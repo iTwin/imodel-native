@@ -273,7 +273,7 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-enable-crash-reporting      (optional)  Opt-in to crash reporting and potential upload\n"
         L"--fwk-inputArgsJsonFile           (optional)  Input args serialized into a file stored as json\n"
         L"--fwk-skip-assignment-check       (optional)  Ignore the assignment check stored in the bridge settings.\n"
-        L"--fwk-no-intermdiate-pushes       (optional)  If set a single changeset is created per input file.\n"
+        L"--fwk-no-intermediate-pushes       (optional)  If set a single changeset is created per input file.\n"
         L"--fwk-snapshot=                   (optional)  Create a standalone \"snapshot\" iModel file with the specified name in the specified staging directory. The file will not be associated with any iModel on any iModel server.\n"
         );
     }
@@ -596,7 +596,9 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WString>& un
             ProcessInputJson(unrecognized, getArgValue(argv[iArg]));
             continue;
             }
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-intermdiate-pushes"))
+        // This argument was originally typoed.  In case anyone out in the field is using it, we still need to support the old spelling
+        if ((argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-intermdiate-pushes")) ||
+            (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-intermediate-pushes"))) 
             {
             m_allowIntermdiatePushes = false;
             continue;
