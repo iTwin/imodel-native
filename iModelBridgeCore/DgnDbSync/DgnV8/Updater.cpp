@@ -493,6 +493,20 @@ void Converter::_DetectDeletedDocuments()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyApi::BeFileName getV8FileNameFromModel(DgnDbR db, SyncInfo::V8ModelExternalSourceAspect& xsa)
+    {
+    auto stmt = db.GetPreparedECSqlStatement("SELECT json_extract(JsonProperties, '$.fileName') FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE ( (Scope.Id=?) AND (Kind ='DocumentWithBeGuid') AND (ECInstanceId=?))");
+    stmt->BindId(1, db.Elements().GetRootSubjectId());
+    stmt->BindId(2, xsa.GetScope());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return BentleyApi::BeFileName();
+
+    return BentleyApi::BeFileName(stmt->GetValueText(0), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyApi::BentleyStatus RootModelConverter::DeleteOrphanReferenceModels()
@@ -513,8 +527,16 @@ BentleyApi::BentleyStatus RootModelConverter::DeleteOrphanReferenceModels()
         auto xsa = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect(*model));
         if (!xsa.IsValid())
             continue;
-        setChannelParentFromModel(*model);
         auto modelName = IssueReporter::FmtModel(*model);
+
+        auto v8FileName = getV8FileNameFromModel(GetDgnDb(), xsa);
+        if (!_GetParams().IsFileAssignedToBridge(v8FileName))
+            {
+            LOG.tracev("DeleteOrphanReferenceModel - skipping model [%s] because it is not owned by this bridge ", modelName.c_str());
+            continue; // This model comes from a file that is not assigned to this bridge
+            }
+        setChannelParentFromModel(*model);
+        LOG.tracev("DeleteOrphanReferenceModel %s", modelName.c_str());
         _DeleteModel(*model, xsa);
         //TODO: Find the file name associated with the orphan model.
         iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference model %s", modelName.c_str()), NULL, iModel::Hub::ChangeSetKind::SpatialData);

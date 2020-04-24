@@ -88,6 +88,26 @@ void V8FileEditor::AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, Dg
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void V8FileEditor::DeleteAllAttachments(DgnV8ModelP v8model)
+    {
+    if (nullptr == v8model)
+        v8model = m_defaultModel;
+
+    bvector<DgnV8Api::DgnAttachment*> tbd;
+    for (DgnAttachmentP attachment : *v8model->GetDgnAttachmentsP())
+        tbd.push_back(attachment);
+
+    BentleyApi::BeTest::SetFailOnAssert(false); // we expect an assertion failure in the V8 code (DgnCacheTxn::_SaveCustomEntryInUndo) because we are not running in an undoable V8 txn
+    for (auto attachment : tbd)
+        {
+        ASSERT_EQ(BentleyApi::SUCCESS, v8model->DeleteDgnAttachment(attachment));
+        }
+    BentleyApi::BeTest::SetFailOnAssert(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void V8FileEditor::AddModel (DgnV8Api::ModelId& modelid, Bentley::WStringCR modelName)

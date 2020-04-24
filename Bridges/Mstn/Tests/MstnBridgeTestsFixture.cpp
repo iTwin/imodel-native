@@ -206,6 +206,22 @@ void MstnBridgeTestsFixture::AddAttachment(BentleyApi::BeFileName& inputFile, Be
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::DeleteAllAttachments(BentleyApi::BeFileName& inputFile)
+    {
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost();
+    if (adoptHost)
+        testHost.Init();
+
+    V8FileEditor v8editor;
+    v8editor.Open(inputFile);
+    v8editor.DeleteAllAttachments();
+    v8editor.Save();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile, int num)
@@ -1091,7 +1107,8 @@ void ProcessRunner::DoSleep(size_t ms)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir, BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                                 BentleyApi::BeFileNameCR inputFile, BentleyApi::BeSQLite::BeGuidCR inputGuid,
-                                                BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid)
+                                                BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid,
+                                                BentleyApi::BeFileNameCR inputFile2, BentleyApi::BeSQLite::BeGuidCR inputGuid2)
     {
     testDir = GetOutputDir();
     
@@ -1133,9 +1150,18 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
     iModelBridgeDocumentProperties refDocProps(refGuid.ToString().c_str(), "wurn2", "durn2", "other2", "");
     testRegistry.SetDocumentProperties(docProps1, inputFile);
     testRegistry.SetDocumentProperties(refDocProps, refFile);
+
     BentleyApi::WString bridgeName;
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile, L"");
+
+    if (!inputFile2.empty())
+        {
+        iModelBridgeDocumentProperties docProps2(inputGuid2.ToString().c_str(), "wurn3", "durn3", "other4", "");
+        testRegistry.SetDocumentProperties(docProps2, inputFile2);
+        testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile2, L"");
+        }
+
     testRegistry.Save();
     //We need to shut down v8host at the end so that rest of the processing works.
     TerminateHost();

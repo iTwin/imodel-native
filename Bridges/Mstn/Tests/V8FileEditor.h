@@ -23,6 +23,7 @@ struct V8FileEditor
     void Save();
     void GetAndLoadModel(DgnV8ModelP&, DgnV8Api::ModelId = -2);
     void AddAttachment(BentleyApi::BeFileNameCR, DgnV8ModelP v8model = nullptr, Bentley::DPoint3d origin = Bentley::DPoint3d::FromZero());
+    void DeleteAllAttachments(DgnV8ModelP v8model = nullptr);
     void SetActiveLevel(EditElementHandleR eeh) {eeh.GetElementP()->ehdr.level = m_activeLevel;}
 
     // Geometry

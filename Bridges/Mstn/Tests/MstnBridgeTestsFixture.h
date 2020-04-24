@@ -198,6 +198,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
     void SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, WCharCP iModelName = nullptr);
 
     void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File, int32_t num, bool useOffsetForElement);
+    void DeleteAllAttachments(BentleyApi::BeFileName& inputFile);
 
     int64_t AddLine(BentleyApi::BeFileName& inputFile, int count = 1);
 
@@ -249,7 +250,8 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                    BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid,
-                                   BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
+                                   BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid,
+                                   BentleyApi::BeFileNameCR inputFile2 = BentleyApi::BeFileName(), BentleyApi::BeSQLite::BeGuidCR inputGuid2 = BentleyApi::BeSQLite::BeGuid());
     };
 
 struct ScopedCodeAssignerXDomain

@@ -1097,11 +1097,15 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     guid2.FromString("85E950D7-6F9C-4FA8-B195-F1B9982D1E2C");
     refGuid.FromString("586AF9AD-8AA3-4126-9410-8E7F6B4AB5E2");
 
+    // Note the SetupTestDirectory creates a registry that says that 
+    // * the reference file is assigned to ABD 
+    // * all other files are assigned to iModelBridgeForMstn
 
     int modelCount = 0;
     BeFileName b1BriefcaseName;
     if (true)
         {
+        // Run iModelBridgeForMstn on inputFile1. It should convert the master file, but not the reference file.
         BentleyApi::BeFileName testDir1;
         SetupTestDirectory(testDir1, L"1", iModelName, inputFile1, guid1, refFile, refGuid);
 
@@ -1126,6 +1130,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     CleanupElementECExtensions();
     if (true)
         {
+        // Run ABD on inputFile1. It should convert the reference file.
         BentleyApi::BeFileName testDir2;
         SetupTestDirectory(testDir2, L"2", iModelName, inputFile1, guid1, refFile, refGuid);
 
@@ -1151,10 +1156,10 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     CleanupElementECExtensions();
     if (true)
         {
+        // Run iModelBridgeForMstn on inputFile2. It should convert the second master file only.
         BentleyApi::BeFileName testDir3;
         SetupTestDirectory(testDir3, L"3", iModelName, inputFile2, guid2, refFile, refGuid);
 
-        // Ask the framework to run our test bridge to do the initial conversion and create the repo
         bvector<WString> margs(args);
         margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
         margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
@@ -1173,12 +1178,13 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         }
 
     CleanupElementECExtensions();
+    size_t referencesSubjectsCount = 0;
     if (true)
         {
+        // Run ABD on inputFile2. It should do nothing. I should detect that the reference file was already converted.
         BentleyApi::BeFileName testDir4;
         SetupTestDirectory(testDir4, L"4", iModelName, inputFile2, guid2, refFile, refGuid);
 
-        //We added a new attachment.
         bvector<WString> rargs(args);
         rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
@@ -1193,6 +1199,181 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         ASSERT_EQ(1, provenanceCount1);
         ASSERT_EQ(1, provenanceCountRef);
         ASSERT_EQ(1, provenanceCount2);
+        }
+    if (true)
+        {
+        referencesSubjectsCount = DbFileInfo(m_briefcaseName).GetReferencesSubjects().size();
+        }
+
+
+    // Delete the attachments to the common reference file from both masterfiles ...
+    DeleteAllAttachments(inputFile1);
+    DeleteAllAttachments(inputFile2);
+
+    // ... and verify that "ABD" bridge deletes the reference models, EVEN IF we run iModelBridgeForMstn first.
+    //      (Do all of this in briefcase #5 - there is no need for each step to have a separate briefcase)
+    BentleyApi::BeFileName testDir5;
+    SetupTestDirectory(testDir5, L"5", iModelName, inputFile1, guid1, refFile, refGuid, inputFile2, guid2);
+    if (true)
+        {
+        // Run iModelBridgeForMstn on inputFile1. It should delete its own References Subjects, but it should not do anything to the model, as the reference is not assigned to it.
+        bvector<WString> margs(args);
+        margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile1.c_str()));
+        margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir5.c_str()));
+        RunTheBridge(margs);
+
+        DbFileInfo info(m_briefcaseName);
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);
+        ASSERT_EQ(modelCount, info.GetPhysicalModelCount());
+
+        b1BriefcaseName = m_briefcaseName;
+        }
+    if (true)
+        {
+        auto newReferencesSubjectsCount = DbFileInfo(m_briefcaseName).GetReferencesSubjects().size();
+        ASSERT_EQ(referencesSubjectsCount - 2, newReferencesSubjectsCount);
+        referencesSubjectsCount = newReferencesSubjectsCount;
+        }
+
+    CleanupElementECExtensions();
+    if (true)
+        {
+        // Run ABD on inputFile1. It should delete its References Subjects. It not delete the referenced model but only reparent it to inputFile2
+        bvector<WString> rargs(args);
+        rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile1.c_str()));
+        rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
+        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir5.c_str()));
+
+        RunTheBridge(rargs);
+
+        DbFileInfo info(m_briefcaseName);
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);
+        ASSERT_EQ(modelCount, info.GetPhysicalModelCount());
+        }
+    if (true)
+        {
+        auto newReferencesSubjectsCount = DbFileInfo(m_briefcaseName).GetReferencesSubjects().size();
+        ASSERT_EQ(referencesSubjectsCount - 2, newReferencesSubjectsCount);
+        referencesSubjectsCount = newReferencesSubjectsCount;
+        }
+
+    CleanupElementECExtensions();
+    if (true)
+        {
+        // Run iModelBridgeForMstn on inputFile2. It should delete its References Subject, but it should not do anything to the model, as the reference is not assigned to it.
+        bvector<WString> margs(args);
+        margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
+        margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir5.c_str()));
+        RunTheBridge(margs);
+
+        DbFileInfo info(m_briefcaseName);
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);
+        ASSERT_EQ(modelCount, info.GetPhysicalModelCount());
+        }
+    if (true)
+        {
+        auto newReferencesSubjectsCount = DbFileInfo(m_briefcaseName).GetReferencesSubjects().size();
+        ASSERT_EQ(referencesSubjectsCount - 1, newReferencesSubjectsCount);
+        referencesSubjectsCount = newReferencesSubjectsCount;
+        }
+
+    CleanupElementECExtensions();
+    if (true)
+        {
+        // Run ABD on inputFile2. It should delete its References Subject, and reparent the model to element #1 as an orphan.
+        bvector<WString> rargs(args);
+        rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
+        rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
+        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir5.c_str()));
+        RunTheBridge(rargs);
+
+        DbFileInfo info(m_briefcaseName);
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);
+        ASSERT_EQ(modelCount, info.GetPhysicalModelCount());
+        }
+    if (true)
+        {
+        auto newReferencesSubjectsCount = DbFileInfo(m_briefcaseName).GetReferencesSubjects().size();
+        ASSERT_EQ(referencesSubjectsCount - 1, newReferencesSubjectsCount);
+        referencesSubjectsCount = newReferencesSubjectsCount;
+        ASSERT_EQ(0, referencesSubjectsCount) << "all dropped reference attachments should have been detected by now";
+        }
+
+    CleanupElementECExtensions();
+    if (true)
+        {
+        // Run iModelBridgeForMstn specifying --fwk-all-docs-processed. It should make no changes at all.
+        bvector<WString> margs(args);
+        margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
+        margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+        margs.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir5.c_str()));
+        RunTheBridge(margs);
+
+        DbFileInfo info(m_briefcaseName);
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);
+        ASSERT_EQ(modelCount, info.GetPhysicalModelCount());
+        }
+    if (true)
+        {
+        auto newReferencesSubjectsCount = DbFileInfo(m_briefcaseName).GetReferencesSubjects().size();
+        ASSERT_EQ(referencesSubjectsCount, newReferencesSubjectsCount);
+        }
+
+    CleanupElementECExtensions();
+    if (true)
+        {
+        // Run ABD specifying --fwk-all-docs-processed. It should delete the reference model itself.
+        BentleyApi::BeFileName testDir4;
+        SetupTestDirectory(testDir4, L"5", iModelName, inputFile2, guid2, refFile, refGuid);
+
+        bvector<WString> rargs(args);
+        rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
+        rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
+        rargs.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir4.c_str()));
+        RunTheBridge(rargs);
+
+        DbFileInfo info(m_briefcaseName);
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(0, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);
+        ASSERT_EQ(modelCount-1, info.GetPhysicalModelCount());
+        }
+    if (true)
+        {
+        auto newReferencesSubjectsCount = DbFileInfo(m_briefcaseName).GetReferencesSubjects().size();
+        ASSERT_EQ(referencesSubjectsCount, newReferencesSubjectsCount);
         }
     }
 
