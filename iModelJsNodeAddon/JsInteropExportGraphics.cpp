@@ -173,92 +173,6 @@ static void unifyIndices(IntermediateMesh const& inMesh, ExportGraphicsMesh& out
     }
 
 //=======================================================================================
-// @bsistruct                                                   Matt.Gooding    04/19
-//=======================================================================================
-struct ExportGraphicsBuilder : SimplifyGraphic
-{
-DEFINE_T_SUPER(SimplifyGraphic);
-
-ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams const& cp, IGeometryProcessorR gp, ViewContextR vc)
-    : T_Super(cp, gp, vc) { }
-virtual ~ExportGraphicsBuilder() { }
-
-// Don't let SimplifyGraphic generate intermediates we always throw away
-void _AddTextString(TextStringCR) override { }
-void _AddTextString2d(TextStringCR, double) override { }
-void AddImage(ImageGraphicCR) override { }
-void AddImage2d(ImageGraphicCR, double) override { }
-bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr&) override { return !symb.IsCosmetic(); }
-bool _WantStrokePattern(PatternParamsCR) override { return false; }
-Render::GraphicPtr _Finish() override {m_isOpen = false; return nullptr;} // we don't use output, don't allocate!
-
-// Copy of SimplifyGraphic::_CreateSubGraphic to generate derived class
-Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const override
-    {
-    auto result = new ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(),
-        Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
-
-    result->m_currGraphicParams  = m_currGraphicParams;
-    result->m_currGeometryParams = m_currGeometryParams;
-    result->m_currGeomEntryId    = m_currGeomEntryId;
-    result->m_currClip           = (nullptr != clip ? clip->Clone(&GetLocalToWorldTransform()) : nullptr);
-    return result;
-    }
-}; // ExportGraphicsBuilder
-
-//=======================================================================================
-// @bsistruct                                                   Matt.Gooding    06/19
-//=======================================================================================
-struct PartInstanceRecord
-{
-    DgnGeometryPartId       partId;
-    Transform               transform;
-    DgnCategoryId           categoryId;
-    DgnSubCategoryId        subCategoryId;
-    RenderMaterialId        materialId;
-    double                  elmTransparency;
-    ColorDef                lineColor;
-};
-
-//=======================================================================================
-// @bsistruct                                                   Matt.Gooding    02/19
-//=======================================================================================
-struct ExportGraphicsContext : NullContext
-{
-    DEFINE_T_SUPER(NullContext);
-    IGeometryProcessorR             m_processor;
-    bvector<PartInstanceRecord>*    m_instances;
-
-ExportGraphicsContext(IGeometryProcessorR processor, bvector<PartInstanceRecord>* instances)
-    : m_processor(processor), m_instances(instances)
-    {
-    m_purpose = processor._GetProcessPurpose();
-    m_viewflags.SetShowConstructions(true);
-    }
-
-Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
-    { return new ExportGraphicsBuilder(params, m_processor, *this); }
-
-void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR transform, Render::GeometryParamsR geomParams) override
-    {
-    if (!m_instances) return T_Super::_AddSubGraphic(graphic, partId, transform, geomParams);
-
-    PartInstanceRecord rec;
-    rec.partId = partId;
-    rec.transform = graphic.GetLocalToWorldTransform() * transform;
-
-    geomParams.Resolve(GetDgnDb());
-    rec.categoryId = geomParams.GetCategoryId();
-    rec.subCategoryId = geomParams.GetSubCategoryId();
-    rec.materialId = geomParams.GetMaterialId();
-    rec.elmTransparency = geomParams.GetTransparency();
-    rec.lineColor = geomParams.GetLineColor();
-
-    m_instances->emplace_back(rec);
-    }
-};
-
-//=======================================================================================
 // @bsistruct                                                   Matt.Gooding    02/19
 //=======================================================================================
 struct ExportGraphicsProcessor : IGeometryProcessor
@@ -275,7 +189,7 @@ public:
         CachedEntry(ColorDef c, bool twoSided, RenderMaterialId matId, DgnTextureId texId, DgnSubCategoryId subCat)
             : color(c), isTwoSided(twoSided), materialId(matId), textureId(texId), subCategoryId(subCat) { }
         };
-    bvector<CachedEntry>            m_cachedEntries;
+    bvector<CachedEntry>                    m_cachedEntries;
     struct CachedLineString
         {
         ColorDef            color;
@@ -285,12 +199,29 @@ public:
         CachedLineString(ColorDef c, DgnSubCategoryId subCat)
             : color(c), subCategoryId(subCat) { }
         };
-    bvector<CachedLineString>       m_cachedLineStrings;
-    bool                            m_gotBadPolyface;
-    bool                            m_generateLines;
+    bvector<CachedLineString>               m_cachedLineStrings;
+    bool                                    m_gotBadPolyface;
+    bool                                    m_generateLines;
+
+    struct LineStyleGeometryCacheEntry
+        {
+        ISolidPrimitivePtr  m_solid;
+        PolyfaceHeaderPtr   m_polyface;
+
+        LineStyleGeometryCacheEntry(ISolidPrimitiveCR solid, IFacetOptionsR facetOptions)
+            {
+            m_solid = solid.Clone();
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(facetOptions);
+            builder->AddSolidPrimitive(*m_solid.get());
+            m_polyface = &builder->GetClientMeshR();
+            }
+        };
+    bvector<LineStyleGeometryCacheEntry>    m_lineStyleGeometryCache;
+    int32_t                                 m_drawingStyledCurveVectorStack;
 
     ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions, bool generateLines) :
-        m_db(db), m_facetOptions(facetOptions), m_gotBadPolyface(false), m_generateLines(generateLines) { }
+        m_db(db), m_facetOptions(facetOptions), m_gotBadPolyface(false), m_generateLines(generateLines),
+        m_drawingStyledCurveVectorStack(0) { }
     virtual ~ExportGraphicsProcessor() { }
 
 private:
@@ -447,8 +378,11 @@ bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg) override
     {
+    uint32_t indexCount = (uint32_t)pfQuery.GetPointIndexCount();
+    uint32_t pointCount = (uint32_t)pfQuery.GetPointCount();
     // Receiving empty polyfaces isn't ideal, but just ignore and don't count as real error condition
-    if (pfQuery.GetPointIndexCount() == 0 || pfQuery.GetPointCount() == 0) return true;
+    // < 3 to account for valid inputs collapsed to a single sliver face.
+    if (indexCount < 3 || pointCount < 3) return true;
 
     // Polyfaces missing requested information or in the wrong style are indicative of real problems upstream
     if (pfQuery.GetNormalIndexCP() == nullptr || pfQuery.GetNormalCount() == 0) { m_gotBadPolyface = true; return true; }
@@ -459,7 +393,6 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     MeshDisplayProps displayProps;
     ResolveMeshDisplayProps(sg, pfQuery, displayProps);
 
-    uint32_t indexCount = (uint32_t)pfQuery.GetPointIndexCount();
     uint32_t indexCountWithoutBlocking = indexCount - (indexCount / 4);
     std::unique_ptr<FPoint2d[]> computedParams(new FPoint2d[indexCountWithoutBlocking]);
 
@@ -526,7 +459,10 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     ExportGraphicsMesh* exportMesh = nullptr;
     for (auto& entry : m_cachedEntries)
         {
+        // Prevent bucketing into huge meshes and triggering too many reallocs
+        static size_t MAX_INDICES_PER_EXPORT_GRAPHICS_MESH = 65000;
         if (entry.color != displayProps.color ||
+            entry.mesh.indices.size() > MAX_INDICES_PER_EXPORT_GRAPHICS_MESH ||
             entry.isTwoSided != displayProps.isTwoSided ||
             entry.materialId != displayProps.materialId ||
             entry.textureId != textureId ||
@@ -544,7 +480,149 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     unifyIndices(IntermediateMesh(pfQuery, localToWorld, std::move(computedParams)), *exportMesh);
     return true;
     }
+
+public:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+// 3D linestyles will send through many, many instances of the same solid primitives. Some
+// factors prevent these from being instanced as GeometryParts, but we can still reuse the
+// constructed PolyfaceHeader for a given input for a massive perf savings.
+// Only store inside a DrawStyledCurveVector call to avoid memory bloat.
+// Track as a stack to avoid issues with re-entrant 3D linestyles, though hopefully no such thing exists.
+void PushIsDrawingStyledCurveVector() { ++m_drawingStyledCurveVectorStack; }
+void PopIsDrawingStyledCurveVector()
+    {
+    --m_drawingStyledCurveVectorStack;
+    if (m_drawingStyledCurveVectorStack == 0)
+        m_lineStyleGeometryCache.clear();
+    }
+bool IsDrawingStyledCurveVector() const { return 0 != m_drawingStyledCurveVectorStack; }
+
+PolyfaceHeaderCR FindOrAddCachedLineStyleGeometry(ISolidPrimitiveCR solid)
+    {
+    BeAssert(IsDrawingStyledCurveVector());
+    for (auto const& cacheEntry : m_lineStyleGeometryCache)
+        {
+        if (cacheEntry.m_solid->IsSameStructureAndGeometry(solid))
+            return *cacheEntry.m_polyface.get();
+        }
+    
+    m_lineStyleGeometryCache.emplace_back(solid, m_facetOptions);
+    return *m_lineStyleGeometryCache.back().m_polyface.get();
+    }
 }; // ExportGraphicsProcessor
+
+
+//=======================================================================================
+// @bsistruct                                                   Matt.Gooding    04/19
+//=======================================================================================
+struct ExportGraphicsBuilder : SimplifyGraphic
+{
+public:
+    DEFINE_T_SUPER(SimplifyGraphic);
+
+    ExportGraphicsProcessor& m_exportGraphicsProcessor;
+
+ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams const& cp, ExportGraphicsProcessor& gp, ViewContextR vc)
+    :
+    T_Super(cp, gp, vc),
+    m_exportGraphicsProcessor(gp)
+    { }
+virtual ~ExportGraphicsBuilder() { }
+
+// Don't let SimplifyGraphic generate intermediates we always throw away
+void _AddTextString(TextStringCR) override { }
+void _AddTextString2d(TextStringCR, double) override { }
+void AddImage(ImageGraphicCR) override { }
+void AddImage2d(ImageGraphicCR, double) override { }
+bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr&) override { return !symb.IsCosmetic(); }
+bool _WantStrokePattern(PatternParamsCR) override { return false; }
+Render::GraphicPtr _Finish() override {m_isOpen = false; return nullptr;} // we don't use output, don't allocate!
+
+// Copy of SimplifyGraphic::_CreateSubGraphic to generate derived class
+Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const override
+    {
+    auto result = new ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(),
+        Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), (ExportGraphicsProcessor&)m_processor, m_context);
+
+    result->m_currGraphicParams  = m_currGraphicParams;
+    result->m_currGeometryParams = m_currGeometryParams;
+    result->m_currGeomEntryId    = m_currGeomEntryId;
+    result->m_currClip           = (nullptr != clip ? clip->Clone(&GetLocalToWorldTransform()) : nullptr);
+    return result;
+    }
+
+void _AddSolidPrimitive(ISolidPrimitiveCR geom) override
+    {
+    if (!m_exportGraphicsProcessor.IsDrawingStyledCurveVector() || nullptr != GetCurrentClip())
+        {
+        T_Super::_AddSolidPrimitive(geom);
+        return;
+        }
+
+    m_processor._ProcessPolyface(m_exportGraphicsProcessor.FindOrAddCachedLineStyleGeometry(geom), false, *this);
+    }
+}; // ExportGraphicsBuilder
+
+//=======================================================================================
+// @bsistruct                                                   Matt.Gooding    06/19
+//=======================================================================================
+struct PartInstanceRecord
+{
+    DgnGeometryPartId       partId;
+    Transform               transform;
+    DgnCategoryId           categoryId;
+    DgnSubCategoryId        subCategoryId;
+    RenderMaterialId        materialId;
+    double                  elmTransparency;
+    ColorDef                lineColor;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Matt.Gooding    02/19
+//=======================================================================================
+struct ExportGraphicsContext : NullContext
+{
+    DEFINE_T_SUPER(NullContext);
+    ExportGraphicsProcessor&        m_processor;
+    bvector<PartInstanceRecord>*    m_instances;
+
+ExportGraphicsContext(ExportGraphicsProcessor& processor, bvector<PartInstanceRecord>* instances)
+    : m_processor(processor), m_instances(instances)
+    {
+    m_purpose = processor._GetProcessPurpose();
+    m_viewflags.SetShowConstructions(true);
+    }
+
+Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
+    { return new ExportGraphicsBuilder(params, m_processor, *this); }
+
+void _DrawStyledCurveVector(Render::GraphicBuilderR builder, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override
+    {
+    m_processor.PushIsDrawingStyledCurveVector();
+    T_Super::_DrawStyledCurveVector(builder, curve, params, doCook);
+    m_processor.PopIsDrawingStyledCurveVector();
+    }
+
+void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR transform, Render::GeometryParamsR geomParams) override
+    {
+    if (!m_instances) return T_Super::_AddSubGraphic(graphic, partId, transform, geomParams);
+
+    PartInstanceRecord rec;
+    rec.partId = partId;
+    rec.transform = graphic.GetLocalToWorldTransform() * transform;
+
+    geomParams.Resolve(GetDgnDb());
+    rec.categoryId = geomParams.GetCategoryId();
+    rec.subCategoryId = geomParams.GetSubCategoryId();
+    rec.materialId = geomParams.GetMaterialId();
+    rec.elmTransparency = geomParams.GetTransparency();
+    rec.lineColor = geomParams.GetLineColor();
+
+    m_instances->emplace_back(rec);
+    }
+};
 
 //=======================================================================================
 // @bsistruct                                                   Matt.Gooding    04/19
@@ -814,6 +892,8 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         Napi::String elementIdString = createIdString(Env(), job->m_elementId);
         for (auto& entry : job->m_processor.m_cachedEntries)
             {
+             // Can happen if all triangles are degenerate
+            if (entry.mesh.indices.empty()) continue;
             Napi::Object cbArgument = Napi::Object::New(Env());
             cbArgument.Set("elementId", elementIdString);
             cbArgument.Set("mesh", convertMesh(Env(), entry.mesh, entry.isTwoSided));
@@ -906,6 +986,8 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
     Napi::Function onGraphicsCb = exportProps.Get("onPartGraphics").As<Napi::Function>();
     for (auto& entry : processor.m_cachedEntries)
         {
+        // Can happen if all triangles are degenerate
+        if (entry.mesh.indices.empty()) continue;
         Napi::Object cbArgument = Napi::Object::New(Env());
         cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
         cbArgument.Set("mesh", convertMesh(Env(), entry.mesh, entry.isTwoSided));
