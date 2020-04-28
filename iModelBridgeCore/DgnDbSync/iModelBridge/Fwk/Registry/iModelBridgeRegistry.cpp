@@ -243,12 +243,11 @@ static CPLSpawnedProcess* findOrStartAffinityCalculator(BeFileNameCR affinityLib
     if (!calcexe.DoesPathExist())
         return nullptr;
 
-    Utf8String calcexeU(calcexe);
-    Utf8String libU(affinityLibraryPath);
+    WString libU(affinityLibraryPath); 
     libU.AddQuotes();
-    const char* callData[] = { calcexeU.c_str(), libU.c_str(), nullptr };
+    const wchar_t* callData[] = { calcexe.c_str(), libU.c_str(), nullptr };
 
-    auto proc = CPLSpawnAsync(NULL, callData, true, true, false, nullptr);
+    auto proc = CPLSpawnAsync(NULL, callData, true, true, false);
     if (nullptr == proc)
         return nullptr;
 
@@ -265,22 +264,21 @@ static int callDiscloseFilesAndAffinities(BeFileNameCR outputFileName, BeFileNam
     if (!calcexe.DoesPathExist())
         return -1;
 
-    Utf8String calcexeU(calcexe);
-    Utf8String libU(affinityLibraryPath);
+    WString libU(affinityLibraryPath);
     libU.AddQuotes();
-    Utf8String outputNameU(outputFileName);
+    WString outputNameU(outputFileName);
     outputNameU.AddQuotes();
-    Utf8String assetsPathU(assetsPath);
+    WString assetsPathU(assetsPath);
     assetsPathU.AddQuotes();
-    Utf8String sourceFileNameU(sourceFileName);
+    WString sourceFileNameU(sourceFileName);
     sourceFileNameU.AddQuotes();
-    Utf8String bridgeNameU(bridgeName.c_str());
+    WString bridgeNameU(bridgeName.c_str());
     bridgeNameU.AddQuotes();
-    const char* callData[] = { calcexeU.c_str(), outputNameU.c_str(), libU.c_str(), assetsPathU.c_str(), sourceFileNameU.c_str(), bridgeNameU.c_str(), nullptr };
+    const wchar_t* callData[] = { calcexe.c_str(), outputNameU.c_str(), libU.c_str(), assetsPathU.c_str(), sourceFileNameU.c_str(), bridgeNameU.c_str(), nullptr };
 
     LOG.tracev(L"%ls <-discloseFilesAndAffinities- (%ls,%ls,%ls)", outputFileName.c_str(), affinityLibraryPath.c_str(), bridgeName.c_str(), sourceFileName.c_str());
 
-    auto proc = CPLSpawnAsync(NULL, callData, true, true, false, nullptr);
+    auto proc = CPLSpawnAsync(NULL, callData, true, true, false);
     if (nullptr == proc)
         return -1;
 
@@ -302,7 +300,7 @@ static void killAllAffinityCalculators()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus callAffinityFunc(Utf8String& line0, Utf8String& line1, CPLSpawnedProcess* calc, BeFileNameCR filePath, BeFileNameCR affinityLibraryPath)
+BentleyStatus callAffinityFunc(WString& line0, WString& line1, CPLSpawnedProcess* calc, BeFileNameCR filePath, BeFileNameCR affinityLibraryPath)
     {
     Utf8String filePathU(filePath);
     filePathU.AddQuotes();
@@ -338,7 +336,7 @@ BentleyStatus iModelBridgeRegistryBase::ComputeBridgeAffinityToDocument(iModelBr
         return BSIERROR;
         }
 
-    Utf8String line0, line1;
+    WString line0, line1;
     if (BSISUCCESS != callAffinityFunc(line0, line1, calc, filePath, affinityLibraryPath))
         {
         if (s_badAffinityCalculators.find(affinityLibraryPath) != s_badAffinityCalculators.end())
@@ -363,14 +361,14 @@ BentleyStatus iModelBridgeRegistryBase::ComputeBridgeAffinityToDocument(iModelBr
         }
 
     int v = 0;
-    if (1 != Utf8String::Sscanf_safe(line0.c_str(), "%d", &v))
+    if (1 != WString::Swscanf_safe(line0.c_str(), L"%d", &v))
         {
         LOG.errorv(L"%ls - \"%ls\" is an invalid affinity value?!", affinityLibraryPath.c_str(), WString(line0.c_str(), true).c_str());
         return BSIERROR;
         }
 
     affinity.m_affinity = (iModelBridgeAffinityLevel)v;
-    affinity.m_bridgeRegSubKey.AssignUtf8(line1.c_str());
+    affinity.m_bridgeRegSubKey = line1.c_str();
     return BSISUCCESS;
     }
 
