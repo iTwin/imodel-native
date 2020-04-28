@@ -568,6 +568,7 @@ private:
     bvector<BlockInfo>                  m_blockStack;
     bvector<int64_t>                    m_parasolidBodies;
     bool                                m_isTargetModel2d;
+    Transform                           m_flatternTransform;
 
     void PushDrawingBlock (DwgDbBlockTableRecordCR block);
     bool IsDrawingBlock () { return m_blockStack.size() > 1; }

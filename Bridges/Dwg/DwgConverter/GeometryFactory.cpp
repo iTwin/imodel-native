@@ -907,6 +907,7 @@ GeometryFactory::GeometryFactory (DwgImporter::ElementCreateParams& createParams
     m_spatialFilter = nullptr;
     m_parasolidBodies.clear ();
     m_isTargetModel2d = !createParams.GetModel().Is3d ();
+    m_flatternTransform.InitFromProjectionToPlane (DPoint3d::FromZero(), DVec3d::UnitZ());
 
     // start block stack by input entity's block
     auto dwg = nullptr == ent || ent->GetDatabase().IsNull() ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
@@ -2114,9 +2115,14 @@ void GeometryFactory::AppendGeometry (GeometricPrimitiveR geometry)
     auto blockId = block.GetBlockId ();
     auto perBlockCount = block.GetAndIncrementGeometryCount ();
 
+    // project geometry to xy-plane if 2D model
+    auto createdGeometry = geometry.Clone ();
+    if (m_isTargetModel2d)
+        createdGeometry->TransformInPlace (m_flatternTransform);
+
     // build a new cache entry for the geometry
     DwgImporter::GeometryEntry   geomEntry;
-    geomEntry.SetGeometry (geometry.Clone().get());
+    geomEntry.SetGeometry (createdGeometry.get());
     geomEntry.SetGeometryParams (display);
     geomEntry.SetTransform (m_currentTransform);
     geomEntry.SetBlockName (block.GetBlockName());
@@ -2153,7 +2159,7 @@ void GeometryFactory::ComputeCategory (DgnCategoryId& categoryId, DgnSubCategory
     if (nullptr != xrefDwg && xrefDwg == &importer.GetDwgDb())
         xrefDwg = nullptr;
 
-    if (toModel.Is3d())
+    if (!m_isTargetModel2d)
         {
         // we are in a modelspace, of the master file or an xref file, get a spatial category and a sub-category from the syncInfo:
         bool    isDisplayed = true;
