@@ -2891,6 +2891,7 @@ public:
         V8Location() : m_isElement(false), m_v8componentKey(0), m_v8componentType(0) {}
         V8Location(V8Location const& l) : m_isElement(l.m_isElement), m_v8fileId(l.m_v8fileId), m_v8componentKey(l.m_v8componentKey), m_v8componentType(l.m_v8componentType) {}
         bool operator< (V8Location const &o) const;
+        Utf8String ToString(DgnDbR) const;
         };
 
     bmap<V8Location, uint32_t>      m_v8ComponentToV10Id;

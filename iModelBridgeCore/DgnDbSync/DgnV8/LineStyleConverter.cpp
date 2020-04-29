@@ -373,6 +373,21 @@ LineStyleConverter::V8Location::V8Location(DgnV8Api::LsCacheComponent const& com
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String LineStyleConverter::V8Location::ToString(DgnDbR db) const
+    {
+    Utf8String filePath = "";
+    if (m_isElement)
+        {
+        RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(m_v8fileId);
+        if (link.IsValid())
+            filePath = Utf8String(link->GetCode().GetValueUtf8CP());
+        }
+    return Utf8PrintfString("[V8 info: isElement: %s, componentKey: %llu, componentType: %d, filePath: %s]",
+                         m_isElement ? "yes" : "no", m_v8componentKey, m_v8componentType, m_isElement ? filePath.c_str() : "N/A");
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
 LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, DgnV8Api::DgnFile&v8File, DgnV8Api::LsCacheComponent const& component, double lsScale)
@@ -412,13 +427,20 @@ LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, Dg
     if (result != m_v8ComponentToV10Id.end())
         {
         v10Id = LsComponentId(convertToLsComponentType(component.GetElementType()), result->second);
+        if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+            {
+            Utf8PrintfString trace("ConvertLsComponent: Found previously converted component: %s %s [DgnDbId = %lld]", Utf8String(component.GetDescription().c_str()).c_str(), v8Location.ToString(GetDgnDb()).c_str(), v10Id.GetValue());
+            LOG_LSTYLE.tracev(trace.c_str());
+            }
         return LINESTYLE_STATUS_Success;
         }
 
     LineStyleStatus retval = LINESTYLE_STATUS_Success;
     if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
-        LOG_LSTYLE.tracev(L"ConvertLsComponent: Begin converting %ls", component.GetDescription().c_str());
-
+        {
+        Utf8PrintfString trace("ConvertLsComponent: Begin converting %s %s", Utf8String(component.GetDescription().c_str()).c_str(), v8Location.ToString(GetDgnDb()).c_str());
+        LOG_LSTYLE.tracev(trace.c_str());
+        }
     switch (compType)
         {
         case LsComponentType::LineCode:
