@@ -60,11 +60,28 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
     {
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Original.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), false));
-    VerifyConvertedElementCount("ORDIntersectionTest.bim", 1, 1);
+    auto dgnDbPtr = VerifyConvertedElementCount("ORDIntersectionTest.bim", 1, 1);
+
+    ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT COUNT(*) FROM CivilDesignerProductsDynamic.Alignment__x005C__DummyFD");
+    ASSERT_TRUE(stmt.IsPrepared());
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0));
+
+    stmt.Finalize();
+    dgnDbPtr->CloseDb();
 
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Edits.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), true));
-    //TODO: VerifyConvertedElementCount("ORDIntersectionTest.bim", 3, 4);
+    dgnDbPtr = VerifyConvertedElementCount("ORDIntersectionTest.bim", 3, 1);
+    
+    stmt.Prepare(*dgnDbPtr, "SELECT COUNT(*) FROM CivilDesignerProductsDynamic.Alignment__x005C__DummyFD");
+    ASSERT_TRUE(stmt.IsPrepared());
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+
+    stmt.Finalize();
+    dgnDbPtr->CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**

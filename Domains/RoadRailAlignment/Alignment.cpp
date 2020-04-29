@@ -28,6 +28,33 @@ AlignmentPtr Alignment::Create(SpatialModelCR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::Delete() const
+    {
+    auto horizontalCPtr = GetHorizontal();
+    auto status = horizontalCPtr->get()->Delete();
+    if (status != DgnDbStatus::Success)
+        return status;
+
+    auto verticalModelId = QueryVerticalAlignmentSubModelId();
+    if (verticalModelId.IsValid())
+        {
+        for (auto& verticalId : QueryVerticalAlignmentIds())
+            {
+            auto verticalCPtr = VerticalAlignment::Get(GetDgnDb(), verticalId);
+            if (DgnDbStatus::Success != (status = verticalCPtr->get()->Delete()))
+                return status;
+            }
+
+        if (DgnDbStatus::Success != (status = GetDgnDb().Models().GetModel(verticalModelId)->Delete()))
+            return status;
+        }
+
+    return get()->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)

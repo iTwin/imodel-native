@@ -145,6 +145,48 @@ CorridorPtr Corridor::Create(TransportationNetworkCR network, CreateFromToParams
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Corridor::Delete() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM RoadRailPhysical.TransportationSystem WHERE ModeledElement.Id = ?");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        auto transpSystemCPtr = TransportationSystem::Get(GetDgnDb(), stmt.GetValueId<DgnElementId>(0));
+        auto corridorModelPtr = transpSystemCPtr->GetModel();
+        auto tsModelPtr = transpSystemCPtr->GetTransportationSystemModel();
+
+        ECSqlStatement tsStmt;
+        tsStmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM BisCore.Element WHERE Model.Id = ? ORDER BY Parent.Id DESC");
+        BeAssert(tsStmt.IsPrepared());
+
+        tsStmt.BindId(1, tsModelPtr->GetModelId());
+
+        DgnDbStatus status;
+        while (DbResult::BE_SQLITE_ROW == tsStmt.Step())
+            {
+            if (DgnDbStatus::Success == (status = GetDgnDb().Elements().Get<DgnElement>(tsStmt.GetValueId<DgnElementId>(0))->Delete()))
+                return status;
+            }
+
+        if (DgnDbStatus::Success == (status = tsModelPtr->Delete()))
+            return status;
+
+        if (DgnDbStatus::Success == (status = transpSystemCPtr->get()->Delete()))
+            return status;
+
+        if (DgnDbStatus::Success == (status = corridorModelPtr->Delete()))
+            return status;        
+        }
+
+    return get()->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 CorridorCPtr Corridor::Insert(Dgn::DgnDbStatus* status)

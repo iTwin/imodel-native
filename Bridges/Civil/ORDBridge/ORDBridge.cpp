@@ -401,6 +401,10 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     params.isUpdating = _GetParams().IsUpdating();
 
     m_converter->SetORDParams(&params);
+
+    if (m_converter->IsUpdating())
+        m_converter->InvalidateBadData();
+
     ConvertORDElementXDomain convertORDXDomain(*m_converter);
     ConvertOBMElementXDomain convertOBMXDomain(*m_converter);
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);

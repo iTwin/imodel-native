@@ -1720,6 +1720,9 @@ BentleyStatus ORDCorridorsConverter::UpdateCorridorComponents(CorridorCR cifCorr
         else
             createCorridorComponent(*corridorSurfacePtr, *genPhysicalObjEnablerP, corridorPortion,
                                     categoryId, emptyCode, *iter->second, subCategoryMap);
+
+        stmt.Reset();
+        stmt.ClearBindings();
         }
 
     return BentleyStatus::SUCCESS;
@@ -2148,25 +2151,6 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
                     }
                 }
             }
-
-        /* TODO: Delete existing element if its classId needs to change
-        THIS LOGIC WILL BE HANDLED BY THE DGNV8CONVERTER!
-        if (m_converter.IsUpdating())
-            {
-            auto elementAndAspectId = static_cast<DgnDbSync::DgnV8::ChangeDetector&>(
-                m_converter.GetChangeDetector()).FindElementAspectById(
-                    m_converter, v8el, v8mm, nullptr);
-            if (elementAndAspectId.IsValid() && elementAndAspectId.GetElementId().IsValid())
-                {
-                auto existingElementId = elementAndAspectId.GetElementId();
-                auto existingElmCPtr = m_converter.GetDgnDb().Elements().GetElement(existingElementId);
-                if (classId != existingElmCPtr->GetElementClassId())
-                    {
-                    existingElmCPtr->Delete();
-                    ORDBRIDGE_LOGI("Deleting elementId %lld because its classId changed.", existingElementId.GetValue());
-                    }
-                }
-            }*/
         }
 
     for (auto pExt : ORDConverterExtensionRegistry::s_extensions)
@@ -2787,6 +2771,37 @@ bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR elem
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertORDElementXDomain::_OnElementClassChanged(DgnDbSync::DgnV8::Converter& converter, DgnV8EhCR v8eh, DgnElementCR newElement, DgnElementId originalElementId)
+    {
+    auto stmtPtr = m_converter.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId, ECClassId, TargetECInstanceId FROM BisCore.GraphicalElement3dRepresentsElement WHERE SourceECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, originalElementId);
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        {
+        auto relId = stmtPtr->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+        auto relClassId = stmtPtr->GetValueId<ECN::ECClassId>(1);
+        auto targetElmId = stmtPtr->GetValueId<DgnElementId>(2);
+
+        if (BeSQLite::DbResult::BE_SQLITE_DONE != m_converter.GetDgnDb().DeleteLinkTableRelationship(BeSQLite::EC::ECInstanceKey(relClassId, relId)))
+            {
+            ORDBRIDGE_LOGW("Could not delete existing 'represents' relationship - %lld to %lld", originalElementId.GetValue(), targetElmId.GetValue());
+            continue;
+            }
+
+        BeSQLite::EC::ECInstanceKey newKey;
+        auto relClassCP = m_converter.GetDgnDb().Schemas().GetClass(relClassId);
+        if (BeSQLite::DbResult::BE_SQLITE_OK != m_converter.GetDgnDb().InsertLinkTableRelationship(
+            newKey, *relClassCP->GetRelationshipClassCP(), newElement.GetElementId(), targetElmId))
+            {
+            ORDBRIDGE_LOGW("Could not recreate 'represents' relationship to - %lld to %lld", newElement.GetElementId().GetValue(), targetElmId.GetValue());
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm, DgnDbSync::DgnV8::Converter&)
@@ -2817,6 +2832,51 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
         auto iter = m_converter.m_planViewModels.find(bimModelId);
         if (iter == m_converter.m_planViewModels.end())
             m_converter.m_planViewModels.insert(bimModelId);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertORDElementXDomain::_OnElementBeforeDelete(DgnDbSync::DgnV8::Converter&, DgnElementId elementId)
+    {
+    auto stmtPtr = m_converter.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId, ECClassId, TargetECInstanceId FROM BisCore.GraphicalElement3dRepresentsElement WHERE SourceECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    auto llStmtPtr = m_converter.GetDgnDb().GetPreparedECSqlStatement("SELECT SourceECInstanceId FROM LinearReferencing.ILinearLocationLocatesElement WHERE TargetECInstanceId = ?");
+    BeAssert(llStmtPtr.IsValid());
+
+    stmtPtr->BindId(1, elementId);
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        {
+        auto relId = stmtPtr->GetValueId<BeSQLite::EC::ECInstanceId>(0);
+        auto relClassId = stmtPtr->GetValueId<ECN::ECClassId>(1);
+
+        m_converter.GetDgnDb().DeleteLinkTableRelationship(BeSQLite::EC::ECInstanceKey(relClassId, relId));
+
+        auto targetId = stmtPtr->GetValueId<DgnElementId>(2);
+
+        auto dgnElementPtr = m_converter.GetDgnDb().Elements().Get<DgnElement>(targetId);
+
+        DgnDbStatus status;
+        if (dgnElementPtr->GetElementClassId() == AlignmentBim::Alignment::QueryClassId(m_converter.GetDgnDb()))
+            status = AlignmentBim::Alignment::Get(m_converter.GetDgnDb(), targetId)->Delete();
+        else if (dgnElementPtr->GetElementClassId() == RoadRailBim::Corridor::QueryClassId(m_converter.GetDgnDb()))
+            status = RoadRailBim::Corridor::Get(m_converter.GetDgnDb(), targetId)->Delete();
+        else
+            {
+            llStmtPtr->BindId(1, targetId);
+            if (BeSQLite::DbResult::BE_SQLITE_ROW == llStmtPtr->Step())
+                {
+                auto linearLocPtr = m_converter.GetDgnDb().Elements().Get<DgnElement>(llStmtPtr->GetValueId<DgnElementId>(0));
+                linearLocPtr->Delete();
+                }
+
+            status = dgnElementPtr->Delete();
+            }
+
+        if (DgnDbStatus::Success != status)
+            ORDBRIDGE_LOGW("Failed while deleting elementId '%lld'", targetId.GetValue());
         }
     }
 
@@ -3232,6 +3292,27 @@ void ORDConverter::CreateDefaultSavedViews()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverter::DetectFeaturizedElementsWithIncorrectClass()
+    {
+    BeSQLite::EC::ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT COUNT(*) FROM BisCore.Element el, DgnV8OpenRoadsDesigner.FeatureAspect fa, meta.ECClassDef c "
+        "WHERE el.ECInstanceId = fa.Element.Id AND el.ECClassId = c.ECInstanceId AND fa.DefinitionName <> c.DisplayLabel");
+    BeAssert(stmt.IsPrepared());
+
+    if (BeSQLite::DbResult::BE_SQLITE_ROW != stmt.Step())
+        return;
+
+    auto rowCount = stmt.GetValueInt(0);
+    if (rowCount > 0)
+        {
+        BeAssert(false);
+        ORDBRIDGE_LOGW("%d featurized elements still exist with incorrect dynamic class.", rowCount);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::_OnConversionComplete()
@@ -3248,6 +3329,8 @@ void ORDConverter::_OnConversionComplete()
             ScalableMeshWrapper::AddTerrainClassifiers(GetDgnDb(), m_clippingsModelId);
             CreateDefaultSavedViews();
             }
+
+        DetectFeaturizedElementsWithIncorrectClass();
         }
 
     T_Super::_OnConversionComplete();
@@ -3519,6 +3602,63 @@ DgnModelId ORDConverter::_MapModelIntoProject(DgnV8ModelR v8Model, Bentley::Utf8
         }
 
     return newModelId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverter::InvalidateBadData()
+    {
+    BeSQLite::EC::ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT el.ECInstanceId, x.ECInstanceId FROM BisCore.Element el, BisCore.ExternalSourceAspect x, "
+        "DgnV8OpenRoadsDesigner.FeatureAspect fa, meta.ECClassDef c WHERE el.ECInstanceId = x.Element.Id AND el.ECInstanceId = fa.Element.Id "
+        "AND el.ECClassId = c.ECInstanceId AND fa.DefinitionName <> c.DisplayLabel");
+    BeAssert(stmt.IsPrepared());
+
+    size_t rowCount = 0;
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        auto elementPtr = GetDgnDb().Elements().GetForEdit<DgnElement>(stmt.GetValueId<DgnElementId>(0));
+        auto extSrcAspect = iModelExternalSourceAspect::GetAspectForEdit(*elementPtr, stmt.GetValueId<BeSQLite::EC::ECInstanceId>(1));
+        auto sourceState = extSrcAspect.GetSourceState();
+        sourceState.m_version = 0;
+        extSrcAspect.SetSourceState(sourceState);
+
+        if (elementPtr->Update().IsNull())
+            ORDBRIDGE_LOGW("Failed while deprecating ExternalSourceAspect for Id %d", elementPtr->GetElementId().GetValue());
+
+        rowCount++;
+        }
+
+    if (rowCount == 0)
+        return;
+
+    ORDBRIDGE_LOGI("%d existing elements found with different dynamic-class from their feature-def property. Forcing update on them...", rowCount);
+
+    stmt.Finalize();
+
+    stmt.Prepare(GetDgnDb(), "SELECT DISTINCT ehl.TargetECInstanceId, rlx.ECInstanceId FROM BisCore.ElementHasLinks ehl, BisCore.ExternalSourceAspect rlx, "
+        "BisCore.Element el, DgnV8OpenRoadsDesigner.FeatureAspect fa, BisCore.ExternalSourceAspect x, meta.ECClassDef c "
+        "WHERE fa.Element.Id = el.ECInstanceId AND el.ECInstanceId = x.Element.Id AND x.Scope.Id = ehl.SourceECInstanceId "
+        "AND ehl.TargetECInstanceId = rlx.Element.Id AND el.ECClassId = c.ECInstanceId AND fa.DefinitionName <> c.DisplayLabel");
+    BeAssert(stmt.IsPrepared());
+
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        auto elementPtr = GetDgnDb().Elements().GetForEdit<DgnElement>(stmt.GetValueId<DgnElementId>(0));
+        auto extSrcAspect = iModelExternalSourceAspect::GetAspectForEdit(*elementPtr, stmt.GetValueId<BeSQLite::EC::ECInstanceId>(1));
+        auto sourceState = extSrcAspect.GetSourceState();
+        sourceState.m_version = 0;
+        extSrcAspect.SetSourceState(sourceState);
+        auto jsonProps = extSrcAspect.GetProperties();
+        if (!jsonProps.IsNull())
+            {
+            jsonProps["lastSaveTime"] = 0;
+            extSrcAspect.SetProperties(jsonProps);
+            }
+
+        elementPtr->Update();
+        }
     }
 
 END_ORDBRIDGE_NAMESPACE

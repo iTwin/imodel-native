@@ -129,6 +129,8 @@ public:
     //! @return Either an Alignment, or nullptr if the element does not have any associated alignment.
     ROADRAILALIGNMENT_EXPORT static AlignmentCPtr GetAssociated(Dgn::DgnElementCR element);
 
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus Delete() const;
+
     //__PUBLISH_SECTION_END__
     //! @privatesection
     ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(Dgn::SpatialModelCR model);

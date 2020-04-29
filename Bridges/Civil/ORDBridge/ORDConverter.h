@@ -99,6 +99,7 @@ private:
     void CreatePathways();
     void AssociateGeneratedAlignments();
     void CreateDefaultSavedViews();
+    void DetectFeaturizedElementsWithIncorrectClass();
 
     typedef Dgn::iModelBridge iModelBridge;
 
@@ -159,6 +160,7 @@ public:
     BentleyStatus MakeRoadRailSchemaChanges();
     Utf8String GetAlignedSubjectName() const;
     Dgn::SubjectCPtr GetAlignedSubject() const;
+    void InvalidateBadData();
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
@@ -188,6 +190,8 @@ protected:
     virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, Dgn::DgnDbSync::DgnV8::Converter&) override;
     virtual void _OnFinishConversion(Dgn::DgnDbSync::DgnV8::Converter&) override {};
     virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&) override;
+    virtual void _OnElementClassChanged(Dgn::DgnDbSync::DgnV8::Converter& converter, DgnV8EhCR v8eh, Dgn::DgnElementCR newElement, Dgn::DgnElementId originalElementId) override;
+    virtual void _OnElementBeforeDelete(Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnElementId elementId) override;
 
 public:
     ConvertORDElementXDomain(ORDConverter& converter);
