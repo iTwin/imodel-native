@@ -75,6 +75,8 @@ DgnGCS* DgnGeoLocation::GetDgnGCS() const
         {
         m_geoServices = T_HOST.GetGeoCoordinationAdmin()._GetServices();
         m_gcs = m_geoServices ? m_geoServices->GetGCSFromProject(m_dgndb) : nullptr;
+        if (m_gcs != nullptr && m_gcs->IsValid())
+            m_gcs->SetReprojectElevation(true); // In the bridge we always reproject elevation
         m_hasCheckedForGCS = true;
         }
     return m_gcs;
@@ -155,6 +157,9 @@ EcefLocation DgnGeoLocation::GetEcefLocation() const
         StatusInt warning;
         auto wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
         wgs84GCS->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+
+        // In the bridge we always reproject elevation.
+        wgs84GCS->SetReprojectElevation(true);
 
         GeoPoint originLatLong, yLatLong, tempLatLong;
         dgnGCS->LatLongFromUors(originLatLong, origin);
