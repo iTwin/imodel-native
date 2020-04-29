@@ -34,7 +34,7 @@ export declare namespace IModelJsNative {
     value: string;
   }
 
-  const enum UsageType {
+  enum UsageType {
     Production = 0 , Trial = 1, Beta = 2, HomeUse= 3, PreActivation = 4,
   }
 
@@ -565,21 +565,14 @@ export declare namespace IModelJsNative {
   /** Authentication methods used by the native addon
    * @internal
    */
-  const enum AuthType {
+  enum AuthType {
     None = 0, SAML = 1, OIDC = 2,
   }
+
   class NativeUlasClient {
     public static initializeRegion(region: number): void;
-    /** Sends a single request to log user usage
-     * @deprecated Use postUserUsage instead
-     */
-    public static trackUsage(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
     /** Sends a single request to log user usage */
     public static postUserUsage(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string, principalId?: string): Promise<void>;
-    /** Sends a single request to log feature usage
-     * @deprecated Use postFeatureUsage instead
-     */
-    public static markFeature(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
     /** Sends a single request to log feature usage */
     public static postFeatureUsage(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string, principalId?: string): Promise<void>;
     public static checkEntitlement(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, correlationId?: string): Entitlement;
