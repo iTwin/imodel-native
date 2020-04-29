@@ -28,6 +28,8 @@ struct FakeRegistry : public iModelBridgeRegistryBase
     void Save();
     BeSQLite::DbResult Open() { return OpenOrCreateStateDb(); }
 
+    BeSQLite::Db& GetDb() {return m_stateDb;}
+
     int RunAssign(int argc, WCharCP argv[]);
     };
 END_BENTLEY_DGN_NAMESPACE

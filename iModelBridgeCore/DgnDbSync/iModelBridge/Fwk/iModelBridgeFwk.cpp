@@ -3064,23 +3064,22 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
 
     ReportFeatureFlags();
 
-    BentleyStatus status;
     if (!m_jobEnvArgs.m_allDocsProcessed)
         {
         if (!m_briefcaseName.DoesPathExist())
             {
-            status = CreateNewSnapshot(error, m_briefcaseBasename.c_str());
+            callTerminate.m_status = CreateNewSnapshot(error, m_briefcaseBasename.c_str());
             }
         else
             {
-            status = CreateSnapshotSecondBridge(error);
+            callTerminate.m_status = CreateSnapshotSecondBridge(error);
             }
 
-        if (BSISUCCESS == status)
+        if (BSISUCCESS == callTerminate.m_status)
             {
             EnterSharedChannel();
 
-            m_bridge->DoFinalizationChanges(*m_briefcaseDgnDb);
+            callTerminate.m_status = m_bridge->DoFinalizationChanges(*m_briefcaseDgnDb);
 
             if (!m_jobEnvArgs.m_argsJson.isMember("skipExtents"))
                 {

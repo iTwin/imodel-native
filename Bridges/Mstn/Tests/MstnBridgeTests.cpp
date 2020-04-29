@@ -3198,6 +3198,52 @@ static bool jsonHasMember(Utf8StringCR jsonStr, Utf8CP memberName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, TestRegistryUpgrade)
+    {
+    auto testDir = CreateTestDir();
+
+    BeFileName inputDbName = iModelBridgeRegistry::MakeDbName(GetTestDataDir(), "v1_0");
+    BeFileName outputDbName = iModelBridgeRegistry::MakeDbName(testDir, "v1_0");
+
+    if (outputDbName.DoesPathExist())
+        outputDbName.BeDeleteFile();
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(inputDbName.c_str(), outputDbName.c_str()));
+
+    static BeSQLite::PropertySpec s_schemaVerPropSpec("SchemaVersion", "be_iModelBridgeFwk", BeSQLite::PropertySpec::Mode::Normal, BeSQLite::PropertySpec::Compress::No);
+
+    if (true)
+        {
+        BeSQLite::Db db;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.OpenBeSQLiteDb(outputDbName, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly)));
+        Utf8String propStr;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, db.QueryProperty(propStr, s_schemaVerPropSpec));
+        BeSQLite::ProfileVersion ver(propStr.c_str());
+        ASSERT_TRUE(ver.GetMajor() == 1 && ver.GetMinor() == 0) << "registry db should start out with schema version 1.0";
+        }
+
+    if (true)
+        {
+        FakeRegistry testRegistry(GetTestDataDir(), outputDbName);
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, testRegistry.Open());
+
+        auto insert = testRegistry.GetDb().GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge,Affinity) VALUES(?,?,?)");
+        ASSERT_TRUE(insert.IsValid()) << "should have been upgraded to schema version 1.1, where fwk_BridgeAssignments has a column called Affinity";
+        }
+
+    if (true)
+        {
+        BeSQLite::Db db;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.OpenBeSQLiteDb(outputDbName, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly)));
+        Utf8String propStr;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, db.QueryProperty(propStr, s_schemaVerPropSpec));
+        BeSQLite::ProfileVersion ver(propStr.c_str());
+        ASSERT_TRUE(ver.GetMajor() == 1 && ver.GetMinor() == 1) << "registry db should have been upgraded to 1.1";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, TestCallAssignToDisclose)
     {
     auto testDir = CreateTestDir();

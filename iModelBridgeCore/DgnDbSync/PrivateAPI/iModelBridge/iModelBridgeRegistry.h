@@ -104,6 +104,8 @@ protected:
     void BridgeDoesNotDiscloseFiles(Utf8StringCR bridgeRegSubKey);
     void UpdateAssignmentsOfReferences(iModelBridgeAffinityDb&, bset<int64_t>& parentFileRowIdsSeen, int64_t parentFileRowId, WStringCR parentBridgeRegSubKey);
 
+    BeSQLite::DbResult UpgradeMinorVersion(BeSQLite::ProfileVersion const&);
+
 protected:
     //Exported for testing
     

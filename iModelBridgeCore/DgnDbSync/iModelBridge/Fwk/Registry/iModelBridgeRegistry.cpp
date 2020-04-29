@@ -144,7 +144,47 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
             LOG.fatalv(L"%ls - version %ls is too old", m_stateFileName.c_str(), WString(ver.ToString().c_str(), true).c_str());
             return BE_SQLITE_ERROR_ProfileTooOld;
             }
+
+        if ((ver.GetMinor() < s_schemaVer.GetMinor()) && !m_stateDb.IsReadonly())
+            {
+            MUSTBEOK(UpgradeMinorVersion(ver));
+            }
         }
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult iModelBridgeRegistryBase::UpgradeMinorVersion(ProfileVersion const& storedVer)
+    {
+    BeAssert(storedVer.GetMajor() == s_schemaVer.GetMajor());
+
+    auto ver = storedVer;
+
+    if (ver.GetMinor() == 0)
+        {
+        // 1.0 -> 1.1
+        auto stmt = m_stateDb.GetCachedStatement("alter table fwk_BridgeAssignments add Affinity INT");
+        MUSTBEDONE(stmt->Step());
+
+        stmt = m_stateDb.GetCachedStatement("alter table fwk_InstalledBridges add BridgeAssetsDir TEXT COLLATE NoCase");
+        MUSTBEDONE(stmt->Step());
+
+        stmt = nullptr;
+
+        // Note: Don't bother inserting default values for new columns. The caller obviously doesn't know about these columns and so will not query them or use their values.
+
+        MUSTBEOK(m_stateDb.CreateTable("Recommendations", "LocalFilePath TEXT NOT NULL COLLATE NoCase, Bridge TEXT NOT NULL COLLATE NoCase"));
+        MUSTBEOK(m_stateDb.CreateTable("DiscloseNotSupported", "Bridge TEXT NOT NULL UNIQUE COLLATE NoCase, FOREIGN KEY(Bridge) REFERENCES fwk_InstalledBridges(Name)"));
+
+        MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
+
+        MUSTBEOK(m_stateDb.SaveChanges());
+        }
+
+    // When we go to 1.2, add incremental update logic here
 
     return BE_SQLITE_OK;
     }
@@ -610,6 +650,11 @@ BentleyStatus iModelBridgeRegistryBase::_AssignFileToBridge(BeFileNameCR sourceF
         }
 
     auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge,Affinity) VALUES(?,?,?)");
+    if (!insertAssignment.IsValid())
+        {
+        LOG.errorv(L"%ls - incompatible schema", m_stateFileName.c_str());
+        return BSIERROR;
+        }
     insertAssignment->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
     insertAssignment->BindInt64(2, bestBridgeRowid);
     insertAssignment->BindInt64(3, iModelBridgeAffinityLevel::ExactMatch);
