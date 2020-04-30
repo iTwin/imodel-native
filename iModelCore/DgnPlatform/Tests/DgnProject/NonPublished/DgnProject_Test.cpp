@@ -319,11 +319,17 @@ TEST_F(DgnDbTest, SetBriefcaseAsStandalone)
     dgndb->SaveChanges();
     ASSERT_TRUE(dgndb->Txns().HasPendingTxns());
 
-    // Check that we can turn the Briefcase -> Master
-    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
-    ASSERT_FALSE(dgndb->Txns().HasPendingTxns());
-    ASSERT_FALSE(dgndb->Txns().IsTracking());
-    ASSERT_TRUE(result == BE_SQLITE_OK);
+    // Check that we can't turn the Briefcase -> Standalone with pending txns
+    bool caught = false;
+    try {
+        dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    } catch (...) {
+        caught = true;
+    }
+    ASSERT_TRUE(caught);
+
+    dgndb->Txns().DeleteAllTxns(); // should work after we delete all txns
+    ASSERT_TRUE(BE_SQLITE_OK == dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())));
 }
 
 /*---------------------------------------------------------------------------------**/ /**

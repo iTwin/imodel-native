@@ -288,10 +288,13 @@ bool DgnDb::RequireStandaloneTxns() const {
 @bsimethod                                    Keith.Bentley                    04/20
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::_OnBeforeSetBriefcaseId(BeBriefcaseId newId) {
+    if (Txns().HasPendingTxns())
+        throw std::runtime_error("cannot change BriefcaseId with pending Txns. Generate a changeset first");
+
     T_Super::_OnBeforeSetBriefcaseId(newId);
 
     Txns().EnableTracking(false);
-    Txns().DeleteAllTxns(); // whenever we switch briefcaseIds, all of the current txn data is invalid
+    Txns().DeleteAllTxns(); // this will delete any reversed txns
 }
 
 /*---------------------------------------------------------------------------------**/ /**

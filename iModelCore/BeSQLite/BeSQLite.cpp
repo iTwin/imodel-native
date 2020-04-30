@@ -1623,6 +1623,8 @@ DbResult Db::ResetBriefcaseId(BeBriefcaseId id) {
         return BE_SQLITE_ERROR;
     }
 
+    SaveChanges(); // make sure there are no pending unsaved changes
+
     _OnBeforeSetBriefcaseId(id);
 
     // NOTE: we used to clear the whole table here. That's not necessary and a bad idea

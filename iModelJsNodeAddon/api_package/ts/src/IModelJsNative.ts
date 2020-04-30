@@ -34,7 +34,7 @@ export declare namespace IModelJsNative {
     value: string;
   }
 
-  enum UsageType {
+  const enum UsageType {
     Production = 0 , Trial = 1, Beta = 2, HomeUse= 3, PreActivation = 4,
   }
 
@@ -187,6 +187,7 @@ export declare namespace IModelJsNative {
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: string): DbResult;
     public createPolyfaceFromElement(props: any): any;
+    public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): IModelStatus;
     public deleteElementAspect(aspectIdJson: string): IModelStatus;
     public deleteLinkTableRelationship(props: string): DbResult;
@@ -490,7 +491,7 @@ export declare namespace IModelJsNative {
   }
 
   class ECPresentationManager implements IDisposable {
-      constructor(id: string, localeDirectories: string[], taskAllocationsMap: { [priority: number]: number }, mode: ECPresentationManagerMode, isChangeTrackingEnabled: boolean, cacheDirectory: string);
+    constructor(id: string, localeDirectories: string[], taskAllocationsMap: { [priority: number]: number }, mode: ECPresentationManagerMode, isChangeTrackingEnabled: boolean, cacheDirectory: string);
     public forceLoadSchemas(db: DgnDb, callback: (result: ECPresentationStatus) => void): void;
     public setupRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
     public setupSupplementalRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
@@ -565,7 +566,7 @@ export declare namespace IModelJsNative {
   /** Authentication methods used by the native addon
    * @internal
    */
-  enum AuthType {
+  const enum AuthType {
     None = 0, SAML = 1, OIDC = 2,
   }
 

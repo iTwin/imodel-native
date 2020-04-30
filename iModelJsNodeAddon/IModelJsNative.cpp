@@ -2061,7 +2061,12 @@ public:
     Napi::Value ResetBriefcaseId(Napi::CallbackInfo const& info) {
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_INTEGER(0, newId, Env().Undefined());
-        return Napi::Number::New(Env(), (int)m_dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(newId)));
+        try {
+            return Napi::Number::New(Env(), (int)m_dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(newId)));
+        } catch(...) {
+            THROW_JS_EXCEPTION("Cannot reset BriefcaseId with pending Txns. Create a changeset");
+            return Napi::Number::New(Env(), -1);
+        }
     }
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForElement(Napi::CallbackInfo const& info) {
@@ -2311,6 +2316,11 @@ public:
         return Napi::Number::New(Env(), (int) GetDgnDb().DeleteBriefcaseLocalValue(name.c_str()));
     }
 
+    // delete all local Txns. THIS IS VERY DANGEROUS! Don't use it unless you know what you're doing!
+    void DeleteAllTxns(Napi::CallbackInfo const& info) {
+        GetDgnDb().Txns().DeleteAllTxns();
+    }
+
     // query a property from the be_prop table.
     Napi::Value QueryFileProperty(Napi::CallbackInfo const& info)
         {
@@ -2491,6 +2501,7 @@ public:
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("createPolyfaceFromElement", &NativeDgnDb::CreatePolyfaceFromElement),
+            InstanceMethod("deleteAllTxns", &NativeDgnDb::DeleteAllTxns),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),

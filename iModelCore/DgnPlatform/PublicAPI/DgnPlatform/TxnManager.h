@@ -371,7 +371,7 @@ public:
     void CallJsTxnManager(Utf8CP methodName) {DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
     void SetInteractive() {m_isInteractive = true;}
 
-    void DeleteAllTxns();
+    DGNPLATFORM_EXPORT void DeleteAllTxns();
     void DeleteFromStartTo(TxnId lastId); //!< @private
     void DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private

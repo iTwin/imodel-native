@@ -2,6 +2,7 @@
   "name": "@bentley/imodeljs-native",
   "license": "SEE LICENSE IN LICENSE.md",
   "version": "${PACKAGE_VERSION}",
+  "main": "IModelJsNative.js",
   "keywords": [
     "Bentley",
     "iModel"
