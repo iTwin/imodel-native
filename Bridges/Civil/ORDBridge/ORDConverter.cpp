@@ -1739,7 +1739,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     auto cifAlignmentPtr = cifCorridor.GetCorridorAlignment();
     if (cifAlignmentPtr.IsNull())
         {
-        ORDBRIDGE_LOGE("CreateNewCorridor '%s' - CIF Corridor with no Alignment.", Utf8String(cifCorridor.GetName().c_str()).c_str());
+        ORDBRIDGE_LOGI("CreateNewCorridor '%s' - CIF Corridor with no Alignment.", Utf8String(cifCorridor.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
         }
 
@@ -1747,7 +1747,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     auto algToBimIter = m_converter.m_cifAlignmentToBimID.find(cifAlgElmRefP);
     if (algToBimIter == m_converter.m_cifAlignmentToBimID.end())
         {
-        ORDBRIDGE_LOGE("CreateNewCorridor '%s' - BIM Alignment not found.", Utf8String(cifCorridor.GetName().c_str()).c_str());
+        ORDBRIDGE_LOGI("CreateNewCorridor '%s' - BIM Alignment not found.", Utf8String(cifCorridor.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
         }
 
@@ -3637,12 +3637,13 @@ void ORDConverter::InvalidateBadData()
 
     stmt.Finalize();
 
-    stmt.Prepare(GetDgnDb(), "SELECT DISTINCT ehl.TargetECInstanceId, rlx.ECInstanceId FROM BisCore.ElementHasLinks ehl, BisCore.ExternalSourceAspect rlx, "
-        "BisCore.Element el, DgnV8OpenRoadsDesigner.FeatureAspect fa, BisCore.ExternalSourceAspect x, meta.ECClassDef c "
-        "WHERE fa.Element.Id = el.ECInstanceId AND el.ECInstanceId = x.Element.Id AND x.Scope.Id = ehl.SourceECInstanceId "
-        "AND ehl.TargetECInstanceId = rlx.Element.Id AND el.ECClassId = c.ECInstanceId AND fa.DefinitionName <> c.DisplayLabel");
+    stmt.Prepare(GetDgnDb(), "SELECT ehl.TargetECInstanceId, rlx.ECInstanceId FROM BisCore.ElementHasLinks ehl, BisCore.ExternalSourceAspect rlx, "
+        "(SELECT DISTINCT x.Scope.Id Id FROM BisCore.Element el, BisCore.ExternalSourceAspect x, DgnV8OpenRoadsDesigner.FeatureAspect fa, meta.ECClassDef c "
+        "WHERE el.ECInstanceId = x.Element.Id AND el.ECInstanceId = fa.Element.Id AND el.ECClassId = c.ECInstanceId AND fa.DefinitionName <> c.DisplayLabel) scopes "
+        "WHERE scopes.Id = ehl.SourceECInstanceId AND ehl.TargetECInstanceId = rlx.Element.Id");
     BeAssert(stmt.IsPrepared());
 
+    rowCount = 0;
     while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
         {
         auto elementPtr = GetDgnDb().Elements().GetForEdit<DgnElement>(stmt.GetValueId<DgnElementId>(0));
@@ -3657,8 +3658,13 @@ void ORDConverter::InvalidateBadData()
             extSrcAspect.SetProperties(jsonProps);
             }
 
-        elementPtr->Update();
+        if (elementPtr->Update().IsNull())
+            ORDBRIDGE_LOGW("Failed while deprecating ExternalSourceAspect for Repository Link Id %d", elementPtr->GetElementId().GetValue());
+
+        rowCount++;
         }
+
+    ORDBRIDGE_LOGI("%d repository links associated to elements with different dynamic-class from their feature-def property. Forcing update on them...", rowCount);
     }
 
 END_ORDBRIDGE_NAMESPACE
