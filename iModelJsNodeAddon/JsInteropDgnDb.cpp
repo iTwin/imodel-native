@@ -947,6 +947,11 @@ public:
             }
 
         auto converter = GeoCoordinates::DatumConverter::Create(*source, *target);
+
+        // #TODO Alain Robert Temporary patch. By default reproject elevation is false in MicroStation (global setting) but in newer workflows
+        // this default value is doubtful. We need to find another mechanism than reprojection settings to process.
+        converter->SetReprojectElevation(true);
+
         if (nullptr == converter)
             {
             source->Destroy();
