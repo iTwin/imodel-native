@@ -311,14 +311,14 @@ static int callDiscloseFilesAndAffinities(BeFileNameCR outputFileName, BeFileNam
     WString assetsPathU(assetsPath);
     assetsPathU.AddQuotes();
     WString sourceFileNameU(sourceFileName);
-    sourceFileNameU.AddQuotes();
+    sourceFileNameU.AddQuotes();    
     WString bridgeNameU(bridgeName.c_str());
     bridgeNameU.AddQuotes();
     const wchar_t* callData[] = { calcexe.c_str(), outputNameU.c_str(), libU.c_str(), assetsPathU.c_str(), sourceFileNameU.c_str(), bridgeNameU.c_str(), nullptr };
 
     LOG.tracev(L"%ls <-discloseFilesAndAffinities- (%ls,%ls,%ls)", outputFileName.c_str(), affinityLibraryPath.c_str(), bridgeName.c_str(), sourceFileName.c_str());
 
-    auto proc = CPLSpawnAsync(NULL, callData, true, true, false);
+    auto proc = CPLSpawnAsync(NULL, callData, false, false, false); // don't create any pipes, as we won't write to the process, and we won't read from it. We just expect it to create a file on disk.
     if (nullptr == proc)
         return -1;
 

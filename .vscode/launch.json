@@ -13,7 +13,7 @@
                 "d:/tmp2/disclosereferences.bim",
                 "${env:OutRoot}Winx64/Product/MstnBridge/DgnV8BridgeM02.dll",
                 "${env:OutRoot}Winx64/Product/MstnBridge/assets",
-                "d:/tmp/obd.dgn",
+                "D:/dgn/test/sourceFiles/Designs/A_Composition Render.dgn",
                 "IModelBridgeForMstn"
             ],
             "stopAtEntry": false,
@@ -27,13 +27,14 @@
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeAssign.exe",
             "args": [
-                "--fwk-logging-config-file=d:\\BridgeToiModelHub\\logging.config.xml",
-                "--server-repository=test9999",
-                "--fwk-staging-dir=d:\\BridgeToiModelHub",
-                "--registry-dir=d:\\tmp2",
-                "--fwk-input=Car.dgn",
-                "--affinity-db-name=foo.db",
-                "--write-progress-to-stdout"
+                "--server-repository=d538676a-6c9d-45eb-87a3-d05038a0137b",
+                "--fwk-staging-dir=d:/dgn/test/sourcefiles/designs",
+                "--fwk-input=\"d:/dgn/test/sourcefiles/designs/a_composition render.dgn\"",
+                "--registry-dir=D:/Users/SAM~1.WIL/AppData/Local/Temp/Bentley/iTwinSynchronizer/d538676a-6c9d-45eb-87a3-d05038a0137b/render/Bentley/itsyn",
+                "--affinity-db-name=\"a_composition render_dgn-affinity.db\"",
+                "--fwk-logging-config-file=D:/Users/SAM~1.WIL/AppData/Local/Temp/Bentley/iTwinSynchronizer/d538676a-6c9d-45eb-87a3-d05038a0137b/render/Bentley/itsyn/d538676a-6c9d-45eb-87a3-d05038a0137b.logging.config.xml",
+                "--no-bridge-search=true",
+                "--write-progress-to-stdout=true"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
