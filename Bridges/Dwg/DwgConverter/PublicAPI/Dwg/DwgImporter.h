@@ -1579,6 +1579,8 @@ protected:
     bool    IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const;
     DWG_EXPORT virtual void _DeleteElement (DgnDbR db, DwgSourceAspects::ObjectAspectCR elementAspect);
     DWG_EXPORT virtual void _DeleteModel (DgnModelR model);
+    DWG_EXPORT virtual void _DeleteView (DgnDbR db, ViewDefinitionCR view);
+    DWG_EXPORT virtual void _DeleteRepositoryLink (DgnDbR db, RepositoryLinkId rlinkId);
     DWG_EXPORT virtual void _DeleteXrefModels (DwgImporterR importer, DwgSourceAspects::RepositoryLinkAspectCR file, DgnModelIdSet const& models);
 
 public:

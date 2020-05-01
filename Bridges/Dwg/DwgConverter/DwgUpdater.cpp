@@ -804,6 +804,14 @@ void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DeleteView (DgnDbR db, ViewDefinitionCR view)
+    {
+    db.Elements().Delete (view.GetViewId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
     {
     auto&   db = importer.GetDgnDb();
@@ -832,7 +840,14 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
                     }
                 }
             if (!isAttached)
-                elements.Delete (viewId);
+                {
+                // give extended bridge a chance to handle the view deletion
+                auto view = elements.Get<ViewDefinition>(viewId);
+                if (view.IsValid())
+                    this->_DeleteView (db, *view);
+                else
+                    elements.Delete (viewId);
+                }
             }
         }
 
@@ -1190,18 +1205,28 @@ bool DetectDetachedXrefsForFile (DgnElementId replinkId, BeFileNameCR filename, 
 
     // find the source xRef from which the input repository link was originally created
     auto xrefDwg = this->FindXrefByRepositoryLink (replinkId);
-    if (xrefDwg == nullptr)
-        return  false;
 
     // search the tree for all attached instances of the source xRef
+    // if the DWG is not even loaded, detect all models linked to it
     DwgDbHandleArray xrefInserts;
-    m_loadedXrefTree.SearchXrefAttachments (xrefDwg, xrefInserts);
+    if (xrefDwg == nullptr)
+        xrefInserts.clear ();
+    else
+        m_loadedXrefTree.SearchXrefAttachments (xrefDwg, xrefInserts);
     this->DetectDetachedXrefsForFile (replinkId, xrefInserts, deletedModels);
 
     return !deletedModels.empty();
     }
 };  // XRefDetector
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DeleteRepositoryLink (DgnDbR db, RepositoryLinkId rlinkId)
+    {
+    db.Elements().Delete (rlinkId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
@@ -1244,7 +1269,7 @@ void UpdaterChangeDetector::_DeleteXrefModels (DwgImporterR importer, DwgSourceA
         {
         BeFileName  filename(file.GetDwgName().c_str());
         LOG.tracev ("Delete repository link %lld of xRef %ls", rlinkId.GetValue(), filename.c_str());
-        db.Elements().Delete (rlinkId);
+        _DeleteRepositoryLink (db, rlinkId);
         }
     }
 
