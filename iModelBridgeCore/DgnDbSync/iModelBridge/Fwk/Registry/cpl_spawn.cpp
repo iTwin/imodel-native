@@ -154,12 +154,12 @@ wchar_t **CSLDuplicate(wchar_t **papszStrList)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CPLPipeReadLine(WString& line, CPL_FILE_HANDLE h)
+BentleyStatus CPLPipeReadLine(Utf8String& line, CPL_FILE_HANDLE h)
     {
-    wchar_t ch;
+    char ch;
     for(;;)
         {
-        if (!CPLPipeRead(h, &ch, 1))
+        if (!CPLPipeRead(h, &ch, 1)) // NB: CPLPipeRead takes a count of bytes
             return BSIERROR;
         if (ch == '\n')
             break;
@@ -169,81 +169,6 @@ BentleyStatus CPLPipeReadLine(WString& line, CPL_FILE_HANDLE h)
         }
     return BSISUCCESS;
     }
-
-/************************************************************************/
-/*                        FillPipeFromFile()                            */
-/************************************************************************/
-
-static void FillPipeFromFile(VSILFILE* fin, CPL_FILE_HANDLE pipe_fd)
-{
-    wchar_t buf[PIPE_BUFFER_SIZE];
-    while(TRUE)
-    {
-        int nRead = (int)VSIFReadL(buf, 1, PIPE_BUFFER_SIZE, fin);
-        if( nRead <= 0 )
-            break;
-        if (!CPLPipeWrite(pipe_fd, buf, nRead))
-            break;
-    }
-}
-
-/************************************************************************/
-/*                            CPLSpawn()                                */
-/************************************************************************/
-
-/**
- * Runs an executable in another process.
- *
- * This function runs an executable, wait for it to finish and returns
- * its exit code.
- *
- * It is implemented as CreateProcess() on Windows platforms, and fork()/exec()
- * on other platforms.
- *
- * @param papszArgv argument list of the executable to run. papszArgv[0] is the
- *                  name of the executable
- * @param fin File handle for input data to feed to the standard input of the
- *            sub-process. May be NULL.
- * @param fout File handle for output data to extract from the standard output of the
- *            sub-process. May be NULL.
- * @param bDisplayErr Set to TRUE to emit the content of the standard error stream of
- *                    the sub-process with CPLError().
- *
- * @return the exit code of the spawned process, or -1 in case of error.
- *
- * @since GDAL 1.10.0
- */
-
-int CPLSpawn(const wchar_t * const papszArgv[], VSILFILE* fin, VSILFILE* fout,
-             int bDisplayErr)
-{
-    CPLSpawnedProcess* sp = CPLSpawnAsync(NULL, papszArgv, TRUE, TRUE, TRUE);
-    if( sp == NULL )
-        return -1;
-
-    CPL_FILE_HANDLE in_child = CPLSpawnAsyncGetOutputFileHandle(sp);
-    if (fin != NULL)
-        FillPipeFromFile(fin, in_child);
-    CPLSpawnAsyncCloseOutputFileHandle(sp);
-
-    CPL_FILE_HANDLE out_child = CPLSpawnAsyncGetInputFileHandle(sp);
-    if (fout != NULL)
-        FillFileFromPipe(out_child, fout);
-    CPLSpawnAsyncCloseInputFileHandle(sp);
-
-    CPL_FILE_HANDLE err_child = CPLSpawnAsyncGetErrorFileHandle(sp);
-    CPLString osName;
-    osName.Sprintf(L"/vsimem/child_stderr_" CPL_FRMT_GIB, CPLGetPID());
-PUSH_DISABLE_DEPRECATION_WARNINGS
-    VSILFILE* ferr = VSIFOpenL(osName.c_str(), L"w");
-POP_DISABLE_DEPRECATION_WARNINGS
-    FillFileFromPipe(err_child, ferr);
-    CPLSpawnAsyncCloseErrorFileHandle(sp);
-
-    VSIFCloseL(ferr);
-
-    return CPLSpawnAsyncFinish(sp, TRUE, FALSE);
-}
 
 /************************************************************************/
 /*                          CPLPipeRead()                               */
@@ -281,26 +206,6 @@ int CPLPipeWrite(CPL_FILE_HANDLE fout, const void* data, int length)
         nRemain -= nWritten;
     }
     return TRUE;
-}
-
-/************************************************************************/
-/*                        FillFileFromPipe()                            */
-/************************************************************************/
-
-static void FillFileFromPipe(CPL_FILE_HANDLE pipe_fd, VSILFILE* fout)
-{
-    wchar_t buf[PIPE_BUFFER_SIZE];
-    while(TRUE)
-    {
-        DWORD nRead;
-        if (!ReadFile( pipe_fd, buf, PIPE_BUFFER_SIZE, &nRead, NULL))
-            break;
-        if (nRead <= 0)
-            break;
-        int nWritten = (int)VSIFWriteL(buf, 1, nRead, fout);
-        if (nWritten < (int)nRead)
-            break;
-    }
 }
 
 struct _CPLSpawnedProcess

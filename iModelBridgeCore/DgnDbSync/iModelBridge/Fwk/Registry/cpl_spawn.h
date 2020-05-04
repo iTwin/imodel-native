@@ -119,7 +119,7 @@ int CPL_DLL CPLPipeWrite(CPL_FILE_HANDLE fout, const void* data, int length);
 
 
 // *** BENTLEY CHANGES: Convenience functions
-BentleyStatus CPL_DLL CPLPipeReadLine(WString&, CPL_FILE_HANDLE);
+BentleyStatus CPL_DLL CPLPipeReadLine(Utf8String&, CPL_FILE_HANDLE);
 
 //CPL_C_END
 

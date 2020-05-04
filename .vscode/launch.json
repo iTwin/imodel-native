@@ -31,7 +31,6 @@
                 "--fwk-staging-dir=d:/dgn/test/sourcefiles/designs",
                 "--fwk-input=\"d:/dgn/test/sourcefiles/designs/a_composition render.dgn\"",
                 "--registry-dir=D:/Users/SAM~1.WIL/AppData/Local/Temp/Bentley/iTwinSynchronizer/d538676a-6c9d-45eb-87a3-d05038a0137b/render/Bentley/itsyn",
-                "--affinity-db-name=\"a_composition render_dgn-affinity.db\"",
                 "--fwk-logging-config-file=D:/Users/SAM~1.WIL/AppData/Local/Temp/Bentley/iTwinSynchronizer/d538676a-6c9d-45eb-87a3-d05038a0137b/render/Bentley/itsyn/d538676a-6c9d-45eb-87a3-d05038a0137b.logging.config.xml",
                 "--no-bridge-search=true",
                 "--write-progress-to-stdout=true"
@@ -238,7 +237,7 @@
             "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=MstnBridgeTests.TestRegistryUpgrade"
+                "--gtest_filter=MstnBridgeTests.TestCallAssignToDisclose"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

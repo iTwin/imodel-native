@@ -340,7 +340,7 @@ static void killAllAffinityCalculators()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus callAffinityFunc(WString& line0, WString& line1, CPLSpawnedProcess* calc, BeFileNameCR filePath, BeFileNameCR affinityLibraryPath)
+BentleyStatus callAffinityFunc(Utf8String& line0, Utf8String& line1, CPLSpawnedProcess* calc, BeFileNameCR filePath, BeFileNameCR affinityLibraryPath)
     {
     Utf8String filePathU(filePath);
     filePathU.AddQuotes();
@@ -376,7 +376,7 @@ BentleyStatus iModelBridgeRegistryBase::ComputeBridgeAffinityToDocument(iModelBr
         return BSIERROR;
         }
 
-    WString line0, line1;
+    Utf8String line0, line1;
     if (BSISUCCESS != callAffinityFunc(line0, line1, calc, filePath, affinityLibraryPath))
         {
         if (s_badAffinityCalculators.find(affinityLibraryPath) != s_badAffinityCalculators.end())
@@ -401,14 +401,14 @@ BentleyStatus iModelBridgeRegistryBase::ComputeBridgeAffinityToDocument(iModelBr
         }
 
     int v = 0;
-    if (1 != WString::Swscanf_safe(line0.c_str(), L"%d", &v))
+    if (1 != Utf8String::Sscanf_safe(line0.c_str(), "%d", &v))
         {
         LOG.errorv(L"%ls - \"%ls\" is an invalid affinity value?!", affinityLibraryPath.c_str(), WString(line0.c_str(), true).c_str());
         return BSIERROR;
         }
 
     affinity.m_affinity = (iModelBridgeAffinityLevel)v;
-    affinity.m_bridgeRegSubKey = line1.c_str();
+    affinity.m_bridgeRegSubKey.AssignUtf8(line1.c_str());
     return BSISUCCESS;
     }
 
