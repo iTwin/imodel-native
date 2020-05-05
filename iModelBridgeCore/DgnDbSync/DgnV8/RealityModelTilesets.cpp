@@ -18,12 +18,31 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 BE_JSON_NAME(tilesetUrl)
 BE_JSON_NAME(tilesetToDbTransform)
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
 void rdsStatusCallback(int index, void* pClient, int ErrorCode, const char* pMsg)
     {
     if (0 == ErrorCode)
         LOG.infov("RealityDataService: %s",pMsg);
     else
         LOG.errorv("RealityDataService: %s", pMsg);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void wsgErrorCallback(const char* pMsg)
+    {
+    LOG.errorv("RDSRequestManager: %s", pMsg);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void wsgCallback(const char* pMsg)
+    {
+    LOG.infov("RDSRequestManager: %s", pMsg);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,6 +206,8 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     if (doUpload)
         {
         ConnectTokenManager::SetTokenProvider(_GetParams().GetCallBackUrl(), _GetParams().GetAccessToken());
+        RDSRequestManager::SetErrorCallback(wsgErrorCallback);
+        RDSRequestManager::SetCallback(wsgCallback);
         RDSRequestManager::Setup();
         if (!RealityDataService::AreParametersSet())
             {

@@ -18,7 +18,8 @@ void RDSRequestManager::Setup(Utf8String serverUrl)
     Utf8String version = server.GetVersion(versionResponse);
     if (versionResponse.responseCode > 399)
         {
-        ReportError("cannot reach server");
+        Utf8PrintfString msg("cannot reach server %s.  Error code: %ld", serverName.c_str(), versionResponse.responseCode);
+        ReportError(msg);
         return;
         }
     
