@@ -127,6 +127,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static MstnBridgeTestsLogProvider s_logProvider;
     static int s_argc;
     static char **s_argv;
+    static wchar_t* s_originalPATH;
     BentleyApi::BeFileName m_briefcaseName;
     BentleyApi::Dgn::DgnElementId m_jobSubjectId;
     BentleyApi::Dgn::IModelClientForBridges* m_client {};
@@ -175,6 +176,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     MstnBridgeTestsFixture() : m_client(nullptr) {}
     ~MstnBridgeTestsFixture();
+    void TearDown() override;
 
     public:
     static void SetArgcArgv(int c, char** v) {s_argc=c; s_argv=v;}

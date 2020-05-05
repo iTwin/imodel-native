@@ -2316,8 +2316,9 @@ void assignSuperelevationAspect(Dgn::DgnElementR element, Cif::SuperElevationCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCorridorSurface)
     {
-    bool isTopMesh = cifCorridorSurface.IsTopMesh();
-    bool isBottomMesh = cifCorridorSurface.IsBottomMesh();
+    CorridorSurfaceExtension extension(cifCorridorSurface);
+    bool isTopMesh = extension.IsTop();
+    bool isBottomMesh = extension.IsBottom();
     auto description = Utf8String(cifCorridorSurface.GetDescription().c_str());
 
     Utf8String corridorName, horizontalName, profileName;
@@ -2343,7 +2344,7 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
         auto name = Utf8String(cifCorridorSurface.GetName().c_str());
         ORDBRIDGE_LOGW(Utf8PrintfString("CIF CorridorSurface '%s' '%s' - related corridor not found.", name.c_str(), description.c_str()).c_str());
         }
-
+    
     if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
         {
         corridorSurfaceAspectP->SetIsTopMesh(isTopMesh);

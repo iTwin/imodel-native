@@ -560,6 +560,7 @@ TEST_F(MstnBridgeTests, ConvertCve)
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", emptyFile.c_str()));
     RunTheBridge(args);
+    CleanupElementECExtensions();
 
     args.pop_back();
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", cveFile.c_str()));
@@ -847,6 +848,7 @@ TEST_F(MstnBridgeTests, ConvertIfcAttachmentSingleBridge)
 
     CleanupElementECExtensions();
     AddAttachment(inputFile, refFile, 1, true);
+    CleanupElementECExtensions();
     if (true)
         {
         //We added a new attachment.

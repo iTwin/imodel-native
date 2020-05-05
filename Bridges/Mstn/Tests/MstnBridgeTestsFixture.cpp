@@ -17,6 +17,7 @@
 MstnBridgeTestsLogProvider MstnBridgeTestsFixture::s_logProvider;
 int MstnBridgeTestsFixture::s_argc;
 char **MstnBridgeTestsFixture::s_argv;
+wchar_t* MstnBridgeTestsFixture::s_originalPATH;
 
 struct FixtureTestProbe : iModelBridgeFwk::TestProbe
     {
@@ -129,6 +130,8 @@ void MstnBridgeTestsFixture::InitializeHost()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::SetUpTestCase()
     {
+    s_originalPATH = ::_wgetenv(L"PATH");
+
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(&s_logProvider);
     InitializeHost();
     }
@@ -141,6 +144,17 @@ void MstnBridgeTestsFixture::TearDownTestCase()
     BentleyApi::BeFileName::EmptyAndRemoveDirectory(GetOutputDir());
     BentleyApi::NativeLogging::LoggingConfig::DeactivateProvider();
     BentleyApi::Http::HttpClient::Uninitialize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void MstnBridgeTestsFixture::TearDown()
+    {
+    CleanupElementECExtensions();
+    WString path(L"PATH=");
+    path.append(s_originalPATH);
+    _wputenv(path.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1095,6 +1109,8 @@ void MstnBridgeTestsFixture::CleanupElementECExtensions()
 
     DgnV8Api::ElementECExtension::DropExtension(DgnV8Api::ACSHandler::GetInstance());
     DgnV8Api::ElementECExtension::DropExtension(DgnV8Api::LineHandler::GetInstance());
+    for (DgnV8Api::IMaterialListener* listener : DgnV8Api::MaterialManager::GetManagerR().GetListenerList())
+        DgnV8Api::MaterialManager::GetManagerR().UnregisterMaterialListener(*listener);
     }
 
 void ProcessRunner::DoSleep(size_t ms)

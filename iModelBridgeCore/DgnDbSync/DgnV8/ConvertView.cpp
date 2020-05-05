@@ -213,7 +213,7 @@ void Converter::ConvertDisplayStyle(DisplayStyleR style, DgnV8Api::DisplayStyle 
         env.m_groundPlane.m_enabled = false;
         style3d->SetEnvironmentDisplay(env);
 
-        if (v8flags.m_overrideBackgroundColor)
+        if (v8flags.m_overrideBackgroundColor && 0 != v8displayStyle.GetEnvironmentName().length())
             {
             if (v8displayStyle.GetEnvironmentTypeDisplayed() == DgnV8Api::EnvironmentDisplay::Color)
                 style.SetBackgroundColor(toColorDef(overrides.m_backgroundColor, dgnFile));

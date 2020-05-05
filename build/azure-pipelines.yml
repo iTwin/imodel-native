@@ -32,7 +32,7 @@ jobs:
       - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py pull $(BB_V)
         displayName: Pull
         env:
-          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
 
       - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py clean $(BB_V)
         displayName: Clean
