@@ -8,6 +8,7 @@
 #include <DgnPlatform/WebMercator.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <DgnPlatform/CesiumTileTree.h>
+#include <WebServices/Connect/IConnectSignInManager.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
@@ -205,7 +206,18 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
     if (doUpload)
         {
-        ConnectTokenManager::SetTokenProvider(_GetParams().GetCallBackUrl(), _GetParams().GetAccessToken());
+        if (!_GetParams().GetCallBackUrl().empty())
+            ConnectTokenManager::SetTokenProvider(_GetParams().GetCallBackUrl(), _GetParams().GetAccessToken());
+        else
+            {
+            WebServices::IConnectSignInManagerPtr  mgr = _GetParams().GetConnectSigninManager();
+            if (nullptr == mgr)
+                return ERROR;
+
+            auto tokenProvider = mgr->GetTokenProvider("https://connect-wsg20.bentley.com");
+            ConnectTokenManager::SetTokenProvider(tokenProvider);
+            }
+        
         RDSRequestManager::SetErrorCallback(wsgErrorCallback);
         RDSRequestManager::SetCallback(wsgCallback);
         RDSRequestManager::Setup();

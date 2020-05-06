@@ -15,7 +15,11 @@ void ConnectTokenManager::RefreshToken() const
     if(m_tokenCallback)
         return m_tokenCallback(m_token, m_tokenRefreshTimer);
 
-    m_token = Utf8String("Authorization: Bearer ");
+    m_token = Utf8String("Authorization: ");
+    if (m_isFromTokenProvider)
+        m_token.append(" Token ");
+    else
+        m_token.append(" Bearer ");
     Utf8String tokenStr = Utf8String();
     WebServices::ISecurityTokenPtr tokenPtr = nullptr;
 

@@ -222,6 +222,7 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib

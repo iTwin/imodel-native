@@ -543,7 +543,7 @@ protected:
 public:
     REALITYDATAPLATFORM_EXPORT static ConnectTokenManager& GetInstance();
     REALITYDATAPLATFORM_EXPORT static void SetTokenProvider(Utf8String callBackurl, Utf8String accessToken);
-
+    REALITYDATAPLATFORM_EXPORT static void SetTokenProvider(WebServices::IConnectTokenProviderPtr);
     //! Set token callback informations
     REALITYDATAPLATFORM_EXPORT void SetTokenCallback(RequestConstructor_TokenCallBack pi_func) { m_tokenCallback = pi_func; }
     
@@ -551,7 +551,8 @@ public:
     REALITYDATAPLATFORM_EXPORT void RefreshToken() const;
 
 private:
-    static WebServices::IConnectTokenProvider*       m_tokenProvider;
+    static WebServices::IConnectTokenProviderPtr       m_tokenProvider;
+    static bool                                        m_isFromTokenProvider;
     mutable Utf8String                  m_token;
     mutable time_t                      m_tokenRefreshTimer;
     RequestConstructor_TokenCallBack    m_tokenCallback;

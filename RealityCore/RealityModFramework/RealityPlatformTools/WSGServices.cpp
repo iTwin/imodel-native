@@ -794,16 +794,27 @@ ProxyManager::ProxyManager()
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
 ConnectTokenManager* ConnectTokenManager::s_ctInstance = nullptr;
-WebServices::IConnectTokenProvider* ConnectTokenManager::m_tokenProvider = nullptr;
+WebServices::IConnectTokenProviderPtr ConnectTokenManager::m_tokenProvider(NULL);
+bool ConnectTokenManager::m_isFromTokenProvider = false;
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Vishal.Shingare              04/2020
 //-------------------------------------------------------------------------------------
 void ConnectTokenManager::SetTokenProvider(Utf8String callBackurl, Utf8String accessToken)
     {
     if (!callBackurl.empty())
-        m_tokenProvider = new iModel::Hub::OidcTokenProvider(callBackurl);
+        m_tokenProvider = WebServices::IConnectTokenProviderPtr(new iModel::Hub::OidcTokenProvider(callBackurl));
     else
-        m_tokenProvider = new iModel::Hub::OidcStaticTokenProvider(accessToken);
+        m_tokenProvider = WebServices::IConnectTokenProviderPtr(new iModel::Hub::OidcStaticTokenProvider(accessToken));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectTokenManager::SetTokenProvider(WebServices::IConnectTokenProviderPtr provider)
+    {
+    m_tokenProvider = provider;
+    m_isFromTokenProvider = true;
     }
 
 //-------------------------------------------------------------------------------------
