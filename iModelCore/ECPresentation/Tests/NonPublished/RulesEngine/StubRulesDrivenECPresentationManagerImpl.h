@@ -120,7 +120,7 @@ protected:
         {
         return LabelDefinition::Create();
         }
-    void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR, Utf8StringCR, Utf8StringCR, ICancelationTokenCR) override {}
+    void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR, Utf8StringCR, CommonOptions const&, ICancelationTokenCR) override {}
 
 public:
     StubRulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManager::Params const& params)

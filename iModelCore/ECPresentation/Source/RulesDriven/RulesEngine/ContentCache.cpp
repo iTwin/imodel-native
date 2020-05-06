@@ -199,7 +199,7 @@ bvector<SpecificationContentProviderPtr> ContentCache::GetProviders(IConnectionC
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool HasRelatedSetting(ContentProviderCR provider, Utf8CP settingId)
     {
-    bset<Utf8String> relatedSettingIds = provider.GetContext().GetRelatedSettingIds();
+    bset<Utf8String> relatedSettingIds = provider.GetContext().GetRelatedVariablesIds();
     for (Utf8StringCR relatedSettingId : relatedSettingIds)
         {
         if (relatedSettingId.Equals(settingId))

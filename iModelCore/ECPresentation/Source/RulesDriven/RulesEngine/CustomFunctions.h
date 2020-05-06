@@ -85,8 +85,8 @@ private:
     IConnectionCR m_connection;
     PresentationRuleSetCR m_ruleset;
     JsonNavNodesFactory const& m_nodesFactory;
-    IUserSettings const& m_userSettings;
-    IUsedUserSettingsListener* m_usedSettingsListener;
+    RulesetVariables const& m_rulesetVariables;
+    IUsedRulesetVariablesListener* m_usedVariablesListener;
     ECExpressionsCache& m_ecexpressionsCache;
     ILocalizationProvider const* m_localizationProvider;
     Utf8String m_locale;
@@ -99,7 +99,7 @@ private:
     ECPresentation::UnitSystem m_unitSystem;
 
 public:
-    ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, IConnectionManagerCR, IConnectionCR, PresentationRuleSetCR, Utf8String locale, IUserSettings const&, IUsedUserSettingsListener*,
+    ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, IConnectionManagerCR, IConnectionCR, PresentationRuleSetCR, Utf8String locale, RulesetVariables const&, IUsedRulesetVariablesListener*,
         ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr,
         ECPresentation::UnitSystem unitSystem = ECPresentation::UnitSystem::Undefined);
     ECPRESENTATION_EXPORT ~CustomFunctionsContext();
@@ -113,8 +113,8 @@ public:
     IConnectionManagerCR GetConnections() const {return m_connections;}
     IConnectionCR GetConnection() const {return m_connection;}
     PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
-    IUserSettings const& GetUserSettings() const {return m_userSettings;}
-    IUsedUserSettingsListener* GetUsedUserSettingsListener() const {return m_usedSettingsListener;}
+    RulesetVariables const& GetRulesetVariables() const {return m_rulesetVariables;}
+    IUsedRulesetVariablesListener* GetUsedRulesetVariablesListener() const {return m_usedVariablesListener;}
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     IUsedClassesListener* GetUsedClassesListener() const {return m_usedClassesListener;}

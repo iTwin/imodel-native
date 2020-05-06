@@ -18,8 +18,8 @@ private:
     IConnectionCR m_connection;
     PresentationRuleSetCR m_ruleset;
     Utf8String m_locale;
-    IUserSettings const& m_userSettings;
-    IUsedUserSettingsListener* m_usedSettingsListener;
+    RulesetVariables const& m_rulesetVariables;
+    IUsedRulesetVariablesListener* m_usedVariablesListener;
     ECExpressionsCache& m_ecexpressionsCache;
 
 private:
@@ -52,9 +52,9 @@ protected:
 
 public:
     RulesPreprocessor(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale,
-        IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache)
-        : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale), m_userSettings(userSettings),
-        m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache)
+        RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener, ECExpressionsCache& ecexpressionsCache)
+        : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale), m_rulesetVariables(rulesetVariables),
+        m_usedVariablesListener(usedVariablesListener), m_ecexpressionsCache(ecexpressionsCache)
         {}
 
 /** @name Rule sets */

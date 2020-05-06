@@ -5809,7 +5809,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset,
-    IUserSettings const& userSettings)
+    RulesetVariables const& variables)
     {
     ECDbR db = connection.GetECDb();
     for (auto pair : queries)
@@ -5821,7 +5821,7 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
 
         JsonNavNodesFactory nodesFactory;
         ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", userSettings,
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", variables,
             nullptr, schemaHelper.GetECExpressionsCache(), nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
         Utf8String queryStr = query->ToString();
@@ -5837,7 +5837,7 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset,
-    IUserSettings const& userSettings)
+    RulesetVariables const& variables)
     {
     ECDbR db = connection.GetECDb();
     for (auto pair : queries)
@@ -5850,7 +5850,7 @@ static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnecti
 
         JsonNavNodesFactory nodesFactory;
         ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", userSettings,
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", variables,
             nullptr, schemaHelper.GetECExpressionsCache(), nodesFactory, nullptr, nullptr, nullptr);
 
         Utf8String queryStr = query->ToString();
@@ -5876,10 +5876,10 @@ TEST(ExpectedQueriesTest, RunAllExpectedQueries)
     IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
     IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     // unused - ECDbR db = connection.GetECDb();
-    TestUserSettings userSettings;
+    RulesetVariables rulesetVariables;
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     CustomFunctionsInjector customFunctions(connections, connection);
 
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, connection, *ruleset, userSettings);
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, connection, *ruleset, userSettings);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, connection, *ruleset, rulesetVariables);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, connection, *ruleset, rulesetVariables);
     }

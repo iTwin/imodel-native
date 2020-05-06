@@ -24,7 +24,6 @@ struct NavNodesDataSourceTests : ECPresentationTest, IECExpressionsCacheProvider
     TestNodesProviderFactory m_providerFactory;
     RefCountedPtr<TestNodesProvider> m_provider;
     NavNodesDataSourcePtr m_source;
-    TestUserSettings m_settings;
     TestConnectionManager m_connections;
     TestNodesCache m_nodesCache;
     ECExpressionsCache m_expressionsCache;
@@ -38,7 +37,7 @@ struct NavNodesDataSourceTests : ECPresentationTest, IECExpressionsCacheProvider
         ECPresentationTest::SetUp();
         m_ruleset = PresentationRuleSet::CreateInstance("NavNodesDataSourceTests", 1, 0, false, "", "", "", false);
         m_context = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", 0, 
-            m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
+            std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache,
             s_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_provider = TestNodesProvider::Create(*m_context);
         m_source = NavNodesDataSource::Create(*m_provider);

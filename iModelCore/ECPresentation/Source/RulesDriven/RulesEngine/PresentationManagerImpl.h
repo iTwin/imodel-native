@@ -26,12 +26,12 @@ struct RulesDrivenECPresentationManager::Impl
     typedef RulesDrivenECPresentationManager::Mode Mode;
     typedef RulesDrivenECPresentationManager::Paths Paths;
     typedef RulesDrivenECPresentationManager::Params Params;
+    typedef RulesDrivenECPresentationManager::CommonOptions CommonOptions;
     typedef RulesDrivenECPresentationManager::NavigationOptions NavigationOptions;
     typedef RulesDrivenECPresentationManager::ContentOptions ContentOptions;
     
 protected:
 /** @name Misc */
-    virtual IRulesPreprocessorPtr _GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const = 0;
     virtual IPropertyCategorySupplier const& _GetCategorySupplier() const = 0;
     virtual IECPropertyFormatter const& _GetECPropertyFormatter() const = 0;
     virtual IUserSettingsManager& _GetUserSettingsManager() const = 0;
@@ -61,7 +61,7 @@ protected:
 /** @} */
 
 /** @name Update */
-    virtual void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR) = 0;
+    virtual void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, CommonOptions const&, ICancelationTokenCR) = 0;
 /** @} */
 
 public:
@@ -72,7 +72,6 @@ public:
     IUserSettings& GetUserSettings(Utf8CP rulesetId) const {return GetUserSettingsManager().GetSettings(rulesetId);}
     bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& GetECInstanceChangeEventSources() const {return _GetECInstanceChangeEventSources();}
     ILocalizationProvider const* GetLocalizationProvider() const {return _GetLocalizationProvider();}
-    IRulesPreprocessorPtr GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const {return _GetRulesPreprocessor(connection, rulesetId, locale, usedSettingsListener);}
     IPropertyCategorySupplier const& GetCategorySupplier() const {return _GetCategorySupplier();}
     IECPropertyFormatter const& GetECPropertyFormatter() const {return _GetECPropertyFormatter();}
     IJsonLocalState* GetLocalState() const {return _GetLocalState();}
@@ -100,7 +99,7 @@ public:
     
 /** @name Update */
     void CompareHierarchies(IUpdateRecordsHandler& recordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8String rhsRulesetId, 
-        Utf8StringCR locale, ICancelationTokenCR cancelationToken) {return _CompareHierarchies(recordsHandler, connection, lhsRulesetId, rhsRulesetId, locale, cancelationToken);}
+        CommonOptions const& options, ICancelationTokenCR cancelationToken) {return _CompareHierarchies(recordsHandler, connection, lhsRulesetId, rhsRulesetId, options, cancelationToken);}
 /** @} */
 };
 
@@ -148,7 +147,6 @@ private:
 
 protected:
     // RulesDrivenECPresentationManager::Impl: General
-    IRulesPreprocessorPtr _GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const override;
     IPropertyCategorySupplier const& _GetCategorySupplier() const override;
     IECPropertyFormatter const& _GetECPropertyFormatter() const override;
     IUserSettingsManager& _GetUserSettingsManager() const override {return *m_userSettings;}
@@ -189,7 +187,7 @@ protected:
     ECPRESENTATION_EXPORT LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override;
 
     // RulesDrivenECPresentationManager::Impl: Update
-    ECPRESENTATION_EXPORT void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, CommonOptions const& options, ICancelationTokenCR) override;
     
 public:
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(Params const&);

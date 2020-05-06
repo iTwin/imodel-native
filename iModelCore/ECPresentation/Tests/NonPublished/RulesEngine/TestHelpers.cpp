@@ -597,11 +597,11 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, JsonNavNodeR node
             extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
         cache.Cache(hlInfo);
         }
-    DataSourceInfo dsInfo = cache.FindDataSource(hlInfo.GetId(), { 0 });
+    DataSourceInfo dsInfo = cache.FindDataSource(hlInfo.GetId(), { 0 }, RulesetVariables());
     if (!dsInfo.IsValid())
         {
         dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
-        cache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+        cache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<RulesetVariableEntry>());
         }
     cache.Cache(node, dsInfo, 0, NodeVisibility::Visible);
     }

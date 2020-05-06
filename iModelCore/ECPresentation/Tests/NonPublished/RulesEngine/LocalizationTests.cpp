@@ -307,7 +307,7 @@ TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
     NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
@@ -342,7 +342,7 @@ TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
     NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
@@ -378,7 +378,7 @@ TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
     NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
@@ -414,7 +414,7 @@ TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
     NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);

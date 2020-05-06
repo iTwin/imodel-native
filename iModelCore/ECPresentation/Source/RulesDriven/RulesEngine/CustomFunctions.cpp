@@ -55,7 +55,7 @@ static void ProcessLabelOverride(LabelDefinitionPtr& labelDefinition, CustomFunc
     {
     // look for label override
     RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(), context.GetLocale(),
-        context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
+        context.GetRulesetVariables(), context.GetUsedRulesetVariablesListener(), context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(node, context.GetParentNode());
     LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
     if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
@@ -63,7 +63,7 @@ static void ProcessLabelOverride(LabelDefinitionPtr& labelDefinition, CustomFunc
         // evaluate the ECExpression to get the label
         ECExpressionContextsProvider::CustomizationRulesContextParameters params(node, context.GetParentNode(),
             context.GetConnection(), context.GetLocale(),
-            context.GetUserSettings(), context.GetUsedUserSettingsListener());
+            context.GetRulesetVariables(), context.GetUsedRulesetVariablesListener());
         ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
         ECValue value;
         Utf8String displayValue;
@@ -373,7 +373,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), classId, instanceId, "");
             thisNode->SetNodeKey(*NavNodesHelper::CreateFakeNodeKey(GetContext().GetConnection(), *thisNode));
             ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(),
-                GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                GetContext().GetLocale(), GetContext().GetRulesetVariables(), GetContext().GetUsedRulesetVariablesListener());
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
             ECValue value;
@@ -1114,7 +1114,7 @@ public:
 
 /*=================================================================================**//**
 * Parameters:
-* - Setting ID
+* - Variable ID
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
 struct GetStringVariableValueScalar : ECPresentation::ScalarFunction
@@ -1125,18 +1125,18 @@ struct GetStringVariableValueScalar : ECPresentation::ScalarFunction
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(1 == nArgs);
-        Utf8CP settingId = args[0].GetValueText();
-        Utf8String value = GetContext().GetUserSettings().GetSettingValue(settingId);
+        Utf8CP variableId = args[0].GetValueText();
+        Utf8String value = GetContext().GetRulesetVariables().GetStringValue(variableId);
         ctx.SetResultText(value.c_str(), (int)value.size(), DbFunction::Context::CopyData::Yes);
 
-        if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
+        if (nullptr != GetContext().GetUsedRulesetVariablesListener())
+            GetContext().GetUsedRulesetVariablesListener()->OnVariableUsed(variableId);
         }
     };
 
 /*=================================================================================**//**
 * Parameters:
-* - Setting ID
+* - Variable ID
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
 struct GetIntVariableValueScalar : ECPresentation::ScalarFunction
@@ -1147,17 +1147,17 @@ struct GetIntVariableValueScalar : ECPresentation::ScalarFunction
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(1 == nArgs);
-        Utf8CP settingId = args[0].GetValueText();
-        ctx.SetResultInt64(GetContext().GetUserSettings().GetSettingIntValue(settingId));
+        Utf8CP variableId = args[0].GetValueText();
+        ctx.SetResultInt64(GetContext().GetRulesetVariables().GetIntValue(variableId));
 
-        if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
+        if (nullptr != GetContext().GetUsedRulesetVariablesListener())
+            GetContext().GetUsedRulesetVariablesListener()->OnVariableUsed(variableId);
         }
     };
 
 /*=================================================================================**//**
 * Parameters:
-* - Setting ID
+* - Variable ID
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
 struct GetBoolVariableValueScalar : ECPresentation::ScalarFunction
@@ -1168,17 +1168,17 @@ struct GetBoolVariableValueScalar : ECPresentation::ScalarFunction
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(1 == nArgs);
-        Utf8CP settingId = args[0].GetValueText();
-        ctx.SetResultInt(GetContext().GetUserSettings().GetSettingBoolValue(settingId) ? 1 : 0);
+        Utf8CP variableId = args[0].GetValueText();
+        ctx.SetResultInt(GetContext().GetRulesetVariables().GetBoolValue(variableId) ? 1 : 0);
 
-        if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
+        if (nullptr != GetContext().GetUsedRulesetVariablesListener())
+            GetContext().GetUsedRulesetVariablesListener()->OnVariableUsed(variableId);
         }
     };
 
 /*=================================================================================**//**
 * Parameters:
-* - Setting ID
+* - Variable ID
 * - Integer value to find
 * @bsiclass                                     Grigas.Petraitis                04/2017
 +===============+===============+===============+===============+===============+======*/
@@ -1191,16 +1191,16 @@ struct InIntVariableValuesScalar : CachingScalarFunction<bmap<Utf8String, bvecto
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(2 == nArgs);
-        Utf8CP settingId = args[0].GetValueText();
+        Utf8CP variableId = args[0].GetValueText();
         int64_t lookupValue = args[1].GetValueInt64();
 
-        if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
+        if (nullptr != GetContext().GetUsedRulesetVariablesListener())
+            GetContext().GetUsedRulesetVariablesListener()->OnVariableUsed(variableId);
 
         bmap<Utf8String, bvector<int64_t>>& cache = GetCache();
-        auto iter = cache.find(settingId);
+        auto iter = cache.find(variableId);
         if (cache.end() == iter)
-            iter = cache.Insert(settingId, GetContext().GetUserSettings().GetSettingIntValues(settingId)).first;
+            iter = cache.Insert(variableId, GetContext().GetRulesetVariables().GetIntValues(variableId)).first;
 
         bvector<int64_t> const& values = iter->second;
         for (int64_t value : values)
@@ -1217,7 +1217,7 @@ struct InIntVariableValuesScalar : CachingScalarFunction<bmap<Utf8String, bvecto
 
 /*=================================================================================**//**
 * Parameters:
-* - Setting ID
+* - Variable ID
 * @bsiclass                                     Grigas.Petraitis                05/2016
 +===============+===============+===============+===============+===============+======*/
 struct HasVariableScalar : ECPresentation::ScalarFunction
@@ -1228,8 +1228,8 @@ struct HasVariableScalar : ECPresentation::ScalarFunction
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(1 == nArgs);
-        Utf8CP settingId = args[0].GetValueText();
-        ctx.SetResultInt(GetContext().GetUserSettings().HasSetting(settingId) ? 1 : 0);
+        Utf8CP variableId = args[0].GetValueText();
+        ctx.SetResultInt(GetContext().GetRulesetVariables().HasValue(variableId) ? 1 : 0);
         }
     };
 
@@ -1875,11 +1875,11 @@ struct GetLabelDefinitionDisplayValueScalar : CachingScalarFunction<bmap<Utf8Str
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsContext::CustomFunctionsContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection,
-    PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener,
+    PresentationRuleSetCR ruleset, Utf8String locale, RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener,
     ECExpressionsCache& ecexpressionsCache, JsonNavNodesFactory const& nodesFactory, IUsedClassesListener* usedClassesListener,
     JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
     : m_schemaHelper(schemaHelper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale),
-    m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache),
+    m_rulesetVariables(rulesetVariables), m_usedVariablesListener(usedVariablesListener), m_ecexpressionsCache(ecexpressionsCache),
     m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener),
     m_extendedData(queryExtendedData), m_localizationProvider(nullptr), m_propertyFormatter(formatter), m_unitSystem(unitSystem)
     {

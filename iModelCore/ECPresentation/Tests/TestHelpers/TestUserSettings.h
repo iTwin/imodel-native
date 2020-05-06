@@ -25,10 +25,36 @@ private:
         if (nullptr != m_changesListener)
             m_changesListener->_OnSettingChanged("", settingId);
         }
+
+    Utf8String GetSettingType(JsonValueCR setting) const
+        {
+        switch (setting.type())
+            {
+            case Json::ValueType::intValue:
+            case Json::ValueType::uintValue:
+                return "int";
+            case Json::ValueType::booleanValue:
+                return "bool";
+            case Json::ValueType::arrayValue:
+                return "ints";
+            case Json::ValueType::stringValue:
+                return "string";
+            default:
+                BeAssert(false);
+                return "";
+            }
+        }
     
 protected:
     Json::Value _GetPresentationInfo(Utf8StringCR) const override {return Json::Value();}
 
+    bvector<bpair<Utf8String, Utf8String>> _GetSettings() const override 
+        {
+        bvector<bpair<Utf8String, Utf8String>> settings;
+        for (Utf8StringCR name : m_values.getMemberNames())
+            settings.push_back(bpair<Utf8String, Utf8String>(name, GetSettingType(m_values[name])));
+        return settings;
+        }
     bool _HasSetting(Utf8CP id) const override {BeMutexHolder lock(m_mutex); return m_values.isMember(id);}
 
     void _InitFrom(UserSettingsGroupList const&) override {}

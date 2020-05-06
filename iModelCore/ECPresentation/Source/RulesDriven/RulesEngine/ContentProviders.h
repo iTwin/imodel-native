@@ -30,18 +30,18 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, Utf8String, Utf8String, int, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierCR, IUserSettings const&,
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, Utf8String, Utf8String, int, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierCR, std::unique_ptr<RulesetVariables>,
         ECExpressionsCache&, RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
     static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags, INavNodeKeysContainerCR inputKeys, 
-        INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierCR categorySupplier, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache,
+        INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierCR categorySupplier, std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache,
         RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
         JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
         return new ContentProviderContext(ruleset, locale, preferredDisplayType, contentFlags, inputKeys, nodesLocater, 
-            categorySupplier, settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
+            categorySupplier, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
     ~ContentProviderContext();

@@ -217,6 +217,7 @@
     <ClCompile Include="NonPublished\RulesEngine\QueryExecutorTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\RuleSetEmbedderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\RuleSetLocaterTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\RulesetVariablesTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\RulesPreprocessorTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\TasksSchedulerTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\TestHelpers.cpp" />

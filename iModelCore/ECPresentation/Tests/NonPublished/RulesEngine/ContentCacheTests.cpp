@@ -18,7 +18,6 @@ struct ContentCacheTests : ECPresentationTest
     {
     TestNodeLocater m_nodesLocater;
     TestCategorySupplier m_categorySupplier;
-    TestUserSettings m_userSettings;
     ECExpressionsCache m_ecexpressionsCache;
     RelatedPathsCache m_relatedPathsCache;
     PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
@@ -34,9 +33,9 @@ struct ContentCacheTests : ECPresentationTest
         {
         PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
         ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, "locale", "", 0, *NavNodeKeyListContainer::Create(),
-            m_nodesLocater, m_categorySupplier, m_userSettings, m_ecexpressionsCache, m_relatedPathsCache,
+            m_nodesLocater, m_categorySupplier, std::make_unique<RulesetVariables>(), m_ecexpressionsCache, m_relatedPathsCache,
             m_polymorphicallyRelatedClassesCache, m_nodesFactory, nullptr);
-        context->GetUsedSettingsListener().OnUserSettingUsed(TEST_RELATED_SETTING);
+        context->GetUsedVariablesListener().OnVariableUsed(TEST_RELATED_SETTING);
         return SpecificationContentProvider::Create(*context, ContentRuleInstanceKeysContainer());
         }
 

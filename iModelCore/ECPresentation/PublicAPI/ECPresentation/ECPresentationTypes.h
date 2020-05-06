@@ -309,12 +309,12 @@ typedef RelatedClassPath const& RelatedClassPathCR;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2016
 +===============+===============+===============+===============+===============+======*/
-struct IUsedUserSettingsListener : RefCountedBase
+struct IUsedRulesetVariablesListener : RefCountedBase
 {
 protected:
-    virtual void _OnUserSettingUsed(Utf8CP settingId) = 0;
+    virtual void _OnVariableUsed(Utf8CP settingId) = 0;
 public:
-    void OnUserSettingUsed(Utf8CP settingId) {_OnUserSettingUsed(settingId);}
+    void OnVariableUsed(Utf8CP settingId) {_OnVariableUsed(settingId);}
 };
 
 /*=================================================================================**//**

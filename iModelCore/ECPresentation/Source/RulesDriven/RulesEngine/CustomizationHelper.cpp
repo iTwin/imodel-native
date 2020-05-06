@@ -19,7 +19,7 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
     if (m_nodeExpressionContext.IsNull())
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters params(m_node, m_parentNode,
-            m_context.GetConnection(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener());
+            m_context.GetConnection(), m_context.GetLocale(), m_context.GetRulesetVariables(), &m_context.GetUsedVariablesListener());
         m_nodeExpressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
         }
     return *m_nodeExpressionContext;
@@ -32,7 +32,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRulesetVariables(), &m_context.GetUsedVariablesListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
     if (nullptr != labelOverride)
@@ -65,7 +65,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRulesetVariables(), &m_context.GetUsedVariablesListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     StyleOverrideCP styleOverride = preprocessor.GetStyleOverride(params);
     if (nullptr != styleOverride)
@@ -104,7 +104,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRulesetVariables(), &m_context.GetUsedVariablesListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     ImageIdOverrideCP imageIdOverride = preprocessor.GetImageIdOverride(params);
     if (nullptr != imageIdOverride)
@@ -160,7 +160,7 @@ bool NavNodeCustomizer::ApplyLocalization()
 bool NavNodeCustomizer::ApplyCheckboxRules()
     {
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRulesetVariables(), &m_context.GetUsedVariablesListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     CheckBoxRuleCP rule = preprocessor.GetCheckboxRule(params);
     if (nullptr == rule)
@@ -224,7 +224,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
 bool NavNodeCustomizer::ApplyExtendedDataRules()
     {
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRulesetVariables(), &m_context.GetUsedVariablesListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     bvector<ExtendedDataRuleCP> rules = preprocessor.GetExtendedDataRules(params);
     bool didAddExtendedData = false;
@@ -380,11 +380,11 @@ NodeArtifacts CustomizationHelper::EvaluateArtifacts(NavNodesProviderContextCR c
     JsonNavNodeCPtr parentNode = context.GetVirtualParentNode();
 
     RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(), context.GetLocale(),
-        context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
+        context.GetRulesetVariables(), &context.GetUsedVariablesListener(), context.GetECExpressionsCache());
     bvector<NodeArtifactsRuleCP> rules = preprocessor.GetNodeArtifactRules(RulesPreprocessor::CustomizationRuleParameters(node, parentNode.get()));
 
     ECExpressionContextsProvider::CustomizationRulesContextParameters evaluationParams(node, parentNode.get(),
-        context.GetConnection(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener());
+        context.GetConnection(), context.GetLocale(), context.GetRulesetVariables(), &context.GetUsedVariablesListener());
     ExpressionContextPtr evaluationContext = ECExpressionContextsProvider::GetCustomizationRulesContext(evaluationParams);
 
     NodeArtifacts artifacts;

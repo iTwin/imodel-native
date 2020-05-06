@@ -38,7 +38,7 @@ struct ECExpressionContextsProviderTests : ECPresentationTest
     static IConnectionPtr s_connection;
     ECSqlStatementCache m_statementCache;
     RuntimeJsonLocalState m_localState;
-    TestUserSettings m_userSettings;
+    RulesetVariables m_rulesetVariables;
     Utf8String m_locale;
     
     ECExpressionContextsProviderTests() : m_statementCache(10) {}
@@ -157,7 +157,7 @@ static RefCountedPtr<IValueListResult const> EvaluateAndGetValueListResult(Utf8C
 TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_RootNode_ParentNodeIsNull)
     {
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.IsNull";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -171,7 +171,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_ParentN
     {
     TestNavNodePtr navNode = TestNodesHelper::CreateCustomNode(*s_connection, "", "TestLabel", "");
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.IsNull";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -185,7 +185,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_LabelAn
     {
     TestNavNodePtr navNode = TestNodesHelper::CreateCustomNode(*s_connection, "", "MyLabel", "MyDescription");
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     
     Utf8CP expression = "ParentNode.Label";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -207,7 +207,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_ClassNa
     NavNodeExtendedData(*navNode).SetECClassId(GetSchema().GetClassCP("ClassA")->GetId());
 
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.ClassName";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsString());
@@ -223,7 +223,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_SchemaN
     NavNodeExtendedData(*navNode).SetECClassId(GetSchema().GetClassCP("ClassA")->GetId());
 
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.SchemaName";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsString());
@@ -239,7 +239,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_SchemaM
     NavNodeExtendedData(*navNode).SetECClassId(GetSchema().GetClassCP("ClassA")->GetId());
 
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.SchemaMajorVersion";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsInteger());
@@ -255,7 +255,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_SchemaM
     NavNodeExtendedData(*navNode).SetECClassId(GetSchema().GetClassCP("ClassA")->GetId());
 
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.SchemaMinorVersion";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsInteger());
@@ -271,7 +271,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_Instanc
     instance->SetInstanceId("456");
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.InstanceId";
     NodePtr node = ECEvaluator::ParseValueExpressionAndCreateTree (expression);
     ASSERT_TRUE(node.IsValid ());
@@ -290,7 +290,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNonInstanceN
     {
     TestNavNodePtr navNode = TestNodesHelper::CreateCustomNode(*s_connection, "", "MyLabel", "MyDescription");
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.IsInstanceNode";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -305,7 +305,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildInstanceNode
     IECInstancePtr instance = ECInstanceTestsHelper::CreateInstance("ClassA", GetSchema());
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.IsInstanceNode";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -319,7 +319,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_TypeIsV
     {
     TestNavNodePtr navNode = TestNodesHelper::CreateCustomNode(*s_connection, "TestType", "MyLabel", "MyDescription");
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     Utf8CP expression = "ParentNode.Type";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsString());
@@ -334,7 +334,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildInstanceNode
     IECInstancePtr instance = ECInstanceTestsHelper::CreateInstance("ClassA", GetSchema());
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     ECValue resultValue = EvaluateAndGetResult("ParentNode.IsInstanceNode", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_TRUE(resultValue.GetBoolean());
@@ -373,7 +373,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildRelationship
     NavNodeExtendedData navNodeExtendedData(*navNode);
     navNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("ParentNode.IsInstanceNode", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -411,7 +411,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildClassGroupin
     {
     TestNavNodePtr navNode = TestNodesHelper::CreateClassGroupingNode(*s_connection, *GetSchema().GetClassCP("ClassA"), "TestLabel");
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("ParentNode.IsInstanceNode", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -451,7 +451,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildPropertyGrou
     ECPropertyCP prop = classA->GetPropertyP("String");
     TestNavNodePtr navNode = TestNodesHelper::CreatePropertyGroupingNode(*s_connection, *classA, *prop, "TestLabel", rapidjson::Value(), false);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("ParentNode.IsInstanceNode", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -490,7 +490,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_InstanceNode_IsOf
     IECInstancePtr instance = ECInstanceTestsHelper::CreateInstance("DerivedA", GetSchema());
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     ECValue resultValue = EvaluateAndGetResult("ParentNode.IsOfClass (\"ClassA\", \"TestSchema\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_TRUE(resultValue.GetBoolean());
@@ -510,7 +510,7 @@ TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_Instance_IsOfClass
 
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
     ECValue resultValue = EvaluateAndGetResult("ParentNode.ECInstance.IsOfClass (\"ClassA\", \"TestSchema\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_TRUE(resultValue.GetBoolean());
@@ -527,7 +527,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ClassGroupingNode
     {
     TestNavNodePtr navNode = TestNodesHelper::CreateClassGroupingNode(*s_connection, *GetSchema().GetClassCP("DerivedA"), "TestLabel");
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("ParentNode.IsOfClass(\"ClassA\", \"TestSchema\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -547,7 +547,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_PropertyGroupingN
     ECPropertyCP prop = classA->GetPropertyP("String");
     TestNavNodePtr navNode = TestNodesHelper::CreatePropertyGroupingNode(*s_connection, *classA, *prop, "TestLabel", rapidjson::Value(), false);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("ParentNode.IsOfClass(\"ClassA\", \"TestSchema\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -574,7 +574,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_GroupingNode_Grou
         ECInstanceKey(ECClassId((uint64_t)5), ECInstanceId((uint64_t)6))
         });
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("ParentNode.GroupedInstancesCount", *ctx);
     ASSERT_TRUE(resultValue.IsLong());
@@ -598,7 +598,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildInstanceNode
 
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue value = EvaluateAndGetResult("ParentNode.ECInstance.GetNodeRulesContext_ChildInstanceNode_GetProperty_Int", *ctx);
     ASSERT_TRUE(value.IsInteger());
@@ -623,7 +623,7 @@ TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_GetNavigationPrope
     
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instanceDerivedA);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue value = EvaluateAndGetResult("ParentNode.ECInstance.A.Id", *ctx);
     ASSERT_TRUE(value.IsLong());
@@ -646,7 +646,7 @@ TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_ChildrenArtifacts)
     NavNodeExtendedData(*navNode).SetChildrenArtifacts(childrenArtifacts);
 
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue value = EvaluateAndGetResult("ParentNode.ChildrenArtifacts.AnyMatches(x => x.IsModel)", *ctx);
     EXPECT_TRUE(value.IsBoolean());
@@ -666,9 +666,9 @@ TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_ChildrenArtifacts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingValue)
     {
-    m_userSettings.SetSettingValue("MySetting", "UserSettings_GetSettingValue");
+    m_rulesetVariables.SetStringValue("MySetting", "UserSettings_GetSettingValue");
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("GetSettingValue(\"MySetting\")", *ctx);
     ASSERT_TRUE(resultValue.IsString());
@@ -680,9 +680,9 @@ TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingIntValue)
     {
-    m_userSettings.SetSettingIntValue("MySetting", 789);
+    m_rulesetVariables.SetIntValue("MySetting", 789);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("GetSettingIntValue(\"MySetting\")", *ctx);
     ASSERT_TRUE(resultValue.IsLong());
@@ -694,9 +694,9 @@ TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingIntValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingIntValues)
     {
-    m_userSettings.SetSettingIntValues("MySetting", {123, 456, 789});
+    m_rulesetVariables.SetIntValues("MySetting", {123, 456, 789});
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     EvaluationResult valueResult;
     RefCountedPtr<IValueListResult const> result = EvaluateAndGetValueListResult("GetSettingIntValues(\"MySetting\")", *ctx);
@@ -723,9 +723,9 @@ TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingIntValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingIntValues_Lambda)
     {
-    m_userSettings.SetSettingIntValues("MySetting", {123, 456, 789});
+    m_rulesetVariables.SetIntValues("MySetting", {123, 456, 789});
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue value = EvaluateAndGetResult("GetSettingIntValues(\"MySetting\").AnyMatches(x => x = 456)", *ctx);
     ASSERT_TRUE(value.IsBoolean());
@@ -741,9 +741,9 @@ TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingIntValues_Lamb
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingBoolValue)
     {
-    m_userSettings.SetSettingBoolValue("MySetting", true);
+    m_rulesetVariables.SetBoolValue("MySetting", true);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("GetSettingBoolValue(\"MySetting\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -756,13 +756,13 @@ TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingBoolValue)
 TEST_F (ECExpressionContextsProviderTests, UserSettings_HasSetting)
     {
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     ECValue resultValue = EvaluateAndGetResult("HasSetting(\"MySetting\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_EQ(false, resultValue.GetBoolean());
 
-    m_userSettings.SetSettingIntValue("MySetting", 99);
+    m_rulesetVariables.SetIntValue("MySetting", 99);
     resultValue = EvaluateAndGetResult("HasSetting(\"MySetting\")", *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_EQ(true, resultValue.GetBoolean());
@@ -774,13 +774,13 @@ TEST_F (ECExpressionContextsProviderTests, UserSettings_HasSetting)
 TEST_F (ECExpressionContextsProviderTests, UserSettings_ReactsToChangesInStore)
     {
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
-    m_userSettings.SetSettingIntValue("MySetting", 123);
+    m_rulesetVariables.SetIntValue("MySetting", 123);
     ECValue resultValue = EvaluateAndGetResult("GetSettingIntValue(\"MySetting\")", *ctx);
     ASSERT_EQ(123, resultValue.GetLong());
 
-    m_userSettings.SetSettingIntValue("MySetting", 456);
+    m_rulesetVariables.SetIntValue("MySetting", 456);
     resultValue = EvaluateAndGetResult("GetSettingIntValue(\"MySetting\")", *ctx);
     ASSERT_EQ(456, resultValue.GetLong());
     }
@@ -792,7 +792,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_ContentDisplayT
     {
     TestNodeLocater nodeLocater;
     ECExpressionContextsProvider::ContentRulesContextParameters params("MyContentType", "", false, *s_connection, 
-        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_rulesetVariables, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params);
     Utf8CP expression = "ContentDisplayType";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -807,7 +807,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_SelectionProvid
     {
     TestNodeLocater nodeLocater;
     ECExpressionContextsProvider::ContentRulesContextParameters params("", "MySelectionProvider", false, *s_connection,
-        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_rulesetVariables, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params);
     Utf8CP expression = "SelectionProviderName";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -822,7 +822,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_IsSubSelectionM
     {
     TestNodeLocater nodeLocater;
     ECExpressionContextsProvider::ContentRulesContextParameters params1("", "", false, *s_connection,
-        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_rulesetVariables, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params1);
     Utf8CP expression = "IsSubSelection";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -830,7 +830,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_IsSubSelectionM
     ASSERT_FALSE(resultValue.GetBoolean());
 
     ECExpressionContextsProvider::ContentRulesContextParameters params2("", "", true, *s_connection,
-        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_rulesetVariables, nullptr);
     ctx = ECExpressionContextsProvider::GetContentRulesContext(params2);
     resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());
@@ -843,7 +843,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_IsSubSelectionM
 TEST_F (ECExpressionContextsProviderTests, Common_Set)
     {
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection,
-        m_locale, m_userSettings, nullptr));
+        m_locale, m_rulesetVariables, nullptr));
 
     EvaluationResult valueResult;
     RefCountedPtr<IValueListResult const> result = EvaluateAndGetValueListResult("Set(1, \"2\")", *ctx);

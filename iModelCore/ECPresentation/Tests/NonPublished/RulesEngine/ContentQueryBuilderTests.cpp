@@ -21,7 +21,7 @@ void ContentQueryBuilderTests::SetUp()
     m_context->SetContentFlagsCalculator([](int defaultFlags){return defaultFlags | (int)ContentFlags::SkipInstancesCheck;});
     m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
     m_queryBuilder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, connections,
-        m_nodesLocater, connection, *m_ruleset, m_context->GetLocale(), m_settings, m_schemaHelper->GetECExpressionsCache(), 
+        m_nodesLocater, connection, *m_ruleset, m_context->GetLocale(), m_rulesetVariables, m_schemaHelper->GetECExpressionsCache(), 
         m_categorySupplier, nullptr, nullptr, &m_localizationProvider));
     }
 

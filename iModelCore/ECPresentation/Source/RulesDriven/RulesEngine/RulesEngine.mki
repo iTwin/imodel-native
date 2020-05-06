@@ -90,6 +90,8 @@ $(o)TaskScheduler$(oext):                $(RulesEngineSourceDirectory)TaskSchedu
 
 $(o)HierarchiesComparer$(oext):          $(RulesEngineSourceDirectory)HierarchiesComparer.cpp $(RulesEngineDependencies)
 
+$(o)RulesetVariables$(oext):             $(RulesEngineSourceDirectory)RulesetVariables.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =

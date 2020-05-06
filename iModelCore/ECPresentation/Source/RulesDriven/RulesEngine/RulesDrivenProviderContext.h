@@ -12,10 +12,11 @@
 #include "CustomFunctions.h"
 #include "LocalizationHelper.h"
 #include "ECSchemaHelper.h"
+#include "DataSourceInfo.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
-struct UsedUserSettingsListener;
+struct UsedRulesetVariablesListener;
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2016
@@ -27,8 +28,8 @@ private:
     PresentationRuleSetCPtr m_ruleset;
     Utf8String m_locale;
     IJsonLocalState const* m_localState;
-    IUserSettings const& m_userSettings;
-    mutable RefCountedPtr<UsedUserSettingsListener> m_usedSettingsListener;
+    std::unique_ptr<RulesetVariables> m_rulesetVariables;
+    mutable RefCountedPtr<UsedRulesetVariablesListener> m_usedVariablesListener;
     RelatedPathsCache& m_relatedPathsCache;
     PolymorphicallyRelatedClassesCache& m_polymorphicallyRelatedClassesCache;
     ECExpressionsCache& m_ecexpressionsCache;
@@ -53,7 +54,7 @@ private:
     void Init();
 
 protected:
-    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, Utf8String locale, IUserSettings const&, ECExpressionsCache&, 
+    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, Utf8String locale, std::unique_ptr<RulesetVariables>, ECExpressionsCache&, 
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
     
@@ -66,10 +67,10 @@ public:
     // common
     PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
-    IUserSettings const& GetUserSettings() const {return m_userSettings;}
-    ECPRESENTATION_EXPORT IUsedUserSettingsListener& GetUsedSettingsListener() const;
-    ECPRESENTATION_EXPORT void SetUsedSettingsListener(RulesDrivenProviderContextCR other);
-    bset<Utf8String> GetRelatedSettingIds() const;
+    RulesetVariables const& GetRulesetVariables() const {return *m_rulesetVariables;}
+    ECPRESENTATION_EXPORT IUsedRulesetVariablesListener& GetUsedVariablesListener() const;
+    ECPRESENTATION_EXPORT void SetUsedVariablesListener(RulesDrivenProviderContextCR other);
+    bset<Utf8String> GetRelatedVariablesIds() const;
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}
     ECPRESENTATION_EXPORT ICancelationTokenCR GetCancelationToken() const;

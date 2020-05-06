@@ -45,17 +45,23 @@ struct HierarchiesComparer
         INodesProviderFactoryCR m_providerFactory;
         bool m_traverseRecursively;
         IHierarchyChangesReporter& m_changesReporter;
+        std::unique_ptr<RulesetVariables> m_variables;
     public:
         Params(NodesCache& nodesCache, INodesProviderContextFactoryCR contextFactory, INodesProviderFactoryCR providerFactory,
-            IHierarchyChangesReporter& changesReporter, bool traverseRecursively)
+            IHierarchyChangesReporter& changesReporter, bool traverseRecursively, std::unique_ptr<RulesetVariables> variables)
             : m_nodesCache(nodesCache), m_contextFactory(contextFactory), m_providerFactory(providerFactory), 
-            m_traverseRecursively(traverseRecursively), m_changesReporter(changesReporter)
+            m_traverseRecursively(traverseRecursively), m_changesReporter(changesReporter), m_variables(std::move(variables))
+            {}
+        Params(Params const& other)
+            : m_nodesCache(other.m_nodesCache), m_contextFactory(other.m_contextFactory), m_providerFactory(other.m_providerFactory),
+            m_traverseRecursively(other.m_traverseRecursively), m_changesReporter(other.m_changesReporter), m_variables(std::make_unique<RulesetVariables>(*other.m_variables))
             {}
         NodesCache& GetNodesCache() const {return m_nodesCache;}
         INodesProviderContextFactoryCR GetProviderContextsFactory() const {return m_contextFactory;}
         INodesProviderFactoryCR GetProvidersFactory() const {return m_providerFactory;}
         bool ShouldTraverseRecursively() const {return m_traverseRecursively;}
         IHierarchyChangesReporter& Reporter() const {return m_changesReporter;}
+        RulesetVariables const& GetVariables() const { return *m_variables; }
     };
 
     struct Context : Params

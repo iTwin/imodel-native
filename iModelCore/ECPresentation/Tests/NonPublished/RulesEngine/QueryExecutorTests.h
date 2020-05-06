@@ -25,7 +25,7 @@ struct QueryExecutorTests : ECPresentationTest
     TestConnectionManager m_connections;
     IConnectionPtr m_connection;
     JsonNavNodesFactory m_nodesFactory;
-    TestUserSettings m_userSettings;
+    RulesetVariables m_rulesetVariables;
     PresentationRuleSetPtr m_ruleset;
     CustomFunctionsInjector* m_customFunctionsInjector;
     DefaultCategorySupplier m_categorySupplier;

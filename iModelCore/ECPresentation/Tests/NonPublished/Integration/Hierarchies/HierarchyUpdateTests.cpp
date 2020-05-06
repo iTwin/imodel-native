@@ -4342,6 +4342,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
+#ifdef wip_ruleset_variables
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4805,6 +4806,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChangesSever
     VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetNode(), *widget);
     EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
     }
+#endif
 
 #ifdef not_tracking_node_expansion_in_imodeljs
 /*---------------------------------------------------------------------------------**//**
@@ -5454,6 +5456,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
     EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
 
+#ifdef wip_ruleset_variables
 /*---------------------------------------------------------------------------------**//**
 * VSTS#28901
 * @betest                                       Haroldas.Vitunskas              09/2018
@@ -5641,3 +5644,4 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesWithVir
     ASSERT_EQ(rules->GetRuleSetId(), hierarchies[0].GetRulesetId());
     ASSERT_EQ(rootNodes[0]->GetNodeId(), *hierarchies[0].GetPhysicalParentNodeId());
     }
+#endif

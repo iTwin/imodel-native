@@ -43,6 +43,8 @@ protected:
 
     virtual Json::Value _GetPresentationInfo(Utf8StringCR locale) const = 0;
 
+    virtual bvector<bpair<Utf8String, Utf8String>> _GetSettings() const = 0;
+
     virtual bool _HasSetting(Utf8CP id) const = 0;
 
     virtual void _InitFrom(UserSettingsGroupList const&) = 0;
@@ -60,6 +62,9 @@ protected:
 public:
     //! Get the presentation info for user settings stored in this instance.
     Json::Value GetPresentationInfo(Utf8StringCR locale) const {return _GetPresentationInfo(locale);}
+
+    //! Get existing settings ids and types
+    bvector<bpair<Utf8String, Utf8String>> GetSettings() const {return _GetSettings();}
 
     //! Is there a user setting with the specified id.
     bool HasSetting(Utf8CP id) const {return _HasSetting(id);}
@@ -106,6 +111,7 @@ private:
     IUserSettingsChangeListener const* m_changeListener;
     bool m_isInitializing;
     UserSettingsGroupList const* m_initializedFrom;
+    bset<bpair<Utf8String, Utf8String>> m_settingIds;
     mutable BeMutex m_mutex;
 
 private:
@@ -116,6 +122,7 @@ private:
 
 protected:
     ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo(Utf8StringCR locale) const override;
+    ECPRESENTATION_EXPORT bvector<bpair<Utf8String, Utf8String>> _GetSettings() const override;
     ECPRESENTATION_EXPORT bool _HasSetting(Utf8CP id) const override;
     ECPRESENTATION_EXPORT void _InitFrom(UserSettingsGroupList const&) override;
     ECPRESENTATION_EXPORT void _SetSettingValue(Utf8CP id, Utf8CP value) override;

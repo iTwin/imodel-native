@@ -333,6 +333,8 @@ static Json::Value GetCommonOptions(JsonValueCR params)
             options.SetUnitSystem(ECPresentation::UnitSystem::UsSurvey);
         }
     options.SetPriority((params.isMember("priority") && params["priority"].isInt()) ? params["priority"].asInt() : DEFAULT_REQUEST_PRIORITY);
+    if (params.isMember("rulesetVariables") && params["rulesetVariables"].isArray())
+        options.SetRulesetVariables(params["rulesetVariables"]);
     return options.GetJson();
     }
 

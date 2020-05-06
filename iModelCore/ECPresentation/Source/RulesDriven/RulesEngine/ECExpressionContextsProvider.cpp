@@ -435,22 +435,23 @@ private:
     Utf8String m_locale;
     INavNodeLocaterCP m_locater;
     NavNodeKeyCP m_key;
+    RulesetVariables const& m_variables;
     SymbolExpressionContextPtr m_context;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String rulesetId, Utf8String locale, INavNodeLocaterCP locater, NavNodeKeyCP key)
-        : m_rootContext(rootContext), m_connection(connection), m_rulesetId(rulesetId), m_locale(locale), m_locater(locater), m_key(key), m_context(nullptr)
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String rulesetId, Utf8String locale, INavNodeLocaterCP locater, NavNodeKeyCP key, RulesetVariables const& variables)
+        : m_rootContext(rootContext), m_connection(connection), m_rulesetId(rulesetId), m_locale(locale), m_locater(locater), m_key(key), m_context(nullptr), m_variables(variables)
         {}
 public:
     static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection,
-        Utf8String rulesetId, Utf8String locale, INavNodeLocaterCP locater, NavNodeKeyCP key)
+        Utf8String rulesetId, Utf8String locale, INavNodeLocaterCP locater, NavNodeKeyCP key, RulesetVariables const& variables)
         {
-        return new NodeContextEvaluator(rootContext, connection, rulesetId, locale, locater, key);
+        return new NodeContextEvaluator(rootContext, connection, rulesetId, locale, locater, key, variables);
         }
     virtual ExpressionContextPtr _GetContext() override
         {
         if (m_context.IsValid())
             return m_context;
 
-        JsonNavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_rulesetId, m_locale, *m_key) : nullptr;
+        JsonNavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_rulesetId, m_locale, *m_key, m_variables) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstancesNodeKey const* instancesNodeKey = m_key->AsECInstanceNodeKey();
@@ -474,10 +475,10 @@ struct RulesetVariablesSymbolsProvider : IECSymbolProvider
 {
     struct Context : ProviderContext
         {
-        IUserSettings const& m_settings;
-        IUsedUserSettingsListener* m_usedSettingsListener;
-        Context(IUserSettings const& settings, IUsedUserSettingsListener* usedSettingsListener)
-            : m_settings(settings), m_usedSettingsListener(usedSettingsListener)
+        RulesetVariables const& m_rulesetVariables;
+        IUsedRulesetVariablesListener* m_usedVariablesListener;
+        Context(RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener)
+            : m_rulesetVariables(rulesetVariables), m_usedVariablesListener(usedVariablesListener)
             {}
         };
 private:
@@ -486,8 +487,8 @@ private:
 private:
     static void OnVariableUsed(Context const& context, Utf8CP variableId)
         {
-        if (nullptr != context.m_usedSettingsListener)
-            context.m_usedSettingsListener->OnUserSettingUsed(variableId);
+        if (nullptr != context.m_usedVariablesListener)
+            context.m_usedVariablesListener->OnVariableUsed(variableId);
         }
     static ExpressionStatus GetStringVariableValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
         {
@@ -505,7 +506,7 @@ private:
 
         Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetUtf8CP(context.m_settings.GetSettingValue(variableId).c_str());
+        evalResult.InitECValue().SetUtf8CP(context.m_rulesetVariables.GetStringValue(variableId));
 
         OnVariableUsed(context, variableId);
 
@@ -527,7 +528,7 @@ private:
 
         Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetLong(context.m_settings.GetSettingIntValue(variableId));
+        evalResult.InitECValue().SetLong(context.m_rulesetVariables.GetIntValue(variableId));
 
         OnVariableUsed(context, variableId);
 
@@ -555,7 +556,7 @@ private:
 
         Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        bvector<int64_t> values = context.m_settings.GetSettingIntValues(variableId);
+        bvector<int64_t> values = context.m_rulesetVariables.GetIntValues(variableId);
         bvector<EvaluationResult> resultValues;
         for (int64_t value : values)
             {
@@ -585,7 +586,7 @@ private:
 
         Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetBoolean(context.m_settings.GetSettingBoolValue(variableId));
+        evalResult.InitECValue().SetBoolean(context.m_rulesetVariables.GetBoolValue(variableId));
 
         OnVariableUsed(context, variableId);
         return ExpressionStatus::Success;
@@ -606,7 +607,7 @@ private:
 
         Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetBoolean(context.m_settings.GetSettingBoolValue(variableId));
+        evalResult.InitECValue().SetBoolean(context.m_rulesetVariables.HasValue(variableId));
 
         OnVariableUsed(context, variableId);
         return ExpressionStatus::Success;
@@ -815,7 +816,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetNodeRulesContext(NodeRules
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
     // Ruleset variables
-    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetRulesetVariables(), params.GetUsedVariablesListener())));
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // ParentNode
@@ -843,12 +844,12 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
     // Ruleset variables
-    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetRulesetVariables(), params.GetUsedVariablesListener())));
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // SelectedNode
     rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(),
-        params.GetRulesetId(), params.GetLocale(), params.GetNodeLocater(), params.GetSelectedNodeKey())));
+        params.GetRulesetId(), params.GetLocale(), params.GetNodeLocater(), params.GetSelectedNodeKey(), params.GetRulesetVariables())));
 
     // Content-specific
     rootCtx->GetSymbolsContext().AddSymbol(*ValueSymbol::Create("ContentDisplayType", ECValue(params.GetContentDisplayType().c_str())));
@@ -874,7 +875,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
     // Ruleset variables
-    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetRulesetVariables(), params.GetUsedVariablesListener())));
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // ParentNode
@@ -927,7 +928,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
     // Ruleset variables
-    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetRulesetVariables(), params.GetUsedVariablesListener())));
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // this

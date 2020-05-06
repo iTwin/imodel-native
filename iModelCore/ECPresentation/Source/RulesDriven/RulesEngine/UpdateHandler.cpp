@@ -175,10 +175,13 @@ protected:
         {
         bvector<IUpdateTaskPtr> subTasks;
         Utf8StringCR rulesetId = m_provider->GetContext().GetRuleset().GetRuleSetId();
+        m_contentCache.ClearCache(rulesetId.c_str());
+#ifdef wip_ruleset_variables
         if (nullptr == m_provider->GetContentDescriptor())
             m_contentCache.ClearCache(rulesetId.c_str());
         else
             m_provider->InvalidateContent();
+#endif
 
         if (m_updateContext.GetReportedContentRulesetIds().end() == m_updateContext.GetReportedContentRulesetIds().find(rulesetId))
             {
@@ -778,6 +781,6 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
         }
 
     CompareReporter reporter(context, subTasks, *this, *nodesCache);
-    HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, m_contextFactory, m_nodesProviderFactory, reporter, false));
+    HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, m_contextFactory, m_nodesProviderFactory, reporter, false, std::make_unique<RulesetVariables>()));
     comparer.Compare(m_connections, oldInfo, newInfo);
     }

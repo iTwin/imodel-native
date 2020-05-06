@@ -31,7 +31,6 @@ struct CustomizationHelperTests : ECPresentationTest
     PresentationRuleSetPtr m_ruleset;
     NavNodesProviderContextPtr m_context;
     TestNodesProviderFactory m_providerFactory;
-    TestUserSettings m_settings;
     TestNodesFactory m_nodesFactory;
     TestNodesCache m_nodesCache;
 
@@ -50,7 +49,7 @@ struct CustomizationHelperTests : ECPresentationTest
         m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests", 1, 0, false, "", "", "", false);
         m_context = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", 0, 
-            m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
+            std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache,
             m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_context->SetQueryContext(m_connections, *m_connection, nullptr);
         }
@@ -245,7 +244,7 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
     NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", &parentNodeId, 
-        m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
+        std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache,
         m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);
     childContext->SetChildNodeContext(&rule, *parentNode);

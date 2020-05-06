@@ -27,7 +27,6 @@ private:
     ILocalizationProvider const* m_localizationProvider;
     bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
 protected:
-    IRulesPreprocessorPtr _GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener*) const override { return nullptr; }
     IPropertyCategorySupplier const& _GetCategorySupplier() const override { return *m_categorySupplier; }
     IECPropertyFormatter const& _GetECPropertyFormatter() const override { return *m_ecPropertyFormatter; }
     IUserSettingsManager& _GetUserSettingsManager() const override { return *m_userSettings; }

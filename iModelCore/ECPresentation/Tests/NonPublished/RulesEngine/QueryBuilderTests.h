@@ -28,7 +28,7 @@ struct NavigationQueryBuilderTests : ECPresentationTest
     RootNodeRuleP m_rootNodeRule;
     ChildNodeRuleP m_childNodeRule;
     NavigationQueryBuilder* m_builder;
-    TestUserSettings m_settings;
+    RulesetVariables m_rulesetVariables;
     IConnectionCPtr m_connection;
     RuleSetLocaterManager m_locaterManager;
     TestNodesCache m_nodesCache;
@@ -72,7 +72,7 @@ struct ContentQueryBuilderTests : ECPresentationTest
     ContentDescriptorBuilder::Context* m_context;
     ContentDescriptorBuilder* m_descriptorBuilder;
     ContentQueryBuilder* m_queryBuilder;
-    TestUserSettings m_settings;
+    RulesetVariables m_rulesetVariables;
     RuleSetLocaterManager m_locaterManager;
     TestNodeLocater m_nodesLocater;
     TestLocalizationProvider m_localizationProvider;

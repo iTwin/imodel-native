@@ -78,7 +78,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
         {
         cachedHierarchyLevel = &hl;
         });
-    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&)
+    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, RulesetVariables const&)
         {
         cachedDataSource = &ds;
         });
@@ -101,11 +101,12 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
         return nodesCached > 0;
         });
     m_context->SetCancelationToken(cancelationToken.get());
-    
+    RulesetVariables variables;
+
     // verify the data source is still invalid
     ASSERT_TRUE(nullptr != cachedHierarchyLevel);
     ASSERT_TRUE(nullptr != cachedDataSource);
-    EXPECT_FALSE(m_nodesCache.IsInitialized(*cachedDataSource));
+    EXPECT_FALSE(m_nodesCache.IsInitialized(*cachedDataSource, variables));
     EXPECT_EQ(2, provider->GetNodesCount());
 
     // force initialization
@@ -116,7 +117,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     EXPECT_EQ(1, nodesCached);
 
     // verify the nodes cache is empty
-    EXPECT_TRUE(m_nodesCache.GetHierarchyLevel(*cachedHierarchyLevel).IsNull());
+    EXPECT_TRUE(m_nodesCache.GetHierarchyLevel(*cachedHierarchyLevel, variables).IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**

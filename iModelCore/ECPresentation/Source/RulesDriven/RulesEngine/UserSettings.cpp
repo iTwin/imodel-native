@@ -7,6 +7,7 @@
 #include <ECPresentation/RulesDriven/UserSettings.h>
 #include "LocalizationHelper.h"
 #include "LoggingHelper.h"
+#include "RulesEngineTypes.h"
 
 #define USER_SETTINGS_NAMESPACE "RulesEngine.UserSettings"
 
@@ -32,6 +33,7 @@ void UserSettings::_SetSettingValue(Utf8CP id, Utf8CP value)
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
     m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), value);
+    m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "string"));
 
     if (!m_isInitializing && nullptr != m_changeListener)
         m_changeListener->_OnSettingChanged(m_rulesetId.c_str(), id);
@@ -59,6 +61,7 @@ void UserSettings::_SetSettingIntValue(Utf8CP id, int64_t value)
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
     m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), Json::Value(value));
+    m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "int"));
     
     if (!m_isInitializing && nullptr != m_changeListener)
         m_changeListener->_OnSettingChanged(m_rulesetId.c_str(), id);
@@ -109,6 +112,7 @@ void UserSettings::_SetSettingIntValues(Utf8CP id, bvector<int64_t> const& value
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
     m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), JsonArrayFromVector(values));
+    m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "ints"));
     
     if (!m_isInitializing && nullptr != m_changeListener)
         m_changeListener->_OnSettingChanged(m_rulesetId.c_str(), id);
@@ -136,6 +140,7 @@ void UserSettings::_SetSettingBoolValue(Utf8CP id, bool value)
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
     m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), value);
+    m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "bool"));
     
     if (!m_isInitializing && nullptr != m_changeListener)
         m_changeListener->_OnSettingChanged(m_rulesetId.c_str(), id);
@@ -235,6 +240,14 @@ Json::Value UserSettings::_GetSettingValueAsJson(Utf8CP id) const
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
     return m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<bpair<Utf8String, Utf8String>> UserSettings::_GetSettings() const
+    {
+    return ContainerHelpers::TransformContainer<bvector<bpair<Utf8String, Utf8String>>>(m_settingIds);
     }
 
 /*---------------------------------------------------------------------------------**//**

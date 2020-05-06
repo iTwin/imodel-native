@@ -25,7 +25,7 @@ struct ContentProviderTests : ECPresentationTest
     PresentationRuleSetPtr m_ruleset;
     JsonNavNodesFactory m_nodesFactory;
     ContentProviderContextPtr m_context;
-    TestUserSettings m_settings;
+    std::shared_ptr<RulesetVariables> m_rulesetVariables;
     RuleSetLocaterManager m_locaterManager;
     TestNodeLocater m_nodesLocater;
     DefaultCategorySupplier m_categorySupplier;

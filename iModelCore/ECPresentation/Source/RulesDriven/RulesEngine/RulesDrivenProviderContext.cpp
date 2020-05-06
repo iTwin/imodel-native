@@ -9,24 +9,24 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2017
 +===============+===============+===============+===============+===============+======*/
-struct UsedUserSettingsListener : IUsedUserSettingsListener
+struct UsedRulesetVariablesListener : IUsedRulesetVariablesListener
 {
 private:
-    bset<Utf8String> m_settingIds;
+    bset<Utf8String> m_variableIds;
     mutable BeMutex m_mutex;
 protected:
-    void _OnUserSettingUsed(Utf8CP settingId) override {BeMutexHolder lock(m_mutex); m_settingIds.insert(settingId);}
+    void _OnVariableUsed(Utf8CP variableId) override {BeMutexHolder lock(m_mutex); m_variableIds.insert(variableId);}
 public:
-    bset<Utf8String> const& GetSettingIds() const {BeMutexHolder lock(m_mutex); return m_settingIds;}
+    bset<Utf8String> const& GetVariableIds() const {BeMutexHolder lock(m_mutex); return m_variableIds;}
 };
 END_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache,
+RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, Utf8String locale, std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache,
     RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
-    : m_ruleset(&ruleset), m_locale(locale), m_userSettings(settings), m_relatedPathsCache(relatedPathsCache),
+    : m_ruleset(&ruleset), m_locale(locale), m_rulesetVariables(std::move(rulesetVariables)), m_relatedPathsCache(relatedPathsCache),
     m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache), m_ecexpressionsCache(ecexpressionsCache), m_nodesFactory(nodesFactory),
     m_localState(localState)
     {
@@ -37,7 +37,7 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR rul
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContextCR other)
-    : m_ruleset(other.m_ruleset), m_locale(other.m_locale), m_userSettings(other.m_userSettings), m_relatedPathsCache(other.m_relatedPathsCache),
+    : m_ruleset(other.m_ruleset), m_locale(other.m_locale), m_rulesetVariables(std::make_unique<RulesetVariables>(*other.m_rulesetVariables)), m_relatedPathsCache(other.m_relatedPathsCache),
     m_polymorphicallyRelatedClassesCache(other.m_polymorphicallyRelatedClassesCache), m_ecexpressionsCache(other.m_ecexpressionsCache),
     m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken)
     {
@@ -140,29 +140,29 @@ void RulesDrivenProviderContext::SetQueryContext(RulesDrivenProviderContextCR ot
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUsedUserSettingsListener& RulesDrivenProviderContext::GetUsedSettingsListener() const
+IUsedRulesetVariablesListener& RulesDrivenProviderContext::GetUsedVariablesListener() const
     {
-    if (m_usedSettingsListener.IsNull())
-        m_usedSettingsListener = new UsedUserSettingsListener();
-    return *m_usedSettingsListener;
+    if (m_usedVariablesListener.IsNull())
+        m_usedVariablesListener = new UsedRulesetVariablesListener();
+    return *m_usedVariablesListener;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::SetUsedSettingsListener(RulesDrivenProviderContextCR other)
+void RulesDrivenProviderContext::SetUsedVariablesListener(RulesDrivenProviderContextCR other)
     {
-    m_usedSettingsListener = other.m_usedSettingsListener;
+    m_usedVariablesListener = other.m_usedVariablesListener;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<Utf8String> RulesDrivenProviderContext::GetRelatedSettingIds() const
+bset<Utf8String> RulesDrivenProviderContext::GetRelatedVariablesIds() const
     {
-    if (m_usedSettingsListener.IsNull())
+    if (m_usedVariablesListener.IsNull())
         return bset<Utf8String>();
-    return m_usedSettingsListener->GetSettingIds();
+    return m_usedVariablesListener->GetVariableIds();
     }
 
 /*=================================================================================**//**

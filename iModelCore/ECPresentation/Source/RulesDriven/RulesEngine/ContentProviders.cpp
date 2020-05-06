@@ -16,9 +16,9 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags,
     INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierCR categorySupplier,
-    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
+    std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
     JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
-    : RulesDrivenProviderContext(ruleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState),
+    : RulesDrivenProviderContext(ruleset, locale, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState),
     m_preferredDisplayType(preferredDisplayType), m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
     {
     Init();
@@ -32,7 +32,7 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
     m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys), m_contentFlags(other.m_contentFlags)
     {
     Init();
-    SetUsedSettingsListener(other);
+    SetUsedVariablesListener(other);
 
     if (other.IsSelectionContext())
         SetSelectionInfo(other);
@@ -632,7 +632,7 @@ public:
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
 
         m_functionsContext = new CustomFunctionsContext(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(),
-            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(),
+            context.GetRuleset(), context.GetLocale(), context.GetRulesetVariables(), &context.GetUsedVariablesListener(),
             context.GetECExpressionsCache(), context.GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
         if (context.IsLocalizationContext())
             m_functionsContext->SetLocalizationProvider(*localizationProvider);
@@ -735,7 +735,7 @@ public:
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
 
         ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetConnections(), context.GetNodesLocater(), context.GetConnection(),
-            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), context.GetECExpressionsCache(),
+            context.GetRuleset(), context.GetLocale(), context.GetRulesetVariables(), context.GetECExpressionsCache(),
             context.GetCategorySupplier(), formatter, context.GetLocalState(), localizationProvider);
 
         m_queryBuilder = new ContentQueryBuilder(params);
@@ -918,7 +918,7 @@ void ContentProvider::Initialize()
     IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
     ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
-        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
+        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetRulesetVariables(), &GetContext().GetUsedVariablesListener(),
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
@@ -963,7 +963,7 @@ size_t ContentProvider::GetFullContentSetSize() const
             IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
             ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
             CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
-                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
+                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetRulesetVariables(), &GetContext().GetUsedVariablesListener(),
                 GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
             if (GetContext().IsLocalizationContext())
                 fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
@@ -1074,7 +1074,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
         {
         IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
         ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetNodesLocater(),
-            GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
+            GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetRulesetVariables(), GetContext().GetECExpressionsCache(),
             GetContext().GetCategorySupplier(), formatter, GetContext().GetLocalState());
         if (GetContext().IsLocalizationContext())
             params.SetLoacalizationProvider(&GetContext().GetLocalizationProvider());

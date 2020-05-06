@@ -101,6 +101,7 @@
     <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
     <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesCompareTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\RulesetVariablesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />

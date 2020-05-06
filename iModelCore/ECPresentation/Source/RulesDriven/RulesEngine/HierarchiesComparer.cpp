@@ -14,7 +14,7 @@ NavNodesProviderPtr HierarchiesComparer::CreateProvider(IConnectionCR connection
     {
     // create the nodes provider context
     NavNodesProviderContextPtr context = m_context.GetProviderContextsFactory().Create(connection, info.GetRulesetId().c_str(),
-        info.GetLocale().c_str(), info.GetPhysicalParentNodeId());
+        info.GetLocale().c_str(), info.GetPhysicalParentNodeId(), nullptr, -1, m_context.GetVariables());
     if (context.IsNull())
         return nullptr;
 
@@ -146,7 +146,7 @@ void HierarchiesComparer::CompareNodes(NavNodesProviderCR lhsProvider, JsonNavNo
 void HierarchiesComparer::CustomizeNode(JsonNavNodeCP lhsNode, JsonNavNodeR rhsNode, NavNodesProviderCR newNodeProvider) const
     {
     int updatedParts = 0;
-    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetContext(), &rhsNode);
+    DataSourceRelatedVariablesUpdater updater(newNodeProvider.GetContext(), &rhsNode);
 
     // if the old node was customized, we have to customize the new one as well;
     // otherwise the comparison is incorrect
@@ -205,7 +205,7 @@ void HierarchiesComparer::Compare(IConnectionCR connection, HierarchyLevelInfo c
     BeAssert(lhs.GetConnectionId().Equals(connection.GetId()));
     BeAssert(rhs.GetConnectionId().Equals(connection.GetId()));
 
-    NavNodesProviderPtr lhsProvider = m_context.GetNodesCache().GetCombinedHierarchyLevel(lhs, false, false);
+    NavNodesProviderPtr lhsProvider = m_context.GetNodesCache().GetCombinedHierarchyLevel(lhs, m_context.GetVariables(), false);
     if (lhsProvider.IsNull())
         {
         BeAssert(false && "Could not find a data source to compare with");

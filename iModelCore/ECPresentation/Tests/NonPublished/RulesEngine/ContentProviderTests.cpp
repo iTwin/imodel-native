@@ -45,7 +45,7 @@ void ContentProviderTests::SetUp()
 
     m_context = ContentProviderContext::Create(*m_ruleset, "locale", ContentDisplayType::Undefined, 0,
         *NavNodeKeyListContainer::Create(), m_nodesLocater, m_categorySupplier,
-        m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, nullptr);
+        std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, nullptr);
     m_context->SetQueryContext(m_connections, *m_connection);
     }
 

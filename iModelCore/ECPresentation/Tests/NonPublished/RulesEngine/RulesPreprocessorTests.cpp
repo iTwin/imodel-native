@@ -25,7 +25,7 @@ protected:
     IConnectionPtr m_connection;
     TestRuleSetLocaterPtr m_locater;
     RuleSetLocaterManager m_locaterManager;
-    TestUserSettings m_userSettings;
+    RulesetVariables m_rulesetVariables;
     ECExpressionsCache m_expressionsCache;
     Utf8String m_locale;
 
@@ -60,7 +60,7 @@ public:
 
     RulesPreprocessor GetTestRulesPreprocessor(PresentationRuleSetCR ruleset)
         {
-        return RulesPreprocessor(m_connections, *m_connection, ruleset, m_locale, m_userSettings, nullptr, 
+        return RulesPreprocessor(m_connections, *m_connection, ruleset, m_locale, m_rulesetVariables, nullptr, 
             m_expressionsCache);
         }
 };

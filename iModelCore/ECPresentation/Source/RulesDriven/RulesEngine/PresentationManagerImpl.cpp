@@ -182,7 +182,6 @@ private:
     JsonNavNodesFactoryCR m_nodeFactory;
     INodesProviderContextFactoryCR m_contextFactory;
     IConnectionManagerCR m_connections;
-    IUserSettingsManager const& m_userSettings;
 
     std::map<Utf8String, std::unique_ptr<NodesCache>> m_caches;
     mutable BeMutex m_mutex;
@@ -207,7 +206,7 @@ protected:
         {
         if (event.GetEventType() == ConnectionEventType::Opened)
             {
-            auto nodesCache = NodesCache::Create(event.GetConnection(), m_cacheDirectory, m_nodeFactory, m_contextFactory, m_userSettings, m_cacheType, m_cacheUpdateData);
+            auto nodesCache = NodesCache::Create(event.GetConnection(), m_cacheDirectory, m_nodeFactory, m_contextFactory, m_cacheType, m_cacheUpdateData);
             if (nodesCache)
                 {
                 nodesCache->SetCacheFileSizeLimit(m_cacheSizeLimit);
@@ -231,8 +230,8 @@ protected:
 
 public:
     NodesCacheManager(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodeFactory, INodesProviderContextFactoryCR nodeProviderContextFactory,
-        IConnectionManagerCR connectionManager, IUserSettingsManager const& settingsManager, NodesCacheType type, bool cacheUpdateData, uint64_t cacheSizeLimit)
-        : m_cacheDirectory(tempDirectory), m_nodeFactory(nodeFactory), m_contextFactory(nodeProviderContextFactory), m_connections(connectionManager), m_userSettings(settingsManager), m_cacheUpdateData(cacheUpdateData),
+        IConnectionManagerCR connectionManager, NodesCacheType type, bool cacheUpdateData, uint64_t cacheSizeLimit)
+        : m_cacheDirectory(tempDirectory), m_nodeFactory(nodeFactory), m_contextFactory(nodeProviderContextFactory), m_connections(connectionManager), m_cacheUpdateData(cacheUpdateData),
         m_cacheSizeLimit(cacheSizeLimit), m_cacheType(type)
         {
         m_connections.AddListener(*this);
@@ -386,7 +385,8 @@ public:
             return nullptr;
             }
 
-        NavNodeCPtr node = nodesCache->LocateNode(m_connection, m_options.GetRulesetId(), m_options.GetLocale(), nodeKey);
+        RulesetVariables variables(m_options.GetRulesetVariables());
+        NavNodeCPtr node = nodesCache->LocateNode(m_connection, m_options.GetRulesetId(), m_options.GetLocale(), nodeKey, variables);
         if (node.IsNull())
             node = LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr, cancelationToken);
 
@@ -429,7 +429,7 @@ private:
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
         {
         RulesPreprocessor preprocessor(m_manager.m_connections, context.GetConnection(), context.GetRuleset(),
-            context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(),
+            context.GetLocale(), context.GetRulesetVariables(), &context.GetUsedVariablesListener(),
             context.GetECExpressionsCache());
         NavNodesProviderPtr provider;
         if (nullptr == parent)
@@ -486,7 +486,7 @@ protected:
                 break;
             case ProviderCacheType::Partial:
                 LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Partial` in cache", NativeLogging::LOG_TRACE);
-                provider = context.GetNodesCache().GetDataSource(context.GetDataSourceInfo());
+                provider = context.GetNodesCache().GetDataSource(context.GetDataSourceInfo(), context.GetRulesetVariables());
                 break;
             case ProviderCacheType::Full:
                 {
@@ -495,7 +495,7 @@ protected:
                 HierarchyLevelInfo info = context.GetNodesCache().FindHierarchyLevel(context.GetConnection().GetId().c_str(),
                     context.GetRuleset().GetRuleSetId().c_str(), context.GetLocale().c_str(), parent ? &parentId : nullptr);
                 if (info.IsValid())
-                    provider = context.GetNodesCache().GetHierarchyLevel(info);
+                    provider = context.GetNodesCache().GetHierarchyLevel(info, context.GetRulesetVariables());
                 break;
                 }
             case ProviderCacheType::Combined:
@@ -503,7 +503,7 @@ protected:
                 LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Combined` in cache", NativeLogging::LOG_TRACE);
                 CombinedHierarchyLevelInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(),
                     context.GetLocale(), parent ? parent->GetNodeId() : 0);
-                provider = context.GetNodesCache().GetCombinedHierarchyLevel(info);
+                provider = context.GetNodesCache().GetCombinedHierarchyLevel(info, context.GetRulesetVariables());
                 break;
                 }
             }
@@ -533,7 +533,7 @@ private:
     RulesDrivenECPresentationManagerImpl& m_manager;
 
 protected:
-    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, size_t pageSize) const override
+    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, size_t pageSize, RulesetVariables const& variables) const override
         {
         // get the ruleset
         RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Get ruleset", NativeLogging::LOG_TRACE);
@@ -562,6 +562,10 @@ protected:
         PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache = m_manager.m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(connection);
         RulesetUsedClassesNotificationFlags& rulesetUsedClassesNotificationFlags = m_manager.m_ecdbCaches->GetRulesetUsedClassesNotificationFlags(connection);
 
+        std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>(variables);
+        rulesetVariables->Merge(settings);
+        nodesCache->OnRulesetVariablesUsed(*rulesetVariables, rulesetId);
+
         // notify listener with ECClasses used in this ruleset
         if (rulesetUsedClassesNotificationFlags.Add(ruleset->GetRuleSetId()))
             UsedClassesHelper::NotifyListenerWithRulesetClasses(*m_manager.m_usedClassesListener, ecexpressionsCache, connection, *ruleset);
@@ -569,7 +573,7 @@ protected:
         // set up the nodes provider context
         _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Create context", NativeLogging::LOG_TRACE);
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, TargetTree_MainTree, locale, parentNodeId,
-            settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_manager.m_nodesFactory, *nodesCache,
+            std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_manager.m_nodesFactory, *nodesCache,
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
         context->SetQueryContext(m_manager.m_connections, connection, m_manager.m_usedClassesListener);
 
@@ -623,7 +627,7 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     m_usedClassesListener = new UsedClassesListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
 
-    m_nodesCachesManager = new NodesCacheManager(params.GetCachingParams().GetCacheDirectoryPath(), *m_nodesFactory, *m_nodesProviderContextFactory, m_connections, GetUserSettingsManager(),
+    m_nodesCachesManager = new NodesCacheManager(params.GetCachingParams().GetCacheDirectoryPath(), *m_nodesFactory, *m_nodesProviderContextFactory, m_connections,
         params.GetCachingParams().ShouldDisableDiskCache() ? NodesCacheType::Memory : NodesCacheType::Disk, params.GetMode() == Mode::ReadWrite, params.GetCachingParams().GetDiskCacheFileSizeLimit());
     m_contentCache = new ContentCache();
 
@@ -785,7 +789,7 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     {
     // create the nodes provider context
     NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
-        nullptr, &cancelationToken, pageSize);
+        nullptr, &cancelationToken, pageSize, RulesetVariables(options.GetRulesetVariables()));
     if (context.IsNull())
         return nullptr;
 
@@ -795,8 +799,9 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     // cache the provider in quick cache
     if (provider.IsValid() && 0 != pageSize)
         {
+        RulesetVariables relatedVariables(context->GetRelatedRulesetVariables());
         CombinedHierarchyLevelInfo info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), 0);
-        static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider);
+        static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider, relatedVariables);
         }
 
     return NavNodesDataSource::Create(*provider);
@@ -836,7 +841,7 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     // create the nodes provider context
     uint64_t parentNodeId = parent.GetNodeId();
     NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
-        &parentNodeId, &cancelationToken, pageSize);
+        &parentNodeId, &cancelationToken, pageSize, RulesetVariables(options.GetRulesetVariables()));
     if (context.IsNull())
         return nullptr;
 
@@ -854,8 +859,9 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     // cache the provider in quick cache
     if (provider.IsValid())
         {
+        RulesetVariables relatedVariables(context->GetRelatedRulesetVariables());
         CombinedHierarchyLevelInfo info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), parentNodeId);
-        static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider);
+        static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider, relatedVariables);
         }
 
     return NavNodesDataSource::Create(*provider);
@@ -1069,13 +1075,17 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
+    std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>(options.GetRulesetVariables());
+    rulesetVariables->Merge(settings);
+    nodesCache->OnRulesetVariablesUsed(*rulesetVariables, ruleset->GetRuleSetId());
+
     // get connection-related caches
     RelatedPathsCache& relatedPathsCache = m_ecdbCaches->GetRelatedPathsCache(connection);
     PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache = m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(connection);
 
     // set up the provider context
     ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, options.GetLocale(), key.GetPreferredDisplayType(), key.GetContentFlags(), inputKeys, *nodesCache,
-        GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
+        GetCategorySupplier(), std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
     context->SetQueryContext(m_connections, connection);
 
     ILocalizationProvider const* localizationProvider = GetLocalizationProvider();
@@ -1089,7 +1099,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
-    RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache);
+    RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), context->GetRulesetVariables(), &context->GetUsedVariablesListener(), ecexpressionsCache);
     RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, nodesCache);
     ContentRuleInputKeysContainer specs = preprocessor.GetContentSpecifications(params);
     _l2 = nullptr;
@@ -1157,6 +1167,10 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
+    std::shared_ptr<RulesetVariables> rulesetVariables = std::make_shared<RulesetVariables>(options.GetRulesetVariables());
+    rulesetVariables->Merge(settings);
+    nodesCache->OnRulesetVariablesUsed(*rulesetVariables, ruleset->GetRuleSetId());
+
     // get connection-related caches
     RelatedPathsCache& relatedPathsCache = m_ecdbCaches->GetRelatedPathsCache(connection);
     PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache = m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(connection);
@@ -1164,7 +1178,7 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     // locate the classes
     ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &ecexpressionsCache);
     ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection,
-        *ruleset, options.GetLocale(), preferredDisplayType, settings, ecexpressionsCache, *nodesCache);
+        *ruleset, options.GetLocale(), preferredDisplayType, *rulesetVariables, ecexpressionsCache, *nodesCache);
     locaterContext.SetContentFlagsCalculator([contentFlags](int){return contentFlags;});
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
@@ -1273,21 +1287,6 @@ LabelDefinitionCPtr RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(IConn
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Robert.Lukasonok                11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRulesPreprocessorPtr RulesDrivenECPresentationManagerImpl::_GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const
-    {
-    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, rulesetId.c_str());
-    if (!ruleset.IsValid())
-        return nullptr;
-
-    IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
-    ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
-
-    return new RulesPreprocessor(m_connections, connection, *ruleset, locale, settings, usedSettingsListener, ecexpressionsCache);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CompareReporter : IHierarchyChangesReporter
@@ -1319,7 +1318,7 @@ public:
 * TODO: ruleset variables
 * @bsimethod                                    Grigas.Petraitis                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_CompareHierarchies(IUpdateRecordsHandler& handler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR cancelationToken)
+void RulesDrivenECPresentationManagerImpl::_CompareHierarchies(IUpdateRecordsHandler& handler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, CommonOptions const& options, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Update, "[RulesDrivenECPresentationManagerImpl::CompareHierarchies]", NativeLogging::LOG_TRACE);
 
@@ -1345,9 +1344,9 @@ void RulesDrivenECPresentationManagerImpl::_CompareHierarchies(IUpdateRecordsHan
     nodesCache->OnRulesetUsed(*lhsRuleset);
     nodesCache->OnRulesetUsed(*rhsRuleset);
 
-    HierarchyLevelInfo lhsInfo(connection.GetId(), lhsRulesetId, locale, 0, 0);
-    HierarchyLevelInfo rhsInfo(connection.GetId(), rhsRulesetId, locale, 0, 0);
+    HierarchyLevelInfo lhsInfo(connection.GetId(), lhsRulesetId, options.GetLocale(), 0, 0);
+    HierarchyLevelInfo rhsInfo(connection.GetId(), rhsRulesetId, options.GetLocale(), 0, 0);
     CompareReporter reporter(handler);
-    HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, *m_nodesProviderContextFactory, *m_nodesProviderFactory, reporter, true));
+    HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, *m_nodesProviderContextFactory, *m_nodesProviderFactory, reporter, true, std::make_unique<RulesetVariables>(options.GetRulesetVariables())));
     comparer.Compare(m_connections, lhsInfo, rhsInfo);
     }

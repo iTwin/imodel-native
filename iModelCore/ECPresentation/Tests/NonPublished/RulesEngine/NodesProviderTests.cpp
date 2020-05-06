@@ -64,11 +64,12 @@ void NodesProviderTests::Cache(JsonNavNodeR node)
             extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
         m_nodesCache.Cache(hlInfo);
         }
-    DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), { 0 });
+    RulesetVariables variables;
+    DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), { 0 }, variables);
     if (!dsInfo.IsValid())
         {
         dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
-        m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+        m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<RulesetVariableEntry>());
         }
     m_nodesCache.Cache(node, dsInfo, 0, NodeVisibility::Visible);
     }

@@ -8,6 +8,7 @@
 #include <ECDb/ECDbTypes.h>
 #include "JsonNavNode.h"
 #include "ECExpressionOptimizer.h"
+#include "RulesetVariables.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -24,16 +25,16 @@ struct ECExpressionContextsProvider : NonCopyableClass
     private:
         IConnectionCR m_connection;
         Utf8String m_locale;
-        IUserSettings const& m_userSettings;
-        IUsedUserSettingsListener* m_usedSettingsListener;
+        RulesetVariables const& m_rulesetVariables;
+        IUsedRulesetVariablesListener* m_usedVariablesListener;
     public:
-        ContextParametersBase(IConnectionCR connection, Utf8String locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : m_connection(connection), m_locale(locale), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener)
+        ContextParametersBase(IConnectionCR connection, Utf8String locale, RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener)
+            : m_connection(connection), m_locale(locale), m_rulesetVariables(rulesetVariables), m_usedVariablesListener(usedVariablesListener)
             {}
         IConnectionCR GetConnection() const {return m_connection;}
         Utf8StringCR GetLocale() const {return m_locale;}
-        IUserSettings const& GetUserSettings() const {return m_userSettings;}
-        IUsedUserSettingsListener* GetUsedSettingsListener() const {return m_usedSettingsListener;}
+        RulesetVariables const& GetRulesetVariables() const {return m_rulesetVariables;}
+        IUsedRulesetVariablesListener* GetUsedVariablesListener() const {return m_usedVariablesListener;}
     };
 
     /*=================================================================================**//**
@@ -45,8 +46,8 @@ struct ECExpressionContextsProvider : NonCopyableClass
         NavNodeCP m_parentNode;
     public:
         NodeRulesContextParameters(NavNodeCP parentNode, IConnectionCR connection, Utf8String locale,
-            IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_parentNode(parentNode)
+            RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener)
+            : ContextParametersBase(connection, locale, rulesetVariables, usedVariablesListener), m_parentNode(parentNode)
             {}
         NavNodeCP GetParentNode() const {return m_parentNode;}
     };
@@ -65,8 +66,8 @@ struct ECExpressionContextsProvider : NonCopyableClass
         NavNodeKeyCP m_selectedNodeKey;
     public:
         ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, Utf8String rulesetId,
-            Utf8String locale, INavNodeLocaterCP nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_rulesetId(rulesetId), m_contentDisplayType(contentDisplayType), 
+            Utf8String locale, INavNodeLocaterCP nodeLocater, NavNodeKeyCP selectedNodeKey, RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener)
+            : ContextParametersBase(connection, locale, rulesetVariables, usedVariablesListener), m_rulesetId(rulesetId), m_contentDisplayType(contentDisplayType), 
             m_selectionProviderName(selectionProviderName), m_isSubSelection(isSubSelection), m_nodeLocater(nodeLocater), m_selectedNodeKey(selectedNodeKey)
             {}
         Utf8StringCR GetRulesetId() const {return m_rulesetId;}
@@ -87,8 +88,8 @@ struct ECExpressionContextsProvider : NonCopyableClass
         NavNodeCPtr m_parentNode;
     public:
         CustomizationRulesContextParameters(NavNodeCR node, NavNodeCP parentNode, IConnectionCR connection, Utf8String locale,
-            IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_node(node), m_parentNode(parentNode)
+            RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener)
+            : ContextParametersBase(connection, locale, rulesetVariables, usedVariablesListener), m_node(node), m_parentNode(parentNode)
             {}
         NavNodeCR GetNode() const {return m_node;}
         NavNodeCP GetParentNode() const {return m_parentNode.get();}
@@ -103,8 +104,8 @@ struct ECExpressionContextsProvider : NonCopyableClass
         JsonNavNodeCR m_node;
     public:
         CalculatedPropertyContextParameters(JsonNavNodeCR node, IConnectionCR connection, Utf8String locale,
-            IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_node(node)
+            RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener)
+            : ContextParametersBase(connection, locale, rulesetVariables, usedVariablesListener), m_node(node)
             {}
         JsonNavNodeCR GetNode() const {return m_node;}
     };

@@ -54,19 +54,19 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedSettingsUpdater::DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context, JsonNavNodeCP node)
+DataSourceRelatedVariablesUpdater::DataSourceRelatedVariablesUpdater(NavNodesProviderContextCR context, JsonNavNodeCP node)
     : m_context(context), m_node(node)
     {
-    m_relatedSettingsCountBefore = m_context.GetRelatedSettings().size();
+    m_relatedVariablesCountBefore = m_context.GetRelatedRulesetVariables().size();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedSettingsUpdater::~DataSourceRelatedSettingsUpdater()
+DataSourceRelatedVariablesUpdater::~DataSourceRelatedVariablesUpdater()
     {
-    bvector<UserSettingEntry> settings = m_context.GetRelatedSettings();
-    if (settings.size() == m_relatedSettingsCountBefore)
+    bvector<RulesetVariableEntry> variables = m_context.GetRelatedRulesetVariables();
+    if (variables.size() == m_relatedVariablesCountBefore)
         return;
 
     DataSourceInfo dsInfo = m_node ? m_context.GetNodesCache().FindDataSource(m_node->GetNodeId()) : m_context.GetDataSourceInfo();
@@ -76,7 +76,8 @@ DataSourceRelatedSettingsUpdater::~DataSourceRelatedSettingsUpdater()
         return;
         }
 
-    m_context.GetNodesCache().Update(dsInfo, nullptr, nullptr, &settings);
+    RulesetVariables relatedVariables(variables);
+    m_context.GetNodesCache().Update(dsInfo, nullptr, nullptr, &relatedVariables);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,9 +162,9 @@ public:
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId,
-    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
+    std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
     JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState)
-    : RulesDrivenProviderContext(ruleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState),
+    : RulesDrivenProviderContext(ruleset, locale, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState),
     m_targetTree(targetTree), m_nodesCache(&nodesCache), m_providerFactory(providerFactory)
     {
     Init();
@@ -249,34 +250,34 @@ IHierarchyCacheR NavNodesProviderContext::GetNodesCache() const {return *m_nodes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UserSettingEntry> NavNodesProviderContext::GetRelatedSettings() const
+bvector<RulesetVariableEntry> NavNodesProviderContext::GetRelatedRulesetVariables() const
     {
-    bset<Utf8String> ids = RulesDrivenProviderContext::GetRelatedSettingIds();
-    bvector<UserSettingEntry> idsWithValues;
+    bset<Utf8String> ids = RulesDrivenProviderContext::GetRelatedVariablesIds();
+    bvector<RulesetVariableEntry> idsWithValues;
     for (Utf8StringCR id : ids)
-        idsWithValues.push_back(UserSettingEntry(id, GetUserSettings().GetSettingValueAsJson(id.c_str())));
+        idsWithValues.push_back(RulesetVariableEntry(id, GetRulesetVariables().GetJsonValue(id.c_str())));
 
     if (m_virtualParentNodeId && (!m_physicalParentNodeId || *m_physicalParentNodeId != *m_virtualParentNodeId))
         {
-        // note: if virtual parent doesn't match physical one, we need to include virtual parent's settings
-        NavNodesProviderPtr provider = GetNodesCache().GetDataSource(*m_virtualParentNodeId, false);
+        // note: if virtual parent doesn't match physical one, we need to include virtual parent's variables
+        NavNodesProviderPtr provider = GetNodesCache().GetDataSource(*m_virtualParentNodeId, GetRulesetVariables());
         if (provider.IsValid())
             {
-            bvector<UserSettingEntry> virtualParentSettings = provider->GetContext().GetRelatedSettings();
-            std::move(virtualParentSettings.begin(), virtualParentSettings.end(), std::inserter(idsWithValues, idsWithValues.end()));
+            bvector<RulesetVariableEntry> virtualParentVariables = provider->GetContext().GetRelatedRulesetVariables();
+            std::move(virtualParentVariables.begin(), virtualParentVariables.end(), std::inserter(idsWithValues, idsWithValues.end()));
             }
         }
 
     NavNodeCPtr physicalParentNode = GetPhysicalParentNode();
     if (physicalParentNode.IsValid() && NavNodesHelper::IsGroupingNode(*physicalParentNode))
         {
-        // note: if parent node is a grouping node, we want to append all its related settings
+        // note: if parent node is a grouping node, we want to append all its related variables
         // because it may have derived them from it's virtual parent
-        NavNodesProviderPtr provider = GetNodesCache().GetDataSource(physicalParentNode->GetNodeId(), false);
+        NavNodesProviderPtr provider = GetNodesCache().GetDataSource(physicalParentNode->GetNodeId(), GetRulesetVariables());
         if (provider.IsValid())
             {
-            bvector<UserSettingEntry> physicalParentSettings = provider->GetContext().GetRelatedSettings();
-            std::move(physicalParentSettings.begin(), physicalParentSettings.end(), std::inserter(idsWithValues, idsWithValues.end()));
+            bvector<RulesetVariableEntry> physicalParentVariables = provider->GetContext().GetRelatedRulesetVariables();
+            std::move(physicalParentVariables.begin(), physicalParentVariables.end(), std::inserter(idsWithValues, idsWithValues.end()));
             }
         }
 
@@ -405,7 +406,7 @@ NavigationQueryBuilder& NavNodesProviderContext::GetQueryBuilder() const
     if (nullptr == m_queryBuilder)
         {
         NavigationQueryBuilderParameters params(GetSchemaHelper(), GetConnections(), GetConnection(), GetRuleset(), GetLocale(),
-            GetUserSettings(), &GetUsedSettingsListener(), GetECExpressionsCache(), *m_nodesCache, GetLocalState());
+            GetRulesetVariables(), &GetUsedVariablesListener(), GetECExpressionsCache(), *m_nodesCache, GetLocalState());
 
         if (nullptr != m_usedClassesListener)
             params.SetUsedClassesListener(m_usedClassesListener);
@@ -459,11 +460,12 @@ DataSourceInfo const& NavNodesProviderContext::GetDataSourceInfo() const
             index = GetProvidersIndexAllocator().AllocateIndex();
         else
             BeAssert(false);
-        m_dataSourceInfo = GetNodesCache().FindDataSource(GetHierarchyLevelInfo().GetId(), index);
+        m_dataSourceInfo = GetNodesCache().FindDataSource(GetHierarchyLevelInfo().GetId(), index, GetRulesetVariables());
         if (!m_dataSourceInfo.IsValid())
             {
             m_dataSourceInfo = DataSourceInfo(GetHierarchyLevelInfo().GetId(), index);
-            GetNodesCache().Cache(m_dataSourceInfo, DataSourceFilter(), bmap<ECClassId, bool>(), GetRelatedSettings());
+            RulesetVariables relatedVariables(GetRelatedRulesetVariables());
+            GetNodesCache().Cache(m_dataSourceInfo, DataSourceFilter(), bmap<ECClassId, bool>(), relatedVariables);
             }
         }
     BeAssert(m_dataSourceInfo.IsValid());
@@ -534,7 +536,7 @@ static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesPro
     {
     NavNodesProviderContextPtr ctx = NavNodesProviderContext::Create(baseContext);
     ctx->SetProvidersIndexAllocator(baseContext.GetProvidersIndexAllocator());
-    ctx->SetUsedSettingsListener(baseContext);
+    ctx->SetUsedVariablesListener(baseContext);
     ctx->SetMayHaveArtifacts(baseContext.MayHaveArtifacts());
     ctx->SetArtifactsCapturers(baseContext.GetArtifactsCapturers());
 
@@ -741,7 +743,7 @@ void NavNodesProvider::FinalizeNode(JsonNavNodeR node, bool customizeLabel) cons
         return;
 
     BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
-    DataSourceRelatedSettingsUpdater updater(GetContext(), &node);
+    DataSourceRelatedVariablesUpdater updater(GetContext(), &node);
     int updatedParts = 0;
 
     // make sure the node is customized
@@ -787,10 +789,10 @@ void NavNodesProvider::FinalizeNodes()
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderPtr NavNodesProvider::GetCachedProvider() const
     {
-    if (!GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo()))
+    if (!GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo(), GetContext().GetRulesetVariables()))
         return nullptr;
 
-    NavNodesProviderPtr provider = GetContext().GetNodesCache().GetDataSource(GetContext().GetDataSourceInfo(), false);
+    NavNodesProviderPtr provider = GetContext().GetNodesCache().GetDataSource(GetContext().GetDataSourceInfo(), GetContext().GetRulesetVariables());
     if (!provider.IsValid())
         {
         BeAssert(false);
@@ -867,7 +869,7 @@ static bool ShouldHideNodeBasedOnHideExpression(NavNodesProviderContextCR contex
 
     JsonNavNodeCPtr parentNode = context.GetVirtualParentNode();
     ECExpressionContextsProvider::CustomizationRulesContextParameters params(node, parentNode.get(),
-        context.GetConnection(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener());
+        context.GetConnection(), context.GetLocale(), context.GetRulesetVariables(), &context.GetUsedVariablesListener());
     ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
     ECValue value;
     if (ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, expression, *expressionContext) && value.IsPrimitive() && value.ConvertToPrimitiveType(PRIMITIVETYPE_Boolean))
@@ -1287,13 +1289,13 @@ bool QueryBasedNodesProvider::InitializeProvidersForAllNodes()
     Savepoint savepoint(*this);
 
     JsonNavNodeCPtr virtualParent = GetContext().GetVirtualParentNode();
-    DataSourceRelatedSettingsUpdater updater(GetContext(), virtualParent.get());
+    DataSourceRelatedVariablesUpdater updater(GetContext(), virtualParent.get());
 
     // set up the custom functions context
     IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
     ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(),
-        GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), GetContext().GetECExpressionsCache(),
+        GetContext().GetLocale(), GetContext().GetRulesetVariables(), &GetContext().GetUsedVariablesListener(), GetContext().GetECExpressionsCache(),
         GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData(), formatter, unitSystem);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
@@ -1373,7 +1375,7 @@ bool QueryBasedNodesProvider::_InitializeNodes()
     // mutex is required for savepoint what no read/write requests would happen from another thread during savepoint and also does synchronization of datasource initialization
     BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
 
-    if (GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo()))
+    if (GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo(), GetContext().GetRulesetVariables()))
         return InitializeProvidersFromCache();
 
     InitializeDataSource();
@@ -1391,8 +1393,8 @@ bool QueryBasedNodesProvider::_InitializeNodes()
 void QueryBasedNodesProvider::InitializeDataSource()
     {
     DataSourceFilter dsFilter(GetSpecificationFilter(GetContext().GetNodesCache(), GetContext().GetVirtualParentNode().get(), *m_query));
-    bvector<UserSettingEntry> relatedSettings = GetContext().GetRelatedSettings();
-    GetContext().GetNodesCache().Update(GetContext().GetDataSourceInfo(), &dsFilter, &m_usedClassIds, &relatedSettings);
+    RulesetVariables relatedVariables(GetContext().GetRelatedRulesetVariables());
+    GetContext().GetNodesCache().Update(GetContext().GetDataSourceInfo(), &dsFilter, &m_usedClassIds, &relatedVariables);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1420,7 +1422,7 @@ bool QueryBasedNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
             BeAssert(false);
             return false;
             }
-        if (!GetContext().GetNodesCache().IsInitialized(hl))
+        if (!GetContext().GetNodesCache().IsInitialized(hl, GetContext().GetRulesetVariables()))
             {
             NavNodesProviderPtr childrenProvider = GetContext().CreateHierarchyLevelProvider(*CreateContextForChildHierarchyLevel(GetContext(), *node), node.get());
             return childrenProvider->GetNode(node, 0);
@@ -1443,7 +1445,7 @@ bool QueryBasedNodesProvider::_HasNodes() const
 size_t QueryBasedNodesProvider::_GetNodesCount() const
     {
     BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
-    if (GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo()))
+    if (GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo(), GetContext().GetRulesetVariables()))
         {
         const_cast<QueryBasedNodesProvider*>(this)->InitializeProvidersFromCache();
         return MultiNavNodesProvider::_GetNodesCount();
@@ -1459,14 +1461,14 @@ size_t QueryBasedNodesProvider::_GetNodesCount() const
         return MultiNavNodesProvider::_GetNodesCount();
         }
 
-    DataSourceRelatedSettingsUpdater updater(GetContext(), virtualParent.get());
+    DataSourceRelatedVariablesUpdater updater(GetContext(), virtualParent.get());
 
     // run a separate query to get the total nodes count (we already know this count
     // won't change during post-processing)
     IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
     ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
-        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
+        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetRulesetVariables(), &GetContext().GetUsedVariablesListener(),
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), 
         &m_query->GetExtendedData(), formatter, unitSystem);
     if (GetContext().IsLocalizationContext())
@@ -2230,7 +2232,7 @@ bool PostProcessingNodesProvider::_HasNodes() const {return GetNodesCount() > 0;
 SQLiteCacheNodesProvider::SQLiteCacheNodesProvider(NavNodesProviderContextCR context, Db& cache, StatementCache& statements)
     : NavNodesProvider(context), m_nodes(nullptr), m_nodesCount(nullptr), m_cache(cache), m_statements(statements)
     {
-    InitializeUsedSettings();
+    InitializeUsedVariables();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2245,12 +2247,12 @@ SQLiteCacheNodesProvider::~SQLiteCacheNodesProvider()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SQLiteCacheNodesProvider::InitializeUsedSettings()
+void SQLiteCacheNodesProvider::InitializeUsedVariables()
     {
-    Utf8String query = "SELECT [us].[SettingId] "
+    Utf8String query = "SELECT [v].[Variables] "
                        "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
-                       "  JOIN [" NODESCACHE_TABLENAME_DataSourceSettings "] us ON [us].[DataSourceId] = [ds].[Id]"
+                       "  JOIN [" NODESCACHE_TABLENAME_Variables "] v ON [v].[Id] = [ds].[VariablesId]"
                        " WHERE [hl].[VirtualParentNodeId] ";
     if (0 == GetContext().GetVirtualParentNodeId())
         query.append("IS NULL");
@@ -2258,6 +2260,7 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
         query.append(" = ?");
     query.append(" AND [hl].[RulesetId] = ?");
     query.append(" AND [hl].[Locale] = ?");
+    query.append(" AND " NODESCACHE_FUNCNAME_VariablesMatch "([v].[Variables], ?) ");
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2271,10 +2274,15 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
         stmt->BindUInt64(bindingIndex++, *GetContext().GetVirtualParentNodeId());
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetLocale(), Statement::MakeCopy::No);
+    stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
 
     BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
     while (BE_SQLITE_ROW == stmt->Step())
-        GetContext().GetUsedSettingsListener().OnUserSettingUsed(stmt->GetValueText(0));
+        {
+        bvector<Utf8String> usedVariables = RulesetVariables(stmt->GetValueText(0)).GetVariableNames();
+        for (Utf8StringCR name : usedVariables)
+            GetContext().GetUsedVariablesListener().OnVariableUsed(name.c_str());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2404,6 +2412,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
     Utf8String query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
                        "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
+                       "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
                        "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_NodesOrder "] no ON [no].[HierarchyLevelId] = [hl].[Id] AND [no].[DataSourceId] = [ds].[Id] AND [no].[NodeId] = [n].[Id]"
@@ -2413,6 +2422,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
         query.append("IS NULL");
     else
         query.append(" = ?");
+    query.append(" AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ");
     query.append(" ORDER BY [no].[OrderValue]");
 
     CachedStatementPtr stmt;
@@ -2428,6 +2438,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
     stmt->BindText(bindingIndex++, m_info.GetLocale(), Statement::MakeCopy::No);
     if (nullptr != m_info.GetPhysicalParentNodeId())
         stmt->BindUInt64(bindingIndex++, *m_info.GetPhysicalParentNodeId());
+    stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
 
     return stmt;
     }
@@ -2440,6 +2451,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
     Utf8String query = "SELECT COUNT(1) "
                        "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
+                       "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
                        "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                        " WHERE     [n].[Visibility] = ? AND [hl].[RemovalId] IS NULL "
                        "       AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [hl].[PhysicalParentNodeId] ";
@@ -2447,6 +2459,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
         query.append("IS NULL");
     else
         query.append(" = ?");
+    query.append(" AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ");
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2461,6 +2474,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
     stmt->BindText(bindingIndex++, m_info.GetLocale(), Statement::MakeCopy::No);
     if (nullptr != m_info.GetPhysicalParentNodeId())
         stmt->BindUInt64(bindingIndex++, *m_info.GetPhysicalParentNodeId());
+    stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
 
     return stmt;
     }
@@ -2473,10 +2487,11 @@ CachedStatementPtr CachedHierarchyLevelProvider::_GetNodesStatement() const
     Utf8CP query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
                    "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                    "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
+                   "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
                    "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_NodesOrder "] no ON [no].[HierarchyLevelId] = [hl].[Id] AND [no].[DataSourceId] = [ds].[Id] AND [no].[NodeId] = [n].[Id]"
-                   " WHERE [n].[Visibility] = ? AND [hl].[Id] = ? "
+                   " WHERE [n].[Visibility] = ? AND [hl].[Id] = ?  AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
                    " ORDER BY [no].[OrderValue]";
 
     CachedStatementPtr stmt;
@@ -2489,6 +2504,7 @@ CachedStatementPtr CachedHierarchyLevelProvider::_GetNodesStatement() const
     int bindingIndex = 1;
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
     stmt->BindUInt64(bindingIndex++, m_hierarchyLevelId);
+    stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
 
     return stmt;
     }
@@ -2501,8 +2517,9 @@ CachedStatementPtr CachedHierarchyLevelProvider::_GetCountStatement() const
     Utf8CP query = "SELECT COUNT(1) "
                    "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                    "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
+                   "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
                    "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
-                   " WHERE [n].[Visibility] = ? AND [hl].[Id] = ? ";
+                   " WHERE [n].[Visibility] = ? AND [hl].[Id] = ?  AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query))
@@ -2514,6 +2531,7 @@ CachedStatementPtr CachedHierarchyLevelProvider::_GetCountStatement() const
     int bindingIndex = 1;
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
     stmt->BindUInt64(bindingIndex++, m_hierarchyLevelId);
+    stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
 
     return stmt;
     }
@@ -2582,11 +2600,13 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
     Utf8String query = "   SELECT COUNT(1) "
                        "     FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hln "
                        "     JOIN [" NODESCACHE_TABLENAME_DataSources "] dsn ON [dsn].[HierarchyLevelId] = [hln].[Id] "
+                       "     JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [dsn].[VariablesId]"
                        "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[VirtualParentNodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
                        "    WHERE     [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
-                       "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) ";
+                       "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) "
+                       "          AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2597,6 +2617,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
 
     stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetLocale(), Statement::MakeCopy::No);
+    stmt->BindText(3, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
     return stmt;
     }
 
@@ -2608,12 +2629,14 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() c
     Utf8String query = "   SELECT [n].[Data], [hln].[PhysicalParentNodeId], [hln].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
                        "     FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hln "
                        "     JOIN [" NODESCACHE_TABLENAME_DataSources "] dsn ON [dsn].[HierarchyLevelId] = [hln].[Id] "
+                       "     JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [dsn].[VariablesId]"
                        "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id] "
                        "     JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[VirtualParentNodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
                        "    WHERE     [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
-                       "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) ";
+                       "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) "
+                       "          AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2624,6 +2647,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() c
 
     stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetLocale(), Statement::MakeCopy::No);
+    stmt->BindText(3, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
     return stmt;
     }
 
@@ -2642,8 +2666,9 @@ CachedStatementPtr FilteredNodesProvider::_GetCountStatement() const
     Utf8String query = "SELECT COUNT(1) "
         "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+        "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-        " WHERE [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'";
+        " WHERE [hl].[RulesetId] = ? AND [hl].[Locale] = ?  AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) AND [n].[Label] LIKE ? ESCAPE \'\\\'";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2656,7 +2681,8 @@ CachedStatementPtr FilteredNodesProvider::_GetCountStatement() const
     filter.append("%").append(m_filter).append("%");
     stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetLocale().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(3, filter.c_str(), Statement::MakeCopy::Yes);
+    stmt->BindText(3, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
+    stmt->BindText(4, filter.c_str(), Statement::MakeCopy::Yes);
     return stmt;
     }
 
@@ -2669,8 +2695,9 @@ CachedStatementPtr FilteredNodesProvider::_GetNodesStatement() const
         "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+        "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-        " WHERE [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'";
+        " WHERE [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) AND [n].[Label] LIKE ? ESCAPE \'\\\'";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2683,7 +2710,8 @@ CachedStatementPtr FilteredNodesProvider::_GetNodesStatement() const
     filter.append("%").append(m_filter).append("%");
     stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetLocale().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(3, filter.c_str(), Statement::MakeCopy::Yes);
+    stmt->BindText(3, GetContext().GetRulesetVariables().GetSerialized(), Statement::MakeCopy::No);
+    stmt->BindText(4, filter.c_str(), Statement::MakeCopy::Yes);
     return stmt;
     }
 

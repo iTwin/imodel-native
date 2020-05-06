@@ -16,8 +16,6 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +===============+===============+===============+===============+===============+======*/
 struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManagerImplBase
 {
-    typedef std::function<IRulesPreprocessorPtr(IConnectionCR, Utf8StringCR, Utf8StringCR, IUsedUserSettingsListener*)> Handler_GetRulesPreprocessor;
-
     typedef std::function<INavNodesDataSourcePtr(IConnectionCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetRootNodes;
     typedef std::function<size_t(IConnectionCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetRootNodesCount;
     typedef std::function<INavNodesDataSourcePtr(IConnectionCR, NavNodeCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetChildNodes;
@@ -32,7 +30,7 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<size_t(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
     typedef std::function<LabelDefinitionCPtr(IConnectionCR, KeySetCR, ICancelationTokenCR)> Handler_GetDisplayLabel;
 
-    typedef std::function<void(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR, Utf8StringCR, Utf8StringCR, ICancelationTokenCR)> Handler_CompareHierarchies;
+    typedef std::function<void(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR, Utf8StringCR, CommonOptions const&, ICancelationTokenCR)> Handler_CompareHierarchies;
 
     typedef std::function<void()> Handler_OnUpdateRecordsHandlerChanged;
     typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceRegistered;
@@ -129,10 +127,10 @@ protected:
             return m_displayLabelHandler(connection, key, cancelationToken);
         return LabelDefinition::Create();
         }
-    void _CompareHierarchies(IUpdateRecordsHandler& updateRecordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR cancelationToken) override
+    void _CompareHierarchies(IUpdateRecordsHandler& updateRecordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, CommonOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_compareHierarchiesHandler)
-            m_compareHierarchiesHandler(updateRecordsHandler, connection, lhsRulesetId, rhsRulesetId, locale, cancelationToken);
+            m_compareHierarchiesHandler(updateRecordsHandler, connection, lhsRulesetId, rhsRulesetId, options, cancelationToken);
         }
 
 public:

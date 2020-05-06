@@ -51,10 +51,10 @@ public:
 struct  INavNodeLocater
 {
 protected:
-    virtual JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR) const = 0;
+    virtual JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR, RulesetVariables const&) const = 0;
 public:
     virtual ~INavNodeLocater() {}
-    JsonNavNodeCPtr LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, NavNodeKeyCR key) const {return _LocateNode(connection, rulesetId, locale, key);}
+    JsonNavNodeCPtr LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, NavNodeKeyCR key, RulesetVariables const& variables) const {return _LocateNode(connection, rulesetId, locale, key, variables);}
 };
 
 /*=================================================================================**//**
@@ -85,28 +85,28 @@ protected:
     virtual bvector<uint64_t> _GetNodeIndex(uint64_t nodeId) const = 0;
 
     virtual HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const = 0;
-    virtual DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index) const = 0;
+    virtual DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index, RulesetVariables const& variables) const = 0;
     virtual DataSourceInfo _FindDataSource(uint64_t nodeId) const = 0;
 
-    virtual NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, bool, bool) const = 0;
-    virtual NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, bool, bool) const = 0;
-    virtual NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, bool, bool) const = 0;
-    virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool, bool) const = 0;
+    virtual NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, RulesetVariables const&, bool) const = 0;
+    virtual NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, RulesetVariables const&, bool) const = 0;
+    virtual NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, RulesetVariables const&, bool) const = 0;
+    virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId, RulesetVariables const&, bool) const = 0;
 
     virtual void _Cache(HierarchyLevelInfo&) = 0;
-    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&) = 0;
+    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, RulesetVariables const&) = 0;
     virtual void _Cache(JsonNavNodeR, DataSourceInfo const&, bvector<uint64_t> const&, NodeVisibility) = 0;
 
     virtual void _Update(uint64_t, JsonNavNodeCR, int partsToUpdate) = 0;
-    virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*) = 0;
+    virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, RulesetVariables const*) = 0;
 
     virtual void _MakePhysical(JsonNavNodeCR) = 0;
     virtual void _MakeVirtual(JsonNavNodeCR) = 0;
     virtual void _MakeHidden(JsonNavNodeCR) = 0;
 
-    virtual bool _IsInitialized(CombinedHierarchyLevelInfo const&) const = 0;
-    virtual bool _IsInitialized(HierarchyLevelInfo const&) const = 0;
-    virtual bool _IsInitialized(DataSourceInfo const&) const = 0;
+    virtual bool _IsInitialized(CombinedHierarchyLevelInfo const&, RulesetVariables const&) const = 0;
+    virtual bool _IsInitialized(HierarchyLevelInfo const&, RulesetVariables const&) const = 0;
+    virtual bool _IsInitialized(DataSourceInfo const&, RulesetVariables const&) const = 0;
     virtual void _FinalizeInitialization(DataSourceInfo const&) = 0;
 
     virtual SavepointPtr _CreateSavepoint() = 0;
@@ -121,43 +121,43 @@ public:
     bvector<uint64_t> GetNodeIndex(uint64_t nodeId) const {return _GetNodeIndex(nodeId);}
 
     HierarchyLevelInfo FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const {return _FindHierarchyLevel(connectionId, rulesetId, locale, virtualParentNodeId);}
-    DataSourceInfo FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index) const {return _FindDataSource(hierarchyLevelId, index);}
+    DataSourceInfo FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index, RulesetVariables const& variables) const {return _FindDataSource(hierarchyLevelId, index, variables);}
     DataSourceInfo FindDataSource(uint64_t nodeId) const {return _FindDataSource(nodeId);}
 
     //! Get data source for the combined hierarchy level for specified physical parent node
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const& info, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetCombinedHierarchyLevel(info, removeIfInvalid, onlyInitialized);}
+    NavNodesProviderPtr GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const& info, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetCombinedHierarchyLevel(info, variables, onlyInitialized);}
     //! Get data source for the whole hierarchy level.
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetHierarchyLevel(HierarchyLevelInfo const& info, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetHierarchyLevel(info, removeIfInvalid, onlyInitialized);}
+    NavNodesProviderPtr GetHierarchyLevel(HierarchyLevelInfo const& info, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetHierarchyLevel(info, variables, onlyInitialized);}
     //! Get partial data source (which is a subset of a hierarchy level).
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetDataSource(DataSourceInfo const& info, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetDataSource(info, removeIfInvalid, onlyInitialized);}
+    NavNodesProviderPtr GetDataSource(DataSourceInfo const& info, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetDataSource(info, variables, onlyInitialized);}
     //! Get partial data source the node with the supplied ID belongs to.
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetDataSource(uint64_t nodeId, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetDataSource(nodeId, removeIfInvalid, onlyInitialized);}
+    NavNodesProviderPtr GetDataSource(uint64_t nodeId, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetDataSource(nodeId, variables, onlyInitialized);}
 
     void Cache(HierarchyLevelInfo& info) {_Cache(info);}
-    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings)
+    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, RulesetVariables const& relatedVariables)
         {
-        _Cache(info, filter, relatedClassIds, relatedSettings);
+        _Cache(info, filter, relatedClassIds, relatedVariables);
         }
     void Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, bvector<uint64_t> const& index, NodeVisibility visibility) {_Cache(node, dsInfo, index, visibility);}
     void Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, uint64_t index, NodeVisibility visibility) {_Cache(node, dsInfo, {index}, visibility);}
 
     void Update(uint64_t nodeId, JsonNavNodeCR node, int partsToUpdate) {_Update(nodeId, node, partsToUpdate);}
-    void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<UserSettingEntry> const* relatedSettings)
+    void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, RulesetVariables const* relatedVariables)
         {
-        _Update(info, filter, relatedClassIds, relatedSettings);
+        _Update(info, filter, relatedClassIds, relatedVariables);
         }
 
     void MakePhysical(JsonNavNodeCR node) {_MakePhysical(node);}
     void MakeVirtual(JsonNavNodeCR node) {_MakeVirtual(node);}
     void MakeHidden(JsonNavNodeCR node) {_MakeHidden(node);}
 
-    bool IsInitialized(CombinedHierarchyLevelInfo const& info) const {return _IsInitialized(info);}
-    bool IsInitialized(HierarchyLevelInfo const& info) const {return _IsInitialized(info);}
-    bool IsInitialized(DataSourceInfo const& info) const {return _IsInitialized(info);}
+    bool IsInitialized(CombinedHierarchyLevelInfo const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
+    bool IsInitialized(HierarchyLevelInfo const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
+    bool IsInitialized(DataSourceInfo const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
     void FinalizeInitialization(DataSourceInfo const& info) {_FinalizeInitialization(info);}
 
     SavepointPtr CreateSavepoint() {return _CreateSavepoint();}
@@ -168,7 +168,7 @@ public:
 #define NODESCACHE_TABLENAME_HierarchyLevels    "HierarchyLevels"
 #define NODESCACHE_TABLENAME_DataSources        "DataSources"
 #define NODESCACHE_TABLENAME_DataSourceClasses  "DataSourceClasses"
-#define NODESCACHE_TABLENAME_DataSourceSettings "DataSourceSettings"
+#define NODESCACHE_TABLENAME_Variables          "Variables"
 #define NODESCACHE_TABLENAME_Nodes              "Nodes"
 #define NODESCACHE_TABLENAME_NodeKeys           "NodeKeys"
 #define NODESCACHE_TABLENAME_NodeInstances      "NodeInstances"
@@ -177,6 +177,9 @@ public:
 #define NODESCACHE_TABLENAME_Rulesets           "Rulesets"
 
 #define NODESCACHE_FUNCNAME_ConcatBinaryIndex   "ConcatBinaryIndex"
+#define NODESCACHE_FUNCNAME_VariablesMatch      "VariablesMatch"
+
+#define NODESCACHE_VARIABLES_Threshold           "5"
 
 // Note: nodes cache uses a small in-memory structure of size NODESCACHE_QUICK_Size to store
 // the most recently used data sources whose size is at least NODESCACHE_QUICK_Boundary nodes.
@@ -192,6 +195,7 @@ struct NodesCache : IHierarchyCache, INavNodeLocater
 {
     struct UniquePtrEnabler;
     struct Savepoint;
+    struct QuickDataSourceCacheKey;
 
     using IHierarchyCache::FindHierarchyLevel;
 
@@ -199,12 +203,11 @@ private:
     JsonNavNodesFactory const& m_nodesFactory;
     INodesProviderContextFactoryCR m_contextFactory;
     IConnectionCR m_connection;
-    IUserSettingsManager const& m_userSettings;
     bool m_cacheUpdateData;
     bool m_tempCache;
     mutable BeSQLite::Db m_db;
     mutable BeSQLite::StatementCache m_statements;
-    mutable bvector<bpair<CombinedHierarchyLevelInfo, NavNodesProviderPtr>> m_quickDataSourceCache;
+    mutable bvector<bpair<QuickDataSourceCacheKey, NavNodesProviderPtr>> m_quickDataSourceCache;
     mutable bvector<bpair<uint64_t, JsonNavNodePtr>> m_quickNodesCache;
     uint64_t m_sizeLimit;
     bvector<BeSQLite::ScalarFunction*> m_customFunctions;
@@ -212,14 +215,14 @@ private:
     mutable BeMutex m_quickCacheMutex;
 
 private:
-    ECPRESENTATION_EXPORT NodesCache(IConnectionCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IUserSettingsManager const&, bool);
+    ECPRESENTATION_EXPORT NodesCache(IConnectionCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, bool);
     BentleyStatus Initialize(BeFileNameCR directory, IConnectionCR, NodesCacheType);
 
     void CacheNode(DataSourceInfo const&, NavNodeR, bvector<uint64_t> const&, NodeVisibility visibility);
     void CacheEmptyHierarchyLevel(HierarchyLevelInfo& info);
-    void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&);
+    void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, uint64_t variablesId);
     void CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const&);
-    void CacheRelatedSettings(uint64_t datasourceId, bvector<UserSettingEntry> const& settings);
+    uint64_t CacheRelatedVariables(Utf8StringCR rulesetId, RulesetVariables const& variables);
     bool HasRelatedSettingsChanged(uint64_t datasourceId, Utf8StringCR rulesetId) const;
     void CacheNodeKey(NavNodeCR);
     void CacheNodeInstanceKeys(NavNodeCR);
@@ -230,9 +233,9 @@ private:
     bvector<DataSourceInfo> GetDataSourcesWithChangedUserSettings(HierarchyLevelInfo const&) const;
     HierarchyLevelInfo GetParentHierarchyLevelInfo(uint64_t nodeId) const;
 
-    void AddQuick(CombinedHierarchyLevelInfo, NavNodesProviderR);
-    void RemoveQuick(CombinedHierarchyLevelInfo const&);
-    NavNodesProviderPtr GetQuick(CombinedHierarchyLevelInfo const&) const;
+    void AddQuick(CombinedHierarchyLevelInfo, NavNodesProviderR, RulesetVariables const&);
+    void RemoveQuick(CombinedHierarchyLevelInfo const&, RulesetVariables const* = nullptr);
+    NavNodesProviderPtr GetQuick(CombinedHierarchyLevelInfo const&, RulesetVariables const&) const;
 
     void AddQuick(JsonNavNodeR) const;
     void RemoveQuick(uint64_t) const;
@@ -245,36 +248,36 @@ protected:
     ECPRESENTATION_EXPORT NodeVisibility _GetNodeVisibility(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const override;
-    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const&) const override;
+    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const&, RulesetVariables const& variables) const override;
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t nodeId) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, bool, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, bool, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, bool, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, RulesetVariables const&, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, RulesetVariables const&, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, RulesetVariables const&, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(uint64_t nodeId, RulesetVariables const&, bool) const override;
     ECPRESENTATION_EXPORT void _Cache(HierarchyLevelInfo&) override;
-    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&) override;
+    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, RulesetVariables const&) override;
     ECPRESENTATION_EXPORT void _Cache(JsonNavNodeR, DataSourceInfo const&, bvector<uint64_t> const&, NodeVisibility) override;
     ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR, int partsToUpdate) override;
-    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*) override;
+    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, RulesetVariables const*) override;
     ECPRESENTATION_EXPORT void _MakePhysical(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeVirtual(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeHidden(JsonNavNodeCR) override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(CombinedHierarchyLevelInfo const&) const override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(HierarchyLevelInfo const&) const override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(DataSourceInfo const&) const override;
+    ECPRESENTATION_EXPORT bool _IsInitialized(CombinedHierarchyLevelInfo const&, RulesetVariables const&) const override;
+    ECPRESENTATION_EXPORT bool _IsInitialized(HierarchyLevelInfo const&, RulesetVariables const&) const override;
+    ECPRESENTATION_EXPORT bool _IsInitialized(DataSourceInfo const&, RulesetVariables const&) const override;
     ECPRESENTATION_EXPORT void _FinalizeInitialization(DataSourceInfo const&) override;
     ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint() override;
     BeMutex& _GetMutex() override { return m_mutex; }
 
     // INavNodeLocater
-    ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR) const override;
+    ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR, RulesetVariables const&) const override;
 
 public:
     ECPRESENTATION_EXPORT static std::unique_ptr<NodesCache> Create(IConnectionCR, BeFileNameCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, 
-        IUserSettingsManager const&, NodesCacheType, bool cacheUpdateData);
+        NodesCacheType type, bool cacheUpdateData);
     ECPRESENTATION_EXPORT ~NodesCache();
 
-    ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR);
+    ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR, RulesetVariables const&);
 
     ECPRESENTATION_EXPORT bool IsNodeCached(uint64_t nodeId) const;
     ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(Utf8CP rulesetId, Utf8CP locale) const;
@@ -295,6 +298,7 @@ public:
     ECPRESENTATION_EXPORT void Persist();
 
     ECPRESENTATION_EXPORT void OnRulesetUsed(PresentationRuleSetCR);
+    ECPRESENTATION_EXPORT void OnRulesetVariablesUsed(RulesetVariables const&, Utf8StringCR);
     BeSQLite::Db const& GetDb() const {return m_db;}
     void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 

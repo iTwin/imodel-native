@@ -211,6 +211,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Locale;
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_UnitSystem;
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Priority;
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetVariables;
 
         //! Constructor. Creates a read-only accessor.
         CommonOptions(JsonValueCR data) : JsonCppAccessor(data) {}
@@ -255,6 +256,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         int GetPriority() const {return GetJson().isMember(OPTION_NAME_Priority) ? GetJson()[OPTION_NAME_Priority].asInt() : DEFAULT_REQUEST_PRIORITY;}
         //! Set priority.
         void SetPriority(int priority) {AddMember(OPTION_NAME_Priority, priority);}
+
+        //! Get ruleset variables.
+        JsonValueCR GetRulesetVariables() const { return GetJson()[OPTION_NAME_RulesetVariables]; }
+        //! Set ruleset variables.
+        void SetRulesetVariables(JsonValueCR variables) { AddMember(OPTION_NAME_RulesetVariables, variables); }
         };
 
     //===================================================================================

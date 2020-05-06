@@ -14,20 +14,6 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct ECDbUsedClassesListenerWrapper;
 
 /*=================================================================================**//**
-* @bsiclass                                     Mantas.Kontrimas                04/2018
-+===============+===============+===============+===============+===============+======*/
-struct UserSettingEntry
-{
-private:
-    Utf8String m_id;
-    Json::Value m_value;
-public:
-    UserSettingEntry(Utf8String id, Json::Value value) : m_id(id), m_value(value) {}
-    Utf8StringCR GetId() const {return m_id;}
-    JsonValueCR GetValue() const {return m_value;}
-};
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2019
 +===============+===============+===============+===============+===============+======*/
 struct IProvidersIndexAllocator : RefCountedBase
@@ -112,17 +98,17 @@ private:
 private:
     void Init();
     void InitProvidersIndexAllocator(uint64_t const* virtualParentNodeId);
-    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&,
+    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, RuleTargetTree, Utf8String, uint64_t const*, std::unique_ptr<RulesetVariables>, ECExpressionsCache&,
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
 
 public:
     static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId,
-        IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache,
+        std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache,
         PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache,
         INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState)
         {
-        return new NavNodesProviderContext(ruleset, targetTree, locale, physicalParentId, userSettings, ecexpressionsCache,
+        return new NavNodesProviderContext(ruleset, targetTree, locale, physicalParentId, std::move(rulesetVariables), ecexpressionsCache,
             relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, nodesCache, providerFactory, localState);
         }
     static NavNodesProviderContextPtr Create(NavNodesProviderContextCR other) {return new NavNodesProviderContext(other);}
@@ -142,7 +128,7 @@ public:
     NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, JsonNavNodeCP parentNode) const;
     HierarchyLevelInfo const& GetHierarchyLevelInfo() const;
     DataSourceInfo const& GetDataSourceInfo() const;
-    bvector<UserSettingEntry> GetRelatedSettings() const;
+    bvector<RulesetVariableEntry> GetRelatedRulesetVariables() const;
     IProvidersIndexAllocator& GetProvidersIndexAllocator() const {return *m_providersIndexAllocator;}
     void SetProvidersIndexAllocator(IProvidersIndexAllocator& allocator) {m_providersIndexAllocator = &allocator;}
     bset<ArtifactsCapturer*> const& GetArtifactsCapturers() const {return m_artifactsCapturers;}
@@ -191,13 +177,13 @@ struct INodesProviderContextFactory
 {
 protected:
     virtual NavNodesProviderContextPtr _Create(IConnectionCR, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId,
-        ICancelationTokenCP, size_t pageSize) const = 0;
+        ICancelationTokenCP, size_t pageSize, RulesetVariables const& variables) const = 0;
 public:
     virtual ~INodesProviderContextFactory() {}
     NavNodesProviderContextPtr Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId,
-        ICancelationTokenCP cancelationToken = nullptr, size_t pageSize = -1) const
+        ICancelationTokenCP cancelationToken = nullptr, size_t pageSize = -1, RulesetVariables const& variables = RulesetVariables()) const
         {
-        return _Create(connection, rulesetId, locale, parentNodeId, cancelationToken, pageSize);
+        return _Create(connection, rulesetId, locale, parentNodeId, cancelationToken, pageSize, variables);
         }
 };
 
@@ -227,14 +213,14 @@ struct DisabledFullNodesLoadContext;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017
 +===============+===============+===============+===============+===============+======*/
-struct DataSourceRelatedSettingsUpdater
+struct DataSourceRelatedVariablesUpdater
     {
     NavNodesProviderContextCR m_context;
     JsonNavNodeCP m_node;
-    size_t m_relatedSettingsCountBefore;
+    size_t m_relatedVariablesCountBefore;
 
-    DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context, JsonNavNodeCP node);
-    ~DataSourceRelatedSettingsUpdater();
+    DataSourceRelatedVariablesUpdater(NavNodesProviderContextCR context, JsonNavNodeCP node);
+    ~DataSourceRelatedVariablesUpdater();
     };
 
 /*=================================================================================**//**
@@ -695,7 +681,7 @@ private:
 
 private:
     void InitializeNodes();
-    void InitializeUsedSettings();
+    void InitializeUsedVariables();
 
 protected:
     SQLiteCacheNodesProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&);

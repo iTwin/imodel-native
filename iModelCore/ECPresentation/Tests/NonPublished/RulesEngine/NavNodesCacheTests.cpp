@@ -23,10 +23,10 @@ struct NodesCacheTests : ECPresentationTest
     static ECDbTestProject* s_project;
 
     TestConnectionManager m_connections;
-    TestUserSettingsManager m_userSettings;
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderContextFactory m_nodesProviderContextFactory;
     IConnectionPtr m_connection;
+    RulesetVariables emptyVariables;
     std::unique_ptr<NodesCache> m_cache;
 
     NodesCacheTests() : m_nodesProviderContextFactory(m_connections) {}
@@ -76,7 +76,7 @@ struct NodesCacheTests : ECPresentationTest
 
     virtual std::unique_ptr<NodesCache> _CreateNodesCache(IConnectionR connection, BeFileNameCR tempDirectory)
         {
-        return NodesCache::Create(connection, tempDirectory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Memory, true);
+        return NodesCache::Create(connection, tempDirectory, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Memory, true);
         }
 
     void ReCreateNodesCache()
@@ -93,8 +93,8 @@ struct NodesCacheTests : ECPresentationTest
     void InitNode(JsonNavNodeR, HierarchyLevelInfo const&);
     void FillWithNodes(bpair<HierarchyLevelInfo, DataSourceInfo> const&, bvector<JsonNavNodePtr> const&, bool createChildDataSources = false, bool areVirtual = false);
     bvector<JsonNavNodePtr> FillWithNodes(bpair<HierarchyLevelInfo, DataSourceInfo> const&, size_t count, bool createChildDataSources = false, bool areVirtual = false);
-    bpair<HierarchyLevelInfo, DataSourceInfo> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t virtualParentId = 0, bool finalize = true);
-    bpair<HierarchyLevelInfo, DataSourceInfo> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t virtualParentId, uint64_t physicalParentId, bool finalize = true);
+    bpair<HierarchyLevelInfo, DataSourceInfo> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t virtualParentId = 0, bool finalize = true, RulesetVariables const& variables = RulesetVariables());
+    bpair<HierarchyLevelInfo, DataSourceInfo> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t virtualParentId, uint64_t physicalParentId, bool finalize = true, RulesetVariables const& variables = RulesetVariables());
     };
 ECDbTestProject* NodesCacheTests::s_project = nullptr;
 
@@ -149,14 +149,18 @@ bvector<JsonNavNodePtr> NodesCacheTests::FillWithNodes(bpair<HierarchyLevelInfo,
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bpair<HierarchyLevelInfo, DataSourceInfo> NodesCacheTests::CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t virtualParentId, uint64_t physicalParentId, bool finalize)
+bpair<HierarchyLevelInfo, DataSourceInfo> NodesCacheTests::CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t virtualParentId, uint64_t physicalParentId, bool finalize, RulesetVariables const& variables)
     {
-    HierarchyLevelInfo hlInfo(connectionId, rulesetId, locale, physicalParentId, virtualParentId);
-    m_cache->Cache(hlInfo);
+    HierarchyLevelInfo hlInfo = m_cache->FindHierarchyLevel(connectionId.c_str(), rulesetId.c_str(), locale.c_str(), &virtualParentId);
+    if (!hlInfo.IsValid())
+        {
+        hlInfo = HierarchyLevelInfo(connectionId, rulesetId, locale, physicalParentId, virtualParentId);
+        m_cache->Cache(hlInfo);
+        }
     EXPECT_TRUE(hlInfo.IsValid());
 
     DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
-    m_cache->Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+    m_cache->Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), variables);
     EXPECT_TRUE(dsInfo.IsValid());
 
     if (finalize)
@@ -168,9 +172,9 @@ bpair<HierarchyLevelInfo, DataSourceInfo> NodesCacheTests::CacheDataSource(Utf8S
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bpair<HierarchyLevelInfo, DataSourceInfo> NodesCacheTests::CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t parentId, bool finalize)
+bpair<HierarchyLevelInfo, DataSourceInfo> NodesCacheTests::CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, Utf8StringCR locale, uint64_t parentId, bool finalize, RulesetVariables const& variables)
     {
-    return CacheDataSource(connectionId, rulesetId, locale, parentId, parentId, finalize);
+    return CacheDataSource(connectionId, rulesetId, locale, parentId, parentId, finalize, variables);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -271,7 +275,7 @@ TEST_F(NodesCacheTests, RemoveHierarchyLevel_RemovesChildHierarchyLevel)
     auto childInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodes[0]->GetNodeId());
 
     // verify child data source is cached
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first).IsValid());
+    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first, emptyVariables).IsValid());
 
     // remove child data source
     BeGuid removalId = m_cache->CreateRemovalId(CombinedHierarchyLevelInfo(childInfo.first.GetConnectionId(),
@@ -279,7 +283,7 @@ TEST_F(NodesCacheTests, RemoveHierarchyLevel_RemovesChildHierarchyLevel)
     m_cache->RemoveHierarchyLevel(removalId);
 
     // verify child data source also got removed
-    EXPECT_FALSE(m_cache->GetHierarchyLevel(childInfo.first).IsValid());
+    EXPECT_FALSE(m_cache->GetHierarchyLevel(childInfo.first, emptyVariables).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -314,7 +318,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
     auto childInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodes[0]->GetNodeId());
 
     // verify child data source is cached
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first).IsValid());
+    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first, emptyVariables).IsValid());
 
     // remove root data source
     BeGuid removalId = m_cache->CreateRemovalId(CombinedHierarchyLevelInfo(rootInfo.first.GetConnectionId(),
@@ -322,7 +326,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
     m_cache->RemoveHierarchyLevel(removalId);
 
     // verify child data source also got removed
-    EXPECT_FALSE(m_cache->GetHierarchyLevel(childInfo.first).IsValid());
+    EXPECT_FALSE(m_cache->GetHierarchyLevel(childInfo.first, emptyVariables).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -433,7 +437,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesFilter)
     DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[usedClassId] = false;
-    m_cache->Cache(dsInfo, DataSourceFilter(), usedClassIds, bvector<UserSettingEntry>());
+    m_cache->Cache(dsInfo, DataSourceFilter(), usedClassIds, RulesetVariables());
     EXPECT_TRUE(dsInfo.IsValid());
 
     // verify the filter is not applied and we find related hierarchy level
@@ -465,7 +469,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
     EXPECT_TRUE(hlInfo.IsValid());
 
     DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
-    m_cache->Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+    m_cache->Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), RulesetVariables());
     EXPECT_TRUE(dsInfo.IsValid());
 
     // verify we don't find related hierarchy level as the key is not related to the data source
@@ -484,6 +488,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
     EXPECT_EQ(1, related.size());
     }
 
+#ifdef wip_ruleset_variables
 /*---------------------------------------------------------------------------------**//**
 * note: the test uses GetRelatedHierarchyLevels function to test the Update
 * @bsitest                                      Grigas.Petraitis                04/2017
@@ -511,6 +516,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedSettings)
     related = m_cache->GetRelatedHierarchyLevels(hlInfo.GetRulesetId().c_str(), "setting_id");
     EXPECT_EQ(1, related.size());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
@@ -686,15 +692,15 @@ TEST_F(NodesCacheTests, ReturnsNullsWhenEmpty)
 
     EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "test ruleset id", "test locale", nullptr).IsValid());
     EXPECT_FALSE(m_cache->FindHierarchyLevel(1).IsValid());
-    EXPECT_FALSE(m_cache->FindDataSource(1, { 0 }).IsValid());
+    EXPECT_FALSE(m_cache->FindDataSource(1, { 0 }, emptyVariables).IsValid());
     EXPECT_FALSE(m_cache->FindDataSource(999).IsValid());
 
     IGNORE_BE_ASSERT();
 
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), "test ruleset id", "test locale", 999)).IsNull());
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(HierarchyLevelInfo(1, m_connection->GetId(), "test ruleset id", "test locale", 0, 0)).IsNull());
-    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(1, { 0 })).IsNull());
-    EXPECT_TRUE(m_cache->GetDataSource(999).IsNull());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), "test ruleset id", "test locale", 999), emptyVariables).IsNull());
+    EXPECT_TRUE(m_cache->GetHierarchyLevel(HierarchyLevelInfo(1, m_connection->GetId(), "test ruleset id", "test locale", 0, 0), emptyVariables).IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(1, { 0 }), emptyVariables).IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(999, emptyVariables).IsNull());
     EXPECT_TRUE(m_cache->GetNode(999).IsNull());
     }
 
@@ -711,18 +717,53 @@ TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
 
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), nullptr).IsValid());
     EXPECT_TRUE(m_cache->FindHierarchyLevel(info.first.GetId()).IsValid());
-    EXPECT_TRUE(m_cache->FindDataSource(info.first.GetId(), { 0 }).IsValid());
+    EXPECT_TRUE(m_cache->FindDataSource(info.first.GetId(), { 0 }, emptyVariables).IsValid());
 
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), info.first.GetRulesetId(), info.first.GetLocale(), 0)).IsValid());
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(info.first).IsValid());
-    EXPECT_TRUE(m_cache->GetDataSource(info.second).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), info.first.GetRulesetId(), info.first.GetLocale(), 0), emptyVariables).IsValid());
+    EXPECT_TRUE(m_cache->GetHierarchyLevel(info.first, emptyVariables).IsValid());
+    EXPECT_TRUE(m_cache->GetDataSource(info.second, emptyVariables).IsValid());
 
     // verify it's not found when looking with invalid parameters
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached("invalid", info.first.GetLocale().c_str()));
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), "invalid", info.first.GetLocale(), 0)).IsNull());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), "invalid", info.first.GetLocale(), 0), emptyVariables).IsNull());
 
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(info.first.GetRulesetId().c_str(), "invalid"));
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), info.first.GetRulesetId(), "invalid", 0)).IsNull());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), info.first.GetRulesetId(), "invalid", 0), emptyVariables).IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, ReturnsDifferentCachedRootDataSourceForDifferentVariables)
+    {
+    RulesetVariables variables1({ RulesetVariableEntry("var_id", rapidjson::Value("value1")) });
+    RulesetVariables variables2({ RulesetVariableEntry("var_id", rapidjson::Value("value2")) });
+
+    // cache root data source
+    auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables1);
+    // cache second root data source with different variables
+    auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables2);
+
+    // verify that data sources where cached for same hierarchy level
+    EXPECT_TRUE(info1.first == info2.first);
+    // verify that data sources are different
+    EXPECT_FALSE(info1.second == info2.second);
+
+    // verify the hierarchy level is cached
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info1.first.GetRulesetId().c_str(), info1.first.GetLocale().c_str()));
+    EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), info1.first.GetRulesetId().c_str(), info1.first.GetLocale().c_str(), nullptr).IsValid());
+    EXPECT_TRUE(m_cache->FindHierarchyLevel(info1.first.GetId()).IsValid());
+
+    // verify that data sources are cached
+    DataSourceInfo cachedSource1 = m_cache->FindDataSource(info1.first.GetId(), { 0 }, variables1);
+    EXPECT_TRUE(cachedSource1.IsValid());
+    DataSourceInfo cachedSource2 = m_cache->FindDataSource(info1.first.GetId(), { 0 }, variables2);
+    EXPECT_TRUE(cachedSource2.IsValid());
+    EXPECT_FALSE(cachedSource1 == cachedSource2);
+
+    // verify hierarchy level is not found when looking with invalid variables
+    RulesetVariables invalidVariables;
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), info1.first.GetRulesetId(), info1.first.GetLocale(), 0), invalidVariables).IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -739,12 +780,12 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
 
     // the root data source should be empty
     NavNodesProviderPtr cachedProvider = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(),
-        info.first.GetRulesetId(), info.first.GetLocale(), 0));
+        info.first.GetRulesetId(), info.first.GetLocale(), 0), emptyVariables);
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(0, cachedProvider->GetNodesCount());
 
     // the node's data source should also be empty
-    cachedProvider = m_cache->GetDataSource(node->GetNodeId());
+    cachedProvider = m_cache->GetDataSource(node->GetNodeId(), emptyVariables);
     ASSERT_FALSE(cachedProvider.IsValid());
 
     // cache the node
@@ -752,7 +793,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
 
     // verify the node is cached
     cachedProvider = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(),
-        info.first.GetRulesetId(), info.first.GetLocale(), 0));
+        info.first.GetRulesetId(), info.first.GetLocale(), 0), emptyVariables);
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(1, cachedProvider->GetNodesCount());
 
@@ -760,13 +801,36 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
     EXPECT_TRUE(m_cache->GetNode(node->GetNodeId()).IsValid());
 
     // verify node's datasource is not empty
-    cachedProvider = m_cache->GetDataSource(node->GetNodeId());
+    cachedProvider = m_cache->GetDataSource(node->GetNodeId(), emptyVariables);
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(1, cachedProvider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
+* @bsitest                                      Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, ReturnsDifferentCachedChildDataSourceForDifferentRulesetVariables)
+    {
+    // cache root data source
+    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale");
+    auto nodes = FillWithNodes(info, 1);
+    uint64_t nodeId = nodes[0]->GetNodeId();
+
+    // child data source should not exist
+    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodeId));
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(),
+        info.first.GetRulesetId(), info.first.GetLocale(), nodeId), emptyVariables).IsNull());
+
+    // cache child data source
+    auto childrenInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodeId);
+
+    // verify the data source exists now
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodeId));
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables).IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, ReturnsCachedChildDataSource)
     {
@@ -778,14 +842,26 @@ TEST_F(NodesCacheTests, ReturnsCachedChildDataSource)
     // child data source should not exist
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodeId));
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(),
-        info.first.GetRulesetId(), info.first.GetLocale(), nodeId)).IsNull());
+        info.first.GetRulesetId(), info.first.GetLocale(), nodeId), emptyVariables).IsNull());
 
-    // cache child data source
-    auto childrenInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodeId);
+    // two child data sources with different variables
+    RulesetVariables variables1({ RulesetVariableEntry("var_id", rapidjson::Value("value1")) });
+    RulesetVariables variables2({ RulesetVariableEntry("var_id", rapidjson::Value("value2")) });
+
+    auto childrenInfo1 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodeId, true, variables1);
+    auto childrenInfo2 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodeId, true, variables2);
+    EXPECT_TRUE(childrenInfo1.first == childrenInfo2.first);
+    EXPECT_FALSE(childrenInfo1.second == childrenInfo2.second);
 
     // verify the data source exists now
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodeId));
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(childrenInfo.first).IsValid());
+
+    NavNodesProviderPtr cachedSource1 = m_cache->GetCombinedHierarchyLevel(childrenInfo1.first, variables1);
+    EXPECT_TRUE(cachedSource1.IsValid());
+
+    NavNodesProviderPtr cachedSource2 = m_cache->GetCombinedHierarchyLevel(childrenInfo2.first, variables2);
+    EXPECT_TRUE(cachedSource2.IsValid());
+    EXPECT_TRUE(cachedSource1 != cachedSource2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -803,7 +879,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
 
     // the data source should be empty
     NavNodesProviderPtr cachedProvider = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(),
-        info.first.GetRulesetId(), info.first.GetLocale(), nodeId));
+        info.first.GetRulesetId(), info.first.GetLocale(), nodeId), emptyVariables);
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(0, cachedProvider->GetNodesCount());
 
@@ -812,7 +888,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
 
     // verify the child node is cached
     cachedProvider = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(),
-        info.first.GetRulesetId(), info.first.GetLocale(), nodeId));
+        info.first.GetRulesetId(), info.first.GetLocale(), nodeId), emptyVariables);
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(1, cachedProvider->GetNodesCount());
 
@@ -820,7 +896,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
     EXPECT_TRUE(m_cache->GetNode(childNodes[0]->GetNodeId()).IsValid());
 
     // verify we can get its parent data source
-    cachedProvider = m_cache->GetDataSource(childNodes[0]->GetNodeId());
+    cachedProvider = m_cache->GetDataSource(childNodes[0]->GetNodeId(), emptyVariables);
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(1, cachedProvider->GetNodesCount());
     }
@@ -865,11 +941,11 @@ TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsDataSourcesWithValidRulesetIds)
     auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id2", "locale", 0);
 
     // verify correct sources are returned
-    NavNodesProviderPtr cached1 = m_cache->GetHierarchyLevel(info1.first);
+    NavNodesProviderPtr cached1 = m_cache->GetHierarchyLevel(info1.first, emptyVariables);
     ASSERT_TRUE(cached1.IsValid());
     EXPECT_STREQ(info1.first.GetRulesetId().c_str(), cached1->GetContext().GetRuleset().GetRuleSetId().c_str());
 
-    NavNodesProviderPtr cached2 = m_cache->GetHierarchyLevel(info2.first);
+    NavNodesProviderPtr cached2 = m_cache->GetHierarchyLevel(info2.first, emptyVariables);
     ASSERT_TRUE(cached2.IsValid());
     EXPECT_STREQ(info2.first.GetRulesetId().c_str(), cached2->GetContext().GetRuleset().GetRuleSetId().c_str());
     }
@@ -886,13 +962,37 @@ TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsDataSourcesWithValidLocales)
     auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale2", 0);
 
     // verify correct sources are returned
-    NavNodesProviderPtr cached1 = m_cache->GetHierarchyLevel(info1.first);
+    NavNodesProviderPtr cached1 = m_cache->GetHierarchyLevel(info1.first, emptyVariables);
     ASSERT_TRUE(cached1.IsValid());
     EXPECT_STREQ(info1.first.GetLocale().c_str(), cached1->GetContext().GetLocale().c_str());
 
-    NavNodesProviderPtr cached2 = m_cache->GetHierarchyLevel(info2.first);
+    NavNodesProviderPtr cached2 = m_cache->GetHierarchyLevel(info2.first, emptyVariables);
     ASSERT_TRUE(cached2.IsValid());
     EXPECT_STREQ(info2.first.GetLocale().c_str(), cached2->GetContext().GetLocale().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsDataSourcesWithValidVariables)
+    {
+    RulesetVariables variables1({ RulesetVariableEntry("var_id", rapidjson::Value("value1")) });
+    RulesetVariables variables2({ RulesetVariableEntry("var_id", rapidjson::Value("value2")) });
+
+    // cache root data source for the first variables
+    auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables1);
+
+    // cache root data source for the second variables
+    auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables2);
+
+    // verify correct sources are returned
+    NavNodesProviderPtr cached1 = m_cache->GetHierarchyLevel(info1.first, variables1);
+    ASSERT_TRUE(cached1.IsValid());
+    EXPECT_TRUE(variables1 == cached1->GetContext().GetRulesetVariables());
+
+    NavNodesProviderPtr cached2 = m_cache->GetHierarchyLevel(info2.first, variables2);
+    ASSERT_TRUE(cached2.IsValid());
+    EXPECT_TRUE(variables2 == cached2->GetContext().GetRulesetVariables());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1016,7 +1116,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
@@ -1024,7 +1124,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     ECClassInstanceKey invalidKey(
         nodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass(),
         ECInstanceId(nodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetId().GetValue() + 100));
-    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECInstancesNodeKey::Create(invalidKey, { "wrong hash" }));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECInstancesNodeKey::Create(invalidKey, { "wrong hash" }), emptyVariables);
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1050,13 +1150,51 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode_FromCorrectRuleset)
     FillWithNodes(info2, { node2 });
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id_1", "locale", *node1->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id_1", "locale", *node1->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     EXPECT_TRUE(node1->Equals(*locatedNode));
 
-    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id_2", "locale", *node2->GetKey());
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id_2", "locale", *node2->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     EXPECT_TRUE(node2->Equals(*locatedNode));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode_ForCorrectRulesetVariables)
+    {
+    ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
+
+    // create a node with ruleset variables 1
+    RulesetVariables variables1({ RulesetVariableEntry("var_id", rapidjson::Value("value1")) });
+    auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables1);
+    JsonNavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
+    FillWithNodes(info1, { node1 });
+
+    // create a node with ruleset 2
+    RulesetVariables variables2({ RulesetVariableEntry("var_id", rapidjson::Value("value2")) });
+    auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables2);
+    JsonNavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
+    FillWithNodes(info2, { node2 });
+
+    // verify the node is found successfully with valid key and variables
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *node1->GetKey(), variables1);
+    ASSERT_TRUE(locatedNode.IsValid());
+    EXPECT_TRUE(node1->Equals(*locatedNode));
+
+    // verify the node is not found with invalid variables
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *node1->GetKey(), emptyVariables);
+    EXPECT_FALSE(locatedNode.IsValid());
+
+    // verify the second node is found successfully with valid key and variables
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *node2->GetKey(), variables2);
+    ASSERT_TRUE(locatedNode.IsValid());
+    EXPECT_TRUE(node2->Equals(*locatedNode));
+
+    // verify the second node is not found with invalid variables
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *node2->GetKey(), emptyVariables);
+    EXPECT_FALSE(locatedNode.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1073,12 +1211,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECClassGroupingNodeKey::Create(*widgetClass1, {"different hash"}, 1));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECClassGroupingNodeKey::Create(*widgetClass1, {"different hash"}, 1), emptyVariables);
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1099,12 +1237,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1), emptyVariables);
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1125,12 +1263,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1), emptyVariables);
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1147,12 +1285,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *NavNodeKey::Create("type", {"wrong hash"}));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *NavNodeKey::Create("type", {"wrong hash"}), emptyVariables);
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1169,12 +1307,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey(), emptyVariables);
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt matchSetInstanceId
-    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *NavNodeKey::Create("type", {"wrong hash"}));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *NavNodeKey::Create("type", {"wrong hash"}), emptyVariables);
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1192,24 +1330,24 @@ TEST_F(NodesCacheTests, Quick_AddsToQuickCacheWhenDataSourceReachesRequiredSize)
     // cache child data source 1 (less than required size to add to quick cache)
     auto childrenInfo1 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", rootNodeIds[0]);
     FillWithNodes(childrenInfo1, NODESCACHE_QUICK_Boundary);
-    NavNodesProviderPtr datasource1 = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(childrenInfo1.first));
+    NavNodesProviderPtr datasource1 = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(childrenInfo1.first), emptyVariables);
     EXPECT_EQ(NODESCACHE_QUICK_Boundary, datasource1->GetNodesCount());
 
     // cache child data source 2 (of required size to add to quick cache)
     auto childrenInfo2 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", rootNodeIds[1]);
     FillWithNodes(childrenInfo2, NODESCACHE_QUICK_Boundary + 1);
-    NavNodesProviderPtr datasource2 = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(childrenInfo2.first));
+    NavNodesProviderPtr datasource2 = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(childrenInfo2.first), emptyVariables);
     EXPECT_EQ(NODESCACHE_QUICK_Boundary + 1, datasource2->GetNodesCount());
 
     // attempt to add both providers to quick cache
-    m_cache->CacheHierarchyLevel(childrenInfo1.first, *datasource1);
-    m_cache->CacheHierarchyLevel(childrenInfo2.first, *datasource2);
+    m_cache->CacheHierarchyLevel(childrenInfo1.first, *datasource1, emptyVariables);
+    m_cache->CacheHierarchyLevel(childrenInfo2.first, *datasource2, emptyVariables);
 
     // verify only the second one got cached
     ASSERT_EQ(2, datasource2->GetRefCount());
     datasource2->Release();
-    EXPECT_NE(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo1.first).get());
-    EXPECT_EQ(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo2.first).get());
+    EXPECT_NE(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo1.first, emptyVariables).get());
+    EXPECT_EQ(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo2.first, emptyVariables).get());
     datasource2->AddRef();
     }
 
@@ -1228,27 +1366,27 @@ TEST_F(NodesCacheTests, Quick_RemovesPreviousDataSourceIfNewOneIsAddedForTheSame
     FillWithNodes(childrenInfo, NODESCACHE_QUICK_Boundary + 1);
 
     // both datasources point to the same data, but they're different instances
-    NavNodesProviderPtr datasource1 = m_cache->GetCombinedHierarchyLevel(childrenInfo.first);
-    NavNodesProviderPtr datasource2 = m_cache->GetCombinedHierarchyLevel(childrenInfo.first);
+    NavNodesProviderPtr datasource1 = m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables);
+    NavNodesProviderPtr datasource2 = m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables);
 
     // add the 1st provider to quick cache
-    m_cache->CacheHierarchyLevel(childrenInfo.first, *datasource1);
+    m_cache->CacheHierarchyLevel(childrenInfo.first, *datasource1, emptyVariables);
 
     // verify 1st provider is in the quick cache, but not the 2nd one
     ASSERT_EQ(2, datasource1->GetRefCount());
     datasource1->Release();
-    EXPECT_EQ(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
-    EXPECT_NE(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
+    EXPECT_EQ(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables).get());
+    EXPECT_NE(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables).get());
     datasource1->AddRef();
 
     // add the 2nd provider to quick cache
-    m_cache->CacheHierarchyLevel(childrenInfo.first, *datasource2);
+    m_cache->CacheHierarchyLevel(childrenInfo.first, *datasource2, emptyVariables);
 
     // verify 2nd provider is in the quick cache, and the 1st one is removed
     ASSERT_EQ(2, datasource2->GetRefCount());
     datasource2->Release();
-    EXPECT_NE(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
-    EXPECT_EQ(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
+    EXPECT_NE(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables).get());
+    EXPECT_EQ(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables).get());
     datasource2->AddRef();
     }
 
@@ -1270,8 +1408,8 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
         auto childrenInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", rootNodeIds[i]);
         FillWithNodes(childrenInfo, NODESCACHE_QUICK_Boundary + 1);
 
-        NavNodesProviderPtr provider = m_cache->GetCombinedHierarchyLevel(childrenInfo.first);
-        m_cache->CacheHierarchyLevel(childrenInfo.first, *provider);
+        NavNodesProviderPtr provider = m_cache->GetCombinedHierarchyLevel(childrenInfo.first, emptyVariables);
+        m_cache->CacheHierarchyLevel(childrenInfo.first, *provider, emptyVariables);
         providers.push_back(provider);
         }
 
@@ -1281,32 +1419,33 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
         ASSERT_EQ(2, providers[i]->GetRefCount());
         providers[i]->Release();
         CombinedHierarchyLevelInfo providerInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[i]);
-        EXPECT_EQ(providers[i].get(), m_cache->GetCombinedHierarchyLevel(providerInfo).get());
+        EXPECT_EQ(providers[i].get(), m_cache->GetCombinedHierarchyLevel(providerInfo, emptyVariables).get());
         providers[i]->AddRef();
         }
 
     // add a new provider
     auto newInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", rootNodeIds[NODESCACHE_QUICK_Size]);
     FillWithNodes(newInfo, NODESCACHE_QUICK_Boundary + 1);
-    NavNodesProviderPtr provider = m_cache->GetCombinedHierarchyLevel(newInfo.first);
-    m_cache->CacheHierarchyLevel(newInfo.first, *provider);
+    NavNodesProviderPtr provider = m_cache->GetCombinedHierarchyLevel(newInfo.first, emptyVariables);
+    m_cache->CacheHierarchyLevel(newInfo.first, *provider, emptyVariables);
 
     // verify the first cached provider is now removed from cache and the new one is inserted
-    EXPECT_NE(providers[0].get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[0])).get());
+    EXPECT_NE(providers[0].get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[0]), emptyVariables).get());
     for (size_t i = 1; i < providers.size(); ++i)
         {
         ASSERT_EQ(2, providers[i]->GetRefCount());
         providers[i]->Release();
-        EXPECT_EQ(providers[i].get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[i])).get());
+        EXPECT_EQ(providers[i].get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[i]), emptyVariables).get());
         providers[i]->AddRef();
         }
 
     ASSERT_EQ(2, provider->GetRefCount());
     provider->Release();
-    EXPECT_EQ(provider.get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[NODESCACHE_QUICK_Size])).get());
+    EXPECT_EQ(provider.get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[NODESCACHE_QUICK_Size]), emptyVariables).get());
     provider->AddRef();
     }
 
+#ifdef wip_ruleset_variables
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1344,6 +1483,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsOnlyRelatedDat
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(childInfo1.first, related[0]);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
@@ -1672,129 +1812,84 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Mantas.Kontrimas                04/2018
+* @bsitest                                      Saulius.Skliutas                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetCombinedHierarchyLevel_ClearsRootDatasourceCacheIfRelatedSettingsValuesChanged)
+TEST_F(NodesCacheTests, GetCombinedHierarchyLevel_ReturnsInvalidRootDatasourceForDifferentRulesetVariables)
     {
-    m_userSettings.GetSettings("ruleset_id").SetSettingValue("setting_id", "value0");
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value("value0"))};
+    RulesetVariables relatedVariables({ RulesetVariableEntry("variable_id", rapidjson::Value("value0"))});
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    m_cache->Update(info.second, nullptr, nullptr, &settingsValues);
+    m_cache->Update(info.second, nullptr, nullptr, &relatedVariables);
 
-    // verify the data source exists now
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    // verify that valid data source is returned for matching ruleset variables
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, relatedVariables).IsValid());
 
-    // verify that valid datasource is not returned with different user settings
-    m_userSettings.GetSettings("ruleset_id").SetSettingValue("setting_id", "value1");
-
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    // verify what valid datasource is not returned with different ruleset variables
+    RulesetVariables differentVariables({ RulesetVariableEntry("variable_id", rapidjson::Value("value1")) });
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first, differentVariables).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Mantas.Kontrimas                04/2018
+* @bsitest                                      Saulius.Skliutas                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetCombinedHierarchyLevel_DoesntClearRootDatasourceCacheIfRelatedSettingsValuesDidntChange)
-    {
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(10))};
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    m_cache->Update(info.second, nullptr, nullptr, &settingsValues);
-
-    // verify the data source exists now
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
-
-    // verify what valid datasource is returned with same user settings
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
-
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Mantas.Kontrimas                04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetCombinedHierarchyLevel_ClearsChildDatasourceCacheIfRelatedSettingsValuesChanged)
+TEST_F(NodesCacheTests, GetCombinedHierarchyLevel_ReturnsInvalidChildDatasourceCacheForDifferentRulesetVariables)
     {
     // cache root data source
     auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     auto rootNodes = FillWithNodes(rootInfo, 1);
 
     // cache child data source
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 1);
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(1))};
+    RulesetVariables relatedVariables({ RulesetVariableEntry("variable_id", rapidjson::Value(1))});
     auto childInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", rootNodes[0]->GetNodeId());
-    m_cache->Update(childInfo.second, nullptr, nullptr, &settingsValues);
+    m_cache->Update(childInfo.second, nullptr, nullptr, &relatedVariables);
 
-    // verify the data source exists now
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(childInfo.first).IsValid());
+    // verify that valid data source is returned for matching ruleset variables
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(childInfo.first, relatedVariables).IsValid());
 
-    // verify what valid datasource is not returned with different user settings
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
-
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(childInfo.first).IsNull());
+    // verify what valid datasource is not returned with different ruleset variables
+    RulesetVariables differentVariables({ RulesetVariableEntry("variable_id", rapidjson::Value(10)) });
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(childInfo.first, differentVariables).IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2018
+* @bsitest                                      Saulius.Skliutas                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetHierarchyLevel_ClearsRootDatasourceCacheIfRelatedSettingsValuesChanged)
+TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsInvalidRootDatasourceForDIfferentRulesetVariables)
     {
-    m_userSettings.GetSettings("ruleset_id").SetSettingValue("setting_id", "value0");
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value("value0"))};
+    RulesetVariables relatedVariables({ RulesetVariableEntry("variable_id", rapidjson::Value("value0"))});
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    m_cache->Update(info.second, nullptr, nullptr, &settingsValues);
+    m_cache->Update(info.second, nullptr, nullptr, &relatedVariables);
 
-    // verify the data source exists now
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(info.first).IsValid());
+    // verify that valid data source is returned for matching ruleset variables
+    EXPECT_TRUE(m_cache->GetHierarchyLevel(info.first, relatedVariables).IsValid());
 
-    // verify that valid datasource is not returned with different user settings
-    m_userSettings.GetSettings("ruleset_id").SetSettingValue("setting_id", "value1");
-
-    EXPECT_FALSE(m_cache->GetHierarchyLevel(info.first).IsValid());
+    // verify what valid datasource is not returned with different ruleset variables
+    RulesetVariables differentVariables({ RulesetVariableEntry("variable_id", rapidjson::Value("value1")) });
+    EXPECT_FALSE(m_cache->GetHierarchyLevel(info.first, differentVariables).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2018
+* @bsitest                                      Saulius.Skliutas                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetHierarchyLevel_DoesntClearRootDatasourceCacheIfRelatedSettingsValuesDidntChange)
-    {
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(10))};
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    m_cache->Update(info.second, nullptr, nullptr, &settingsValues);
-
-    // verify the data source exists now
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(info.first).IsValid());
-
-    // verify what valid datasource is returned with same user settings
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
-
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(info.first).IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetHierarchyLevel_ClearsChildDatasourceCacheIfRelatedSettingsValuesChanged)
+TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsInvalidChildDatasourceForDifferentRulesetVariables)
     {
     // cache root data source
     auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     auto rootNodes = FillWithNodes(rootInfo, 1);
 
     // cache child data source
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 1);
-    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(1))};
+    RulesetVariables relatedVariables({ RulesetVariableEntry("variable_id", rapidjson::Value(1))});
     auto childInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", rootNodes[0]->GetNodeId());
-    m_cache->Update(childInfo.second, nullptr, nullptr, &settingsValues);
+    m_cache->Update(childInfo.second, nullptr, nullptr, &relatedVariables);
 
-    // verify the data source exists now
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first).IsValid());
+    // verify that valid data source is returned for matching ruleset variables
+    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first, relatedVariables).IsValid());
 
-    // verify what valid datasource is not returned with different user settings
-    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
-
-    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first).IsNull());
+    // verify what valid datasource is not returned with different ruleset variables
+    RulesetVariables differentVariables({ RulesetVariableEntry("variable_id", rapidjson::Value(10)) });
+    EXPECT_TRUE(m_cache->GetHierarchyLevel(childInfo.first, differentVariables).IsNull());
     }
 
+#ifdef wip_ruleset_variables
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1856,6 +1951,7 @@ TEST_F(NodesCacheTests, GetDataSource_ClearsChildDatasourceCacheIfRelatedSetting
 
     EXPECT_TRUE(m_cache->GetDataSource(childInfo.second).IsNull());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2018
@@ -1867,12 +1963,12 @@ TEST_F(NodesCacheTests, Savepoint_DiscardsChangesWhenCanceled)
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     auto nodes = FillWithNodes(info, 1);
 
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->GetNode(nodes[0]->GetNodeId()).IsValid());
 
     savepoint->Cancel();
 
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_FALSE(m_cache->GetNode(nodes[0]->GetNodeId()).IsValid());
     }
 
@@ -1886,13 +1982,94 @@ TEST_F(NodesCacheTests, Savepoint_DoesntDiscardChangesWhenNotCanceled)
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     auto nodes = FillWithNodes(info, 1);
 
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->GetNode(nodes[0]->GetNodeId()).IsValid());
 
     savepoint = nullptr;
 
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->GetNode(nodes[0]->GetNodeId()).IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, OnRulesetVariablesUsed_DoesNotClearVariablesWhenThresholdIsNotExceeded)
+    {
+    // cache root hierarchy level
+    HierarchyLevelInfo info(m_connection->GetId(), "ruleset_id", "locale", 0, 0);
+    m_cache->Cache(info);
+    ASSERT_TRUE(info.IsValid());
+
+    RulesetVariables variables;
+    bvector<DataSourceInfo> dataSourceInfos;
+    int cacheThreshold = atoi(NODESCACHE_VARIABLES_Threshold);
+    // cache some data sources with different variables not exceeding threshold
+    for (uint64_t i = 0; i < cacheThreshold; ++i)
+        {
+        variables.SetIntValue("var_id", i);
+        DataSourceInfo ds(info.GetId(), { i });
+        // cache data source
+        m_cache->Cache(ds, DataSourceFilter(), bmap<ECClassId, bool>(), variables);
+        m_cache->FinalizeInitialization(ds);
+        // check that data source exists
+        EXPECT_TRUE(m_cache->GetDataSource(ds, variables).IsValid());
+        dataSourceInfos.push_back(ds);
+        BeThreadUtilities::BeSleep(5); // sleep for 5 milliseconds to make sure the "last used" time differs
+        }
+
+    variables.SetIntValue("var_id", cacheThreshold);
+    m_cache->OnRulesetVariablesUsed(variables, "var_id");
+
+    // check that all data sources still exists
+    for (uint64_t i = 0; i < cacheThreshold; ++i)
+        {
+        variables.SetIntValue("var_id", i);
+        EXPECT_TRUE(m_cache->GetDataSource(dataSourceInfos[i], variables).IsValid());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, OnRulesetVariablesUsed_ClearVariablesWhenThresholdIsExceeded)
+    {
+    // cache root hierarchy level
+    HierarchyLevelInfo info(m_connection->GetId(), "ruleset_id", "locale", 0, 0);
+    m_cache->Cache(info);
+    ASSERT_TRUE(info.IsValid());
+
+    RulesetVariables variables;
+    bvector<DataSourceInfo> dataSourceInfos;
+    int cacheThreshold = atoi(NODESCACHE_VARIABLES_Threshold);
+    // cache some data sources with different ruleset variables to exceed threshold
+    for (uint64_t i = 0; i < cacheThreshold + 1; ++i)
+        {
+        variables.SetIntValue("var_id", i);
+        DataSourceInfo ds(info.GetId(), { i });
+        // cache data source
+        m_cache->Cache(ds, DataSourceFilter(), bmap<ECClassId, bool>(), variables);
+        m_cache->FinalizeInitialization(ds);
+        // check that data source exists
+        EXPECT_TRUE(m_cache->GetDataSource(ds, variables).IsValid());
+        dataSourceInfos.push_back(ds);
+        BeThreadUtilities::BeSleep(5); // sleep for 5 milliseconds to make sure the "last used" time differs
+        }
+
+    // remove data sources using oldest variables
+    variables.SetIntValue("var_id", cacheThreshold);
+    m_cache->OnRulesetVariablesUsed(variables, "ruleset_id");
+
+    // check that data source with oldest variables is removed
+    variables.SetIntValue("var_id", 0);
+    EXPECT_FALSE(m_cache->GetDataSource(dataSourceInfos[0], variables).IsValid());
+
+    // check all data source exist except first
+    for (uint64_t i = 1; i < cacheThreshold + 1; ++i)
+        {
+        variables.SetIntValue("var_id", i);
+        EXPECT_TRUE(m_cache->GetDataSource(dataSourceInfos[i], variables).IsValid());
+        }
     }
 
 /*=================================================================================**//**
@@ -1911,7 +2088,7 @@ struct DiskNodesCacheTests : NodesCacheTests
 
     virtual std::unique_ptr<NodesCache> _CreateNodesCache(IConnectionR connection, BeFileNameCR tempDir) override
         {
-        return NodesCache::Create(connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, m_cacheUpdateData);
+        return NodesCache::Create(connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, m_cacheUpdateData);
         }
     };
 
@@ -1922,7 +2099,7 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
     {
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    auto secondCache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    auto secondCache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
 
     Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
     Utf8CP secondCacheName = secondCache->GetDb().GetDbFileName();
@@ -1940,7 +2117,7 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     auto nodes = FillWithNodes(info, 2, true);
 
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
 
@@ -1950,13 +2127,13 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache.get());
 
     // cache should not be cleaned
     CombinedHierarchyLevelInfo updatedInfo(m_connection->GetId(), info.first.GetRulesetId(),
         info.first.GetLocale(), 0);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(updatedInfo).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(updatedInfo, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
     }
@@ -1973,14 +2150,14 @@ TEST_F(DiskNodesCacheTests, RecreatesCacheIfExistingCacheDoesntHaveUpdateData)
     
     // cache something
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
 
     // re-create the cache in read-write mode
     m_cacheUpdateData = true;
     ReCreateNodesCache();
 
     // expect the data to be gone
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2019,7 +2196,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
 
     // cache some nodes
     auto nodes = FillWithNodes(info, 2, true);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
 
@@ -2028,7 +2205,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
     m_cache->OnRulesetUsed(*ruleset);
 
     // verify cache is cleared
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
     }
@@ -2043,7 +2220,7 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
 
     // cache some nodes
     auto nodes = FillWithNodes(info, 2, true);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
 
@@ -2056,11 +2233,11 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache.get());
 
     // verify cache is cleared
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
     }
@@ -2073,14 +2250,14 @@ TEST_F(DiskNodesCacheTests, ClearsOldestRulesetCacheWhenCacheFileSizeExceedsLimi
     // cache root data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     FillWithNodes(info, 30, true);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
 
     // create second ruleset and cache root data source
     m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
 
     auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id2", "locale", 0);
     FillWithNodes(info2, 40, true);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info2.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info2.first, emptyVariables).IsValid());
 
     // set cache file size limit
     const_cast<Db&>(m_cache->GetDb()).SaveChanges();
@@ -2095,14 +2272,14 @@ TEST_F(DiskNodesCacheTests, ClearsOldestRulesetCacheWhenCacheFileSizeExceedsLimi
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache.get());
 
     // verify first ruleset cache was deleted
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
 
     // verify second ruleset cache wasn't deleted
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info2.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info2.first, emptyVariables).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2113,7 +2290,7 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // cache root data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     FillWithNodes(info, 30, true);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
 
     // set cache file size limit
     const_cast<Db&>(m_cache->GetDb()).SaveChanges();
@@ -2128,11 +2305,11 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache.get());
 
     // verify the cache is still valid
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2145,7 +2322,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
 
     // cache some nodes
     auto nodes = FillWithNodes(info, 2, true);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first, emptyVariables).IsValid());
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
 
@@ -2162,13 +2339,13 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = NodesCache::Create(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache.get());
 
     // cache should be empty for this connection
     CombinedHierarchyLevelInfo updatedInfo(m_connection->GetId(), info.first.GetRulesetId(),
         info.first.GetLocale(), 0);
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(updatedInfo).IsValid());
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(updatedInfo, emptyVariables).IsValid());
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
     }
@@ -2227,7 +2404,7 @@ TEST_F(DiskNodesCacheLocationTests, CreatesCacheInSpecifiedDirectory)
     Utf8PrintfString cacheName("%s.HierarchyCache.db", m_ecdbFileName.c_str());
     expectedPath.AppendSeparator().AppendUtf8(cacheName.c_str());
 
-    auto cache = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    auto cache = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache->GetDb().GetDbFileName());
     }
 
@@ -2241,11 +2418,11 @@ TEST_F(DiskNodesCacheLocationTests, ReusesExistingCache)
     expectedPath.AppendSeparator().AppendUtf8(cacheName.c_str());
 
     {
-    NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     }
     EXPECT_TRUE(expectedPath.DoesPathExist());
 
-    auto cache = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    auto cache = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache->GetDb().GetDbFileName());
     }
 
@@ -2258,12 +2435,12 @@ TEST_F(DiskNodesCacheLocationTests, CreatesSeparateCacheWhenExistingIsLocked)
     Utf8PrintfString cacheName("%s.HierarchyCache.db", m_ecdbFileName.c_str());
     expectedPath1.AppendSeparator().AppendUtf8(cacheName.c_str());
 
-    auto cache1 = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    auto cache1 = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath1.GetNameUtf8().c_str(), cache1->GetDb().GetDbFileName());
 
     BeFileName cache2Path;
     {
-        auto cache2 = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+        auto cache2 = NodesCache::Create(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
         cache2Path = BeFileName(cache2->GetDb().GetDbFileName());
         BeFileName expectedDirectory2 = BeFileName(m_directory).AppendSeparator();
         EXPECT_STREQ(expectedDirectory2.c_str(), cache2Path.GetDirectoryName().c_str());
@@ -2287,6 +2464,6 @@ TEST_F(DiskNodesCacheLocationTests, CreatesCacheInTheSameDirectoryAsIModelIfDire
     Utf8PrintfString cacheName("%s.HierarchyCache.db", m_ecdbFileName.c_str());
     expectedPath.AppendUtf8(cacheName.c_str());
 
-    auto cache = NodesCache::Create(*m_connection, BeFileName(), m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    auto cache = NodesCache::Create(*m_connection, BeFileName(), m_nodesFactory, m_nodesProviderContextFactory, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache->GetDb().GetDbFileName());
     }
