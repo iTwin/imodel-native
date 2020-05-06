@@ -131,7 +131,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
         return BentleyStatus::ERROR;
         }
 
-    DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv, _GetParams().GetDmsSupportLibrary());
+    DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv, _GetParams().GetDmsSupportLibrary(), _GetParams().GetUrlEnvironment());
     if (m_isUnitTesting)
         {
         //When unit testing, we need to make an additional call to SetProcessingDisabled in order for CIF backpointers to be created in ProcessAffected()

@@ -18,6 +18,8 @@
 #include <VersionedDgnV8Api/DgnPlatform/CveHandler.h>
 #include <VersionedDgnV8Api/TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 
+#include <WebServices/Configuration/UrlProvider.h>
+
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
 //#include <AecUnits/AecUnitsDomain.h>
@@ -523,14 +525,21 @@ struct ConverterV8Txn : DgnV8Api::DgnCacheTxn
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     {
-    SMHost()
+    int m_connectEnvironment = 0;
+    SMHost(int connectEnvironment)
         {
+        m_connectEnvironment = connectEnvironment;
         }
 
     ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
         {
         struct CsScalableMeshAdmin : public ScalableMesh::ScalableMeshAdmin
             {
+            int m_connectEnvironment = 0;
+            CsScalableMeshAdmin(int connectEnvironment)
+                {
+                m_connectEnvironment = connectEnvironment;
+                }
             virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override
                 {
                 IScalableMeshTextureGeneratorPtr generator;
@@ -566,8 +575,23 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 productInfo.m_productName = L"DgnV8Converter";
                 return productInfo;
                 }
+
+            virtual uint32_t _SupplyRegionID() const override
+                {
+                auto regionID = WebServices::UrlProvider::Environment(m_connectEnvironment);
+                switch(regionID)
+                    {
+                        case WebServices::UrlProvider::Environment::Qa:
+                            return 102;
+                        case WebServices::UrlProvider::Environment::Release:
+                            return 1;
+                        default:
+                            return 1;
+                    }
+                return uint32_t(m_connectEnvironment);
+                }
             };
-        return *new CsScalableMeshAdmin;
+        return *new CsScalableMeshAdmin(m_connectEnvironment);
         };
 
     };
@@ -601,7 +625,8 @@ struct CifSheetExaggeratedViewHandlerStandin : DgnV8Api::ViewHandler
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir,
-                           BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[], BentleyApi::Dgn::IDmsSupport* dmsSupport)
+                           BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[], BentleyApi::Dgn::IDmsSupport* dmsSupport,
+                           int connectEnvironment)
     {
     if (!isPowerPlatformBased)
         {
@@ -676,7 +701,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
 
     DgnDomainP domain = new PresentationRulesDomain();
     DgnDomains::RegisterDomain(*domain, DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
-    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
+    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost(connectEnvironment));
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         xdomain->_RegisterDomain(bridgeAssetsDir);

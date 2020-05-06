@@ -1912,7 +1912,8 @@ public:
     DGNDBSYNC_EXPORT static void Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir,
                                             BentleyApi::BeFileNameCR v8DllsRelativeDir, BentleyApi::BeFileNameCP realdwgAbsoluteDir,
                                             bool isPowerPlatformBased, int argc, WCharCP argv[],
-                                            BentleyApi::Dgn::IDmsSupport*);
+                                            BentleyApi::Dgn::IDmsSupport*,
+                                            int);
     DGNDBSYNC_EXPORT static void Terminate(iModelBridge::Params const&);
     static BentleyStatus InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR realdwgDir);
     static BentleyStatus InitializeDwgSettings (Converter* v8converter);

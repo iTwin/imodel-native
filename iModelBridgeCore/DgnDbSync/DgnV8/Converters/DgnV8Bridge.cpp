@@ -12,6 +12,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/WebMercator.h>
+#include <WebServices/Configuration/UrlProvider.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
 #include <WebServices/Client/ClientInfo.h>
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
@@ -319,7 +320,7 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
         _GetConverterParams().SetV8SdkRelativeDir(v8DllsRelativeDir, isPowerplatformBased);
         }
 
-    Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv, _GetParams().GetDmsSupportLibrary());
+    Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv, _GetParams().GetDmsSupportLibrary(), _GetParams().GetUrlEnvironment());
 
     // Resolve import config file.
     BeFileName configFile;
@@ -746,6 +747,9 @@ BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
         saparams.SetLoggingConfigFile(_GetLoggingConfigurationFilename(argv[0]));
 
     iModelBridgeSacAdapter::InitializeHost(*this, "DgnV8Converter");
+
+    RuntimeJsonLocalState localState;
+    WebServices::UrlProvider::Initialize(WebServices::UrlProvider::Environment::Qa, WebServices::UrlProvider::DefaultTimeout, &localState);
 
     if (BSISUCCESS != _Initialize(argc, argv))
         {
