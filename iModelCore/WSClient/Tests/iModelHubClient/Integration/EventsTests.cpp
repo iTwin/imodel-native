@@ -136,27 +136,34 @@ TEST_F(EventsTests, SingleCallbackTest)
 
     //Test events callbacks
     EXPECT_SUCCESS(briefcase->SubscribeEventsCallback(&eventTypes, callback)->GetResult());
+
+    auto versionManager = s_connection->GetVersionsManager();
+    VersionInfoPtr baselineVersion = new VersionInfo("Baseline", "", "");
+    auto baselineVersionResult = versionManager.CreateVersion(*baselineVersion)->GetResult();
+    EXPECT_SUCCESS(baselineVersionResult);
+
     iModelHubHelpers::AddChangeSets(briefcase, 1, 0, false, true, "EventsTestsSingleCallbackTest");
     auto changeSets = s_connection->GetAllChangeSets()->GetResult().GetValue();
     EXPECT_FALSE(changeSets.empty());
-    auto versionManager = s_connection->GetVersionsManager();
+
     VersionInfoPtr version = new VersionInfo("Name", "", changeSets.at(0)->GetId());
     auto versionResult = versionManager.CreateVersion(*version)->GetResult();
     EXPECT_SUCCESS(versionResult);
+
     version = versionResult.GetValue();
     version->SetName("NewName");
     EXPECT_SUCCESS(versionManager.UpdateVersion(*version)->GetResult());
 
-    WaitForEventsCount(callbackNum, 14, 0, 0);
+    WaitForEventsCount(callbackNum, 15, 0, 0);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback)->GetResult());
-    EXPECT_EQ(14, callbackNum);
+    EXPECT_EQ(15, callbackNum);
 
     EXPECT_EQ(7, codeEventCallbackNum);
     EXPECT_EQ(3, lockEventCallbackNum);
     EXPECT_EQ(1, changeSetPrePushEventCallbackNum);
     EXPECT_EQ(1, changeSetPostPushEventCallbackNum);
-    EXPECT_EQ(1, versionEventCallbackNum);
+    EXPECT_EQ(2, versionEventCallbackNum);
     EXPECT_EQ(1, versionModifiedEventCallbackNum);
     }
 

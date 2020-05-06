@@ -226,6 +226,11 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     BriefcaseResult acquireResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, createResult.GetValue(), false);
     const auto iModelConnection = CreateiModelConnection(createResult.GetValue());
     BriefcasePtr briefcase = acquireResult.GetValue();
+
+    VersionInfoPtr baselineVersion;
+    iModelHubHelpers::CreateNamedVersion(baselineVersion, iModelConnection, "Baseline", -1);
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::NamedVersionCreatedEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
+
     auto model = CreateModel(GetTestInfo().name(), briefcase->GetDgnDb());
     CreateElement(*model, DgnCode(), false);
 

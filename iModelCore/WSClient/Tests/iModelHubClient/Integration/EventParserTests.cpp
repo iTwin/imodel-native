@@ -138,6 +138,23 @@ Utf8String StubHttpResponseValidVersionEvent()
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod									Algirdas.Mikoliunas             05/2020
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidBaselineVersionEvent()
+    {
+    return R"(
+              {
+              "Date":"SomeDate",
+              "EventTopic":"SomeEventTopic",
+              "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
+              "VersionId":"SomeVersionId",
+              "VersionName":"SomeVersionName",
+              "ChangeSetId":""
+              }
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidLockEvent1()
@@ -496,6 +513,24 @@ TEST_F(EventParserTests, VersionEventTests)
     {
     //Check for valid values
     EventPtr validPtr = EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseValidVersionEvent());
+    EXPECT_TRUE(validPtr.IsValid());
+    EXPECT_EQ(Event::EventType::VersionEvent, validPtr->GetEventType());
+    VersionEvent& versionEvent1 = dynamic_cast<VersionEvent&>(*validPtr);
+    EXPECT_TRUE(dynamic_cast<Event::GenericEvent*>(&versionEvent1)); //VersionEvent is a subclass of Event
+    RefCountedPtr<struct VersionEvent> versionEvent2 = EventParser::GetVersionEvent(validPtr);
+    EXPECT_TRUE(versionEvent2.IsValid());
+    EXPECT_EQ(versionEvent1.GetVersionId(), versionEvent2->GetVersionId());
+    EXPECT_EQ(versionEvent1.GetVersionName(), versionEvent2->GetVersionName());
+    EXPECT_EQ(versionEvent1.GetChangeSetId(), versionEvent2->GetChangeSetId());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Algirdas.Mikoliunas              05/2020
+//---------------------------------------------------------------------------------------
+TEST_F(EventParserTests, BaselineVersionEventTests)
+    {
+    //Check for valid values
+    EventPtr validPtr = EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseValidBaselineVersionEvent());
     EXPECT_TRUE(validPtr.IsValid());
     EXPECT_EQ(Event::EventType::VersionEvent, validPtr->GetEventType());
     VersionEvent& versionEvent1 = dynamic_cast<VersionEvent&>(*validPtr);
