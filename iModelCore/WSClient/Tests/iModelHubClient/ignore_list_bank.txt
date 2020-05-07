@@ -48,12 +48,6 @@ iModelTests.UnsuccessfulCreateiModel
 iModelTests.UnsuccessfulGetiModels
 
 #----------------------------------------------------------------------------------------
-#   Fails when running all tests
-#----------------------------------------------------------------------------------------
-VersionsTests.GetChangeSetsAfterBaselineVersionSucceeds                     #301247 Baseline iModel version is not listed
-VersionsTests.GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds       #301247 Baseline iModel version is not listed
-
-#----------------------------------------------------------------------------------------
 #   Missing features in iModelBank
 #----------------------------------------------------------------------------------------
 ChangeSetsTests.PreDownload                         #222158 - Events
@@ -94,14 +88,10 @@ SeedFileTests.*                                     #Seed files
 ChangeSetsTests.ChangeSetsInfo                                          #299701 fix backward relationships
 BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithoutReinstating     #299701 fix backward relationships
 BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithReinstating        #299701 fix backward relationships
-LocksTests.QueryUnavailableLocksTest                                    #299702 $filter for released locks
-PerformanceTests.PushLocks                                              #299702 $filter for released locks
-CodesLocksTests.QueryLocksCodes                                         #300574 Fix `in` operator when filtering code ids
 PerformanceTests.RetrieveCodesById                                      #300575 Fix Content-Type in WSClient
 PerformanceTests.RetrieveFractionOfAllAvailableCodesById                #300575 Fix Content-Type in WSClient
 PerformanceTests.RetrieveLocksById                                      #300575 Fix Content-Type in WSClient
 PerformanceTests.RetrieveFractionOfAllAvailableLocksById                #300575 Fix Content-Type in WSClient
-SchemaLockTests.LockSchemas                                             #300576 Restrict objectId for schema locks
 
 #----------------------------------------------------------------------------------------
 #   iModelManager or Gateway issues, might need fix
