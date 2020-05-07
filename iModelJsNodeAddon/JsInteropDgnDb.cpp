@@ -862,6 +862,71 @@ DgnDbStatus JsInterop::QueryModelExtents(JsonValueR extentsJson, DgnDbR db, Json
     return DgnDbStatus::Success;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* TEMPORARY FUNCTION #TODO Alain Robert
+* This method converts the stored vertical datum code to the effective vertical datum code.
+* This fix is temporary till we can fix Power Platform to support correctly
+* code zero that currently can be interpreted differently depending on the geodetic datum.
+* Once Power Platform is fixed we can start to phase off value zero for fixed values
+* not subject to interpretation.
+* @bsimethod                                    Alain.Robert                   05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+GeoCoordinates::VertDatumCode GetEffectiveVerticalDatumCode(DgnGCSCR gcs)
+    {
+    GeoCoordinates::VertDatumCode effectiveVerticalDatumCode = gcs.GetVerticalDatumCode();
+
+    // Due to a design flaw in Power Platform value 0 (gdcFromDatum) is interpreted
+    // differently depending on the geodetic datum.
+    // Note that this flaw prevents dataset in the USA to use Ellipsoid vertical datum.
+    if (effectiveVerticalDatumCode == GeoCoordinates::vdcFromDatum)
+        {
+        if (gcs.IsNAD83())
+            effectiveVerticalDatumCode = GeoCoordinates::vdcNAVD88;
+        else if (gcs.IsNAD27())
+            effectiveVerticalDatumCode = GeoCoordinates::vdcNGVD29;
+        }
+
+    return effectiveVerticalDatumCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* TEMPORARY FUNCTION #TODO Alain Robert
+* Conversion of a GCS to JSON will be moved down to DgnUnit then probably GeoCoord eventually.
+* The purpose of this function is to provide a quick fix for vertical datum support
+* in iModelJS. For proper Bing Map display it is required to know the
+* vertical datum of the iModel.
+* @bsimethod                                    Alain.Robert                   05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value GetGCSAsJson(DgnGCSCR gcs)
+    {
+    Json::Value fullGCS;
+
+    if (gcs.IsValid())
+        {
+        Json::Value horizontalGCS;
+
+        horizontalGCS["name"] = Json::Value(Utf8String(gcs.GetName()).c_str());
+
+        horizontalGCS["geodeticDatumKeyname"] = Json::Value(Utf8String(gcs.GetDatumName()).c_str());
+
+        Json::Value verticalGCS;
+        GeoCoordinates::VertDatumCode verticalDatum = GetEffectiveVerticalDatumCode(gcs);
+        if (verticalDatum == GeoCoordinates::vdcGeoid)
+            verticalGCS["verticalDatum"] = Json::Value("GEOID");
+        else if (verticalDatum == GeoCoordinates::vdcNAVD88)
+            verticalGCS["verticalDatum"] = Json::Value("NAVD88");
+        else if (verticalDatum == GeoCoordinates::vdcNGVD29)
+            verticalGCS["verticalDatum"] = Json::Value("NGVD29");
+        else
+            verticalGCS["verticalDatum"] = Json::Value("ELLIPSOID");
+
+        fullGCS["horizontalCS"] = horizontalGCS;
+        fullGCS["verticalCS"] = verticalGCS;
+
+        }
+    return fullGCS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Keith.Bentley                 12/17
 //---------------------------------------------------------------------------------------
@@ -888,7 +953,13 @@ void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb) {
     auto ecefLocation = geolocation.GetEcefLocation();
     if (ecefLocation.m_isValid)
         val[json_ecefLocation()] = ecefLocation.ToJson();
+
+    auto gcs = geolocation.GetDgnGCS();
+
+    if (gcs != nullptr && gcs->IsValid())
+        val["geographicCoordinateSystem"] = GetGCSAsJson(*gcs);
 }
+
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/20
@@ -901,6 +972,8 @@ private:
     GeoCoordinates::DatumCP         m_targetDatum = nullptr;
     WString                         m_sourceName;
     WString                         m_targetName;
+    GeoCoordinates::VertDatumCode   m_sourceVerticalDatum;
+    GeoCoordinates::VertDatumCode   m_targetVerticalDatum;
 
     void Reset()
         {
@@ -915,6 +988,8 @@ private:
         m_targetDatum = src.m_targetDatum;
         m_sourceName = src.m_sourceName;
         m_targetName = src.m_targetName;
+        m_sourceVerticalDatum = src.m_sourceVerticalDatum;
+        m_targetVerticalDatum = src.m_targetVerticalDatum;
 
         src.Reset();
         }
@@ -933,7 +1008,7 @@ public:
         return *this;
         }
 
-    CachedDatumConverter(WStringCR sourceName, WStringCR targetName) : m_sourceName(sourceName), m_targetName(targetName)
+    CachedDatumConverter(WStringCR sourceName, WStringCR targetName, GeoCoordinates::VertDatumCode sourceVerticalDatum, GeoCoordinates::VertDatumCode targetVerticalDatum) : m_sourceName(sourceName), m_targetName(targetName)
         {
         auto source = GeoCoordinates::Datum::CreateDatum(sourceName.c_str());
         if (nullptr == source)
@@ -946,7 +1021,7 @@ public:
             return;
             }
 
-        auto converter = GeoCoordinates::DatumConverter::Create(*source, *target);
+        auto converter = GeoCoordinates::DatumConverter::Create(*source, *target, sourceVerticalDatum, targetVerticalDatum);
 
         // #TODO Alain Robert Temporary patch. By default reproject elevation is false in MicroStation (global setting) but in newer workflows
         // this default value is doubtful. We need to find another mechanism than reprojection settings to process.
@@ -961,6 +1036,8 @@ public:
 
         m_sourceDatum = source;
         m_targetDatum = target;
+        m_sourceVerticalDatum = sourceVerticalDatum;
+        m_targetVerticalDatum = targetVerticalDatum;
         m_converter = converter;
         }
 
@@ -976,9 +1053,10 @@ public:
         Reset();
         }
 
-    bool Matches(WCharCP sourceName, WCharCP targetName) const
+    bool Matches(WCharCP sourceName, WCharCP targetName, GeoCoordinates::VertDatumCode sourceVerticalDatum, GeoCoordinates::VertDatumCode targetVerticalDatum) const
         {
-        return m_sourceName.Equals(sourceName) && m_targetName.Equals(targetName);
+        return m_sourceName.Equals(sourceName) && m_targetName.Equals(targetName) && 
+               m_sourceVerticalDatum == sourceVerticalDatum && m_targetVerticalDatum == targetVerticalDatum;
         }
 
     GeoCoordinates::DatumConverterP GetConverter() const { return m_converter; }
@@ -999,13 +1077,13 @@ private:
         return *db.ObtainAppData(s_key, []() { return new DatumConverterCache(); });
         }
 
-    GeoCoordinates::DatumConverterP GetConverter(WStringCR sourceDatumName, WStringCR targetDatumName)
+    GeoCoordinates::DatumConverterP GetConverter(WStringCR sourceDatumName, WStringCR targetDatumName, GeoCoordinates::VertDatumCode sourceVerticalDatum, GeoCoordinates::VertDatumCode targetVerticalDatum)
         {
-        auto iter = std::find_if(m_converters.begin(), m_converters.end(), [&](CachedDatumConverter& cvtr) { return cvtr.Matches(sourceDatumName.c_str(), targetDatumName.c_str()); });
+        auto iter = std::find_if(m_converters.begin(), m_converters.end(), [&](CachedDatumConverter& cvtr) { return cvtr.Matches(sourceDatumName.c_str(), targetDatumName.c_str(), sourceVerticalDatum, targetVerticalDatum); });
         if (m_converters.end() != iter)
             return iter->GetConverter();
 
-        m_converters.emplace_back(sourceDatumName, targetDatumName);
+        m_converters.emplace_back(sourceDatumName, targetDatumName, sourceVerticalDatum, targetVerticalDatum);
 
         // In some cases the converter returned is null possibly due to misconfiguration of grid shift files
         // So don't cache unless we get a non-null converter.
@@ -1016,7 +1094,7 @@ private:
         return converter;
         }
 
-    static WString GetRequiredDatumName(Utf8String requestedDatumName, DgnDbR db)
+    static WString GetRequiredDatumName(Utf8String requestedDatumName, GeoCoordinates::VertDatumCode requestedVerticalDatum, DgnDbR db)
         {
         requestedDatumName.DropQuotes();
         if (requestedDatumName.empty())
@@ -1028,28 +1106,40 @@ private:
 
         WCharCP iModelDatumName = gcs->GetDatumName();
         WString requestedDatumNameW(requestedDatumName.c_str(), true);
-        if (requestedDatumNameW.Equals(iModelDatumName))
+        if (requestedDatumNameW.Equals(iModelDatumName) && GetEffectiveVerticalDatumCode(*gcs) == requestedVerticalDatum)
             return WString();
 
         return requestedDatumNameW;
         }
 public:
-    static GeoCoordinates::DatumConverterP GetConverterFromIModelCoords(Utf8StringCR targetDatumName, DgnDbR db)
+    static GeoCoordinates::DatumConverterP GetConverterFromIModelCoords(Utf8StringCR targetDatumName, GeoCoordinates::VertDatumCode targetVerticalDatum, DgnDbR db)
         {
-        auto targetDatumNameW = GetRequiredDatumName(targetDatumName, db);
+        auto targetDatumNameW = GetRequiredDatumName(targetDatumName, targetVerticalDatum,  db);
         if (targetDatumNameW.empty())
             return nullptr;
 
-        return Get(db).GetConverter(db.GeoLocation().GetDgnGCS()->GetDatumName(), targetDatumNameW);
+        auto gcs = db.GeoLocation().GetDgnGCS();
+        if (nullptr == gcs || !gcs->IsValid())
+            return nullptr;
+        
+        GeoCoordinates::VertDatumCode effectiveVerticalDatumCode = GetEffectiveVerticalDatumCode(*gcs);
+
+        return Get(db).GetConverter(gcs->GetDatumName(), targetDatumNameW, effectiveVerticalDatumCode, targetVerticalDatum);
         }
 
-    static GeoCoordinates::DatumConverterP GetConverterToIModelCoords(Utf8StringCR sourceDatumName, DgnDbR db)
+    static GeoCoordinates::DatumConverterP GetConverterToIModelCoords(Utf8StringCR sourceDatumName, GeoCoordinates::VertDatumCode sourceVerticalDatum, DgnDbR db)
         {
-        auto sourceDatumNameW = GetRequiredDatumName(sourceDatumName, db);
+        auto sourceDatumNameW = GetRequiredDatumName(sourceDatumName, sourceVerticalDatum, db);
         if (sourceDatumNameW.empty())
             return nullptr;
 
-        return Get(db).GetConverter(sourceDatumNameW, db.GeoLocation().GetDgnGCS()->GetDatumName());
+        auto gcs = db.GeoLocation().GetDgnGCS();
+        if (nullptr == gcs || !gcs->IsValid())
+            return nullptr;
+
+        GeoCoordinates::VertDatumCode effectiveVerticalDatumCode = GetEffectiveVerticalDatumCode(*gcs);
+
+        return Get(db).GetConverter(sourceDatumNameW, gcs->GetDatumName(), sourceVerticalDatum, effectiveVerticalDatumCode);
         }
 };
 
@@ -1085,7 +1175,10 @@ BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords(JsonValueR results, DgnDbR
     bvector<ReprojectStatus> statusList(geoPoints.size());
 
     Utf8String targetDatumName = props[json_targetDatum()].ToString();
-    auto datumConverter = DatumConverterCache::GetConverterFromIModelCoords(targetDatumName, dgnDb);
+
+    // #TODO Alain Robert Currently we only support Ellipsoid Vertical Datum
+    GeoCoordinates::VertDatumCode targetVerticalDatum = GeoCoordinates::vdcFromDatum;
+    auto datumConverter = DatumConverterCache::GetConverterFromIModelCoords(targetDatumName, targetVerticalDatum, dgnDb);
     auto gcs = dgnDb.GeoLocation().GetDgnGCS();
 
     auto outputStatus = statusList.begin();
@@ -1129,7 +1222,11 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
 
     // get the GCS
     Utf8String sourceDatumName = props[json_sourceDatum()].ToString();
-    auto datumConverter = DatumConverterCache::GetConverterToIModelCoords(sourceDatumName, dgnDb);
+
+    // #TODO Alain Robert Currently we only support Ellipsoid Vertical Datum
+    GeoCoordinates::VertDatumCode sourceVerticalDatum = GeoCoordinates::vdcFromDatum;
+
+    auto datumConverter = DatumConverterCache::GetConverterToIModelCoords(sourceDatumName, sourceVerticalDatum, dgnDb);
     auto gcs = dgnDb.GeoLocation().GetDgnGCS();
 
     auto outputStatus = statusList.begin();

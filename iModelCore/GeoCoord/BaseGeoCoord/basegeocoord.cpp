@@ -5977,8 +5977,26 @@ GeoPointCR  inLatLong
                 return GEOCOORDERR_VerticalDatumConversion;
             }
         }
-        
-        
+    // If none are NGVD29 and one is NAVD88 then we process as if NAVD88 was GEOID (Which it is actually)
+    else if (m_fromVDC == vdcFromDatum && m_toVDC == vdcNAVD88)
+    {
+        double  elevationDelta;
+
+        if (0 == CS_geoidHgt((double *)&outLatLong, &elevationDelta))
+            outLatLong.elevation -= elevationDelta;
+        else
+            return GEOCOORDERR_VerticalDatumConversion;
+    }
+    else if (m_fromVDC == vdcNAVD88 && m_toVDC == vdcFromDatum)
+    {
+        double  elevationDelta;
+
+        if (0 == CS_geoidHgt((double *)&outLatLong, &elevationDelta))
+            outLatLong.elevation += elevationDelta;
+        else
+            return GEOCOORDERR_VerticalDatumConversion;
+    }
+
     return SUCCESS;
     }
 
@@ -14003,6 +14021,34 @@ static VertDatumCode   NetVerticalDatum (BaseGCSCR gcs)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+VerticalDatumConverter*         GetVerticalDatumConverterFromCode
+(
+    bool                fromIsNAD27,
+    VertDatumCode       fromVDC,
+    VertDatumCode       toVDC
+)
+{
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
+    // If vertical datums are both geoid we still create a vertical datum converter to prevent ellipsoidal
+    // vertical transformation
+    if (fromVDC == toVDC && fromVDC != vdcGeoid)
+        return NULL;
+
+    // If either vertical datum codes are NGVD29 or NAVD88 then we init
+    // the VERTCON american vertical datum system
+    if (fromVDC == vdcNGVD29 || fromVDC == vdcNAVD88 || toVDC == vdcNGVD29 || toVDC == vdcNAVD88)
+        if (0 != CSvrtconInit())
+            return NULL;
+
+    // This value is irrelevant when we are not performing NGVD29/NAVD88 vertical datum shift.
+    return new VerticalDatumConverter(fromIsNAD27, fromVDC, toVDC);
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter*         GetVerticalDatumConverter
@@ -14035,21 +14081,8 @@ BaseGCSCR       to
     // are they the same?
     VertDatumCode   fromVDC = NetVerticalDatum (from);
     VertDatumCode   toVDC   = NetVerticalDatum (to);
-
-    // If vertical datums are both geoid we still create a vertical datum converter to prevent ellipsoidal
-    // vertical transformation
-    if (fromVDC == toVDC && fromVDC != vdcGeoid) 
-        return NULL;
-
-    // If either vertical datum codes are NGVD29 or NAVD88 then we init
-    // the VERTCON american vertical datum system
-    if (fromVDC == vdcNGVD29 || fromVDC == vdcNAVD88 || toVDC == vdcNGVD29 || toVDC == vdcNAVD88)
-        if (0 != CSvrtconInit())
-            return NULL;
-
-    // This value is irrelevant when we are not performing NGVD29/NAVD88 vertical datum shift.
     bool fromIsNAD27 = from.IsNAD27();
-    return new VerticalDatumConverter (fromIsNAD27, fromVDC, toVDC);
+    return GetVerticalDatumConverterFromCode(fromIsNAD27, fromVDC, toVDC);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14105,6 +14138,39 @@ DatumCR     to
         return NULL;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DatumConverterP         DatumConverter::Create
+(
+    DatumCR       from,
+    DatumCR       to,
+    VertDatumCode fromVerticalDatum,
+    VertDatumCode toVerticalDatum
+)
+{
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
+    if (!from.IsValid() || !to.IsValid())
+        return NULL;
+    CSDatum* srcCSDatum = from.GetCSDatum();
+    CSDatum* dstCSDatum = to.GetCSDatum();
+    if ((NULL == srcCSDatum) || (NULL == dstCSDatum))
+        return NULL;
+
+    bool fromIsNAD27 = ((0 == BeStringUtilities::Stricmp(srcCSDatum->key_nm, "NAD27")) || (0 == BeStringUtilities::Stricmp(srcCSDatum->key_nm, "EPSG:6267")));
+
+    VerticalDatumConverter* verticalDatumConverter = GetVerticalDatumConverterFromCode(fromIsNAD27, fromVerticalDatum, toVerticalDatum);
+
+    CSDatumConvert  *datumConvert = CSMap::CSdtcsu(srcCSDatum, dstCSDatum);
+
+    if ((NULL != datumConvert) || (NULL != verticalDatumConverter))
+        return new DatumConverter(datumConvert, verticalDatumConverter);
+    else
+        return NULL;
+}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/

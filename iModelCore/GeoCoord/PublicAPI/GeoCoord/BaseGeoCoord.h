@@ -2533,6 +2533,14 @@ DatumCR         from,
 DatumCR         to
 );
 
+BASEGEOCOORD_EXPORTED static   DatumConverterP         Create
+(
+DatumCR       from,   
+DatumCR       to,
+VertDatumCode fromVerticalDatum,
+VertDatumCode toVerticalDatum
+);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
