@@ -89,13 +89,16 @@ BeFileName ORDBridgeTestsHost::GetDgnPlatformAssetsDirectory()
     return assetsRootDirectory;
     }
 
-WString* ORDBridgeTestsHost::GetInputFileArgument(BeFileName inputPath, WCharCP input)
+WString* ORDBridgeTestsHost::GetInputFileArgument(BeFileName inputPath, WCharCP input, bool isLargeTestFile)
     {
     BeFileName assetsRootDirectory;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDirectory);
 
     BeFileName inputPath1(assetsRootDirectory);
-    inputPath1.AppendString(WCharCP(L"TestFiles\\ORD\\"));
+    if (isLargeTestFile)
+        inputPath1.AppendString(WCharCP(L"LargeTestFiles\\ORD\\"));
+    else
+        inputPath1.AppendString(WCharCP(L"TestFiles\\ORD\\"));
     inputPath1.AppendString(WCharCP(input));
 
     WString inArg(WString(L"--input=\"").append(inputPath1.c_str()).append(L"\"").c_str());
@@ -249,14 +252,18 @@ bool CiviliModelBridgesORDBridgeTestsFixture::CopyTestFile(Utf8CP source, Utf8CP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode)
+bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode, 
+    bool isLargeTestFile)
     {
     BeFileName testAppPath = m_host->GetTestAppProductDirectory();
     testAppPath.AppendA("PublishORDToBim.exe");
 
     BeFileName assetsPath = m_host->GetDgnPlatformAssetsDirectory();
     BeFileName inputPath(assetsPath);
-    inputPath.AppendString(WCharCP(L"TestFiles\\ORD\\"));
+    if (isLargeTestFile)
+        inputPath.AppendString(WCharCP(L"LargeTestFiles\\ORD\\"));
+    else
+        inputPath.AppendString(WCharCP(L"TestFiles\\ORD\\"));
     inputPath.AppendString(WCharCP(input));
 
     BeFileName outputPath = m_host->GetOutputDirectory();
@@ -266,7 +273,7 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
         outputPath.BeDeleteFile();
 
     WCharCP testAppPathArgument = testAppPath;
-    auto inputArgument = m_host->GetInputFileArgument(inputPath, input);
+    auto inputArgument = m_host->GetInputFileArgument(inputPath, input, isLargeTestFile);
     auto outputArgument = m_host->GetOutputFileArgument(outputPath, bimFileName);
     WCharCP noAssertDialoguesArgument = WCharCP(L"--no-assert-dialogs");
     WCharCP command[4] = {testAppPathArgument, WCharCP((*inputArgument).c_str()), WCharCP((*outputArgument).c_str()), noAssertDialoguesArgument};

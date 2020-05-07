@@ -10,6 +10,16 @@
 
 baseDir = $(_MakeFilePath)
 
+%ifdef INCLUDE_LONG_RUNNING_TESTS
+    nameToDefine = INCLUDE_LONG_RUNNING_TESTS
+    %include cdefapnd.mki
+%endif
+
+%ifdef SKIP_SHORT_RUNNING_TESTS
+    nameToDefine = SKIP_SHORT_RUNNING_TESTS
+    %include cdefapnd.mki
+%endif
+
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)ORDBridge
 BEGTEST_INPUT = $(baseDir)$(TestDir)/

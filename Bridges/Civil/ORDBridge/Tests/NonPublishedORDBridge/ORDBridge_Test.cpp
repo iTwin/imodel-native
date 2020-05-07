@@ -2,6 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+#ifndef SKIP_SHORT_RUNNING_TESTS
 #include "../BackDoorORDBridge/PublicApi/BackDoor/ORDBridge/BackDoor.h"
 
 /*---------------------------------------------------------------------------------**//**
@@ -413,3 +414,5 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullLocalPathTest)
 
     ASSERT_TRUE(RunTestAppFullLocalPath(dgn.c_str(), sql.c_str(), false));
     }
+
+#endif

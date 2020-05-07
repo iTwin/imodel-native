@@ -21,6 +21,7 @@
     <PartStrategy PartFile="CivilBaseGeometry" PartName="*" BuildFromSource="Once"/>
     <PartStrategy PartFile="CiviliModelBridges" PartName="*" BuildFromSource="Once"/>
     <PartStrategy PartFile="CivilTestFiles" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="CivilLargeTestFiles" PartName="*" BuildFromSource="Once"/>
     <PartStrategy PartFile="DgnV8OpenRoadsDesigner" PartName="*" BuildFromSource="Once"/>
     <PartStrategy PartFile="LinearReferencing" PartName="*" BuildFromSource="Once"/>
     <PartStrategy PartFile="RoadRailAlignment" PartName="*" BuildFromSource="Once"/>

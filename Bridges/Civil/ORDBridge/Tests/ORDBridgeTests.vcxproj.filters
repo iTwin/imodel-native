@@ -57,6 +57,9 @@
     <ClCompile Include="BackDoorORDBridge\ORDBridgeTestsFixture.cpp">
       <Filter>Source Files\BackDoor</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublishedORDBridge\ORDBridge_LongRunningTests.cpp">
+      <Filter>Source Files\NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ordbridge_ignore_list.txt">

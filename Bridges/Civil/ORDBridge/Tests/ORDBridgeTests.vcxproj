@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoorORDBridge\ORDBridgeTestsFixture.cpp" />
+    <ClCompile Include="NonPublishedORDBridge\ORDBridge_LongRunningTests.cpp" />
     <ClCompile Include="NonPublishedORDBridge\ORDBridge_Test.cpp" />
     <ClCompile Include="PublishedORDBridge\ORDBridgeTest.cpp" />
   </ItemGroup>

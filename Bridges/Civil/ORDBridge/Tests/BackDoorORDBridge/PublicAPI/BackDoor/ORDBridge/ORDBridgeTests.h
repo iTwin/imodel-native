@@ -33,7 +33,7 @@ struct ORDBridgeTestsHost : BentleyM0200::Dgn::DgnPlatformLib::Host
         BeFileName GetTestAppProductDirectory();
         BeFileName GetOutputDirectory();
         BeFileName GetDgnPlatformAssetsDirectory();
-        WString* GetInputFileArgument(BeFileName inputPath, WCharCP input);
+        WString* GetInputFileArgument(BeFileName inputPath, WCharCP input, bool isLargeTestFile);
         WString* GetOutputFileArgument(BeFileName outputPath, WCharCP bimFileName);
         BeFileName BuildProjectFileName(WCharCP);
         virtual Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
@@ -66,7 +66,7 @@ struct CiviliModelBridgesORDBridgeTestsFixture : ::testing::Test
 
         static bool TestFileName(Utf8CP source);
         static bool CopyTestFile(Utf8CP source, Utf8CP target);
-        static bool RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode);
+        static bool RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode, bool isLargeTestFile=false);
         static bool RunTestAppFullLocalPath(WCharCP inputFullLocalPath, WCharCP bimFileName, bool updateMode);
         static Dgn::DgnDbPtr VerifyConvertedElementCount(Utf8CP bimFileName, size_t alignmentCount, size_t corridorCount);
         static Dgn::DgnDbPtr VerifyConvertedGeometryUniqueAlignmentNameExists(Utf8CP bimFileName, Utf8CP alignmentName);
