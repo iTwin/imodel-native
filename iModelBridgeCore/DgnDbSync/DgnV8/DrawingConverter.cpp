@@ -1313,6 +1313,11 @@ bool CreateOrUpdateDrawingGraphics()
                     Utf8PrintfString msg("drawing extraction for element %" PRIu64" and category %" PRIu64, byElement.first, sectionedElementCategory.GetValue());
                     m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
                     }
+
+                if (BSISUCCESS != iModelBridge::SaveChangesToConserveMemory(m_converter.GetDgnDb(), nullptr, 100000))
+                    {
+                    m_converter.OnFatalError(Converter::IssueCategory::DiskIO(), Converter::Issue::Error(), "SavePoint failed");
+                    }
                 }
             if (m_converter.IsUpdating() &&
                 m_converter.DetectedDeletedExtractionGraphicsCategories(m_masterModelMapping.GetDgnModel(), v8SectionedElementPath, seenCategories))
@@ -1334,6 +1339,11 @@ bool CreateOrUpdateDrawingGraphics()
             }
         if (hasAnyChanges && m_converter.DetectDeletedExtractionGraphics(m_masterModelMapping, v8SectionedElementPathsSeen, m_attachmentsUnchanged))
             modified = true;
+
+        if (BSISUCCESS != iModelBridge::SaveChangesToConserveMemory(m_converter.GetDgnDb(), nullptr, 100000))
+            {
+            m_converter.OnFatalError(Converter::IssueCategory::DiskIO(), Converter::Issue::Error(), "SavePoint failed");
+            }
         }
 
     return !m_converter.IsUpdating() || modified;
