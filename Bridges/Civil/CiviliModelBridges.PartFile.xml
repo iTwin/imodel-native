@@ -429,7 +429,7 @@
     <Part Name="ORDBridge-Xliffs" BentleyBuildMakeFile="ORDBridge/xliffs.mke">
         <Bindings>
             <Files Required="false" SubPartDirectory="xliffs">
-                Delivery/xliffs/ORDBridge_en.xliff
+                Delivery/xliffs/*.xliff
             </Files>
         </Bindings>
     </Part>
