@@ -402,8 +402,11 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
 
     m_converter->SetORDParams(&params);
 
-    if (m_converter->IsUpdating())
-        m_converter->InvalidateBadData();
+    /*if (m_converter->IsUpdating())
+        {
+        if (TestFeatureFlag("civil-imodel-bridge-repair-elements-nodynamicfeaturedefclass"))
+            m_converter->InvalidateBadData();
+        }*/
 
     ConvertORDElementXDomain convertORDXDomain(*m_converter);
     ConvertOBMElementXDomain convertOBMXDomain(*m_converter);
