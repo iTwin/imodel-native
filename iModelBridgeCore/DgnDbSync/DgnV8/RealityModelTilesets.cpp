@@ -215,6 +215,8 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 return ERROR;
 
             auto tokenProvider = mgr->GetTokenProvider("https://connect-wsg20.bentley.com");
+            if (nullptr == tokenProvider)
+                return ERROR;
             ConnectTokenManager::SetTokenProvider(tokenProvider);
             }
         
