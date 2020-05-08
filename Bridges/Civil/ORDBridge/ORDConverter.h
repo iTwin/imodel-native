@@ -160,7 +160,7 @@ public:
     BentleyStatus MakeRoadRailSchemaChanges();
     Utf8String GetAlignedSubjectName() const;
     Dgn::SubjectCPtr GetAlignedSubject() const;
-    void InvalidateBadData();
+    void MakeElementsWithIncorrectFeatureDefDynClassAvailableForUpdateAndMorph();
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain

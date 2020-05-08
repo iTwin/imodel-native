@@ -59,6 +59,8 @@ public:
 
 StopWatchCummulative* s_preConvertStopWatch = new StopWatchCummulative("_PreConvertElement");
 StopWatchCummulative* s_determineElemParamsStopWatch = new StopWatchCummulative("_DetermineElementParams");
+StopWatchCummulative* s_onElementClassChangedStopWatch = new StopWatchCummulative("_OnElementClassChanged");
+StopWatchCummulative* s_onElementBeforeDeleteStopWatch = new StopWatchCummulative("_OnElementBeforeDelete");
 StopWatchCummulative* s_processResultsStopWatch = new StopWatchCummulative("_ProcessResults");
 StopWatchCummulative* s_convertProfilesStopWatch = new StopWatchCummulative("ConvertProfiles");
 StopWatchCummulative* s_assignAlignmentAspectStopWatch = new StopWatchCummulative("AssignAlignmentAspect");
@@ -2776,6 +2778,7 @@ bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR elem
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_OnElementClassChanged(DgnDbSync::DgnV8::Converter& converter, DgnV8EhCR v8eh, DgnElementCR newElement, DgnElementId originalElementId)
     {
+    StopWatchOnStack stopWatch(*s_onElementClassChangedStopWatch);
     auto stmtPtr = m_converter.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId, ECClassId, TargetECInstanceId FROM BisCore.GraphicalElement3dRepresentsElement WHERE SourceECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
 
@@ -2841,6 +2844,7 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_OnElementBeforeDelete(DgnDbSync::DgnV8::Converter&, DgnElementId elementId)
     {
+    StopWatchOnStack stopWatch(*s_onElementBeforeDeleteStopWatch);
     auto stmtPtr = m_converter.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId, ECClassId, TargetECInstanceId FROM BisCore.GraphicalElement3dRepresentsElement WHERE SourceECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
 
@@ -3148,6 +3152,8 @@ void ORDConverter::CreateRoadRailElements()
     stopWatch.Stop();
     ORDBRIDGEPERF_LOGI("%s", s_preConvertStopWatch->GetLogMessage());
     ORDBRIDGEPERF_LOGI("%s", s_determineElemParamsStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_onElementBeforeDeleteStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_onElementClassChangedStopWatch->GetLogMessage());
     ORDBRIDGEPERF_LOGI("%s", s_assignAlignmentAspectStopWatch->GetLogMessage());
     ORDBRIDGEPERF_LOGI("%s", s_assignCorridorAspectStopWatch->GetLogMessage());
     ORDBRIDGEPERF_LOGI("%s", s_assignCorridorSurfaceAspectStopWatch->GetLogMessage());
@@ -3608,12 +3614,13 @@ DgnModelId ORDConverter::_MapModelIntoProject(DgnV8ModelR v8Model, Bentley::Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverter::InvalidateBadData()
+void ORDConverter::MakeElementsWithIncorrectFeatureDefDynClassAvailableForUpdateAndMorph()
     {
     BeSQLite::EC::ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT el.ECInstanceId, x.ECInstanceId FROM BisCore.Element el, BisCore.ExternalSourceAspect x, "
-        "DgnV8OpenRoadsDesigner.FeatureAspect fa, meta.ECClassDef c WHERE el.ECInstanceId = x.Element.Id AND el.ECInstanceId = fa.Element.Id "
-        "AND el.ECClassId = c.ECInstanceId AND fa.DefinitionName <> c.DisplayLabel");
+    stmt.Prepare(GetDgnDb(), "SELECT el.ECInstanceId, x.ECInstanceId FROM meta.ECSchemaDef s, meta.ECClassDef c, BisCore.Element el, "
+        "BisCore.ExternalSourceAspect x, DgnV8OpenRoadsDesigner.FeatureAspect fa WHERE el.ECInstanceId = x.Element.Id AND "
+        "el.ECInstanceId = fa.Element.Id AND c.Schema.Id = s.ECInstanceId AND s.Name = 'CivilDesignerProductsDynamic' AND "
+        "c.DisplayLabel = fa.DefinitionName AND c.ECInstanceId <> el.ECClassId");
     BeAssert(stmt.IsPrepared());
 
     size_t rowCount = 0;
@@ -3639,9 +3646,10 @@ void ORDConverter::InvalidateBadData()
     stmt.Finalize();
 
     stmt.Prepare(GetDgnDb(), "SELECT ehl.TargetECInstanceId, rlx.ECInstanceId FROM BisCore.ElementHasLinks ehl, BisCore.ExternalSourceAspect rlx, "
-        "(SELECT DISTINCT x.Scope.Id Id FROM BisCore.Element el, BisCore.ExternalSourceAspect x, DgnV8OpenRoadsDesigner.FeatureAspect fa, meta.ECClassDef c "
-        "WHERE el.ECInstanceId = x.Element.Id AND el.ECInstanceId = fa.Element.Id AND el.ECClassId = c.ECInstanceId AND fa.DefinitionName <> c.DisplayLabel) scopes "
-        "WHERE scopes.Id = ehl.SourceECInstanceId AND ehl.TargetECInstanceId = rlx.Element.Id");
+        "(SELECT DISTINCT x.Scope.Id Id FROM BisCore.Element el, BisCore.ExternalSourceAspect x, DgnV8OpenRoadsDesigner.FeatureAspect fa, "
+        "meta.ECClassDef c, meta.ECSchemaDef s WHERE el.ECInstanceId = x.Element.Id AND el.ECInstanceId = fa.Element.Id AND "
+        "fa.DefinitionName = c.DisplayLabel AND el.ECClassId <> c.ECInstanceId AND c.Schema.Id = s.ECInstanceId AND "
+        "s.Name = 'CivilDesignerProductsDynamic') scopes WHERE scopes.Id = ehl.SourceECInstanceId AND ehl.TargetECInstanceId = rlx.Element.Id");
     BeAssert(stmt.IsPrepared());
 
     rowCount = 0;
