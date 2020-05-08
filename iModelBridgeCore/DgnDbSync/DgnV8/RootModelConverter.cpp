@@ -1746,6 +1746,11 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
         //if traversal fails, still continue with next element, so return value doesn't matter here.
         ng->TraverseMembers(&ngConverter, DgnV8Api::MemberTraverseType::Enumerate, false, false);
 
+        if (BSISUCCESS != iModelBridge::SaveChangesToConserveMemory(GetDgnDb(), nullptr, 100000))
+            {
+            OnFatalError(IssueCategory::DiskIO(), Issue::Error(), "SavePoint failed");
+            }
+
         if (!IsUpdating())
             continue;
 
