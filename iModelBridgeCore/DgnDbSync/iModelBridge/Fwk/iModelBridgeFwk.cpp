@@ -1584,6 +1584,7 @@ int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling(iModelBridgeFwk::Fwk
     __except (windows_filterException(GetExceptionInformation()))
         {
         fprintf(stderr, "Unhandled exception in UpdateExistingBim. Attempting to release public locks...\n");
+        context.m_error.m_id = iModelBridgeErrorId::Unhandled_exception;
         }
 
     return RETURN_STATUS_UNHANDLED_EXCEPTION;
@@ -1886,6 +1887,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
     catch (...)
         {
+        // NEEDSWORK: We might as well remove this try/catch. We'll never get here, because the __try/__exception in UpdateExistingBimWithExceptionHandling catches everything.
         LOG.fatal("UpdateExistingBim failed");
         status = RETURN_STATUS_LOCAL_ERROR;
         }
@@ -3095,6 +3097,8 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
         if (!m_briefcaseDgnDb.IsValid())
             {
             callTerminate.m_status = BSIERROR;
+            error.m_id = iModelBridgeErrorId::Local_error;
+            error.m_description.Assign(WPrintfString(L"Cannot open %ls", m_briefcaseName.c_str()).c_str());
             }
         else
             {
@@ -3113,6 +3117,11 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
     if (callTerminate.m_status == BSISUCCESS)
         {
         callTerminate.m_status = (BentleyStatus)m_briefcaseDgnDb->SaveChanges();
+        if (callTerminate.m_status != BSISUCCESS)
+            {
+            error.m_id = iModelBridgeErrorId::Local_error;
+            error.m_description.Assign(WPrintfString(L"Cannot open %ls", m_briefcaseName.c_str()).c_str());
+            }
         }
     else
         {

@@ -917,11 +917,21 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     Response _EndBulkOperation() override
     {
-        if (m_inBulkUpdate <= 0)
-        {
+        if (m_bulkModeIsLocked)
+            {
             BeAssert(false);
-            return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::InvalidRequest);
-        }
+            LOG.fatal("This bridge has called Db::SaveChanges directly. This is a bug in the bridge. It should call iModelBridge::SaveChangesToConserveMemory instead. Failing ...");
+            // return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::InvalidRequest);
+            throw std::logic_error("This bridge has called Db::SaveChanges directly. This is a bug in the bridge. It should call iModelBridge::SaveChangesToConserveMemory instead.");
+            }
+
+        if (m_inBulkUpdate <= 0)
+            {
+            BeAssert(false);
+            LOG.error("EndBulkOperation called but the briefcase is not in a bulk operation. This is a bug in iModelBridge or iModelBridgeFwk. Failing ...");
+            // return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::InvalidRequest);
+            throw std::logic_error("EndBulkOperation called but the briefcase is not in a bulk operation. This is a bug in iModelBridge or iModelBridgeFwk.");
+            }
 
         --m_inBulkUpdate;
 

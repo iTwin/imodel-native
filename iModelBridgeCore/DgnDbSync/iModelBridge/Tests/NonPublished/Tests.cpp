@@ -785,6 +785,8 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     TestIModelHubFwkClientForBridges& m_testIModelHubClientForBridges;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
+    bool m_makeIllegalCallToSaveChanges = false;
+    bool m_makeLegalCallToSaveChanges = false;
     int m_changeCount = 0;
 
     struct
@@ -1069,6 +1071,15 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
     //  Garbage-collect the elements that were abandoned.
     changeDetector->DeleteElementsNotSeenInScope(m_docScopeId);
 
+    if (m_makeIllegalCallToSaveChanges)
+        {
+        GetDgnDbR().SaveChanges("this is the wrong way to do it");  // I also fail to check the result! I am a buggy bridge!
+        }
+    else if (m_makeLegalCallToSaveChanges)
+        {
+        ASSERT_EQ(BSISUCCESS, iModelBridge::SaveChanges(GetDgnDbR(), "this is the right way to do it")); // I also check the result. I am a correctly written bridge.
+        }
+
     bool anyChanges = (changeDetector->GetElementsConverted() != 0);
 
     ASSERT_EQ((m_expect.anyChanges || m_expect.anyDeleted), anyChanges);
@@ -1315,6 +1326,62 @@ TEST_F(iModelBridgeTests, Test1)
             ASSERT_EQ(dbInfo.GetElementClassId(testBridge.m_foo_items[0].m_mappedToElement), dbInfo.GetClassId("TestSchema.MyDomainElement"));
             }
     }
+
+    if (true)
+        {
+        // Test the wrong way of saving changes as you go along
+        testBridge.m_foo_items[0].m_content = "changed again (savechanges test 1)";
+
+        // and run an update
+        // This time, we expect to find the repo and briefcase already there.
+        testIModelHubClientForBridges.m_expect.push_back(false);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) -  : 0
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - dynamic schemas : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - definitions : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - comment in quotes : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);//For project extents
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+
+        testBridge.m_makeIllegalCallToSaveChanges = true;
+        BeTest::SetFailOnAssert(false); // we expect an assertion failure in a debug build.
+        ASSERT_EQ((int)iModelBridgeErrorId::Unhandled_exception, fwk.Run(argc, argv));
+        BeTest::SetFailOnAssert(true);
+
+        testIModelHubClientForBridges.m_expect.clear();
+        }
+
+    if (true)
+        {
+        // Test the right way of saving changes as you go along
+        testBridge.m_foo_items[0].m_content = "changed again (savechanges test 2)";
+
+        // and run an update
+        // This time, we expect to find the repo and briefcase already there.
+        testIModelHubClientForBridges.m_expect.push_back(false);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) -  : 0
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - dynamic schemas : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - definitions : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);// iModelBridgeTests_Test1_Bridge - Foo (6640b375-a539-4e73-b3e1-2c0ceb912551) - comment in quotes : 1
+        testIModelHubClientForBridges.m_expect.push_back(true);//For project extents
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+
+        testBridge.m_makeIllegalCallToSaveChanges = false;
+        testBridge.m_makeLegalCallToSaveChanges = true;
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        // TODO: How to check that the bridge called iModelBridge::SaveChanges?
+
+        testIModelHubClientForBridges.m_expect.clear();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

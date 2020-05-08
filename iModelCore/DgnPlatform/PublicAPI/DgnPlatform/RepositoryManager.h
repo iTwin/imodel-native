@@ -180,6 +180,7 @@ private:
     DgnDbR  m_db;
 protected:
     ChannelProps m_channelProps;
+    bool m_bulkModeIsLocked{};
 
 private:
     void ReformulateLockRequest(LockRequestR, Response const&) const;
@@ -217,6 +218,7 @@ protected:
     virtual void _StartBulkOperation() = 0;
     virtual bool _IsBulkOperation() const = 0;
     virtual Response _EndBulkOperation() = 0;
+    virtual void _SetBulkModeLocked(bool b) { m_bulkModeIsLocked = b; }
     virtual void _ExtractRequestFromBulkOperation(Request&, bool locks, bool codes) {;}
     virtual bset<CodeSpecId> _GetFilteredCodeSpecIds() { return bset<CodeSpecId>(); }
 
@@ -239,6 +241,9 @@ public:
     DgnDbR GetDgnDb() const { return m_db; } //!< The DgnDb managed by this object
 
     Response LockChannelParent() {return _LockChannelParent();}
+
+    void LockBulkOperation(bool b) { _SetBulkModeLocked(b); } //!< @private - if true, a call to _EndBulkOperation will be rejected. Bridge briefcasemanager sets this when it wants to prevent bridges from calling Db::SaveChanges directly.
+    bool IsBulkOperationLocked() const {return m_bulkModeIsLocked;} //!< @private
 
     //! Of this model is in a *normal channel* return its channel parent ID.
     //! @param mid The ModelId of the model to check

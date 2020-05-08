@@ -14,6 +14,7 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeError::iModelBridgeError()
     {
+    m_id = iModelBridgeErrorId::Unknown;
     }
 
 /*---------------------------------------------------------------------------------**//**

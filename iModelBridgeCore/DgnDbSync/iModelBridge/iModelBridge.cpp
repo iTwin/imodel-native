@@ -26,6 +26,51 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 
 static L10NLookup* s_bridgeL10NLookup = NULL;
 
+namespace {
+
+// Allows certain iModelBridge functions to end the bulk operation and then restart it
+struct ResumeBulkMode
+    {
+    bool m_runningInBulkMode;
+    bool m_isBulkOperationLocked;
+    DgnDbR m_db;
+
+    ResumeBulkMode(DgnDbR db) : m_db(db)
+        {
+        m_runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+        m_isBulkOperationLocked = db.BriefcaseManager().IsBulkOperationLocked();
+        db.BriefcaseManager().LockBulkOperation(false); // unlock bulk mode. That means that it's OK for caller to end the bulk transaction
+        }
+
+    ~ResumeBulkMode()
+        {
+        if (m_runningInBulkMode && !m_db.BriefcaseManager().IsBulkOperation())
+            m_db.BriefcaseManager().StartBulkOperation(); // resume bulk operation (if it was stopped)
+
+        m_db.BriefcaseManager().LockBulkOperation(m_isBulkOperationLocked); // re-lock bulk mode. That means that it's NOT OK for caller to end the bulk transaction
+        }
+    };
+
+
+// Prevents a bridge callback from ending the bulk operation, except by calling a special iModelBridge function.
+struct LockBulkMode
+    {
+    bool m_canEndBulkMode;
+    DgnDbR m_db;
+
+    LockBulkMode(DgnDbR db) : m_db(db)
+        {
+        m_canEndBulkMode = db.BriefcaseManager().IsBulkOperationLocked();
+        db.BriefcaseManager().LockBulkOperation(true);   // it's NOT OK to end the bulk operation
+        }
+
+    ~LockBulkMode()
+        {
+        m_db.BriefcaseManager().LockBulkOperation(m_canEndBulkMode); // it's OK to end the bulk operation
+        }
+    };
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -238,30 +283,34 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
 
     db.BriefcaseManager().StartBulkOperation();
     bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
-
-    //  First, make sure we have a JobSubject element. When initializing, this will entail reserving a Code and inserting into the RepositoryModel.
-    jobsubj = _FindJob();
-    if (!jobsubj.IsValid())
+    if (true)
         {
-        _GetParams().SetIsUpdating(false);
-        db.BriefcaseManager().GetChannelPropsR().isInitializingChannel = true;
-        jobsubj = _InitializeJob();    // this is the first time that this bridge has tried to convert this input file into this iModel
-        db.BriefcaseManager().GetChannelPropsR().isInitializingChannel = false;
+        LockBulkMode bulkModeLock(db); // the bridge must call iModelBridge::SaveChanges, not DgnDb::SaveChanges
+
+        //  First, make sure we have a JobSubject element. When initializing, this will entail reserving a Code and inserting into the RepositoryModel.
+        jobsubj = _FindJob();
         if (!jobsubj.IsValid())
             {
-            LOG.fatalv("Failed to create job structure");
-            return BSIERROR;
+            _GetParams().SetIsUpdating(false);
+            db.BriefcaseManager().GetChannelPropsR().isInitializingChannel = true;
+            jobsubj = _InitializeJob();    // this is the first time that this bridge has tried to convert this input file into this iModel
+            db.BriefcaseManager().GetChannelPropsR().isInitializingChannel = false;
+            if (!jobsubj.IsValid())
+                {
+                LOG.fatalv("Failed to create job structure");
+                return BSIERROR;
+                }
             }
-        }
 
-    _GetParams().SetJobSubjectId(jobsubj->GetElementId());
-    BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
+        _GetParams().SetJobSubjectId(jobsubj->GetElementId());
+        BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
 
-    //  Now make normal definition changes, such as converting levels into Categories.
-    if (BSISUCCESS != _MakeDefinitionChanges(*jobsubj))
-        {
-        LOG.fatalv("_MakeDefinitionChanges failed");
-        return BSIERROR; // caller must call abandon changes
+        //  Now make normal definition changes, such as converting levels into Categories.
+        if (BSISUCCESS != _MakeDefinitionChanges(*jobsubj))
+            {
+            LOG.fatalv("_MakeDefinitionChanges failed");
+            return BSIERROR; // caller must call abandon changes
+            }
         }
 
     // Must either succeed in getting all required locks and codes ... or abort the whole txn.
@@ -299,11 +348,16 @@ BentleyStatus iModelBridge::DoFinalizationChanges(DgnDbR db)
 
     BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
 
-    //  Now make normal definition cleanup changes, such as cleaning up unnecessary categories.
-    if (BSISUCCESS != _FinalizeChanges(db))
+    if (true)
         {
-        LOG.fatalv("_FinalizeChanges failed");
-        return BSIERROR; // caller must call abandon changes
+        LockBulkMode bulkModeLock(db); // the bridge must call iModelBridge::SaveChanges, not DgnDb::SaveChanges
+
+        //  Now make normal definition cleanup changes, such as cleaning up unnecessary categories.
+        if (BSISUCCESS != _FinalizeChanges(db))
+            {
+            LOG.fatalv("_FinalizeChanges failed");
+            return BSIERROR; // caller must call abandon changes
+            }
         }
 
     // Must either succeed in getting all required locks and codes ... or abort the whole txn.
@@ -333,18 +387,23 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj,
     db.BriefcaseManager().StartBulkOperation();
     bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
 
-    bool haveInputFile = !_GetParams().GetInputFileName().empty();
-    if (haveInputFile)
+    if (true)
         {
-        if (BSISUCCESS != _ConvertToBim(jobsubj))
-            {
-            LOG.fatalv("_ConvertToBim failed");
-            return BSIERROR; // caller must call abandon changes
-            }
-        }
+        LockBulkMode bulkModeLock(db); // the bridge must call iModelBridge::SaveChanges, not DgnDb::SaveChanges
 
-    if (detectDeletedFiles)
-        _DetectDeletedDocuments();
+        bool haveInputFile = !_GetParams().GetInputFileName().empty();
+        if (haveInputFile)
+            {
+            if (BSISUCCESS != _ConvertToBim(jobsubj))
+                {
+                LOG.fatalv("_ConvertToBim failed");
+                return BSIERROR; // caller must call abandon changes
+                }
+            }
+
+        if (detectDeletedFiles)
+            _DetectDeletedDocuments();
+        }
 
     // Must either succeed in getting all required locks and codes ... or abort the whole txn.
     BeAssert(!runningInBulkMode || db.BriefcaseManager().IsBulkOperation());
@@ -369,10 +428,15 @@ BentleyStatus iModelBridge::DoOnAllDocumentsProcessed(DgnDbR db)
     db.BriefcaseManager().StartBulkOperation();
     bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
 
-    if (BSISUCCESS != _OnAllDocumentsProcessed())
+    if (true)
         {
-        LOG.fatalv("_ConvertToBim failed");
-        return BSIERROR; // caller must call abandon changes
+        LockBulkMode bulkModeLock(db); // the bridge must call iModelBridge::SaveChanges, not DgnDb::SaveChanges
+
+        if (BSISUCCESS != _OnAllDocumentsProcessed())
+            {
+            LOG.fatalv("_ConvertToBim failed");
+            return BSIERROR; // caller must call abandon changes
+            }
         }
 
     // Must either succeed in getting all required locks and codes ... or abort the whole txn.
@@ -1143,7 +1207,7 @@ struct MemoryUsageAppData : DgnDb::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment, int maxRowsChangedPerTxn)
     {
-    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+    ResumeBulkMode bulkModeResumer(db); // calls db.BriefcaseManager().StartBulkOperation() at end of scope
 
     auto lastCheck = MemoryUsageAppData::FindOrAdd(db);
 
@@ -1157,9 +1221,6 @@ BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commit
     if (BE_SQLITE_OK != status)
         return BSIERROR;
 
-    if (runningInBulkMode)
-        db.BriefcaseManager().StartBulkOperation();
-
     return BSISUCCESS;
     }
 
@@ -1168,7 +1229,7 @@ BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commit
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     {
-    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+    ResumeBulkMode bulkModeResumer(db); // calls db.BriefcaseManager().StartBulkOperation() at end of scope
 
     auto lastCheck = MemoryUsageAppData::FindOrAdd(db);
 
@@ -1179,9 +1240,6 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     iModelBridge::LogPerformance(timer, "iModelBridge::SaveChanges()");
     if (BE_SQLITE_OK != status)
         return BSIERROR;
-
-    if (runningInBulkMode)
-        db.BriefcaseManager().StartBulkOperation();
 
     return BSISUCCESS;
     }
@@ -1223,17 +1281,20 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
 
     if (db.BriefcaseManager().IsBulkOperation())
         {
-        SaveChanges(db, commitComment.c_str());
-        auto response = db.BriefcaseManager().EndBulkOperation();
+        if (BSISUCCESS != SaveChanges(db, commitComment.c_str()))
+            {
+            LOG.error("Failed to save changes to briefcase or to acquire locks and/or codes");
+            return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
+            }
+
+        ResumeBulkMode bulkModeResumer(db); // calls db.BriefcaseManager().StartBulkOperation() at end of scope
+        auto response = db.BriefcaseManager().EndBulkOperation(); // NEEDSWORK: Why this additional call to EndBulkOperation? The call to SaveChanges above should have ended (and resumed) the bulk operation.
         if (RepositoryStatus::Success != response.Result())
             {
             LOG.errorv("Failed to acquire locks and/or codes with error %x", response.Result());
-            db.BriefcaseManager().StartBulkOperation();
             return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
             }
-        auto status = bcMgr->_Push(commitComment.c_str(), changedFiles, changes);
-        db.BriefcaseManager().StartBulkOperation();
-        return status;
+        return bcMgr->_Push(commitComment.c_str(), changedFiles, changes);
         }
 
     db.SaveChanges(commitComment.c_str());
