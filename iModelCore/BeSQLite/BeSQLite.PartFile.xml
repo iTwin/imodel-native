@@ -25,6 +25,34 @@
         </Bindings>
     </Part>
 
+    <Part Name="BCVDaemon" BentleyBuildMakeFile="BCVDaemon.mke">
+        <SubPart LibType="Static" PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="OpenSsl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <Bindings>
+            <Files ProductDirectoryName="StaticAssemblies">
+                Delivery/BCVDaemon$(exeext)
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BCVDaemonExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Dynamic">
+        <SubPart PartName="BCVDaemon" LibType="Static"/>
+    </Part>
+
+    <Part Name="BCVDaemonExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="BCVDaemon" LibType="Static"/>
+    </Part>
+
+    <Part Name="BCVDaemonExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="BCVDaemon" LibType="Static"/>
+    </Part>
+
+    <Part Name="BCVDaemon-exe">
+        <SubPart PartName="BCVDaemonExe-Windows" LibType="Static"/>
+        <SubPart PartName="BCVDaemonExe-Linux" LibType="Static"/>
+        <SubPart PartName="BCVDaemonExe-MacOS" LibType="Static"/>
+    </Part>
+
     <!-- ******************************** Unit Tests ************************************** -->
 
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">

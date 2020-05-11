@@ -1,24 +1,17 @@
 /*
 ** 2019-11-25
 **
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
 ******************************************************************************
 **
 ** Implementation of the client VFS for the blockcachevfs system.
 */
+#include "bcv_socket.h"
 #include "sqlite3.h"
 #include <string.h>
 #include <assert.h>
-// #include <unistd.h> 
 #include <stdio.h> 
 
-#include "bcv_socket.h"
+#include "blockcachevfs.h"
 
 typedef unsigned char u8;
 typedef unsigned int u32;
@@ -92,6 +85,8 @@ struct BlockcacheFile {
   sqlite3_file base;              /* IO methods */
   BCV_SOCKET_TYPE fdDaemon;       /* Localhost connection to daemon (or -1) */
   int bDaemon;                    /* True if daemon=1 was specified */
+  char *zAccount;                 /* Account name used by connected daemon */
+  char *zContainer;               /* Container name */
   sqlite3_int64 szBlk;            /* Block size */
   char *zBlkFile;                 /* Name of block file */
   sqlite3_file *pBlkFile;         /* File descriptor open on block-cache file */
@@ -124,6 +119,11 @@ struct BlockcacheFile {
 
 #define BCV_CACHEFILE_NAME "cachefile.bcv"
 
+#define BCV_SAS_PARAM "bcv_sas"
+#define BCV_PORTNUMBER_FILE "portnumber.bcv"
+
+#define HTTP_AUTH_ERROR 403
+
 /* 
 ** The following structure represents the deserialized version of a message
 ** passed between the daemon and the current process.
@@ -142,6 +142,7 @@ struct BlockcacheMessage {
   int iVal;
   int nData;
   u8 *aData;
+  void *pFree;                    /* Use sqlite3_free() on this */
 };
 
 /* Access to a lower-level VFS. Argument is the blockcachevfs object */
@@ -189,6 +190,23 @@ static int bcvSleep(sqlite3_vfs*, int microseconds);
 static int bcvCurrentTime(sqlite3_vfs*, double*);
 static int bcvGetLastError(sqlite3_vfs*, int, char *);
 static int bcvCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
+
+struct bcv_global_t {
+  void *pSasCtx;                  /* First argument for xSas */
+  int(*xSas)(                     /* SAS token factory */
+      void *pCtx, 
+      const char *zStorage, 
+      const char *zAccount, 
+      const char *zContainer,
+      char **pzSasToken,
+      int *pbReadonly
+  );
+};
+
+static struct bcv_global_t bcv_global = {
+  0,
+  0
+};
 
 static sqlite3_vfs bcv_vfs = {
   2,                              /* iVersion */
@@ -261,7 +279,7 @@ static u32 bcvGetU32(u8 *a){
 /*
 ** Send the message in the second argument to the daemon. 
 */
-static int bcvSendMessage(BlockcacheFile *p, BlockcacheMessage *pMsg){
+static int bcvSendMessage(BCV_SOCKET_TYPE fd, BlockcacheMessage *pMsg){
   int rc = SQLITE_OK;
   u8 *aMsg = 0;
   int nMsg = 5;
@@ -291,7 +309,7 @@ static int bcvSendMessage(BlockcacheFile *p, BlockcacheMessage *pMsg){
     memcpy(&aMsg[nMsg-pMsg->nData], pMsg->aData, pMsg->nData);
   }
 
-  res = send(p->fdDaemon, aMsg, nMsg, 0);
+  res = send(fd, aMsg, nMsg, 0);
   if( res!=nMsg ){
     rc = SQLITE_IOERR;
   }
@@ -300,46 +318,19 @@ static int bcvSendMessage(BlockcacheFile *p, BlockcacheMessage *pMsg){
   return rc;
 }
 
-/*
-** Close a BlockcacheFile.
-*/
-static int bcvClose(sqlite3_file *pFile){
-  BlockcacheFile *p = (BlockcacheFile*)pFile;
-  sqlite3_file *pOrig = ORIGFILE(pFile);
-  if( p->bSendCkptOnClose ){
-    BlockcacheMessage ckpt;
-    memset(&ckpt, 0, sizeof(ckpt));
-    ckpt.eType = BCV_MESSAGE_WDONE;
-    bcvSendMessage(p, &ckpt);
-  }
-  if( pOrig->pMethods ){
-    pOrig->pMethods->xClose(pOrig);
-  }
-  if( p->pBlkFile && p->pBlkFile->pMethods ){
-    p->pBlkFile->pMethods->xClose(p->pBlkFile);
-  }
-  sqlite3_free(p->zBlkFile);
-  p->zBlkFile = 0;
-  sqlite3_free(p->aUsed);
-  sqlite3_free(p->aBlkArray);
-  if( p->fdDaemon ){
-    bcv_close_socket(p->fdDaemon);
-  }
-  return SQLITE_OK;
-}
 
 /*
 ** Read a message from the daemon process into the structure supplied
 ** as the second argument. Return SQLITE_OK if successful, or an SQLite
 ** error code if an error has occured.
 */
-static int bcvReceiveMessage(BlockcacheFile *p, BlockcacheMessage *pMsg){
+static int bcvReceiveMessage(BCV_SOCKET_TYPE fd, BlockcacheMessage *pMsg){
   int rc = SQLITE_OK;
-  ssize_t nRead;
+  int nRead;
   u8 aMsg[5];
 
   memset(pMsg, 0, sizeof(BlockcacheMessage));
-  nRead = recv(p->fdDaemon, aMsg, 5, 0);
+  nRead = recv(fd, aMsg, 5, 0);
   if( nRead!=5 ){
     rc = SQLITE_IOERR;
   }else{
@@ -348,11 +339,12 @@ static int bcvReceiveMessage(BlockcacheFile *p, BlockcacheMessage *pMsg){
 
     pMsg->eType = (int)aMsg[0];
     if( nBody>0 ){
-      aBody = sqlite3_malloc(nBody);
+      aBody = sqlite3_malloc(nBody+1);
       if( aBody==0 ){
         rc = SQLITE_IOERR_NOMEM;
       }else{
-        nRead = recv(p->fdDaemon, aBody, nBody, 0);
+        aBody[nBody] = 0x00;
+        nRead = (int)recv(fd, aBody, nBody, 0);
         if( nRead!=nBody ){
           rc = SQLITE_IOERR;
         }
@@ -361,22 +353,31 @@ static int bcvReceiveMessage(BlockcacheFile *p, BlockcacheMessage *pMsg){
 
     if( rc==SQLITE_OK ){
       switch( aMsg[0] ){
+        case BCV_MESSAGE_ERROR_REPLY:
         case BCV_MESSAGE_LOGIN_REPLY:
-          pMsg->iVal = (int)bcvGetU32(&aBody[0]);
-          break;
-        case BCV_MESSAGE_WREQUEST_REPLY: 
         case BCV_MESSAGE_QUERY_REPLY: 
+          pMsg->iVal = (int)bcvGetU32(&aBody[0]);
+          pMsg->nData = nBody-4;
+          pMsg->aData = &aBody[4];
+          pMsg->pFree = (void*)aBody;
+          aBody = 0;
+          break;
+
+        case BCV_MESSAGE_WREQUEST_REPLY: 
         case BCV_MESSAGE_REQUEST_REPLY: {
           pMsg->nData = nBody;
           pMsg->aData = aBody;
+          pMsg->pFree = (void*)aBody;
           aBody = 0;
           break;
         }
+#if 0
         case BCV_MESSAGE_ERROR_REPLY: {
           sqlite3_log(SQLITE_IOERR, "daemon error: %.*s", nBody, aBody);
           sqlite3_free(aBody);
           return SQLITE_IOERR;
         }
+#endif
         default:
           rc = SQLITE_IOERR;
           break;
@@ -394,6 +395,98 @@ static int bcvReceiveMessage(BlockcacheFile *p, BlockcacheMessage *pMsg){
 }
 
 /*
+**
+*/
+static int bcvExchangeMessage(
+  BlockcacheFile *p, 
+  BlockcacheMessage *pSend,
+  BlockcacheMessage *pReply
+){
+  int rc = SQLITE_OK;
+  int ii;
+
+  for(ii=0; ii<5 && rc==SQLITE_OK; ii++){
+    rc = bcvSendMessage(p->fdDaemon, pSend);
+    if( rc==SQLITE_OK ){
+      rc = bcvReceiveMessage(p->fdDaemon, pReply);
+    }
+    if( rc==SQLITE_OK 
+     && pReply->eType==BCV_MESSAGE_ERROR_REPLY 
+     && pReply->iVal==HTTP_AUTH_ERROR 
+     && bcv_global.xSas
+    ){
+      BlockcacheMessage query;
+      BlockcacheMessage reply;
+      char *zToken = 0;
+      int bReadonly = 0;
+      rc = bcv_global.xSas(
+          bcv_global.pSasCtx, "azure", 
+          p->zAccount, p->zContainer, &zToken, &bReadonly
+      );
+      if( zToken ){
+        memset(&query, 0, sizeof(BlockcacheMessage));
+        query.aData = (u8*)sqlite3_mprintf("bcv_%s=%s?%s", 
+            bReadonly?"readonly":"attach", p->zContainer, zToken
+        );
+        query.nData = strlen((const char*)query.aData);
+        query.eType = BCV_MESSAGE_QUERY;
+        rc = bcvSendMessage(p->fdDaemon, &query);
+        if( rc==SQLITE_OK ){
+          rc = bcvReceiveMessage(p->fdDaemon, &reply);
+        }
+        if( rc==SQLITE_OK ){
+          sqlite3_free(reply.pFree);
+        }
+      }else if( rc==SQLITE_OK ){
+        rc = SQLITE_IOERR;
+      }
+    }else{
+      break;
+    }
+  }
+
+  if( rc==SQLITE_OK && pReply->eType==BCV_MESSAGE_ERROR_REPLY ){
+    sqlite3_log(SQLITE_ERROR, "error from blockcachevfsd: rc=%d msg=%.*s",
+        pReply->iVal, pReply->nData, pReply->aData
+    );
+    sqlite3_free(pReply->pFree);
+    rc = SQLITE_IOERR;
+  }
+
+  return rc;
+}
+  
+
+/*
+** Close a BlockcacheFile.
+*/
+static int bcvClose(sqlite3_file *pFile){
+  BlockcacheFile *p = (BlockcacheFile*)pFile;
+  sqlite3_file *pOrig = ORIGFILE(pFile);
+  if( p->bSendCkptOnClose ){
+    BlockcacheMessage ckpt;
+    memset(&ckpt, 0, sizeof(ckpt));
+    ckpt.eType = BCV_MESSAGE_WDONE;
+    bcvSendMessage(p->fdDaemon, &ckpt);
+  }
+  if( pOrig->pMethods ){
+    pOrig->pMethods->xClose(pOrig);
+  }
+  if( p->pBlkFile && p->pBlkFile->pMethods ){
+    p->pBlkFile->pMethods->xClose(p->pBlkFile);
+  }
+  sqlite3_free(p->zBlkFile);
+  p->zBlkFile = 0;
+  sqlite3_free(p->aUsed);
+  sqlite3_free(p->aBlkArray);
+  sqlite3_free(p->zContainer);
+  if( p->fdDaemon ){
+    bcv_close_socket(p->fdDaemon);
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Request block iBlk for the database file from the daemon. The daemon,
 ** assuming no error occurs, will reply with a new block map containing
 ** an entry for the requested block that is installed in 
@@ -405,31 +498,38 @@ static int bcvRequestBlock(BlockcacheFile *p, int iBlk){
   int rc = SQLITE_OK;
   BlockcacheMessage req;
   BlockcacheMessage reply;
-  memset(&reply, 0, sizeof(reply));
-  memset(&req, 0, sizeof(req));
 
+  memset(&req, 0, sizeof(req));
   req.eType = BCV_MESSAGE_REQUEST;
   req.iVal = iBlk;
   if( p->aUsed ){
     req.nData = p->nUsed;
     req.aData = p->aUsed;
   }
-  rc = bcvSendMessage(p, &req);
+  rc = bcvExchangeMessage(p, &req, &reply);
 
   if( rc==SQLITE_OK ){
     int nUsedReq;
-    rc = bcvReceiveMessage(p, &reply);
     sqlite3_free(p->aBlkArray);
     p->aBlkArray = reply.aData;
     p->nBlkByte = reply.nData;
     nUsedReq = ((p->nBlkByte / sizeof(u32))+7)/8;
     if( nUsedReq>p->nUsed ){
-      p->aUsed = (u8*)sqlite3_realloc(p->aUsed, nUsedReq);
-      memset(&p->aUsed[p->nUsed], 0, (nUsedReq-p->nUsed));
-      p->nUsed = nUsedReq;
+      u8 *aNew = (u8*)sqlite3_realloc(p->aUsed, nUsedReq);
+      if( aNew ){
+        memset(&aNew[p->nUsed], 0, (nUsedReq-p->nUsed));
+        p->aUsed = aNew;
+        p->nUsed = nUsedReq;
+      }else{
+        rc = SQLITE_NOMEM;
+      }
     }
   }
 
+  /* Either an error occured or the requested block must now be available */
+  assert( rc!=SQLITE_OK 
+      || (p->nBlkByte>=(iBlk+1)*4 && bcvGetU32(&p->aBlkArray[iBlk*4])!=0) 
+  );
   return rc;
 }
 
@@ -532,15 +632,12 @@ static int bcvWrite(
       wreq.eType = BCV_MESSAGE_WREQUEST;
       wreq.aData = aBuf;
       wreq.nData = sizeof(aBuf);
-      rc = bcvSendMessage(p, &wreq);
-      if( rc==SQLITE_OK ){
-        rc = bcvReceiveMessage(p, &reply);
-      }
+      rc = bcvExchangeMessage(p, &wreq, &reply);
       if( rc==SQLITE_OK ){
         assert( reply.nData==wreq.nData );
         p->iPrevBlk = iBlk;
         p->iPrevLoc = bcvGetU32(reply.aData);
-        sqlite3_free(reply.aData);
+        sqlite3_free(reply.pFree);
       }
     }
     iMap = p->iPrevLoc;
@@ -663,13 +760,13 @@ static int bcvFileControl(sqlite3_file *pFile, int op, void *pArg){
       msg.eType = BCV_MESSAGE_QUERY;
       msg.nData = strlen(zMsg);
       msg.aData = (u8*)zMsg;
-      rc = bcvSendMessage(p, &msg);
-      if( rc==SQLITE_OK ){
-        rc = bcvReceiveMessage(p, &reply);
-      }
+
+      rc = bcvExchangeMessage(p, &msg, &reply);
       if( rc==SQLITE_OK ){
         assert( reply.eType==BCV_MESSAGE_QUERY_REPLY );
         aPragma[0] = sqlite3_mprintf("%.*s", reply.nData, reply.aData);
+        sqlite3_free(reply.pFree);
+        rc = reply.iVal;
       }
     }
   }
@@ -730,7 +827,7 @@ static int bcvShmLock(sqlite3_file *pFile, int offset, int n, int flags){
       done.eType = BCV_MESSAGE_DONE;
       done.nData = p->nUsed;
       done.aData = p->aUsed;
-      rc = bcvSendMessage(p, &done);
+      rc = bcvSendMessage(p->fdDaemon, &done);
       sqlite3_free(p->aBlkArray);
       sqlite3_free(p->aUsed);
       p->aBlkArray = 0;
@@ -747,7 +844,7 @@ static int bcvShmLock(sqlite3_file *pFile, int offset, int n, int flags){
     BlockcacheMessage ckpt;
     memset(&ckpt, 0, sizeof(ckpt));
     ckpt.eType = BCV_MESSAGE_WDONE;
-    rc = bcvSendMessage(p, &ckpt);
+    rc = bcvSendMessage(p->fdDaemon, &ckpt);
     p->iPrevBlk = -1;
   }
   return rc==SQLITE_OK ? rc2 : rc;
@@ -790,6 +887,58 @@ static int bcvUnfetch(sqlite3_file *pFile, sqlite3_int64 iOfst, void *pPage){
   return pOrig->pMethods->xUnfetch(pOrig, iOfst, pPage);
 }
 
+static int bcvParseInt(const u8 *z, int n){
+  int ii;
+  int iPort = 0;
+  for(ii=0; z[ii]>='0' && z[ii]<='9' && (ii<n || n<0); ii++){
+    iPort = iPort*10 + (z[ii]-'0');
+  }
+  return iPort;
+}
+
+/*
+** Attempt to open a new socket connection to port iPort on localhost.
+** If successful, set (*pSocket) to point to the new socket handle and
+** return SQLITE_OK. Or, if an error occurs, return an SQLite error
+** code. The final value of (*pSocket) is undefined in this case.
+*/
+static int bcvConnectSocket(int iPort, BCV_SOCKET_TYPE *pSocket){
+  int rc = SQLITE_OK;
+  BCV_SOCKET_TYPE s;
+  s = socket(AF_INET, SOCK_STREAM, 0);
+  if( bcv_socket_is_valid(s)==0 ){
+    rc = SQLITE_CANTOPEN;
+  }else{
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(iPort);
+
+    /* This should really be:
+    **
+    **   inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr); 
+    **
+    ** But since mingw does not have inet_pton, and we only ever use 
+    ** it on the ipv4 localhost address, just hard code the value. */
+    ((u8*)&addr.sin_addr)[0] = 0x7F;
+    ((u8*)&addr.sin_addr)[1] = 0x00;
+    ((u8*)&addr.sin_addr)[2] = 0x00;
+    ((u8*)&addr.sin_addr)[3] = 0x01;
+
+    if( connect(s, (struct sockaddr*)&addr, sizeof(addr))<0 ){
+      sqlite3_log(SQLITE_CANTOPEN, 
+          "blockcachevfs: failed to connect to 127.0.0.1:%d", iPort
+      );
+      rc = SQLITE_CANTOPEN;
+      bcv_close_socket(s);
+    }else{
+      *pSocket = s;
+    }
+  }
+
+  return rc;
+}
+
 /* 
 ** Connect to the daemon process. Leave the tcp socket in p->fdDaemon.
 */
@@ -814,74 +963,52 @@ static int bcvConnectDaemon(BlockcacheFile *p){
       **    blockvfs:1:$container/$database:$port\n
       **
       ** Parse this up.  */
-      int ii;
       int iPort = 0;
       char *zDb = (char*)&aBuf[11];
       int nDb = 0;
       for(nDb=0; nDb<(sz-11); nDb++){
         if( zDb[nDb]==':' ) break;
       }
-      ii = nDb+12;
 
-      for(ii=nDb+12; aBuf[ii]>='0' && aBuf[ii]<='9' && ii<sz; ii++){
-        iPort = iPort*10 + (aBuf[ii]-'0');
-      }
+      iPort = bcvParseInt(&aBuf[nDb+12], sz-nDb-12);
       if( iPort==0 ){
         rc = SQLITE_CANTOPEN;
       }else{
-        p->fdDaemon = socket(AF_INET, SOCK_STREAM, 0);
-        if( bcv_socket_is_valid(p->fdDaemon)==0 ){
-          rc = SQLITE_CANTOPEN;
-        }else{
-          struct sockaddr_in addr;
-          memset(&addr, 0, sizeof(addr));
-          addr.sin_family = AF_INET;
-          addr.sin_port = htons(iPort);
+        rc = bcvConnectSocket(iPort, &p->fdDaemon);
+        if( rc==SQLITE_OK ){
+          int nMsg = 5 + nDb + 1;
+          u8 *aMsg = sqlite3_malloc(nMsg);
+          if( aMsg==0 ){
+            rc = SQLITE_IOERR_NOMEM;
+          }else{
+            BlockcacheMessage reply;
+            BlockcacheMessage login;
+            memset(&reply, 0, sizeof(reply));
+            memset(&login, 0, sizeof(login));
 
-          /* This should really be:
-          **
-          **   inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr); 
-          **
-          ** But since mingw does not have inet_pton, and we only ever use 
-          ** it on the ipv4 localhost address, just hard code the value. */
-          ((u8*)&addr.sin_addr)[0] = 0x7F;
-          ((u8*)&addr.sin_addr)[1] = 0x00;
-          ((u8*)&addr.sin_addr)[2] = 0x00;
-          ((u8*)&addr.sin_addr)[3] = 0x01;
+            login.eType = BCV_MESSAGE_LOGIN;
+            login.aData = (u8*)sqlite3_mprintf("%.*s", nDb, zDb);;
+            login.nData = strlen((const char*)login.aData) + 1;
 
-          if( connect(p->fdDaemon, (struct sockaddr*)&addr, sizeof(addr))<0 ){
-            sqlite3_log(SQLITE_CANTOPEN, 
-                "blockcachevfs: failed to connect to 127.0.0.1:%d", iPort
-            );
-            rc = SQLITE_CANTOPEN;
-          }
-
-          if( rc==SQLITE_OK ){
-            int nMsg = 5 + nDb + 1;
-            u8 *aMsg = sqlite3_malloc(nMsg);
-            if( aMsg==0 ){
-              rc = SQLITE_IOERR_NOMEM;
-            }else{
-              BlockcacheMessage reply;
-              BlockcacheMessage login;
-              memset(&reply, 0, sizeof(reply));
-              memset(&login, 0, sizeof(login));
-
-              login.eType = BCV_MESSAGE_LOGIN;
-              login.aData = (u8*)sqlite3_mprintf("%.*s", nDb, zDb);;
-              login.nData = strlen((const char*)login.aData) + 1;
-
-              rc = bcvSendMessage(p, &login);
-              if( rc==SQLITE_OK ){
-                rc = bcvReceiveMessage(p, &reply);
-              }
-              if( rc==SQLITE_OK ){
-                p->szBlk = reply.iVal;
-              }
-
-              sqlite3_free(login.aData);
-              sqlite3_free(aMsg);
+            rc = bcvSendMessage(p->fdDaemon, &login);
+            if( rc==SQLITE_OK ){
+              rc = bcvReceiveMessage(p->fdDaemon, &reply);
             }
+            if( rc==SQLITE_OK ){
+              assert( p->zContainer==0 );
+              p->szBlk = reply.iVal;
+              p->zContainer = sqlite3_malloc(reply.nData);
+              if( p->zContainer==0 ){
+                rc = SQLITE_NOMEM;
+              }else{
+                memcpy(p->zContainer, reply.aData, reply.nData);
+                p->zAccount = &p->zContainer[strlen(p->zContainer)+1];
+              }
+            }
+
+            sqlite3_free(login.aData);
+            sqlite3_free(aMsg);
+            sqlite3_free(reply.pFree);
           }
         }
       }
@@ -889,6 +1016,159 @@ static int bcvConnectDaemon(BlockcacheFile *p){
     sqlite3_free(aBuf);
   }
 
+  return rc;
+}
+
+/*
+** Open text file zFile and read the contents into a buffer obtained from
+** sqlite3_malloc(). If successful, append a nul-terminator byte, set
+** (*pzText) to point to the new buffer and return SQLITE_OK. Or, if an
+** error occurs, return an SQLite error code. The final value of (*pzText)
+** is undefined in this case.
+*/
+static int bcvReadTextFile(const char *zFile, char **pzText){
+  int rc = SQLITE_OK;
+  int f = SQLITE_OPEN_READONLY | SQLITE_OPEN_MAIN_DB;
+  sqlite3_int64 sz = 0;
+  sqlite3_file *pFile = 0;
+  sqlite3_vfs *pVfs = (sqlite3_vfs*)bcv_vfs.pAppData;
+  char *zRet = 0;
+
+  pFile = (sqlite3_file*)sqlite3_malloc(pVfs->szOsFile);
+  if( pFile==0 ){
+    return SQLITE_NOMEM;
+  }
+  memset(pFile, 0, pVfs->szOsFile);
+
+  rc = pVfs->xOpen(pVfs, zFile, pFile, f, &f);
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(pFile);
+  }else{
+    rc = pFile->pMethods->xFileSize(pFile, &sz);
+  }
+
+  if( rc==SQLITE_OK ){
+    zRet = sqlite3_malloc(sz+1);
+    if( zRet==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      zRet[sz] = '\0';
+      rc = pFile->pMethods->xRead(pFile, zRet, sz, 0);
+    }
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(zRet);
+    zRet = 0;
+  }
+  if( pFile && pFile->pMethods ){
+    pFile->pMethods->xClose(pFile);
+  }
+  sqlite3_free(pFile);
+
+  *pzText = zRet;
+  return rc;
+}
+
+static int bcvAutoAttach(
+  const char *zFile,              /* File-name to open */
+  const char *zSas,               /* URI bcv_sas= parameter */
+  int bReadflag                   /* True if SQLITE_OPEN_READONLY */
+){
+  int rc = SQLITE_OK;
+  int i2;
+  int i1;
+  char *zPortfile = 0;
+  char *zContainer = 0;
+  char *zPort = 0;
+  char *zFree = 0;
+  int bReadonly = bReadflag;
+  const char *zSasToken = zSas;
+  BCV_SOCKET_TYPE fd;
+
+  for(i2=strlen(zFile); i2>0 && zFile[i2]!='/'; i2--);
+  if( i2==0 ) return SQLITE_ERROR;
+  for(i1=i2-1; i1>0 && zFile[i1]!='/'; i1--);
+  if( zFile[i1]!='/' ) return SQLITE_ERROR;
+
+  zPortfile = sqlite3_mprintf("%.*s%s%c", i1+1, zFile,BCV_PORTNUMBER_FILE,'\0');
+  zContainer = sqlite3_mprintf("%.*s", i2-i1-1, &zFile[i1+1]);
+  if( zPortfile==0 || zContainer==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = bcvReadTextFile(zPortfile, &zPort);
+    if( rc==SQLITE_OK ){
+      int iPort = bcvParseInt((const u8*)zPort, -1);
+      rc = bcvConnectSocket(iPort, &fd);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    if( zSas[0]=='1' && zSas[1]=='\0' ){
+      /* If the SAS token is just "1", then request the account name from the
+      ** daemon process, then use the callback to obtain an SAS token.  */
+      if( bcv_global.xSas==0 ){
+        rc = SQLITE_CANTOPEN;
+      }else{
+        BlockcacheMessage msg;
+        BlockcacheMessage reply;
+  
+        memset(&msg, 0, sizeof(msg));
+        memset(&reply, 0, sizeof(reply));
+  
+        msg.eType = BCV_MESSAGE_QUERY;
+        msg.aData = (u8*)"bcv_account=";
+        msg.nData = 12;
+        rc = bcvSendMessage(fd, &msg);
+        if( rc==SQLITE_OK ){
+          rc = bcvReceiveMessage(fd, &reply);
+        }
+        if( rc==SQLITE_OK ){
+          rc = bcv_global.xSas(
+              bcv_global.pSasCtx, "azure", 
+              (const char*)reply.aData, zContainer, &zFree, &bReadonly
+          );
+          zSasToken = zFree;
+        }
+        sqlite3_free(reply.pFree);
+      }
+    }
+  
+    if( rc==SQLITE_OK ){
+      BlockcacheMessage msg;
+      BlockcacheMessage reply;
+      char *zMsg;
+  
+      memset(&msg, 0, sizeof(msg));
+      memset(&reply, 0, sizeof(reply));
+        
+      zMsg = sqlite3_mprintf("bcv_%s=%s?%s", 
+          bReadonly?"readonly":"attach", zContainer, zSasToken
+      );
+      if( zMsg==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        msg.eType = BCV_MESSAGE_QUERY;
+        msg.nData = strlen(zMsg);
+        msg.aData = (u8*)zMsg;
+        rc = bcvSendMessage(fd, &msg);
+        if( rc==SQLITE_OK ){
+          rc = bcvReceiveMessage(fd, &reply);
+        }
+        sqlite3_free(zMsg);
+        if( rc==SQLITE_OK && reply.iVal ){
+          rc = SQLITE_CANTOPEN;
+        }
+        sqlite3_free(reply.pFree);
+      }
+    }
+    bcv_close_socket(fd);
+  }
+
+  sqlite3_free(zPort);
+  sqlite3_free(zPortfile);
+  sqlite3_free(zContainer);
+  sqlite3_free(zFree);
   return rc;
 }
 
@@ -902,7 +1182,7 @@ static int bcvOpen(
   int flags,
   int *pOutFlags
 ){
-  int rc;
+  int rc = SQLITE_OK;
   sqlite3_vfs *pOrigVfs = ORIGVFS(pVfs);
   BlockcacheFile *p = (BlockcacheFile*)pFile;
   sqlite3_file *pOrig = ORIGFILE(p);
@@ -910,7 +1190,18 @@ static int bcvOpen(
   memset(p, 0, sizeof(BlockcacheFile));
   p->iPrevBlk = -1;
   p->base.pMethods = &bcv_io_methods;
-  rc = pOrigVfs->xOpen(pOrigVfs, zName, pOrig, flags, pOutFlags);
+
+  if( flags & SQLITE_OPEN_URI ){
+    const char *zSas = sqlite3_uri_parameter(zName, BCV_SAS_PARAM);
+    if( zSas ){
+      rc = bcvAutoAttach(zName, zSas, (flags & SQLITE_OPEN_READONLY)!=0);
+      flags &= ~SQLITE_OPEN_CREATE;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = pOrigVfs->xOpen(pOrigVfs, zName, pOrig, flags, pOutFlags);
+  }
   if( rc==SQLITE_OK && (flags & SQLITE_OPEN_MAIN_DB) ){
     char aHdr[11];
     rc = pOrig->pMethods->xRead(pOrig, aHdr, 11, 0);
@@ -919,11 +1210,12 @@ static int bcvOpen(
         p->bDaemon = sqlite3_uri_boolean(zName, "daemon", 0);
         rc = bcvConnectDaemon(p);
         if( rc==SQLITE_OK ){
+          int nCachefile = strlen(BCV_CACHEFILE_NAME);
           int nName = strlen(zName);
           int f = SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_READWRITE;
           char *zNew;
-          int nNew = nName + strlen(BCV_CACHEFILE_NAME) + 1;
-          zNew = (char*)sqlite3_malloc(nNew);
+    
+          zNew = (char*)sqlite3_malloc(nName + nCachefile + 2);
           if( zNew==0 ){
             rc = SQLITE_IOERR_NOMEM;
           }else{
@@ -935,9 +1227,9 @@ static int bcvOpen(
                 if( (++nSlash)==2 ) break;
               }
             }
-            memcpy(&zNew[ii+1],BCV_CACHEFILE_NAME,strlen(BCV_CACHEFILE_NAME)+1);
-            int nNewl = strlen(zNew) + 1;
-            memset(zNew + nNewl, '\0', nNew - nNewl);
+            memcpy(&zNew[ii+1], BCV_CACHEFILE_NAME, nCachefile);
+            zNew[ii+1+nCachefile+0] = '\0';
+            zNew[ii+1+nCachefile+1] = '\0';
             p->pBlkFile = (sqlite3_file*)(((u8*)pOrig) + pOrigVfs->szOsFile);
             rc = pOrigVfs->xOpen(pOrigVfs, zNew, p->pBlkFile, f, &f);
             p->zBlkFile = zNew;
@@ -1147,7 +1439,7 @@ static int bcvVtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 
 static int bcvVtabClose(sqlite3_vtab_cursor *cur){
   bcv_cursor *pCur = (bcv_cursor*)cur;
-  sqlite3_free(pCur->data.aData);
+  sqlite3_free(pCur->data.pFree);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }
@@ -1235,9 +1527,9 @@ static int bcvVtabFilter(
   msg.eType = BCV_MESSAGE_QUERY;
   msg.aData = (u8*)pTab->zTopic;
   msg.nData = strlen(pTab->zTopic);
-  rc = bcvSendMessage(p, &msg);
+  rc = bcvSendMessage(p->fdDaemon, &msg);
   if( rc==SQLITE_OK ){
-    rc = bcvReceiveMessage(p, &pCur->data);
+    rc = bcvReceiveMessage(p->fdDaemon, &pCur->data);
   }
   if( rc==SQLITE_OK && !bcvVtabEof(cur) ){
     rc = bcvVtabNext(cur);
@@ -1260,7 +1552,7 @@ static int bcvVtabBestIndex(
   return SQLITE_OK;
 }
 
-static void bcvRegisterVtab(
+static int bcvRegisterVtab(
   sqlite3 *db, 
   const char **pzErrMsg, 
   const struct sqlite3_api_routines *pThunk
@@ -1297,20 +1589,39 @@ static void bcvRegisterVtab(
   for(i=0; azMod[i]; i++){
     sqlite3_create_module(db, azMod[i], &bcv_manifest, (void*)azMod[i]);
   }
-}
-
-int bcvExtraInit(const char *unused){
-  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
-  bcv_vfs.szOsFile = sizeof(BlockcacheFile) + pVfs->szOsFile*2;
-  bcv_vfs.pAppData = (void*)pVfs;
-  sqlite3_vfs_register(&bcv_vfs, 1);
-  sqlite3_auto_extension((void(*)(void))bcvRegisterVtab);
-  bcv_socket_init();
   return SQLITE_OK;
 }
-void bcvRestoreDefaultVfs(void){
-  sqlite3_vfs *pDefault = bcv_vfs.pAppData;
-  assert( pDefault );
-  sqlite3_vfs_register(pDefault, 1);
+
+const char *sqlite3_bcv_register(int bDefault){
+  if( bcv_vfs.pAppData==0 ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+    bcv_vfs.szOsFile = sizeof(BlockcacheFile) + pVfs->szOsFile*2;
+    bcv_vfs.pAppData = (void*)pVfs;
+    sqlite3_vfs_register(&bcv_vfs, bDefault);
+    sqlite3_auto_extension((void(*)(void))bcvRegisterVtab);
+    bcv_socket_init();
+  }
+  return bcv_vfs.zName;
+}
+
+int sqlite3_bcv_sas_callback(
+  void *pSasCtx,
+  int(*xSas)(
+      void *pCtx, 
+      const char *zStorage, 
+      const char *zAccount, 
+      const char *zContainer,
+      char **pzSasToken,
+      int *pbReadonly
+  )
+){
+  bcv_global.pSasCtx = pSasCtx;
+  bcv_global.xSas = xSas;
+  return SQLITE_OK;
+}
+
+int sqlite3_bcv_init(const char *unused){
+  sqlite3_bcv_register(1);
+  return SQLITE_OK;
 }
 

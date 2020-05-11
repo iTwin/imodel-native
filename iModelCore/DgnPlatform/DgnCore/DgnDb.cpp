@@ -607,10 +607,12 @@ DbResult DgnDb::DeleteLinkTableRelationships(Utf8CP relClassECSqlName, ECInstanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const& params)
+DbResult DgnDb::DoOpenDgnDb(BeFileNameCR fileNameIn, OpenParams const& params)
     {
-    BeFileName fileName(projectNameIn);
-    fileName.SupplyDefaultNameParts(s_dgndbExt);
+    BeFileName fileName(fileNameIn);
+    if (!fileName.DoesPathExist())
+        fileName.SupplyDefaultNameParts(s_dgndbExt);
+
     m_fileName = fileName.GetNameUtf8();
 
     DbResult stat = OpenBeSQLiteDb(fileName, params);
@@ -632,12 +634,9 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
     DbResult ALLOW_NULL_OUTPUT(status, outResult);
     bool wantReadonly = openParams.IsReadonly();
 
-    BeFileName dbFileName(fileName);
-    dbFileName.SupplyDefaultNameParts(s_dgndbExt);
-
     DgnDbPtr dgnDb = new DgnDb();
 
-    status = dgnDb->DoOpenDgnDb(dbFileName, openParams);
+    status = dgnDb->DoOpenDgnDb(fileName, openParams);
     if (status != BE_SQLITE_OK)
         return nullptr;
 
@@ -649,7 +648,7 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
     dgnDb = new DgnDb(); // release old and create a new DgnDb
     OpenParams readonlyParams(openParams);
     readonlyParams.SetOpenMode(Db::OpenMode::Readonly);
-    status = dgnDb->DoOpenDgnDb(dbFileName, readonlyParams);
+    status = dgnDb->DoOpenDgnDb(fileName, readonlyParams);
     return (status != BE_SQLITE_OK) ? nullptr : dgnDb;
     }
 

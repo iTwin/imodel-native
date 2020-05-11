@@ -1,29 +1,19 @@
 
 
-#if defined(_WIN32)
-#define __WIN32__
+#if defined(WIN32) && !defined(__WIN32__)
+# define __WIN32__
 #endif
 
 #ifdef __WIN32__
-#ifndef _SSIZE_T_DEFINED
-#ifdef  _WIN64
-typedef unsigned __int64 ssize_t;
+# include <winsock2.h>
+# include <windows.h>
+# include <ws2tcpip.h>
+# define BCV_SOCKET_TYPE SOCKET
 #else
-typedef _W64 unsigned int ssize_t;
-#endif
-#define _SSIZE_T_DEFINED
-#endif
-#endif
-
-#ifdef __WIN32__
-#include <winsock2.h>
-#include <windows.h>
-#include <ws2tcpip.h>
-#define BCV_SOCKET_TYPE SOCKET
-#else
-#include <sys/socket.h> 
-#include <arpa/inet.h> 
-#define BCV_SOCKET_TYPE int
+# include <unistd.h>
+# include <sys/socket.h> 
+# include <arpa/inet.h> 
+# define BCV_SOCKET_TYPE int
 #endif
 
 static int bcv_socket_is_valid(BCV_SOCKET_TYPE s){

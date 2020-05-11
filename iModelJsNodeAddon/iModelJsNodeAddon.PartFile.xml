@@ -18,7 +18,7 @@
       </Files>
     </Bindings>
   </Part>
-  
+
   <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64" PrgOutputDir="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon"/>
     <SubPart PartName="iModelJsApiDeclarations"/>
@@ -78,7 +78,8 @@
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
-    <SubPart PartName="iModelHubClient-PublicAPI" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02" />
+    <SubPart PartName="iModelHubClient-PublicAPI" PartFile="iModelCore/WSClient/WSClient" />
+    <SubPart PartName="BCVDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
       <VendorNotices IfNotPresent="Continue">

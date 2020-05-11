@@ -2,7 +2,8 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See COPYRIGHT.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
- VCRuntimeCheckOption = -RTCsu
+VCRuntimeCheckOption = -RTCsu
+
 %include mdl.mki
 
 baseDir = $(_MakeFilePath)
@@ -17,24 +18,23 @@ CCompPDBName = $(appName)
 always:
     !~@mkdir $(o)
 
-MultiCompileDepends=$(_MakeFileSpec)
-%include MultiCppCompileRule.mki
-
 CCompFpOpts=precise
-CCompOpts + -DSQLITE_EXTRA_INIT=bcvExtraInit -DCURL_STATICLIB=1
+CCompOpts + -DCURL_STATICLIB=1 -DSQLITE_EXTRA_INIT=sqlite3_bcv_init
 
 # Third-party section of this library.
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
-$(o)simplexml$(oext): $(SQLiteDir)simplexml.c
+MultiCompileDepends =$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
 
-$(o)sqlite3$(oext): $(SQLiteDir)sqlite3.c
+$(o)simplexml$(oext): $(SQLiteDir)simplexml.c ${MultiCompileDepends}
 
-$(o)blockcachevfsd$(oext): $(SQLiteDir)blockcachevfsd.c
+$(o)sqlite3$(oext): $(SQLiteDir)sqlite3.c ${MultiCompileDepends}
 
-$(o)blockcachevfs$(oext): $(SQLiteDir)blockcachevfs.c
+$(o)blockcachevfsd$(oext): $(SQLiteDir)blockcachevfsd.c ${MultiCompileDepends}
 
-%include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
+$(o)blockcachevfs$(oext): $(SQLiteDir)blockcachevfs.c ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 EXE_DEST            = $(o)

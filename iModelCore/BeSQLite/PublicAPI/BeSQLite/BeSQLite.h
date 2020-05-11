@@ -2344,7 +2344,7 @@ public:
         //! Get a writable reference to the encryption parameters
         EncryptionParams& GetEncryptionParamsR() {return m_encryption;}
 
-        //! Pass aditional parameter down to sqlite as URI query params. If queryParams are not empty then path is converted to file:///<path>?queryParams
+        //! Pass additional parameters to sqlite as URI query params. If queryParams are not empty then path is converted to file:///<path>?queryParams
         bmap<Utf8String, Utf8String> const& GetQueryParams() const { return m_queryParams; }
         //! Set a query parameter for open/create call
         BE_SQLITE_EXPORT void SetQueryParam(Utf8CP key, Utf8CP value) const;
@@ -2359,7 +2359,7 @@ public:
     {
         Encoding m_encoding;
         PageSize m_pagesize;
-        enum CompressedDb {CompressDb_None=0,CompressDb_Zlib=1,CompressDb_Snappy=2,} m_compressedDb;
+        enum CompressedDb {CompressDb_None=0,CompressDb_Zlib=1,} m_compressedDb;
         enum ApplicationId : uint64_t {APPLICATION_ID_BeSQLiteDb='BeDb',} m_applicationId;
         bool m_failIfDbExists;
         DateTime m_expirationDate;
@@ -3248,10 +3248,6 @@ public:
 
 };
 
-#define SQLITE_FORMAT_SIGNATURE     "SQLite format 3"
-#define SQLZLIB_FORMAT_SIGNATURE    "ZV-zlib"
-#define SQLSNAPPY_FORMAT_SIGNATURE  "ZV-snappy"
-#define BLOCKCACHEVFS_FORMAT_SIGNATURE "blockvfs:"
 #define ENCRYPTED_BESQLITE_FORMAT_SIGNATURE "Encrypted BeSQLite"
 
 #define BEDB_PROPSPEC_NAMESPACE "be_Db"

@@ -11,6 +11,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/BeLzma.h>
 #include "SQLite/sqlite3.h"
+#include "SQLite/blockcachevfs.h"
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeStringUtilities.h>
@@ -34,9 +35,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
 static Utf8CP loadZlibVfs();
-static Utf8CP loadSnappyVfs();
 Utf8CP loadEncryptedDbVfs();
-extern "C" int bcvExtraInit(const char *);
 
 #if !defined (NDEBUG)
 extern "C" int checkNoActiveStatements(SqlDbP db);
@@ -1804,9 +1803,6 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         case CreateParams::CompressDb_Zlib:
             vfs = loadZlibVfs();
             break;
-        case CreateParams::CompressDb_Snappy:
-            vfs = loadSnappyVfs();
-            break;
         }
 
     SqlDbP sqlDb;
@@ -2539,93 +2535,69 @@ Utf8CP Db::GetDbFileName() const
     {
     return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : nullptr;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Affan.Khan                      1/20
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8CP loadBlockCacheVfs()
-    {
-    static Utf8CP s_blockcachevfs = "blockcachevfs";
-    if (0 == sqlite3_vfs_find(s_blockcachevfs))
-        bcvExtraInit(nullptr);
-
-    return s_blockcachevfs;
-    }
 
 //  See http://www.sqlite.org/fileformat.html for format of header.
 #define DBFILE_PAGESIZE_OFFSET  16
 #define DBFILE_PAGECOUNT_OFFSET 28
 
-/*---------------------------------------------------------------------------------**//**
+#define IS_SQLITE_FILE_SIGNATURE(toCheck) (0 == memcmp((Utf8CP)header, toCheck, strlen(toCheck)))
+
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
-    {
-    WString filenameW(filename, BentleyCharEncoding::Utf8);
+static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs) {
     BeFile tester;
+    BeFileName filenameW(filename, BentleyCharEncoding::Utf8);
     BeFileStatus status = tester.Open(filenameW.c_str(), BeFileAccess::Read);
-    switch (status)
-        {
-        case BeFileStatus::Success:
-            break;
-        case BeFileStatus::FileNotFoundError:
-            return  BE_SQLITE_ERROR_FileNotFound;
-        default:
-            return  BE_SQLITE_ERROR;
-        }
+
+    switch (status) {
+    case BeFileStatus::Success:
+        break;
+    case BeFileStatus::FileNotFoundError:
+        return BE_SQLITE_ERROR_FileNotFound;
+    default:
+        return BE_SQLITE_ERROR;
+    }
 
     uint32_t bytesRead;
     uint8_t header[100] = "";
     tester.Read(header, &bytesRead, sizeof(header));
     tester.Close();
 
-    DbResult result = BE_SQLITE_NOTADB;
-    bool doFileSizeCheck = true;
-    Utf8CP ident = (Utf8CP)header;
-    if (0 == strcmp(ident, SQLITE_FORMAT_SIGNATURE))
-        result = BE_SQLITE_OK;
-    else if (0 == strcmp(ident, SQLZLIB_FORMAT_SIGNATURE))
-        {
-        vfs = loadZlibVfs();
-        result = BE_SQLITE_OK;
-        }
-    else if (0 == strcmp(ident, SQLSNAPPY_FORMAT_SIGNATURE))
-        {
-        vfs = loadSnappyVfs();
-        result = BE_SQLITE_OK;
-        }
-    else if (0 == strcmp(ident, ENCRYPTED_BESQLITE_FORMAT_SIGNATURE))
-        {
-        vfs = loadEncryptedDbVfs();
-        doFileSizeCheck = false; // this VFS lays out the file differently
-        result = BE_SQLITE_OK;
-        }
-    else if (0 == memcmp(ident, BLOCKCACHEVFS_FORMAT_SIGNATURE, strlen(BLOCKCACHEVFS_FORMAT_SIGNATURE)))
-        {
-        vfs = loadBlockCacheVfs();
-        doFileSizeCheck = false;
-        result = BE_SQLITE_OK;
-        }
+    if (IS_SQLITE_FILE_SIGNATURE("SQLite format 3")) {
+        if (bytesRead != sizeof(header))
+            return BE_SQLITE_CORRUPT;
 
-    if (BE_SQLITE_OK != result)
-        return result;
-
-    if (doFileSizeCheck)
-        {
         //  Extract big endian values
-        uint32_t pageSize = (header[DBFILE_PAGESIZE_OFFSET+0] << 8) + header[DBFILE_PAGESIZE_OFFSET+1];
-        uint64_t pageCount = (header[DBFILE_PAGECOUNT_OFFSET+0] << 24) + (header[DBFILE_PAGECOUNT_OFFSET+1] << 16) + (header[DBFILE_PAGECOUNT_OFFSET+2] << 8) + header[DBFILE_PAGECOUNT_OFFSET+3];
-        uint64_t requiredMin = pageSize*pageCount;
+        uint32_t pageSize = (header[DBFILE_PAGESIZE_OFFSET + 0] << 8) + header[DBFILE_PAGESIZE_OFFSET + 1];
+        uint64_t pageCount = (header[DBFILE_PAGECOUNT_OFFSET + 0] << 24) + (header[DBFILE_PAGECOUNT_OFFSET + 1] << 16) + (header[DBFILE_PAGECOUNT_OFFSET + 2] << 8) + header[DBFILE_PAGECOUNT_OFFSET + 3];
+        uint64_t requiredMin = pageSize * pageCount;
         uint64_t filesize;
-        BeFileName::GetFileSize(filesize, filenameW.c_str());
-        if (filesize<requiredMin)
-            {
+        filenameW.GetFileSize(filesize);
+        if (filesize < requiredMin) {
             LOG.errorv("isValidDbFile: file %s is truncated", filename);
-            return BE_SQLITE_CORRUPT_VTAB;
-            }
+            return BE_SQLITE_CORRUPT;
         }
-
-    return BE_SQLITE_OK;
+        return BE_SQLITE_OK;
     }
+
+    if (IS_SQLITE_FILE_SIGNATURE("blockvfs:")) {
+        vfs = sqlite3_bcv_register(0);
+        return BE_SQLITE_OK;
+    }
+
+    if (IS_SQLITE_FILE_SIGNATURE("ZV-zlib")) {
+        vfs = loadZlibVfs();
+        return BE_SQLITE_OK;
+    }
+
+    if (IS_SQLITE_FILE_SIGNATURE(ENCRYPTED_BESQLITE_FORMAT_SIGNATURE)) {
+        vfs = loadEncryptedDbVfs();
+        return BE_SQLITE_OK;
+    }
+
+return BE_SQLITE_NOTADB;
+}
 
 #ifdef TRACE_ALL_SQLITE_STATEMENTS
 /*---------------------------------------------------------------------------------**//**
@@ -5030,37 +5002,6 @@ static Utf8CP loadZlibVfs()
     return  s_vfsZlib;
     }
 
-//=======================================================================================
-// support for snappy-compressed databases
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-static int zfsSnappyBound(void *pCtx, int nByte){return (int) snappy::MaxCompressedLength(nByte);}
-static int zfsSnappyCompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
-    {
-    snappy::RawCompress(aSrc, nSrc, aDest, (unsigned int*) pnDest);
-    return SQLITE_OK;
-    }
-
-static int zfsSnappyUncompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
-    {
-    size_t outSize;
-    snappy::GetUncompressedLength(aSrc, nSrc, &outSize);
-    *pnDest = (int) outSize;
-    bool rc = snappy::RawUncompress(aSrc, nSrc, aDest);
-    return (rc ? SQLITE_OK : SQLITE_ERROR);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8CP loadSnappyVfs()
-    {
-    static Utf8CP s_vfsSnappy = "snappy";
-    if (0 == sqlite3_vfs_find(s_vfsSnappy))
-        zipvfs_create_vfs(s_vfsSnappy, 0, 0, zfsSnappyBound, zfsSnappyCompress, zfsSnappyUncompress);
-
-    return s_vfsSnappy;
-    }
 /*---------------------------------------------------------------------------------**//**
 * implementation of SQL "InVirtualSet" function. Returns 1 if the value is contained in the set.
 * @bsimethod                                    Keith.Bentley                   11/13
