@@ -21,10 +21,7 @@ ECPRESENTATION_TYPEDEFS(RulesDrivenProviderContext)
 ECPRESENTATION_REFCOUNTED_PTR(RulesDrivenProviderContext)
 
 // nav node data sources
-ECPRESENTATION_TYPEDEFS(INavNodesDataSource)
-ECPRESENTATION_REFCOUNTED_PTR(INavNodesDataSource)
 ECPRESENTATION_REFCOUNTED_PTR(NavNodesDataSource)
-ECPRESENTATION_REFCOUNTED_PTR(PagingDataSource)
 ECPRESENTATION_REFCOUNTED_PTR(CachingNavNodesDataSource)
 ECPRESENTATION_REFCOUNTED_PTR(EmptyNavNodesDataSource)
 
@@ -235,6 +232,20 @@ public:
         TContainerType container;
         container.insert(container.end(), item);
         return container;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                01/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TContainerType, typename TItemType>
+    static TItemType FindFirst(TContainerType const& container, std::function<bool(TItemType const&)> const& pred, TItemType const& defaultValue = TItemType())
+        {
+        for (TItemType const& item : container)
+            {
+            if (pred(item))
+                return item;
+            }
+        return defaultValue;
         }
 };
 

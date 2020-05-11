@@ -33,7 +33,6 @@ protected:
     ECPRESENTATION_EXPORT virtual void _AsJson(ContentDescriptor::RelatedContentField const& relatedContentField, RapidJsonDocumentR nestedContentFieldJson) const override;
     virtual void _AsJson(ContentDescriptor::SystemField const&, RapidJsonDocumentR) const override {}
     virtual void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const override {}
-    virtual void _AsJson(ContentDescriptor::ECNavigationInstanceIdField const&, RapidJsonDocumentR) const override {}
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(HierarchyUpdateRecord const& updateRecord, rapidjson::Document::AllocatorType*) const override;
 
@@ -54,6 +53,7 @@ protected:
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(DisplayValueGroupCR, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType*) const override;
 

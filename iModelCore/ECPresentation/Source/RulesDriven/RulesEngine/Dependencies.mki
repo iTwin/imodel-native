@@ -53,7 +53,9 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)PresentationManagerImpl.h              \
                                 $(RulesEngineSourceDirectory)TaskScheduler.h                        \
                                 $(RulesEngineSourceDirectory)HierarchiesComparer.h                  \
-                                $(RulesEngineSourceDirectory)RulesetVariables.h
+                                $(RulesEngineSourceDirectory)RulesetVariables.h                     \
+                                $(RulesEngineSourceDirectory)NavigationQueryResultsReader.h         \
+                                $(RulesEngineSourceDirectory)ContentQueryResultsReader.h
 
 RulesEngineXliffHeaders       = $(XliffsDirectory)RulesEngine.xliff.h
 

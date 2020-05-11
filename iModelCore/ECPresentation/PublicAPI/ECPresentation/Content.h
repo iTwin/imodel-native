@@ -74,7 +74,9 @@ enum class ContentFlags
     ShowImages =            1 << 1, //!< Each content record additionally has an image id
     ShowLabels =            1 << 2, //!< Each content record additionally has a label
     MergeResults =          1 << 3, //!< All content records are merged into a single record
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
     DistinctValues =        1 << 4, //!< Content has only distinct values
+#endif
     NoFields =              1 << 5, //!< Doesnt create property or calculated fields. Can be used in conjunction with @e ShowLabels.
     ExcludeEditingData =    1 << 6, //!< Should editing data be excluded from the content. This flag increases performance and should be used when requesting data for read-only cases.
     SkipInstancesCheck =    1 << 7, //!< Skip instances' check when creating content with ContentRelatedInstances specification.
@@ -939,7 +941,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     };
 
     struct ECInstanceKeyField;
-    struct ECNavigationInstanceIdField;
     //===================================================================================
     // @bsiclass                                    Grigas.Petraitis            06/2017
     //===================================================================================
@@ -955,15 +956,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         SystemField() : Field(Category(), "") {}
         virtual ECInstanceKeyField* _AsECInstanceKeyField() {return nullptr;}
         virtual ECInstanceKeyField const* _AsECInstanceKeyField() const {return nullptr;}
-        virtual ECNavigationInstanceIdField* _AsECNavigationInstanceIdField() {return nullptr;}
-        virtual ECNavigationInstanceIdField const* _AsECNavigationInstanceIdField() const {return nullptr;}
     public:
         bool IsECInstanceKeyField() const {return nullptr != _AsECInstanceKeyField();}
         ECInstanceKeyField* AsECInstanceKeyField() {return _AsECInstanceKeyField();}
         ECInstanceKeyField const* AsECInstanceKeyField() const {return _AsECInstanceKeyField();}
-        bool IsECNavigationInstanceIdField() const {return nullptr != _AsECNavigationInstanceIdField();}
-        ECNavigationInstanceIdField* AsECNavigationInstanceIdField() {return _AsECNavigationInstanceIdField();}
-        ECNavigationInstanceIdField const* AsECNavigationInstanceIdField() const {return _AsECNavigationInstanceIdField();}
     };
 
     //===================================================================================
@@ -986,33 +982,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECInstanceKeyField() : SystemField() {}
         bvector<ContentDescriptor::ECPropertiesField const*> const& GetKeyFields() const {return m_keyFields;}
         void AddKeyField(ContentDescriptor::ECPropertiesField const& field) {m_keyFields.push_back(&field);}
-    };
-
-    //===================================================================================
-    // @bsiclass                                    Saulius.Skliutas            08/2017
-    //===================================================================================
-    struct ECNavigationInstanceIdField : SystemField
-    {
-    private:
-        ECPropertiesField const* m_propertyField;
-    protected:
-        ECNavigationInstanceIdField* _AsECNavigationInstanceIdField() override {return this;}
-        ECNavigationInstanceIdField const* _AsECNavigationInstanceIdField() const override {return this;}
-        Field* _Clone() const override {return new ECNavigationInstanceIdField(*this);}
-        ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
-        ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
-        ECPRESENTATION_EXPORT Utf8String _CreateName() const override;
-        ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const&) override;
-        ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
-        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
-    public:
-        ECNavigationInstanceIdField(ECPropertiesField const& propertiesField)
-            : SystemField(), m_propertyField(&propertiesField)
-            {}
-        ECNavigationInstanceIdField(ECNavigationInstanceIdField const& other)
-            : SystemField(other), m_propertyField(other.m_propertyField)
-            {}
-        ECPropertiesField const& GetPropertiesField() const {return *m_propertyField;}
     };
 
     //===================================================================================
@@ -1136,8 +1105,13 @@ public:
     //! Get the fields in this descriptor (including system ones).
     bvector<Field*> const& GetAllFields() const {return m_fields;}
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
     //! Returns a field if descriptor has DistinctValues flag set, has a single field and that field qualifies to be used with DistinctValues flag. Returns nullptr otherwise.
     Field const* GetDistinctField() const;
+#endif
+
+    //! Get field with the given unique name
+    ECPRESENTATION_EXPORT Field const* GetField(Utf8StringCR name) const;
 
     //! Get the ECInstance key fields in this descriptor.
     bvector<ECInstanceKeyField*> const& GetECInstanceKeyFields() const { return m_keyFields; }
@@ -1195,8 +1169,10 @@ public:
     bool ShowLabels() const {return HasContentFlag(ContentFlags::ShowLabels);}
     //! Should the content be merged into a single record.
     bool MergeResults() const {return HasContentFlag(ContentFlags::MergeResults);}
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
     //! Should only distinct values be returned
     bool OnlyDistinctValues() const {return HasContentFlag(ContentFlags::DistinctValues);}
+#endif
 };
 
 //=======================================================================================
@@ -1360,6 +1336,25 @@ public:
     DataContainer<ContentSetItemCPtr> GetContentSet() const {return DataContainer<ContentSetItemCPtr>(*m_contentSource);}
 
     //! Serialize this object to JSON.
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
+};
+
+//=======================================================================================
+//! @ingroup GROUP_Presentation_Content
+// @bsiclass                                    Grigas.Petraitis                04/2020
+//=======================================================================================
+struct DisplayValueGroup : RefCountedBase
+{
+private:
+    Utf8String m_displayValue;
+    rapidjson::Document::AllocatorType m_rawValuesAllocator;
+    bvector<rapidjson::Value> m_rawValues;
+public:
+    DisplayValueGroup(Utf8String displayValue) : m_displayValue(displayValue) {}
+    Utf8StringCR GetDisplayValue() const {return m_displayValue;}
+    bvector<rapidjson::Value> const& GetRawValues() const {return m_rawValues;}
+    bvector<rapidjson::Value>& GetRawValues() {return m_rawValues;}
+    rapidjson::Document::AllocatorType& GetRawValuesAllocator() {return m_rawValuesAllocator;}
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 };
 

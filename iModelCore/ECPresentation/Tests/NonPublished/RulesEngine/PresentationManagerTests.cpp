@@ -20,7 +20,7 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
     RulesDrivenECPresentationManager* m_manager;
 
     RulesDrivenECPresentationManagerTests() : m_manager(nullptr) {}
-    virtual RulesDrivenECPresentationManager::Impl* _CreateImpl(RulesDrivenECPresentationManager::Params const&) = 0;
+    virtual RulesDrivenECPresentationManager::Impl* _CreateImpl(RulesDrivenECPresentationManager::Impl::Params const&) = 0;
     virtual void SetUp() override;
     virtual void TearDown() override;
 
@@ -156,8 +156,8 @@ void RulesDrivenECPresentationManagerTests::SetUp()
     m_manager = new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost())));
 
     RulesDrivenECPresentationManager::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
-    params.SetConnections(new TestConnectionManager());
-    m_manager->SetImpl(*_CreateImpl(m_manager->CreateImplParams(params)));
+    params.SetConnections(std::make_shared<TestConnectionManager>());
+    m_manager->SetImpl(*_CreateImpl(*m_manager->CreateImplParams(params)));
 
     m_manager->GetConnections().CreateConnection(GetECDb());
     }
@@ -177,7 +177,7 @@ struct RulesDrivenECPresentationManagerStubbedImplTests : RulesDrivenECPresentat
     {
     StubRulesDrivenECPresentationManagerImpl* m_impl;
 
-    virtual RulesDrivenECPresentationManager::Impl* _CreateImpl(RulesDrivenECPresentationManager::Params const& params) override
+    virtual RulesDrivenECPresentationManager::Impl* _CreateImpl(RulesDrivenECPresentationManager::Impl::Params const& params) override
         {
         m_impl = new StubRulesDrivenECPresentationManagerImpl(params);
         return m_impl;

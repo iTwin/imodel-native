@@ -343,6 +343,7 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentDes
     if (extendedData.IsCustomized())
         return;
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
     if (item.GetKeys().empty())
         {
         // note: the record has no keys when we're selecting distinct values. Multiple
@@ -350,6 +351,7 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentDes
         // for customizing
         return;
         }
+#endif
 
     if (item.GetKeys().size() > 1)
         {

@@ -19,7 +19,7 @@ void PresentationManagerIntegrationTests::SetUpTestCase()
     {
     s_project = new ECDbTestProject();
     s_project->Create("PresentationManagerIntegrationTests", "RulesEngineTest.01.00.ecschema.xml");
-    INIT_SCHEMA_REGISTRY(s_project->GetECDb());    
+    INIT_SCHEMA_REGISTRY(s_project->GetECDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,9 +33,9 @@ void PresentationManagerIntegrationTests::TearDownTestCase()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IConnectionManager* PresentationManagerIntegrationTests::_CreateConnectionManager()
+std::unique_ptr<IConnectionManager> PresentationManagerIntegrationTests::_CreateConnectionManager()
     {
-    return new TestConnectionManager();
+    return std::make_unique<TestConnectionManager>();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -46,7 +46,7 @@ void PresentationManagerIntegrationTests::_ConfigureManagerParams(RulesDrivenECP
     RulesDrivenECPresentationManager::Params::CachingParams cachingParams;
     cachingParams.SetDisableDiskCache(true);
     params.SetCachingParams(cachingParams);
-    params.SetConnections(m_connections);
+    params.SetConnections(m_connectionManager);
     params.SetLocalizationProvider(&m_localizationProvider);
     params.SetLocalState(&m_localState);
     }
@@ -68,16 +68,9 @@ void PresentationManagerIntegrationTests::SetUp()
     Localization::Init();
 
     m_localState.GetValues().clear();
-    m_connections = _CreateConnectionManager();
-
-    RulesDrivenECPresentationManager::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
-    _ConfigureManagerParams(params);
-
-    m_manager = new RulesDrivenECPresentationManager(params);
-    m_manager->GetConnections().CreateConnection(_GetProject());
-
     m_locater = DelayLoadingRuleSetLocater::Create();
-    m_manager->GetLocaters().RegisterLocater(*m_locater);
+    m_connectionManager = _CreateConnectionManager();
+    ReCreatePresentationManager(CreateManagerParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -89,6 +82,27 @@ void PresentationManagerIntegrationTests::TearDown()
     m_locater = nullptr;
     DELETE_AND_CLEAR(m_manager);
     Localization::Terminate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+RulesDrivenECPresentationManager::Params PresentationManagerIntegrationTests::CreateManagerParams()
+    {
+    RulesDrivenECPresentationManager::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    _ConfigureManagerParams(params);
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationManagerIntegrationTests::ReCreatePresentationManager(RulesDrivenECPresentationManager::Params const& params)
+    {
+    DELETE_AND_CLEAR(m_manager);
+    m_manager = new RulesDrivenECPresentationManager(params);
+    m_manager->GetConnections().CreateConnection(_GetProject());
+    m_manager->GetLocaters().RegisterLocater(*m_locater);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -260,7 +274,7 @@ void UpdateTests::SetUp()
     m_eventsSource = std::make_shared<TestECInstanceChangeEventsSource>();
 
     PresentationManagerIntegrationTests::SetUp();
-    
+
     m_schema = m_db.Schemas().GetSchema("RulesEngineTest");
     m_widgetClass = m_schema->GetClassCP("Widget");
     m_gadgetClass = m_schema->GetClassCP("Gadget");
@@ -270,7 +284,7 @@ void UpdateTests::SetUp()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IConnectionManager* UpdateTests::_CreateConnectionManager()
+std::unique_ptr<IConnectionManager> UpdateTests::_CreateConnectionManager()
     {
     // return no manager to use default
     return nullptr;

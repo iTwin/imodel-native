@@ -34,13 +34,13 @@ private:
         {
         bpair<NavNodePtr, bvector<NavNodePtr>> pair;
         if (!FindPair(parent, pair))
-            return EmptyNavNodesDataSource::Create();
+            return EmptyDataSource<NavNodePtr>::Create();
 
         bvector<NavNodePtr> nodes;
         for (NavNodePtr node : pair.second)
             nodes.push_back(node.get()->Clone());
 
-        return NodesVectorDataSource::Create(nodes);
+        return VectorDataSource<NavNodePtr>::Create(nodes);
         }
     bool FindPair(NavNodeCP parent, bpair<NavNodePtr, bvector<NavNodePtr>>& p)
         {
@@ -120,10 +120,14 @@ protected:
         {
         return LabelDefinition::Create();
         }
+    PagingDataSourcePtr<DisplayValueGroupCPtr> _GetDistinctValues(IConnectionCR, ContentDescriptorCR, Utf8StringCR, PageOptionsCR, ICancelationTokenCR) override
+        {
+        return PagingDataSource<DisplayValueGroupCPtr>::Create();
+        }
     void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR, Utf8StringCR, CommonOptions const&, ICancelationTokenCR) override {}
 
 public:
-    StubRulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManager::Params const& params)
+    StubRulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManager::Impl::Params const& params)
         : RulesDrivenECPresentationManagerImplBase(params)
         {}
 

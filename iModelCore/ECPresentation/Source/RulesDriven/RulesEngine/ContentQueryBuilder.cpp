@@ -69,6 +69,7 @@ static bvector<RelatedClassPath> GetPathsToSelectClass(bvector<SelectClassInfo> 
     return paths;
     }
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -80,6 +81,7 @@ static ComplexContentQueryPtr WrapQueryIntoGroupingClause(ComplexContentQueryR q
     grouped->GroupByContract(queryContract);
     return grouped;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -131,9 +133,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, selectClassInfo, nullptr, nullptr);
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         // handle selecting property for distinct values
         if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
+#endif
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
@@ -212,9 +216,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
             selectClassInfo, recursiveInfo, specification.GetInstanceFilter().c_str());
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         // handle selecting property for distinct values
         if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
+#endif
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
@@ -258,9 +264,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
             selectClassInfo, nullptr, specification.GetInstanceFilter().c_str());
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         // handle selecting property for distinct values
         if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
+#endif
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }

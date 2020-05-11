@@ -118,6 +118,10 @@ protected:
     //! Get display label
     //! @see GetDisplayLabel
     virtual folly::Future<LabelDefinitionCPtr> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) = 0;
+
+    //! Get distinct values
+    //! @see GetDistinctValues
+    virtual folly::Future<PagedDataContainer<DisplayValueGroupCPtr>> _GetDistinctValues(ContentDescriptorCR, Utf8StringCR, PageOptionsCR, PresentationRequestContextCR) = 0;
 /** @} */
 
 public:
@@ -240,6 +244,12 @@ public:
     //! @param[in] db The db to use for getting the label.
     //! @param[in] keys Set of ECInstance keys to get the label for.
     ECPRESENTATION_EXPORT folly::Future<LabelDefinitionCPtr> GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR extendedOptions = Json::Value(), PresentationRequestContextCR = PresentationRequestContext());
+
+    //! Get distinct values
+    //! @param[in] descriptor The content descriptor which describes the content distinct values are requested for
+    //! @param[in] fieldName Name of the descriptor field distinct values are requested for
+    //! @param[in] pageOptions Info about the requested page of data.
+    ECPRESENTATION_EXPORT folly::Future<PagedDataContainer<DisplayValueGroupCPtr>> GetDistinctValues(ContentDescriptorCR descriptor, Utf8StringCR fieldName, PageOptionsCR pageOptions, PresentationRequestContextCR = PresentationRequestContext());
 /** @} */
 };
 

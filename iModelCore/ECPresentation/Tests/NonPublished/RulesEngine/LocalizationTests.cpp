@@ -284,14 +284,14 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizati
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017
 +===============+===============+===============+===============+===============+======*/
-struct QueryExecutorLocalizationTests : QueryExecutorTests
+struct NavigationQueryResultsReaderLocalizationTests : QueryExecutorTests
     {
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
+TEST_F(NavigationQueryResultsReaderLocalizationTests, ECInstanceNodesLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
@@ -307,26 +307,28 @@ TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr,
+        m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
-    executor.ReadRecords();
+    QueryExecutor executor(*m_connection, *query);
 
-    EXPECT_TRUE(executor.GetNodesCount() > 0);
-    for (size_t i = 0; i < executor.GetNodesCount(); i++)
-        {
-        JsonNavNodePtr node = executor.GetNode(i);
-        ASSERT_TRUE(node.IsValid());
-        ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
-        }
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, "locale", *query->GetContract(),
+        query->GetResultParameters().GetResultType(), &query->GetResultParameters().GetNavNodeExtendedData());
+
+    JsonNavNodePtr node;
+    EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
+    ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
+
+    EXPECT_EQ(QueryExecutorStatus::Done, executor.ReadNext(node, *reader));
+    EXPECT_TRUE(node.IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
+TEST_F(NavigationQueryResultsReaderLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     {
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsClassGroupingNode", 1, "\"@Namespace:Id@\"", ""));
 
@@ -345,23 +347,24 @@ TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
-    executor.ReadRecords();
+    QueryExecutor executor(*m_connection, *query);
 
-    EXPECT_TRUE(executor.GetNodesCount() > 0);
-    for (size_t i = 0; i < executor.GetNodesCount(); i++)
-        {
-        JsonNavNodePtr node = executor.GetNode(i);
-        ASSERT_TRUE(node.IsValid());
-        ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
-        }
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, "locale", *query->GetContract(),
+        query->GetResultParameters().GetResultType(), &query->GetResultParameters().GetNavNodeExtendedData());
+
+    JsonNavNodePtr node;
+    EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
+    ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, node->GetType().c_str());
+    ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
+
+    EXPECT_EQ(QueryExecutorStatus::Done, executor.ReadNext(node, *reader));
+    EXPECT_TRUE(node.IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
+TEST_F(NavigationQueryResultsReaderLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     {
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsPropertyGroupingNode", 1, "\"@Namespace:Id@\"", ""));
 
@@ -381,23 +384,24 @@ TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
-    executor.ReadRecords();
+    QueryExecutor executor(*m_connection, *query);
 
-    EXPECT_TRUE(executor.GetNodesCount() > 0);
-    for (size_t i = 0; i < executor.GetNodesCount(); i++)
-        {
-        JsonNavNodePtr node = executor.GetNode(i);
-        ASSERT_TRUE(node.IsValid());
-        ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
-        }
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, "locale", *query->GetContract(),
+        query->GetResultParameters().GetResultType(), &query->GetResultParameters().GetNavNodeExtendedData());
+
+    JsonNavNodePtr node;
+    EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
+    ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
+    ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
+
+    EXPECT_EQ(QueryExecutorStatus::Done, executor.ReadNext(node, *reader));
+    EXPECT_TRUE(node.IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized)
+TEST_F(NavigationQueryResultsReaderLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
@@ -417,15 +421,16 @@ TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
-    executor.ReadRecords();
+    QueryExecutor executor(*m_connection, *query);
 
-    EXPECT_TRUE(executor.GetNodesCount() > 0);
-    for (size_t i = 0; i < executor.GetNodesCount(); i++)
-        {
-        JsonNavNodePtr node = executor.GetNode(i);
-        ASSERT_TRUE(node.IsValid());
-        ASSERT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
-        }
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, "locale", *query->GetContract(),
+        query->GetResultParameters().GetResultType(), &query->GetResultParameters().GetNavNodeExtendedData());
+
+    JsonNavNodePtr node;
+    EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
+    ASSERT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, node->GetType().c_str());
+    ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
+
+    EXPECT_EQ(QueryExecutorStatus::Done, executor.ReadNext(node, *reader));
+    EXPECT_TRUE(node.IsNull());
     }

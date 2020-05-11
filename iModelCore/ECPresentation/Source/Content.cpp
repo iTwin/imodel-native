@@ -195,6 +195,7 @@ bvector<ContentDescriptor::Field*> ContentDescriptor::GetVisibleFields() const
     return fields;
     }
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -211,6 +212,16 @@ ContentDescriptor::Field const* ContentDescriptor::GetDistinctField() const
         return GetDisplayLabelField();
 
     return nullptr;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field const* ContentDescriptor::GetField(Utf8StringCR name) const
+    {
+    int index = GetFieldIndex(name.c_str());
+    return (index > 0) ? m_fields[index] : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -981,14 +992,6 @@ rapidjson::Document ContentDescriptor::ECInstanceKeyField::_AsJson(rapidjson::Do
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentDescriptor::ECNavigationInstanceIdField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECInstanceKeyField::_CreateTypeDescription() const
@@ -1052,65 +1055,6 @@ bool ContentDescriptor::ECInstanceKeyField::_OnFieldRemoved(ContentDescriptor::F
             }
         }
     return m_keyFields.empty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas               09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentDescriptor::ECNavigationInstanceIdField::_Equals(Field const& other) const
-    {
-    if (!other.IsSystemField() || !other.AsSystemField()->IsECNavigationInstanceIdField())
-        return false;
-
-    if (*other.AsSystemField()->AsECNavigationInstanceIdField()->m_propertyField != *m_propertyField)
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECNavigationInstanceIdField::_CreateTypeDescription() const
-    {
-    return new PrimitiveTypeDescription("ECInstanceId");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ContentDescriptor::ECNavigationInstanceIdField::_CreateName() const
-    {
-    BeAssert(!m_propertyField->GetUniqueName().empty());
-    Utf8String name("/id/");
-    name.append(m_propertyField->GetUniqueName());
-    return name;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas               08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::ECNavigationInstanceIdField::_OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo)
-    {
-    auto iter = fieldsRemapInfo.find(m_propertyField);
-    if (fieldsRemapInfo.end() == iter)
-        return;
-
-    if (!iter->second->IsPropertiesField())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_propertyField = iter->second->AsPropertiesField();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentDescriptor::ECNavigationInstanceIdField::_OnFieldRemoved(ContentDescriptor::Field const& field)
-    {
-    return (&field == m_propertyField);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1205,6 +1149,14 @@ rapidjson::Document ContentSetItem::AsJson(int flags, rapidjson::Document::Alloc
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document Content::AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DisplayValueGroup::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }

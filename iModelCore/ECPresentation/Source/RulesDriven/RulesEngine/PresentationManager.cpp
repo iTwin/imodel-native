@@ -74,14 +74,14 @@ struct RulesDrivenECPresentationManager::ConnectionManagerWrapper : IConnectionM
 {
 private:
     ECPresentationTasksManager& m_tasksManager;
-    IConnectionManagerR m_wrapped;
+    std::shared_ptr<IConnectionManager> m_wrapped;
     mutable bmap<int, bset<IConnectionsListener*>> m_listeners;
     mutable BeMutex m_mutex;
 
 protected:
-    IConnection* _GetConnection(Utf8CP connectionId) const override {return m_wrapped.GetConnection(connectionId);}
-    IConnection* _GetConnection(ECDbCR ecdb) const override {return m_wrapped.GetConnection(ecdb);}
-    IConnectionPtr _CreateConnection(ECDbR ecdb) override {return m_wrapped.CreateConnection(ecdb);}
+    IConnection* _GetConnection(Utf8CP connectionId) const override {return m_wrapped->GetConnection(connectionId);}
+    IConnection* _GetConnection(ECDbCR ecdb) const override {return m_wrapped->GetConnection(ecdb);}
+    IConnectionPtr _CreateConnection(ECDbR ecdb) override {return m_wrapped->CreateConnection(ecdb);}
     void _AddListener(IConnectionsListener& listener) const override
         {
         BeMutexHolder lock(m_mutex);
@@ -126,16 +126,15 @@ protected:
         }
 
 public:
-    ConnectionManagerWrapper(RulesDrivenECPresentationManager& manager, IConnectionManagerP wrapped)
+    ConnectionManagerWrapper(RulesDrivenECPresentationManager& manager, std::shared_ptr<IConnectionManager> wrapped)
         : m_tasksManager(manager.GetTasksManager()),
-        m_wrapped(nullptr != wrapped ? *wrapped : *new ConnectionManager())
+        m_wrapped(nullptr != wrapped ? wrapped : std::make_shared<ConnectionManager>())
         {
-        m_wrapped.AddListener(*this);
+        m_wrapped->AddListener(*this);
         }
     ~ConnectionManagerWrapper()
         {
-        m_wrapped.DropListener(*this);
-        delete &m_wrapped;
+        m_wrapped->DropListener(*this);
         }
 };
 
@@ -226,24 +225,25 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2018
+* @bsimethod                                    Grigas.Petraitis                09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RulesDrivenECPresentationManager::Params CreateParams(IConnectionManagerR connections, RulesDrivenECPresentationManager::Paths const& paths, bool disableDiskCache)
+std::unique_ptr<RulesDrivenECPresentationManager::ImplParams> RulesDrivenECPresentationManager::CreateImplParams(RulesDrivenECPresentationManager::Params const& source)
     {
-    RulesDrivenECPresentationManager::Params::CachingParams cachingParams;
-    cachingParams.SetDisableDiskCache(disableDiskCache);
-    RulesDrivenECPresentationManager::Params params(paths);
-    params.SetConnections(&connections);
-    params.SetCachingParams(cachingParams);
-    return params;
-    }
+    auto result = std::make_unique<RulesDrivenECPresentationManager::ImplParams>(source);
+    result->SetConnections(std::make_shared<RulesDrivenECPresentationManager::ConnectionManagerWrapper>(*this, source.GetConnections()));
+    result->SetUserSettings(std::make_shared<RulesDrivenECPresentationManager::UserSettingsManagerWrapper>(*this, source.GetPaths().GetTemporaryDirectory()));
+    result->SetRulesetLocaters(std::make_shared<RulesDrivenECPresentationManager::RulesetLocaterManagerWrapper>(*this, *result->GetConnections()));
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache)
-    : RulesDrivenECPresentationManager(CreateParams(connections, paths, disableDiskCache))
-    {}
+    bvector<std::shared_ptr<ECInstanceChangeEventSource>> ecInstanceChangeEventSources;
+    for (std::shared_ptr<ECInstanceChangeEventSource> const& evtSource : source.GetECInstanceChangeEventSources())
+        {
+        auto wrapper = std::make_shared<RulesDrivenECPresentationManager::ECInstanceChangeEventSourceWrapper>(*this, evtSource);
+        ecInstanceChangeEventSources.push_back(wrapper);
+        }
+    result->SetECInstanceChangeEventSources(ecInstanceChangeEventSources);
+
+    return result;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
@@ -251,7 +251,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(IConnectionMa
 RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const& params)
     {
     m_tasksManager = new ECPresentationTasksManager(params.GetMultiThreadingParams().GetBackgroundThreadAllocations());
-    RulesDrivenECPresentationManagerImpl* impl = new RulesDrivenECPresentationManagerImpl(CreateImplParams(params));
+    RulesDrivenECPresentationManagerImpl* impl = new RulesDrivenECPresentationManagerImpl(*CreateImplParams(params));
     m_impl = impl;
     impl->Initialize();
     }
@@ -272,27 +272,6 @@ void RulesDrivenECPresentationManager::SetImpl(Impl& impl)
     {
     DELETE_AND_CLEAR(m_impl);
     m_impl = &impl;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::Params RulesDrivenECPresentationManager::CreateImplParams(Params const& source)
-    {
-    RulesDrivenECPresentationManager::Params result(source);
-    result.SetConnections(new RulesDrivenECPresentationManager::ConnectionManagerWrapper(*this, source.GetConnections()));
-    result.SetUserSettings(new RulesDrivenECPresentationManager::UserSettingsManagerWrapper(*this, source.GetPaths().GetTemporaryDirectory()));
-    result.SetRulesetLocaters(new RulesDrivenECPresentationManager::RulesetLocaterManagerWrapper(*this, *result.GetConnections()));
-
-    bvector<std::shared_ptr<ECInstanceChangeEventSource>> ecInstanceChangeEventSources;
-    for (std::shared_ptr<ECInstanceChangeEventSource> const& evtSource : source.GetECInstanceChangeEventSources())
-        {
-        auto wrapper = std::make_shared<RulesDrivenECPresentationManager::ECInstanceChangeEventSourceWrapper>(*this, evtSource);
-        ecInstanceChangeEventSources.push_back(wrapper);
-        }
-    result.SetECInstanceChangeEventSources(ecInstanceChangeEventSources);
-
-    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -370,10 +349,10 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes
         INavNodesDataSourcePtr source = m_impl->GetRootNodes(*GetTaskConnection(task), pageOpts, options, *task.GetCancelationToken());
         if (source.IsValid())
             {
-            source = PreloadedDataSource::Create(*source);
-            return DataContainer<NavNodeCPtr>(*ConstNodesDataSource::Create(*source));
+            source = PreloadedDataSource<NavNodePtr>::Create(*source);
+            return NavNodesContainer(*ConstNodesDataSource::Create(*source));
             }
-        return DataContainer<NavNodeCPtr>();
+        return NavNodesContainer();
         }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
@@ -414,10 +393,10 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(
         INavNodesDataSourcePtr source = m_impl->GetChildren(*GetTaskConnection(task), *parent, pageOpts, options, *task.GetCancelationToken());
         if (source.IsValid())
             {
-            source = PreloadedDataSource::Create(*source);
-            return DataContainer<NavNodeCPtr>(*ConstNodesDataSource::Create(*source));
+            source = PreloadedDataSource<NavNodePtr>::Create(*source);
+            return NavNodesContainer(*ConstNodesDataSource::Create(*source));
             }
-        return DataContainer<NavNodeCPtr>();
+        return NavNodesContainer();
         }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
@@ -765,6 +744,32 @@ folly::Future<LabelDefinitionCPtr> RulesDrivenECPresentationManager::_GetDisplay
         {
         context.OnTaskStart();
         return m_impl->GetDisplayLabel(*GetTaskConnection(task), *keys, *task.GetCancelationToken());
+        }, dependencies, true, options.GetPriority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<PagedDataContainer<DisplayValueGroupCPtr>> RulesDrivenECPresentationManager::_GetDistinctValues(ContentDescriptorCR descriptor, Utf8StringCR fieldName, PageOptionsCR pageOptions, PresentationRequestContextCR context)
+    {
+    ContentOptions options(descriptor.GetOptions());
+    TaskDependencies dependencies
+        {
+        std::make_shared<TaskDependencyOnConnection>(descriptor.GetConnectionId()),
+        std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId()),
+        std::make_shared<TaskDependencyOnDisplayType>(descriptor.GetPreferredDisplayType()),
+        };
+    if (descriptor.GetSelectionInfo())
+        dependencies.push_back(std::make_shared<TaskDependencyOnSelection>(*descriptor.GetSelectionInfo()));
+
+    return m_tasksManager->CreateAndExecute<PagedDataContainer<DisplayValueGroupCPtr>>([&, descriptor = ContentDescriptorCPtr(&descriptor), fieldName, pageOptions, context](auto const& task)
+        {
+        context.OnTaskStart();
+
+        PagingDataSourceCPtr<DisplayValueGroupCPtr> source = m_impl->GetDistinctValues(*GetTaskConnection(task), *descriptor, fieldName, pageOptions, *task.GetCancelationToken());
+        if (source.IsValid())
+            return PagedDataContainer<DisplayValueGroupCPtr>(*source);
+        return PagedDataContainer<DisplayValueGroupCPtr>();
         }, dependencies, true, options.GetPriority());
     }
 

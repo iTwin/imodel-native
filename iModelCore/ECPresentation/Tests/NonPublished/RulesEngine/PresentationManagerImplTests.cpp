@@ -17,7 +17,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct RulesDrivenECPresentationManagerImplTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
-    TestConnectionManager* m_connections;
+    std::shared_ptr<TestConnectionManager> m_connections;
     IConnectionPtr m_connection;
     RulesDrivenECPresentationManagerImpl* m_impl;
     TestCategorySupplier m_categorySupplier;
@@ -62,7 +62,7 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
     ECPresentationTest::SetUp();
 
     m_locater = TestRuleSetLocater::Create();
-    m_connections = new TestConnectionManager();
+    m_connections = std::make_shared<TestConnectionManager>();
 
     RulesDrivenECPresentationManagerImpl::Params::CachingParams cachingParams;
     cachingParams.SetDisableDiskCache(true);
@@ -72,9 +72,9 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
     params.SetCategorySupplier(&m_categorySupplier);
     params.SetLocalizationProvider(&m_localizationProvider);
     m_impl = new RulesDrivenECPresentationManagerImpl(params);
-    
+
     m_impl->GetLocaters().RegisterLocater(*m_locater);
-    
+
     m_impl->GetConnections().CreateConnection(s_project->GetECDb());
     m_connection = m_impl->GetConnections().GetConnection(s_project->GetECDb());
 
@@ -122,14 +122,14 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, LocatesChildNodeWhoseGrandPare
     RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str());
     INavNodesDataSourcePtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *cancelationToken);
     ASSERT_EQ(2, rootNodes->GetSize());
-    EXPECT_STREQ("child1", rootNodes->GetNode(0)->GetLabelDefinition().GetDisplayValue().c_str());
-    EXPECT_STREQ("child2", rootNodes->GetNode(1)->GetLabelDefinition().GetDisplayValue().c_str());
-    INavNodesDataSourcePtr childNodes = m_impl->GetChildren(*m_connection, *rootNodes->GetNode(1), PageOptions(), options, *cancelationToken);
+    EXPECT_STREQ("child1", rootNodes->Get(0)->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("child2", rootNodes->Get(1)->GetLabelDefinition().GetDisplayValue().c_str());
+    INavNodesDataSourcePtr childNodes = m_impl->GetChildren(*m_connection, *rootNodes->Get(1), PageOptions(), options, *cancelationToken);
     ASSERT_EQ(1, childNodes->GetSize());
-    EXPECT_STREQ("child2.1", childNodes->GetNode(0)->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("child2.1", childNodes->Get(0)->GetLabelDefinition().GetDisplayValue().c_str());
 
     // clear nodes cache and try to locate the node by its key
-    NavNodeKeyCPtr key = childNodes->GetNode(0)->GetKey();
+    NavNodeKeyCPtr key = childNodes->Get(0)->GetKey();
     m_impl->GetNodesCache(*m_connection)->Clear();
     NavNodeCPtr locatedNode = m_impl->GetNode(*m_connection, *key, options, *cancelationToken);
     ASSERT_TRUE(locatedNode.IsValid());
@@ -258,7 +258,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     // get the parent node
     RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str());
     INavNodesDataSourceCPtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *token);
-    NavNodeCPtr rootNode = rootNodes->GetNode(0);
+    NavNodeCPtr rootNode = rootNodes->Get(0);
     ASSERT_TRUE(rootNode.IsValid());
 
     // add a ruleset locater which cancels the request
@@ -284,7 +284,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     // get the parent node
     RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str());
     INavNodesDataSourceCPtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *token);
-    NavNodeCPtr rootNode = rootNodes->GetNode(0);
+    NavNodeCPtr rootNode = rootNodes->Get(0);
     ASSERT_TRUE(rootNode.IsValid());
 
     // add a ruleset locater which cancels the request

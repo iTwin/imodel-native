@@ -3,11 +3,7 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
-#include <ECPresentation/RulesDriven/PresentationManager.h>
-#include "QueryExecutor.h"
-#include "QueryContracts.h"
-#include "JsonNavNode.h"
-#include <sstream>
+#include "NavigationQueryResultsReader.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
@@ -30,7 +26,7 @@ static GroupedInstanceKeysList ParseInstanceKeys(ECSqlStatementCR stmt, Navigati
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct ECInstanceNodeReader : NavNodeReader
+struct ECInstanceNodeReader : NavNodesReader
 {
 typedef ECInstanceNodesQueryContract Contract;
 protected:
@@ -50,13 +46,13 @@ protected:
         return node;
         }
 public:
-    ECInstanceNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+    ECInstanceNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodesReader(factory, contract) {}
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct MultiECInstanceNodeReader : NavNodeReader
+struct MultiECInstanceNodeReader : NavNodesReader
 {
 typedef MultiECInstanceNodesQueryContract Contract;
 protected:
@@ -75,13 +71,13 @@ protected:
         return node;
         }
 public:
-    MultiECInstanceNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+    MultiECInstanceNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodesReader(factory, contract) {}
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct DisplayLabelGroupingNodeReader : NavNodeReader
+struct DisplayLabelGroupingNodeReader : NavNodesReader
 {
 typedef DisplayLabelGroupingNodesQueryContract Contract;
 protected:
@@ -98,13 +94,13 @@ protected:
         return node;
         }
 public:
-    DisplayLabelGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+    DisplayLabelGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodesReader(factory, contract) {}
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct ECClassGroupingNodeReader : NavNodeReader
+struct ECClassGroupingNodeReader : NavNodesReader
 {
 typedef ECClassGroupingNodesQueryContract Contract;
 protected:
@@ -135,13 +131,13 @@ protected:
         return node;
         }
 public:
-    ECClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+    ECClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodesReader(factory, contract) {}
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct BaseClassGroupingNodeReader : NavNodeReader
+struct BaseClassGroupingNodeReader : NavNodesReader
 {
 typedef BaseECClassGroupingNodesQueryContract Contract;
 protected:
@@ -172,13 +168,13 @@ protected:
         return node;
         }
 public:
-    BaseClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+    BaseClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodesReader(factory, contract) {}
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct ECRelationshipClassGroupingNodeReader : NavNodeReader
+struct ECRelationshipClassGroupingNodeReader : NavNodesReader
 {
 typedef ECRelationshipGroupingNodesQueryContract Contract;
 protected:
@@ -187,7 +183,7 @@ protected:
         return nullptr;
         }
 public:
-    ECRelationshipClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+    ECRelationshipClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodesReader(factory, contract) {}
 };
 
 /*=================================================================================**//**
@@ -297,7 +293,7 @@ static rapidjson::Document GetPointAsJsonFromString(Utf8StringCR valueStr)
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct ECPropertyGroupingNodeReader : NavNodeReader
+struct ECPropertyGroupingNodeReader : NavNodesReader
 {
 typedef ECPropertyGroupingNodesQueryContract Contract;
 
@@ -392,44 +388,66 @@ protected:
         }
 
 public:
-    ECPropertyGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+    ECPropertyGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodesReader(factory, contract) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeReaderPtr NavNodeReader::Create(JsonNavNodesFactory const& factory, IConnectionCR connection, Utf8StringCR locale, NavigationQueryContract const& contract, NavigationQueryResultType resultType)
+std::unique_ptr<NavNodesReader> NavNodesReader::Create(JsonNavNodesFactory const& factory, IConnectionCR connection, Utf8String locale, NavigationQueryContract const& contract,
+    NavigationQueryResultType resultType, NavNodeExtendedData const* extendedData)
     {
-    NavNodeReaderPtr reader = nullptr;
+    std::unique_ptr<NavNodesReader> reader;
     switch (resultType)
         {
         case NavigationQueryResultType::ECRelationshipClassNodes:
-            reader = new ECRelationshipClassGroupingNodeReader(factory, contract);
+            reader = std::make_unique<ECRelationshipClassGroupingNodeReader>(factory, contract);
             break;
         case NavigationQueryResultType::ClassGroupingNodes:
-            reader = new ECClassGroupingNodeReader(factory, contract);
+            reader = std::make_unique<ECClassGroupingNodeReader>(factory, contract);
             break;
         case NavigationQueryResultType::BaseClassGroupingNodes:
-            reader = new BaseClassGroupingNodeReader(factory, contract);
+            reader = std::make_unique<BaseClassGroupingNodeReader>(factory, contract);
             break;
         case NavigationQueryResultType::PropertyGroupingNodes:
-            reader = new ECPropertyGroupingNodeReader(factory, contract);
+            reader = std::make_unique<ECPropertyGroupingNodeReader>(factory, contract);
             break;
         case NavigationQueryResultType::DisplayLabelGroupingNodes:
-            reader = new DisplayLabelGroupingNodeReader(factory, contract);
+            reader = std::make_unique<DisplayLabelGroupingNodeReader>(factory, contract);
             break;
         case NavigationQueryResultType::ECInstanceNodes:
-            reader = new ECInstanceNodeReader(factory, contract);
+            reader = std::make_unique<ECInstanceNodeReader>(factory, contract);
             break;
         case NavigationQueryResultType::MultiECInstanceNodes:
-            reader = new MultiECInstanceNodeReader(factory, contract);
+            reader = std::make_unique<MultiECInstanceNodeReader>(factory, contract);
             break;
         default:
             BeAssert(false && "Not implemented.");
             return nullptr;
         }
-
     reader->m_connection = &connection;
-    reader->m_locale = &locale;
+    reader->m_locale = locale;
+    reader->m_navNodeExtendedData = extendedData;
     return reader;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+QueryResultReaderStatus NavNodesReader::_ReadRecord(JsonNavNodePtr& node, ECSqlStatementCR stmt)
+    {
+    node = _ReadNode(stmt);
+    if (node.IsNull())
+        {
+        BeAssert(false);
+        return QueryResultReaderStatus::Error;
+        }
+
+    if (nullptr != m_navNodeExtendedData)
+        {
+        NavNodeExtendedData extendedData(*node);
+        extendedData.MergeWith(*m_navNodeExtendedData);
+        }
+
+    return QueryResultReaderStatus::Row;
     }

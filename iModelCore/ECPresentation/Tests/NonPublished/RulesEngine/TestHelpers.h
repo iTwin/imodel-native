@@ -714,18 +714,41 @@ struct TestCategorySupplier : IPropertyCategorySupplier
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                09/2016
 +===============+===============+===============+===============+===============+======*/
-struct TestPropertyFormatter : IECPropertyFormatter
+struct StubPropertyFormatter : IECPropertyFormatter
 {
 private:
     bool m_addLocaleSuffix;
     bool m_addUnitSystemSuffix;
 protected:
     BentleyStatus _GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP locale, ECPresentation::UnitSystem) const override;
-    BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const override;
+    BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPathCR relatedClassPath, RelationshipMeaning relationshipMeaning) const override;
 public:
-    TestPropertyFormatter(bool addLocaleSuffix = false, bool addUnitSystemSuffix = false)
+    StubPropertyFormatter(bool addLocaleSuffix = false, bool addUnitSystemSuffix = false)
         : m_addLocaleSuffix(addLocaleSuffix), m_addUnitSystemSuffix(addUnitSystemSuffix)
         {}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                09/2016
++===============+===============+===============+===============+===============+======*/
+struct TestPropertyFormatter : IECPropertyFormatter
+{
+private:
+    std::function<BentleyStatus(Utf8StringR, ECPropertyCR, ECValueCR, Utf8CP, ECPresentation::UnitSystem)> m_valueFormatter;
+    std::function<BentleyStatus(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPathCR, RelationshipMeaning)> m_labelFormatter;
+protected:
+    BentleyStatus _GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP locale, ECPresentation::UnitSystem unitSystem) const override
+        {
+        return m_valueFormatter ? m_valueFormatter(formattedValue, ecProperty, ecValue, locale, unitSystem) : ERROR;
+        }
+    BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPathCR relatedClassPath, RelationshipMeaning relationshipMeaning) const override
+        {
+        return m_labelFormatter ? m_labelFormatter(formattedLabel, ecProperty, propertyClass, relatedClassPath, relationshipMeaning) : ERROR;
+        }
+public:
+    TestPropertyFormatter() {}
+    void SetValueFormatter(std::function<BentleyStatus(Utf8StringR, ECPropertyCR, ECValueCR, Utf8CP, ECPresentation::UnitSystem)> formatter) {m_valueFormatter = formatter;}
+    void SetLabelFormatter(std::function<BentleyStatus(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPathCR, RelationshipMeaning)> formatter) {m_labelFormatter = formatter;}
 };
 
 /*=================================================================================**//**

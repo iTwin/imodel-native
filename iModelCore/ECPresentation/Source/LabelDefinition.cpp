@@ -235,13 +235,15 @@ LabelDefinitionPtr LabelDefinition::FromInternalJson(RapidJsonValueCR json)
     {
     Utf8CP displayValue = json[NAVNODE_LABEL_DEFINITION_DisplayValue].GetString();
     Utf8CP typeName = json[NAVNODE_LABEL_DEFINITION_TypeName].GetString();
-    RapidJsonValueCR rawValueJson = json[NAVNODE_LABEL_DEFINITION_RawValue];
     std::unique_ptr<RawValueBase> rawValue = nullptr;
-    if (rawValueJson.IsObject() && rawValueJson.HasMember(NAVNODE_LABEL_DEFINITION_COMPOSITE_VALUE_Separator))
-        rawValue = LabelDefinition::CompositeRawValue::FromInternalJson(rawValueJson);
-    else
-        rawValue = LabelDefinition::SimpleRawValue::FromInternalJson(rawValueJson);
-
+    if (json.HasMember(NAVNODE_LABEL_DEFINITION_RawValue))
+        {
+        RapidJsonValueCR rawValueJson = json[NAVNODE_LABEL_DEFINITION_RawValue];
+        if (rawValueJson.IsObject() && rawValueJson.HasMember(NAVNODE_LABEL_DEFINITION_COMPOSITE_VALUE_Separator))
+            rawValue = LabelDefinition::CompositeRawValue::FromInternalJson(rawValueJson);
+        else
+            rawValue = LabelDefinition::SimpleRawValue::FromInternalJson(rawValueJson);
+        }
     return LabelDefinition::Create(displayValue, typeName, std::move(rawValue));
     }
 

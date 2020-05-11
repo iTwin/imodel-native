@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/IECPresentationManager.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedInstanceNodesSpecification.h>
@@ -29,7 +29,7 @@ struct DataSourceFilter
         RelatedInstanceInfo(bset<ECClassId> relationshipClassIds, RequiredRelationDirection direction, bvector<ECClassInstanceKey> const& instanceKeys)
             : m_relationshipClassIds(relationshipClassIds), m_direction(direction)
             {
-            std::transform(instanceKeys.begin(), instanceKeys.end(), std::back_inserter(m_instanceKeys), 
+            std::transform(instanceKeys.begin(), instanceKeys.end(), std::back_inserter(m_instanceKeys),
                 [](ECClassInstanceKeyCR k){return ECInstanceKey(k.GetClass()->GetId(), k.GetId());});
             }
         bool IsValid() const {return !m_relationshipClassIds.empty() && !m_instanceKeys.empty();}
@@ -59,15 +59,10 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2016
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE INavNodesDataSource : IDataSource<NavNodePtr>
-{
-protected:
-    virtual NavNodePtr _GetNode(size_t index) const = 0;
-    NavNodePtr _Get(size_t index) const override {return _GetNode(index);}
-public:
-    NavNodePtr GetNode(size_t index) const {return _GetNode(index);}
-    NavNodePtr operator[](size_t index) const {return GetNode(index);}
-};
+typedef IDataSource<NavNodePtr> INavNodesDataSource;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(INavNodesDataSource)
+typedef RefCountedPtr<INavNodesDataSource> INavNodesDataSourcePtr;
+typedef RefCountedPtr<INavNodesDataSource const> INavNodesDataSourceCPtr;
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                09/2015
@@ -82,7 +77,7 @@ private:
     static NavNodePtr TransformJsonNodeToNode(JsonNavNodePtr const& node) {return node;}
 
 protected:
-    ECPRESENTATION_EXPORT NavNodePtr _GetNode(size_t index) const override;
+    ECPRESENTATION_EXPORT NavNodePtr _Get(size_t index) const override;
     ECPRESENTATION_EXPORT size_t _GetSize() const override;
     Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<TransformingIterableIteratorImpl<NavNodesProvider::Iterator, JsonNavNodePtr, NavNodePtr>>(m_nodesProvider->begin(), &NavNodesDataSource::TransformJsonNodeToNode));}
     Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<TransformingIterableIteratorImpl<NavNodesProvider::Iterator, JsonNavNodePtr, NavNodePtr>>(m_nodesProvider->end(), &NavNodesDataSource::TransformJsonNodeToNode));}
@@ -91,94 +86,6 @@ public:
     static NavNodesDataSourcePtr Create(NavNodesProviderCR nodesProvider) {return new NavNodesDataSource(nodesProvider);}
     JsonNavNodePtr GetNode(size_t index) const;
     NavNodesProviderCPtr GetProvider() const {return m_nodesProvider;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2016
-+===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE PagingDataSource : INavNodesDataSource
-{
-private:
-    INavNodesDataSourceCPtr m_source;
-    size_t m_pageStart;
-    size_t m_pageSize;
-
-private:
-    PagingDataSource(INavNodesDataSourceCR source, size_t pageStart, size_t pageSize) 
-        : m_source(&source), m_pageStart(pageStart), m_pageSize(pageSize)
-        {}
-
-protected:
-    ECPRESENTATION_EXPORT NavNodePtr _GetNode(size_t index) const override;
-    ECPRESENTATION_EXPORT size_t _GetSize() const override;
-    ECPRESENTATION_EXPORT Iterator _CreateFrontIterator() const override;
-    ECPRESENTATION_EXPORT Iterator _CreateBackIterator() const override;
-
-public:
-    static PagingDataSourcePtr Create(INavNodesDataSourceCR source, size_t pageStart, size_t pageSize)
-        {
-        return new PagingDataSource(source, pageStart, pageSize);
-        }
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct PreloadedDataSource : INavNodesDataSource
-{
-private:
-    INavNodesDataSourceCPtr m_source;
-    bvector<NavNodePtr> m_nodes;
-
-private:
-    PreloadedDataSource(INavNodesDataSourceCR source) 
-        : m_source(&source)
-        {
-        for (NavNodePtr node : *m_source)
-            m_nodes.push_back(node);
-        }
-
-protected:
-    NavNodePtr _GetNode(size_t index) const override {return (index < m_nodes.size()) ? m_nodes[index] : nullptr;}
-    size_t _GetSize() const override {return m_nodes.size();}
-    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_nodes.begin()));}
-    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_nodes.end()));}
-
-public:
-    static RefCountedPtr<PreloadedDataSource> Create(INavNodesDataSourceCR source) {return new PreloadedDataSource(source);}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2016
-+===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE EmptyNavNodesDataSource : INavNodesDataSource
-{
-private:
-    EmptyNavNodesDataSource() {}
-protected:
-    NavNodePtr _GetNode(size_t index) const override {return nullptr;}
-    size_t _GetSize() const override {return 0;}
-    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
-    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
-public:
-    static EmptyNavNodesDataSourcePtr Create() {return new EmptyNavNodesDataSource();}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                12/2016
-+===============+===============+===============+===============+===============+======*/
-struct NodesVectorDataSource : INavNodesDataSource
-{
-private:
-    bvector<NavNodePtr> m_vec;
-    NodesVectorDataSource(bvector<NavNodePtr> vec) : m_vec(vec) {}
-protected:
-    NavNodePtr _GetNode(size_t index) const override {return m_vec[index];}
-    size_t _GetSize() const override {return m_vec.size();}
-    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_vec.begin()));}
-    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_vec.end()));}
-public:
-    static RefCountedPtr<NodesVectorDataSource> Create(bvector<NavNodePtr> vec) { return new NodesVectorDataSource(vec); }
 };
 
 /*=================================================================================**//**

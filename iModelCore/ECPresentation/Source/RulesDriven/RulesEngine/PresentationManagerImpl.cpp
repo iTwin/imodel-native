@@ -333,7 +333,7 @@ private:
         bool found = false;
         for (size_t i = 0; i < nodesCount; ++i)
             {
-            node = nodes->GetNode(i);
+            node = nodes->Get(i);
             bvector<Utf8String> const& nodePath = node->GetKey()->GetHashPath();
             if (nodePath.size() <= index)
                 {
@@ -428,7 +428,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
         {
-        RulesPreprocessor preprocessor(m_manager.m_connections, context.GetConnection(), context.GetRuleset(),
+        RulesPreprocessor preprocessor(*m_manager.m_connections, context.GetConnection(), context.GetRuleset(),
             context.GetLocale(), context.GetRulesetVariables(), &context.GetUsedVariablesListener(),
             context.GetECExpressionsCache());
         NavNodesProviderPtr provider;
@@ -575,7 +575,7 @@ protected:
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, TargetTree_MainTree, locale, parentNodeId,
             std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_manager.m_nodesFactory, *nodesCache,
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
-        context->SetQueryContext(m_manager.m_connections, connection, m_manager.m_usedClassesListener);
+        context->SetQueryContext(*m_manager.m_connections, connection, m_manager.m_usedClassesListener);
 
         ILocalizationProvider const* localizationProvider = m_manager.GetLocalizationProvider();
         if (nullptr != localizationProvider)
@@ -599,7 +599,7 @@ public:
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Params const& params)
-    : m_connections(params.GetConnections() ? *params.GetConnections() : *new ConnectionManager())
+    : m_connections(params.GetConnections() ? params.GetConnections() : std::make_shared<ConnectionManager>())
     {
     m_mode = params.GetMode();
     m_localState = params.GetLocalState();
@@ -607,10 +607,10 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     m_categorySupplier = params.GetCategorySupplier();
     m_localizationProvider = params.GetLocalizationProvider();
 
-    m_locaters = params.GetRulesetLocaters() ? params.GetRulesetLocaters() : new RuleSetLocaterManager(m_connections);
+    m_locaters = params.GetRulesetLocaters() ? params.GetRulesetLocaters() : std::make_shared<RuleSetLocaterManager>(*m_connections);
     m_locaters->SetRulesetCallbacksHandler(this);
 
-    m_userSettings = params.GetUserSettings() ? params.GetUserSettings() : new UserSettingsManager(params.GetPaths().GetTemporaryDirectory());
+    m_userSettings = params.GetUserSettings() ? params.GetUserSettings() : std::make_shared<UserSettingsManager>(params.GetPaths().GetTemporaryDirectory());
     GetUserSettingsManager().SetChangesListener(this);
     GetUserSettingsManager().SetLocalizationProvider(m_localizationProvider);
     GetUserSettingsManager().SetLocalState(m_localState);
@@ -619,7 +619,7 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     for (auto const& ecInstanceChangeEventSource : m_ecInstanceChangeEventSources)
         ecInstanceChangeEventSource->RegisterEventHandler(*this);
 
-    m_customFunctions = new CustomFunctionsInjector(m_connections);
+    m_customFunctions = new CustomFunctionsInjector(*m_connections);
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
     m_ecdbCaches = new ECDbCaches();
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
@@ -627,15 +627,15 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     m_usedClassesListener = new UsedClassesListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
 
-    m_nodesCachesManager = new NodesCacheManager(params.GetCachingParams().GetCacheDirectoryPath(), *m_nodesFactory, *m_nodesProviderContextFactory, m_connections,
+    m_nodesCachesManager = new NodesCacheManager(params.GetCachingParams().GetCacheDirectoryPath(), *m_nodesFactory, *m_nodesProviderContextFactory, *m_connections,
         params.GetCachingParams().ShouldDisableDiskCache() ? NodesCacheType::Memory : NodesCacheType::Disk, params.GetMode() == Mode::ReadWrite, params.GetCachingParams().GetDiskCacheFileSizeLimit());
     m_contentCache = new ContentCache();
 
-    m_updateHandler = new UpdateHandler(*m_nodesCachesManager, m_contentCache, m_connections, *m_nodesProviderContextFactory,
+    m_updateHandler = new UpdateHandler(*m_nodesCachesManager, m_contentCache, *m_connections, *m_nodesProviderContextFactory,
         *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
     m_updateHandler->SetRecordsHandler(std::make_unique<CompositeUpdateRecordsHandler>(params.GetUpdateRecordsHandlers()));
 
-    m_connections.AddListener(*this);
+    m_connections->AddListener(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -659,9 +659,7 @@ NodesCache* RulesDrivenECPresentationManagerImpl::GetNodesCache(IConnectionCR co
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManagerImpl::~RulesDrivenECPresentationManagerImpl()
     {
-    m_connections.DropListener(*this);
-    DELETE_AND_CLEAR(m_userSettings);
-    DELETE_AND_CLEAR(m_locaters);
+    m_connections->DropListener(*this);
     DELETE_AND_CLEAR(m_updateHandler);
     DELETE_AND_CLEAR(m_contentCache);
     DELETE_AND_CLEAR(m_nodesFactory);
@@ -672,7 +670,6 @@ RulesDrivenECPresentationManagerImpl::~RulesDrivenECPresentationManagerImpl()
     DELETE_AND_CLEAR(m_rulesetECExpressionsCache);
     DELETE_AND_CLEAR(m_customFunctions);
     DELETE_AND_CLEAR(m_nodesCachesManager);
-    delete &m_connections;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -769,7 +766,7 @@ void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvec
         return;
         }
 
-    IConnectionPtr connection = m_connections.GetConnection(db);
+    IConnectionPtr connection = m_connections->GetConnection(db);
     if (connection.IsNull())
         {
         BeAssert(false);
@@ -814,9 +811,9 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetRootNodes(IConn
     {
     INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, options, pageOpts.GetPageSize());
     if (source.IsNull())
-        source = EmptyNavNodesDataSource::Create();
+        source = EmptyDataSource<NavNodePtr>::Create();
     if (!pageOpts.Equals(PageOptions(0, 0)))
-        source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
+        source = PagingDataSource<NavNodePtr>::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
     LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[GetRootNodes] Returned [%" PRIu64 ", %" PRIu64 ") nodes",
         (uint64_t)pageOpts.GetPageStart(), (uint64_t)(pageOpts.GetPageStart() + source->GetSize())).c_str());
     return source;
@@ -850,7 +847,7 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     if (jsonParent.IsNull())
         {
         BeAssert(false);
-        return EmptyNavNodesDataSource::Create();
+        return EmptyDataSource<NavNodePtr>::Create();
         }
 
     // create the nodes provider
@@ -874,9 +871,9 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetChildren(IConne
     {
     INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, parent, options, pageOpts.GetPageSize());
     if (source.IsNull())
-        source = EmptyNavNodesDataSource::Create();
+        source = EmptyDataSource<NavNodePtr>::Create();
     if (!pageOpts.Equals(PageOptions(0, 0)))
-        source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
+        source = PagingDataSource<NavNodePtr>::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
     LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[GetChildren] Returned [%" PRIu64 ", %" PRIu64 ") nodes for parent: '%s'",
         (uint64_t)pageOpts.GetPageStart(), (uint64_t)(pageOpts.GetPageStart() + source->GetSize()), parent.GetLabelDefinition().GetDisplayValue().c_str()).c_str());
     return source;
@@ -1041,21 +1038,17 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, INavNodeKeysContainerCR inputKeys,
-    SelectionInfo const* selectionInfo, ContentOptions const& options)
+SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider]", NativeLogging::LOG_TRACE);
     RefCountedPtr<PerformanceLogger> _l2;
 
     SpecificationContentProviderPtr provider = m_contentCache->GetProvider(key);
     if (provider.IsValid())
-        {
-        provider->GetContextR().Adopt(connection, &cancelationToken);
         return provider;
-        }
 
     // get the ruleset
-    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, options.GetRulesetId());
+    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, key.GetRulesetId().c_str());
     if (!ruleset.IsValid())
         return nullptr;
 
@@ -1075,7 +1068,11 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
+#ifdef wip_should_take_vars_from_cache_key
     std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>(options.GetRulesetVariables());
+#else
+    std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>();
+#endif
     rulesetVariables->Merge(settings);
     nodesCache->OnRulesetVariablesUsed(*rulesetVariables, ruleset->GetRuleSetId());
 
@@ -1084,23 +1081,23 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache = m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(connection);
 
     // set up the provider context
-    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, options.GetLocale(), key.GetPreferredDisplayType(), key.GetContentFlags(), inputKeys, *nodesCache,
+    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, key.GetLocale(), key.GetPreferredDisplayType(), key.GetContentFlags(), key.GetInputNodeKeys(), *nodesCache,
         GetCategorySupplier(), std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
-    context->SetQueryContext(m_connections, connection);
+    context->SetQueryContext(*m_connections, connection);
 
     ILocalizationProvider const* localizationProvider = GetLocalizationProvider();
     if (nullptr != localizationProvider)
         context->SetLocalizationContext(*localizationProvider);
 
-    context->SetPropertyFormattingContext(GetECPropertyFormatter(), options.GetUnitSystem());
+    context->SetPropertyFormattingContext(GetECPropertyFormatter(), key.GetUnitSystem());
     context->SetCancelationToken(&cancelationToken);
-    if (nullptr != selectionInfo)
-        context->SetSelectionInfo(*selectionInfo);
+    if (nullptr != key.GetSelectionInfo())
+        context->SetSelectionInfo(*key.GetSelectionInfo());
 
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
-    RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), context->GetRulesetVariables(), &context->GetUsedVariablesListener(), ecexpressionsCache);
-    RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, nodesCache);
+    RulesPreprocessor preprocessor(*m_connections, connection, *ruleset, key.GetLocale(), context->GetRulesetVariables(), &context->GetUsedVariablesListener(), ecexpressionsCache);
+    RulesPreprocessor::ContentRuleParameters params(key.GetInputNodeKeys(), key.GetPreferredDisplayType(), key.GetSelectionInfo(), nodesCache);
     ContentRuleInputKeysContainer specs = preprocessor.GetContentSpecifications(params);
     _l2 = nullptr;
 
@@ -1119,17 +1116,12 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentDescriptorCR descriptor, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options)
+SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentDescriptorCR descriptor)
     {
+    ContentOptions options(descriptor.GetOptions());
     ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
-        options.GetLocale(), options.GetUnitSystem(), inputKeys, selectionInfo);
-    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, key, inputKeys, selectionInfo, options);
-    if (cachedProvider.IsNull())
-        return nullptr;
-
-    SpecificationContentProviderPtr provider = cachedProvider->Clone();
-    provider->SetContentDescriptor(descriptor);
-    return provider;
+        options.GetLocale(), options.GetUnitSystem(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+    return GetContentProvider(connection, cancelationToken, key);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1177,7 +1169,7 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
 
     // locate the classes
     ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &ecexpressionsCache);
-    ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection,
+    ContentClassesLocater::Context locaterContext(schemaHelper, *m_connections, connection,
         *ruleset, options.GetLocale(), preferredDisplayType, *rulesetVariables, ecexpressionsCache, *nodesCache);
     locaterContext.SetContentFlagsCalculator([contentFlags](int){return contentFlags;});
     return ContentClassesLocater(locaterContext).Locate(classes);
@@ -1196,7 +1188,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 
     INavNodeKeysContainerCPtr nodeKeys = inputKeys.GetAllNavNodeKeys();
     ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, contentFlags, options.GetLocale(), options.GetUnitSystem(), *nodeKeys, selectionInfo);
-    ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, *nodeKeys, selectionInfo, options);
+    ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key);
     return provider.IsValid() ? provider->GetContentDescriptor() : nullptr;
     }
 
@@ -1206,9 +1198,8 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, PageOptionsCR pageOpts, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContent]", NativeLogging::LOG_TRACE);
-    ContentProviderPtr provider = GetContentProvider(connection, cancelationToken, descriptor, descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo(),
-        descriptor.GetOptions());
-    if (provider.IsNull() || nullptr == provider->GetContentDescriptor())
+    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, descriptor);
+    if (cachedProvider.IsNull() || nullptr == cachedProvider->GetContentDescriptor())
         {
         LoggingHelper::LogMessage(Log::Content, "No content", NativeLogging::LOG_ERROR);
         return nullptr;
@@ -1221,6 +1212,9 @@ ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(IConnectionCR conn
         }
 
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContent] Initialize", NativeLogging::LOG_TRACE);
+    SpecificationContentProviderPtr provider = cachedProvider->Clone();
+    provider->GetContextR().Adopt(connection, &cancelationToken);
+    provider->SetContentDescriptor(descriptor);
     provider->SetPageOptions(pageOpts);
     provider->Initialize();
 
@@ -1238,9 +1232,8 @@ ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(IConnectionCR conn
 size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentSetSize]", NativeLogging::LOG_TRACE);
-    ContentProviderPtr provider = GetContentProvider(connection, cancelationToken, descriptor, descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo(),
-        descriptor.GetOptions());
-    if (provider.IsNull() || nullptr == provider->GetContentDescriptor())
+    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, descriptor);
+    if (cachedProvider.IsNull() || nullptr == cachedProvider->GetContentDescriptor())
         {
         LoggingHelper::LogMessage(Log::Content, "No content", NativeLogging::LOG_ERROR);
         return 0;
@@ -1251,6 +1244,10 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(IConnectionCR co
         LoggingHelper::LogMessage(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentSetSize] Canceled.");
         return 0;
         }
+
+    SpecificationContentProviderPtr provider = cachedProvider->Clone();
+    provider->GetContextR().Adopt(connection, &cancelationToken);
+    provider->SetContentDescriptor(descriptor);
 
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentSetSize] Query size", NativeLogging::LOG_TRACE);
     size_t size = provider->GetFullContentSetSize();
@@ -1284,6 +1281,40 @@ LabelDefinitionCPtr RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(IConn
         }
 
     return &item->GetDisplayLabelDefinition();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl::_GetDistinctValues(IConnectionCR connection, ContentDescriptorCR descriptor, Utf8StringCR fieldName, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken)
+    {
+    RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDistinctValues]", NativeLogging::LOG_TRACE);
+    SpecificationContentProviderCPtr contentProvider = GetContentProvider(connection, cancelationToken, descriptor);
+    if (contentProvider.IsNull() || nullptr == contentProvider->GetContentDescriptor())
+        {
+        LoggingHelper::LogMessage(Log::Content, "No content", NativeLogging::LOG_ERROR);
+        return PagingDataSource<DisplayValueGroupCPtr>::Create();
+        }
+
+    if (cancelationToken.IsCanceled())
+        {
+        LoggingHelper::LogMessage(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDistinctValues] Canceled");
+        return PagingDataSource<DisplayValueGroupCPtr>::Create();
+        }
+
+    RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDistinctValues] Initialize", NativeLogging::LOG_TRACE);
+
+    /*
+    TODO:
+    - composite primitive properties (structs, arrays)
+    - nested content
+    */
+
+    IDataSourceCPtr<DisplayValueGroupCPtr> values = contentProvider->GetDistinctValues(fieldName);
+    if (values.IsNull())
+        return PagingDataSource<DisplayValueGroupCPtr>::Create();
+
+    return PagingDataSource<DisplayValueGroupCPtr>::Create(*values, pageOptions.GetPageStart(), pageOptions.GetPageSize());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1348,5 +1379,5 @@ void RulesDrivenECPresentationManagerImpl::_CompareHierarchies(IUpdateRecordsHan
     HierarchyLevelInfo rhsInfo(connection.GetId(), rhsRulesetId, options.GetLocale(), 0, 0);
     CompareReporter reporter(handler);
     HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, *m_nodesProviderContextFactory, *m_nodesProviderFactory, reporter, true, std::make_unique<RulesetVariables>(options.GetRulesetVariables())));
-    comparer.Compare(m_connections, lhsInfo, rhsInfo);
+    comparer.Compare(*m_connections, lhsInfo, rhsInfo);
     }

@@ -363,8 +363,6 @@ private:
             m_descriptor.AddField(field);
             if (!m_pathFromSelectToPropertyClass.empty() && m_keyField)
                 m_keyField->AddKeyField(*field);
-            if (p.GetIsNavigation())
-                m_descriptor.AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field));
             }
 
         return true;

@@ -32,7 +32,7 @@ $(o)QueryExecutor$(oext):                $(RulesEngineSourceDirectory)QueryExecu
 
 $(o)NavNodeProviders$(oext):             $(RulesEngineSourceDirectory)NavNodeProviders.cpp $(RulesEngineDependencies)
 
-$(o)StatementHandlers$(oext):            $(RulesEngineSourceDirectory)StatementHandlers.cpp $(RulesEngineDependencies)
+$(o)NavigationQueryResultsReader$(oext): $(RulesEngineSourceDirectory)NavigationQueryResultsReader.cpp $(RulesEngineDependencies)
 
 $(o)CustomFunctions$(oext):              $(RulesEngineSourceDirectory)CustomFunctions.cpp $(RulesEngineDependencies)
 
@@ -91,6 +91,8 @@ $(o)TaskScheduler$(oext):                $(RulesEngineSourceDirectory)TaskSchedu
 $(o)HierarchiesComparer$(oext):          $(RulesEngineSourceDirectory)HierarchiesComparer.cpp $(RulesEngineDependencies)
 
 $(o)RulesetVariables$(oext):             $(RulesEngineSourceDirectory)RulesetVariables.cpp $(RulesEngineDependencies)
+
+$(o)ContentQueryResultsReader$(oext):    $(RulesEngineSourceDirectory)ContentQueryResultsReader.cpp $(RulesEngineDependencies)
 
 %include MultiCppCompileGo.mki
 

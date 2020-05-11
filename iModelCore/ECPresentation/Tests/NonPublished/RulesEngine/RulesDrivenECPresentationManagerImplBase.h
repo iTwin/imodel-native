@@ -18,9 +18,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct RulesDrivenECPresentationManagerImplBase : RulesDrivenECPresentationManager::Impl, IRulesetCallbacksHandler, IUserSettingsChangeListener
 {
 private:
-    IConnectionManagerR m_connections;
-    IRulesetLocaterManager* m_locaters;
-    IUserSettingsManager* m_userSettings;
+    std::shared_ptr<IConnectionManager> m_connections;
+    std::shared_ptr<IRulesetLocaterManager> m_locaters;
+    std::shared_ptr<IUserSettingsManager> m_userSettings;
     IJsonLocalState* m_localState;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier const* m_categorySupplier;
@@ -34,13 +34,13 @@ protected:
     ILocalizationProvider const* _GetLocalizationProvider() const override { return m_localizationProvider; }
     IJsonLocalState* _GetLocalState() const override { return m_localState; }
     IRulesetLocaterManager& _GetLocaters() const override { return *m_locaters; }
-    IConnectionManagerR _GetConnections() override { return m_connections; }
+    IConnectionManagerR _GetConnections() override { return *m_connections; }
     void _OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR) override {}
     void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR) override {}
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override {}
 public:
-    RulesDrivenECPresentationManagerImplBase(RulesDrivenECPresentationManager::Params const& params)
-        : m_connections(*params.GetConnections())
+    RulesDrivenECPresentationManagerImplBase(RulesDrivenECPresentationManager::Impl::Params const& params)
+        : m_connections(params.GetConnections())
         {
         static const TestPropertyFormatter s_defaultPropertyFormatter;
         static const TestCategorySupplier s_defaultCategorySupplier;
@@ -55,11 +55,6 @@ public:
 
         m_locaters->SetRulesetCallbacksHandler(this);
         m_userSettings->SetChangesListener(this);
-        }
-    ~RulesDrivenECPresentationManagerImplBase()
-        {
-        DELETE_AND_CLEAR(m_locaters);
-        DELETE_AND_CLEAR(m_userSettings);
         }
 };
 

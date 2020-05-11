@@ -18,7 +18,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
 protected:
     // Not supported:
     rapidjson::Document _AsJson(ConnectionEvent const&, rapidjson::Document::AllocatorType* allocator) const override;
-    
+
     // Common:
     rapidjson::Document _AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const override;
     KeySetPtr _GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const override;
@@ -37,6 +37,7 @@ protected:
     rapidjson::Document _AsJson(Content const& content, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType* allocator) const override;
+    rapidjson::Document _AsJson(DisplayValueGroupCR, rapidjson::Document::AllocatorType*) const override;
     rapidjson::Document _AsJson(ContentDescriptor::Category const& category, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContentDescriptor::Property const& property, rapidjson::Document::AllocatorType* allocator) const override;
     void _FieldAsJson(ContentDescriptor::Field const& field, RapidJsonDocumentR fieldBaseJson) const override;
@@ -48,7 +49,6 @@ protected:
     void _AsJson(ContentDescriptor::CalculatedPropertyField const&, RapidJsonDocumentR) const override {}
     void _AsJson(ContentDescriptor::SystemField const&, RapidJsonDocumentR) const override {}
     void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const override {}
-    void _AsJson(ContentDescriptor::ECNavigationInstanceIdField const&, RapidJsonDocumentR) const override {}
     rapidjson::Document _AsJson(ContentFieldEditor const& editor, rapidjson::Document::AllocatorType* allocator) const override;
     void _ParamsAsJson(ContentFieldEditor::Params const&, RapidJsonDocumentR) const override {}
     void _AsJson(FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const override;

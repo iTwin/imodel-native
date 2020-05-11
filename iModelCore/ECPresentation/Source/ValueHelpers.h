@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/ECPresentation.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -14,7 +14,7 @@ struct ValueHelpers : NonCopyableClass
 {
 private:
     ValueHelpers() {}
-    static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, 
+    static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop,
         std::function<int()> getIntEnumId, std::function<Utf8CP()> getStrEnumId);
 public:
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, BeSQLite::DbValue const& dbValue);
@@ -47,6 +47,9 @@ public:
     static ECN::ECValue GetECValueFromJson(ECN::PrimitiveType, RapidJsonValueCR);
     static ECN::ECValue GetECValueFromJson(ECN::ECPropertyCR, JsonValueCR);
 
+    static BeSQLite::EC::ECInstanceKey GetECInstanceKeyFromJson(RapidJsonValueCR);
+    static BeSQLite::EC::ECInstanceKey GetECInstanceKeyFromSerializedJson(Utf8CP);
+    static bvector<BeSQLite::EC::ECInstanceKey> GetECInstanceKeysFromJson(RapidJsonValueCR);
     static bvector<BeSQLite::EC::ECInstanceKey> GetECInstanceKeysFromSerializedJson(Utf8CP);
 
     static Utf8String GetJsonAsString(RapidJsonValueCR);

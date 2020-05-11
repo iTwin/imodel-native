@@ -20,7 +20,7 @@ struct RulesDrivenECPresentationManagerMultithreadingTestsBase : ECPresentationT
     {
     static Utf8CP s_projectName;
     static ECDbTestProject* s_project;
-    IConnectionManager* m_connections;
+    std::shared_ptr<IConnectionManager> m_connections;
     IConnection* m_connection;
     std::shared_ptr<TestECInstanceChangeEventsSource> m_eventsSource;
     RulesDrivenECPresentationManager* m_manager;
@@ -30,7 +30,7 @@ struct RulesDrivenECPresentationManagerMultithreadingTestsBase : ECPresentationT
     virtual void SetUp() override;
     virtual void TearDown() override;
 
-    virtual IConnectionManager* _CreateConnectionManager() const = 0;
+    virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager() const = 0;
     virtual RulesDrivenECPresentationManager::Params _CreateManagerParams() const
         {
         RulesDrivenECPresentationManager::Params::CachingParams cachingParams;
@@ -41,7 +41,7 @@ struct RulesDrivenECPresentationManagerMultithreadingTestsBase : ECPresentationT
         params.SetECInstanceChangeEventSources({ m_eventsSource });
         return params;
         }
-    virtual RulesDrivenECPresentationManager::Impl* _CreateCustomImpl(RulesDrivenECPresentationManager::Params) {return nullptr;}
+    virtual RulesDrivenECPresentationManager::Impl* _CreateCustomImpl(RulesDrivenECPresentationManager::Impl::Params const&) {return nullptr;}
 
     void Sync() { m_manager->GetTasksCompletion().wait(); }
     };
@@ -79,18 +79,14 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp()
     RulesDrivenECPresentationManager::Params params(_CreateManagerParams());
     m_manager = new RulesDrivenECPresentationManager(params);
 
-    IConnectionManagerP tempConnections = _CreateConnectionManager();
-    params.SetConnections(tempConnections);
-    RulesDrivenECPresentationManager::Impl* customImpl = _CreateCustomImpl(m_manager->CreateImplParams(params));
+    std::shared_ptr<IConnectionManager> connections = _CreateConnectionManager();
+    params.SetConnections(connections);
+    RulesDrivenECPresentationManager::Impl* customImpl = _CreateCustomImpl(*m_manager->CreateImplParams(params));
     if (nullptr != customImpl)
         {
-        m_connections = tempConnections;
+        m_connections = connections;
         m_connection = m_connections->CreateConnection(s_project->GetECDb()).get();
         m_manager->SetImpl(*customImpl);
-        }
-    else
-        {
-        delete tempConnections;
         }
 
     Sync();
@@ -111,7 +107,7 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDown()
 +===============+===============+===============+===============+===============+======*/
 struct RulesDrivenECPresentationManagerMultithreadingTests : RulesDrivenECPresentationManagerMultithreadingTestsBase
     {
-    IConnectionManager* _CreateConnectionManager() const override {return new TestConnectionManager();}
+    std::unique_ptr<IConnectionManager> _CreateConnectionManager() const override {return std::make_unique<TestConnectionManager>();}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -185,7 +181,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, ECInstanceChangeEven
 struct RulesDrivenECPresentationManagerMultithreadingRealConnectionTests : RulesDrivenECPresentationManagerMultithreadingTestsBase
     {
     ECDb m_db;
-    IConnectionManager* _CreateConnectionManager() const override {return new ConnectionManager();}
+    std::unique_ptr<IConnectionManager> _CreateConnectionManager() const override {return std::make_unique<ConnectionManager>();}
     virtual void SetUp() override
         {
         RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp();
@@ -371,7 +367,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
 struct RulesDrivenECPresentationManagerCustomImplMultithreadingTests : RulesDrivenECPresentationManagerMultithreadingTests
     {
     TestRulesDrivenECPresentationManagerImpl* m_impl;
-    virtual RulesDrivenECPresentationManager::Impl* _CreateCustomImpl(RulesDrivenECPresentationManager::Params params) override
+    virtual RulesDrivenECPresentationManager::Impl* _CreateCustomImpl(RulesDrivenECPresentationManager::Impl::Params const& params) override
         {
         m_impl = new TestRulesDrivenECPresentationManagerImpl(params);
         return m_impl;
@@ -724,7 +720,7 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
     void CloseConnectionAndVerifyResult(bool expectConnectionInterrupted)
         {
         EnsureBlocked();
-        static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*m_connections->GetConnection(s_project->GetECDb()));
+        static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionClosed(*m_connections->GetConnection(s_project->GetECDb()));
         VerifyCancelation(true, expectConnectionInterrupted, 0);
         }
 
@@ -1640,7 +1636,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     {
     ECDbTestProject project2;
     project2.Create("DoesntCancelContentDescriptorRequestWhenSelectionOnDifferentConnectionChanges");
-    RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
+    RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
     m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
@@ -1668,7 +1664,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     // verify
     VerifyCancelation(false, false, 2);
 
-    static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*connection2);
+    static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1911,7 +1907,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     {
     ECDbTestProject project2;
     project2.Create(BeTest::GetNameOfCurrentTest());
-    IConnectionPtr connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
+    IConnectionPtr connection2 = static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
     m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
@@ -1940,7 +1936,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     // verify
     VerifyCancelation(false, false, 2);
 
-    static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*connection2);
+    static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2151,7 +2147,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     {
     ECDbTestProject project2;
     project2.Create(BeTest::GetNameOfCurrentTest());
-    RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
+    RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
     m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)
@@ -2180,5 +2176,5 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     // verify
     VerifyCancelation(false, false, 2);
 
-    static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*connection2);
+    static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionClosed(*connection2);
     }

@@ -797,6 +797,8 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(Rules
     return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), GetContentFlags(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, context)
         .then([&manager, descriptorOverridesJson, fieldName, maximumValueCount, context] (ContentDescriptorCPtr descriptor)
             {
+            context.OnTaskStart();
+
             if (descriptor.IsNull())
                 return folly::makeFutureWith([] () { return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor"); });
 
@@ -828,6 +830,45 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(Rules
 
                     response.PushBack(rapidjson::Value(value.GetString(), response.GetAllocator()), response.GetAllocator());
                     }
+                return ECPresentationResult(std::move(response));
+                });
+            });
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(RulesDrivenECPresentationManager& manager, ECDbR db, JsonValueCR params, PresentationRequestContextCR context)
+    {
+    if (!params.isMember("fieldName"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "fieldName");
+
+    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
+    PageOptions pageOptions = GetPageOptions(params);
+    Json::Value options = GetContentOptions(params).GetJson();
+    Utf8String fieldName = params["fieldName"].asString();
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), GetContentFlags(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, context)
+        .then([&manager, descriptorOverridesJson, fieldName, pageOptions, context] (ContentDescriptorCPtr descriptor)
+            {
+            context.OnTaskStart();
+
+            if (descriptor.IsNull())
+                return folly::makeFutureWith([] () { return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor"); });
+
+            return manager.GetDistinctValues(*descriptor, fieldName, pageOptions, context)
+                .then([context](PagedDataContainer<DisplayValueGroupCPtr> values)
+                {
+                context.OnTaskStart();
+
+                rapidjson::Document response(rapidjson::kObjectType);
+                rapidjson::Value valuesJson(rapidjson::kArrayType);
+                for (DisplayValueGroupCPtr value : values)
+                    valuesJson.PushBack(value->AsJson(&response.GetAllocator()), response.GetAllocator());
+                response.AddMember("items", valuesJson, response.GetAllocator());
+                response.AddMember("total", (uint64_t)values.GetTotalSize(), response.GetAllocator());
+
                 return ECPresentationResult(std::move(response));
                 });
             });

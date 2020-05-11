@@ -15,6 +15,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_GetECClassDisplayLabel        "GetECClassDisplayLabel"
 #define FUNCTION_NAME_GetECPropertyDisplayLabel     "GetECPropertyDisplayLabel"
 #define FUNCTION_NAME_GetNavigationPropertyLabel    "GetNavigationPropertyLabel"
+#define FUNCTION_NAME_GetNavigationPropertyValue    "GetNavigationPropertyValue"
 #define FUNCTION_NAME_GetSortingValue               "GetSortingValue"
 #define FUNCTION_NAME_GetRangeIndex                 "GetRangeIndex"
 #define FUNCTION_NAME_GetRangeImageId               "GetRangeImageId"
@@ -38,7 +39,9 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_GetPointAsJsonString          "GetPointAsJsonString"
 #define FUNCTION_NAME_ArePointsEqualByValue         "ArePointsEqualByValue"
 #define FUNCTION_NAME_AreDoublesEqualByValue        "AreDoublesEqualByValue"
-#define FUNCTION_NAME_GetPropertyDisplayValue       "GetPropertyDisplayValue"
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
+    #define FUNCTION_NAME_GetPropertyDisplayValue   "GetPropertyDisplayValue"
+#endif
 #define FUNCTION_NAME_GetRelatedDisplayLabel        "GetRelatedDisplayLabel"
 #define FUNCTION_NAME_ToBase36                      "ToBase36"
 #define FUNCTION_NAME_ParseBriefcaseId              "ParseBriefcaseId"

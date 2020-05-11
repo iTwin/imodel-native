@@ -120,6 +120,7 @@ struct ECPresentationUtils
     static folly::Future<ECPresentationResult> GetContent(RulesDrivenECPresentationManager&, ECDbR, JsonValueCR params, PresentationRequestContextCR);
     static folly::Future<ECPresentationResult> GetContentSetSize(RulesDrivenECPresentationManager&, ECDbR, JsonValueCR params, PresentationRequestContextCR);
     static folly::Future<ECPresentationResult> GetDistinctValues(RulesDrivenECPresentationManager&, ECDbR, JsonValueCR params, PresentationRequestContextCR);
+    static folly::Future<ECPresentationResult> GetPagedDistinctValues(RulesDrivenECPresentationManager&, ECDbR, JsonValueCR params, PresentationRequestContextCR);
     static folly::Future<ECPresentationResult> GetDisplayLabel(RulesDrivenECPresentationManager&, ECDbR, JsonValueCR params, PresentationRequestContextCR);
 
     static folly::Future<ECPresentationResult> CompareHierarchies(RulesDrivenECPresentationManager&, std::shared_ptr<IUpdateRecordsHandler>, ECDbR,

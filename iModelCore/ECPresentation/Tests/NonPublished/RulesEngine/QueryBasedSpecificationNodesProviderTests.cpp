@@ -1076,11 +1076,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArti
 
     RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     provider->GetNodesCount();
-
     EXPECT_TRUE(captureArtifacts->GetArtifacts().empty());
-    ASSERT_EQ(1, provider->GetNodeProviders().size());
-    ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
-    ASSERT_FALSE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadStarted());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1109,11 +1105,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
 
     RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     provider->GetNodesCount();
-
     EXPECT_EQ(1, captureArtifacts->GetArtifacts().size());
-    ASSERT_EQ(1, provider->GetNodeProviders().size());
-    ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
-    ASSERT_TRUE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadFinished());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1142,9 +1134,5 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
 
     RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     provider->GetNodesCount();
-
     EXPECT_EQ(1, captureArtifacts->GetArtifacts().size());
-    ASSERT_EQ(1, provider->GetNodeProviders().size());
-    ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
-    ASSERT_TRUE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadFinished());
     }

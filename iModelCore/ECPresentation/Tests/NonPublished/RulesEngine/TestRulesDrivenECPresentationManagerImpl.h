@@ -29,6 +29,7 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)> Handler_GetContent;
     typedef std::function<size_t(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
     typedef std::function<LabelDefinitionCPtr(IConnectionCR, KeySetCR, ICancelationTokenCR)> Handler_GetDisplayLabel;
+    typedef std::function<PagingDataSourcePtr<DisplayValueGroupCPtr>(IConnectionCR, ContentDescriptorCR, Utf8StringCR, PageOptionsCR, ICancelationTokenCR)> Handler_GetDistinctValues;
 
     typedef std::function<void(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR, Utf8StringCR, CommonOptions const&, ICancelationTokenCR)> Handler_CompareHierarchies;
 
@@ -50,6 +51,7 @@ private:
     Handler_GetContent m_contentHandler;
     Handler_GetContentSetSize m_contentSetSizeHandler;
     Handler_GetDisplayLabel m_displayLabelHandler;
+    Handler_GetDistinctValues m_distinctValuesHandler;
 
     Handler_CompareHierarchies m_compareHierarchiesHandler;
 
@@ -127,6 +129,12 @@ protected:
             return m_displayLabelHandler(connection, key, cancelationToken);
         return LabelDefinition::Create();
         }
+    PagingDataSourcePtr<DisplayValueGroupCPtr> _GetDistinctValues(IConnectionCR connection, ContentDescriptorCR descriptor, Utf8StringCR fieldName, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) override
+        {
+        if (m_distinctValuesHandler)
+            return m_distinctValuesHandler(connection, descriptor, fieldName, pageOptions, cancelationToken);
+        return PagingDataSource<DisplayValueGroupCPtr>::Create();
+        }
     void _CompareHierarchies(IUpdateRecordsHandler& updateRecordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, CommonOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_compareHierarchiesHandler)
@@ -134,7 +142,7 @@ protected:
         }
 
 public:
-    TestRulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManager::Params const& params)
+    TestRulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManager::Impl::Params const& params)
         : RulesDrivenECPresentationManagerImplBase(params)
         {}
 
@@ -151,6 +159,7 @@ public:
     void SetContentHandler(Handler_GetContent handler) {m_contentHandler = handler;}
     void SetContentSetSizeHandler(Handler_GetContentSetSize handler) {m_contentSetSizeHandler = handler;}
     void SetDisplayLabelHandler(Handler_GetDisplayLabel handler) {m_displayLabelHandler = handler;}
+    void SetDistinctValuesHandler(Handler_GetDistinctValues handler) {m_distinctValuesHandler = handler;}
 
     void SetCompareHierarchiesHandler(Handler_CompareHierarchies handler) {m_compareHierarchiesHandler = handler;}
 };

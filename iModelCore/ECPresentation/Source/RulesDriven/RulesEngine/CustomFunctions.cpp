@@ -223,15 +223,10 @@ private:
 private:
     LabelDefinitionPtr GetLabel(ECClassInstanceKeyCR key) const
         {
-        Utf8String label;
         bvector<InstanceLabelOverrideValueSpecification const*> labelOverrideSpecs = QueryBuilderHelpers::SerializeECClassMapPolymorphically(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(),
             GetContext().GetRuleset().GetInstanceLabelOverrides()), *key.GetClass());
         GenericQueryPtr labelQuery = QueryBuilderHelpers::CreateInstanceLabelQuery(key, labelOverrideSpecs);
-        GenericQueryExecutor executor(GetContext().GetSchemaHelper().GetConnection(), *labelQuery, [&label](ECSqlStatement& stmt)
-            {
-            label = stmt.GetValueText(0);
-            });
-        executor.ReadRecords();
+        Utf8String label = QueryExecutorHelper::ReadText(GetContext().GetSchemaHelper().GetConnection(), *labelQuery);
         return LabelDefinition::FromString(label.c_str());
         }
 
@@ -329,6 +324,66 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, std:
             iter = GetCache().Insert(classId, std::make_shared<Utf8String>(labelDefinition->ToJsonString())).first;
             }
         ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
+        }
+    };
+
+/*=================================================================================**//**
+* Parameters:
+* - ECClassId
+* - ECInstanceId
+* @bsiclass                                                Mantas.Kontrimas    05/2018
++===============+===============+===============+===============+===============+======*/
+struct GetNavigationPropertyValueScalar : CachingScalarFunction<bmap<ECInstanceKey, std::shared_ptr<Utf8String>>>
+{
+private:
+    LabelDefinitionPtr GetLabel(ECClassInstanceKeyCR key) const
+        {
+        bvector<InstanceLabelOverrideValueSpecification const*> labelOverrideSpecs = QueryBuilderHelpers::SerializeECClassMapPolymorphically(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(),
+            GetContext().GetRuleset().GetInstanceLabelOverrides()), *key.GetClass());
+        GenericQueryPtr labelQuery = QueryBuilderHelpers::CreateInstanceLabelQuery(key, labelOverrideSpecs);
+        Utf8String label = QueryExecutorHelper::ReadText(GetContext().GetSchemaHelper().GetConnection(), *labelQuery);
+        return LabelDefinition::FromString(label.c_str());
+        }
+
+public:
+    GetNavigationPropertyValueScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetNavigationPropertyValue, 2, DbValueType::TextVal, manager)
+        {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        BeAssert(2 == nArgs);
+        ECClassId classId = args[0].GetValueId<ECClassId>();
+        ECInstanceId instanceId(args[1].GetValueUInt64());
+        ECInstanceKey key(classId, instanceId);
+
+        auto iter = GetCache().find(key);
+        if (GetCache().end() == iter)
+            {
+            Utf8String result;
+            if (key.IsValid())
+                {
+                ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
+                if (nullptr == ecClass)
+                    {
+                    BeAssert(false && "Invalid class");
+                    ctx.SetResultError("Invalid ECClassId", BE_SQLITE_ERROR);
+                    return;
+                    }
+                result.append("{");
+                result.append("\"label\":").append(GetLabel(ECClassInstanceKey(ecClass, instanceId))->ToJsonString()).append(",");
+                result.append("\"key\":")
+                    .append("{")
+                    .append("\"c\":").append(std::to_string(classId.GetValueUnchecked())).append(",")
+                    .append("\"i\":").append(std::to_string(instanceId.GetValueUnchecked()))
+                    .append("}");
+                result.append("}");
+                }
+            iter = GetCache().Insert(key, std::make_shared<Utf8String>(result)).first;
+            }
+        if (iter->second->empty())
+            ctx.SetResultNull();
+        else
+            ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
     };
 
@@ -517,7 +572,7 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
                     {
                     if (ecProperty->GetIsPrimitive())
                         {
-                        labelDefinition->SetECPropertyValue(*ecProperty, args[3], GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3], 
+                        labelDefinition->SetECPropertyValue(*ecProperty, args[3], GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3],
                             GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem()).c_str());
                         }
                     else
@@ -580,6 +635,7 @@ struct GetPointAsJsonStringScalar : ECPresentation::ScalarFunction
         }
     };
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*=================================================================================**//**
 * Parameters:
 * - ECSchemaName
@@ -607,6 +663,7 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
         ctx.SetResultText(formattedValue.c_str(), (int)formattedValue.size(), DbFunction::Context::CopyData::Yes);
         }
     };
+#endif
 
 /*=================================================================================**//**
 * Parameters:
@@ -1645,12 +1702,12 @@ struct JoinOptionallyRequiredScalar : ECPresentation::ScalarFunction
                 continue;
                 }
 
-            if (!displayLabel.empty()) 
+            if (!displayLabel.empty())
                 displayLabel.append(separator);
             displayLabel.append(value->GetDisplayValue());
 
             // aggregate consecutive string label definitions into one
-            if (value->GetTypeName().EqualsI("string")) 
+            if (value->GetTypeName().EqualsI("string"))
                 {
                 aggregatedValue.AddValue(*value, separator);
                 }
@@ -2117,7 +2174,10 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new GetPointAsJsonStringScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new ArePointsEqualByValueScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new AreDoublesEqualByValueScalar(CustomFunctionsManager::GetManager()));
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
     m_scalarFunctions.push_back(new GetPropertyDisplayValueScalar(CustomFunctionsManager::GetManager()));
+#endif
+    m_scalarFunctions.push_back(new GetNavigationPropertyValueScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetRelatedDisplayLabelScalar(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetNavigationPropertyLabel, true));
     m_scalarFunctions.push_back(new GetRelatedDisplayLabelScalar(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetRelatedDisplayLabel));
     m_scalarFunctions.push_back(new ToBase36Scalar(CustomFunctionsManager::GetManager()));

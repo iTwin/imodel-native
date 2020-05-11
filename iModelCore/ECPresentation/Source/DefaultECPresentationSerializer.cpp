@@ -452,6 +452,22 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentSetItem cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                 05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(DisplayValueGroupCR value,
+    rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("Label", rapidjson::Value(value.GetDisplayValue().c_str(), json.GetAllocator()), json.GetAllocator());
+    rapidjson::Value rawValuesJson(rapidjson::kArrayType);
+    for (RapidJsonValueCR rawValue : value.GetRawValues())
+        rawValuesJson.PushBack(rapidjson::Value(rawValue, json.GetAllocator()), json.GetAllocator());
+    json.AddMember("RawValues", rawValuesJson, json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document DefaultECPresentationSerializer::_AsJson(ECClassInstanceKeyCR key,

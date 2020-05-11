@@ -101,6 +101,14 @@ folly::Future<LabelDefinitionCPtr> IECPresentationManager::GetDisplayLabel(ECDbC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<PagedDataContainer<DisplayValueGroupCPtr>> IECPresentationManager::GetDistinctValues(ContentDescriptorCR descriptor, Utf8StringCR fieldName, PageOptionsCR pageOptions, PresentationRequestContextCR context)
+    {
+    return _GetDistinctValues(descriptor, fieldName, pageOptions, context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<NavNodeCPtr> IECPresentationManager::GetNode(ECDbCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationRequestContextCR context)

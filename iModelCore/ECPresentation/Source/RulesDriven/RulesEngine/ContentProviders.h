@@ -2,11 +2,12 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include "RulesDrivenProviderContext.h"
 #include "RulesPreprocessor.h"
 #include "QueryExecutor.h"
 #include "QueryBuilder.h"
+#include "ContentQueryResultsReader.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -33,14 +34,14 @@ private:
     ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, Utf8String, Utf8String, int, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierCR, std::unique_ptr<RulesetVariables>,
         ECExpressionsCache&, RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
-    
+
 public:
-    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags, INavNodeKeysContainerCR inputKeys, 
+    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags, INavNodeKeysContainerCR inputKeys,
         INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierCR categorySupplier, std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache,
-        RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
+        RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
         JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
-        return new ContentProviderContext(ruleset, locale, preferredDisplayType, contentFlags, inputKeys, nodesLocater, 
+        return new ContentProviderContext(ruleset, locale, preferredDisplayType, contentFlags, inputKeys, nodesLocater,
             categorySupplier, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
@@ -55,7 +56,7 @@ public:
     void SetIsNestedContent(bool value) {m_isNestedContent = value;}
     INavNodeKeysContainerCR GetInputKeys() const {return *m_inputNodeKeys;}
     void SetInputKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
-    
+
     // Selection info context
     ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfoCR selectionInfo);
     ECPRESENTATION_EXPORT void SetSelectionInfo(ContentProviderContextCR);
@@ -74,27 +75,27 @@ public:
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
 struct ContentProvider : RefCountedBase
-{    
+{
 private:
     ContentProviderContextPtr m_context;
     PageOptions m_pageOptions;
-    ContentQueryExecutor* m_executor;
     bvector<ContentSetItemPtr> m_records;
     bool m_initialized;
     mutable size_t m_contentSetSize;
     mutable bool m_fullContentSetSizeDetermined;
     mutable bmap<ContentDescriptor::NestedContentField const*, NestedContentProviderPtr> m_nestedContentProviders;
+    mutable bmap<Utf8String, bvector<DisplayValueGroupCPtr>> m_distinctValuesCache;
 
 private:
     NestedContentProviderPtr GetNestedContentProvider(ContentDescriptor::NestedContentField const&, bool) const;
     void LoadNestedContent(ContentSetItemR) const;
     void LoadNestedContentFieldValue(ContentSetItemR, ContentDescriptor::NestedContentField const&, bool) const;
     void LoadCompositePropertiesFieldValue(ContentSetItemR, ContentDescriptor::ECPropertiesField const&) const;
-    
+    bvector<DisplayValueGroupCPtr> CreateDistinctValues(Utf8StringCR fieldName) const;
+
 protected:
     ECPRESENTATION_EXPORT ContentProvider(ContentProviderContextR);
     ECPRESENTATION_EXPORT ContentProvider(ContentProviderCR);
-    ECPRESENTATION_EXPORT ~ContentProvider();
     virtual ContentDescriptorCP _GetContentDescriptor() const = 0;
     virtual ContentQueryCPtr _GetQuery() const = 0;
     virtual ContentProviderPtr _Clone() const = 0;
@@ -106,7 +107,7 @@ public:
 
     ContentProviderContextR GetContextR() const {return *m_context;}
     ContentProviderContextCR GetContext() const {return GetContextR();}
-    
+
     ContentDescriptorCP GetContentDescriptor() const {return _GetContentDescriptor();}
 
     PageOptionsCR GetPageOptions() const {return m_pageOptions;}
@@ -115,6 +116,8 @@ public:
     ECPRESENTATION_EXPORT bool GetContentSetItem(ContentSetItemPtr& item, size_t index) const;
     ECPRESENTATION_EXPORT size_t GetContentSetSize() const;
     ECPRESENTATION_EXPORT size_t GetFullContentSetSize() const;
+
+    ECPRESENTATION_EXPORT IDataSourceCPtr<DisplayValueGroupCPtr> GetDistinctValues(Utf8StringCR fieldName) const;
 
     void InvalidateContent();
 };
@@ -149,7 +152,7 @@ public:
         }
     ~SpecificationContentProvider();
     SpecificationContentProviderPtr Clone() const {return new SpecificationContentProvider(*this);}
-    
+
     ECPRESENTATION_EXPORT void SetContentDescriptor(ContentDescriptorCR descriptor);
 };
 

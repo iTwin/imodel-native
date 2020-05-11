@@ -34,7 +34,7 @@ struct CustomFunctionTests : ECPresentationTest
     RulesetVariables m_rulesetVariables;
     JsonNavNodesFactory m_nodesFactory;
     ECSchemaHelper* m_schemaHelper;
-    TestPropertyFormatter const* m_propertyFormatter;
+    StubPropertyFormatter m_propertyFormatter;
     Utf8String m_locale;
 
     static void SetUpTestCase();
@@ -48,7 +48,6 @@ struct CustomFunctionTests : ECPresentationTest
         m_customFunctionsInjector = new CustomFunctionsInjector(m_connections, *m_connection);
         m_widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *s_widgetClass);
         ECInstanceId::FromString(m_widgetInstanceId, m_widgetInstance->GetInstanceId().c_str());
-        m_propertyFormatter = new TestPropertyFormatter();
         m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr);
         m_locale = "test locale";
         }
@@ -57,7 +56,6 @@ struct CustomFunctionTests : ECPresentationTest
         {
         s_project->GetECDb().AbandonChanges();
         delete m_customFunctionsInjector;
-        delete m_propertyFormatter;
         delete m_schemaHelper;
         }
 
@@ -344,7 +342,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesPropertyValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Formats)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, &m_propertyFormatter);
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
@@ -1170,6 +1168,7 @@ TEST_F(CustomFunctionTests, GetPointAsJsonString)
     EXPECT_STREQ(expected.c_str(), stmt.GetValueText(0));
     }
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1178,7 +1177,7 @@ TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point2d)
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, &m_propertyFormatter);
     Utf8CP query = "SELECT " FUNCTION_NAME_GetPropertyDisplayValue "(?, ?, ?, '{\"x\":1.512,\"y\":1.512}') "
                    "  FROM RET.ClassH h";
 
@@ -1199,7 +1198,7 @@ TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point3d)
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, &m_propertyFormatter);
     Utf8CP query = "SELECT " FUNCTION_NAME_GetPropertyDisplayValue "(?, ?, ?, '{\"x\":1.512,\"y\":1.512,\"z\":1.512}') "
                    "  FROM RET.ClassH h";
 
@@ -1217,7 +1216,7 @@ TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Double)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, &m_propertyFormatter);
     Utf8CP query = "SELECT " FUNCTION_NAME_GetPropertyDisplayValue "(?, ?, ?, 1.123456789) "
                    "  FROM RET.Widget";
 
@@ -1229,6 +1228,7 @@ TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Double)
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_STREQ("_1.123456789_", stmt.GetValueText(0));
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017

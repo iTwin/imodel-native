@@ -524,8 +524,7 @@ private:
 private:
     ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&, bvector<RelatedClassPath> const&, bool);
     PresentationQueryContractField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const;
-    PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&, bool) const;
-    PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
+    PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8StringCR, Utf8StringCR) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(ContentDescriptor::ECInstanceKeyField const&, bool isMerging) const;
 
 protected:

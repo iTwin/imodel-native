@@ -879,7 +879,7 @@ PresentationQueryContractField const& ContentQueryContract::GetDisplayLabelField
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, bool isGroupingField) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue) const
     {
     Utf8String value = "'";
     value += calculatedPropertyValue;
@@ -933,6 +933,7 @@ static Utf8String GetPropertySelectClauseFromAccessString(Utf8StringCR accessStr
     return clause;
     }
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -949,6 +950,7 @@ static Utf8String PropertyDisplayValueSelectStringClause(ECPropertyCR ecProperty
     clause.append(valueAccessString).append(")");
     return clause;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                11/2017
@@ -974,26 +976,27 @@ static Utf8String PropertyValueSelectStringClause(Utf8CP prefix, Utf8CP property
 static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString,
     ECPropertyCR prop, bool isGroupingField)
     {
+    PresentationQueryContractFieldPtr field;
     if (prop.GetIsPrimitive())
         {
         Utf8String valueSelectClause = PropertyValueSelectStringClause(prefix, propertyAccessString, prop.GetAsPrimitiveProperty()->GetType());
-        PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, valueSelectClause.c_str(), false);
+        field = PresentationQueryContractSimpleField::Create(fieldName, valueSelectClause.c_str(), false);
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         if (isGroupingField)
             {
             Utf8String displayValueSelectClause = PropertyDisplayValueSelectStringClause(prop, field->GetName());
             field->SetGroupingClause(displayValueSelectClause);
             }
-        return field;
+#endif
         }
-    if (prop.GetIsNavigation())
+    else if (prop.GetIsNavigation())
         {
-        RefCountedPtr<PresentationQueryContractFunctionField> navigationLabelfield = PresentationQueryContractFunctionField::Create(Utf8String(fieldName).append("_inner").c_str(),
-            FUNCTION_NAME_GetNavigationPropertyLabel, CreateFieldsList("ECClassId", "ECInstanceId"), true);
-        navigationLabelfield->SetPrefixOverride(prefix);
-
-        return PrepareDisplayLabelField(PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetLabelDefinitionDisplayValue, { navigationLabelfield }));
+        field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetNavigationPropertyValue, CreateFieldsList("ECClassId", "ECInstanceId"), true);
         }
-    PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, prop.GetName().c_str(), true);
+    else
+        {
+        field = PresentationQueryContractSimpleField::Create(fieldName, prop.GetName().c_str(), true);
+        }
     field->SetPrefixOverride(prefix);
     return field;
     }
@@ -1033,7 +1036,7 @@ static PresentationQueryContractFieldCPtr CreateNullPropertySelectField(Utf8CP f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const
+static PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging)
     {
     if (!isMerging)
         {
@@ -1071,31 +1074,18 @@ PresentationQueryContractFieldCPtr ContentQueryContract::CreateInstanceKeyField(
             {
             // merging queries wrap merged ones, so we don't have access to field's instance class alias - in this
             // case we have to select by field alias
-            return CreateInstanceKeyField(field.GetUniqueName().c_str(), nullptr, ECClassId(), true);
+            return ::CreateInstanceKeyField(field.GetUniqueName().c_str(), nullptr, ECClassId(), true);
             }
         }
 
     ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(*field.GetKeyFields().front(), m_class);
     if (nullptr != fieldPropertyForThisContract)
         {
-        return CreateInstanceKeyField(field.GetUniqueName().c_str(), fieldPropertyForThisContract->GetPrefix(),
+        return ::CreateInstanceKeyField(field.GetUniqueName().c_str(), fieldPropertyForThisContract->GetPrefix(),
             fieldPropertyForThisContract->GetPropertyClass().GetId(), isMerging);
         }
 
     return PresentationQueryContractSimpleField::Create(field.GetUniqueName().c_str(), "CAST(null AS TEXT)", false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static PresentationQueryContractFieldCPtr GetNavigationInstanceIdField(Utf8String fieldName, Utf8CP prefix)
-    {
-    if (nullptr == prefix)
-        return PresentationQueryContractSimpleField::Create(fieldName.c_str(), "CAST(null AS LONG)", false);
-
-    PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName.c_str(), "ECInstanceId");
-    field->SetPrefixOverride(prefix);
-    return field;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1106,19 +1096,29 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
     bvector<PresentationQueryContractFieldCPtr> contractFields;
 
     bvector<Utf8CP> selectAliases = m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
+
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
     if (!m_descriptor->OnlyDistinctValues())
         {
+#endif
+        // contract id
         if (0 != GetId())
             contractFields.push_back(PresentationQueryContractSimpleField::Create(ContractIdFieldName, std::to_string(GetId()).c_str(), false));
         else
             contractFields.push_back(PresentationQueryContractSimpleField::Create(nullptr, ContractIdFieldName, false));
-        contractFields.push_back(CreateInstanceKeyField(ECInstanceKeysFieldName, selectAliases.empty() ? nullptr : selectAliases.front(), ECClassId(), m_descriptor->MergeResults()));
+
+        // instance key
+        contractFields.push_back(::CreateInstanceKeyField(ECInstanceKeysFieldName, selectAliases.empty() ? nullptr : selectAliases.front(), ECClassId(), m_descriptor->MergeResults()));
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         }
+#endif
 
     if (0 == ((int)ContentFlags::KeysOnly & m_descriptor->GetContentFlags()))
         {
+        // related instances' info
         contractFields.push_back(CreateRelatedInstanceInfoField(m_relatedInstancePaths));
 
+        // fields
         for (ContentDescriptor::Field const* descriptorField : m_descriptor->GetAllFields())
             {
             bool createMergeField = m_descriptor->MergeResults();
@@ -1140,7 +1140,11 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
                         Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
                         ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
                         contractField = CreatePropertySelectField(propertiesField.GetUniqueName().c_str(), fieldPropertyForThisContract->GetPrefix(),
-                            propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
+                            propertyAccessor.c_str(), ecProperty
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
+                            , m_descriptor->OnlyDistinctValues()
+#endif
+                            );
                         }
                     else
                         {
@@ -1152,24 +1156,19 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
             else if (descriptorField->IsCalculatedPropertyField())
                 {
                 if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || m_class->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
-                    contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), m_descriptor->OnlyDistinctValues());
+                    contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression());
                 else
                     contractField = PresentationQueryContractSimpleField::Create(descriptorField->GetUniqueName().c_str(), "CAST(null AS TEXT)", false);
                 }
-            else if (!m_descriptor->OnlyDistinctValues() && descriptorField->IsSystemField() && descriptorField->AsSystemField()->IsECInstanceKeyField())
+            else if (
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
+                !m_descriptor->OnlyDistinctValues() &&
+#endif
+                descriptorField->IsSystemField() && descriptorField->AsSystemField()->IsECInstanceKeyField())
                 {
                 ContentDescriptor::ECInstanceKeyField const& keyField = *descriptorField->AsSystemField()->AsECInstanceKeyField();
                 contractField = CreateInstanceKeyField(keyField, createMergeField);
                 createMergeField = false;
-                }
-            else if (!m_descriptor->OnlyDistinctValues() && descriptorField->IsSystemField() && descriptorField->AsSystemField()->IsECNavigationInstanceIdField())
-                {
-                ContentDescriptor::ECNavigationInstanceIdField const& idField = *descriptorField->AsSystemField()->AsECNavigationInstanceIdField();
-                ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(idField.GetPropertiesField(), m_class);
-                if (nullptr != fieldPropertyForThisContract)
-                    contractField = GetNavigationInstanceIdField(idField.GetUniqueName(), fieldPropertyForThisContract->GetPrefix());
-                else
-                    contractField = GetNavigationInstanceIdField(idField.GetUniqueName(), nullptr);
                 }
 
             if (contractField.IsNull())

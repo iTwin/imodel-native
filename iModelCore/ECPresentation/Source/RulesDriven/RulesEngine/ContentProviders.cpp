@@ -3,6 +3,7 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
+#include <set>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "ContentProviders.h"
@@ -11,6 +12,7 @@
 #include "LoggingHelper.h"
 #include "CustomizationHelper.h"
 #include "NavNodeProviders.h"
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -762,42 +764,17 @@ public:
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderContextR context)
-    : m_context(&context), m_executor(nullptr), m_initialized(false),
-    m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
-    {
-    if (GetContext().IsQueryContext())
-        m_executor = new ContentQueryExecutor(context.GetConnection());
-    if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
-        {
-        m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
-        m_executor->SetUnitSystem(GetContext().GetUnitSystem());
-        }
-    }
+    : m_context(&context), m_initialized(false), m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderCR other)
-    : m_executor(nullptr), m_initialized(false),
-    m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
+    : m_initialized(false), m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
     m_context = ContentProviderContext::Create(*other.m_context);
     m_context->SetCancelationToken(&other.GetContext().GetCancelationToken());
-    if (GetContext().IsQueryContext())
-        m_executor = new ContentQueryExecutor(m_context->GetConnection());
-    if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
-        {
-        m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
-        m_executor->SetUnitSystem(GetContext().GetUnitSystem());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-ContentProvider::~ContentProvider()
-    {
-    DELETE_AND_CLEAR(m_executor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -912,7 +889,7 @@ void ContentProvider::Initialize()
     if (m_initialized)
         return;
 
-    if (nullptr == m_executor)
+    if (!GetContext().IsQueryContext())
         return;
 
     IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
@@ -930,16 +907,41 @@ void ContentProvider::Initialize()
         return;
         }
 
-    m_executor->SetQuery(*query);
-    m_executor->ReadRecords(&GetContext().GetCancelationToken());
-
-    if (GetContext().GetCancelationToken().IsCanceled())
-        return;
-
-    size_t index = 0;
-    ContentSetItemPtr item;
-    while ((item = m_executor->GetRecord(index++)).IsValid())
+    ContentDescriptorCR descriptor = query->GetContract()->GetDescriptor();
+    ContentReader contentReader(*query);
+    if (GetContext().IsPropertyFormattingContext())
         {
+        contentReader.SetPropertyFormatter(GetContext().GetECPropertyFormatter());
+        contentReader.SetUnitSystem(GetContext().GetUnitSystem());
+        }
+    QueryExecutor executor(GetContext().GetConnection(), *query);
+
+    ContentSetItemPtr item;
+    while (QueryExecutorStatus::Row == executor.ReadNext(item, contentReader))
+        {
+        if (GetContext().GetCancelationToken().IsCanceled())
+            {
+            m_records.clear();
+            return;
+            }
+
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
+        if (descriptor.GetDistinctField() != nullptr)
+            {
+            bool skipItem = false;
+            for (size_t i = 0; i < m_records.size(); i++)
+                {
+                if (item->GetDisplayValues() == m_records[i]->GetDisplayValues() && item->GetDisplayLabelDefinition() == m_records[i]->GetDisplayLabelDefinition())
+                    {
+                    skipItem = true;
+                    break;
+                    }
+                }
+            if (skipItem)
+                continue;
+            }
+#endif
+
         LoadNestedContent(*item);
         m_records.push_back(item);
         }
@@ -987,9 +989,7 @@ size_t ContentProvider::GetFullContentSetSize() const
                 countQuery->From(*StringGenericQuery::Create(queryNotSorted->ToString(), queryNotSorted->GetBoundValues()));
 
                 // execute
-                CountQueryExecutor executor(GetContext().GetConnection(), *countQuery);
-                executor.ReadRecords(&GetContext().GetCancelationToken());
-                m_contentSetSize = executor.GetResult();
+                m_contentSetSize = (size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *countQuery);
                 }
             }
         m_fullContentSetSizeDetermined = !GetContext().GetCancelationToken().IsCanceled();
@@ -1024,13 +1024,102 @@ bool ContentProvider::GetContentSetItem(ContentSetItemPtr& item, size_t index) c
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<DisplayValueGroupCPtr> ContentProvider::CreateDistinctValues(Utf8StringCR fieldName) const
+    {
+    if (!GetContext().IsQueryContext())
+        return bvector<DisplayValueGroupCPtr>();
+
+    ContentDescriptorCP descriptor = GetContentDescriptor();
+    if (!descriptor)
+        return bvector<DisplayValueGroupCPtr>();
+
+    ContentDescriptor::Field const* field = ContainerHelpers::FindFirst<bvector<ContentDescriptor::Field*>, ContentDescriptor::Field const*>(descriptor->GetAllFields(), [&fieldName](auto const& f)
+        {
+        return f->GetUniqueName().Equals(fieldName);
+        }, nullptr);
+    if (!field)
+        return bvector<DisplayValueGroupCPtr>();
+
+    if (!field->IsPropertiesField() && !field->IsDisplayLabelField() && !field->IsCalculatedPropertyField())
+        {
+        // WIP - add support for non-properties fields (nested content, structs)
+        return bvector<DisplayValueGroupCPtr>();
+        }
+
+    ContentQueryCPtr contentQuery = _GetQuery();
+    if (contentQuery.IsNull())
+        return bvector<DisplayValueGroupCPtr>();
+
+    RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create(
+        {
+        PresentationQueryContractSimpleField::Create(fieldName.c_str(), fieldName.c_str(), false)
+        });
+    ComplexGenericQueryPtr distinctValuesQuery = ComplexGenericQuery::Create();
+    distinctValuesQuery->SelectContract(*contract);
+    distinctValuesQuery->From(*StringGenericQuery::Create(contentQuery->ToString(), contentQuery->GetBoundValues()));
+    distinctValuesQuery->GroupByContract(*contract);
+
+    IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
+    ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
+    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
+        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetRulesetVariables(), &GetContext().GetUsedVariablesListener(),
+        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
+    if (GetContext().IsLocalizationContext())
+        fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
+
+    DistinctValuesReader distinctValuesReader(*field);
+    if (GetContext().IsPropertyFormattingContext())
+        {
+        distinctValuesReader.SetPropertyFormatter(GetContext().GetECPropertyFormatter());
+        distinctValuesReader.SetUnitSystem(GetContext().GetUnitSystem());
+        }
+    QueryExecutor executor(GetContext().GetConnection(), *distinctValuesQuery);
+
+    bpair<Utf8String, ECValue> value;
+    bmap<Utf8String, bvector<ECValue>> values;
+    while (QueryExecutorStatus::Row == executor.ReadNext(value, distinctValuesReader))
+        {
+        if (GetContext().GetCancelationToken().IsCanceled())
+            return bvector<DisplayValueGroupCPtr>();
+
+        auto iter = values.find(value.first);
+        if (values.end() == iter)
+            values.Insert(value.first, {value.second});
+        else
+            iter->second.push_back(value.second);
+        }
+
+    return ContainerHelpers::TransformContainer<bvector<DisplayValueGroupCPtr>, bmap<Utf8String, bvector<ECValue>>>(values, [](auto const& entry)
+        {
+        DisplayValueGroupPtr group = new DisplayValueGroup(entry.first);
+        for (ECValueCR rawValue : entry.second)
+            group->GetRawValues().push_back(ValueHelpers::GetJsonFromECValue(rawValue, &group->GetRawValuesAllocator()));
+        return group;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+IDataSourceCPtr<DisplayValueGroupCPtr> ContentProvider::GetDistinctValues(Utf8StringCR fieldName) const
+    {
+    auto cacheIter = m_distinctValuesCache.find(fieldName);
+    if (m_distinctValuesCache.end() == cacheIter)
+        {
+        bvector<DisplayValueGroupCPtr> values = CreateDistinctValues(fieldName);
+        if (GetContext().GetCancelationToken().IsCanceled())
+            return EmptyDataSource<DisplayValueGroupCPtr>::Create();
+        cacheIter = m_distinctValuesCache.Insert(fieldName, values).first;
+        }
+    return VectorDataSource<DisplayValueGroupCPtr>::Create(cacheIter->second);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProvider::InvalidateContent()
-    {
-    _Reset();
-    m_executor->Reset();
-    }
+void ContentProvider::InvalidateContent() {_Reset();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017

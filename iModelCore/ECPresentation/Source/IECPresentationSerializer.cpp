@@ -91,18 +91,6 @@ rapidjson::Document IECPresentationSerializer::AsJson(ContentDescriptor::ECInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IECPresentationSerializer::AsJson(ContentDescriptor::ECNavigationInstanceIdField const& ecNavigationInstanceIdField,
-    rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    _SystemFieldAsJson(ecNavigationInstanceIdField, json);
-    _AsJson(ecNavigationInstanceIdField, json);
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document IECPresentationSerializer::AsJson(FieldEditorJsonParams const& jsonParams,
     rapidjson::Document::AllocatorType* allocator) const
     {

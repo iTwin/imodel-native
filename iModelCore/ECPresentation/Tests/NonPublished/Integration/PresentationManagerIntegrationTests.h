@@ -17,7 +17,7 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     static ECDbTestProject* s_project;
 
     RulesDrivenECPresentationManager* m_manager;
-    IConnectionManager* m_connections;
+    std::shared_ptr<IConnectionManager> m_connectionManager;
     DelayLoadingRuleSetLocaterPtr m_locater;
     SQLangLocalizationProvider m_localizationProvider;
     RuntimeJsonLocalState m_localState;
@@ -28,11 +28,14 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     static void ShutDownTestL10N();
 
     PresentationManagerIntegrationTests() : m_manager(nullptr) {}
-    virtual IConnectionManager* _CreateConnectionManager();
+    virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager();
     virtual void _ConfigureManagerParams(RulesDrivenECPresentationManager::Params&);
     virtual ECDbR _GetProject();
     virtual void SetUp() override;
     virtual void TearDown() override;
+
+    RulesDrivenECPresentationManager::Params CreateManagerParams();
+    void ReCreatePresentationManager(RulesDrivenECPresentationManager::Params const&);
 
     void SetUpDefaultLabelRule(PresentationRuleSetR rules);
 
@@ -85,7 +88,7 @@ struct UpdateTests : PresentationManagerIntegrationTests
     virtual void SetUp() override;
     virtual ECDbR _GetProject() override;
     virtual void _ConfigureManagerParams(RulesDrivenECPresentationManager::Params&) override;
-    virtual IConnectionManager* _CreateConnectionManager() override;
+    virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager() override;
 
     void Sync() { m_manager->GetTasksCompletion().wait(); }
     };

@@ -21,7 +21,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_ReturnsInstanceQueryWhen
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    
+
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -30,7 +30,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_ReturnsInstanceQueryWhen
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_ReturnsInstanceQueryWhenSelectedOneInstanceNode");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -43,7 +43,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_ReturnsInstanceQueryWhen
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    
+
     TestParsedInput info(*ecClass, {ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)});
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -52,7 +52,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_ReturnsInstanceQueryWhen
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_ReturnsInstanceQueryWhenSelectedMultipleInstanceNodesOfTheSameClass");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -66,9 +66,9 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_ReturnsInstanceQueryWhen
     ECClassCP ecClass1 = GetECClass("Basic1", "Class1A");
     ECClassCP ecClass2 = GetECClass("Basic2", "Class2");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    
+
     TestParsedInput info({
-        bpair<ECClassCP, ECInstanceId>(ecClass1, {ECInstanceId((uint64_t)123)}), 
+        bpair<ECClassCP, ECInstanceId>(ecClass1, {ECInstanceId((uint64_t)123)}),
         bpair<ECClassCP, ECInstanceId>(ecClass2, {ECInstanceId((uint64_t)123)})
         });
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -78,7 +78,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_ReturnsInstanceQueryWhen
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_ReturnsInstanceQueryWhenSelectedMultipleInstanceNodesOfDifferentClasses");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -91,7 +91,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_FiltersSelectedNodesBySc
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     SelectedNodeInstancesSpecification spec(1, false, "Basic2", "", false);
-    
+
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsNull());
@@ -104,7 +104,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_FiltersSelectedNodesByCl
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     SelectedNodeInstancesSpecification spec(1, false, "", "Class1B", false);
-    
+
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsNull());
@@ -119,10 +119,10 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_FiltersSelectedNodesByCl
     ECClassCP classB = GetECClass("Basic4", "ClassB");
     ECClassCP classC = GetECClass("Basic4", "ClassC");
     SelectedNodeInstancesSpecification spec(1, false, "", "ClassB", true);
-    
+
     TestParsedInput info({
-        bpair<ECClassCP, ECInstanceId>(classA, {ECInstanceId((uint64_t)123)}), 
-        bpair<ECClassCP, ECInstanceId>(classB, {ECInstanceId((uint64_t)123)}), 
+        bpair<ECClassCP, ECInstanceId>(classA, {ECInstanceId((uint64_t)123)}),
+        bpair<ECClassCP, ECInstanceId>(classB, {ECInstanceId((uint64_t)123)}),
         bpair<ECClassCP, ECInstanceId>(classC, {ECInstanceId((uint64_t)123)})
         });
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -132,7 +132,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_FiltersSelectedNodesByCl
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_FiltersSelectedNodesByClassNamePolymorphically");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -146,7 +146,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesHiddenProperty)
     ECClassCP class3 = GetECClass("SchemaComplex", "Class3");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class3", false);
     spec.AddPropertyOverride(*new PropertySpecification("PropertyC", 1000, "", "", false));
-    
+
     TestParsedInput info(*class3, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -155,7 +155,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesHiddenProperty)
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesHiddenProperty");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -178,7 +178,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenProperti
     ECClassCP ecClass = GetECClass("PhysicalElement");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     spec.AddPropertyOverride(*new PropertySpecification("*", 1000, "", "", false));
-    
+
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -187,7 +187,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenProperti
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -213,7 +213,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenBaseClas
     ContentModifier* modifier = new ContentModifier(baseClass->GetSchema().GetName(), baseClass->GetName());
     modifier->AddPropertyOverride(*new PropertySpecification("*", 1000, "", "", false));
     m_ruleset->AddPresentationRule(*modifier);
-    
+
     TestParsedInput info(*derivedClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -222,7 +222,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenBaseClas
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -247,7 +247,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenDerivedC
     ContentModifier* modifier = new ContentModifier(derivedClass->GetSchema().GetName(), derivedClass->GetName());
     modifier->AddPropertyOverride(*new PropertySpecification("*", 1000, "", "", false));
     m_ruleset->AddPresentationRule(*modifier);
-    
+
     TestParsedInput info(*derivedClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -256,7 +256,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenDerivedC
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -271,7 +271,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class3", false);
     spec.AddPropertyOverride(*new PropertySpecification("PropertyC", 1000, "", "", false));
     spec.AddPropertyOverride(*new PropertySpecification("PropertyD", 1000, "", "", false));
-    
+
     TestParsedInput info(*class3, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -280,7 +280,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesMultipleHiddenProperties");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -296,9 +296,9 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "", false);
     spec.AddPropertyOverride(*new PropertySpecification("PropertyB", 1000, "", "", false));
     spec.AddPropertyOverride(*new PropertySpecification("PropertyC", 1000, "", "", false));
-    
+
     TestParsedInput info({
-        bpair<ECClassCP, ECInstanceId>(class2, {ECInstanceId((uint64_t)123)}), 
+        bpair<ECClassCP, ECInstanceId>(class2, {ECInstanceId((uint64_t)123)}),
         bpair<ECClassCP, ECInstanceId>(class3, {ECInstanceId((uint64_t)123)})
         });
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -308,7 +308,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesMultipleHiddenPropertiesOfDifferentClasses");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -323,7 +323,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsSingleRelatedPropert
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "IntProperty", RelationshipMeaning::RelatedInstance));
-    
+
     TestParsedInput info(*gadgetClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -332,7 +332,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsSingleRelatedPropert
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsSingleRelatedProperty");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -347,8 +347,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsMultipleRelatedPrope
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "IntProperty,LongProperty", RelationshipMeaning::RelatedInstance));
-    
-    TestParsedInput info(*gadgetClass, ECInstanceId((uint64_t)123));    
+
+    TestParsedInput info(*gadgetClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -356,7 +356,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsMultipleRelatedPrope
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsMultipleRelatedProperties");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -371,7 +371,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsAllRelatedProperties
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Sprocket", false);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "", RelationshipMeaning::RelatedInstance));
-    
+
     TestParsedInput info(*sprocketClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -380,7 +380,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsAllRelatedProperties
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsAllRelatedProperties");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -395,7 +395,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsBackwardRelatedPrope
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class2", false);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "SchemaComplex:Class1HasClass2And3", "SchemaComplex:Class1", "", RelationshipMeaning::RelatedInstance));
-    
+
     TestParsedInput info(*class2, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -404,7 +404,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsBackwardRelatedPrope
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsBackwardRelatedProperties");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -424,7 +424,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsBothDirectionsRelate
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Both,
         "RulesEngineTest:WidgetHasGadget,GadgetHasSprocket", "", "IntProperty,Gadget", RelationshipMeaning::RelatedInstance));
-    
+
     TestParsedInput info(*gadget, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -433,7 +433,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsBothDirectionsRelate
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsBothDirectionsRelatedProperties");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -448,7 +448,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsPropertiesOfTheSameC
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget,WidgetHasGadgets", "", "Description", RelationshipMeaning::RelatedInstance));
-    
+
     TestParsedInput info(*gadgetClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -457,7 +457,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsPropertiesOfTheSameC
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsPropertiesOfTheSameClassFoundByFollowingDifferentRelationships");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -475,7 +475,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedPropertiesOfTh
     relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget,WidgetHasGadgets", "", "IntProperty", RelationshipMeaning::RelatedInstance));
     spec.AddRelatedProperty(*relatedPropertiesSpec);
-    
+
     TestParsedInput info(*sprocketClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -484,7 +484,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedPropertiesOfTh
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsNestedPropertiesOfTheSameClassFoundByFollowingDifferentRelationships");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -502,7 +502,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedRelatedPropert
     relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget", "", "Description", RelationshipMeaning::RelatedInstance));
     spec.AddRelatedProperty(*relatedPropertiesSpec);
-    
+
     TestParsedInput info(*sprocketClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -511,7 +511,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedRelatedPropert
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsNestedRelatedProperties");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -529,7 +529,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedRelatedPropert
     relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget", "", "Description", RelationshipMeaning::RelatedInstance));
     spec.AddRelatedProperty(*relatedPropertiesSpec);
-    
+
     TestParsedInput info(*sprocketClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -538,12 +538,13 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedRelatedPropert
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_AddsNestedRelatedProperties2");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
     }
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -563,13 +564,14 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_SelectsRawValueAndGroups
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
         << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
         << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
@@ -593,7 +595,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ap
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_InstanceLabelOverride_AppliedByPriority");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -611,8 +613,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ov
 
     // set up selection
     TestParsedInput info({
-        bpair<ECClassCP, ECInstanceId>(gadgetClass, {ECInstanceId((uint64_t)1)}), 
-        bpair<ECClassCP, ECInstanceId>(widgetClass, {ECInstanceId((uint64_t)2)}), 
+        bpair<ECClassCP, ECInstanceId>(gadgetClass, {ECInstanceId((uint64_t)1)}),
+        bpair<ECClassCP, ECInstanceId>(widgetClass, {ECInstanceId((uint64_t)2)}),
         });
 
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
@@ -627,7 +629,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ov
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideSpecifiedClassInstancesLabelsWhenMultipleClassesSelected");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -645,8 +647,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ov
 
     // set up selection
     TestParsedInput info({
-        bpair<ECClassCP, ECInstanceId>(gadgetClass, {ECInstanceId((uint64_t)1)}), 
-        bpair<ECClassCP, ECInstanceId>(widgetClass, {ECInstanceId((uint64_t)2)}), 
+        bpair<ECClassCP, ECInstanceId>(gadgetClass, {ECInstanceId((uint64_t)1)}),
+        bpair<ECClassCP, ECInstanceId>(widgetClass, {ECInstanceId((uint64_t)2)}),
         });
 
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
@@ -663,7 +665,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ov
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
@@ -692,5 +694,3 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_JoinsRelatedInstanceWith
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
     }
-
-

@@ -31,42 +31,6 @@ void QueryBasedNodesProviderTests::SetUp()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryBasedNodesProviderTests, DoesntQueryNodesIfNotNecessary)
-    {
-    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
-
-    RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
-    
-    // checking for nodes doesnt query them
-    EXPECT_TRUE(provider->HasNodes());
-    EXPECT_FALSE(provider->GetExecutor().IsReadStarted());
-
-    // requesting nodes count doesnt query them
-    EXPECT_EQ(3, provider->GetNodesCount());
-    EXPECT_FALSE(provider->GetExecutor().IsReadStarted());
-
-    // requesting a node should customize it
-    JsonNavNodePtr node;
-    provider->GetNode(node, 1);
-    EXPECT_TRUE(NavNodeExtendedData(*node).IsCustomized());
-
-    // other nodes should still be not customized
-    node = provider->GetExecutor().GetNode(0);
-    EXPECT_FALSE(NavNodeExtendedData(*node).IsCustomized());
-    node = provider->GetExecutor().GetNode(2);
-    EXPECT_FALSE(NavNodeExtendedData(*node).IsCustomized());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
@@ -134,5 +98,5 @@ TEST_F(QueryBasedNodesProviderTests, HasNodesDoesntQueryChildrenIfAlwaysReturnsC
 
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     EXPECT_TRUE(provider->HasNodes());
-    EXPECT_FALSE(provider->GetExecutor().IsReadStarted());
+    EXPECT_EQ(0, m_nodesCache.GetCachedChildrenCount(0));
     }

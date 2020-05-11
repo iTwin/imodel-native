@@ -36,7 +36,7 @@ struct RulesDrivenECPresentationManagerContentTests : PresentationManagerIntegra
 
     void CloseConnection(IConnectionCR connection)
         {
-        static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(connection);
+        static_cast<TestConnectionManager&>(*m_connectionManager).NotifyConnectionClosed(connection);
         }
 };
 
@@ -4397,7 +4397,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsRemovedF
     ContentDescriptorCPtr descriptor1 = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
 
     // simulate re-opening
-    CloseConnection(*m_connections->GetConnection(s_project->GetECDb()));
+    CloseConnection(*m_manager->GetConnections().GetConnection(s_project->GetECDb()));
     m_manager->GetConnections().CreateConnection(s_project->GetECDb());
 
     // request again
@@ -10728,10 +10728,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
     EXPECT_STREQ(FIELD_NAME(classL, "LengthProperty"), descriptor->GetVisibleFields()[1]->GetUniqueName().c_str());
     }
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
+TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValues)
     {
     // set up the dataset
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
@@ -10785,7 +10786,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Kilinskas                06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromRelatedInstancesWithSeveralRelationships)
+TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValuesFromRelatedInstancesWithSeveralRelationships)
     {
     ECRelationshipClassCP widgetHasGadget = m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
     ECRelationshipClassCP widgetHasGadgets = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
@@ -10858,7 +10859,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromRelate
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Kilinskas                06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfCalculatedProperty)
+TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValuesOfCalculatedProperty)
     {
     //set up data
     ECRelationshipClassCP widgetHasGadgets = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
@@ -10937,7 +10938,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfCalculat
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Kilinskas                06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayLabel)
+TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValuesOfDisplayLabel)
     {
     ECRelationshipClassCP widgetHasGadgets = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
 
@@ -10997,7 +10998,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayL
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMergedField)
+TEST_F (RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValuesFromMergedField)
     {
     // insert some widget & gadget instances
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
@@ -11048,6 +11049,422 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     EXPECT_STREQ("GadgetID", jsonValues[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID")].GetString());
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
     EXPECT_STREQ("WidgetID", jsonValues2[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID")].GetString());
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctDisplayLabelValues, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctDisplayLabelValues)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("B"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("B"));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*contentRule);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "Label"));
+
+    // get distinct values
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create(), nullptr, options.GetJson()).get();
+    PagedDataContainer<DisplayValueGroupCPtr> values = m_manager->GetDistinctValues(*descriptor, ContentDescriptor::DisplayLabelField::NAME, PageOptions()).get();
+
+    // validate
+    ASSERT_EQ(2, values.GetSize());
+
+    EXPECT_STREQ("A", values[0]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[0]->GetRawValues().size());
+    EXPECT_EQ(rapidjson::Value("A"), values[0]->GetRawValues()[0]);
+
+    EXPECT_STREQ("B", values[1]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[1]->GetRawValues().size());
+    EXPECT_EQ(rapidjson::Value("B"), values[1]->GetRawValues()[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctCalculatedValues, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Width" typeName="int" />
+        <ECProperty propertyName="Length" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctCalculatedValues)
+    {
+    // set up data
+    ECClassCP classA = GetClass("A");
+
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Width", ECValue(1)); instance.SetValue("Length", ECValue(4));}); // Area = 4
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Width", ECValue(2)); instance.SetValue("Length", ECValue(3));}); // Area = 6
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Width", ECValue(3)); instance.SetValue("Length", ECValue(2));}); // Area = 6
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Width", ECValue(4)); instance.SetValue("Length", ECValue(1));}); // Area = 4
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Area", 1000, "this.Width * this.Length"));
+    rules->AddPresentationRule(*modifier);
+
+    // get distinct values
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptor::Field const* calculatedField = descriptor->GetAllFields().back();
+    PagedDataContainer<DisplayValueGroupCPtr> values = m_manager->GetDistinctValues(*descriptor, calculatedField->GetUniqueName(), PageOptions()).get();
+
+    // validate
+    ASSERT_EQ(2, values.GetSize());
+
+    EXPECT_STREQ("4", values[0]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[0]->GetRawValues().size());
+    EXPECT_EQ(rapidjson::Value("4"), values[0]->GetRawValues()[0]);
+
+    EXPECT_STREQ("6", values[1]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[1]->GetRawValues().size());
+    EXPECT_EQ(rapidjson::Value("6"), values[1]->GetRawValues()[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctPrimitiveValues, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctPrimitiveValues)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("Test1"));});
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("Test1"));});
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("Test2"));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*contentRule);
+
+    // get distinct values
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    PagedDataContainer<DisplayValueGroupCPtr> values = m_manager->GetDistinctValues(*descriptor, FIELD_NAME(classA, "Prop"), PageOptions()).get();
+
+    // validate
+    ASSERT_EQ(2, values.GetSize());
+
+    EXPECT_STREQ("Test1", values[0]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[0]->GetRawValues().size());
+    EXPECT_EQ(rapidjson::Value("Test1"), values[0]->GetRawValues()[0]);
+
+    EXPECT_STREQ("Test2", values[1]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[1]->GetRawValues().size());
+    EXPECT_EQ(rapidjson::Value("Test2"), values[1]->GetRawValues()[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctNavigationPropertyValues, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECNavigationProperty propertyName="A" relationshipName="A_To_B" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_To_B" strength="referencing" strengthDirection="Forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassC Uses ClassA" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassA is used by ClassC" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationPropertyValues)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP rel = GetClass("A_To_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A1"));});
+    IECInstancePtr b11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a1, *b11);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a1, *b12);
+
+    IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A2"));});
+    IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A2"));});
+    IECInstancePtr b21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a21, *b21);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a22, *b22);
+
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A3"));});
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a3, *b3);
+
+    IECInstancePtr b4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+
+    // create a ruleset
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", true);
+    m_locater->AddRuleSet(*ruleset);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), true));
+    ruleset->AddPresentationRule(*rule);
+
+    ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "Label"));
+
+    // get distinct values
+    RulesDrivenECPresentationManager::ContentOptions options(ruleset->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    PagedDataContainer<DisplayValueGroupCPtr> values = m_manager->GetDistinctValues(*descriptor, FIELD_NAME(classB, "A"), PageOptions()).get();
+
+    // validate
+    ASSERT_EQ(4, values.GetSize());
+    size_t valueIndex = 0;
+
+    EXPECT_STREQ("", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_TRUE(values[valueIndex]->GetRawValues()[0].IsNull());
+    ++valueIndex;
+
+    EXPECT_STREQ("A1", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ(RulesEngineTestHelpers::GetInstanceKey(*a1).GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("A2", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(2, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ(RulesEngineTestHelpers::GetInstanceKey(*a21).GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), values[valueIndex]->GetRawValues()[0].GetString());
+    EXPECT_STREQ(RulesEngineTestHelpers::GetInstanceKey(*a22).GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), values[valueIndex]->GetRawValues()[1].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("A3", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ(RulesEngineTestHelpers::GetInstanceKey(*a3).GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), values[valueIndex]->GetRawValues()[0].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctRelatedPrimitivePropertyValues, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_To_B" strength="referencing" strengthDirection="Forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassC Uses ClassA" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassA is used by ClassC" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctRelatedPrimitivePropertyValues)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP rel = GetClass("A_To_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A1")); });
+    IECInstancePtr b11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a1, *b11);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a1, *b12);
+
+    IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A2")); });
+    IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A2")); });
+    IECInstancePtr b21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a21, *b21);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a22, *b22);
+
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("A3")); });
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *a3, *b3);
+
+    IECInstancePtr b4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+
+    // create a ruleset
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", true);
+    m_locater->AddRuleSet(*ruleset);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    auto spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), true);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Backward)),
+        {new PropertySpecification("Label")}, RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    ruleset->AddPresentationRule(*rule);
+
+    // get distinct values
+    RulesDrivenECPresentationManager::ContentOptions options(ruleset->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    PagedDataContainer<DisplayValueGroupCPtr> values = m_manager->GetDistinctValues(*descriptor, RELATED_FIELD_NAME(classB, classA, "Label"), PageOptions()).get();
+
+    // validate
+    ASSERT_EQ(4, values.GetSize());
+    size_t valueIndex = 0;
+
+    EXPECT_STREQ("", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_TRUE(values[valueIndex]->GetRawValues()[0].IsNull());
+    ++valueIndex;
+
+    EXPECT_STREQ("A1", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("A1", values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("A2", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("A2", values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("A3", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("A3", values[valueIndex]->GetRawValues()[0].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctPrimitiveValuesFromMergedField, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctPrimitiveValuesFromMergedField)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("Label1"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("Label2"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("Label3"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("Label1"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("Label2"));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false));
+    rules->AddPresentationRule(*contentRule);
+
+    // get distinct values
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    PagedDataContainer<DisplayValueGroupCPtr> values = m_manager->GetDistinctValues(*descriptor, FIELD_NAME((bvector<ECClassCP>{classA, classB}), "Label"), PageOptions()).get();
+
+    // validate
+    ASSERT_EQ(3, values.GetSize());
+    size_t valueIndex = 0;
+
+    EXPECT_STREQ("Label1", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("Label1", values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("Label2", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("Label2", values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("Label3", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("Label3", values[valueIndex]->GetRawValues()[0].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctPrimitiveValuesFromMergedFieldWhenFormatterFormatsThemDifferently, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctPrimitiveValuesFromMergedFieldWhenFormatterFormatsThemDifferently)
+    {
+    // set up manager with a custom formatter
+    TestPropertyFormatter formatter;
+    formatter.SetValueFormatter([](Utf8StringR result, ECPropertyCR prop, ECValueCR value, Utf8CP, ECPresentation::UnitSystem)
+        {
+        result = Utf8PrintfString("%s-%s", prop.GetClass().GetName().c_str(), value.ToString().c_str());
+        return SUCCESS;
+        });
+    RulesDrivenECPresentationManager::Params managerParams = CreateManagerParams();
+    managerParams.SetECPropertyFormatter(&formatter);
+    ReCreatePresentationManager(managerParams);
+
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("Label"));});
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("Label"));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false));
+    rules->AddPresentationRule(*contentRule);
+
+    // get distinct values
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    PagedDataContainer<DisplayValueGroupCPtr> values = m_manager->GetDistinctValues(*descriptor, FIELD_NAME((bvector<ECClassCP>{classA, classB}), "Label"), PageOptions()).get();
+
+    // validate
+    ASSERT_EQ(2, values.GetSize());
+    size_t valueIndex = 0;
+
+    EXPECT_STREQ("A-Label", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("Label", values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("B-Label", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("Label", values[valueIndex]->GetRawValues()[0].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11101,6 +11518,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     EXPECT_TRUE(jsonValues2[FIELD_NAME(m_gadgetClass, "Widget")].IsNull());
     }
 
+#ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -11148,6 +11566,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetDisplayValues();
     EXPECT_STREQ("WidgetID", jsonValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                01/2018
@@ -17059,7 +17478,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppendsTheSameRelatedConten
         NESTED_CONTENT_FIELD_NAME_C(elementClass, myAspectClass, 2),
         myAspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
         FIELD_NAME(myAspectClass, "Prop1"), FIELD_NAME(myAspectClass, "Prop1"),
-        FIELD_NAME_C(myAspectClass, "Prop1", 2), FIELD_NAME_C(myAspectClass, "Prop1", 2)        
+        FIELD_NAME_C(myAspectClass, "Prop1", 2), FIELD_NAME_C(myAspectClass, "Prop1", 2)
         ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -17071,7 +17490,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppendsTheSameRelatedConten
 //=======================================================================================
 struct RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests : RulesDrivenECPresentationManagerContentTests
     {
-    TestPropertyFormatter m_propertyFormatter;
+    StubPropertyFormatter m_propertyFormatter;
     RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests()
         : RulesDrivenECPresentationManagerContentTests(), m_propertyFormatter(false, true)
         {}

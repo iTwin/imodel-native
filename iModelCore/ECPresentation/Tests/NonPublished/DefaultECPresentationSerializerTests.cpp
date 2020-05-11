@@ -956,41 +956,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerialization)
-    {
-    ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField propertiesField(ContentDescriptor::Category(), "my name", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
-    ContentDescriptor::ECNavigationInstanceIdField navigationInstanceIdField(propertiesField);
-    navigationInstanceIdField.SetUniqueName(navigationInstanceIdField.CreateName());
-    rapidjson::Document actual = navigationInstanceIdField.AsJson();
-
-    rapidjson::Document expected;
-    expected.Parse(Utf8PrintfString(R"({
-        "Category": {
-            "Name": "",
-            "DisplayLabel": "",
-            "Description": "",
-            "Expand": false,
-            "Priority": 0
-        },
-        "Name": "/id/my name",
-        "DisplayLabel": "",
-        "Type": {
-            "TypeName": "ECInstanceId",
-            "ValueFormat": "Primitive"
-        },
-        "IsReadOnly": true,
-        "Priority": 0
-    })").c_str());
-
-    EXPECT_EQ(expected, actual)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mantas.Kontrimas                03/2018
-//---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, CompositeContentFieldSerialization)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");

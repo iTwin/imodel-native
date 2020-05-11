@@ -8,6 +8,7 @@
 #include "RulesPreprocessor.h"
 #include "DataSourceInfo.h"
 #include "UsedClassesListener.h"
+#include "NavigationQueryResultsReader.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -608,8 +609,6 @@ struct QueryBasedNodesProvider : MultiNavNodesProvider
 private:
     NavigationQueryCPtr m_query;
     mutable bmap<ECClassId, bool> m_usedClassIds;
-    mutable NavigationQueryExecutor m_executor;
-    size_t m_executorIndex;
     size_t m_offset;
 
 private:
@@ -634,8 +633,6 @@ public:
         {
         return WithInitialize(new QueryBasedNodesProvider(context, query, usedClassIds));
         }
-    NavigationQueryExecutor const& GetExecutor() const {return m_executor;}
-    NavigationQueryExecutor& GetExecutorR() {return m_executor;}
     bmap<ECClassId, bool> const& GetUsedClassIds() const {return m_usedClassIds;}
     void SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const&);
     void SetOffset(size_t value) {m_offset = value;}

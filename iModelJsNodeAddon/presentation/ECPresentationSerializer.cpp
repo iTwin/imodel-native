@@ -23,7 +23,7 @@ ECClassCP IModelJsECPresentationSerializer::GetClassFromFullName(IConnectionCR c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ConnectionEvent const&, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ConnectionEvent const&, rapidjson::Document::AllocatorType* allocator) const
     {
     BeAssert(false && "Not expected to be used");
     return rapidjson::Document(allocator);
@@ -32,7 +32,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ConnectionEvent co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentFieldEditor const& editor, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentFieldEditor const& editor, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -54,7 +54,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentFieldEditor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Category const& category, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Category const& category, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -69,7 +69,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Property const& property, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Property const& property, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -107,7 +107,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_FieldAsJson(ContentDescriptor::Field const& field, RapidJsonDocumentR fieldBaseJson) const 
+void IModelJsECPresentationSerializer::_FieldAsJson(ContentDescriptor::Field const& field, RapidJsonDocumentR fieldBaseJson) const
     {
     fieldBaseJson.SetObject();
     fieldBaseJson.AddMember("category", field.GetCategory().AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
@@ -124,7 +124,7 @@ void IModelJsECPresentationSerializer::_FieldAsJson(ContentDescriptor::Field con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::ECPropertiesField const& ecPropertiesField, RapidJsonDocumentR fieldBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::ECPropertiesField const& ecPropertiesField, RapidJsonDocumentR fieldBaseJson) const
     {
     rapidjson::Value propertiesJson(rapidjson::kArrayType);
     for (ContentDescriptor::Property const& prop : ecPropertiesField.GetProperties())
@@ -135,7 +135,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::ECPropertiesFi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_NestedContentFieldAsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const 
+void IModelJsECPresentationSerializer::_NestedContentFieldAsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const
     {
     if (nestedContentField.ShouldAutoExpand())
         fieldBaseJson.AddMember("autoExpand", nestedContentField.ShouldAutoExpand(), fieldBaseJson.GetAllocator());
@@ -149,7 +149,7 @@ void IModelJsECPresentationSerializer::_NestedContentFieldAsJson(ContentDescript
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::CompositeContentField const& compositeContentField, RapidJsonDocumentR nestedContentBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::CompositeContentField const& compositeContentField, RapidJsonDocumentR nestedContentBaseJson) const
     {
     nestedContentBaseJson.AddMember("contentClassInfo", IModelJsECPresentationSerializer::_AsJson(compositeContentField.GetContentClass(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
     nestedContentBaseJson.AddMember("pathToPrimaryClass", rapidjson::Document(rapidjson::kArrayType), nestedContentBaseJson.GetAllocator()); // just for backwards compatibility
@@ -158,7 +158,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::CompositeConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::RelatedContentField const& relatedContentField, RapidJsonDocumentR nestedContentBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::RelatedContentField const& relatedContentField, RapidJsonDocumentR nestedContentBaseJson) const
     {
     nestedContentBaseJson.AddMember("contentClassInfo", IModelJsECPresentationSerializer::_AsJson(relatedContentField.GetContentClass(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator()); // just for backwards compatibility
     nestedContentBaseJson.AddMember("pathToPrimaryClass", IModelJsECPresentationSerializer::_AsJson(RelatedClassPath(relatedContentField.GetPathFromSelectToContentClass()).Reverse("", false), nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
@@ -209,7 +209,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(HierarchyUpdateRec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const
     {
 #ifdef wip
     paramsBaseJson.CopyFrom(jsonParams.GetJson(), paramsBaseJson.GetAllocator());
@@ -219,7 +219,7 @@ void IModelJsECPresentationSerializer::_AsJson(FieldEditorJsonParams const& json
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(FieldEditorMultilineParams const& multilineParams, RapidJsonDocumentR paramsBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(FieldEditorMultilineParams const& multilineParams, RapidJsonDocumentR paramsBaseJson) const
     {
 #ifdef wip
     paramsBaseJson.SetObject();
@@ -230,7 +230,7 @@ void IModelJsECPresentationSerializer::_AsJson(FieldEditorMultilineParams const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(FieldEditorRangeParams const& rangeParams, RapidJsonDocumentR paramsBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(FieldEditorRangeParams const& rangeParams, RapidJsonDocumentR paramsBaseJson) const
     {
 #ifdef wip
     paramsBaseJson.SetObject();
@@ -250,7 +250,7 @@ void IModelJsECPresentationSerializer::_AsJson(FieldEditorRangeParams const& ran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(FieldEditorSliderParams const& sliderParams, RapidJsonDocumentR paramsBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(FieldEditorSliderParams const& sliderParams, RapidJsonDocumentR paramsBaseJson) const
     {
 #ifdef wip
     paramsBaseJson.SetObject();
@@ -265,7 +265,7 @@ void IModelJsECPresentationSerializer::_AsJson(FieldEditorSliderParams const& sl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_TypeDescriptionAsJson(ContentDescriptor::Field::TypeDescription const& typeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const 
+void IModelJsECPresentationSerializer::_TypeDescriptionAsJson(ContentDescriptor::Field::TypeDescription const& typeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.SetObject();
     typeDescriptionBaseJson.AddMember("typeName", rapidjson::Value(typeDescription.GetTypeName().c_str(), typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
@@ -274,7 +274,7 @@ void IModelJsECPresentationSerializer::_TypeDescriptionAsJson(ContentDescriptor:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::PrimitiveTypeDescription const&, RapidJsonDocumentR typeDescriptionBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::PrimitiveTypeDescription const&, RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("valueFormat", "Primitive", typeDescriptionBaseJson.GetAllocator());
     }
@@ -282,7 +282,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::Primiti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::ArrayTypeDescription const& arrayTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::ArrayTypeDescription const& arrayTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("valueFormat", "Array", typeDescriptionBaseJson.GetAllocator());
     typeDescriptionBaseJson.AddMember("memberType", arrayTypeDescription.GetMemberType()->AsJson(&typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
@@ -291,7 +291,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::ArrayTy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::StructTypeDescription const& structTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::StructTypeDescription const& structTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("valueFormat", "Struct", typeDescriptionBaseJson.GetAllocator());
     rapidjson::Value members(rapidjson::kArrayType);
@@ -309,7 +309,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::StructT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("valueFormat", "Struct", typeDescriptionBaseJson.GetAllocator());
     rapidjson::Value members(rapidjson::kArrayType);
@@ -327,7 +327,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContentDescriptor::Field::NestedC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -340,7 +340,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECClassCR ecClass,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -397,7 +397,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentDescriptor 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -466,9 +466,24 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContentSetItem con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                 05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(DisplayValueGroupCR value, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("displayValue", rapidjson::Value(value.GetDisplayValue().c_str(), json.GetAllocator()), json.GetAllocator());
+    rapidjson::Value rawValuesJson(rapidjson::kArrayType);
+    for (RapidJsonValueCR rawValue : value.GetRawValues())
+        rawValuesJson.PushBack(rapidjson::Value(rawValue, json.GetAllocator()), json.GetAllocator());
+    json.AddMember("groupedRawValues", rawValuesJson, json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -480,7 +495,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECClassInstanceKey
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(Content const& content, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(Content const& content, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -501,7 +516,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(Content const& con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECInstanceChangeResult const&, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECInstanceChangeResult const&, rapidjson::Document::AllocatorType* allocator) const
     {
     BeAssert(false && "Not expected to be used");
     return rapidjson::Document(allocator);
@@ -510,7 +525,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ECInstanceChangeRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_NavNodeKeyAsJson(NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const 
+void IModelJsECPresentationSerializer::_NavNodeKeyAsJson(NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.SetObject();
     navNodeKeyBaseJson.AddMember("type", rapidjson::Value(navNodeKey.GetType().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
@@ -547,7 +562,7 @@ static bvector<Utf8String> ParseNodeKeyHashPath(RapidJsonValueCR pathJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const 
+NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     if (!json.isObject() || json.isNull())
         {
@@ -576,7 +591,7 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnecti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const 
+NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     if (!json.IsObject() || json.IsNull())
         {
@@ -605,7 +620,7 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnecti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(JsonValueCR json) const 
+NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(JsonValueCR json) const
     {
     Utf8CP type = json["type"].asCString();
     return NavNodeKey::Create(type, ParseNodeKeyHashPath(json["pathFromRoot"]));
@@ -614,7 +629,7 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(JsonV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const 
+NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const
     {
     Utf8CP type = json["type"].GetString();
     return NavNodeKey::Create(type, ParseNodeKeyHashPath(json["pathFromRoot"]));
@@ -623,7 +638,7 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(Rapid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ECInstancesNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ECInstancesNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     rapidjson::Value instanceKeysJson(rapidjson::kArrayType);
     for (ECClassInstanceKeyCR instanceKey : ecInstanceNodeKey.GetInstanceKeys())
@@ -634,7 +649,7 @@ void IModelJsECPresentationSerializer::_AsJson(ECInstancesNodeKey const& ecInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const 
+ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     bvector<ECClassInstanceKey> instanceKeys;
     if (json.isMember("instanceKeys") && json["instanceKeys"].isArray())
@@ -654,7 +669,7 @@ ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const 
+ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     bvector<ECClassInstanceKey> instanceKeys;
     if (json.HasMember("instanceKeys") && json["instanceKeys"].IsArray())
@@ -674,7 +689,7 @@ ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.AddMember("groupedInstancesCount", groupingNodeKey.GetGroupedInstancesCount(), navNodeKeyBaseJson.GetAllocator());
     navNodeKeyBaseJson.AddMember("className", rapidjson::StringRef(groupingNodeKey.GetECClass().GetFullName()), navNodeKeyBaseJson.GetAllocator());
@@ -683,7 +698,7 @@ void IModelJsECPresentationSerializer::_AsJson(ECClassGroupingNodeKey const& gro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const 
+ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].asUInt64();
     Utf8CP className = json["className"].asCString();
@@ -694,7 +709,7 @@ ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const 
+ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUint64();
     Utf8CP className = json["className"].GetString();
@@ -705,7 +720,7 @@ ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.AddMember("groupedInstancesCount", propertyGroupingNodeKey.GetGroupedInstancesCount(), navNodeKeyBaseJson.GetAllocator());
     navNodeKeyBaseJson.AddMember("className", rapidjson::StringRef(propertyGroupingNodeKey.GetECClass().GetFullName()), navNodeKeyBaseJson.GetAllocator());
@@ -717,7 +732,7 @@ void IModelJsECPresentationSerializer::_AsJson(ECPropertyGroupingNodeKey const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const 
+ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].asUInt64();
     Utf8CP className = json["className"].asCString();
@@ -734,7 +749,7 @@ ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const 
+ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUint64();
     Utf8CP className = json["className"].GetString();
@@ -749,7 +764,7 @@ ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_AsJson(LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const 
+void IModelJsECPresentationSerializer::_AsJson(LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.AddMember("groupedInstancesCount", labelGroupingNodeKey.GetGroupedInstancesCount(), navNodeKeyBaseJson.GetAllocator());
     navNodeKeyBaseJson.AddMember("label", rapidjson::Value(labelGroupingNodeKey.GetLabel().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
@@ -758,7 +773,7 @@ void IModelJsECPresentationSerializer::_AsJson(LabelGroupingNodeKey const& label
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const 
+LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].asUInt64();
     Utf8CP label = json["label"].asCString();
@@ -768,7 +783,7 @@ LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeK
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const 
+LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUint64();
     Utf8CP label = json["label"].GetString();
@@ -778,7 +793,7 @@ LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeK
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -822,7 +837,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(NavNode const& nav
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -839,7 +854,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.CopyFrom(value.GetValue(), json.GetAllocator());
@@ -849,7 +864,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition::S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -865,7 +880,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(LabelDefinition::C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     if (navNodesPathElement.GetNode().IsNull())
@@ -897,7 +912,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(NodesPathElement c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const 
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -925,7 +940,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(KeySet const& keyS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr IModelJsECPresentationSerializer::_GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const 
+KeySetPtr IModelJsECPresentationSerializer::_GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     InstanceKeyMap instanceKeys;
     JsonValueCR instanceKeysJson = json["instanceKeys"];
@@ -961,7 +976,7 @@ KeySetPtr IModelJsECPresentationSerializer::_GetKeySetFromJson(IConnectionCR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value IModelJsECPresentationSerializer::_AsJson(ECEnumerationCR enumeration, rapidjson::Document::AllocatorType& allocator) const 
+rapidjson::Value IModelJsECPresentationSerializer::_AsJson(ECEnumerationCR enumeration, rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kArrayType);
     for (ECEnumeratorCP enumerator : enumeration.GetEnumerators())
@@ -980,7 +995,7 @@ rapidjson::Value IModelJsECPresentationSerializer::_AsJson(ECEnumerationCR enume
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value IModelJsECPresentationSerializer::_AsJson(KindOfQuantityCR koq, rapidjson::Document::AllocatorType& allocator) const 
+rapidjson::Value IModelJsECPresentationSerializer::_AsJson(KindOfQuantityCR koq, rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kObjectType);
     json.AddMember("name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
@@ -993,7 +1008,7 @@ rapidjson::Value IModelJsECPresentationSerializer::_AsJson(KindOfQuantityCR koq,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value IModelJsECPresentationSerializer::_AsJson(RelatedClassCR relatedClass, rapidjson::Document::AllocatorType& allocator) const 
+rapidjson::Value IModelJsECPresentationSerializer::_AsJson(RelatedClassCR relatedClass, rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kObjectType);
     json.AddMember("sourceClassInfo", IModelJsECPresentationSerializer::_AsJson(*relatedClass.GetSourceClass(), &allocator), allocator);
@@ -1008,7 +1023,7 @@ rapidjson::Value IModelJsECPresentationSerializer::_AsJson(RelatedClassCR relate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value IModelJsECPresentationSerializer::_AsJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType& allocator) const 
+rapidjson::Value IModelJsECPresentationSerializer::_AsJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kArrayType);
     for (RelatedClass const& relatedClass : path)
@@ -1026,7 +1041,7 @@ rapidjson::Value IModelJsECPresentationSerializer::_AsJson(RelatedClassPathCR pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value IModelJsECPresentationSerializer::_AsJson(SelectionInfo const& selectionInfo, rapidjson::Document::AllocatorType& allocator) const 
+rapidjson::Value IModelJsECPresentationSerializer::_AsJson(SelectionInfo const& selectionInfo, rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value info(rapidjson::kObjectType);
     info.AddMember("providerName", rapidjson::Value(selectionInfo.GetSelectionProviderName().c_str(), allocator), allocator);

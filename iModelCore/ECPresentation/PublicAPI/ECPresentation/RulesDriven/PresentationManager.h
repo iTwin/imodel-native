@@ -53,6 +53,7 @@ struct IECPresentationTask;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager
 {
+    struct ImplParams;
     struct Impl;
 //__PUBLISH_SECTION_END__
     struct ConnectionManagerWrapper;
@@ -141,9 +142,9 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
                 }
             bmap<int, unsigned> const& GetBackgroundThreadAllocations() const {return m_backgroundThreadAllocations;}
         };
-        
+
     private:
-        IConnectionManagerP m_connections;
+        std::shared_ptr<IConnectionManager> m_connections;
         Paths m_paths;
         Mode m_mode;
         CachingParams m_cachingParams;
@@ -152,17 +153,14 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         ILocalizationProvider const* m_localizationProvider;
         IECPropertyFormatter const* m_propertyFormatter;
         IPropertyCategorySupplier const* m_categorySupplier;
-        IRulesetLocaterManager* m_rulesetLocaters;
-        IUserSettingsManager* m_userSettings;
         bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
         bvector<std::shared_ptr<IUpdateRecordsHandler>> m_updateRecordsHandlers;
     public:
         //! Constructor.
         //! @param[in] paths Known directory paths required by the presentation manager
         Params(Paths paths)
-            : m_paths(paths), m_connections(nullptr), m_localState(nullptr), m_localizationProvider(nullptr),
-            m_propertyFormatter(nullptr), m_categorySupplier(nullptr), m_rulesetLocaters(nullptr),
-            m_userSettings(nullptr), m_mode(Mode::ReadWrite)
+            : m_paths(paths), m_localState(nullptr), m_localizationProvider(nullptr),
+            m_propertyFormatter(nullptr), m_categorySupplier(nullptr), m_mode(Mode::ReadWrite)
             {}
 
         Paths const& GetPaths() const {return m_paths;}
@@ -176,15 +174,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         MultiThreadingParams const& GetMultiThreadingParams() const { return m_multiThreadingParams; }
         void SetMultiThreadingParams(MultiThreadingParams params) { m_multiThreadingParams = params; }
 
-        //! @note: Manager takes ownership of the supplied `IConnectionManager` object
-        void SetConnections(IConnectionManagerP connections) {m_connections = connections;}
-        IConnectionManagerP GetConnections() const {return m_connections;}
-        //! @note: Manager takes ownership of the supplied `IRulesetLocaterManager` object
-        void SetRulesetLocaters(IRulesetLocaterManager* locaters) { m_rulesetLocaters = locaters; }
-        IRulesetLocaterManager* GetRulesetLocaters() const { return m_rulesetLocaters; }
-        //! @note: Manager takes ownership of the supplied `IUserSettingsManager` object
-        void SetUserSettings(IUserSettingsManager* settings) { m_userSettings = settings; }
-        IUserSettingsManager* GetUserSettings() const { return m_userSettings; }
+        void SetConnections(std::shared_ptr<IConnectionManager> connections) {m_connections = connections;}
+        std::shared_ptr<IConnectionManager> GetConnections() const {return m_connections;}
 
         IJsonLocalState* GetLocalState() const {return m_localState;}
         void SetLocalState(IJsonLocalState* localState) {m_localState = localState;}
@@ -282,15 +273,15 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
         //! @param[in] locale Locale identifier
         //! @param[in] unitSystem Unit system to use for formatting property values
-        NavigationOptions(Utf8CP rulesetId, Utf8CP locale = nullptr, UnitSystem unitSystem = UnitSystem::Undefined) 
-            : CommonOptions(rulesetId, locale, unitSystem) 
+        NavigationOptions(Utf8CP rulesetId, Utf8CP locale = nullptr, UnitSystem unitSystem = UnitSystem::Undefined)
+            : CommonOptions(rulesetId, locale, unitSystem)
             {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
         //! @param[in] locale Locale identifier
         //! @param[in] unitSystem Unit system to use for formatting property values
-        NavigationOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "", UnitSystem unitSystem = UnitSystem::Undefined) 
-            : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str(), unitSystem) 
+        NavigationOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "", UnitSystem unitSystem = UnitSystem::Undefined)
+            : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str(), unitSystem)
             {}
         };
 
@@ -313,14 +304,14 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
         //! @param[in] locale Locale identifier
         //! @param[in] unitSystem Unit system to use for formatting property values
-        ContentOptions(Utf8CP rulesetId, Utf8CP locale = nullptr, UnitSystem unitSystem = UnitSystem::Undefined) 
+        ContentOptions(Utf8CP rulesetId, Utf8CP locale = nullptr, UnitSystem unitSystem = UnitSystem::Undefined)
             : CommonOptions(rulesetId, locale, unitSystem)
             {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
         //! @param[in] locale Locale identifier
         //! @param[in] unitSystem Unit system to use for formatting property values
-        ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "", UnitSystem unitSystem = UnitSystem::Undefined) 
+        ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "", UnitSystem unitSystem = UnitSystem::Undefined)
             : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str(), unitSystem)
             {}
         };
@@ -355,12 +346,13 @@ protected:
     ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR, PresentationRequestContextCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationRequestContextCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<LabelDefinitionCPtr> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<PagedDataContainer<DisplayValueGroupCPtr>> _GetDistinctValues(ContentDescriptorCR, Utf8StringCR, PageOptionsCR, PresentationRequestContextCR) override;
 
 //__PUBLISH_SECTION_END__
 public:
     ECPresentationTasksManager& GetTasksManager() const {return *m_tasksManager;}
     ECPRESENTATION_EXPORT IUserSettingsManager& GetUserSettings() const;
-    ECPRESENTATION_EXPORT Params CreateImplParams(Params const& managerParams);
+    ECPRESENTATION_EXPORT std::unique_ptr<ImplParams> CreateImplParams(Params const& managerParams);
     Impl& GetImpl() const {return *m_impl;}
     ECPRESENTATION_EXPORT void SetImpl(Impl&);
     ECPRESENTATION_EXPORT folly::Future<folly::Unit> GetTasksCompletion() const;
@@ -368,14 +360,6 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Constructor.
-    //! @param[in] connections Connection manager used by this presentation manager.
-    //! @param[in] paths Application paths provider.
-    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep
-    //!            this enabled unless being used for testing.
-    //! @deprecated Use RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const&)
-    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache = false);
-
     //! Constructor.
     //! @param[in] params A object that contains various configuration parameters for the presentation manager
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Params const& params);
@@ -390,7 +374,7 @@ public:
     //! @note Local state must be set for user settings to work.
     //! @see SetLocalState
     ECPRESENTATION_EXPORT IUserSettings& GetUserSettings(Utf8CP rulesetId) const;
-    
+
     //! Get the connection manager used by this presentation manager.
     ECPRESENTATION_EXPORT IConnectionManagerCR GetConnectionsCR() const;
 

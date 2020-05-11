@@ -789,7 +789,6 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkippingMoreThan
 
     // expect 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
-    ASSERT_TRUE(nodes[0].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -849,32 +848,6 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
     ASSERT_EQ(2, nodes.GetSize());
     EXPECT_STREQ("A", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("B", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_IndexHigherThanPageSize)
-    {
-    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("A"));});
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("B"));});
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
-    RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
-        "", "RulesEngineTest:Widget", false));
-    rules->AddPresentationRule(*rule);
-
-    // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
-    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get(); });
-
-    // expect nullptr
-    EXPECT_TRUE(nodes[2].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1098,9 +1098,8 @@ size_t CustomNodesProvider::_GetNodesCount() const
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds)
-    : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetConnection(), GetLocale(context), query),
-    m_executorIndex(0), m_usedClassIds(usedClassIds), m_offset(0)
-    { }
+    : MultiNavNodesProvider(context), m_query(&query), m_usedClassIds(usedClassIds), m_offset(0)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
@@ -1108,7 +1107,6 @@ QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR conte
 void QueryBasedNodesProvider::SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds)
     {
     BeAssert(m_query->GetResultParameters().GetResultType() == query.GetResultParameters().GetResultType());
-    m_executor.SetQuery(query, false);
     m_query = &query;
     m_usedClassIds = usedClassIds;
     }
@@ -1221,7 +1219,6 @@ struct QueryBasedNodesProvider::Savepoint
     void Cancel()
         {
         m_cacheSavepoint->Cancel();
-        m_provider.m_executorIndex = 0;
         }
     };
 
@@ -1301,12 +1298,14 @@ bool QueryBasedNodesProvider::InitializeProvidersForAllNodes()
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
 
     // read the nodes
-    m_executor.ReadRecords(&GetContext().GetCancelationToken());
-
+    auto nodesReader = NavNodesReader::Create(GetContext().GetNodesFactory(), GetContext().GetConnection(), GetContext().GetLocale(), *m_query->GetContract(),
+        m_query->GetResultParameters().GetResultType(), &m_query->GetResultParameters().GetNavNodeExtendedData());
+    QueryExecutor executor(GetContext().GetConnection(), *m_query);
+    
     // create providers for each node
+    uint64_t readerIndex = 0;
     JsonNavNodePtr node;
-    GetNodeProvidersR().reserve(m_executor.GetNodesCount());
-    while ((node = m_executor.GetNode(m_executorIndex)).IsValid())
+    while (QueryExecutorStatus::Row == executor.ReadNext(node, *nodesReader))
         {
         if (GetContext().GetCancelationToken().IsCanceled())
             break;
@@ -1323,11 +1322,11 @@ bool QueryBasedNodesProvider::InitializeProvidersForAllNodes()
 
         EvaluateArtifacts(*node);
 
-        GetContext().GetNodesCache().Cache(*node, GetContext().GetDataSourceInfo(), m_executorIndex + m_offset, NodeVisibility::Visible);
+        GetContext().GetNodesCache().Cache(*node, GetContext().GetDataSourceInfo(), readerIndex + m_offset, NodeVisibility::Visible);
 
         NavNodesProviderPtr provider = CreateProvider(*node, false);
         AddProvider(*provider);
-        ++m_executorIndex;
+        ++readerIndex;
         }
 
     if (GetContext().GetCancelationToken().IsCanceled())
@@ -1338,7 +1337,7 @@ bool QueryBasedNodesProvider::InitializeProvidersForAllNodes()
         }
 
     GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
-    LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[QueryBasedNodesProvider] Created node providers for %" PRIu64 " nodes", (uint64_t)m_executorIndex).c_str(), NativeLogging::LOG_DEBUG);
+    LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[QueryBasedNodesProvider] Created node providers for %" PRIu64 " nodes", readerIndex).c_str(), NativeLogging::LOG_DEBUG);
     return true;
     }
 
@@ -1483,10 +1482,7 @@ size_t QueryBasedNodesProvider::_GetNodesCount() const
     countQuery->GroupByContract(*contract);
     countQuery->From(*StringGenericQuery::Create(queryNotSorted->ToString(), queryNotSorted->GetBoundValues()));
 
-    CountQueryExecutor executor(GetContext().GetConnection(), *countQuery);
-    executor.ReadRecords(&GetContext().GetCancelationToken());
-    size_t count = executor.GetResult();
-
+    size_t count = (size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *countQuery);
     if (0 == count)
         GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
 

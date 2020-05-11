@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECPresentation/RulesDriven/PresentationManager.h>
+#include "NavNodesDataSource.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -14,9 +15,25 @@ struct ContentCache;
 struct ContentProviderKey;
 struct JsonNavNodesFactory;
 struct CustomFunctionsInjector;
-typedef RefCountedPtr<struct INavNodesDataSource> INavNodesDataSourcePtr;
 typedef RefCountedPtr<struct SpecificationContentProvider> SpecificationContentProviderPtr;
 typedef RefCountedPtr<struct SpecificationContentProvider const> SpecificationContentProviderCPtr;
+
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            07/2018
+//===================================================================================
+struct RulesDrivenECPresentationManager::ImplParams : RulesDrivenECPresentationManager::Params
+{
+private:
+    std::shared_ptr<IRulesetLocaterManager> m_rulesetLocaters;
+    std::shared_ptr<IUserSettingsManager> m_userSettings;
+public:
+    ImplParams(RulesDrivenECPresentationManager::Params const& other) : RulesDrivenECPresentationManager::Params(other) {}
+    ImplParams(ImplParams const& other) : RulesDrivenECPresentationManager::Params(other), m_rulesetLocaters(other.m_rulesetLocaters), m_userSettings(other.m_userSettings) {}
+    void SetRulesetLocaters(std::shared_ptr<IRulesetLocaterManager> locaters) { m_rulesetLocaters = locaters; }
+    std::shared_ptr<IRulesetLocaterManager> GetRulesetLocaters() const { return m_rulesetLocaters; }
+    void SetUserSettings(std::shared_ptr<IUserSettingsManager> settings) { m_userSettings = settings; }
+    std::shared_ptr<IUserSettingsManager> GetUserSettings() const { return m_userSettings; }
+};
 
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                11/2017
@@ -25,11 +42,11 @@ struct RulesDrivenECPresentationManager::Impl
 {
     typedef RulesDrivenECPresentationManager::Mode Mode;
     typedef RulesDrivenECPresentationManager::Paths Paths;
-    typedef RulesDrivenECPresentationManager::Params Params;
     typedef RulesDrivenECPresentationManager::CommonOptions CommonOptions;
     typedef RulesDrivenECPresentationManager::NavigationOptions NavigationOptions;
     typedef RulesDrivenECPresentationManager::ContentOptions ContentOptions;
-    
+    typedef RulesDrivenECPresentationManager::ImplParams Params;
+
 protected:
 /** @name Misc */
     virtual IPropertyCategorySupplier const& _GetCategorySupplier() const = 0;
@@ -58,6 +75,7 @@ protected:
     virtual ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) = 0;
     virtual size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR) = 0;
     virtual LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) = 0;
+    virtual PagingDataSourcePtr<DisplayValueGroupCPtr> _GetDistinctValues(IConnectionCR, ContentDescriptorCR, Utf8StringCR, PageOptionsCR, ICancelationTokenCR) = 0;
 /** @} */
 
 /** @name Update */
@@ -95,10 +113,11 @@ public:
     ContentCPtr GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) {return _GetContent(connection, descriptor, pageOptions, cancelationToken);}
     size_t GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(connection, descriptor, cancelationToken);}
     LabelDefinitionCPtr GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken) {return _GetDisplayLabel(connection, keys, cancelationToken);}
+    PagingDataSourcePtr<DisplayValueGroupCPtr> GetDistinctValues(IConnectionCR connection, ContentDescriptorCR descriptor, Utf8StringCR fieldName, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) {return _GetDistinctValues(connection, descriptor, fieldName, pageOptions, cancelationToken);}
 /** @} */
-    
+
 /** @name Update */
-    void CompareHierarchies(IUpdateRecordsHandler& recordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8String rhsRulesetId, 
+    void CompareHierarchies(IUpdateRecordsHandler& recordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8String rhsRulesetId,
         CommonOptions const& options, ICancelationTokenCR cancelationToken) {return _CompareHierarchies(recordsHandler, connection, lhsRulesetId, rhsRulesetId, options, cancelationToken);}
 /** @} */
 };
@@ -118,7 +137,7 @@ struct RulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::
 
 private:
     Mode m_mode;
-    IConnectionManagerR m_connections;
+    std::shared_ptr<IConnectionManager> m_connections;
     JsonNavNodesFactory const* m_nodesFactory;
     NodesProviderContextFactory const* m_nodesProviderContextFactory;
     NodesProviderFactory const* m_nodesProviderFactory;
@@ -130,8 +149,8 @@ private:
     UpdateHandler* m_updateHandler;
     UsedClassesListener* m_usedClassesListener;
     bmap<Utf8String, bvector<RuleSetLocaterPtr>> m_embeddedRuleSetLocaters;
-    IRulesetLocaterManager* m_locaters;
-    IUserSettingsManager* m_userSettings;
+    std::shared_ptr<IRulesetLocaterManager> m_locaters;
+    std::shared_ptr<IUserSettingsManager> m_userSettings;
     IJsonLocalState* m_localState;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier const* m_categorySupplier;
@@ -142,8 +161,8 @@ private:
 private:
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&, size_t pageSize = -1);
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavNodeCR parent, NavigationOptions const&, size_t pageSize = -1);
-    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
-    SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
+    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&);
+    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR);
 
 protected:
     // RulesDrivenECPresentationManager::Impl: General
@@ -154,7 +173,7 @@ protected:
     ILocalizationProvider const* _GetLocalizationProvider() const override {return m_localizationProvider;}
     IJsonLocalState* _GetLocalState() const override {return m_localState;}
     IRulesetLocaterManager& _GetLocaters() const override {return *m_locaters;}
-    IConnectionManagerR _GetConnections() override {return m_connections;}
+    IConnectionManagerR _GetConnections() override {return *m_connections;}
 
     // IRulesetCallbacksHandler
     ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR) override;
@@ -185,10 +204,11 @@ protected:
     ECPRESENTATION_EXPORT ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT PagingDataSourcePtr<DisplayValueGroupCPtr> _GetDistinctValues(IConnectionCR, ContentDescriptorCR, Utf8StringCR, PageOptionsCR, ICancelationTokenCR) override;
 
     // RulesDrivenECPresentationManager::Impl: Update
     ECPRESENTATION_EXPORT void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, CommonOptions const& options, ICancelationTokenCR) override;
-    
+
 public:
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(Params const&);
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManagerImpl();

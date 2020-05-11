@@ -71,7 +71,7 @@ IECInstancePtr RulesEngineTestHelpers::InsertInstance(ECDbR db, ECInstanceInsert
     if (nullptr != instancePreparer)
         instancePreparer(*instance);
     inserter.Insert(*instance);
-    
+
     if (commit)
         db.SaveChanges();
 
@@ -104,7 +104,7 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
         Utf8CP navigationPropertyName = stmt.GetValueText(0);
         ECClassCP targetClass = db.Schemas().GetClass(targetKey.GetClassId());
         BeAssert(nullptr == instancePreparer && "Navigation property relationships aren't backed by an instance");
-    
+
         ECSqlStatement updateStmt;
         Utf8String updateQuery = Utf8String("UPDATE ").append(targetClass->GetECSqlName())
             .append(" SET ").append(navigationPropertyName).append(" = ?")
@@ -124,18 +124,18 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
 
         return ECInstanceKey(relationship.GetId(), targetKey.GetInstanceId());
         }
-        
+
     // regular relationship
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(relationship);
     StandaloneECRelationshipInstancePtr instance = relationshipEnabler->CreateRelationshipInstance();
     if (nullptr != instancePreparer)
         instancePreparer(*instance);
-    
+
     ECInstanceKey key;
     ECInstanceInserter inserter(db, relationship, nullptr);
     DbResult result = inserter.InsertRelationship(key, sourceKey.GetInstanceId(), targetKey.GetInstanceId(), instance.get());
     BeAssert(DbResult::BE_SQLITE_OK == result);
-    
+
     if (commit)
         db.SaveChanges();
 
@@ -215,7 +215,7 @@ void RulesEngineTestHelpers::DeleteInstance(ECDbR db, ECInstanceKeyCR key, bool 
             return;
             }
         }
-    
+
     ECSqlStatement statement;
     Utf8PrintfString sql("DELETE FROM %s WHERE ECInstanceId = ?", ecClass->GetECSqlName().c_str());
     ECSqlStatus status = statement.Prepare(db, sql.c_str());
@@ -228,7 +228,7 @@ void RulesEngineTestHelpers::DeleteInstance(ECDbR db, ECInstanceKeyCR key, bool 
     BeSQLite::DbResult result = statement.Step();
     UNUSED_VARIABLE(result);
     BeAssert(result == BE_SQLITE_DONE);
-    
+
     if (commit)
         db.SaveChanges();
     }
@@ -278,7 +278,7 @@ IECInstancePtr RulesEngineTestHelpers::GetInstance(ECDbR db, ECClassCR ecClass, 
     DbResult result = ecStatement.Step();
     EXPECT_EQ(BE_SQLITE_ROW, result) << "RulesEngineTestHelpers::GetInstance> Instance not found.";
     if (result != BE_SQLITE_ROW)
-        return nullptr;        
+        return nullptr;
 
     ECInstanceECSqlSelectAdapter adapter(ecStatement);
     IECInstancePtr instance = adapter.GetInstance();
@@ -436,7 +436,7 @@ static ECValue GetECValueFromJson(RapidJsonValueCR json, ECPropertyCR ecProperty
                 break;
             default:
                 BeAssert(false);
-            }        
+            }
         }
     return value;
     }
@@ -451,7 +451,7 @@ static void AssertInstanceValueValid(IECInstanceCR instance, RapidJsonValueCR va
     ASSERT_TRUE(nullptr != property);
 
     ASSERT_TRUE(property->GetIsNavigation() || property->GetIsPrimitive());
-    
+
     ECValue instanceValue;
     ECObjectsStatus status = instance.GetValue(instanceValue, propertyName);
     EXPECT_EQ(ECObjectsStatus::Success, status);
@@ -470,7 +470,7 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
     ASSERT_EQ(1, keys.Size());
     EXPECT_STREQ(instance.GetClass().GetId().ToString().c_str(), keys[0]["ECClassId"].GetString());
     EXPECT_STREQ(instance.GetInstanceId().c_str(), keys[0]["ECInstanceId"].GetString());
-    
+
     ASSERT_TRUE(json.HasMember("DisplayLabel"));
     if (nullptr != expectedLabel)
         {
@@ -573,7 +573,7 @@ DataContainer<NavNodeCPtr> RulesEngineTestHelpers::GetValidatedNodes(std::functi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR descriptor, ECClassCR primaryClass, 
+ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR descriptor, ECClassCR primaryClass,
     ContentDescriptor::Property prop, IPropertyCategorySupplierR categorySupplier)
     {
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(categorySupplier.CreateCategory(primaryClass, prop.GetProperty(), RelationshipMeaning::SameInstance), prop);
@@ -609,7 +609,7 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, JsonNavNodeR node
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TestPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP locale, ECPresentation::UnitSystem unitSystem) const
+BentleyStatus StubPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP locale, ECPresentation::UnitSystem unitSystem) const
     {
     formattedValue.clear();
     if (!ecValue.IsPrimitive())
@@ -643,8 +643,8 @@ BentleyStatus TestPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR form
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksonras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TestPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const
-    {   
+BentleyStatus StubPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR, RelatedClassPathCR, RelationshipMeaning) const
+    {
     formattedLabel = Utf8String().append("_").append(ecProperty.GetDisplayLabel()).append("_");
     return SUCCESS;
     }

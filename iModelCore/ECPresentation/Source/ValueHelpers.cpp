@@ -742,17 +742,37 @@ Utf8String ValueHelpers::GetJsonAsString(RapidJsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECInstanceKey> ValueHelpers::GetECInstanceKeysFromSerializedJson(Utf8CP serializedJson)
+ECInstanceKey ValueHelpers::GetECInstanceKeyFromJson(RapidJsonValueCR json)
+    {
+    if (!json.IsObject())
+        {
+        BeAssert(false);
+        return ECInstanceKey();
+        }
+    return ECInstanceKey(ECClassId(json["c"].GetUint64()), ECInstanceId(json["i"].GetUint64()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKey ValueHelpers::GetECInstanceKeyFromSerializedJson(Utf8CP serializedJson)
     {
     if (nullptr == serializedJson || 0 == *serializedJson)
         {
         BeAssert(false);
-        return bvector<ECInstanceKey>();
+        return ECInstanceKey();
         }
 
     rapidjson::Document json;
     json.Parse(serializedJson);
+    return GetECInstanceKeyFromJson(json);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECInstanceKey> ValueHelpers::GetECInstanceKeysFromJson(RapidJsonValueCR json)
+    {
     bvector<ECInstanceKey> list;
     if (json.IsArray())
         {
@@ -766,14 +786,30 @@ bvector<ECInstanceKey> ValueHelpers::GetECInstanceKeysFromSerializedJson(Utf8CP 
     else
         {
         BeAssert(false);
-        }    
+        }
     return list;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECInstanceKey> ValueHelpers::GetECInstanceKeysFromSerializedJson(Utf8CP serializedJson)
+    {
+    if (nullptr == serializedJson || 0 == *serializedJson)
+        {
+        BeAssert(false);
+        return bvector<ECInstanceKey>();
+        }
+
+    rapidjson::Document json;
+    json.Parse(serializedJson);
+    return GetECInstanceKeysFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ValueHelpers::GetECValueTypeName(ECValueCR value) 
+Utf8String ValueHelpers::GetECValueTypeName(ECValueCR value)
     {
     switch (value.GetPrimitiveType())
         {
