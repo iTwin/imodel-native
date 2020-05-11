@@ -2,9 +2,9 @@
 * Copyright (c) 2019 Bentley Systems, Incorporated. All rights reserved.
 * Licensed under the MIT License. See LICENSE.md in the project root for license terms.
 *--------------------------------------------------------------------------------------------*/
-import { logTest, loadAddon } from "./utils";
+import { loadAddon, logTest } from "./utils";
 import { assert } from "chai";
-import { Logger } from "@bentley/bentleyjs-core";
+import { Guid, Logger } from "@bentley/bentleyjs-core";
 import { runTests as runDbTests } from "./dbTest";
 import { IModelBankNative } from "../IModelBankNative";
 import { IModelBankNativeHost } from "../IModelBankNativeHost";
@@ -14,6 +14,7 @@ IModelBankNativeHost.addon = loadAddon();
 
 const addon: typeof IModelBankNative = IModelBankNativeHost.addon;
 addon.logger = Logger;
+addon.initialize("http://localhost:3999", Guid.createValue());
 
 logTest("Start imodel-bank tests");
 
@@ -31,6 +32,6 @@ runDbTests();
 
 // Give the license check a chance to succeed.
 setTimeout(() => {
-    addon.doDeferredLogging();
-    logTest("Finished imodel-bank tests");
+  addon.doDeferredLogging();
+  logTest("Finished imodel-bank tests");
 }, 3000);

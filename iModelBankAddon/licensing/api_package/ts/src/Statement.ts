@@ -2,7 +2,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
 type NativeSQLiteStatement = any; // import { NativeSQLiteStatement } from "@bentley/imodel-bank/native";
-import { IDisposable, StatusCodeWithMessage, DbResult, BentleyError, Logger } from "@bentley/bentleyjs-core";
+import { BentleyError, DbResult, IDisposable, Logger, StatusCodeWithMessage } from "@bentley/bentleyjs-core";
 import { Db } from "./Db";
 import { IModelBankLicensingNativeHost } from "./IModelBankLicensingNativeHost";
 

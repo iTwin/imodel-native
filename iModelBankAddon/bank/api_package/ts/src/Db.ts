@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
-import { OpenMode, DbResult, IDisposable, Logger, assert } from "@bentley/bentleyjs-core";
+import { assert, DbResult, IDisposable, Logger, OpenMode } from "@bentley/bentleyjs-core";
 import { Statement, StatementCache } from "./Statement";
 import { IModelBankNative } from "./IModelBankNative";
 import { IModelBankNativeHost } from "./IModelBankNativeHost";

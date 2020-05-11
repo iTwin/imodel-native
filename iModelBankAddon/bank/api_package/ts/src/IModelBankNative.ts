@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
  *--------------------------------------------------------------------------------------------*/
-import { Logger, DbResult, OpenMode, StatusCodeWithMessage } from "@bentley/bentleyjs-core";
+import { DbResult, Logger, OpenMode, StatusCodeWithMessage } from "@bentley/bentleyjs-core";
 
 export declare namespace IModelBankNative {
 

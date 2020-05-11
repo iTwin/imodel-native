@@ -12,7 +12,7 @@ let useLocalBuild = true;
 if (process.argv.length > 2) {
   for (let i = 3; i < process.argv.length; ++i) {
     if ((process.argv[i] === "-i") || (process.argv[i] === "--installed")) {
-        useLocalBuild = false;
+      useLocalBuild = false;
     }
   }
 }
