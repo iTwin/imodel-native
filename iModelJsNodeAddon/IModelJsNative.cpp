@@ -2708,6 +2708,15 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
         out["prefixSize"] = prefixSize;
         return Napi::String::New(info.Env(), out.ToString().c_str());
         }
+    static Napi::Value DumpChangesetToDb(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, changesetFile, Napi::Number::New(info.Env(), (int) ERROR));
+        REQUIRE_ARGUMENT_STRING(1, sqliteFile, Napi::Number::New(info.Env(), (int)ERROR));
+        REQUIRE_ARGUMENT_BOOL(2, includeCols, Napi::Number::New(info.Env(), (int) ERROR));
+
+        BentleyStatus status = RevisionUtility::DumpChangesetToDb(changesetFile.c_str(), sqliteFile.c_str(), includeCols);
+        return Napi::Number::New(info.Env(), (int)status);
+        }
     static void Init(Napi::Env env, Napi::Object exports)
         {
         Napi::HandleScope scope(env);
@@ -2718,6 +2727,7 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
             StaticMethod("normalizeLzmaParams", &NativeRevisionUtility::NormalizeLzmaParams),
             StaticMethod("computeStatistics", &NativeRevisionUtility::ComputeStatistics),
             StaticMethod("getUncompressSize", &NativeRevisionUtility::GetUncompressSize),
+            StaticMethod("dumpChangesetToDb", &NativeRevisionUtility::DumpChangesetToDb),
         });
 
         exports.Set("RevisionUtility", t);

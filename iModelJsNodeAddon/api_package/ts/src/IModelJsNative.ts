@@ -304,7 +304,8 @@ export declare namespace IModelJsNative {
     public static assembleRevision(targetFile: string, rawChangesetFile: string, prefixFile?: string, lzmaPropsJson?: string): BentleyStatus;
     public static normalizeLzmaParams(lzmaPropsJson?: string): string;
     public static computeStatistics(sourceFile: string, addPrefix: boolean): string;
-    public static getUncompressSize (sourceFile: string): string;
+    public static getUncompressSize(sourceFile: string): string;
+    public static dumpChangesetToDb(sourceFile: string, dbFile: string, includeCols: boolean): BentleyStatus;
   }
 
   /**

@@ -77,7 +77,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         result = iter.GetFKeyConflicts(&nConflicts);
         BeAssert(result == BE_SQLITE_OK);
         LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
-        return ChangeSet::ConflictResolution::Abort;
+        return ChangeSet::ConflictResolution::Abort ;
         }
 
     if (cause == ChangeSet::ConflictCause::NotFound)
@@ -360,6 +360,7 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
     if (m_id.empty() || m_id.length() != SHA1::HashBytes * 2)
         {
         BeAssert(false && "The revision id is empty");
+        LOG.errorv("Changeset Id (%s) is not a valid SHA1 hash", m_id.c_str());
         return RevisionStatus::InvalidId;
         }
 
@@ -367,12 +368,14 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
     if (m_dbGuid != dbGuid)
         {
         BeAssert(false && "The revision did not originate in the specified DgnDb");
+        LOG.errorv("The changeset did not originate in this bim file. this.DbGuid (%s) <> changeset.DbGuid (%s)", dbGuid.c_str(), m_dbGuid.c_str());
         return RevisionStatus::WrongDgnDb;
         }
 
     if (!m_revChangesFile.DoesPathExist())
         {
         BeAssert(false && "File containing the change stream doesn't exist. Cannot validate.");
+        LOG.errorv("Changeset (id=%s) file not found. (%s)", m_id.c_str(), m_revChangesFile.GetNameUtf8().c_str());
         return RevisionStatus::FileNotFound;
         }
 
@@ -384,6 +387,7 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
     if (m_id != id)
         {
         BeAssert(false && "The contents of the change stream file don't match the DgnRevision");
+        LOG.errorv("Changeset SHA1 hash does not match its content. expected: %s <> actual: %s", m_id.c_str(), id.c_str());
         return RevisionStatus::CorruptedChangeStream;
         }
 

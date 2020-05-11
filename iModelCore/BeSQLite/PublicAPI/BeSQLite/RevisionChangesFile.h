@@ -97,5 +97,6 @@ public:
     BE_SQLITE_EXPORT static BentleyStatus AssembleRevision(Utf8CP inPrefixFile, Utf8CP inChangesetFile, Utf8CP outputFile, LzmaEncoder::LzmaParams params = LzmaEncoder::LzmaParams());
     BE_SQLITE_EXPORT static BentleyStatus ComputeStatistics(Utf8CP changesetFile, bool addPrefix, Json::Value& stats);
     BE_SQLITE_EXPORT static BentleyStatus GetUncompressSize(Utf8CP sourceFile, uint32_t& compressSize, uint32_t& changesetSize, uint32_t& prefixSize);
+    BE_SQLITE_EXPORT static BentleyStatus DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db, bool dumpColumns);
 };
 END_BENTLEY_SQLITE_NAMESPACE

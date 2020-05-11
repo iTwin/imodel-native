@@ -983,3 +983,144 @@ BentleyStatus RevisionUtility::ComputeStatistics(Utf8CP changesetFile, bool addP
     return SUCCESS;
     }
 
+BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP dbFile, bool includeCols)
+    {
+    BeFileName input;
+    input.AppendUtf8(changesetFile);
+
+    BeFileName output;
+    Db db;
+    output.AppendUtf8(dbFile);
+    if (output.DoesPathExist())
+        {
+        if (db.OpenBeSQLiteDb(output, Db::OpenParams(Db::OpenMode::ReadWrite)) != BE_SQLITE_OK)
+            output.BeDeleteFile();
+        }
+    if (!db.IsDbOpen())
+        {
+        BeFileName::CreateNewDirectory(output.GetDirectoryName());
+        if (db.CreateNewDb(output) != BE_SQLITE_OK)
+            return ERROR;
+        }
+    
+    if (!db.TableExists("changeset"))
+        {
+        if (db.ExecuteDdl("CREATE TABLE changeset(Id INTEGER PRIMARY KEY, wsgId TEXT)") != BE_SQLITE_OK)
+            return ERROR;
+        if (db.ExecuteDdl("CREATE TABLE changeset_row(Id INTEGER PRIMARY KEY, changesetId INTEGER REFERENCES changeset(Id) ON DELETE CASCADE, PK INTEGER, tableName TEXT,op TEXT, indirect INTEGER)") != BE_SQLITE_OK)
+            return ERROR;
+        if (db.ExecuteDdl("CREATE TABLE changeset_schema(Id INTEGER PRIMARY KEY, changesetId INTEGER REFERENCES changeset(Id) ON DELETE CASCADE, DDL TEXT)") != BE_SQLITE_OK)
+            return ERROR;            
+        if (db.ExecuteDdl("CREATE TABLE changeset_col(Id INTEGER PRIMARY KEY, changedRowId INTEGER REFERENCES changeset_row(Id) ON DELETE CASCADE, oldVal, newVal)") != BE_SQLITE_OK)
+            return ERROR;
+        }
+    auto changesetExists = [&](Utf8String& wsgId) {
+        auto stmt = db.GetCachedStatement("SELECT NULL FROM changeset WHERE wsgId = ?");
+        stmt->BindText(1, wsgId.c_str(), Statement::MakeCopy::No);
+        return stmt->Step() == BE_SQLITE_ROW;
+    };
+    auto insertChangeset = [&](Utf8String& wsgId) {
+        auto stmt = db.GetCachedStatement("INSERT INTO changeset(wsgId) VALUES (?)");
+        stmt->BindText(1, wsgId.c_str(), Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_DONE)
+            return (int64_t)0;
+        return db.GetLastInsertRowId();
+    };
+    auto insertChangesetSchema = [&](int64_t changesetId, Utf8String& ddl) {
+        auto stmt = db.GetCachedStatement("INSERT INTO changeset_schema(changesetId,ddl) VALUES (?,?)");
+        stmt->BindInt64(1, changesetId);
+        stmt->BindText(2, ddl.c_str(), Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_DONE)
+            return (int64_t)0;
+        return db.GetLastInsertRowId();
+    };
+    auto insertChangesetRow = [&](int64_t changesetId, Utf8CP tableName, int indirect, int64_t pk, DbOpcode op) {
+        auto stmt = db.GetCachedStatement("INSERT INTO changeset_row(changesetId, pk, tableName, indirect, op) VALUES (?,?,?,?,?)");
+        stmt->BindInt64(1, changesetId);
+        if (pk > 0)
+            stmt->BindInt64(2, pk);
+
+        stmt->BindText(3, tableName, Statement::MakeCopy::No);
+        stmt->BindInt(4, indirect);
+        stmt->BindText(5, op==DbOpcode::Delete ?"delete" :(op==DbOpcode::Insert? "insert" : "update") , Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_DONE)
+            return (int64_t)0;
+        return db.GetLastInsertRowId();
+    };
+    auto insertChangesetCol = [&](int64_t rowId, DbValue oldValue, DbValue newValue) {
+        auto stmt = db.GetCachedStatement("INSERT INTO changeset_col(changedRowId, oldVal, newVal) VALUES (?,?,?)");
+        stmt->BindInt64(1, rowId);
+        if (oldValue.IsValid())
+            stmt->BindDbValue(2, oldValue);
+        if (newValue.IsValid())
+            stmt->BindDbValue(3, newValue);
+    };
+    Utf8String changesetIdStr = GetChangesetId(input);
+    if (changesetExists(changesetIdStr)){
+        return SUCCESS;
+    }
+
+    const auto changesetId = insertChangeset(changesetIdStr);
+    if (changesetId == 0)
+        return ERROR;
+
+    Db unused;
+    RevisionChangesFileReaderBase reader({input}, unused);
+    auto stats = ChangesetStatistics::Create();
+    DbValue defaultVal(nullptr);
+    for( const auto& change : reader.GetChanges())
+        {
+        Utf8CP tableName;
+        int nCols, indirect, nPkCols;
+        DbOpcode opcode;
+        Byte* pPkCols;
+        if (change.GetOperation(&tableName, &nCols, &opcode, &indirect) != BE_SQLITE_OK)
+            return ERROR;
+        if(change.GetPrimaryKeyColumns(&pPkCols, &nPkCols) != BE_SQLITE_OK)
+            return ERROR;
+        int64_t pk = 0;
+        for (int i = 0; i < nPkCols; ++i)
+            {
+            if (pPkCols[i])
+                {
+                if (pk > 0 )
+                    break;
+
+                DbValue v(nullptr);
+                if (opcode == DbOpcode::Insert)
+                    v = change.GetNewValue(i);
+                else
+                    v = change.GetOldValue(i);
+                
+                if (v.IsValid() && v.GetValueType() == DbValueType::IntegerVal)
+                    pk = v.GetValueInt64();
+                }
+            }
+
+        auto changedRowId = insertChangesetRow(changesetId, tableName, indirect, pk, opcode);
+        if (changedRowId == 0)
+            return ERROR;
+        
+        if (!includeCols)
+            continue;
+
+        for (int i = 0; i < nPkCols; ++i)
+            {
+            if (opcode == DbOpcode::Delete)
+                insertChangesetCol(changedRowId, change.GetOldValue(i), defaultVal);
+            else if (opcode == DbOpcode::Insert)
+                insertChangesetCol(changedRowId, defaultVal, change.GetNewValue(i));
+            else 
+                insertChangesetCol(changedRowId, change.GetOldValue(i), change.GetNewValue(i));
+            }
+        }
+
+        DbSchemaChangeSet schemaChangeset;
+        bool hasSchemaChanges;
+        reader.MakeReader()->GetSchemaChanges(hasSchemaChanges, schemaChangeset);
+        if (hasSchemaChanges) {
+            auto ddl = schemaChangeset.ToString();
+            insertChangesetSchema(changesetId, ddl);
+        }
+        return SUCCESS;
+    }
