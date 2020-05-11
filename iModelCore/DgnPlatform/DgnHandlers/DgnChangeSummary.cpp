@@ -44,7 +44,7 @@ void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanc
             }
         else /* if (dbOpcode == DbOpcode::Update) */
             {
-            // The end instance id may not be part of the update record - look in the current database if it's not present. 
+            // The end instance id may not be part of the update record - look in the current database if it's not present.
             if (relInstance.ContainsValue(endInstanceIdAccessStr))
                 {
                 newEndInstanceId = relInstance.GetNewValue(endInstanceIdAccessStr).GetValueId<ECInstanceId>();
@@ -300,7 +300,7 @@ struct CompareChangeSet : BentleyApi::BeSQLite::ChangeSet
         BeAssert(result == BE_SQLITE_OK);
         UNUSED_VARIABLE(result);
 
-        if (cause == ChangeSet::ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
+        if (cause == ChangeSet::ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone.
             return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
 
         return ChangeSet::ConflictResolution::Replace;
@@ -492,7 +492,7 @@ StatusInt    DgnChangeSummary::GetChangedElements(DgnDbR currentDb, DgnDbPtr tar
             {
             BeFileNameCR changesetChangesFile = changeset->GetRevisionChangesFile();
             RevisionChangesFileReader changeStream(changesetChangesFile, currentDb);
-            changeStream.ToChangeGroup(group);
+            changeStream.AddToChangeGroup(group);
             }
 
         // Put together the changeset

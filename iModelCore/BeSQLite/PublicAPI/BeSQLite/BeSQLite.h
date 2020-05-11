@@ -3077,6 +3077,43 @@ enum ZipErrors
 };
 
 //=======================================================================================
+// Used to hold large in-memory buffers in chunks, without requiring large mallocs.
+// @bsiclass                                                    Keith.Bentley  05/20
+//=======================================================================================
+struct ChunkedArray {
+    using Chunk = bvector<Byte>;
+    int m_maxSize; // when Append is called and the current chunk is already larger than this, start a new chunk.
+    size_t m_size = 0; // total number of bytes in all chunks
+    bvector<Chunk> m_chunks;
+
+    void Clear() { m_size = 0; m_chunks.clear(); }
+    bool IsEmpty() const { return m_size == 0; }
+    ChunkedArray(int maxSize = 64 * 1024) { m_maxSize = maxSize; }
+    ChunkedArray(ChunkedArray&& other) { *this = std::move(other); }
+    ChunkedArray& operator=(ChunkedArray&& other) {
+        m_maxSize = other.m_maxSize;
+        m_chunks = std::move(other.m_chunks);
+        m_size = other.m_size;
+        other.m_size = 0;
+        return *this;
+    }
+    void Append(Byte const* data, int size) {
+        m_size += size;
+        if (m_chunks.size() > 0 && m_chunks.back().size() < m_maxSize)
+            m_chunks.back().insert(m_chunks.back().end(), data, data + size);
+        else
+            m_chunks.emplace_back(Chunk(data, data + size));
+    }
+    struct Reader {
+        ChunkedArray const& m_array;
+        size_t m_offset = 0;
+        int m_chunkNum = 0;
+        Reader(ChunkedArray const& array) : m_array(array) {}
+        BE_SQLITE_EXPORT void Read(Byte* data, int *pSize);
+    };
+};
+
+//=======================================================================================
 //! Utility to compress and write data to a blob using "Snappy" compression. Snappy is faster (usually 2x) both to
 //! compress and decompress, but usually results in about 10-20% larger storage requirement than zip.
 //! (see http://code.google.com/p/snappy)
@@ -3207,6 +3244,8 @@ public:
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
     BE_SQLITE_EXPORT void Finish() ;
     ZipErrors ReadAndFinish(Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead) {auto stat=_Read(data, bufSize, bytesActuallyRead); Finish(); return stat;}
+    BE_SQLITE_EXPORT ZipErrors ReadToChunkedArray(ChunkedArray& array, uint32_t bufSize);
+
 };
 
 #define SQLITE_FORMAT_SIGNATURE     "SQLite format 3"

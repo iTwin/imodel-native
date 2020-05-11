@@ -208,7 +208,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    DbResult _OutputPage(const void *pData, int nData) override
+    DbResult _Append(Byte const* pData, int nData) override
         {
         m_hash.Add(pData, nData);
         return BE_SQLITE_OK;
@@ -225,6 +225,8 @@ private:
 
 public:
     DgnRevisionIdGenerator() {}
+    bool _IsEmpty() const override final { return false; }
+    RefCountedPtr<Changes::Reader> _GetReader() const override { return nullptr; }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
@@ -237,8 +239,9 @@ public:
         DgnRevisionIdGenerator idgen;
         idgen.AddStringToHash(parentRevId);
 
+        auto reader = fs.MakeReader();
         DbResult result;
-        Utf8StringCR prefix = fs.GetPrefix(result);
+        Utf8StringCR prefix = reader->GetPrefix(result);
         if (BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -246,9 +249,9 @@ public:
             }
 
         if (!prefix.empty())
-            idgen._OutputPage(prefix.c_str(), (int) prefix.SizeInBytes());
+            idgen._Append((Byte const*) prefix.c_str(), (int) prefix.SizeInBytes());
 
-        result = idgen.FromChangeStream(fs);
+        result = idgen.ReadFrom(*reader);
         if (BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -337,7 +340,7 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
 
     bool containsSchemaChanges;
     DbSchemaChangeSet dbSchemaChangeSet;
-    DbResult result = fs.GetSchemaChanges(containsSchemaChanges, dbSchemaChangeSet);
+    DbResult result = fs.MakeReader()->GetSchemaChanges(containsSchemaChanges, dbSchemaChangeSet);
     BeAssert(result == BE_SQLITE_OK);
 
     LOG.infov("Contains Schema Changes: %s", containsSchemaChanges ? "yes" : "no");
@@ -685,7 +688,7 @@ bool DgnRevision::ContainsSchemaChanges(DgnDbCR dgndb) const
 
     bool containsSchemaChanges;
     DbSchemaChangeSet dbSchemaChanges;
-    DbResult result = changeStream.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
+    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false);
@@ -1020,10 +1023,10 @@ RevisionStatus RevisionManager::GroupChanges(DbSchemaChangeSetR dbSchemaChangeSe
             }
         else
             {
-            AbortOnConflictChangeSet sqlChangeSet;
+            ChangeSet sqlChangeSet;
             txnMgr.ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None);
 
-            DbResult result = dataChangeGroup.AddChanges(sqlChangeSet.GetSize(), sqlChangeSet.GetData());
+            DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
             if (result != BE_SQLITE_OK)
                 {
                 BeAssert(false && "Failed to group sqlite changesets - see error codes in sqlite3changegroup_add()");
@@ -1079,66 +1082,72 @@ struct ChangeStreamQueueProducer : ChangeStream
     {
     folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
     ChangeStreamQueueProducer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
-    DbResult _OutputPage(const void *pData, int nData) override
+    DbResult _Append(Byte const* pData, int nData) override
         {
-        while (!m_q.write((uint8_t*)const_cast<void*>(pData), (uint8_t*)const_cast<void*>(pData) + nData))
+        while (!m_q.write(pData, pData + nData))
             ;   // spin until the queue has room
         return BE_SQLITE_OK;
         }
     ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) override {BeAssert(false); return ConflictResolution::Abort;}
+
+    RefCountedPtr<Changes::Reader> _GetReader() const override { return nullptr; }
+    bool _IsEmpty() const override { return false; }
     };
 
 //=======================================================================================
 //! Satisfies a request for input by reading from a ProducerConsumerQueue. Can be used as the consumer side of a concurrent pipeline.
 // @bsiclass                                                 Sam.Wilson     03/2018
 //=======================================================================================
-struct ChangeStreamQueueConsumer : ChangeStream
-    {
+struct ChangeStreamQueueConsumer : ChangeStream {
     folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
-    bvector<uint8_t> m_remaining;
-
     ChangeStreamQueueConsumer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
 
-    DbResult _InputPage(void *pData, int *pnData) override
-        {
-        if (!m_remaining.empty())
-            {
-            // If the queued buffer was bigger than the caller's buffer, then we return
-            // the remaining portion in the amounts that the caller can deal with.
-            size_t retcount = std::min((size_t)*pnData, m_remaining.size());
-            memcpy(pData, m_remaining.data(), retcount);
-            *pnData = (int)retcount;
-            m_remaining.erase(m_remaining.begin(), m_remaining.begin() + retcount);
+    struct Reader : Changes::Reader {
+        ChangeStreamQueueConsumer const& m_consumer;
+        Reader(ChangeStreamQueueConsumer const& consumer) : m_consumer(consumer) {}
+        bvector<uint8_t> m_remaining;
+
+        DbResult _Read(Byte* pData, int* pnData) override {
+            if (!m_remaining.empty()) {
+                // If the queued buffer was bigger than the caller's buffer, then we return
+                // the remaining portion in the amounts that the caller can deal with.
+                size_t retcount = std::min((size_t)*pnData, m_remaining.size());
+                memcpy(pData, m_remaining.data(), retcount);
+                *pnData = (int)retcount;
+                m_remaining.erase(m_remaining.begin(), m_remaining.begin() + retcount);
+                return BE_SQLITE_OK;
+            }
+
+            bvector<uint8_t>* pval;
+            do {
+                pval = m_consumer.m_q.frontPtr();
+            } while (!pval); // spin until we get a value;
+
+            if (pval->empty()) {
+                *pnData = 0;
+            } else {
+                // return as much of the queued buffer as the caller's buffer can hold.
+                size_t retcount = std::min((size_t)*pnData, pval->size());
+                memcpy(pData, pval->data(), retcount);
+                *pnData = (int)retcount;
+
+                // if the queued buffer has more, save it for the next call
+                if (retcount < pval->size())
+                    m_remaining.assign(pval->data() + retcount, pval->data() + pval->size());
+            }
+
+            m_consumer.m_q.popFront();
             return BE_SQLITE_OK;
-            }
-
-        bvector<uint8_t>* pval;
-        do  {
-            pval = m_q.frontPtr();
-            }
-        while (!pval); // spin until we get a value;
-
-        if (pval->empty())
-            {
-            *pnData = 0;
-            }
-        else
-            {
-            // return as much of the queued buffer as the caller's buffer can hold.
-            size_t retcount = std::min((size_t)*pnData, pval->size());
-            memcpy(pData, pval->data(), retcount);
-            *pnData = (int)retcount;
-
-            // if the queued buffer has more, save it for the next call
-            if (retcount < pval->size())
-                m_remaining.assign(pval->data() + retcount, pval->data() + pval->size());
-            }
-
-        m_q.popFront();
-        return BE_SQLITE_OK;
         }
-    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) override {BeAssert(false); return ConflictResolution::Abort;}
     };
+    bool _IsEmpty() const override { return false; }
+    DbResult _Append(Byte const* pData, int nData) override { return BE_SQLITE_ERROR; }
+    RefCountedPtr<Changes::Reader> _GetReader() const override { return new Reader(*this); }
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) override {
+        BeAssert(false);
+        return ConflictResolution::Abort;
+    }
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015

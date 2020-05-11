@@ -332,6 +332,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         // Put together the changeset
         RevisionChangesFileReader fr (changeset->GetRevisionChangesFile(), *m_targetDb);
         changeSummary->FromChangeSet(fr);
+
 #ifdef DUMP_CHANGE_SUMMARIES
         changeSummary->Dump();
 #endif

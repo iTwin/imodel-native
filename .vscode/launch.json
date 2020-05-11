@@ -65,7 +65,35 @@
             "program": "${env:OutRoot}Winx64/Product/DgnPlatform-Gtest/DgnPlatformTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=DgnDbTest.SetBriefcaseAsStandalone"
+                "--gtest_filter=SchemaVersionTestFixture.CreateAndMergeRevision"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "Debug specific BeSQLite test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/BeSQLite-Gtest/BeSQLiteTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=BeIdSetTests.ChunkedArray"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "Debug specific ECDb test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=*"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

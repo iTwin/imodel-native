@@ -2513,6 +2513,12 @@ int iModelBridgeFwk::DoNormalUpdate()
                                                                                                         // ==== CHANNEL LOCK
     //Call save changes before the bridge is closed.                                                    // ==== CHANNEL LOCK
     dbres = m_briefcaseDgnDb->SaveChanges();                                                            // ==== CHANNEL LOCK
+    if (BeSQLite::BE_SQLITE_OK != dbres)
+        {                                                                                               // ==== CHANNEL LOCK
+        GetLogger().fatalv("Bridge::DoConvertToExistingBim - SaveChanges failed with status %d", dbres); // ==== CHANNEL LOCK
+        callCloseOnReturn.m_status = BSIERROR;
+        return RETURN_STATUS_CONVERTER_ERROR;                                                           // ==== CHANNEL LOCK
+        }                                                                                               // ==== CHANNEL LOCK
                                                                                                         // ==== CHANNEL LOCK
     callCloseOnReturn.m_status = BSISUCCESS;                                                            // ==== CHANNEL LOCK
                                                                                                         // ==== CHANNEL LOCK
@@ -2609,7 +2615,10 @@ int iModelBridgeFwk::OnAllDocsProcessed(FwkContext& context)
                                                                                                         // ==== CHANNEL LOCKS
     //Call save changes before the bridge is closed.                                                    // ==== CHANNEL LOCKS
     if (m_briefcaseDgnDb->Txns().HasChanges())
-        m_briefcaseDgnDb->SaveChanges();                                                                // ==== CHANNEL LOCKS
+        {
+        if (BeSQLite::BE_SQLITE_OK != m_briefcaseDgnDb->SaveChanges())                                 // ==== CHANNEL LOCKS
+            return RETURN_STATUS_CONVERTER_ERROR;
+        }
 
     if (!m_jobEnvArgs.CreateSnapshot())
         {
@@ -2910,8 +2919,11 @@ BentleyStatus iModelBridgeFwk::CreateNewSnapshot(iModelBridgeError& error, Utf8C
         return BSIERROR;
         }
 
-    m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
-                       // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+    if (BeSQLite::BE_SQLITE_OK != m_briefcaseDgnDb->SaveChanges()) // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+        {                                                           // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+        LOG.fatalv("CreateNewSnapshot - SaveChanges failed");
+        return BSIERROR;
+        }
 
     // Tell the bridge to generate schemas
     bool hasMoreChanges = false;
@@ -2985,8 +2997,11 @@ BentleyStatus iModelBridgeFwk::CreateSnapshotSecondBridge(iModelBridgeError& err
         return BentleyStatus::ERROR;
         }
 
-    m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
-                        // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+    if (BeSQLite::BE_SQLITE_OK != m_briefcaseDgnDb->SaveChanges()) // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+        {                                                           // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+        LOG.fatalv("CreateSnapshotSecondBridge - SaveChanges failed");
+        return BSIERROR;
+        }
 
     //  Let the bridge generate schema changes
     bool hasMoreChanges = false;

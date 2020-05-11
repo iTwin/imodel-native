@@ -135,7 +135,7 @@ void RevisionChangesFileWriter::FinishOutput()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileWriter::_OutputPage(const void *pData, int nData)
+DbResult RevisionChangesFileWriter::_Append(Byte const* pData, int nData)
     {
     if (nullptr == m_outLzmaFileStream)
         {
@@ -145,14 +145,6 @@ DbResult RevisionChangesFileWriter::_OutputPage(const void *pData, int nData)
 
     ZipErrors zipErrors = m_lzmaEncoder.CompressNextPage(pData, nData);
     return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-void RevisionChangesFileWriter::_Reset()
-    {
-    FinishOutput();
     }
 
 //---------------------------------------------------------------------------------------
@@ -225,22 +217,12 @@ DbResult RevisionChangesFileWriter::Initialize()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2017
-//---------------------------------------------------------------------------------------
-RevisionChangesFileWriter::~RevisionChangesFileWriter() { _Reset(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2017
-//---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileWriter::CallOutputPage(const void* pData, int nData) { return _OutputPage(pData, nData); }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReaderBase::StartInput()
+DbResult RevisionChangesFileReaderBase::Reader::StartInput()
     {
     BeAssert(m_inLzmaFileStream == nullptr);
-    m_inLzmaFileStream = new BlockFilesLzmaInStream(m_files);
+    m_inLzmaFileStream = new BlockFilesLzmaInStream(m_base.m_files);
     m_prefix = "";
 
     if (!m_inLzmaFileStream->IsReady())
@@ -272,7 +254,7 @@ DbResult RevisionChangesFileReaderBase::StartInput()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-void RevisionChangesFileReaderBase::FinishInput()
+void RevisionChangesFileReaderBase::Reader::FinishInput()
     {
     if (m_inLzmaFileStream == nullptr)
         return;
@@ -285,8 +267,8 @@ void RevisionChangesFileReaderBase::FinishInput()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReaderBase::_InputPage(void *pData, int *pnData)
-    {
+ DbResult RevisionChangesFileReaderBase::Reader::_Read(Byte* pData, int *pnData)
+     {
     if (nullptr == m_inLzmaFileStream)
         {
         DbResult result = StartInput();
@@ -294,14 +276,14 @@ DbResult RevisionChangesFileReaderBase::_InputPage(void *pData, int *pnData)
             return result;
         }
 
-    ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*)pData, pnData);
+    ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage(pData, pnData);
     return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
-Utf8StringCR RevisionChangesFileReaderBase::GetPrefix(DbResult& result)
+Utf8StringCR RevisionChangesFileReaderBase::Reader::GetPrefix(DbResult& result)
     {
     result = BE_SQLITE_OK;
     if (nullptr == m_inLzmaFileStream)
@@ -313,7 +295,7 @@ Utf8StringCR RevisionChangesFileReaderBase::GetPrefix(DbResult& result)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReaderBase::GetSchemaChanges(bool& containsSchemaChanges, DbSchemaChangeSetR dbSchemaChanges)
+DbResult RevisionChangesFileReaderBase::Reader::GetSchemaChanges(bool& containsSchemaChanges, DbSchemaChangeSetR dbSchemaChanges)
     {
     DbResult result;
     /* unused - Utf8StringCR prefix = */GetPrefix(result);
@@ -345,7 +327,7 @@ DbResult RevisionChangesFileReaderBase::GetSchemaChanges(bool& containsSchemaCha
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
-BeSQLite::DbResult RevisionChangesFileReaderBase::ReadPrefix()
+BeSQLite::DbResult RevisionChangesFileReaderBase::Reader::ReadPrefix()
     {
     Byte sizeBytes[4];
     int readSizeBytes = 4;
@@ -378,14 +360,6 @@ BeSQLite::DbResult RevisionChangesFileReaderBase::ReadPrefix()
 
     m_prefix = (Utf8CP)prefixBytes.GetData();
     return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-void RevisionChangesFileReaderBase::_Reset()
-    {
-    FinishInput();
     }
 
 //---------------------------------------------------------------------------------------
@@ -517,7 +491,7 @@ BentleyStatus RevisionUtility::GetUncompressSize(BeSQLite::LzmaDecoder& lzmaDeco
         uncompressSize += decompressBytesRead;
 
         } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
-    
+
     return SUCCESS;
     }
 
@@ -527,7 +501,7 @@ BentleyStatus RevisionUtility::ExportChangesetFile(BeFileName targetDir, Utf8Str
     if (!BeFileName::DoesPathExist(targetDir.GetName()))
         BeFileName::CreateNewDirectory(targetDir.GetDirectoryName());
 
-    BeFileName outFilePath;    
+    BeFileName outFilePath;
     outFilePath = outFilePath.Combine({targetDir.GetName(), (changesetIdW + L".cs-raw").c_str()});
     BeFile rawChangesetFile;
     rawChangesetFile.Create(outFilePath.GetName(), true);
@@ -737,7 +711,7 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
         BeAssert(false);
         return ERROR;
         }
-    
+
     Byte sizeBytes[4];
     int readSizeBytes = 4;
     zipStatus = lzmaDecoder.DecompressNextPage((Byte*)sizeBytes, &readSizeBytes);
@@ -749,7 +723,7 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
     Utf8String prefix;
     const int prefixSizeRead = (int)ByteArrayToUInt(sizeBytes);
     if (prefixSizeRead > 0)
-        { 
+        {
         ScopedArray<Byte> prefixBytes(prefixSizeRead);
         int bytesRead = 0;
         while (bytesRead < prefixSizeRead)
@@ -809,18 +783,18 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
     const int kMaxDecompressBytes = 1024 * 64;
     int decompressBytesRead;
     Byte buffer[kMaxDecompressBytes];
-    do 
+    do
         {
         decompressBytesRead = kMaxDecompressBytes;
         zipStatus = lzmaDecoder.DecompressNextPage(buffer, &decompressBytesRead);
         if (zipStatus != ZIP_SUCCESS)
             return ERROR;
-         
+
         if (decompressBytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, decompressBytesRead) != ZIP_SUCCESS )
             return ERROR;
 
         } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
-  
+
     lzmaDecoder.FinishDecompress();
     lzmaEncoder.FinishCompress();
     return SUCCESS;
@@ -845,7 +819,7 @@ struct OperationStatistics final : NonCopyableClass
         int GetMaxColumns() const { return m_cols; }
         uint32_t GetRowsChanged() const { return m_changes; }
         uint32_t GetRowIndirectlyChanged() const { return m_indirect; }
-        Utf8CP GetOpName() const 
+        Utf8CP GetOpName() const
             {
             switch (m_op)
                 {
@@ -966,12 +940,13 @@ struct ChangesetStatistics final : NonCopyableClass
             m_tableStats[tableName] = TableStatistics::Create(tableName);
             return GetTable(tableName);
             }
-        Json::Value Statistics() const 
+        Json::Value Statistics() const
             {
             return GetSummary();
             }
         static std::unique_ptr<ChangesetStatistics> Create() { return std::unique_ptr<ChangesetStatistics>(new ChangesetStatistics()); }
     };
+
 BentleyStatus RevisionUtility::ComputeStatistics(Utf8CP changesetFile, bool addPrefix, Json::Value& out)
     {
     BeFileName input;
@@ -991,7 +966,7 @@ BentleyStatus RevisionUtility::ComputeStatistics(Utf8CP changesetFile, bool addP
 
     DbSchemaChangeSet schemaChangeset;
     bool hasSchemaChanges;
-    reader.GetSchemaChanges(hasSchemaChanges, schemaChangeset);
+    reader.MakeReader()->GetSchemaChanges(hasSchemaChanges, schemaChangeset);
 
     out = Json::Value(Json::ValueType::objectValue);
     out["changesetId"] = GetChangesetId(input);

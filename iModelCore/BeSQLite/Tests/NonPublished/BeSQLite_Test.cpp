@@ -44,7 +44,7 @@ TEST_F(BeIdSetTests, ToString)
     ExpectRoundTrip(MakeIdSet({1,5}), "+1+4");
     ExpectRoundTrip(MakeIdSet({3,7,8,10}), "+3+4+1+2");
     ExpectRoundTrip(MakeIdSet({0xFF, 0x150}), "+FF+51");
-    
+
     ExpectRoundTrip(MakeIdSet({1,2,3,4,5}), "+1*5");
     ExpectRoundTrip(MakeIdSet({2,4,6,8}), "+2*4");
     ExpectRoundTrip(MakeIdSet({1,2,3,4,8,12,16}), "+1*4+4*3");
@@ -53,6 +53,92 @@ TEST_F(BeIdSetTests, ToString)
     ExpectRoundTrip(MakeIdSet({100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300}), "+64*17");
     ExpectRoundTrip(MakeIdSet({1,10001,20001,30001,40001,50001,60001,70001,80001,90001,100001,110001,120001,130001,140001,150001,160001,170001,180001,190001,200001,210001,220001,230001, 230002}), "+1+2710*17+1");
     }
+
+    enum {
+        K = (1024),
+        MEG = (K * K),
+        TEST_DATA_SIZE = 160 * K,
+    };
+
+static void verifyRead(ChunkedArray const& array, int numInts, int totalSize) {
+    bvector<int> bytes(numInts, 333);
+    int* data =  bytes.data();
+
+    ChunkedArray::Reader reader(array);
+    int index = 0;
+    int total = 0;
+    int size = 0;
+    do {
+        size = (int) bytes.size() * sizeof(int);
+        reader.Read((Byte*)data, &size);
+        total += size;
+        for (int i=0; i<(size/sizeof(int)); ++i)
+            EXPECT_TRUE(data[i] == index++);
+    } while (size > 0);
+
+    EXPECT_TRUE(total == totalSize);
+}
+
+static void verifyReadSizes(ChunkedArray const& array, int totalSize) {
+    verifyRead(array, 22, totalSize);
+    verifyRead(array, 100, totalSize);
+    verifyRead(array, 1024, totalSize);
+    verifyRead(array, 16*K, totalSize);
+    verifyRead(array, 2*MEG, totalSize);
+}
+
+static void fillArray(ChunkedArray& array, int const* from, int chunkSize, int numInts) {
+    int curr = 0;
+    while (curr < numInts) {
+        array.Append((Byte const*)(from+curr), chunkSize*sizeof(int));
+        curr += chunkSize;
+    }
+}
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeIdSetTests, ChunkedArray) {
+    int totalSize = TEST_DATA_SIZE * sizeof(int);
+    int* testData = (int*)malloc(totalSize);
+    for (int i = 0; i < TEST_DATA_SIZE; ++i)
+        testData[i] = i;
+
+    ChangeSet test1;
+    fillArray(test1.m_data, testData, 1024, TEST_DATA_SIZE);
+    verifyReadSizes(test1.m_data, totalSize);
+    test1.Clear();
+    fillArray(test1.m_data, testData, 16 * K, TEST_DATA_SIZE);
+    verifyReadSizes(test1.m_data, totalSize);
+
+    Byte* savePtr = test1.m_data.m_chunks[0].data();
+    ChangeSet t2 = std::move(test1);
+    verifyReadSizes(t2.m_data, totalSize);
+    EXPECT_TRUE(test1._IsEmpty());
+    EXPECT_EQ(test1.m_data.m_chunks.size(), 0);
+    EXPECT_EQ(savePtr, t2.m_data.m_chunks[0].data()); // make sure we did a move, not a copy
+    EXPECT_FALSE(t2.m_data.IsEmpty());
+    t2.Clear();
+
+    ChunkedArray test2(100);
+    test2.Append((Byte*)testData, totalSize);
+    verifyReadSizes(test2, totalSize);
+    test2.Clear();
+    fillArray(test2, testData, 1024, TEST_DATA_SIZE);
+    verifyReadSizes(test2, totalSize);
+    test2.Clear();
+
+    DbSchemaChangeSet schema;
+    schema.AddDDL("Test1");
+    schema.AddDDL("Test2");
+    Utf8String ddl = schema.ToString();
+    EXPECT_EQ(ddl, "Test1;Test2");
+
+    DbSchemaChangeSet schema1("This is a Test", 5);
+    schema1.AddDDL("This is another test");
+    schema1.AddDDL("This is a 3rd test");
+    ddl = schema1.ToString();
+    EXPECT_EQ(ddl, "This is a Test;This is another test;This is a 3rd test");
+}
 
 
 //=======================================================================================
@@ -107,7 +193,7 @@ struct BeSQliteTestFixture : public ::testing::Test
             BeFileName outputPathB;
             BeTest::GetHost().GetOutputRoot(outputPathB);
             outputPathB.AppendUtf8(out);
-           
+
             if (outputPathB.DoesPathExist())
                 if (!override)
                     return BeFileNameStatus::AlreadyExists;
@@ -161,7 +247,7 @@ struct BeSQliteTestFixture : public ::testing::Test
 
             if (!tracker.HasChanges())
                 return nullptr;
-            
+
             std::unique_ptr< BeSQLite::ChangeSet> changeset = std::unique_ptr< BeSQLite::ChangeSet>(new TestChangeSet());
             if (BE_SQLITE_OK != changeset->FromChangeTrack(tracker))
                 return nullptr;
@@ -169,7 +255,7 @@ struct BeSQliteTestFixture : public ::testing::Test
             return changeset;
             }
     public:
-        BeSQliteTestFixture(): 
+        BeSQliteTestFixture():
             ::testing::Test()
             {
             BeFileName tempDir;
@@ -193,7 +279,7 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
 
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create unique index uidx_foo1_a_b on foo1(a)"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create unique index uidx_foo2_a_b on foo2(a)"));
-    
+
 
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo1(id,a,b) values(1,'aa1','bb1')"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo1(id,a,b) values(2,'aa2','bb2')"));
@@ -213,7 +299,7 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
     db1->SaveChanges();
     db1->CloseDb();
     ASSERT_EQ(BeFileNameStatus::Success, Clone("first.db", "second.db"));
-    
+
     db1 = OpenReadWrite("first.db");
     auto db2 = OpenReadWrite("second.db");
 
@@ -225,7 +311,7 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
         return db.ExecuteSql("analyze") == BE_SQLITE_OK;
         }, nullptr);
 
-       
+
     const int expectedRowCount = GetRowCount(*db1, "sqlite_stat1");
     ASSERT_NE(expectedRowCount, 0);
     db1->SaveChanges();
@@ -381,14 +467,14 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
         begin
              insert into t1
                     values(null, new.c0, new.c1, new.c2, new.c3);
-        end; 
+        end;
         --
         create trigger if not exists t1_i after insert on t1
                when cast(new.c0 as real) between 0.0 and 0.6
         begin
              insert into t2
                     values(null, new.c0, new.c1, new.c2, new.c3);
-        end; 
+        end;
         --
         create trigger if not exists t2_i after insert on t2
                when cast(new.c0 as real) between 0.0 and 0.4
@@ -431,7 +517,9 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
 
         BeFile file;
         ASSERT_EQ(BeFileStatus::Success, file.Create(changesetFile.GetName()));
-        ASSERT_EQ(BeFileStatus::Success, file.Write(nullptr, cs->GetData(), cs->GetSize()));
+        for (auto& chunk : cs->m_data.m_chunks) {
+            ASSERT_EQ(BeFileStatus::Success, file.Write(nullptr, chunk.data(), (uint32_t) chunk.size()));
+        }
         ASSERT_EQ(BeFileStatus::Success, file.Flush());
         ASSERT_EQ(BeFileStatus::Success, file.Close());
         }
@@ -447,7 +535,7 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
         ASSERT_EQ(BeFileStatus::Success, file.Open(changesetFile.GetName(), BeFileAccess::Read));
         ByteStream stream;
         ASSERT_EQ(BeFileStatus::Success, file.ReadEntireFile(stream));
-        ASSERT_EQ(BE_SQLITE_OK, cs.FromData(stream.GetSize(), stream.GetData(), false));
+        cs.m_data.Append(stream.GetData(), stream.GetSize());
         LOG.debugv("Reading Changeset ... %s [size=%d bytes]", changesetFile.GetNameUtf8().c_str(), cs.GetSize());
         }
 
@@ -507,7 +595,7 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
         }
 
     ASSERT_EQ(BE_SQLITE_OK, db2->SaveChanges());
- 
+
     }
 
 //---------------------------------------------------------------------------------------

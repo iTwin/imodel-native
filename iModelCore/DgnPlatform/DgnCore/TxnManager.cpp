@@ -19,6 +19,14 @@ struct ChangesBlobHeader
 };
 END_UNNAMED_NAMESPACE
 
+enum {
+    K                       = (1024),
+    MEG                     = (K*K),
+    GIG                     = (K*MEG),
+    MAX_REASONABLE_TXN_SIZE = (100*MEG),
+    MAX_TXN_SIZE            = ((4*MEG) - 100),
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -78,10 +86,17 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
 * in the DgnDb. This also compresses the changes.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, bool isSchemaChange) {
-    if (0 == changeBytes.GetSize()) {
+DbResult TxnManager::SaveChanges(ChangeSetCR changeSet, Utf8CP operation, bool isSchemaChange) {
+    if (0 == changeSet.GetSize()) {
         BeAssert(false);
         return BE_SQLITE_ERROR;
+    }
+
+    BeAssert(changeSet.GetSize() < MAX_REASONABLE_TXN_SIZE); // if you hit this, something is wrong in your application. You should call commit more frequently.
+
+    if (changeSet.GetSize() > MAX_TXN_SIZE) {
+        LOG.fatalv("changeset size exceeds maximum. Panic stop to avoid loss! You must now abandon this briefcase.");
+        throw std::runtime_error("Maximum txn size");
     }
 
     enum Column : int {Id=1,Deleted=2,Grouped=3,Operation=4,IsSchemaChange=5,Change=6};
@@ -98,9 +113,11 @@ DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, boo
     stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.back()));
 
     m_snappyTo.Init();
-    ChangesBlobHeader header(changeBytes.GetSize());
+    uint32_t csetSize = (uint32_t) changeSet.GetSize();
+    ChangesBlobHeader header(csetSize);
     m_snappyTo.Write((Byte const*) &header, sizeof(header));
-    m_snappyTo.Write((Byte const*) changeBytes.GetData(), changeBytes.GetSize());
+    for (auto const& chunk : changeSet.m_data.m_chunks)
+        m_snappyTo.Write(chunk.data(), (uint32_t) chunk.size());
 
     uint32_t zipSize = m_snappyTo.GetCompressedSize();
     if (0 < zipSize)
@@ -556,13 +573,13 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
 * on the inverted changeset to allow TxnTables to react to the fact that the changes were abandoned.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeTracker::OnCommitStatus TxnManager::CancelChanges(BeSQLite::IChangeSet& changeset)
+ChangeTracker::OnCommitStatus TxnManager::CancelChanges(BeSQLite::ChangeStream& changeset)
     {
     DbResult rc = GetDgnDb().ExecuteSql("ROLLBACK");
     if (rc != BE_SQLITE_OK)
         return OnCommitStatus::Abort;
 
-    if (!changeset.IsEmpty())
+    if (!changeset._IsEmpty())
         {
         m_action = TxnAction::Abandon;
         OnChangesApplied(changeset, true);
@@ -578,7 +595,7 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(BeSQLite::IChangeSet& ch
 * so they can update in-memory state as necessary.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::OnChangesApplied(BeSQLite::IChangeSet& changeSet, bool invert)
+void TxnManager::OnChangesApplied(BeSQLite::ChangeStream& changeSet, bool invert)
     {
     Changes const& changes = changeSet.GetChanges(invert);
 
@@ -668,18 +685,24 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     BeAssert(!InDynamicTxn() && "How is this being invoked when we have dynamic change trackers on the stack?");
     CancelDynamics();
 
-    DbSchemaChangeSet schemaChanges;
-    if (HasDbSchemaChanges())
-        schemaChanges = GetDbSchemaChanges();
+    DbSchemaChangeSet schemaChanges = std::move(m_dbSchemaChanges);
 
     // Create a ChangeSet from modified data records. We'll use this to drive indirect changes.
     UndoChangeSet dataChangeSet;
-    if (HasDataChanges()) {
+    if (HasDataChanges())
+        {
         DbResult result = dataChangeSet.FromChangeTrack(*this); // Note: Changes to data in the change set may not make actual records in the Db.
-        BeAssert(BE_SQLITE_OK == result);
-    }
+        if (BE_SQLITE_OK != result)
+            {
+            BeAssert(false && "dataChangeSet.FromChangeTrack failed");
+            LOG.fatalv("dataChangeSet.FromChangeTrack failed with error %x.", result);
+            if (BE_SQLITE_NOMEM == result)
+                throw std::bad_alloc();
+            return OnCommitStatus::Abort;
+            }
+        }
 
-    if (dataChangeSet.IsEmpty() && schemaChanges.IsEmpty()) {
+    if (dataChangeSet._IsEmpty() && schemaChanges._IsEmpty()) {
         // DbFile::StopSavepoint() used to check HasChanges() before invoking us here.
         // It no longer does, because we may have dynamic txns to revert even if TxnManager has no changes of its own
         // That's taken care of in the above call to CancelDynamics(), so we're finished
@@ -705,7 +728,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     // just leave them reversed and they'll get thrown away on the next commit (or reinstated.)
     DeleteReversedTxns(); // these Txns are no longer reachable.
 
-    if (!dataChangeSet.IsEmpty()) {
+    if (!dataChangeSet._IsEmpty()) {
         OnBeginValidate();
 
         Changes changes(dataChangeSet, false);
@@ -715,7 +738,15 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
         if (HasDataChanges()) {// did we have any indirect data changes captured in the tracker?
             UndoChangeSet indirectDataChangeSet;
-            indirectDataChangeSet.FromChangeTrack(*this);
+            DbResult result = indirectDataChangeSet.FromChangeTrack(*this);
+            if (BE_SQLITE_OK != result)
+                {
+                BeAssert(false && "indirectDataChangeSet.FromChangeTrack failed");
+                LOG.fatalv("indirectDataChangeSet.FromChangeTrack failed with error %x.", result);
+                if (BE_SQLITE_NOMEM == result)
+                    throw std::bad_alloc();
+                return OnCommitStatus::Abort;
+                }
             Restart();
             Changes indirectChanges(indirectDataChangeSet, false);
             AddChanges(indirectChanges);
@@ -732,13 +763,13 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         }
     }
 
-    if (!schemaChanges.IsEmpty()) {
+    if (!schemaChanges._IsEmpty()) {
         DbResult result = SaveSchemaChanges(schemaChanges, operation);
         if (result != BE_SQLITE_DONE)
             return OnCommitStatus::Abort;
     }
 
-    if (!dataChangeSet.IsEmpty()) {
+    if (!dataChangeSet._IsEmpty()) {
         DbResult result = SaveDataChanges(dataChangeSet, operation); // save changeSet into DgnDb itself, along with the description of the operation we're performing
         if (result != BE_SQLITE_DONE)
             return OnCommitStatus::Abort;
@@ -748,7 +779,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     if (m_enableNotifyTxnMonitors)
         T_HOST.GetTxnAdmin()._OnCommit(*this);
 
-    if (!dataChangeSet.IsEmpty())
+    if (!dataChangeSet._IsEmpty())
         OnEndValidate();
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
@@ -772,14 +803,14 @@ RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision
     {
     bool containsSchemaChanges;
     DbSchemaChangeSet dbSchemaChanges;
-    DbResult result = changeStream.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
+    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
         return RevisionStatus::ApplyError;
         }
 
-    if (dbSchemaChanges.IsEmpty())
+    if (dbSchemaChanges._IsEmpty())
         return RevisionStatus::Success;
 
     result = ApplyDbSchemaChangeSet(dbSchemaChanges);
@@ -828,7 +859,15 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
         if (HasDataChanges())
             {
-            indirectChanges.FromChangeTrack(*this);
+            result = indirectChanges.FromChangeTrack(*this);
+            if (BeSQLite::BE_SQLITE_OK != result)
+                {
+                BeAssert(false && "MergeDataChangesInRevision indirectDataChangeSet.FromChangeTrack failed");
+                LOG.fatalv("MergeDataChangesInRevision indirectDataChangeSet.FromChangeTrack failed with error %x.", result);
+                if (BE_SQLITE_NOMEM == result)
+                    throw std::bad_alloc();
+                return RevisionStatus::SQLiteError;
+                }
             Restart();
 
             if (status == RevisionStatus::Success)
@@ -895,10 +934,10 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
         // Since this is an unlikely error condition, and it's just a single revision, we just hold the changes in memory
         // and not worry about the memory overhead.
         ChangeGroup undoChangeGroup;
-        changeStream.ToChangeGroup(undoChangeGroup);
+        changeStream.AddToChangeGroup(undoChangeGroup);
         if (indirectChanges.IsValid())
             {
-            result = undoChangeGroup.AddChanges(indirectChanges.GetSize(), indirectChanges.GetData());
+            result = indirectChanges.AddToChangeGroup(undoChangeGroup);
             BeAssert(result == BE_SQLITE_OK);
             }
 
@@ -1145,7 +1184,7 @@ void TxnManager::AddChanges(Changes const& changes)
 * and after it is applied.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert)
+DbResult TxnManager::ApplyChanges(ChangeStream& changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert)
     {
     BeAssert(action != TxnAction::None);
     m_action = action;
@@ -1326,105 +1365,72 @@ BentleyStatus TxnManager::PatchSlowSchemaChangeSet(Utf8StringR patchedDDL, Utf8S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyDbSchemaChangeSet(DbSchemaChangeSetCR dbSchemaChanges)
-    {
-    BeAssert(!dbSchemaChanges.IsEmpty() && "DbSchemaChangeSet is empty");
+DbResult TxnManager::ApplyDbSchemaChangeSet(DbSchemaChangeSetCR dbSchemaChanges) {
+    BeAssert(!dbSchemaChanges._IsEmpty() && "DbSchemaChangeSet is empty");
     bool wasTracking = EnableTracking(false);
 
     Utf8String originalDDL = dbSchemaChanges.ToString();
     Utf8String patchedDDL;
     DbResult result = BE_SQLITE_OK;
     BentleyStatus status = PatchSlowSchemaChangeSet(patchedDDL, originalDDL);
-    if (status == SUCCESS)
-        {
+    if (status == SUCCESS) {
         // Info message so we can look out if this issue has gone due to fix in the place which produce these changeset.
         LOG.info("[PATCH] Appling DDL patch for #292801 #281557");
         result = m_dgndb.ExecuteSql(patchedDDL.c_str());
-        if (result != BE_SQLITE_OK)
-            {
+        if (result != BE_SQLITE_OK) {
             LOG.info("[PATCH] Failed to apply patch for #292801 #281557. Fallback to original DDL");
             result = m_dgndb.ExecuteSql(originalDDL.c_str());
-            }
         }
-    else
-        {
+    } else {
         result = m_dgndb.ExecuteSql(originalDDL.c_str());
-        }
+    }
 
     EnableTracking(wasTracking);
     return result;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet& dbSchemaChanges, TxnId rowId)
-    {
-    uint32_t sizeRead;
-    Byte* data = ReadChanges(sizeRead, rowId);
-    if (data == nullptr)
-        return;
+void TxnManager::ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet& dbSchemaChanges, TxnId rowId) {
+    ReadChanges(dbSchemaChanges, rowId);
+}
 
-    dbSchemaChanges.AddDDL((Utf8CP) data);
-    delete[] data;
-    }
-
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * Changesets are stored as compressed blobs in the DGN_TABLE_Txns table. Read one by rowid.
 * If the TxnDirection is backwards, invert the changeset.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReadDataChanges(ChangeSet& dataChangeSet, TxnId rowId, TxnAction action)
-    {
-    uint32_t sizeRead;
-    Byte* data = ReadChanges(sizeRead, rowId);
-    if (data == nullptr)
-        return;
+void TxnManager::ReadDataChanges(ChangeSet& dataChangeSet, TxnId rowId, TxnAction action) {
+    ReadChanges(dataChangeSet, rowId);
+    if (action == TxnAction::Reverse)
+        dataChangeSet.Invert();
+}
 
-    dataChangeSet.FromData(sizeRead, data, action == TxnAction::Reverse);
-    delete[] data;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Ramanujam.Raman   01/17
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod                                    Keith.Bentley                    05/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-Byte* TxnManager::ReadChanges(uint32_t& sizeRead, TxnId rowId)
-    {
-    if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId.GetValue()))
-        {
+void TxnManager::ReadChanges(ChangeSet& changeset, TxnId rowId) {
+    if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId.GetValue())) {
         BeAssert(false);
-        return nullptr;
-        }
+        return;
+    }
 
     ChangesBlobHeader header(m_snappyFrom);
-    if ((ChangesBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
-        {
+    if ((ChangesBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size) {
         BeAssert(false);
-        return nullptr;
-        }
-
-    Byte* data = new Byte[header.m_size];
-
-    m_snappyFrom.ReadAndFinish(data, header.m_size, sizeRead);
-
-    if (sizeRead != header.m_size)
-        {
-        delete[] data;
-        BeAssert(false);
-        return nullptr;
-        }
-
-    sizeRead = header.m_size;
-    return data;
+        return;
     }
 
-/*---------------------------------------------------------------------------------**//**
+    m_snappyFrom.ReadToChunkedArray(changeset.m_data, header.m_size);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
 * Read a changeset from the dgn_Txn table, potentially inverting it (depending on whether we're performing undo or redo),
 * and then apply the changeset to the DgnDb.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action)
-    {
+void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action) {
     BeAssert(!HasDataChanges() && !InDynamicTxn());
     BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyChanges() if you don't want undo/redo notifications sent to TxnMonitors...
     BeAssert(!IsSchemaChangeTxn(rowId));
@@ -1440,11 +1446,11 @@ void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action)
 
     // Mark this row as deleted/undeleted depending on which way we just applied the changes.
     CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET Deleted=? WHERE Id=?");
-    stmt->BindInt(1, action==TxnAction::Reverse);
+    stmt->BindInt(1, action == TxnAction::Reverse);
     stmt->BindInt64(2, rowId.GetValue());
     rc = stmt->Step();
-    BeAssert(rc==BE_SQLITE_DONE);
-    }
+    BeAssert(rc == BE_SQLITE_DONE);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -2471,7 +2477,7 @@ void TxnManager::DumpTxns(bool verbose) const
             }
         else
             {
-            AbortOnConflictChangeSet sqlChangeSet;
+            ChangeSet sqlChangeSet;
             txnMgr.ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None);
 
             if (verbose)

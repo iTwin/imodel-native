@@ -118,7 +118,7 @@ BentleyStatus ECDbSchemaManagerGetSchema()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_SchemaManagerGetSchema.sampleCode
 
     // Retrieve a schema
-    // (Passing false as second parameter indicates that classes of the schema should not be loaded along with the schema, 
+    // (Passing false as second parameter indicates that classes of the schema should not be loaded along with the schema,
     // but be loaded on demand)
     ECSchemaCP fooSchema = ecdb.Schemas().GetSchema("fooschema", false);
     if (fooSchema == nullptr)
@@ -159,7 +159,7 @@ BentleyStatus ECDbSchemaManagerGetClass()
     }
 
 bvector<ECN::ECSchemaCP> ReadSchema(Utf8CP);
-BeSQLite::IChangeSet& GetChangeSetInfoFromHub(DateTime& pushDate, Utf8String& createdBy, Utf8CP changeSetHubId);
+BeSQLite::ChangeSet& GetChangeSetInfoFromHub(DateTime& pushDate, Utf8String& createdBy, Utf8CP changeSetHubId);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   12/17
@@ -174,7 +174,7 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     ECDb changeCacheFile;
     primaryECDb.CreateChangeCache(changeCacheFile, changeCacheFilePath);
 
-    //Read a custom schema (the method ReadSchema is just a place holder function to keep the example simple) 
+    //Read a custom schema (the method ReadSchema is just a place holder function to keep the example simple)
     bvector<ECN::ECSchemaCP> customSchemas = ReadSchema(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
          <ECSchema schemaName="ChangeSets" alias="cset" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -201,12 +201,12 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     changeCacheFile.CloseDb();
 
     //***Step 2: Add additional information to extracted change summary
-    
-    //retrieve changeset and additional information from elsewhere (using a place holder function to keep the example simple) 
+
+    //retrieve changeset and additional information from elsewhere (using a place holder function to keep the example simple)
     Utf8CP changeSetHubId = "ec1efd72621d42a0642bf135bdca409e94a454ed";
     DateTime pushDate;
     Utf8String createdBy;
-    BeSQLite::IChangeSet& changeSet = GetChangeSetInfoFromHub(pushDate, createdBy, changeSetHubId);
+    BeSQLite::ChangeSet& changeSet = GetChangeSetInfoFromHub(pushDate, createdBy, changeSetHubId);
 
     changeCacheFile.OpenBeSQLiteDb(changeCacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
 

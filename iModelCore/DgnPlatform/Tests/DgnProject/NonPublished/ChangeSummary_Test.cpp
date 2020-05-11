@@ -178,7 +178,7 @@ bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ChangeSummary const
 //---------------------------------------------------------------------------------------
 void ChangeSummaryTestFixture::GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary)
     {
-    AbortOnConflictChangeSet sqlChangeSet;
+    ChangeSet sqlChangeSet;
     DbResult result = sqlChangeSet.FromChangeTrack(m_db->Txns(), ChangeSet::SetType::Full);
     ASSERT_TRUE(BE_SQLITE_OK == result);
 

@@ -205,6 +205,7 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_stmts(20), m_snapp
     {
     m_mruCache.reset(new ElementMRU());
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

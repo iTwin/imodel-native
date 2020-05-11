@@ -174,7 +174,7 @@ void InstancesTable::InsertOrUpdate(ChangeSummary::InstanceCR instance)
     *
     * found:UPDATE + new:INSERT  = Update existing entry to INSERT
     * found:UPDATE + new:DELETE  = Update existing entry to DELETE
-    * 
+    *
     * <all other cases keep existing entry>
     */
 
@@ -444,8 +444,8 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ChangeExtractor::ChangeExtractor(ChangeSummary const& changeSummary, InstancesTable& instancesTable, ValuesTable& valuesTable) 
-    : m_changeSummary(changeSummary), m_ecdb(m_changeSummary.GetDb()), m_instancesTable(instancesTable), m_valuesTable(valuesTable) 
+ChangeExtractor::ChangeExtractor(ChangeSummary const& changeSummary, InstancesTable& instancesTable, ValuesTable& valuesTable)
+    : m_changeSummary(changeSummary), m_ecdb(m_changeSummary.GetDb()), m_instancesTable(instancesTable), m_valuesTable(valuesTable)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -467,7 +467,7 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances)
+BentleyStatus ChangeExtractor::FromChangeSet(ChangeStream& changeSet, bool includeRelationshipInstances)
     {
     // Pass 1
     BentleyStatus status = FromChangeSet(changeSet, ExtractOption::InstancesOnly);
@@ -481,7 +481,7 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, bool include
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption)
+BentleyStatus ChangeExtractor::FromChangeSet(ChangeStream& changeSet, ExtractOption extractOption)
     {
     ChangeIterator iter(m_ecdb, changeSet);
 
@@ -489,7 +489,7 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
         {
         // There are tables which are just not mapped to EC that we simply don't care about (e.g., be_Prop table)
         if (!rowEntry.IsMapped())
-            continue; 
+            continue;
 
         ECClassCP primaryClass = rowEntry.GetPrimaryClass();
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
@@ -505,7 +505,7 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
             ExtractInstance(rowEntry);
             continue;
             }
-        
+
         if (extractOption == ExtractOption::RelationshipInstancesOnly)
             {
             ExtractRelInstances(rowEntry);
@@ -618,7 +618,7 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
         BeAssert(relClassId.IsValid());
         }
     ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
-    
+
     ECN::ECClassCP relClass = m_ecdb.Schemas().GetClass(relClassId);
     BeAssert(relClass != nullptr);
     RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (m_ecdb.Schemas().Main().GetClassMap(*relClass));
@@ -627,7 +627,7 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
         BeAssert(relClassMap != nullptr);
         return;
         }
-    
+
     // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
     ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
     ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
@@ -853,7 +853,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
     if (endIsInOneClass)
         {
         // TODO: dynamic_cast<PropertyMapRelationshipConstraintClassId const*> (propMap)->GetDefaultConstraintECClassId()
-        // should work, but doesn't for link tables - need to check with Krischan/Affan. 
+        // should work, but doesn't for link tables - need to check with Krischan/Affan.
         return GetRelEndClassIdFromRelClass(relationshipClassMap.GetClass().GetRelationshipClassCP(), relEnd);
         }
 
@@ -991,7 +991,7 @@ ChangeSummary::~ChangeSummary()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummary::FromChangeSet(IChangeSet& changeSet, ChangeSummary::Options const& options)
+BentleyStatus ChangeSummary::FromChangeSet(ChangeStream& changeSet, ChangeSummary::Options const& options)
     {
     Initialize();
     return m_changeExtractor->FromChangeSet(changeSet, options.GetIncludeRelationshipInstances());
@@ -1055,7 +1055,7 @@ void ChangeSummary::Dump() const
         printf("Invalid ChangeSummary");
         return;
         }
-        
+
     printf("\tBriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect\n");
     printf("\t\tAccessString;OldValue;NewValue\n");
 
@@ -1101,7 +1101,7 @@ void ChangeSummary::Dump() const
                 oldValueStr = oldValue.Format(0);
                 newValueStr = newValue.Format(0);
                 }
-            
+
             printf("\t\t%s;%s;%s\n", accessString.c_str(), oldValueStr.c_str(), newValueStr.c_str());
             }
         }
@@ -1118,7 +1118,7 @@ Utf8String ChangeSummary::GetValuesTableName() const { return m_valuesTable->Get
 // static
 BentleyStatus ChangeSummary::GetMappedPrimaryTable(Utf8CP& tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb)
     {
-    // TODO: This functionality needs to be moved to some publicly available ECDb mapping utility. 
+    // TODO: This functionality needs to be moved to some publicly available ECDb mapping utility.
     ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(ecClass);
     if (!classMap)
         return ERROR;
@@ -1181,7 +1181,7 @@ DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
            return m_valuesTableSelect->GetDbValue(0);
        BeAssert(result == BE_SQLITE_DONE);
        }
-    
+
     DbDupValue invalidValue(nullptr);
     return invalidValue;
     }
@@ -1316,8 +1316,8 @@ ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator:
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator::end() const
-    { 
-    return Entry(m_changeSummary, m_stmt.get(), false); 
+    {
+    return Entry(m_changeSummary, m_stmt.get(), false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1479,8 +1479,8 @@ void IsChangedInstanceSqlFunction::_ComputeScalar(ScalarFunction::Context& ctx, 
     /*
      * TODO: Instead of returning a bool we can return a change id (need to set one up)
      * Alternately, we can setup ECSQL mappings with the change table and entirely
-     * avoid some of these custom functions. This needs more investigation if and when 
-     * the use cases demand it. 
+     * avoid some of these custom functions. This needs more investigation if and when
+     * the use cases demand it.
      */
     int res = changeSummary->ContainsInstance(classId, instanceId) ? 1 : 0;
     ctx.SetResultInt(res);

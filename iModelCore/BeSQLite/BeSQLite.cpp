@@ -3461,6 +3461,60 @@ ZipErrors SnappyFromBlob::_Read(Byte* data, uint32_t bufSize, uint32_t& bytesAct
     return  ZIP_SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChunkedArray::Reader::Read(Byte* data, int* pSize) {
+    int copied = 0;
+    int nLeft = *pSize; // on input, this is the requested size. On output it is the actual read size.
+    Byte* pOut = data;
+    while (nLeft > 0) {
+        auto currChunk = m_array.m_chunks.begin() + m_chunkNum;
+        if (currChunk >= m_array.m_chunks.end())
+            break;
+        int leftInChunk = std::min((int)(currChunk->size() - m_offset), nLeft);
+        if (leftInChunk > 0) {
+            auto start = currChunk->begin() + m_offset;
+            memcpy(pOut, &*start, leftInChunk);
+            nLeft -= leftInChunk;
+            m_offset += leftInChunk;
+            copied += leftInChunk;
+            pOut += leftInChunk;
+        } else {
+            m_offset = 0;
+            ++m_chunkNum;
+        }
+    }
+    *pSize = copied;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+ZipErrors SnappyFromBlob::ReadToChunkedArray(ChunkedArray& array, uint32_t bufSize) {
+    array.Clear();
+
+    // while there's still more data requested
+    while (0 != bufSize) {
+        // if there's no more uncompressed data, read from the blob
+        if (0 >= m_uncompressAvail) {
+            // get more data from the blob
+            if (ZIP_SUCCESS != ReadNextChunk()) {
+                Finish();
+                return ZIP_ERROR_COMPRESSION_ERROR;
+            }
+        }
+
+        uint32_t readSize = (bufSize > m_uncompressAvail) ? m_uncompressAvail : bufSize;
+        array.Append(m_uncompressCurr, readSize);
+        m_uncompressCurr += readSize;
+        bufSize -= readSize;
+        m_uncompressAvail -= readSize;
+    }
+
+    Finish();
+    return ZIP_SUCCESS;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12

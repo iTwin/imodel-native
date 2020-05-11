@@ -987,9 +987,9 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
     else
         rlink = RepositoryLink::Create(*lmodel, "", code.GetValue().GetUtf8CP());
 
-    // *** 
+    // ***
     // *** NB: Keep this in sync with UpdateRepositoryLinkDocumentProperties
-    // *** 
+    // ***
 
     rlink->SetUrl(docProps.m_desktopURN.c_str());
     rlink->SetDescription("");
@@ -1021,9 +1021,9 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
 //---------------+---------------+---------------+---------------+---------------+-------
 bool iModelBridge::UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR db, Params const& params, BeFileNameCR localFileName, bool updateProperties)
     {
-    // *** 
+    // ***
     // *** NB: Keep this in sync with MakeRepositoryLink
-    // *** 
+    // ***
 
     if (nullptr == params.GetDocumentPropertiesAccessor())
         return false;
@@ -1239,7 +1239,11 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     auto status = db.SaveChanges(commitComment);
     iModelBridge::LogPerformance(timer, "iModelBridge::SaveChanges()");
     if (BE_SQLITE_OK != status)
+        {
+        BeAssert(false && "db.SaveChanges failed");
+        LOG.errorv("db.SaveChanges failed with error %x.", status);
         return BSIERROR;
+        }
 
     return BSISUCCESS;
     }
@@ -1254,7 +1258,7 @@ Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
     auto key = params.GetBridgeRegSubKeyUtf8();
 
     Utf8String comment = key;
-    
+
     auto const& rcomment = params.GetRevisionComment();
     if (!comment.empty() && !rcomment.empty())
         comment.append(" - ");
@@ -1297,7 +1301,12 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
         return bcMgr->_Push(commitComment.c_str(), changedFiles, changes);
         }
 
-    db.SaveChanges(commitComment.c_str());
+    if (BSISUCCESS != db.SaveChanges(commitComment.c_str()))
+        {
+        BeAssert(false && "SaveChanges failed");
+        LOG.errorv("SaveChanges failed. Push not done.");
+        return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
+        }
     return bcMgr->_Push(commitComment.c_str(), changedFiles, changes);
     }
 

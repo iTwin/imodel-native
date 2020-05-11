@@ -35,14 +35,13 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 */
 
 //! Actions that cause events to be sent to TxnTables.
-enum class TxnAction
-{
-    None = 0,   //!< not currently processing anything
-    Commit,     //!< processing a Commit. Triggered by a call to DgnDb::SaveChanges
-    Abandon,    //!< abandoning the current Txn. Triggered by a call to DgnDb::AbandonChanges
-    Reverse,    //!< reversing a previously committed ChangeSet. Triggered by a call to TxnManager::ReverseActions
-    Reinstate,  //!< reinstating a previously reversed ChangeSet. Triggered by a call to TxnManager::ReinstateActions
-    Merge       //!< merging a ChangeSet made by a foreign briefcase.
+enum class TxnAction {
+    None = 0,  //!< not currently processing anything
+    Commit,    //!< processing a Commit. Triggered by a call to DgnDb::SaveChanges
+    Abandon,   //!< abandoning the current Txn. Triggered by a call to DgnDb::AbandonChanges
+    Reverse,   //!< reversing a previously committed ChangeSet. Triggered by a call to TxnManager::ReverseActions
+    Reinstate, //!< reinstating a previously reversed ChangeSet. Triggered by a call to TxnManager::ReinstateActions
+    Merge      //!< merging a ChangeSet made by a foreign briefcase.
 };
 
 //=======================================================================================
@@ -50,8 +49,7 @@ enum class TxnAction
 //! Call DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor to register a TxnMonitor.
 // @bsiclass                                                      Keith.Bentley   10/07
 //=======================================================================================
-struct TxnMonitor
-{
+struct TxnMonitor {
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
@@ -78,9 +76,8 @@ namespace dgn_TxnTable {
 //! and change merging operations and informs the TxnTable of what happened.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct TxnTable : RefCountedBase
-{
-    enum class ChangeType : int {Insert, Update, Delete};
+struct TxnTable : RefCountedBase {
+    enum class ChangeType : int { Insert, Update, Delete };
     TxnManager& m_txnMgr;
     TxnTable(TxnManager& mgr) : m_txnMgr(mgr) {}
 
@@ -184,8 +181,7 @@ struct TxnRelationshipLinkTables
 //! to react to change propagation caused by dynamic operations before they are rolled back.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DynamicTxnProcessor
-{
+struct EXPORT_VTABLE_ATTRIBUTE DynamicTxnProcessor {
     virtual void _ProcessDynamicChanges() = 0;
 };
 
@@ -329,24 +325,24 @@ private:
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
 
     void AddChanges(BeSQLite::Changes const&);
-    BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
+    BeSQLite::DbResult SaveChanges(BeSQLite::ChangeSetCR changeset, Utf8CP operation, bool isSchemaChange);
     BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation) {return SaveChanges(schemaChangeSet, operation, true); }
     BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation) {return SaveChanges(changeSet, operation, false);}
 
     BeSQLite::DbResult SaveRebase(int64_t& id, BeSQLite::Rebase const& rebase);
 
-    Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
+    void ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     void ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet&, TxnId rowid);
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStream& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
 
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
-    void OnChangesApplied(BeSQLite::IChangeSet& changeset, bool invert);
-    OnCommitStatus CancelChanges(BeSQLite::IChangeSet& changeset);
+    void OnChangesApplied(BeSQLite::ChangeStream& changeset, bool invert);
+    OnCommitStatus CancelChanges(BeSQLite::ChangeStream& changeset);
     BentleyStatus PropagateChanges() {return DoPropagateChanges(*this);}
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     void ReverseTxnRange(TxnRange const& txnRange);
@@ -716,37 +712,35 @@ namespace dgn_TxnTable
         bool HasChanges() const {return m_changes;}
     };
 
-    struct ElementDep : TxnTable
-    {
-        struct DepRelData
-        {
+    struct ElementDep : TxnTable {
+        struct DepRelData {
             BeSQLite::EC::ECInstanceKey m_relKey;
             DgnElementId m_source, m_target;
 
-            DepRelData(BeSQLite::EC::ECInstanceKey const& key, DgnElementId s, DgnElementId t) : m_relKey(key), m_source(s), m_target(t) {;}
+            DepRelData(BeSQLite::EC::ECInstanceKey const& key, DgnElementId s, DgnElementId t) : m_relKey(key), m_source(s), m_target(t) { ; }
         };
 
         BeSQLite::Statement m_stmt;
         DgnElementIdSet m_failedTargets;
         bvector<DepRelData> m_deletedRels;
         bool m_changes;
-        static Utf8CP MyTableName() {return BIS_TABLE(BIS_REL_ElementDrivesElement);}
-        Utf8CP _GetTableName() const override {return MyTableName();}
+        static Utf8CP MyTableName() { return BIS_TABLE(BIS_REL_ElementDrivesElement); }
+        Utf8CP _GetTableName() const override { return MyTableName(); }
 
         ElementDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
         void _Initialize() override;
         void _OnValidate() override;
-        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {UpdateSummary(change, TxnTable::ChangeType::Insert);}
-        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Delete);}
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Update);}
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Insert); }
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Delete); }
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Update); }
         void _PropagateChanges() override;
         void _OnValidated() override;
 
         void UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType);
         void AddDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
-        void AddFailedTarget(DgnElementId id) {m_failedTargets.insert(id);}
-        DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
-        bool HasChanges() const {return m_changes;}
+        void AddFailedTarget(DgnElementId id) { m_failedTargets.insert(id); }
+        DgnElementIdSet const& GetFailedTargets() const { return m_failedTargets; }
+        bool HasChanges() const { return m_changes; }
     };
 
     //! @private

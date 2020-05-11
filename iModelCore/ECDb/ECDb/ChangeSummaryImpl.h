@@ -37,7 +37,7 @@ struct InstancesTable final
 
         void Insert(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName);
         void Update(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
-        
+
     public:
         InstancesTable(ChangeSummaryCR changeSummary, int nameSuffix);
         ~InstancesTable() { Free(); }
@@ -118,7 +118,7 @@ struct ChangeExtractor final
         ChangeExtractor(ChangeExtractor const&) = delete;
         ChangeExtractor& operator=(ChangeExtractor const&) = delete;
 
-        BentleyStatus FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption);
+        BentleyStatus FromChangeSet(ChangeStream& changeSet, ExtractOption extractOption);
 
         void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
         ECN::ECClassId GetRelEndClassId(ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
@@ -138,7 +138,7 @@ struct ChangeExtractor final
 
     public:
         ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTable& instancesTable, ValuesTable& valuesTable);
-        BentleyStatus FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances);
+        BentleyStatus FromChangeSet(ChangeStream& changeSet, bool includeRelationshipInstances);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

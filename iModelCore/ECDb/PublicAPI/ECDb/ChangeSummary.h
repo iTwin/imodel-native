@@ -36,17 +36,17 @@ struct ValuesTable;
 struct ChangeExtractor;
 
 //=======================================================================================
-//! Utility to interpret a set of changes to the database as EC instances. 
+//! Utility to interpret a set of changes to the database as EC instances.
 //! @deprecated Use BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary instead
-//! 
-//! @remarks The utility iterates over the raw SQLite changes to consolidate and extract 
-//! information on the contained ECInstances and ECRelationshipInstances. 
-//! 
+//!
+//! @remarks The utility iterates over the raw SQLite changes to consolidate and extract
+//! information on the contained ECInstances and ECRelationshipInstances.
+//!
 //! Internally two passes are made over the changes with the @ref ChangeIterator. The
-//! second pass allows consolidation of instances and relationship instances that may be 
-//! spread across multiple tables. The results are stored in temporary tables, and this 
-//! allows iteration and queries of the changes as EC instances. 
-//! 
+//! second pass allows consolidation of instances and relationship instances that may be
+//! spread across multiple tables. The results are stored in temporary tables, and this
+//! allows iteration and queries of the changes as EC instances.
+//!
 //! @see ChangeSet, ChangeIterator
 //! @ingroup ECDbGroup
 //! @bsiclass                                                             07/2015
@@ -115,15 +115,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary
         //! Get the DbOpcode of the changed instance that indicates that the instance was inserted, updated or deleted.
         DbOpcode GetDbOpcode() const { return m_dbOpcode; }
 
-        //! Get the flag indicating if the change was "indirectly" caused by a database trigger or other means. 
+        //! Get the flag indicating if the change was "indirectly" caused by a database trigger or other means.
         int GetIndirect() const { return m_indirect; }
 
         //! Get the name of the primary table containing the instance
         Utf8StringCR GetTableName() const { return m_tableName; }
 
-        //! Returns true if the instance is valid. 
+        //! Returns true if the instance is valid.
         bool IsValid() const { return m_instanceId.IsValid(); }
-    
+
         //! Returns true if the value specified by the accessString exists
         ECDB_EXPORT bool ContainsValue(Utf8CP accessString) const;
 
@@ -132,7 +132,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary
 
         //! Get a specific changed value
         ECDB_EXPORT DbDupValue GetNewValue(Utf8CP accessString) const;
-                
+
         //! Make an iterator over the changed values in a changed instance.
         ValueIterator MakeValueIterator() const { return ChangeSummary::ValueIterator(*m_changeSummary, m_classId, m_instanceId); }
     };
@@ -167,7 +167,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary
     private:
         ChangeSummary const& m_changeSummary;
         Options m_options;
-        
+
         Utf8String MakeSelectStatement(Utf8CP columns) const;
     public:
         explicit InstanceIterator(ChangeSummary const& changeSummary, Options const& options=Options())
@@ -191,9 +191,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary
             //! Get the DbOpcode of the current change
             DbOpcode GetDbOpcode() const { return (DbOpcode) m_sql->GetValueInt(2); }
 
-            //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means. 
+            //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means.
             int GetIndirect() const { return m_sql->GetValueInt(3); }
-                
+
             //! Get the entire instance representing the current change.
             ECDB_EXPORT Instance GetInstance() const;
 
@@ -258,7 +258,7 @@ private:
 
     static int s_count;
     static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
-    
+
     //not copyable
     ChangeSummary(ChangeSummary const&) = delete;
     ChangeSummary& operator=(ChangeSummary const&) = delete;
@@ -277,13 +277,13 @@ public:
     ECDB_EXPORT virtual ~ChangeSummary();
 
     //! Populate the ChangeSummary from the contents of a BeSQLite ChangeSet
-    //! @remarks The ChangeSummary needs to be new or freed before this call. 
+    //! @remarks The ChangeSummary needs to be new or freed before this call.
     //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet, Options const& options = Options());
+    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::ChangeStream& changeSet, Options const& options = Options());
 
     //! Free the data held by this ChangeSummary.
-    //! @note After this call the ChangeSet becomes invalid. Need not be called if used only once - 
-    //! the destructor will automatically call Free. 
+    //! @note After this call the ChangeSet becomes invalid. Need not be called if used only once -
+    //! the destructor will automatically call Free.
     ECDB_EXPORT void Free();
 
     //! Determine whether this ChangeSet holds extracted data or not.
@@ -306,17 +306,17 @@ public:
     ECDB_EXPORT Instance GetInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
 
     //! Get the name of the table containing summary of changed instances
-    //! @remarks The table includes ClassId, InstanceId, DbOpcode and Indirect columns, and can be used as part of other 
+    //! @remarks The table includes ClassId, InstanceId, DbOpcode and Indirect columns, and can be used as part of other
     //! queries. Use @ref FromChangeSet to populate the ChangeSummary table.
     ECDB_EXPORT Utf8String GetInstancesTableName() const;
 
     //! Get the name of the table containing all the changed values
-    //! @remarks The table includes ClassId, InstanceId, AccessString, OldValue, NewValue columns, and can be used as part of other 
+    //! @remarks The table includes ClassId, InstanceId, AccessString, OldValue, NewValue columns, and can be used as part of other
     //! queries. Use @ref FromChangeSet to populate the ChangeSummary table.
     ECDB_EXPORT Utf8String GetValuesTableName() const;
 
     //! @private internal use only
-    //! Query for all changed instances of the specified class (and it's sub classes). 
+    //! Query for all changed instances of the specified class (and it's sub classes).
     ECDB_EXPORT void QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic = true, QueryDbOpcode queryDbOpcodes = QueryDbOpcode::All) const;
 
     Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const; //! @private

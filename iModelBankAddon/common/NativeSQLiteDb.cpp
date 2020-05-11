@@ -72,14 +72,14 @@ static DbResult applyChangeSet(NativeSQLiteDb::ChangeSetApplyStats &stats, Db &d
     // Apply DDL, if any
     DbSchemaChangeSet dbSchemaChanges;
     bool containsSchemaChanges;
-    DbResult result = changesetReader.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
+    DbResult result = changesetReader.MakeReader()->GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
     if (result != BE_SQLITE_OK)
     {
         //        BeAssert(false);
         return result;
     }
 
-    if (containsSchemaChanges && !dbSchemaChanges.IsEmpty())
+    if (containsSchemaChanges && !dbSchemaChanges._IsEmpty())
     {
         stats.containsSchemaChanges = true;
 

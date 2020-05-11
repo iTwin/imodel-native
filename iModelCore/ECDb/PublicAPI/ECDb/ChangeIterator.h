@@ -12,19 +12,19 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! Utility to iterate over change records and interpret it as ECInstances. 
+//! Utility to iterate over change records and interpret it as ECInstances.
 //!
-//! @remarks The utility provides a forward only iterator over the rows of a change set/stream, 
+//! @remarks The utility provides a forward only iterator over the rows of a change set/stream,
 //! and has methods to interpret the raw SQLite changes as ECInstances, taking into account
-//! the mapping between the ECSchema and the persisted SQLite Db. 
+//! the mapping between the ECSchema and the persisted SQLite Db.
 //!
-//! The changes to ECInstances and ECRelationshipInstances may be spread over multiple 
-//! tables, and the may be streamed in no particular order. This utility does not attempt 
-//! to consolidate the EC information, and doesn't provide information on the relationships. 
-//! It must be used only for cases of mining specific EC information from the ChangeSet-s 
-//! without incurring the performance penalty of creating change summaries. 
+//! The changes to ECInstances and ECRelationshipInstances may be spread over multiple
+//! tables, and the may be streamed in no particular order. This utility does not attempt
+//! to consolidate the EC information, and doesn't provide information on the relationships.
+//! It must be used only for cases of mining specific EC information from the ChangeSet-s
+//! without incurring the performance penalty of creating change summaries.
 //!
-//! See @ref ECDbChange to get a consolidated view of the changed ECInstances and 
+//! See @ref ECDbChange to get a consolidated view of the changed ECInstances and
 //! ECRelationshipInstances
 //!
 //! @see @ref ECDbChange, ChangeSet
@@ -145,7 +145,7 @@ struct ChangeIterator final
             //! Get the DbOpcode of the current change
             ECDB_EXPORT DbOpcode GetDbOpcode() const;
 
-            //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means. 
+            //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means.
             ECDB_EXPORT int GetIndirect() const;
 
             //! Get the primary class of the current change
@@ -175,7 +175,7 @@ struct ChangeIterator final
             ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId whereInstanceIdIs) const; //!< @private
         };
 
-  
+
     private:
         ECDbCR m_ecdb;
         Changes m_changes;
@@ -187,7 +187,7 @@ struct ChangeIterator final
 
     public:
         ECDB_EXPORT ChangeIterator(ECDbCR ecdb, Changes const& changes);
-        ChangeIterator(ECDbCR ecdb, IChangeSet& changeSet) : ChangeIterator(ecdb, changeSet.GetChanges()) {}
+        ChangeIterator(ECDbCR ecdb, ChangeStream& changeSet) : ChangeIterator(ecdb, changeSet.GetChanges()) {}
         ECDB_EXPORT ~ChangeIterator();
 
         typedef RowEntry const_iterator;
@@ -196,7 +196,7 @@ struct ChangeIterator final
         ECDB_EXPORT const_iterator end() const;
 
         //! @private
-        TableMap const* GetTableMap(Utf8StringCR tableName) const; 
+        TableMap const* GetTableMap(Utf8StringCR tableName) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -232,10 +232,10 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
             ECClassCP ecClass = m_ecdb.Schemas().GetClass(instanceChangeStmt.GetValueId<ECClassId>(2));
             ASSERT_TRUE(ecClass != nullptr) << "ECClassId: " << instanceChangeStmt.GetValueId<ECClassId>(2).ToString();
 
-            printf("%s|%s|%s|%s|%s\r\n", 
+            printf("%s|%s|%s|%s|%s\r\n",
                    instanceChangeStmt.GetValueId<ECInstanceId>(1).ToString().c_str(),
-                   ecClass->GetFullName(), ecClass->GetId().ToString().c_str(), 
-                   ChangedOpCodeToString((ChangeOpCode) instanceChangeStmt.GetValueInt(3)), 
+                   ecClass->GetFullName(), ecClass->GetId().ToString().c_str(),
+                   ChangedOpCodeToString((ChangeOpCode) instanceChangeStmt.GetValueInt(3)),
                    instanceChangeStmt.GetValueBoolean(4) ? "yes" : "no");
 
 
@@ -366,8 +366,8 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
 TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("change_statistic1.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -377,7 +377,7 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
                 <ECProperty propertyName="Origin" typeName="Point2d" />
             </ECEntityClass>
         </ECSchema>)xml")));
-    
+
     ReopenECDb();
     //Enusre only on system table exist by default
     ASSERT_TRUE(m_ecdb.TableExists("sqlite_stat1"));
@@ -399,13 +399,13 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     tracker.EnableTracking(false);
     //Make we captured some changes
     ASSERT_TRUE(tracker.HasChanges());
-    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker)); 
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
     }
 
     m_ecdb.CloseDb();
     ASSERT_EQ(SUCCESS, SetupECDb("change_statistic2.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -441,8 +441,8 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
 TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionOptimizations.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo">
                 <ECProperty propertyName="I" typeName="int" />
             </ECEntityClass>
@@ -533,7 +533,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations)
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
- 
+
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
@@ -551,8 +551,8 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations)
 TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionInput.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -691,8 +691,8 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
 TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionOnlyForSelect.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -746,8 +746,8 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
 TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ValidCache_InvalidCache.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -900,8 +900,8 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
 TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("AttachChangeCacheMethodInput.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -947,8 +947,8 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
 TEST_F(ChangeSummaryTestFixture, IsChangeCacheAttached)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("IsChangeCacheAttached.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -967,8 +967,8 @@ TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
     TestHelper helper(m_ecdb);
 
     ASSERT_EQ(SUCCESS, helper.ImportSchema(SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
@@ -993,7 +993,7 @@ TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath)
 
     BeFileName cacheFilePath = ecdbPath.GetDirectoryName();
     cacheFilePath.AppendToPath(L"mycachefolder");
-    
+
     if (!cacheFilePath.DoesPathExist())
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(cacheFilePath.GetName()));
 
@@ -1171,8 +1171,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
     {
     std::map<Utf8String, std::unique_ptr<SchemaItem>> testSchemas;
     testSchemas["default mapping"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="NamedElement">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -1183,8 +1183,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         </ECSchema>)xml");
 
     testSchemas["joined table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1202,8 +1202,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         </ECSchema>)xml");
 
     testSchemas["shared columns"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1223,8 +1223,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         </ECSchema>)xml");
 
     testSchemas["overflow table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1245,8 +1245,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         </ECSchema>)xml");
 
     testSchemas["joined table and shared columns"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1267,8 +1267,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         </ECSchema>)xml");
 
     testSchemas["joined table and overflow table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1377,8 +1377,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
     {
     std::map<Utf8String, std::unique_ptr<SchemaItem>> testSchemas;
     testSchemas["default mapping"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="NamedElement">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -1389,8 +1389,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         </ECSchema>)xml");
 
     testSchemas["joined table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1408,8 +1408,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         </ECSchema>)xml");
 
     testSchemas["shared columns"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1429,8 +1429,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         </ECSchema>)xml");
 
     testSchemas["overflow table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1451,8 +1451,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         </ECSchema>)xml");
 
     testSchemas["joined table and shared columns"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1473,8 +1473,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         </ECSchema>)xml");
 
     testSchemas["joined table and overflow table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="NamedElement">
                  <ECCustomAttributes>
@@ -1637,8 +1637,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
     {
     std::map<Utf8String, std::unique_ptr<SchemaItem>> testSchemas;
     testSchemas["default mapping"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECStructClass typeName="Location" modifier="Sealed">
                 <ECProperty propertyName="City" typeName="string" />
                 <ECProperty propertyName="Zip" typeName="int" />
@@ -1653,8 +1653,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         </ECSchema>)xml");
 
     testSchemas["joined table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECStructClass typeName="Location" modifier="Sealed">
                 <ECProperty propertyName="City" typeName="string" />
@@ -1676,8 +1676,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         </ECSchema>)xml");
 
     testSchemas["shared columns"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECStructClass typeName="Location" modifier="Sealed">
                 <ECProperty propertyName="City" typeName="string" />
@@ -1701,8 +1701,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         </ECSchema>)xml");
 
     testSchemas["overflow table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECStructClass typeName="Location" modifier="Sealed">
                 <ECProperty propertyName="City" typeName="string" />
@@ -1727,8 +1727,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         </ECSchema>)xml");
 
     testSchemas["joined table and shared columns"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECStructClass typeName="Location" modifier="Sealed">
                 <ECProperty propertyName="City" typeName="string" />
@@ -1753,8 +1753,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         </ECSchema>)xml");
 
     testSchemas["joined table and overflow table"] = std::make_unique<SchemaItem>(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECStructClass typeName="Location" modifier="Sealed">
                 <ECProperty propertyName="City" typeName="string" />
@@ -1967,8 +1967,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -2071,7 +2071,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    //before update 
+    //before update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
@@ -2080,7 +2080,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    //after update 
+    //after update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
@@ -2121,8 +2121,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -2166,8 +2166,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId)
     {
         ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId.ecdb", SchemaItem(
-            R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -2268,7 +2268,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-        //before update 
+        //before update
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
@@ -2277,7 +2277,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
             << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-        //after update 
+        //after update
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
@@ -2318,8 +2318,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
 TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("VirtualRelECClassId.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -2372,8 +2372,8 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropCascadeDelete.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2457,7 +2457,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId, Name, Parent FROM ts.Child.Changes(%s,'AfterInsert') ORDER BY Name", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json", 
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json",
                                          parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert') ORDER BY TargetECInstanceId", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
@@ -2480,7 +2480,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    //before update 
+    //before update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
@@ -2489,7 +2489,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    //after update 
+    //after update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
@@ -2534,8 +2534,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonRelationshipRelECClassId)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -2598,11 +2598,11 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
         };
 
     // Case 1: Link table has FKs into end tables
-            { 
+            {
             // Classes must have a class id column -> TPH and not sealed
             ASSERT_EQ(SUCCESS, SetupECDb("DeletedLinkTableRow.ecdb", SchemaItem(
-                R"xml(<?xml version="1.0" encoding="utf-8"?> 
-                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                     <ECEntityClass typeName="A">
                         <ECCustomAttributes>
@@ -2656,7 +2656,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
             ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
             ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
-            changeset.Free();
+            changeset.Clear();
             ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
             //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
             ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
@@ -2671,7 +2671,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
             resetFile(aKey, bKey, relKey, tracker);
             ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
-            changeset.Free();
+            changeset.Clear();
             ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
             //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
             ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
@@ -2687,8 +2687,8 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
 
         {
         ASSERT_EQ(SUCCESS, SetupECDb("DeletedLinkTableRow_NoFks.ecdb", SchemaItem(
-            R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
         <ECEntityClass typeName="A">
             <ECCustomAttributes>
@@ -2748,7 +2748,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
-        changeset.Free();
+        changeset.Clear();
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
         //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
@@ -2763,7 +2763,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
         resetFile(aKey, bKey, relKey, tracker);
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
-        changeset.Free();
+        changeset.Clear();
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
         //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
@@ -2776,7 +2776,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
 
         //now delete rel in separate changeset
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
-        changeset.Free();
+        changeset.Clear();
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
         //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
@@ -2816,7 +2816,7 @@ TEST_F(ChangeSummaryTestFixture, SchemaChange)
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "</ECSchema>")));
 
-    changeSet.Free();
+    changeSet.Clear();
     ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeSet), ECDb::ChangeSummaryExtractOptions(false)));
     }
@@ -3095,8 +3095,8 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Element" modifier="Abstract">
                 <ECCustomAttributes>
@@ -3556,7 +3556,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     ECInstanceKey employeeHardwareKey;
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(employeeHardwareKey));
 
-    changeset.Free();
+    changeset.Clear();
 
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
@@ -3597,7 +3597,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     ECInstanceKey employeeHardwareKey2;
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(employeeHardwareKey2));
 
-    changeset.Free();
+    changeset.Clear();
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
@@ -3762,7 +3762,7 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
 
     //----------------------------------------------------------------------------------
     TestChangeSet rev0;
-    rev0.FromChangeTrack(tracker, IChangeSet::SetType::Full);
+    rev0.FromChangeTrack(tracker, ChangeSet::SetType::Full);
     tracker.Restart();
     ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into fooP(id,prop) values(3, 'dog')"));
     ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("update fooP set prop='crow' where id =2"));
@@ -3778,7 +3778,7 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
 
     //----------------------------------------------------------------------------------
     TestChangeSet rev1;
-    rev1.FromChangeTrack(tracker, IChangeSet::SetType::Full);
+    rev1.FromChangeTrack(tracker, ChangeSet::SetType::Full);
     tracker.EnableTracking(false);
 
     //Verify
@@ -3865,7 +3865,7 @@ TEST_F(ChangeSummaryTestFixtureV1, SchemaChange)
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "</ECSchema>")));
 
-    changeSet.Free();
+    changeSet.Clear();
     ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
 
     changeSummary.Free();
@@ -3879,8 +3879,8 @@ TEST_F(ChangeSummaryTestFixtureV1, SchemaChange)
 TEST_F(ChangeSummaryTestFixtureV1, Overflow_PrimitiveProperties)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Element" modifier="Abstract">
                 <ECCustomAttributes>
@@ -4396,11 +4396,11 @@ TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction)
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     changeSummary.Free();
-    changeSet.Free();
+    changeSet.Clear();
 
     result = changeSet.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == result);
-    
+
     status = changeSummary.FromChangeSet(changeSet);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -4422,7 +4422,7 @@ TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction)
     m_ecdb.SaveChanges();
     tracker.Restart();
 
-    /* 
+    /*
     * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
     */
     statement.Finalize();
@@ -4443,7 +4443,7 @@ TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction)
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     changeSummary.Free();
-    changeSet.Free();
+    changeSet.Clear();
 
     result = changeSet.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == result);
@@ -4715,5 +4715,5 @@ TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns)
     }
 
 
-        
+
 END_ECDBUNITTESTS_NAMESPACE

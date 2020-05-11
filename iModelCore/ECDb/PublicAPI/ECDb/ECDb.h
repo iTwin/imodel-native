@@ -55,19 +55,19 @@ enum class ChangedValueState
 struct ChangeSetArg final
     {
     private:
-        BeSQLite::IChangeSet& m_changeSet;
+        BeSQLite::ChangeStream& m_changeSet;
         Utf8String m_extendedPropertiesJson;
 
     public:
         //!Constructs a ChangeSetArg
         //!@param[in] changeSet SQLite Changeset
-        explicit ChangeSetArg(BeSQLite::IChangeSet& changeSet) : m_changeSet(changeSet) {}
+        explicit ChangeSetArg(BeSQLite::ChangeStream& changeSet) : m_changeSet(changeSet) {}
         //!Constructs a ChangeSetArg
         //!@param[in] changeSet SQLite Changeset
         //!@param[in] extendedPropertiesJson JSON additional properties about the ChangeSet which are inserted
         //!into the ChangeSummary::ExtendedProperties property.
-        ChangeSetArg(BeSQLite::IChangeSet& changeSet, Utf8StringCR extendedPropertiesJson) : m_changeSet(changeSet), m_extendedPropertiesJson(extendedPropertiesJson) {}
-        BeSQLite::IChangeSet& GetChangeSet() const { return m_changeSet; }
+        ChangeSetArg(BeSQLite::ChangeStream& changeSet, Utf8StringCR extendedPropertiesJson) : m_changeSet(changeSet), m_extendedPropertiesJson(extendedPropertiesJson) {}
+        BeSQLite::ChangeStream& GetChangeSet() const { return m_changeSet; }
         Utf8String const& GetExtendedPropertiesJson() const { return m_extendedPropertiesJson; }
     };
 

@@ -1315,11 +1315,11 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
 
     MyChangeSet changeSet;
     changeSet.FromChangeTrack(changeTracker);
-    int size = changeSet.GetSize();
+    auto size = changeSet.GetSize();
     ASSERT_TRUE(size > 0);
 
     changeTracker.EndTracking();
-    changeSet.Free();
+    changeSet.Clear();
     changeTracker.EnableTracking(true);
 
     /* Test 2: Update with no changes to integral values
@@ -1333,7 +1333,7 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
     ASSERT_TRUE(size == 0);
 
     changeTracker.EndTracking();
-    changeSet.Free();
+    changeSet.Clear();
     m_db.CloseDb();
     }
 
@@ -1354,7 +1354,7 @@ TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
 
     MyChangeSet changeSet;
     changeSet.FromChangeTrack(changeTracker);
-    int size = changeSet.GetSize();
+    auto size = changeSet.GetSize();
     ASSERT_TRUE(size > 0);
     changeTracker.EndTracking();
 
@@ -1493,7 +1493,7 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
     // Create change set - fails!
-    changeSet.Free();
+    changeSet.Clear();
     result = changeSet.FromChangeTrack(changeTracker);
     ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
 
@@ -1502,12 +1502,12 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
     // Create change set - fails!
-    changeSet.Free();
+    changeSet.Clear();
     result = changeSet.FromChangeTrack(changeTracker);
     ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
 
     changeTracker.EndTracking();
-    changeSet.Free();
+    changeSet.Clear();
     m_db.CloseDb();
     }
 
@@ -1560,7 +1560,7 @@ TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
     EXPECT_TRUE(result == BE_SQLITE_ROW);
     EXPECT_EQ(1.1, stmt.GetValueDouble(0));
 
-    changeSet.Free();
+    changeSet.Clear();
     stmt.Finalize();
     m_db.CloseDb();
     }

@@ -567,8 +567,7 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridgeFwkPush::_Push(Utf8CP co
 
     if (!m_fwk.AllowIntermediatePushes())
         {
-        m_fwk.m_briefcaseDgnDb->SaveChanges();
-        return iModelBridge::IBriefcaseManager::Success;
+        return (m_fwk.m_briefcaseDgnDb->SaveChanges() == BeSQLite::BE_SQLITE_OK)? iModelBridge::IBriefcaseManager::Success : iModelBridge::IBriefcaseManager::UnknownError;
         }
 
     auto channelParentId = m_fwk.m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId;
@@ -598,6 +597,13 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bvector<Ut
     if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
         {
         GetLogger().errorv("%s failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()", opName);
+        BeAssert(false);
+        return BSIERROR;
+        }
+
+    if (m_briefcaseDgnDb->Txns().HasChanges())
+        {
+        GetLogger().errorv("Briefcase_PullMergePush failed - caller must call SaveChanges before calling this function");
         BeAssert(false);
         return BSIERROR;
         }

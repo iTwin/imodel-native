@@ -65,15 +65,15 @@ struct ChangeSummaryExtractor final
             public:
                 Context(ECDbCR primaryFile, ECDbR changeCacheFile) : m_primaryECDb(primaryFile), m_userChangeCacheECDb(&changeCacheFile), m_changeSummaryStmtCache(15) {}
                 Context(ECDbCR primaryFile) : m_primaryECDb(primaryFile), m_changeSummaryStmtCache(15) {}
-                //Performs clean-up: 
+                //Performs clean-up:
                 //*saves changes to change summary ECDb
                 //*reattaches the change summary ECDb to the primary ECDb if it was attached before extraction
                 ~Context();
 
                 DbResult Initialize();
                 void ExtractCompletedSuccessfully() { m_extractCompletedSuccessfully = true; }
-                CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const 
-                    { 
+                CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const
+                    {
                     ECDbCR changeCache = m_userChangeCacheECDb != nullptr ? *m_userChangeCacheECDb : m_ownedChangeCacheECDb;
                     return m_changeSummaryStmtCache.GetPreparedStatement(changeCache, ecsql);
                     }
@@ -109,7 +109,7 @@ struct ChangeSummaryExtractor final
         ~ChangeSummaryExtractor() = delete;
 
         static BentleyStatus Extract(ECInstanceKey& changeSummaryKey, Context&, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&);
-        static BentleyStatus Extract(Context&, ECInstanceId summaryId, BeSQLite::IChangeSet&, ExtractMode);
+        static BentleyStatus Extract(Context&, ECInstanceId summaryId, BeSQLite::ChangeStream&, ExtractMode);
         static BentleyStatus ExtractInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&);
         static BentleyStatus ExtractRelInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&);
 
@@ -132,7 +132,7 @@ struct ChangeSummaryExtractor final
 
         static ECSqlStatus BindDbValue(ECSqlStatement&, int, DbValue const&);
         static bool RawIndirectToBool(int indirect) { return indirect != 0; }
-        
+
     public:
         static BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ECDbR changeCacheECDb, ECDbCR primaryECDb, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&);
         static BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ECDbCR primaryECDb, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&);

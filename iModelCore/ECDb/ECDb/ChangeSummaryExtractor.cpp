@@ -58,8 +58,7 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, Context
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-//static
-BentleyStatus ChangeSummaryExtractor::Extract(Context& ctx, ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode mode)
+BentleyStatus ChangeSummaryExtractor::Extract(Context& ctx, ECInstanceId summaryId, ChangeStream& changeSet, ExtractMode mode)
     {
     ChangeIterator iter(ctx.GetPrimaryECDb(), changeSet);
     for (ChangeIterator::RowEntry const& rowEntry : iter)
@@ -581,7 +580,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
             ctx.Issues().ReportV("Failed to extract change summary. Could not determine %sECClassId for the ForeignKey Relationship '%s': Related table has a multi-column primary key which is not supported.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
             return ERROR;
             }
-         
+
         DbColumn const& otherEndPkCol = *otherEndTable.GetPrimaryKeyConstraint()->GetColumns()[0];
 
         if (newOtherEndInstanceId.IsValid())
@@ -899,7 +898,7 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         DbResult r = m_ownedChangeCacheECDb.OpenBeSQLiteDb(m_attachedChangeCachePath.c_str(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
         if (BE_SQLITE_OK != r)
             return r;
-        
+
         }
 
     if (!m_attachedChangeCachePath.empty())
