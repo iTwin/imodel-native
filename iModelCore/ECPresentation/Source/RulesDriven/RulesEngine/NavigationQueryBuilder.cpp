@@ -1250,7 +1250,7 @@ private:
                 {
                 // if we found an ECInstance parent created using the same specification, it means the specification
                 // is used to create multiple hierarchy levels - when looking for class grouping node we have to break
-                // as soon as we find the first parent ECInstance node or otherwise we'll be grouping children by 
+                // as soon as we find the first parent ECInstance node or otherwise we'll be grouping children by
                 // parent's class
                 break;
                 }
@@ -2086,7 +2086,7 @@ private:
             {
             query.Join(relatedInstancePath);
             for (RelatedClassCR relatedInstanceClass : relatedInstancePath)
-                {                
+                {
                 if (!relatedInstanceClass.GetTargetClass().GetDerivedExcludedClasses().empty())
                     {
                     QueryBuilderHelpers::FilterOutExcludes(query, relatedInstanceClass.GetTargetClassAlias(),
@@ -2608,13 +2608,13 @@ static BentleyStatus AppendParents(ComplexNavigationQuery& query, bset<unsigned>
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ApplyInstanceFilter(ComplexNavigationQuery& query, SelectQueryInfo const& selectInfo, NavigationQueryBuilderParameters const& params,
-    Utf8StringCR instanceFilter, NavNodeCP parentNode)
+    Utf8StringCR instanceFilter, NavNodeCP parentInstanceNode)
     {
     if (instanceFilter.empty())
         return;
 
     bset<unsigned> usedParentInstanceLevels = GetUsedParentInstanceLevels(instanceFilter);
-    if (usedParentInstanceLevels.empty() || parentNode && SUCCESS == AppendParents(query, usedParentInstanceLevels, params, *parentNode))
+    if (usedParentInstanceLevels.empty() || parentInstanceNode && SUCCESS == AppendParents(query, usedParentInstanceLevels, params, *parentInstanceNode))
         query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(instanceFilter).c_str(), BoundQueryValuesList());
 
     if (nullptr != params.GetUsedClassesListener())
@@ -2693,7 +2693,7 @@ static QueryClauseAndBindings CreateRelatedInstancesWhereClause(SelectQueryInfo 
             query->Join(copy);
             }
         }
-    else 
+    else
         {
         RefCountedPtr<SimpleQueryContract> queryContract = SimpleQueryContract::Create({
             PresentationQueryContractSimpleField::Create("/RelatedInstanceId/", "ECInstanceId", true, false, FieldVisibility::Inner)
@@ -2726,7 +2726,7 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     bool groupByContract = HasOneToManyToOneSplit(pathFromSelectToParentClass);
     if (selectInfo.GetPathFromParentToSelectClass().size() == pathFromSelectToParentClass.size())
         {
-        // the reversed path always becomes shorter if there are recursive relationships involved. if not, then 
+        // the reversed path always becomes shorter if there are recursive relationships involved. if not, then
         // we just need to filter by the end of the join
 
         // if path contains steps one -> many and many -> one create IN clause with subquery to avoid GROUP BY
@@ -2755,7 +2755,7 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
         // otherwise the appropriate filtering gets applied when the reversed path is joined
         query->Join(pathFromSelectToParentClass, false);
         }
-    
+
     ApplyInstanceFilter(*query, selectInfo, params, instanceFilter, &parentInstanceNode);
 
     if (groupByContract)
@@ -3065,7 +3065,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                 NavigationQueryContractPtr contract = queryContext->GetContract(info);
                 if (contract.IsValid())
                     {
-                    ComplexNavigationQueryPtr query = CreateQuery(*contract, info, m_params, *parentNode, parentClass, parentInstanceIds,
+                    ComplexNavigationQueryPtr query = CreateQuery(*contract, info, m_params, *groupingResolver.GetParentInstanceNode(), parentClass, parentInstanceIds,
                         FormatInstanceFilter(specification.GetInstanceFilter()), queryContext->HasGrouping(info));
                     if (queryContext->Accept(query, info))
                         OnSelected(info, m_params);

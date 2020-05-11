@@ -1997,7 +1997,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Gro
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"A\"", 1, false);
-    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, true, false, 
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, true, false,
         "", { new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward)) }));
     rules->AddPresentationRule(*childRule);
 
@@ -6645,7 +6645,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(FiltersGroupedNodesByGrandParentNodes_MatchingFilter, R"*(
+DEFINE_SCHEMA(InstanceNodesOfSpecificClasses_FiltersGroupedNodesByGrandParentNodes_MatchingFilter, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Value" typeName="int" />
     </ECEntityClass>
@@ -6654,7 +6654,7 @@ DEFINE_SCHEMA(FiltersGroupedNodesByGrandParentNodes_MatchingFilter, R"*(
         <ECProperty propertyName="Value" typeName="int" />
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, FiltersGroupedNodesByGrandParentNodes_MatchingFilter)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_FiltersGroupedNodesByGrandParentNodes_MatchingFilter)
     {
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
@@ -6679,7 +6679,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, FiltersGroupedNodesByGra
     rules->AddPresentationRule(*childRule);
 
     ChildNodeRule* grandChildRule = new ChildNodeRule(Utf8PrintfString("ParentNode.ClassName=\"%s\"", classB->GetName().c_str()), 1, false, TargetTree_Both);
-    grandChildRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    grandChildRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false,
         "this.Value = parent.parent.Value", classC->GetFullName(), false));
     rules->AddPresentationRule(*grandChildRule);
 
@@ -6698,9 +6698,106 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, FiltersGroupedNodesByGra
     DataContainer<NavNodeCPtr> bNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *bGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, bNodes.GetSize());
     VerifyNodeInstance(*bNodes[0], *b);
-    
+
+    // make sure it has 1 'C' grouping node
+    DataContainer<NavNodeCPtr> cGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *bNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, cGroupingNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, cGroupingNodes[0]->GetKey()->GetType().c_str());
+
     // make sure it has 1 'C' instance node
-    DataContainer<NavNodeCPtr> cNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *bNodes[0], PageOptions(), options).get(); });
+    DataContainer<NavNodeCPtr> cNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *cGroupingNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, cNodes.GetSize());
+    VerifyNodeInstance(*cNodes[0], *c);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_FiltersGroupedNodesByGrandParentNodes_MatchingFilter, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Value" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Value" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_FiltersGroupedNodesByGrandParentNodes_MatchingFilter)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("B_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Value", ECValue(1)); });
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("Value", ECValue(1)); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.ClassName=\"%s\"", classA->GetName().c_str()), 1, false, TargetTree_Both);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "",
+        {
+        new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward))
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    ChildNodeRule* grandChildRule = new ChildNodeRule(Utf8PrintfString("ParentNode.ClassName=\"%s\"", classB->GetName().c_str()), 1, false, TargetTree_Both);
+    grandChildRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "this.Value = parent.parent.Value",
+        {
+        new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward))
+        }));
+    rules->AddPresentationRule(*grandChildRule);
+
+    // make sure we have 1 root node
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+    DataContainer<NavNodeCPtr> aNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, aNodes.GetSize());
+    VerifyNodeInstance(*aNodes[0], *a);
+
+    // make sure it has 1 'B' grouping node
+    DataContainer<NavNodeCPtr> bGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *aNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, bGroupingNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, bGroupingNodes[0]->GetKey()->GetType().c_str());
+
+    // make sure it has 1 'B' instance node
+    DataContainer<NavNodeCPtr> bNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *bGroupingNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, bNodes.GetSize());
+    VerifyNodeInstance(*bNodes[0], *b);
+
+    // make sure it has 1 'C' grouping node
+    DataContainer<NavNodeCPtr> cGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *bNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, cGroupingNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, cGroupingNodes[0]->GetKey()->GetType().c_str());
+
+    // make sure it has 1 'C' instance node
+    DataContainer<NavNodeCPtr> cNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *cGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, cNodes.GetSize());
     VerifyNodeInstance(*cNodes[0], *c);
     }
