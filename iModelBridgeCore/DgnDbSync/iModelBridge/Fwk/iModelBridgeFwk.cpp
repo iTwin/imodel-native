@@ -850,8 +850,20 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    bool dmsCredentialsAreEncrypted = false;
-    if (bankArgs.ParsedAny())
+    bool dmsCredentialsAreEncrypted = false; 
+    if (m_jobEnvArgs.CreateSnapshot())
+        {
+        if (m_jobEnvArgs.m_snapshotFileName.IsAbsolutePath())
+            {
+            m_briefcaseBasename.Assign(m_jobEnvArgs.m_snapshotFileName.GetBaseName().c_str());
+            m_jobEnvArgs.m_stagingDir = m_jobEnvArgs.m_snapshotFileName.GetDirectoryName();
+            }
+        else
+            {
+            m_briefcaseBasename.Assign(m_jobEnvArgs.m_snapshotFileName.c_str());
+            }
+        }
+    else if (bankArgs.ParsedAny())
         {
         m_useIModelHub = false;
         m_iModelBankArgs = new IModelBankArgs(bankArgs);
@@ -3041,15 +3053,7 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
 
     // Get the name of the output .bim file from the snapshot argument, not the --server-repository argument
     BeAssert(!m_jobEnvArgs.m_snapshotFileName.empty());
-    if (m_jobEnvArgs.m_snapshotFileName.IsAbsolutePath())
-        {
-        m_briefcaseBasename.Assign(m_jobEnvArgs.m_snapshotFileName.GetBaseName().c_str());
-        m_jobEnvArgs.m_stagingDir = m_jobEnvArgs.m_snapshotFileName.GetDirectoryName();
-        }
-    else
-        {
-        m_briefcaseBasename.Assign(m_jobEnvArgs.m_snapshotFileName.c_str());
-        }
+    BeAssert(!m_briefcaseBasename.empty());
 
     Briefcase_MakeBriefcaseName();
 

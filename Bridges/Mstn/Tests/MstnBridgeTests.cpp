@@ -8,6 +8,7 @@
 #include <iModelBridge/FakeRegistry.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 PUSH_DISABLE_DEPRECATION_WARNINGS
 extern "C"
@@ -1791,7 +1792,10 @@ TEST_F(MstnBridgeTests, CreateSnapshot)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
 
-    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
+    WCharCP snapshotName = L"Test Snap shot";
+    WCharCP expectedRegistryDbName = L"Test Snap shot.fwk-registry.db";
+
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, Utf8String(snapshotName));
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,
@@ -1804,7 +1808,7 @@ TEST_F(MstnBridgeTests, CreateSnapshot)
 
     BentleyApi::BeFileName masterFile, refFile1, refFile2;
     SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, testRegistry);
-    args.push_back(L"--fwk-snapshot=TestSnapshot");
+    args.push_back(WPrintfString(L"--fwk-snapshot=\"%ls\"", snapshotName));
 
     testRegistry.Save();
 
@@ -1823,6 +1827,12 @@ TEST_F(MstnBridgeTests, CreateSnapshot)
         ASSERT_FALSE(dbFileInfo.m_db->Txns().HasPendingTxns());
         auto modelCount = dbFileInfo.GetModelCount();
         ASSERT_EQ(8, modelCount);
+
+        bvector<BeFileName> matches;
+        BeDirectoryIterator::WalkDirsAndMatch(matches, testDir, L"*.db", true);
+        ASSERT_EQ(2, matches.size());
+        auto x = std::find_if(matches.begin(), matches.end(), [&](BeFileNameCR fn) {return fn.EndsWith(expectedRegistryDbName);});
+        ASSERT_TRUE(x != matches.end());
         }
     }
 
@@ -1837,13 +1847,15 @@ TEST_F(MstnBridgeTests, CreateSnapshotTwoBridges)
     auto master2 = GetOutputFileName(L"master2.i.dgn");      //          "
     BeFileName commonRef(L"commonRef.i.dgn");                   // The common embedded file will be identified by its basename only
 
+    WCharCP snapshotName = L"CreateSnapshotTwoBridges";
+
     putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
 
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, Utf8String(snapshotName));
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -1884,9 +1896,9 @@ TEST_F(MstnBridgeTests, CreateSnapshotTwoBridges)
     if (true)
         {
         bvector<WString> args;
-        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, snapshotName);
 
-        args.push_back(L"--fwk-snapshot=CreateSnapshotTwoBridges");
+        args.push_back(WPrintfString(L"--fwk-snapshot=\"%ls\"", snapshotName));
 
         auto master_1_v3 = GetTestDataFileName(L"SharedEmbeddedReferences/v3/master1.i.dgn"); // no embedded ref
         auto master_2_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master2.i.dgn"); // embedded ref
