@@ -207,6 +207,7 @@
     <ProductDirectoryList ListName="iModelFwkDirList">
         <ProductDirectory Name="applicationroot"                Path="native"/>
         <ProductDirectory Name="Assemblies"                     Path="bin"      RelativeTo="applicationroot"/>
+        <ProductDirectory Name="CrashpadHandler"                Path="bin"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnV8ConverterLibs"             Path="lib"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path="lib"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Path="lib"      RelativeTo="applicationroot"/>
