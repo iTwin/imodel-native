@@ -56,6 +56,7 @@ public:
     void SetIsNestedContent(bool value) {m_isNestedContent = value;}
     INavNodeKeysContainerCR GetInputKeys() const {return *m_inputNodeKeys;}
     void SetInputKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
+    ECPRESENTATION_EXPORT bvector<RulesetVariableEntry> GetRelatedRulesetVariables() const;
 
     // Selection info context
     ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfoCR selectionInfo);

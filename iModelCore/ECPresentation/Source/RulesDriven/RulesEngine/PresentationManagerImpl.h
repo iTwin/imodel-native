@@ -161,7 +161,7 @@ private:
 private:
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&, size_t pageSize = -1);
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavNodeCR parent, NavigationOptions const&, size_t pageSize = -1);
-    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&);
+    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, RulesetVariables const& variables);
     SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR);
 
 protected:

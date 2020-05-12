@@ -1038,12 +1038,12 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key)
+SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, RulesetVariables const& variables)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider]", NativeLogging::LOG_TRACE);
     RefCountedPtr<PerformanceLogger> _l2;
 
-    SpecificationContentProviderPtr provider = m_contentCache->GetProvider(key);
+    SpecificationContentProviderPtr provider = m_contentCache->GetProvider(key, variables);
     if (provider.IsValid())
         return provider;
 
@@ -1068,11 +1068,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
-#ifdef wip_should_take_vars_from_cache_key
-    std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>(options.GetRulesetVariables());
-#else
-    std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>();
-#endif
+    std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>(variables);
     rulesetVariables->Merge(settings);
     nodesCache->OnRulesetVariablesUsed(*rulesetVariables, ruleset->GetRuleSetId());
 
@@ -1121,7 +1117,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ContentOptions options(descriptor.GetOptions());
     ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
         options.GetLocale(), options.GetUnitSystem(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
-    return GetContentProvider(connection, cancelationToken, key);
+    return GetContentProvider(connection, cancelationToken, key, RulesetVariables(options.GetRulesetVariables()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1188,7 +1184,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 
     INavNodeKeysContainerCPtr nodeKeys = inputKeys.GetAllNavNodeKeys();
     ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, contentFlags, options.GetLocale(), options.GetUnitSystem(), *nodeKeys, selectionInfo);
-    ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key);
+    ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, RulesetVariables(options.GetRulesetVariables()));
     return provider.IsValid() ? provider->GetContentDescriptor() : nullptr;
     }
 

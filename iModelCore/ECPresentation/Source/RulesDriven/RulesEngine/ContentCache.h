@@ -10,6 +10,9 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+#define CONTENTCACHE_Size 100
+#define CONTENTCACHE_Provider_Variations_Limit 5
+
 /*=============================================================================**//**
 * Key used for caching content providers.
 * @bsiclass                                     Grigas.Petraitis            07/2016
@@ -35,6 +38,8 @@ public:
     ECPRESENTATION_EXPORT ContentProviderKey& operator=(ContentProviderKey const& other);
     ECPRESENTATION_EXPORT ContentProviderKey& operator=(ContentProviderKey&& other);
     ECPRESENTATION_EXPORT bool operator<(ContentProviderKey const& other) const;
+    ECPRESENTATION_EXPORT bool operator==(ContentProviderKey const& other) const;
+    bool operator!=(ContentProviderKey const& other) const { return !operator==(other); }
 
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
     int GetContentFlags() const {return m_contentFlags;}
@@ -47,19 +52,43 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                05/2020
++===============+===============+===============+===============+===============+======*/
+struct ContentCacheEntry
+{
+private:
+    ContentProviderKey m_key;
+    SpecificationContentProviderPtr m_provider;
+    uint64_t m_lastUsed;
+public:
+    ContentCacheEntry(ContentProviderKey const& key, SpecificationContentProviderR provider)
+        : m_key(key), m_lastUsed(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_provider(&provider)
+        {}
+    ContentProviderKey const& GetProviderKey() const { return m_key; }
+    RulesetVariables GetRelatedVariables() const { return RulesetVariables(m_provider->GetContext().GetRelatedRulesetVariables()); }
+    SpecificationContentProviderR GetProvider() const { return *m_provider; }
+    uint64_t GetLastUsedTime() const { return m_lastUsed; }
+    void SetLastUsedTime(uint64_t value) { m_lastUsed = value; }
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2016
 +===============+===============+===============+===============+===============+======*/
 struct ContentCache : NonCopyableClass
 {
 private:
-    bmap<ContentProviderKey, SpecificationContentProviderPtr> m_providers;
+    bvector<ContentCacheEntry> m_cacheEntries;
     mutable BeMutex m_mutex;
 
+private:
+    void LimitProviderVariations(ContentProviderKey const& key);
+    void RemoveLeastRecentlyUsedProvider();
+
 public:
-    void ClearCache() {BeMutexHolder lock(m_mutex); m_providers.clear();}
+    void ClearCache() {BeMutexHolder lock(m_mutex); m_cacheEntries.clear();}
     ECPRESENTATION_EXPORT void ClearCache(IConnectionCR connection);
     ECPRESENTATION_EXPORT void ClearCache(Utf8StringCR rulesetId);
-    ECPRESENTATION_EXPORT SpecificationContentProviderPtr GetProvider(ContentProviderKey const& key) const;
+    ECPRESENTATION_EXPORT SpecificationContentProviderPtr GetProvider(ContentProviderKey const& key, RulesetVariables const& variables);
     ECPRESENTATION_EXPORT bvector<SpecificationContentProviderPtr> GetProviders(IConnectionCR) const;
     ECPRESENTATION_EXPORT bvector<SpecificationContentProviderPtr> GetProviders(Utf8CP rulesetId, Utf8CP settingId) const;
     ECPRESENTATION_EXPORT void CacheProvider(ContentProviderKey key, SpecificationContentProviderR provider);

@@ -82,6 +82,19 @@ void ContentProviderContext::SetSelectionInfo(ContentProviderContextCR other)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RulesetVariableEntry> ContentProviderContext::GetRelatedRulesetVariables() const
+    {
+    bset<Utf8String> ids = RulesDrivenProviderContext::GetRelatedVariablesIds();
+    bvector<RulesetVariableEntry> idsWithValues;
+    for (Utf8StringCR id : ids)
+        idsWithValues.push_back(RulesetVariableEntry(id, GetRulesetVariables().GetJsonValue(id.c_str())));
+
+    return idsWithValues;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpecificationContentProvider::SpecificationContentProvider(ContentProviderContextR context, ContentRuleInstanceKeysContainer ruleSpecs)
