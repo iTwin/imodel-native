@@ -446,7 +446,29 @@ TEST_F(BeSQLiteDbTests, VacuumWithPageSize)
         ASSERT_EQ(ps, GetPageSize(dbFileName));
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                    05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, VacuumInto)
+    {
+    Db db;
+    WCharCP dbName = L"smalldb.db";
+    SetupDb(db, dbName);
+    ASSERT_TRUE(db.IsDbOpen());
+    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);
+    BeFileName vacuumedFile;
+    vacuumedFile.append(dbFileName.GetDirectoryName());
+    vacuumedFile.append(L"small_vacuum.db");
+    if (vacuumedFile.DoesPathExist())
+        vacuumedFile.BeDeleteFile();
 
+    ASSERT_EQ(BE_SQLITE_ERROR, db.VacuumInto(vacuumedFile));
+    db.SaveChanges();
+    db.CloseDb();
+
+    ASSERT_EQ(BE_SQLITE_OK, Db::VacuumInto(dbFileName, vacuumedFile)) << db.GetLastError();
+    ASSERT_TRUE(vacuumedFile.DoesPathExist());
+    }
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================

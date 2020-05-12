@@ -5937,3 +5937,31 @@ DbResult Db::Vacuum(Utf8CP dbFileName, int newPageSizeInBytes)
     status = db.TryExecuteSql("vacuum");
     return status;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan     03/2020
+//---------------------------------------------------------------------------------------
+// static
+DbResult Db::VacuumInto(BeFileName dbFileName, BeFileName newFileName)
+    {
+    Db db;
+    Db::OpenParams param(Db::OpenMode::Readonly, DefaultTxn::No);
+    DbResult status = db.OpenBeSQLiteDb(dbFileName, param);
+    if (status != BE_SQLITE_OK)
+        return status;
+
+    return db.VacuumInto(newFileName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan     03/2020
+//---------------------------------------------------------------------------------------
+DbResult Db::VacuumInto(BeFileName newFileName)
+    {
+    if (IsTransactionActive())
+        {
+        LOG.error("Cannot VACUUM from within a transaction");
+        return BE_SQLITE_ERROR;
+        }
+
+    return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName.GetNameUtf8().c_str()));
+    }

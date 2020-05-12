@@ -3020,6 +3020,11 @@ public:
     //! @see QueryExpirationDate, IsExpired
     BE_SQLITE_EXPORT DbResult SaveExpirationDate(DateTime const& expirationDate);
 
+    //! Vacuum current db into a new file
+    //! @param newFileName path to new db
+    //! @return BE_SQLITE_OK if successful
+    BE_SQLITE_EXPORT DbResult VacuumInto(BeFileName newFileName);
+
     //! Returns true if the specified file is recognized as an encrypted BeSQLite database.
     BE_SQLITE_EXPORT static bool IsEncryptedDb(BeFileNameCR dbFileName);
 
@@ -3039,6 +3044,13 @@ public:
     //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.
     //! @return BE_SQLITE_OK if successful
     BE_SQLITE_EXPORT static DbResult Vacuum(Utf8CP dbFileName, int newPageSizeInBytes = 0);
+
+    //! Vacuum a file into another file
+    //! @param dbFileName path to db.
+    //! @param newFileName path to new db
+    //! @return BE_SQLITE_OK if successful
+    BE_SQLITE_EXPORT static DbResult VacuumInto(BeFileName dbFileName, BeFileName newFileName);
+
 };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan        03/20
