@@ -22,10 +22,11 @@ END_UNNAMED_NAMESPACE
 enum {
     K                       = (1024),
     MEG                     = (K*K),
-    GIG                     = (K*MEG),
-    MAX_REASONABLE_TXN_SIZE = (100*MEG),
-    MAX_TXN_SIZE            = ((4*MEG) - 100),
 };
+
+static const uint64_t GIG = K*MEG;
+static const uint64_t MAX_REASONABLE_TXN_SIZE = (200*MEG);
+static const uint64_t MAX_TXN_SIZE = (4*GIG) -100;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
