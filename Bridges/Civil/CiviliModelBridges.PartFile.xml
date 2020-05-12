@@ -427,6 +427,8 @@
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->    
     <Part Name="ORDBridge-Xliffs" BentleyBuildMakeFile="ORDBridge/xliffs.mke">
+        <!-- This dependency is necessary to make sure the DgnV8Converter xliff gets created before we get here. -->
+        <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="xliffs">
                 Delivery/xliffs/*.xliff
