@@ -119,7 +119,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BentleyStatus IModelHub_DoCreatedRepository(FwkContext& context);
     
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo, FwkContext& context);
-    BentleyStatus GetSchemaLock();
+    BentleyStatus GetSchemaLock(iModelBridgeError& error);
     
     enum class SyncState
         {
@@ -372,7 +372,7 @@ protected:
     int UpdateExistingBimWithExceptionHandling(FwkContext& context);
     int MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions&);
     int MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCallOpenCloseFunctions&);
-    int DoNormalUpdate();
+    int DoNormalUpdate(iModelBridgeError&);
     int OnAllDocsProcessed(FwkContext& context);
     BentleyStatus LockAllJobSubjects();
     Utf8String GetRevisionComment();

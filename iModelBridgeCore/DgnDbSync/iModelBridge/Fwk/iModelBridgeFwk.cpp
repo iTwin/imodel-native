@@ -25,6 +25,7 @@
 #include "../iModelBridgeSettings.h"
 #include <WebServices/iModelHub/Client/Error.h>
 #include "CrashProcessor.h"
+#include <WebServices/iModelHub/Client/iModelManager.h>
 
 PUSH_DISABLE_DEPRECATION_WARNINGS
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
@@ -2155,9 +2156,40 @@ void iModelBridgeFwk::EnterSharedChannel()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   GetLockErrorMessage(Utf8StringR message, iModel::Hub::iModelManager& mgr)
+    {
+    auto connection = mgr.GetiModelConnectionPtr();
+    if (connection.IsNull())
+        return ERROR;
+
+    auto allLocks = connection->QueryAllLocks()->GetResult().GetValue();
+    for (auto lock : allLocks)
+        {
+        if (!lock.IsOwned())
+            continue;
+
+        if (LockableType::Schemas != lock.GetLockableId().GetType())
+            continue;
+
+        if (LockLevel::Exclusive != lock.GetOwnership().GetLockLevel())
+            continue;
+
+        auto briefcaseId = lock.GetOwnership().GetExclusiveOwner();
+        auto briefcaseInfo = connection->QueryBriefcaseInfo(briefcaseId)->GetResult().GetValue();
+        Utf8String userName = briefcaseInfo->GetUserOwned();
+        message = Utf8PrintfString("Lock failure since User: %s owns schema lock in briefcase id: %d", userName.c_str(), briefcaseId);
+        LOG.fatalv("Bridge cannot obtain schema lock. Reason:  %s", message.c_str());
+        break;
+        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::GetSchemaLock()
+BentleyStatus   iModelBridgeFwk::GetSchemaLock(iModelBridgeError& error)
     {
     GetLogger().infov("GetSchemaLock.");
 
@@ -2178,7 +2210,13 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
         } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry(m_maxRetryWait));
 
     if (RepositoryStatus::Success != status)
+        {
+        error.m_id = static_cast<iModelBridgeErrorId>(status);
         GetLogger().warningv(L"GetSchemaLock failed with status %x. briefcase=%ls", status, m_briefcaseName.c_str());
+        iModel::Hub::iModelManager * mgr = dynamic_cast<iModel::Hub::iModelManager*> (GetRepositoryManager(*m_briefcaseDgnDb));
+        if (NULL != mgr)
+            GetLockErrorMessage(error.m_message, *mgr);
+        }
 
     return (status != RepositoryStatus::Success) ? BSIERROR : BSISUCCESS;
     }
@@ -2413,7 +2451,7 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeFwk::DoNormalUpdate()
+int iModelBridgeFwk::DoNormalUpdate(iModelBridgeError& errorContext)
     {
     // ---------------------------------------------------
     //  Definition Changes => shared channel
@@ -2427,7 +2465,7 @@ int iModelBridgeFwk::DoNormalUpdate()
 
     GetProgressMeter().SetCurrentStepName("Lock Schema");
 
-    if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
+    if (BSISUCCESS != GetSchemaLock(errorContext))  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
         {
         LOG.fatalv("Bridge cannot obtain schema lock.");
         return RETURN_STATUS_SERVER_ERROR;
@@ -2782,7 +2820,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         if (!m_jobEnvArgs.m_allDocsProcessed)
             {
             LOG.tracev(L"DoNormalUpdate");
-            res = DoNormalUpdate();
+            res = DoNormalUpdate(context.m_error);
             LOG.tracev(L"DoNormalUpdate              : Done (result=%x)", res);
             }
         else
@@ -2811,7 +2849,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
 
     EnterSharedChannel();
 
-    if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
+    if (BSISUCCESS != GetSchemaLock(context.m_error))  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
         {
         LOG.fatalv("Bridge cannot obtain schema lock.");
         return RETURN_STATUS_SERVER_ERROR;
