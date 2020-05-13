@@ -20,6 +20,18 @@ enum class FieldVisibility
     Both  = Inner | Outer,
     };
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2020
++===============+===============+===============+===============+===============+======*/
+enum class PresentationQueryFieldType
+    {
+    Unknown,
+    Primitive,
+    Enum,
+    LabelDefinition,
+    NavigationPropertyValue,
+    };
+
 struct PresentationQueryContractSimpleField;
 struct PresentationQueryContractFunctionField;
 struct PresentationQueryContractDynamicField;
@@ -37,16 +49,17 @@ private:
     bool m_isAggregateField;
     FieldVisibility m_fieldVisibility;
     Utf8String m_prefixOverride;
+    PresentationQueryFieldType m_resultType;
 
 protected:
     PresentationQueryContractField(Utf8CP defaultName, bool allowsPrefix, bool isAggregateField, FieldVisibility fieldVisibility)
-        : m_defaultName(defaultName), m_allowsPrefix(allowsPrefix), m_isAggregateField(isAggregateField), m_fieldVisibility(fieldVisibility) {}
+        : m_defaultName(defaultName), m_allowsPrefix(allowsPrefix), m_isAggregateField(isAggregateField), m_fieldVisibility(fieldVisibility), m_resultType(PresentationQueryFieldType::Unknown)
+        {}
     ~PresentationQueryContractField() {}
     bool AllowsPrefix() const {return m_allowsPrefix;}
     virtual Utf8String _GetSelectClause(Utf8CP prefix, bool useFieldNames) const = 0;
     virtual PresentationQueryContractSimpleField* _AsPresentationQueryContractSimpleField() {return nullptr;}
     virtual PresentationQueryContractFunctionField* _AsPresentationQueryContractFunctionField() {return nullptr;}
-
 
 public:
     Utf8CP     GetDefaultName() const {return m_defaultName.c_str();}
@@ -58,6 +71,8 @@ public:
     FieldVisibility GetVisibility() const {return m_fieldVisibility;}
     void       SetPrefixOverride(Utf8String prefix) {m_prefixOverride = prefix;}
     Utf8String GetSelectClause(Utf8CP prefix = nullptr, bool useFieldNames = false) const {return _GetSelectClause(m_prefixOverride.empty() ? prefix : m_prefixOverride.c_str(), useFieldNames);}
+    PresentationQueryFieldType GetResultType() const {return m_resultType;}
+    void SetResultType(PresentationQueryFieldType type) {m_resultType = type;}
 
     bool IsPresentationQueryContractSimpleField() const {return nullptr != AsPresentationQueryContractSimpleField();}
     PresentationQueryContractSimpleField* AsPresentationQueryContractSimpleField() {return _AsPresentationQueryContractSimpleField();}
@@ -170,9 +185,21 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2020
++===============+===============+===============+===============+===============+======*/
+struct IPresentationQueryFieldTypesProvider
+{
+protected:
+    virtual PresentationQueryFieldType _GetFieldType(Utf8StringCR name) const = 0;
+public:
+    virtual ~IPresentationQueryFieldTypesProvider() {}
+    PresentationQueryFieldType GetFieldType(Utf8StringCR name) const {return _GetFieldType(name);}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                06/2015
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryContract : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryContract : RefCountedBase, IPresentationQueryFieldTypesProvider
 {
 public:
     ECPRESENTATION_EXPORT static Utf8CP RelatedInstanceInfoFieldName;
@@ -190,6 +217,7 @@ protected:
     static PresentationQueryContractFieldPtr CreateDisplayLabelField(Utf8CP name, PresentationQueryContractFieldCR classIdField,
         PresentationQueryContractFieldCR instanceIdField, ECClassCP, bvector<RelatedClassPath> const&,
         bvector<InstanceLabelOverrideValueSpecification const*> const&);
+    ECPRESENTATION_EXPORT PresentationQueryFieldType _GetFieldType(Utf8StringCR name) const override;
 
 public:
     uint64_t GetId() const {return m_id;}

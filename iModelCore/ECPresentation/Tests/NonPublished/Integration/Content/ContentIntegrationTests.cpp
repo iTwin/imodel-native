@@ -811,6 +811,76 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Filters
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DescriptorOverride_FiltersByNavigationProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECNavigationProperty propertyName="A" relationshipName="A_To_B" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="false">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersByNavigationProperty)
+    {
+    // insert some instances
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP rel = GetClass("A_To_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Label", ECValue("1"));});
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a1, *b1);
+
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Label", ECValue("2"));});
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a2, *b2);
+
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, classA->GetFullName(), "Label"));
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), "", 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // get the default content
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate the default content set
+    ASSERT_EQ(3, content->GetContentSet().GetSize());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetFilterExpression(Utf8PrintfString("%s = \"1\"", descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()));
+
+    // get the content with descriptor override
+    content = m_manager->GetContent(*ovr, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // make sure the records in the content set are filtered
+    RulesEngineTestHelpers::ValidateContentSet({b1.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest                                       Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_ReturnsValidDescriptorWhichDoesNotDependOnSelectedClasses)

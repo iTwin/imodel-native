@@ -133,6 +133,17 @@ bvector<Utf8CP> PresentationQueryContract::GetGroupingAliases() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryFieldType PresentationQueryContract::_GetFieldType(Utf8StringCR name) const
+    {
+    auto field = GetField(name.c_str());
+    if (field.IsValid())
+        return field->GetResultType();
+    return PresentationQueryFieldType::Unknown;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String CreateRelatedInstanceInfoClause(bvector<RelatedClassPath> const& relatedInstancePaths)
@@ -177,6 +188,7 @@ template<typename T>
 static T PrepareDisplayLabelField(T field)
     {
     field->SetGroupingClause(QueryBuilderHelpers::CreateDisplayLabelValueClause(field->GetName()));
+    field->SetResultType(PresentationQueryFieldType::LabelDefinition);
     return field;
     }
 
@@ -981,6 +993,10 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
         {
         Utf8String valueSelectClause = PropertyValueSelectStringClause(prefix, propertyAccessString, prop.GetAsPrimitiveProperty()->GetType());
         field = PresentationQueryContractSimpleField::Create(fieldName, valueSelectClause.c_str(), false);
+        if (nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
+            field->SetResultType(PresentationQueryFieldType::Enum);
+        else
+            field->SetResultType(PresentationQueryFieldType::Primitive);
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         if (isGroupingField)
             {
@@ -992,10 +1008,12 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
     else if (prop.GetIsNavigation())
         {
         field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetNavigationPropertyValue, CreateFieldsList("ECClassId", "ECInstanceId"), true);
+        field->SetResultType(PresentationQueryFieldType::NavigationPropertyValue);
         }
     else
         {
         field = PresentationQueryContractSimpleField::Create(fieldName, prop.GetName().c_str(), true);
+        field->SetResultType(PresentationQueryFieldType::Primitive);
         }
     field->SetPrefixOverride(prefix);
     return field;

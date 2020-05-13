@@ -30,7 +30,7 @@ struct ECExpressionsToECSqlConverterTests : ECPresentationTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, LogicalOperators)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("A And B AndAlso C Or D");
+    Utf8String ecsql = m_helper.ConvertToECSql("A And B AndAlso C Or D", nullptr);
     ASSERT_STREQ("[A] AND [B] AND [C] OR [D]", ecsql.c_str());
     }
 
@@ -39,7 +39,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, LogicalOperators)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, NotOperator)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Not True");
+    Utf8String ecsql = m_helper.ConvertToECSql("Not True", nullptr);
     ASSERT_STREQ("NOT TRUE", ecsql.c_str());
     }
 
@@ -48,7 +48,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, NotOperator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, Parens)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("2 * (3 + 4)");
+    Utf8String ecsql = m_helper.ConvertToECSql("2 * (3 + 4)", nullptr);
     ASSERT_STREQ("2 * (3 + 4)", ecsql.c_str());
     }
 
@@ -57,7 +57,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, Parens)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, SingleQuotesInStringValues)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.Test = \"aaa'\"");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.Test = \"aaa'\"", nullptr);
     ASSERT_STREQ("[this].[Test] = 'aaa'''", ecsql.c_str());
     }
 
@@ -66,7 +66,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, SingleQuotesInStringValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, DoubleQuotesInStringValues)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.Test = \"aaa\"\"\"");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.Test = \"aaa\"\"\"", nullptr);
     ASSERT_STREQ("[this].[Test] = 'aaa\"'", ecsql.c_str());
     }
 
@@ -75,7 +75,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, DoubleQuotesInStringValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.Test ~ \"aaa\"");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.Test ~ \"aaa\"", nullptr);
     ASSERT_STREQ("CAST([this].[Test] AS TEXT) LIKE 'aaa' ESCAPE \'\\\'", ecsql.c_str());
     }
 
@@ -84,7 +84,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase_WithFunction)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("LOWER(this.Test) ~ \"aaa\"");
+    Utf8String ecsql = m_helper.ConvertToECSql("LOWER(this.Test) ~ \"aaa\"", nullptr);
     ASSERT_STREQ("CAST(LOWER([this].[Test]) AS TEXT) LIKE 'aaa' ESCAPE \'\\\'", ecsql.c_str());
     }
 
@@ -93,7 +93,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase_WithFunction)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, Concatenation)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("\"str\" & Label");
+    Utf8String ecsql = m_helper.ConvertToECSql("\"str\" & Label", nullptr);
     ASSERT_STREQ("'str' || [Label]", ecsql.c_str());
     }
 
@@ -102,7 +102,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, Concatenation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, IsNullCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Label = NULL");
+    Utf8String ecsql = m_helper.ConvertToECSql("Label = NULL", nullptr);
     ASSERT_STREQ("[Label] IS NULL", ecsql.c_str());
     }
 
@@ -111,7 +111,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, IsNullCase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, IsNotNullCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Label <> NULL");
+    Utf8String ecsql = m_helper.ConvertToECSql("Label <> NULL", nullptr);
     ASSERT_STREQ("[Label] IS NOT NULL", ecsql.c_str());
     }
 
@@ -120,7 +120,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, IsNotNullCase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, Functions)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("GetDisplayLabel(param1, \"param2\", 3)");
+    Utf8String ecsql = m_helper.ConvertToECSql("GetDisplayLabel(param1, \"param2\", 3)", nullptr);
     ASSERT_STREQ("GetDisplayLabel([param1], 'param2', 3)", ecsql.c_str());
     }
 
@@ -129,7 +129,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, Functions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, Properties)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.ParentId = parent.ECInstanceId");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.ParentId = parent.ECInstanceId", nullptr);
     ASSERT_STREQ("[this].[ParentId] = [parent].[ECInstanceId]", ecsql.c_str());
     }
 
@@ -138,17 +138,40 @@ TEST_F(ECExpressionsToECSqlConverterTests, Properties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, StructProperties)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.Code.Value = 1");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.Code.Value = 1", nullptr);
     ASSERT_STREQ("[this].[Code].[Value] = 1", ecsql.c_str());
     }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2020
++===============+===============+===============+===============+===============+======*/
+struct TestPresentationQueryFieldTypesProvider : IPresentationQueryFieldTypesProvider
+    {
+    PresentationQueryFieldType m_fieldType;
+    PresentationQueryFieldType _GetFieldType(Utf8StringCR name) const override {return m_fieldType;}
+    TestPresentationQueryFieldTypesProvider(PresentationQueryFieldType fieldType)
+        : m_fieldType(fieldType)
+        {}
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, DisplayLabelFieldWithSlashes)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("/DisplayLabel/ = \"a\"");
+    TestPresentationQueryFieldTypesProvider types(PresentationQueryFieldType::LabelDefinition);
+    Utf8String ecsql = m_helper.ConvertToECSql("/DisplayLabel/ = \"a\"", &types);
     ASSERT_STREQ("GetLabelDisplayValue([/DisplayLabel/]) = 'a'", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, NavigationPropertyField)
+    {
+    TestPresentationQueryFieldTypesProvider types(PresentationQueryFieldType::NavigationPropertyValue);
+    Utf8String ecsql = m_helper.ConvertToECSql("SomeNavigationProperty = \"a\"", &types);
+    ASSERT_STREQ("GetLabelDisplayValue(json_extract([SomeNavigationProperty], '$.label')) = 'a'", ecsql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -156,7 +179,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, DisplayLabelFieldWithSlashes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, PropertiesAsFunctionArguments)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("some_function(this.PropertyName, \"test\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("some_function(this.PropertyName, \"test\")", nullptr);
     ASSERT_STREQ("some_function([this].[PropertyName], 'test')", ecsql.c_str());
     }
 
@@ -165,7 +188,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, PropertiesAsFunctionArguments)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, IsOfClassFunctionSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.IsOfClass(\"ClassName\", \"SchemaName\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.IsOfClass(\"ClassName\", \"SchemaName\")", nullptr);
     ASSERT_STREQ("IsOfClass([this].[ECClassId], 'ClassName', 'SchemaName')", ecsql.c_str());
     }
 
@@ -174,7 +197,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, IsOfClassFunctionSpecialCase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, GetECClassIdFunctionSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.ECClassId = GetECClassId(\"A\", \"B\") OR GetECClassId(\"C\", \"D\") <> 5");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.ECClassId = GetECClassId(\"A\", \"B\") OR GetECClassId(\"C\", \"D\") <> 5", nullptr);
     ASSERT_STREQ("[this].[ECClassId] = RulesEngine_GetECClassId('A', 'B') OR RulesEngine_GetECClassId('C', 'D') <> 5", ecsql.c_str());
     }
 
@@ -183,7 +206,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetECClassIdFunctionSpecialCase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Forward)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.HasRelatedInstance(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.HasRelatedInstance(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\")", nullptr);
     ASSERT_STREQ(" EXISTS ("
         "SELECT 1 "
         "FROM [TestSchema1].[RelationshipName] relationship "
@@ -198,7 +221,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Forward
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Backward)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.HasRelatedInstance(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.HasRelatedInstance(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\")", nullptr);
     ASSERT_STREQ(" EXISTS ("
         "SELECT 1 "
         "FROM [TestSchema1].[RelationshipName] relationship "
@@ -213,7 +236,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Backwar
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_Forward)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedInstancesCount(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedInstancesCount(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\")", nullptr);
     ASSERT_STREQ("("
         "SELECT COUNT(1) "
         "FROM [TestSchema1].[RelationshipName] relationship "
@@ -229,7 +252,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_F
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_Backward)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedInstancesCount(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedInstancesCount(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\")", nullptr);
     ASSERT_STREQ("("
         "SELECT COUNT(1) "
         "FROM [TestSchema1].[RelationshipName] relationship "
@@ -245,7 +268,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_B
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Forward)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\", \"SomePropertyName\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\", \"SomePropertyName\")", nullptr);
     ASSERT_STREQ("("
         "SELECT [related].[SomePropertyName] "
         "FROM [TestSchema1].[RelationshipName] relationship, [TestSchema2].[RelatedClassName] related "
@@ -261,7 +284,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Forward)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Backward)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\", \"SomePropertyName\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\", \"SomePropertyName\")", nullptr);
     ASSERT_STREQ("("
         "SELECT [related].[SomePropertyName] "
         "FROM [TestSchema1].[RelationshipName] relationship, [TestSchema2].[RelatedClassName] related "
@@ -277,7 +300,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Backward)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_StructProperty)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\", \"Code.Value\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\", \"Code.Value\")", nullptr);
     ASSERT_STREQ("("
         "SELECT [related].[Code].[Value] "
         "FROM [TestSchema1].[RelationshipName] relationship, [TestSchema2].[RelatedClassName] related "
@@ -293,16 +316,16 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_StructProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, FunctionNameSubstitution)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("GetSettingValue(\"setting_id\")");
+    Utf8String ecsql = m_helper.ConvertToECSql("GetSettingValue(\"setting_id\")", nullptr);
     EXPECT_STREQ(FUNCTION_NAME_GetVariableStringValue "('setting_id')", ecsql.c_str());
 
-    ecsql = m_helper.ConvertToECSql("GetSettingIntValue(\"setting_id\")");
+    ecsql = m_helper.ConvertToECSql("GetSettingIntValue(\"setting_id\")", nullptr);
     EXPECT_STREQ(FUNCTION_NAME_GetVariableIntValue "('setting_id')", ecsql.c_str());
 
-    ecsql = m_helper.ConvertToECSql("GetSettingBoolValue(\"setting_id\")");
+    ecsql = m_helper.ConvertToECSql("GetSettingBoolValue(\"setting_id\")", nullptr);
     EXPECT_STREQ(FUNCTION_NAME_GetVariableBoolValue "('setting_id')", ecsql.c_str());
 
-    ecsql = m_helper.ConvertToECSql("HasSetting(\"setting_id\")");
+    ecsql = m_helper.ConvertToECSql("HasSetting(\"setting_id\")", nullptr);
     EXPECT_STREQ(FUNCTION_NAME_HasVariable "('setting_id')", ecsql.c_str());
     }
 
@@ -311,13 +334,13 @@ TEST_F(ECExpressionsToECSqlConverterTests, FunctionNameSubstitution)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, VariableIntValuesSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("GetSettingIntValues(\"setting_id\").AnyMatch(x => x = this.SomeProperty)");
+    Utf8String ecsql = m_helper.ConvertToECSql("GetSettingIntValues(\"setting_id\").AnyMatch(x => x = this.SomeProperty)", nullptr);
     EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
 
-    ecsql = m_helper.ConvertToECSql("GetSettingIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
+    ecsql = m_helper.ConvertToECSql("GetSettingIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)", nullptr);
     EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
 
-    ecsql = m_helper.ConvertToECSql("GetVariableIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
+    ecsql = m_helper.ConvertToECSql("GetVariableIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)", nullptr);
     EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
     }
 
@@ -326,7 +349,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, VariableIntValuesSpecialCase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingProperty)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => x = this.SomeProperty.Id)");
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => x = this.SomeProperty.Id)", nullptr);
     EXPECT_STREQ("[this].[SomeProperty].[Id] IN (1, 2, 3, '4')", ecsql.c_str());
     }
 
@@ -335,7 +358,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingProperty_Reverse)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => this.SomeProperty.Id = x)");
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => this.SomeProperty.Id = x)", nullptr);
     EXPECT_STREQ("[this].[SomeProperty].[Id] IN (1, 2, 3, '4')", ecsql.c_str());
     }
 
@@ -344,7 +367,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingFunctionCall)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Set(\"a\", \"b\").AnyMatch(x => x = upper(this.SomeProperty.Id))");
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(\"a\", \"b\").AnyMatch(x => x = upper(this.SomeProperty.Id))", nullptr);
     EXPECT_STREQ("upper([this].[SomeProperty].[Id]) IN ('a', 'b')", ecsql.c_str());
     }
 
@@ -353,7 +376,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingFu
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingFunctionCall_Reverse)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Set(\"a\", \"b\").AnyMatch(x => upper(this.SomeProperty.Id) = x)");
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(\"a\", \"b\").AnyMatch(x => upper(this.SomeProperty.Id) = x)", nullptr);
     EXPECT_STREQ("upper([this].[SomeProperty].[Id]) IN ('a', 'b')", ecsql.c_str());
     }
 
@@ -362,7 +385,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCaseMatchingFu
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, ValueSetWithFunctionCallAnyMatchSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Set(upper(\"a\")).AnyMatch(x => x = this.SomeProperty)");
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(upper(\"a\")).AnyMatch(x => x = this.SomeProperty)", nullptr);
     EXPECT_STREQ("[this].[SomeProperty] IN (upper('a'))", ecsql.c_str());
     }
 
@@ -421,6 +444,6 @@ TEST_F(ECExpressionsToECSqlConverterTests, ParseValueExpressionAndCreateTree_Mul
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, CompareDateTimes_WrapsAndComparesArguments)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2)");
+    Utf8String ecsql = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2)", nullptr);
     EXPECT_STREQ("(JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", ecsql.c_str());
     }

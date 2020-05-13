@@ -1004,6 +1004,7 @@ struct ECExpressionToECSqlConverter : NodeVisitor
 #define ARGUMENTS_PRECONDITION() if (m_inArguments && m_ignoreArguments) return true;
 
 private:
+    IPresentationQueryFieldTypesProvider const* m_fieldTypes;
     bvector<Utf8String> m_usedClasses;
     Utf8String m_ecsql;
     RefCountedPtr<CallNode const> m_currentValueListMethodNode;
@@ -1094,14 +1095,22 @@ private:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Aidas.Vaiksnoras            08/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
-    void HandleLikeToken(NodeCR node)
+    void WrapPreviousNode(Utf8StringCR before, Utf8StringCR after)
         {
-        Utf8String::size_type previousNode = m_ecsql.rfind(m_nodesStack.back());
-        if (previousNode == Utf8String::npos)
+        Utf8String::size_type previousNodePos = m_ecsql.rfind(m_nodesStack.back());
+        if (previousNodePos == Utf8String::npos)
             return;
 
-        m_ecsql.insert(previousNode, "CAST(");
-        Append("AS TEXT)");
+        m_ecsql.insert(previousNodePos, before);
+        Append(after);
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Aidas.Vaiksnoras            08/2017
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleLikeToken(NodeCR node)
+        {
+        WrapPreviousNode("CAST(", "AS TEXT)");
         Append("LIKE");
         }
 
@@ -1139,7 +1148,21 @@ private:
         if (m_inStructProperty)
             {
             Append("]");
-            m_inStructProperty--;
+            --m_inStructProperty;
+            }
+        if (0 == m_inStructProperty && !m_nodesStack.empty() && m_fieldTypes != nullptr && (m_previousToken == TOKEN_Ident || m_previousToken == TOKEN_Dot))
+            {
+            Utf8String name = m_nodesStack.back();
+            PresentationQueryFieldType fieldType = m_fieldTypes->GetFieldType(name.Trim("[]"));
+            switch (fieldType)
+                {
+                case PresentationQueryFieldType::LabelDefinition:
+                    WrapPreviousNode(Utf8String(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("("), ")");
+                    break;
+                case PresentationQueryFieldType::NavigationPropertyValue:
+                    WrapPreviousNode(Utf8String(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(").append("json_extract("), ", '$.label'))");
+                    break;
+                }
             }
         }
 
@@ -1552,6 +1575,9 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleDotNode(DotNodeCR node)
         {
+        m_inStructProperty++;
+        Append(".");
+        Append("[");
         Append(node.GetName());
         }
 
@@ -1586,6 +1612,8 @@ private:
             // note: name of display label field contains invalid characters, so we wrap it
             // with quotes to make it look like a string - see Preprocess method
             Append(QueryHelpers::Wrap(value));
+            m_previousToken = TOKEN_Ident;
+            HandleScopeEnd();
             return;
             }
 
@@ -1680,13 +1708,6 @@ public:
 
         HandleScopeEnd();
 
-        if ((TOKEN_Dot == node.GetOperation()))
-            {
-            m_inStructProperty++;
-            Append(".");
-            Append("[");
-            }
-
         switch (node.GetOperation())
             {
             case TOKEN_Null:
@@ -1773,9 +1794,9 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
-    ECExpressionToECSqlConverter()
+    ECExpressionToECSqlConverter(IPresentationQueryFieldTypesProvider const* fieldTypes)
         : m_inArguments(0), m_inStructProperty(0), m_ignoreArguments(0), m_previousToken(TOKEN_Unrecognized),
-        m_skipNextArgumentsOpeningBrace(false), m_ignoreNextArguments(false)
+        m_skipNextArgumentsOpeningBrace(false), m_ignoreNextArguments(false), m_fieldTypes(fieldTypes)
         {}
 
     /*-----------------------------------------------------------------------------**//**
@@ -1783,8 +1804,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+--*/
     static void Preprocess(Utf8StringR expr)
         {
-        Utf8String displayLabelValue = Utf8String(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(").append(Utf8String(ContentDescriptor::DisplayLabelField::NAME).AddQuotes()).append(")");
-        expr.ReplaceAll(ContentDescriptor::DisplayLabelField::NAME, displayLabelValue.c_str());
+        expr.ReplaceAll(ContentDescriptor::DisplayLabelField::NAME, Utf8String(ContentDescriptor::DisplayLabelField::NAME).AddQuotes().c_str());
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -1814,7 +1834,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECExpressionsHelper::ConvertToECSql(Utf8StringCR expression)
+Utf8String ECExpressionsHelper::ConvertToECSql(Utf8StringCR expression, IPresentationQueryFieldTypesProvider const* fieldTypes)
     {
     if (expression.empty())
         return "";
@@ -1829,7 +1849,7 @@ Utf8String ECExpressionsHelper::ConvertToECSql(Utf8StringCR expression)
         return "";
         }
 
-    ECExpressionToECSqlConverter converter;
+    ECExpressionToECSqlConverter converter(fieldTypes);
     return converter.GetECSql(*node);
     }
 
@@ -1853,7 +1873,7 @@ bvector<Utf8String> const& ECExpressionsHelper::GetUsedClasses(Utf8StringCR expr
         return empty;
         }
 
-    ECExpressionToECSqlConverter converter;
+    ECExpressionToECSqlConverter converter(nullptr);
     bvector<Utf8String> classes = converter.GetUsedClasses(*node);
     m_cache.Add(expression.c_str(), classes);
     return *m_cache.GetUsedClasses(expression.c_str());

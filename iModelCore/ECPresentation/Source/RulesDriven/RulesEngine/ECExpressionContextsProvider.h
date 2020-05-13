@@ -9,6 +9,7 @@
 #include "JsonNavNode.h"
 #include "ECExpressionOptimizer.h"
 #include "RulesetVariables.h"
+#include "QueryContracts.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -51,7 +52,7 @@ struct ECExpressionContextsProvider : NonCopyableClass
             {}
         NavNodeCP GetParentNode() const {return m_parentNode;}
     };
-    
+
     /*=================================================================================**//**
     * @bsiclass                                     Grigas.Petraitis                04/2016
     +===============+===============+===============+===============+===============+======*/
@@ -67,7 +68,7 @@ struct ECExpressionContextsProvider : NonCopyableClass
     public:
         ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, Utf8String rulesetId,
             Utf8String locale, INavNodeLocaterCP nodeLocater, NavNodeKeyCP selectedNodeKey, RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* usedVariablesListener)
-            : ContextParametersBase(connection, locale, rulesetVariables, usedVariablesListener), m_rulesetId(rulesetId), m_contentDisplayType(contentDisplayType), 
+            : ContextParametersBase(connection, locale, rulesetVariables, usedVariablesListener), m_rulesetId(rulesetId), m_contentDisplayType(contentDisplayType),
             m_selectionProviderName(selectionProviderName), m_isSubSelection(isSubSelection), m_nodeLocater(nodeLocater), m_selectedNodeKey(selectedNodeKey)
             {}
         Utf8StringCR GetRulesetId() const {return m_rulesetId;}
@@ -77,7 +78,7 @@ struct ECExpressionContextsProvider : NonCopyableClass
         INavNodeLocaterCP GetNodeLocater() const {return m_nodeLocater;}
         NavNodeKeyCP GetSelectedNodeKey() const {return m_selectedNodeKey;}
     };
-    
+
     /*=================================================================================**//**
     * @bsiclass                                     Grigas.Petraitis                04/2016
     +===============+===============+===============+===============+===============+======*/
@@ -94,7 +95,7 @@ struct ECExpressionContextsProvider : NonCopyableClass
         NavNodeCR GetNode() const {return m_node;}
         NavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
-    
+
     /*=================================================================================**//**
     * @bsiclass                                     Grigas.Petraitis                04/2016
     +===============+===============+===============+===============+===============+======*/
@@ -167,7 +168,7 @@ public:
     ECExpressionsHelper(ECExpressionsCache& cache) : m_cache(cache) {}
     bool EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context);
     ECPRESENTATION_EXPORT NodePtr GetNodeFromExpression(Utf8CP expression);
-    ECPRESENTATION_EXPORT Utf8String ConvertToECSql(Utf8StringCR expression);
+    ECPRESENTATION_EXPORT Utf8String ConvertToECSql(Utf8StringCR expression, IPresentationQueryFieldTypesProvider const*);
     ECPRESENTATION_EXPORT bvector<Utf8String> const& GetUsedClasses(Utf8StringCR expression);
 };
 

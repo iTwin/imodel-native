@@ -2615,7 +2615,7 @@ static void ApplyInstanceFilter(ComplexNavigationQuery& query, SelectQueryInfo c
 
     bset<unsigned> usedParentInstanceLevels = GetUsedParentInstanceLevels(instanceFilter);
     if (usedParentInstanceLevels.empty() || parentInstanceNode && SUCCESS == AppendParents(query, usedParentInstanceLevels, params, *parentInstanceNode))
-        query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(instanceFilter).c_str(), BoundQueryValuesList());
+        query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(instanceFilter, nullptr).c_str(), BoundQueryValuesList());
 
     if (nullptr != params.GetUsedClassesListener())
         {

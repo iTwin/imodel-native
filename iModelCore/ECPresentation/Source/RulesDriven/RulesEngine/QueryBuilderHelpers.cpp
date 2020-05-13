@@ -455,7 +455,7 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
                     bset<ECInstanceId> const& ids = params.GetSelectInfo().GetPathFromInputToSelectClass().back().GetTargetIds();
                     IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
                     query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
-                    if (ids.empty()) 
+                    if (ids.empty())
                         return InstanceFilteringResult::NoResults;
                     result = InstanceFilteringResult::Success;
                     }
@@ -477,7 +477,7 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
 
     if (params.GetInstanceFilter() && 0 != *params.GetInstanceFilter())
         {
-        query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+        query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter(), nullptr).c_str(), BoundQueryValuesList());
         result = InstanceFilteringResult::Success;
         }
 
@@ -562,22 +562,32 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
         ContentDescriptor::Field const* sortingField = ovr.GetSortingField();
         if (nullptr != sortingField)
             {
-            if (sortingField->IsPropertiesField() && sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetIsPrimitive()
-                && nullptr != sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration())
+            switch (query->GetContract()->GetFieldType(sortingField->GetUniqueName()))
                 {
-                ECEnumerationCP enumeration = sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration();
-                orderByClause.append(CreateEnumOrderByClause(*sortingField, *enumeration));
+                case PresentationQueryFieldType::Enum:
+                    {
+                    if (!sortingField->IsPropertiesField() || !sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetIsPrimitive()
+                        || nullptr == sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration())
+                        {
+                        BeAssert(false);
+                        break;
+                        }
+                    ECEnumerationCP enumeration = sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration();
+                    orderByClause.append(CreateEnumOrderByClause(*sortingField, *enumeration));
+                    break;
+                    }
+                case PresentationQueryFieldType::LabelDefinition:
+                    orderByClause.append(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(")
+                        .append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str())).append(")");
+                    break;
+                case PresentationQueryFieldType::NavigationPropertyValue:
+                    orderByClause.append(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(json_extract(")
+                        .append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str())).append(", '$.label'))");
+                    break;
+                default:
+                    orderByClause.append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str()));
                 }
-            else if (sortingField->IsDisplayLabelField())
-                {
-                orderByClause.append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str()));
-                }
-            else
-                {
-                orderByClause.append(QueryHelpers::Wrap(ovr.GetSortingField()->GetUniqueName()));
-                }
-
-            sortingFieldNames.push_back(ovr.GetSortingField()->GetUniqueName().c_str());
+            sortingFieldNames.push_back(sortingField->GetUniqueName().c_str());
             }
 #ifdef WIP_SORTING_GRID_CONTENT
         else if (ovr.ShowLabels())
@@ -608,7 +618,7 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
         {
         query = CreateNestedQuery(*query);
         Utf8String ecsqlExpression = "(";
-        ecsqlExpression.append(ECExpressionsHelper(ecexpressionsCache).ConvertToECSql(ovr.GetFilterExpression()));
+        ecsqlExpression.append(ECExpressionsHelper(ecexpressionsCache).ConvertToECSql(ovr.GetFilterExpression(), query->GetContract()));
         ecsqlExpression.append(")");
         if (ecsqlExpression.length() > 2)
             Where(query, ecsqlExpression.c_str(), BoundQueryValuesList());
