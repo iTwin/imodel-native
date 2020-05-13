@@ -251,7 +251,6 @@ static void testModelUndoRedo(DgnDbR db)
     db.SaveChanges("added model");
 
     auto& txns = db.Txns();
-    txns.SetInteractive();
 
     auto stat = txns.ReverseSingleTxn();
     ASSERT_TRUE(DgnDbStatus::Success == stat);
@@ -393,7 +392,6 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(m_db->IsStandalone());
 
     auto& txns = m_db->Txns();
-    txns.SetInteractive();
     m_db->SaveChanges();
 
     SpatialModelPtr defaultModel = m_db->Models().Get<SpatialModel>(m_defaultModelId);
@@ -527,7 +525,6 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     {
     SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
-    txns.SetInteractive();
 
     ModelTxnMonitor monitor;
 

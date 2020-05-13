@@ -5,55 +5,51 @@
 #include <DgnPlatformInternal.h>
 
 BEGIN_UNNAMED_NAMESPACE
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct ChangesBlobHeader
-{
-    enum {DB_Signature06 = 0x0600};
-    uint32_t m_signature;    // write this so we can detect errors on read
+struct ChangesBlobHeader {
+    enum { DB_Signature06 = 0x0600 };
+    uint32_t m_signature; // write this so we can detect errors on read
     uint32_t m_size;
 
-    ChangesBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
-    ChangesBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
+    ChangesBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size = size;}
+    ChangesBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*)this, sizeof(*this), actuallyRead);}
 };
+
+enum : uint64_t {
+     K = 1024,
+     MEG = K * K,
+     GIG = K * MEG,
+     MAX_REASONABLE_TXN_SIZE = 200 * MEG,
+     MAX_TXN_SIZE = (4 * GIG) - 100,
+};
+
 END_UNNAMED_NAMESPACE
-
-enum {
-    K                       = (1024),
-    MEG                     = (K*K),
-};
-
-static const uint64_t GIG = K*MEG;
-static const uint64_t MAX_REASONABLE_TXN_SIZE = (200*MEG);
-static const uint64_t MAX_TXN_SIZE = (4*GIG) -100;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change change)
-    {
+TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change change) {
     Utf8CP tableName;
-    int nCols,indirect;
+    int nCols, indirect;
     DbOpcode opcode;
     change.GetOperation(&tableName, &nCols, &opcode, &indirect);
 
-    if (cause == ConflictCause::NotFound)
-        {
+    if (cause == ConflictCause::NotFound) {
         if (opcode == DbOpcode::Delete)      // a delete that is already gone.
             return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
         if (opcode == DbOpcode::Update)
             return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
-        }
-    else if (ConflictCause::Data == cause)
-        {
+    } else if (ConflictCause::Data == cause) {
         if (DbOpcode::Delete == opcode)
             return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
-        }
+    }
 
     BeAssert(false);
     return ConflictResolution::Skip;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    11/18
@@ -312,8 +308,7 @@ DbResult TxnManager::InitializeTableHandlers()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
-    {
+DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass) {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
@@ -328,32 +323,28 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
     dgn_TxnTable::RelationshipLinkTable* rlt;
 
     auto handler = FindTxnTable(tableName);
-    if (handler != nullptr)
-        {
+    if (handler != nullptr) {
         // Somebody is already tracking this table
         rlt = dynamic_cast<dgn_TxnTable::RelationshipLinkTable*>(handler);
-        if (nullptr == rlt)
-            {
+        if (nullptr == rlt) {
             //BeAssert(false && "relationship link table appears to be handled already. I can't handle it!");
             return DgnDbStatus::BadArg;
-            }
+        }
 
         //  An RLT is tracking this table
         auto unirlt = dynamic_cast<dgn_TxnTable::UniqueRelationshipLinkTable*>(rlt);
-        if (nullptr != unirlt)                  // If this table holds only one relationship, that means that
-            {
+        if (nullptr != unirlt) // If this table holds only one relationship, that means that
+        {
             //BeAssert(unirlt->m_ecclass == &relClass);
-            return DgnDbStatus::DuplicateName;  // this RLT must be tracking this relationship class
-            }
-        else
-            {
+            return DgnDbStatus::DuplicateName; // this RLT must be tracking this relationship class
+        } else {
             auto multi = static_cast<dgn_TxnTable::MultiRelationshipLinkTable*>(rlt);
             if (multi->m_ecclasses.find(&relClass) != multi->m_ecclasses.end())
-                return DgnDbStatus::DuplicateName;  // this RLT is already tracking this relationship class
+                return DgnDbStatus::DuplicateName; // this RLT is already tracking this relationship class
             multi->m_ecclasses.insert(&relClass);
-            return DgnDbStatus::Success;            // Start tracking this relationship class
-            }
+            return DgnDbStatus::Success; // Start tracking this relationship class
         }
+    }
 
     // Nobody is tracking this table.
     // *** TBD:
@@ -364,27 +355,26 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
     //  handler = multi;
     //  }
     // else
-        {
+    {
         auto uni = new dgn_TxnTable::UniqueRelationshipLinkTable(*this);
         uni->m_ecclass = &relClass;
         handler = uni;
-        }
-
-    m_tables.push_back(handler);
-    m_tablesByName.Insert(tableName, handler);           // (takes ownership of handlers by adding a reference to it)
-
-    return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
+    m_tables.push_back(handler);
+    m_tablesByName.Insert(tableName, handler); // (takes ownership of handlers by adding a reference to it)
+
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::EndTrackingRelationship(ECN::ECClassCR relClass)
-    {
-    /*
+    DgnDbStatus TxnManager::EndTrackingRelationship(ECN::ECClassCR relClass) {
+        /*
     *** WIP_LINKTABLES
     */
-    return DgnDbStatus::Success;
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -590,42 +580,41 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(BeSQLite::ChangeStream& 
     return OnCommitStatus::Completed;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * The supplied changeset was just applied to the database. That means the the database now potentially reflects a different
 * state than the in-memory objects for the affected tables. Use the changeset to send _OnAppliedxxx events to the TxnTables for each changed row,
 * so they can update in-memory state as necessary.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::OnChangesApplied(BeSQLite::ChangeStream& changeSet, bool invert)
-    {
-    Changes const& changes = changeSet.GetChanges(invert);
+void TxnManager::OnChangesApplied(BeSQLite::ChangeStream& changeSet, bool invert) {
+    if (!m_initTableHandlers) // not necessary unless we can possibly have local changes
+        return;
 
+    Changes const& changes = changeSet.GetChanges(invert);
     Utf8String currTable;
     TxnTable* txnTable = 0;
 
     // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
     // before we see any changes to another table.
-    for (auto change : changes)
-        {
+    for (auto change : changes) {
         Utf8CP tableName;
-        int nCols,indirect;
+        int nCols, indirect;
         DbOpcode opcode;
 
         DbResult rc = change.GetOperation(&tableName, &nCols, &opcode, &indirect);
-        BeAssert(rc==BE_SQLITE_OK);
+        BeAssert(rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
 
         if (0 != strcmp(currTable.c_str(), tableName)) // changes within a changeset are grouped by table
-            {
+        {
             currTable = tableName;
             txnTable = FindTxnTable(tableName);
-            }
+        }
 
         if (nullptr == txnTable)
             continue; // this table does not have a TxnTable for it, skip it
 
-        switch (opcode)
-            {
+        switch (opcode) {
             case DbOpcode::Delete:
                 txnTable->_OnAppliedDelete(change);
                 break;
@@ -637,9 +626,9 @@ void TxnManager::OnChangesApplied(BeSQLite::ChangeStream& changeSet, bool invert
                 break;
             default:
                 BeAssert(false);
-            }
         }
     }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * A changeset is about to be committed (or, in the case of "what if" testing, look like it is committed). Let each
@@ -1185,13 +1174,12 @@ void TxnManager::AddChanges(Changes const& changes)
 * and after it is applied.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStream& changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert)
-    {
+DbResult TxnManager::ApplyChanges(ChangeStream& changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert) {
     BeAssert(action != TxnAction::None);
     m_action = action;
 
-    // if we're not in interactive mode, we won't keep these caches up to date, just clear them
-    if (!m_isInteractive) {
+    // if we're not using table handlers, we won't keep these caches up to date, just clear them
+    if (!m_initTableHandlers) {
         m_dgndb.Elements().ClearCache();
         m_dgndb.Models().ClearCache();
     }
@@ -1208,11 +1196,10 @@ DbResult TxnManager::ApplyChanges(ChangeStream& changeset, TxnAction action, boo
 
     if (action == TxnAction::Merge && result == BE_SQLITE_OK) {
         if (containsSchemaChanges) {
-            /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
-            * The call to ClearECDbCache also clears all EC related caches held by DgnDb.
-            * Additionally, we force merging of revisions containing schema changes to happen right when the
-            * DgnDb is opened, and the Element caches haven't had a chance to get initialized.
-            */
+            // Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
+            // The call to ClearECDbCache also clears all EC related caches held by DgnDb.
+            // Additionally, we force merging of revisions containing schema changes to happen right when the
+            // DgnDb is opened, and the Element caches haven't had a chance to get initialized.
             result = m_dgndb.AfterSchemaChangeSetApplied();
             if (result != BE_SQLITE_OK) {
                 BeAssert(false);
@@ -1230,19 +1217,18 @@ DbResult TxnManager::ApplyChanges(ChangeStream& changeset, TxnAction action, boo
     }
 
     if (result == BE_SQLITE_OK) {
-        if (m_isInteractive)
-            OnChangesApplied(changeset, invert);
+        OnChangesApplied(changeset, invert);
 
         if (!IsInAbandon())
             T_HOST.GetTxnAdmin()._OnAppliedChanges(*this);
     }
 
-    if (m_isInteractive && !IsInAbandon())
+    if (!IsInAbandon())
         OnEndApplyChanges();
 
     m_action = TxnAction::None;
     return result;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Affan.Khan        04/20
@@ -1457,6 +1443,9 @@ void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action) {
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnBeginApplyChanges() {
+    if (!m_initTableHandlers)  // not necessary unless we can possibly have local changes
+        return;
+
     for (auto table : m_tables)
         table->_OnApply();
 }
@@ -1465,6 +1454,9 @@ void TxnManager::OnBeginApplyChanges() {
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnEndApplyChanges() {
+    if (!m_initTableHandlers)  // not necessary unless we can possibly have local changes
+        return;
+
     for (auto table : m_tables)
         table->_OnApplied();
 }
@@ -1472,12 +1464,11 @@ void TxnManager::OnEndApplyChanges() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseTxnRange(TxnRange const& txnRange)
-    {
+void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
     if (HasChanges() || InDynamicTxn())
         m_dgndb.AbandonChanges(); // will cancel dynamics if active
 
-    for (TxnId curr=QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr=QueryPreviousTxnId(curr))
+    for (TxnId curr = QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr = QueryPreviousTxnId(curr))
         ApplyTxnChanges(curr, TxnAction::Reverse);
 
     BeAssert(!HasChanges());
@@ -1488,7 +1479,7 @@ void TxnManager::ReverseTxnRange(TxnRange const& txnRange)
 
     // save in reversed Txns list
     m_reversedTxn.push_back(txnRange);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04

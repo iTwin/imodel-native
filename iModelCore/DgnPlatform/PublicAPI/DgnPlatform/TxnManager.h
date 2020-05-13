@@ -315,7 +315,6 @@ private:
     bool m_initTableHandlers;
     bool m_enableNotifyTxnMonitors;
     bool m_enableRebasers;
-    bool m_isInteractive = false;
 public:
     ModelChanges m_modelChanges;
 private:
@@ -365,7 +364,6 @@ private:
 public:
     void CallJsMonitors(Utf8CP eventName, int* arg = nullptr);
     void CallJsTxnManager(Utf8CP methodName) {DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
-    void SetInteractive() {m_isInteractive = true;}
 
     DGNPLATFORM_EXPORT void DeleteAllTxns();
     void DeleteFromStartTo(TxnId lastId); //!< @private
