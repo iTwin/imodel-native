@@ -298,6 +298,30 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName CiviliModelBridgesORDBridgeTestsFixture::GetOutputDir()
+    {
+    return m_host->GetOutputDirectory();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName CiviliModelBridgesORDBridgeTestsFixture::GetTestAppProductDir()
+    {
+    return m_host->GetTestAppProductDirectory();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName CiviliModelBridgesORDBridgeTestsFixture::GetDgnPlatformAssetsDir()
+    {
+    return m_host->GetDgnPlatformAssetsDirectory();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CiviliModelBridgesORDBridgeTestsFixture::RunTestAppFullLocalPath(WCharCP inputFullLocalPath, WCharCP bimFileName, bool updateMode)

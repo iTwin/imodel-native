@@ -2150,7 +2150,7 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
                         {
                         classId = dynamicClassId;
                         }
-                    }
+                     }
                 }
             }
         }
@@ -3393,6 +3393,70 @@ void ORDConverter::InsertIntoV8ToBimElmMap(Bentley::ElementRefP v8ElementRefP, D
     m_v8ToBimElmMap.Insert(v8ElementRefP, bimElementPtr);
     }
 
+BentleyStatus ORDConverter::DiscloseCivilFileAndAffinity(iModelBridgeAffinityDb& affinityDb, DgnV8FileR v8File)
+    {
+    iModelBridgeAffinityLevel affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::Low;
+    wchar_t bridgeRegSubKey[MAX_PATH];
+    BeStringUtilities::Wcsncpy(bridgeRegSubKey, _countof(bridgeRegSubKey), CIVILBRIDGEREGISTRYKEY);
+
+    auto format = v8File.GetOriginalFormat();
+    // Foreign file formats do not have authoring file info - don't load them:
+    if (format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::None;
+        }
+    else if (v8File.IsIModel())
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::None;
+        }
+    else
+        {
+        //we take over here and check affinity
+        //Because we reserve the right to switch the root model in case 3d active but we have a civil 2d,
+        //then we will use the same trick here
+        ModelRefPinner modelPinner;
+        DgnV8Api::DgnFileStatus openStatus;
+
+        if (auto rootModelRefP = v8File.LoadRootModelById((Bentley::StatusInt*)&openStatus, v8File.GetDefaultModelId(), /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected()))
+            {
+            if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelRefP))
+                {
+                //in case GetPlanModelFromModel fails to discover planModel, might return the argument, so we still 
+                //need to investigate if we have any GeometricModel in the planModelRefP
+                auto cifConnPtr = ConsensusConnection::Create(*planModelRefP);
+                auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
+                if (cifModelPtr.IsValid())
+                    {
+                    auto activeGeomModelPtr = cifModelPtr->GetActiveGeometricModel();//this will return the first found, even if found in some reference attachment
+                    //therefore I will compare its dgnModelP with the planModelRefP we found above, and I will consider it failed even if 
+                    //dgnFile might match, because that means we did not locate correctly the root model.
+                    if (activeGeomModelPtr.IsValid() && activeGeomModelPtr->GetDgnModelP() == planModelRefP)
+                        {
+                        //  CIF geometric model found in current file (we might have switched the root model if 3d was the default)...
+                        affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                        }
+                    ///debug code:
+                    //////Bentley::DgnModelP activeGeomdgnModelP = activeGeomModelPtr->GetDgnModelP();
+                    //////Bentley::DgnModelP planModeldgnModelP = planModelRefP->GetDgnModelP();
+                    //////Bentley::DgnFileP activegeomdgnFile = activeGeomdgnModelP->GetDgnFileP();
+                    //////Bentley::DgnFileP planModeldgndgnFile = planModeldgnModelP->GetDgnFileP();
+                    //////if (activeGeomModelPtr.IsValid() && activegeomdgnFile == planModeldgndgnFile)
+                    //////    {
+                    //////    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                    //////    }
+                    }
+                cifConnPtr = nullptr;
+                }
+            }
+        else
+            {
+            ORDBRIDGE_LOGE("Not valid '%s' -  root-model in file.", Utf8String(v8File.GetFileName().c_str()).c_str());
+            }
+        }
+    auto fileRowId = affinityDb.FindOrInsertFile(BeFileName(v8File.GetFileName().c_str()));
+    auto bridgeRowId = affinityDb.FindOrInsertBridge(Utf8String(bridgeRegSubKey));
+    return affinityDb.FindOrInsertAffinity(fileRowId, bridgeRowId, affinityLevel, nullptr);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3674,6 +3738,35 @@ void ORDConverter::MakeElementsWithIncorrectFeatureDefDynClassAvailableForUpdate
         }
 
     ORDBRIDGE_LOGI("%d repository links associated to elements with different dynamic-class from their feature-def property. Forcing update on them...", rowCount);
+    }
+
+BentleyStatus ORDConverter::DiscloseFilesAndAffinities(iModelBridgeAffinityDb& affinityDb)
+    {
+    if (m_rootFile->IsIModel())
+        {
+        // i.dgn file
+        auto fileRowId = affinityDb.FindOrInsertFile(BeFileName(m_rootFile->GetFileName().c_str()));
+        auto bridgeRowId = affinityDb.FindOrInsertBridge(Utf8String("Civil"));
+        return affinityDb.FindOrInsertAffinity(fileRowId, bridgeRowId, BentleyApi::Dgn::iModelBridgeAffinityLevel::None, nullptr);
+        }
+
+    // Normal dgn file
+
+    for (auto v8File : m_v8Files)
+        {
+        auto status = DiscloseCivilFileAndAffinity(affinityDb, *v8File);
+        if (status != BSISUCCESS)
+            return status;
+        }
+
+    _ConvertModels(); // This does not convert the content of the models. It does create modeled elements and adds ExternalSourceAspects to them.
+    if (nullptr != m_rootModelRef && m_isRootModelSpatial)
+        {
+        auto parentModelRowId = FindOrInsertModelIntoAffinityDb(affinityDb, *m_rootModelRef, m_rootModelMapping);
+        DiscloseReferenceAttachments(affinityDb, parentModelRowId, *m_rootModelRef);
+        }
+
+    return BSISUCCESS;
     }
 
 END_ORDBRIDGE_NAMESPACE

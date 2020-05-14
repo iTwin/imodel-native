@@ -427,6 +427,14 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     ORDConverterExtension::UnRegister(*s_obmConverter);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus ORDBridge::_DiscloseFilesAndAffinities(iModelBridgeAffinityDb& affinityDb)
+    {
+    return m_converter->DiscloseFilesAndAffinities(affinityDb);//
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017

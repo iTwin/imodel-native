@@ -56,8 +56,9 @@ public:
     virtual BentleyStatus _OnOpenBim(Dgn::DgnDbR db) override;
     void _OnCloseBim(BentleyStatus, ClosePurpose) override;
     virtual BentleyStatus _DetectDeletedDocuments() override;
+    virtual BentleyStatus _DiscloseFilesAndAffinities (Dgn::iModelBridgeAffinityDb& affinityDb)  override;
 
-    static WCharCP GetRegistrySubKey() { return L"Civil"; }
+    static WCharCP GetRegistrySubKey() { return CIVILBRIDGEREGISTRYKEY; }
     static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
 	static void AppendObmSdkToDllSearchPath(BeFileNameCR libraryDir);
     void SetIsUnitTesting(bool isUnitTesting) { m_isUnitTesting = isUnitTesting; }

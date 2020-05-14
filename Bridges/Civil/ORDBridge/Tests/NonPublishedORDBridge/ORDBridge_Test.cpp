@@ -415,4 +415,84 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullLocalPathTest)
     ASSERT_TRUE(RunTestAppFullLocalPath(dgn.c_str(), sql.c_str(), false));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool jsonHasMember(Utf8StringCR jsonStr, Utf8CP memberName)
+    {
+    auto json = Json::Value::From(jsonStr);
+    if (json.isNull())
+        return false;
+    return json.isMember(memberName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, DiscloseFilesAndAffinities)
+    {
+    BeFileName outDir = GetOutputDir();
+    BeFileName affinityDbName(outDir);
+    affinityDbName.AppendToPath(L"affinity.db");
+
+    auto affinityLibraryPath = GetTestAppProductDir();
+    affinityLibraryPath.AppendToPath(L"ORDBridge.dll");
+    auto assetsPath = GetDgnPlatformAssetsDir();
+    BeFileName inputPath(assetsPath);
+    inputPath.AppendToPath(L"TestFiles\\ORD\\");
+
+    auto masterFileName = inputPath; masterFileName.AppendToPath(L"Fully Federated\\container 2.dgn");
+    auto ref1FileName = inputPath; ref1FileName.AppendToPath(L"Fully Federated\\mainline 2.dgn");
+    auto ref2FileName = inputPath; ref2FileName.AppendToPath(L"Fully Federated\\ramp 2.dgn");
+
+    auto discloseFilesAndAffinities = (T_iModelBridge_discloseFilesAndAffinities*)iModelBridgeRegistryUtils::GetBridgeFunction(affinityLibraryPath, "iModelBridge_discloseFilesAndAffinities");
+    ASSERT_TRUE(discloseFilesAndAffinities != nullptr);
+    ASSERT_EQ(0, discloseFilesAndAffinities(affinityDbName.c_str(), affinityLibraryPath.c_str(), assetsPath.c_str(), masterFileName.c_str(), L"Civil"));
+    
+    auto db = iModelBridgeAffinityDb::Open(affinityDbName);
+    ASSERT_TRUE(db.IsValid());
+    auto mid = db->FindFile(masterFileName);
+    auto r1id = db->FindFile(ref1FileName);
+    auto r2id = db->FindFile(ref2FileName);
+    ASSERT_NE(0, mid);
+    ASSERT_EQ(1, mid);
+    ASSERT_NE(0, r1id);
+    ASSERT_NE(0, r2id);
+
+    auto civilBridgeId = db->FindBridge("Civil");
+    ASSERT_NE(0, civilBridgeId);
+
+    iModelBridgeAffinityLevel level;
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, mid, civilBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, level);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, r1id, civilBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::ExactMatch, level);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, r2id, civilBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::ExactMatch, level);
+
+    Utf8String json;
+    auto mmid = db->FindModel(nullptr, &json, mid, "0");
+    ASSERT_NE(0, mmid);
+    ASSERT_EQ(1, mmid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+    auto r1mid = db->FindModel(nullptr, &json, r1id, "0");
+    ASSERT_NE(0, r1mid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+    auto r2mid = db->FindModel(nullptr, &json, r2id, "0");
+    ASSERT_NE(0, r2mid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, mmid, r1mid));
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, mmid, r2mid));
+
+    bset<int64_t> attachedToMaster;
+    db->QueryAttachmentsToFile(mid, [&attachedToMaster](int64_t refFileRowId)
+        {
+        attachedToMaster.insert(refFileRowId);
+        });
+    ASSERT_EQ(2, attachedToMaster.size());
+    ASSERT_TRUE(attachedToMaster.find(r1id) != attachedToMaster.end());
+    ASSERT_TRUE(attachedToMaster.find(r2id) != attachedToMaster.end());
+    }
+
 #endif

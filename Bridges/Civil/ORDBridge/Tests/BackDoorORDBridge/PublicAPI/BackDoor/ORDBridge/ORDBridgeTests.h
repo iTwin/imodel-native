@@ -75,6 +75,9 @@ struct CiviliModelBridgesORDBridgeTestsFixture : ::testing::Test
         static Dgn::DgnDbPtr VerifyConvertedGeometryStationStart(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance);
         static Dgn::DgnDbPtr VerifyConvertedGeometryStationEquation(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance, int eqnCount, double eqnDistanceAlong, double eqnStationAhead);
         static Dgn::DgnDbPtr VerifyConvertedElementItemTypes(Utf8CP bimFileName, Utf8CP alignmentName, Utf8CP itemTypeLibName, Utf8CP typeClassName, size_t typePropCount, Utf8CP typePropName, Utf8CP typePropStringValue, int typePropIntegerValue, double typePropDoubleValue);
+        static BeFileName GetOutputDir();
+        static BeFileName GetTestAppProductDir();
+        static BeFileName GetDgnPlatformAssetsDir();
 
         static Dgn::DgnDbPtr VerifyConvertedGeometryElementCountAndEnds
         (

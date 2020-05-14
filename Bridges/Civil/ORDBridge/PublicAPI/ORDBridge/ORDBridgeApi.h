@@ -27,4 +27,5 @@ extern "C"
     ORDBRIDGE_EXPORT void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
         WCharCP affinityLibraryPath, WCharCP sourceFileName);
     ORDBRIDGE_EXPORT wchar_t const* iModelBridge_getRegistrySubKey();
+    ORDBRIDGE_EXPORT BentleyApi::BentleyStatus iModelBridge_discloseFilesAndAffinities(WCharCP outputFileName, WCharCP affinityLibraryPathStr, WCharCP assetsPathStr, WCharCP sourceFileNameStr, WCharCP bridgeId);
     }

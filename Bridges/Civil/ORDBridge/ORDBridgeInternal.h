@@ -57,6 +57,7 @@
 BEGIN_ORDBRIDGE_NAMESPACE
 END_ORDBRIDGE_NAMESPACE
 
+#define CIVILBRIDGEREGISTRYKEY      L"Civil"
 #include "ORDConverter.h"
 #include "OBMConverter.h"
 #include "ORDBridge.h"

@@ -100,6 +100,7 @@ private:
     void AssociateGeneratedAlignments();
     void CreateDefaultSavedViews();
     void DetectFeaturizedElementsWithIncorrectClass();
+    BentleyStatus DiscloseCivilFileAndAffinity(Dgn::iModelBridgeAffinityDb& affinityDb, DgnV8FileR v8File);
 
     typedef Dgn::iModelBridge iModelBridge;
 
@@ -160,6 +161,7 @@ public:
     BentleyStatus MakeRoadRailSchemaChanges();
     Utf8String GetAlignedSubjectName() const;
     Dgn::SubjectCPtr GetAlignedSubject() const;
+    BentleyStatus DiscloseFilesAndAffinities (Dgn::iModelBridgeAffinityDb& affinityDb);
     void MakeElementsWithIncorrectFeatureDefDynClassAvailableForUpdateAndMorph();
 }; // ORDConverter
 

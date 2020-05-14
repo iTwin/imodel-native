@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ORDBridgeInternal.h>
 
+
 /*=================================================================================**//**
 * @bsiclass                                                     Abeesh.Basheer     03/09
 +===============+===============+===============+===============+===============+======*/
@@ -54,6 +55,9 @@ USING_NAMESPACE_BENTLEY_ORDBRIDGE
 extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
     WCharCP affinityLibraryPath, WCharCP sourceFileName)
     {
+
+    BeStringUtilities::Wcsncpy(buffer, bufferSize, ORDBridge::GetRegistrySubKey());
+
     affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::None;
     BentleyApi::BeFileName sourceFile(sourceFileName);
     BentleyApi::BeFileName lowercaseSourceFile(sourceFile.ToLower().c_str());
@@ -106,6 +110,14 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
         StatusInt nStatus;
         dgnFilePtr->LoadFile(&nStatus, nullptr, true);
 
+        if (nStatus != SUCCESS || dgnFilePtr->IsIModel())
+            return;
+
+        auto format = dgnFilePtr->GetOriginalFormat();
+        // Foreign file formats do not have authoring file info - don't load them:
+        if (format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
+            return;
+
         DgnV8Api::ModelId modelId = dgnFilePtr->GetDefaultModelId();
 
         DependencyManager::SetProcessingDisabled(false);
@@ -124,25 +136,29 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
             GeometryModelDgnECDataBinder::GetInstance().Initialize();
             }
 
-        auto cifConnPtr = ConsensusConnection::Create(*rootModelP);
-        auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
-        if (cifModelPtr.IsValid())
+        if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelP))
             {
-            auto geomModelsPtr = cifModelPtr->GetActiveGeometricModels();
-            while (geomModelsPtr.IsValid() && geomModelsPtr->MoveNext())
+            //in case GetPlanModelFromModel fails to discover planModel, might return the argument, so we still 
+            //need to investigate if we have any GeometricModel in the planModelRefP
+            auto cifConnPtr = ConsensusConnection::Create(*planModelRefP);
+            auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
+            if (cifModelPtr.IsValid())
                 {
-                // At least one CIF geometric model found...
-                BeStringUtilities::Wcsncpy(buffer, bufferSize, ORDBridge::GetRegistrySubKey());
-                affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                auto activeGeomModelPtr = cifModelPtr->GetActiveGeometricModel();//this will return the first found, even if found in some reference attachment
+                                                                                 //therefore I will compare its dgnModelP with the planModelRefP we found above, and I will consider it failed even if 
+                                                                                 //dgnFile might match, because that means we did not locate correctly the root model.
+                if (activeGeomModelPtr.IsValid() && activeGeomModelPtr->GetDgnModelP() == planModelRefP)
+                    {
+                    //  CIF geometric model found in current file (we might have switched the root model if 3d was the default)...
+                    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                    }
                 }
-            }
+            cifConnPtr = nullptr;
 
-        cifConnPtr = nullptr;
-        dgnFilePtr = nullptr;
+            }
 
         if (BentleyApi::Dgn::iModelBridgeAffinityLevel::None == affinityLevel)
             {
-            BeStringUtilities::Wcsncpy(buffer, bufferSize, ORDBridge::GetRegistrySubKey());
             affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::Low;
             }
         }
@@ -155,4 +171,13 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
 //        DgnV8Api::DgnPlatformLib::ForgetHost();
 
     _wputenv(originalPath.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+extern "C" BentleyApi::BentleyStatus iModelBridge_discloseFilesAndAffinities(WCharCP outputFileName, WCharCP affinityLibraryPathStr, WCharCP assetsPathStr, WCharCP sourceFileNameStr, WCharCP bridgeId)
+    {
+    ORDBridge bridge;
+    return iModelBridge::DiscloseFilesAndAffinities(bridge, outputFileName, affinityLibraryPathStr, assetsPathStr, sourceFileNameStr, bridgeId);
     }
