@@ -76,6 +76,20 @@ folly::Future<folly::Unit> SaasClient::PostFeatureUsage
     return m_impl->PostFeatureUsage(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId, principalId);
     }
 
+folly::Future<TrackUsageStatus> SaasClient::EntitlementWorkflow
+(
+    Utf8StringCR accessToken,
+    BeVersionCR version,
+    Utf8StringCR projectId,
+    AuthType authType,
+    std::vector<int> productIds,
+    Utf8StringCR deviceId,
+    Utf8StringCR correlationId
+)
+    {
+    return m_impl->TrackUsage(accessToken, version, projectId, authType, productIds, deviceId, correlationId);
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -161,7 +161,7 @@ folly::Future<EntitlementResult> SaasClientImpl::CheckEntitlement
         [=] (WebEntitlementResult e)
         {
         auto usageType = LicenseStatusToUsageType(e.Status);
-        EntitlementResult entitlement {LicenseStatusToRunStatus(e.Status), e.PrincipalId, usageType};
+        EntitlementResult entitlement {LicenseStatusToRunStatus(e.Status), e.PrincipalId, usageType, e.ExpiresOn};
         return entitlement;
         });
     }

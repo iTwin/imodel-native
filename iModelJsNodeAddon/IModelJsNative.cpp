@@ -121,6 +121,21 @@ USING_NAMESPACE_BENTLEY_EC
         Napi::Value arrValue = arr[arrIndex];\
         if (arrValue.IsString())\
             var.push_back(arrValue.As<Napi::String>().Utf8Value().c_str());\
+    }\
+
+#define REQUIRE_ARGUMENT_STRING_ARRAY_ASYNC(i, var, deferred)\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsArray()) {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an array")\
+    }\
+    bvector<Utf8String> var;\
+    Napi::Array arr = info[i].As<Napi::Array>();\
+    for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {\
+        Napi::Value arrValue = arr[arrIndex];\
+        if (!arrValue.IsString()) {\
+            Utf8PrintfString msg("Argument " #i " must be an array of strings. Item at index %d is not a strings", arrIndex);\
+            REJECT_DEFERRED_AND_RETURN(deferred, msg.c_str())\
+        }\
+        var.push_back(arrValue.As<Napi::String>().Utf8Value().c_str());\
     }
 
 #define REQUIRE_ARGUMENT_NUMBER(i, var, retval)\
@@ -137,7 +152,13 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define REQUIRE_ARGUMENT_INTEGER(i, var, retval)\
     if (ARGUMENT_IS_NOT_NUMBER(i)) {\
-        THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an integer", retval)\
+        THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a number", retval)\
+    }\
+    int32_t var = info[i].As<Napi::Number>().Int32Value();
+
+#define REQUIRE_ARGUMENT_INTEGER_ASYNC(i, var, deferred)\
+    if (ARGUMENT_IS_NOT_NUMBER(i)) {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a number")\
     }\
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
@@ -145,7 +166,34 @@ USING_NAMESPACE_BENTLEY_EC
     if (ARGUMENT_IS_NOT_NUMBER(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an integer", retval)\
     }\
-    int32_t var = info[i].As<Napi::Number>().Uint32Value();
+    uint32_t var = info[i].As<Napi::Number>().Uint32Value();
+
+#define REQUIRE_ARGUMENT_INTEGER_ARRAY(i, var, retval)\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsArray()) {\
+        THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an array of integer", retval)\
+    }\
+    bvector<int32_t> var;\
+    Napi::Array arr = info[i].As<Napi::Array>();\
+    for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {\
+        Napi::Value arrValue = arr[arrIndex];\
+        if (arrValue.IsNumber())\
+            var.push_back(arrValue.As<Napi::Number>().Int32Value());\
+    }
+
+#define REQUIRE_ARGUMENT_INTEGER_ARRAY_ASYNC(i, var, deferred)\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsArray()) {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an array")\
+    }\
+    bvector<int32_t> var;\
+    Napi::Array arr = info[i].As<Napi::Array>();\
+    for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {\
+        Napi::Value arrValue = arr[arrIndex];\
+        if (!arrValue.IsNumber()) {\
+            Utf8PrintfString msg("Argument " #i " must be an array of numbers. Item at index %d is not a number", arrIndex);\
+            REJECT_DEFERRED_AND_RETURN(deferred, msg.c_str())\
+        }\
+        var.push_back(arrValue.As<Napi::Number>().Int32Value());\
+    }
 
 #define REQUIRE_ARGUMENT_BOOL(i, var, retval)\
     if (ARGUMENT_IS_NOT_BOOL(i)) {\
@@ -5026,6 +5074,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             jsNavValue.Set("allowed", Napi::Boolean::New(info.Env(), entitlementResult.allowed));
             jsNavValue.Set("principalId", Napi::String::New(info.Env(), entitlementResult.principalId.c_str()));
             jsNavValue.Set("usageType", Napi::String::New(info.Env(), usageType.c_str()));
+            jsNavValue.Set("expiresOn", Napi::String::New(info.Env(), entitlementResult.expiresOn.c_str()));
 
             return jsNavValue;
             }
@@ -5305,6 +5354,37 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
 
             return deferred.Promise();
             }
+    
+    static Napi::Value EntitlementWorkflow(Napi::CallbackInfo const& info)
+    {
+            Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+
+            REQUIRE_ARGUMENT_STRING_ASYNC(0, accessToken, deferred);
+            REQUIRE_ARGUMENT_STRING_ASYNC(1, appVersionStr, deferred);
+            BeVersion appVersion = BeVersion(appVersionStr.c_str());
+            REQUIRE_ARGUMENT_STRING_ASYNC(2, projectId, deferred);
+            REQUIRE_ARGUMENT_INTEGER_ASYNC(3, authType, deferred);
+            REQUIRE_ARGUMENT_INTEGER_ARRAY_ASYNC(4, productIds, deferred);// does this need casting? 
+            REQUIRE_ARGUMENT_STRING_ASYNC(5, deviceId, deferred);            
+            REQUIRE_ARGUMENT_STRING_ASYNC(6, correlationId, deferred);
+
+            Utf8String errorMessage = "";
+            try
+            {
+                 // TODO: find a way to avoid calling get() (which blocks the thread) and instead incorporate a .then() for the future, return the Napi promise immediately, and resolve/reject it later.
+                TrackUsageStatus result = UlasClient::Get().EntitlementWorkflow(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productIds, deviceId, correlationId).get();
+                deferred.Resolve(Napi::Number::New(info.Env(), (int)result));
+            }
+            catch(const std::exception& e)
+            {
+                //Most exceptions should be caught, logged, and handled in the CPC Saas client, but just in case
+                errorMessage.Sprintf("Exception occured : %s", e.what());
+                REJECT_DEFERRED_AND_RETURN(deferred, errorMessage.c_str());                
+            }
+
+            return deferred.Promise();            
+    }
+
     public:
         NativeUlasClient(Napi::CallbackInfo const &info) : BeObjectWrap<NativeUlasClient>(info) {}
         ~NativeUlasClient() {SetInDestructor();}
@@ -5322,6 +5402,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             StaticMethod("markFeature", &NativeUlasClient::MarkFeature),
             StaticMethod("postFeatureUsage", &NativeUlasClient::PostFeatureUsage),
             StaticMethod("checkEntitlement", &NativeUlasClient::CheckEntitlement),
+            StaticMethod("entitlementWorkflow", &NativeUlasClient::EntitlementWorkflow),
         });
         exports.Set("NativeUlasClient", t);
         }
@@ -6970,6 +7051,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     NativeECSchemaXmlContext::Init(env, exports);
     SnapRequest::Init(env, exports);
     NativeUlasClient::Init(env, exports);
+    //CPC normal client wrapper -- Add here
     DisableNativeAssertions::Init(env, exports);
     NativeImportContext::Init(env, exports);
     NativeDevTools::Init(env, exports);

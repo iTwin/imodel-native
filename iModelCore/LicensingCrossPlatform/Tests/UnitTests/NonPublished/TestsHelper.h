@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../../../Licensing/TrackUsageStatus.h"
+#include <Licensing/TrackUsageStatus.h>
 #include <Bentley/BeTest.h>
 #include <Licensing/Licensing.h>
 #include <BeHttp/HttpClient.h>

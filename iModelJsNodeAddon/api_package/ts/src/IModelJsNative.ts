@@ -35,7 +35,7 @@ export declare namespace IModelJsNative {
   }
 
   const enum UsageType {
-    Production = 0 , Trial = 1, Beta = 2, HomeUse= 3, PreActivation = 4,
+    Production = 0 , Trial = 1, Beta = 2, HomeUse= 3, PreActivation = 4, Evaluation = 5, Academic = 6,  Practitioner = 7,
   }
 
   const enum UpgradeMode {
@@ -562,6 +562,15 @@ export declare namespace IModelJsNative {
     allowed: boolean;
     usageType: string;
     principalId: string;
+    expiresOn: string;
+  }
+
+  const enum TrackUsageStatus {
+    BadParam = -2,
+    NotEntitled = -1,
+    Error = 0,
+    EntitledButErrorUsageTracking = 1,
+    Success = 2
   }
 
   /** Authentication methods used by the native addon
@@ -578,7 +587,12 @@ export declare namespace IModelJsNative {
     /** Sends a single request to log feature usage */
     public static postFeatureUsage(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string, principalId?: string): Promise<void>;
     public static checkEntitlement(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, correlationId?: string): Entitlement;
-  }
+    public static entitlementWorkflow(accessToken: string, appVersionStr: string, projectId: GuidString, authType: AuthType, productIds: number[], deviceId: string, correlationId: string): Promise<TrackUsageStatus>; //review params required, ? is optional
+  }   
+  
+  //class NativeCPCClient -- rename -- CPC normal client wrapper here
+  //OIDC passed as param -- up to caller to create...
+  // need to determine if 2 way communication between C++ and TS will be needed to keep heartbeats alive when OIDC tokens expire / need refreshed
 
   class DisableNativeAssertions implements IDisposable {
     constructor();

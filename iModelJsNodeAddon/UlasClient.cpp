@@ -254,6 +254,35 @@ BentleyStatus UlasClient::CheckEntitlement(
     return status;
     }
 
+    //-------------------------------------------------------------------------------------
+    // @bsimethod                                                         Matt Yale 4/2020
+    //-------------------------------------------------------------------------------------
+    folly::Future<TrackUsageStatus> UlasClient::EntitlementWorkflow
+    (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        Licensing::AuthType authType,
+        std::vector<int> productIds,
+        Utf8StringCR deviceId,
+        Utf8StringCR correlationId
+    ) const
+    {
+    //Param Validation 
+    TrackUsageStatus status = TrackUsageStatus::NotEntitled;
+    //Implementation
+    auto result = m_client->EntitlementWorkflow(accessToken, version, projectId, authType, productIds, deviceId, correlationId)
+    .then([&status](TrackUsageStatus value) {
+        status = value;
+                }).onError([&status](std::exception& ex) {
+                status = TrackUsageStatus::Error;
+                });
+    // Without this check the function exit without returning the result
+    while (result.isReady() != true){}
+
+    return status;
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle             12/2018
 //+---------------+---------------+---------------+---------------+---------------+------

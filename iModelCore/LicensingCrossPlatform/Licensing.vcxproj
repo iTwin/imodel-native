@@ -35,7 +35,6 @@
     <ClInclude Include="Licensing\Providers\EntitlementProvider.h" />
     <ClInclude Include="Licensing\Providers\IEntitlementProvider.h" />
     <ClInclude Include="Licensing\Providers\WebEntitlementResult.h" />
-    <ClInclude Include="Licensing\TrackUsageStatus.h" />
     <ClInclude Include="PublicAPI\Licensing\ClientConfig.h" />
     <ClInclude Include="PublicAPI\Licensing\EntitlementResult.h" />
     <ClInclude Include="Licensing\SaasClientImpl.h" />
@@ -119,7 +118,7 @@
     <NMakeReBuildCommandLine>bb -ax64 re Licensing -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <IncludePath>D:\dev\CPC\imodel02\src\imodel02\iModelCore\LicensingCrossPlatform\Licensing;$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>

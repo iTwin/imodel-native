@@ -122,8 +122,9 @@ folly::Future<WebEntitlementResult> EntitlementProvider::FetchWebEntitlementV4(c
 
             if (ls == "Allowed")
                 {
+                Utf8String expiresOn(ent["ExpiresOn"].asCString());
                 Utf8String principalId(ent["PrincipalId"].asCString());
-                WebEntitlementResult webEntitlement {ent["ProductId"].asInt(), LicenseStatus::Ok, principalId};
+                WebEntitlementResult webEntitlement {ent["ProductId"].asInt(), LicenseStatus::Ok, principalId, expiresOn};
                 return webEntitlement;
                 }
             }
@@ -134,8 +135,9 @@ folly::Future<WebEntitlementResult> EntitlementProvider::FetchWebEntitlementV4(c
 
             if (ls == "AllowedTrial")
                 {
+                Utf8String expiresOn(ent["ExpiresOn"].asCString());
                 Utf8String principalId(ent["PrincipalId"].asCString());
-                WebEntitlementResult webEntitlement {ent["ProductId"].asInt(), LicenseStatus::Trial, principalId};
+                WebEntitlementResult webEntitlement {ent["ProductId"].asInt(), LicenseStatus::Trial, principalId, expiresOn};
                 return webEntitlement;
                 }
             }
@@ -146,8 +148,9 @@ folly::Future<WebEntitlementResult> EntitlementProvider::FetchWebEntitlementV4(c
 
             if (ls == "AllowedEvaluation")
                 {
+                Utf8String expiresOn(ent["ExpiresOn"].asCString());
                 Utf8String principalId(ent["PrincipalId"].asCString());
-                WebEntitlementResult webEntitlement {ent["ProductId"].asInt(), LicenseStatus::Trial, principalId};
+                WebEntitlementResult webEntitlement {ent["ProductId"].asInt(), LicenseStatus::Trial, principalId, expiresOn};
                 return webEntitlement;
                 }
             }

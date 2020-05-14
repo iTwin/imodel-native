@@ -12,7 +12,7 @@
 #include <Licensing/AuthType.h>
 #include <Licensing/EntitlementResult.h>
 
-#include "TrackUsageStatus.h"
+#include <Licensing/TrackUsageStatus.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 

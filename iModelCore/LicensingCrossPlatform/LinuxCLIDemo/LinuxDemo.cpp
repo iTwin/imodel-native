@@ -269,6 +269,7 @@ void Initialize()
 
     BeFileName tempDir;
     Desktop::FileSystem::BeGetTempPath(tempDir);
+    cout << "DB Location is : "  << tempDir.c_str();
     if(BeSQLite::DbResult::BE_SQLITE_OK != BeSQLite::BeSQLiteLib::Initialize(tempDir))
         {
         cout << "BeSQLiteLib initialization failed. Try again.\n";

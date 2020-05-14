@@ -18,6 +18,7 @@ public:
 	int ProductId;
 	Licensing::LicenseStatus Status;
 	Utf8String PrincipalId;
+    Utf8String ExpiresOn; //For Trials / Evaluation
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

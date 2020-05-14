@@ -4,10 +4,13 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+//__PUBLISH_SECTION_START__
+
 enum class TrackUsageStatus
 	{
 	BadParam = -2,
 	NotEntitled = -1,
+	Error = 0,
 	EntitledButErrorUsageTracking = 1,
 	Success = 2
 	};

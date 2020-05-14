@@ -18,7 +18,8 @@ enum class UsageType
     HomeUse = 3,
     PreActivation = 4,
     Evaluation = 5,
-    Academic = 6
+    Academic = 6, 
+    Practitioner = 7
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

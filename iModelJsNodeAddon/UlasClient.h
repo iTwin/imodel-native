@@ -50,6 +50,20 @@ namespace IModelJsNative
         void Initialize(Region);
         void Uninitialize();
 
+        // Takes in a product or products, and determines if ANY of the products passed has an entitlement, 
+        // If so, starts RealTimeTrackUsage on that product.
+        // Prioritizes Allowed over Trial over Evaluation entitlements
+        // Returns TrackUsageStatus 
+        folly::Future<TrackUsageStatus> EntitlementWorkflow(
+            Utf8StringCR accessToken,
+            BeVersionCR version,
+            Utf8StringCR projectId,
+            Licensing::AuthType authType,
+            std::vector<int> productIds,
+            Utf8StringCR deviceId,
+            Utf8StringCR correlationId
+        ) const;
+
         /**
          * @deprecated use PostUserUsage instead.
          */

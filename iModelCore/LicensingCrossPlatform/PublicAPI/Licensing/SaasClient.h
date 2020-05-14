@@ -17,6 +17,8 @@
 #include <Licensing/Utils/FeatureEvent.h>
 #include <Licensing/UsageType.h>
 #include <Licensing/AuthType.h>
+#include <Licensing/TrackUsageStatus.h>
+
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -72,6 +74,30 @@ public:
         catch(...) { return folly::makeFuture(BentleyStatus::ERROR); }
         return folly::makeFuture(BentleyStatus::SUCCESS);
         };
+
+    
+
+    // Takes in a product or products, and determines if ANY of the products passed has an entitlement, 
+    // If so, starts RealTimeTrackUsage on that product.
+    // Prioritizes Allowed over Trial over Evaluation entitlements
+    // Returns TrackUsageStatus 
+    //! @param[in] accessToken OIDC or SAML token of user to track usage against. OIDC is preferred
+    //! @param[in] version version for this usage
+    //! @param[in] projectId projectId of this usage
+    //! @param[in] authType specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
+    //! @param[in] productIds specify the productIds for this usage
+    //! @param[in] deviceId specify the deviceId for this usage, required for multi-product id tracking
+    //! @param[in] correlationId specify the correlationId for this usage, must be a GUID
+    LICENSING_EXPORT folly::Future<TrackUsageStatus> EntitlementWorkflow
+    (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        AuthType authType,
+        std::vector<int> productIds,
+        Utf8StringCR deviceId,
+        Utf8StringCR correlationId
+    );
 
     /**
      * Sends realtime user usage

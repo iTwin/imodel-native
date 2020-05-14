@@ -19,6 +19,7 @@ public:
 	bool allowed;
 	Utf8String principalId;
 	UsageType usageType;
+    Utf8String expiresOn; //For Trials and Evaluation
 };
 
 END_BENTLEY_LICENSING_NAMESPACE
