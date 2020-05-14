@@ -48,7 +48,7 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
 //=======================================================================================
-struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
+struct iModelBridgeFwk : iMBridgeDocPropertiesAccessor
 {
     friend struct IBriefcaseManagerForBridges;
 

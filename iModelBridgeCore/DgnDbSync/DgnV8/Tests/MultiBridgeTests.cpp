@@ -11,7 +11,7 @@
 */
 #include "ConverterTestsBaseFixture.h"
 
-struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccessor
+struct MultiBridgeTestDocumentAccessor : iMBridgeDocPropertiesAccessor
     {
     std::map<BentleyApi::WString, std::vector<BentleyApi::BeFileName>> m_assignments;
     std::map<BentleyApi::BeFileName, iModelBridgeDocumentProperties> m_docProps;

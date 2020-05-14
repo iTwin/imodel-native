@@ -873,7 +873,7 @@ BeSQLite::BeGuid iModelBridge::Params::QueryDocumentGuid(BeFileNameCR localFileN
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelBridge::Params::QueryDocumentURN(BeFileNameCR localFileName) const
     {
-    if (nullptr == m_documentPropertiesAccessor)
+    if (nullptr == m_documentPropertiesAccessor)//Check whether dms support has a urn we can use.
         return "";
 
     iModelBridgeDocumentProperties docProps;

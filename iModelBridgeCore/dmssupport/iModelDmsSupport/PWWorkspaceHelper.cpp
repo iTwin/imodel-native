@@ -6,6 +6,7 @@
 #include <iModelDmsSupport/DmsSession.h>
 #include <ProjectWise_InternalSDK/Include/Workspace/ManagedWorkspace.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include <Objbase.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
 
@@ -286,4 +287,74 @@ bool            PWWorkspaceHelper::_StageInputFile(BeFileNameCR fileLocation)
         return true;
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+iMBridgeDocPropertiesAccessor* PWWorkspaceHelper::_GetDocumentPropertiersAccessor()
+    {
+    return this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      PWWorkspaceHelper::GetDocumentGuid(WStringCR inputMoniker)
+    {
+    HMONIKER moniker = NULL;
+    DWORD monikerFlags = AAMONIKERF_USE_EXISTING_LOGIN | AAMONIKERF_RESOURCE_LOCATION;
+    LPCWSTR monikerArray = &inputMoniker[0];
+    if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, monikerFlags))
+        {
+        LOG.errorv("aaApi_StringsToMonikers failed for document %ls", inputMoniker.c_str());
+        return "";
+        }
+
+    LPCGUID guid = aaApi_GetDocumentGuidFromMoniker(moniker);
+    if (NULL == guid)
+        {
+        LOG.errorv("aaApi_GetDocumentGuidFromMoniker failed for document %ls", inputMoniker.c_str());
+        aaApi_Free(moniker);
+        return "";
+        }
+    
+    // Create a WCHAR array to write the GUID to.
+    WChar guidString[256];
+    // Initialize the zero-based index of the 
+    // guidString to the null-terminating character 
+    // because the StringFromGUID2 may fail.
+    guidString[0] = '\0';
+    // Convert the GUID to a string of the form "{...}".
+    StringFromGUID2(*guid, guidString, 256);
+    // Return the guidString as a wstring.
+    aaApi_Free(moniker);
+    
+    Utf8String stringWithBraces(guidString);
+    return stringWithBraces.substr(1, stringWithBraces.length() - 2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PWWorkspaceHelper::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+    {
+    if (!m_inputFileMoniker.empty() && 0 == fn.CompareToI(m_inputFile))
+        props.m_desktopURN.Assign(m_inputFileMoniker.c_str());
+
+    if (m_documentGuid.empty())
+        m_documentGuid = GetDocumentGuid(m_inputFileMoniker);
+
+    if (!m_documentGuid.empty())
+        props.m_docGuid = m_documentGuid;
+
+    return BentleyStatus(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PWWorkspaceHelper::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid)
+    {
+    return  BentleyStatus(0);
     }

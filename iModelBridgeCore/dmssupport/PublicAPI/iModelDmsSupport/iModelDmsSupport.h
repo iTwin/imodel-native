@@ -16,7 +16,7 @@ namespace Bentley {
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 struct DmsSession;
-
+struct iMBridgeDocPropertiesAccessor;
 struct IDmsSupport
     {
     virtual bool _InitializeSession(WStringCR pwMoniker) = 0;
@@ -29,6 +29,7 @@ struct IDmsSupport
     virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns) = 0;
     virtual void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) = 0;
     virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() = 0;
+    virtual iMBridgeDocPropertiesAccessor* _GetDocumentPropertiersAccessor() = 0;
     };
 
 /*---------------------------------------------------------------------------------**//**

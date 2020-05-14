@@ -932,7 +932,7 @@ public:
                                                                 Utf8StringCR knownUrn = Utf8String());
 
     //! Convenience method to detect deleted documents and delete everything that was created from them.
-    //! This method takes care of detecting which documents were deleted (in cooperation with iModelBridge::IDocumentPropertiesAccessor).
+    //! This method takes care of detecting which documents were deleted (in cooperation with iMBridgeDocPropertiesAccessor).
     //! And, this method takes care of deleting the corresponding records from syncinfo.
     //! This method delegates the task of deleting corresponding models and elements from the BIM to the bridge by invoking the _OnDocumentDeleted method.
     //! @param kind Optional. The document kind. Defaults to "DocumentWithBeGuid"

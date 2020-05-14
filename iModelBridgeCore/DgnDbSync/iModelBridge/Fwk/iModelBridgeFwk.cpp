@@ -1300,6 +1300,15 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         }
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
+    else
+        {
+        if (NULL != m_dmsSupport)
+            {
+            iMBridgeDocPropertiesAccessor* propAccessor = m_dmsSupport->_GetDocumentPropertiersAccessor();
+            if (NULL != propAccessor)
+                params.SetDocumentPropertiesAccessor(*propAccessor);
+            }
+        }
     if (m_bcMgrForBridges.IsValid())
         params.SetBriefcaseManager(*m_bcMgrForBridges);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);

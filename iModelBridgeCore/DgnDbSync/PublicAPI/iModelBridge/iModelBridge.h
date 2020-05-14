@@ -62,6 +62,41 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct iModelBridgeFwk;
 struct iModelBridgeSacAdapter;
 
+//! Interface implemented by an agent that can get the document properties associated with a local file and can check of a file is assigned to a specified bridge
+struct iMBridgeDocPropertiesAccessor
+    {
+    //! Check if the specified file is assigned to the specified bridge.
+    //! @param fn   The name of the file that is to be converted
+    //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+    //! @return true if the specified bridge should convert the specified file
+    virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+
+    //! Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
+    //! @param[in] fn   The name of the file that is to be converted
+    //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
+    //! @return non-zero error status if doc properties could not be found for this file.
+    virtual BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) = 0;
+
+    //! Look up a document's properties by its document GUID.
+    //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
+    //! @param[out] localFilePath The local filepath of the staged document
+    //! @param[in] docGuid  The document's GUID in its home DCS
+    //! @return non-zero error status if the GUID is not in the table of registered documents.
+    virtual BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) = 0;
+
+    //! Assign a new file to the Bridge Registry database. This is for tracking files which might exist outside the Document Management system but still is critical
+    //! in succesfully converting data inside a file.
+    //! @param fn   The name of the file that is to be converted
+    //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+    //! @param guid The the default docguid should docprops not exist for fn
+    //! @return non-zero error status if assignment of this file to the registry database failed.
+    virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
+
+    //! Query all files assigned to this bridge.
+    //! @param fns   The names of all files that are assignd to this bridge.
+    //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+    virtual void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) = 0;
+    };
 /**
 @addtogroup GROUP_iModelBridge
 
@@ -474,41 +509,6 @@ struct iModelBridge
         UseGcsTransformWithScaling,             //!< Convert using a best fit transform that includes scaling to GCS grid coordinates.
         };
 
-    //! Interface implemented by an agent that can get the document properties associated with a local file and can check of a file is assigned to a specified bridge
-    struct IDocumentPropertiesAccessor
-        {
-        //! Check if the specified file is assigned to the specified bridge.
-        //! @param fn   The name of the file that is to be converted
-        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
-        //! @return true if the specified bridge should convert the specified file
-        virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
-
-        //! Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
-        //! @param[in] fn   The name of the file that is to be converted
-        //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
-        //! @return non-zero error status if doc properties could not be found for this file.
-        virtual BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) = 0;
-
-        //! Look up a document's properties by its document GUID.
-        //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
-        //! @param[out] localFilePath The local filepath of the staged document
-        //! @param[in] docGuid  The document's GUID in its home DCS
-        //! @return non-zero error status if the GUID is not in the table of registered documents.
-        virtual BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) = 0;
-
-        //! Assign a new file to the Bridge Registry database. This is for tracking files which might exist outside the Document Management system but still is critical
-        //! in succesfully converting data inside a file.
-        //! @param fn   The name of the file that is to be converted
-        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
-        //! @param guid The the default docguid should docprops not exist for fn
-        //! @return non-zero error status if assignment of this file to the registry database failed.
-        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
-
-        //! Query all files assigned to this bridge.
-        //! @param fns   The names of all files that are assignd to this bridge.
-        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
-        virtual void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) = 0;
-        };
 
     //! Interface to enable bridges to perform briefcase operations, such as push while they run.
     struct IBriefcaseManager
@@ -602,7 +602,7 @@ struct iModelBridge
         DgnPlatformLib::Host::RepositoryAdmin* m_repoAdmin;
         WebServices::ClientInfoPtr m_clientInfo;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
-        IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
+        iMBridgeDocPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
         IBriefcaseManager* m_briefcaseManager = nullptr;
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
@@ -739,9 +739,9 @@ struct iModelBridge
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
         WString GetBridgeRegSubKey() const {return m_thisBridgeRegSubKey;}
         Utf8String GetBridgeRegSubKeyUtf8() const {return Utf8String(m_thisBridgeRegSubKey);}
-        void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
+        void SetDocumentPropertiesAccessor(iMBridgeDocPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
         void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
-        IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
+        iMBridgeDocPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
         void SetPushIntermediateRevisions(PushIntermediateRevisions v) {m_pushIntermediateRevisions = v;}
         PushIntermediateRevisions GetPushIntermediateRevisions() const {return m_pushIntermediateRevisions;}
         void SetBriefcaseManager(IBriefcaseManager& c) {m_briefcaseManager = &c;}
@@ -1090,7 +1090,7 @@ public:
     // @private
     //! Make a RepositoryLink Element that refers to a specified source file.
     //! This function will attempt to set the properties of the RepositoryLink element from the DMS document properties of the source file.
-    //! This function will call Params::IDocumentPropertiesAccessor to get the document properties. If found,
+    //! This function will call Params::iMBridgeDocPropertiesAccessor to get the document properties. If found,
     //! the CodeValue for the RepositoryLink Element will be set to the document's GUID, and the element's URI property will be set to the document's URN.
     //! If DMS document properties cannot be found, this function will use the supplied defaultCode and defaultURN to set up the RepositoryLink.
     //! @param db               The briefcase.

@@ -287,9 +287,9 @@ static bool GetV8DgnDllsRelativeDir(BentleyApi::BeFileNameR v8DllsRelativeDir, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct     ResourceUpdateCaller : public DgnV8Api::IEnumerateAvailableHandlers
     {
-    iModelBridge::IDocumentPropertiesAccessor& m_accessor;
+    iMBridgeDocPropertiesAccessor& m_accessor;
 
-    ResourceUpdateCaller(iModelBridge::IDocumentPropertiesAccessor& accessor)
+    ResourceUpdateCaller(iMBridgeDocPropertiesAccessor& accessor)
         :m_accessor(accessor)
         {}
 
@@ -330,7 +330,7 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
     // Set dir prefix to be dropped from filenames when coming up with unique but portable filenames in syncinfo
     _GetConverterParams().SetInputRootDir(_GetParams().GetInputFileName().GetDirectoryName());
 
-    iModelBridge::IDocumentPropertiesAccessor* docAccessor = _GetParams().GetDocumentPropertiesAccessor();
+    iMBridgeDocPropertiesAccessor* docAccessor = _GetParams().GetDocumentPropertiesAccessor();
     if (nullptr != docAccessor)
         {
         ResourceUpdateCaller rCaller(*docAccessor);

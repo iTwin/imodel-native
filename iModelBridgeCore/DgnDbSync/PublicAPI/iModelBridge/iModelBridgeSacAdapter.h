@@ -61,7 +61,7 @@ struct iModelBridgeSacAdapter
     static WCharCP std_CompressedDgnDbExt() {return L"imodel";}
 
     //! Parameters that are specific to standalone converters that use iModelBridges.
-    struct Params : iModelBridge::IDocumentPropertiesAccessor
+    struct Params : iMBridgeDocPropertiesAccessor
         {
       protected:
         bool m_tryUpdate = false;               

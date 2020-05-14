@@ -177,6 +177,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ProjectWiseDocumentService;
             WSCLIENT_EXPORT static const UrlDescriptor RealityDataServices;
             WSCLIENT_EXPORT static const UrlDescriptor ContextServices;
+            WSCLIENT_EXPORT static const UrlDescriptor ProjectShareReactPortal;
             // ! DEPRECATED, use FormsWsg
             WSCLIENT_EXPORT static const UrlDescriptor ConnectForms;
             };

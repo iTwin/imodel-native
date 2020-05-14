@@ -2950,7 +2950,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual void _ImportSchema(DgnDbR) {} /* extension may import schemas. NB: call db.BriefcaseManager().LockSchemas() before calling db.ImportSchemas */
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
-    virtual void _UpdateResourceDefinitions (iModelBridge::IDocumentPropertiesAccessor& accessor) {}
+    virtual void _UpdateResourceDefinitions (iMBridgeDocPropertiesAccessor& accessor) {}
     virtual bool _OnElementPostInsertOrUpdate(Converter&, DgnV8EhCR, DgnElementId elementId, Converter::ChangeOperation changeOperation) { return false; /* element doesn't need updating */ }
     virtual void _OnElementClassChanged(Converter& converter, DgnV8EhCR v8eh, DgnElementCR newElement, DgnElementId originalElementId) {}
 };

@@ -387,6 +387,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ContextServices(
     "https://perf-connect-contextservices.bentley.com/",
     &s_urlRegistry
 );
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectShareReactPortal(
+    "ProjectShareReactPortal.Url",
+    "https://dev-connect-projectshareweb.bentley.com/",
+    "https://qa-connect-projectshareweb.bentley.com/",
+    "https://connect-projectshareweb.bentley.com/",
+    nullptr,
+    &s_urlRegistry
+);
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

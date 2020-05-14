@@ -8,6 +8,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <rapidjson/document.h>
 #include <Bentley/BeTextFile.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
 
@@ -125,8 +126,9 @@ Utf8String       DmsHelper::GetToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
-    BeFileName fLocation = fileLocation;
-    return _StageDocuments(fLocation);
+    m_inputFileMoniker = m_repositoryUrl;
+    m_inputFile = fileLocation;
+    return _StageDocuments(m_inputFile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -384,4 +386,59 @@ bool   DmsHelper::CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileD
 Utf8String      DmsHelper::GetRepositoryType()
     {
     return m_repositoryType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+iMBridgeDocPropertiesAccessor* DmsHelper::_GetDocumentPropertiersAccessor()
+    {
+    return this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vishal.Shingare                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      DmsHelper::GetDocumentGuid(Utf8String inputMoniker)
+    {
+    if (inputMoniker.empty())
+        return Utf8String();
+
+    int length = inputMoniker.length();
+    if (GetRepositoryType().EqualsI(PWREPOSITORYTYPE))
+        return inputMoniker.substr(length - 37, 36);
+
+    return inputMoniker.substr(length - 36, 36);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vishal.Shingare                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DmsHelper::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+    {
+    if (GetRepositoryType().EqualsI(PWREPOSITORYTYPE) && !m_inputFileMoniker.empty() && 0 == fn.CompareToI(m_inputFile))
+        props.m_desktopURN.Assign(WString(m_inputFileMoniker.c_str(), 0).c_str());
+    else if (!m_inputFileMoniker.empty() && 0 == fn.CompareToI(m_inputFile))
+        {
+        if (m_projectShareUrl.empty())
+            m_projectShareUrl = UrlProvider::Urls::ProjectShareReactPortal.Get().append(m_inputFileMoniker);
+
+        props.m_desktopURN.Assign(WString(m_projectShareUrl.c_str(), 0).c_str());
+        }
+
+    if (m_documentGuid.empty())
+        m_documentGuid = GetDocumentGuid(m_inputFileMoniker).ToUpper();
+
+    if (!m_documentGuid.empty())
+        props.m_docGuid = m_documentGuid;
+
+    return BentleyStatus(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vishal.Shingare                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DmsHelper::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid)
+    {
+    return  BentleyStatus(0);
     }

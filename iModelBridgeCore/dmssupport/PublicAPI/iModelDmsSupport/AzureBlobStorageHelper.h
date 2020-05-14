@@ -45,6 +45,7 @@ struct AzureBlobStorageHelper : public IDmsSupport
             {
             return NULL;
             }
+        virtual iMBridgeDocPropertiesAccessor* _GetDocumentPropertiersAccessor() { return NULL; }
     };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -73,6 +73,7 @@
     <SubPart PartName="ProjectWise_SDK"/>
     <SubPart PartName="VersionedV8_InternalSDK" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
     <SubPart PartName="PublicAPI" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+    <SubPart PartName="PublicAPI" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
     <SubPart PartName="v8ConfigSupport"/>
     <SubPart PartName="iModelDmsPublicApi"/>
     <SubPart PartName="UstationDummy"/>
