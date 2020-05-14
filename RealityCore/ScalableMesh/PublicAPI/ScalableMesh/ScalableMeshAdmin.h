@@ -5,6 +5,7 @@
 #pragma once
 #include <DgnPlatform/DgnPlatform.h>
 #include <ScalableMesh/IScalableMeshTextureGenerator.h>
+#include <WebServices/Connect/IConnectTokenProvider.h>
 
 /*--------------------------------------------------------------------------------------+
 |   Header File Dependencies
@@ -92,6 +93,10 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
         virtual AuthTokenType _SupplyAuthTokenType() const { return AuthTokenType::None; }
 
         virtual bool _SupplyAuthHeaderValue(Utf8StringR value, Utf8StringCR scope) const { return false; }
+
+        virtual Utf8String _SupplyTokenCallbackUrl() const { return Utf8String(); }
+
+        virtual WebServices::IConnectTokenProviderPtr _SupplyTokenProvider() const { return nullptr; }
 
         virtual uint32_t _SupplyRegionID() const { return uint32_t(-1); }
 

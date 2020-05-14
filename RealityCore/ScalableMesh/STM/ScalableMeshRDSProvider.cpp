@@ -216,6 +216,21 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& ser
             timer = std::time(nullptr);
             });
         }
+    else
+        {
+        Utf8String callbackUrl = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyTokenCallbackUrl();
+        if(!callbackUrl.empty())
+            ConnectTokenManager::SetTokenProvider(callbackUrl, token);
+        else
+            {
+            auto tokenProvider = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyTokenProvider();
+
+            if(tokenProvider != nullptr)
+                {
+                ConnectTokenManager::SetTokenProvider(tokenProvider);
+                }
+            }
+        }
 #endif
 
     // Set the error callback in RDS (will be called when errors occur)

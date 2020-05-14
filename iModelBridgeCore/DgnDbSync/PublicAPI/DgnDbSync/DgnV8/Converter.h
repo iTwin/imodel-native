@@ -1909,11 +1909,14 @@ public:
     //! Call this once before working with Converter
     //! @note Call this just \em after initializing DgnDb's DgnPlatformLib
     //! @note If you install RealDWG on a shared location, pass in an absolute path; otherwise the default \V8SDK\RealDwg\ location will be used.
+    //! @param connectEnvironment Connect region of the project (Qa, Release, etc.)
+    //! @param tokenCallbackUrl Identifies the url to the token provider service
+    //! @param mgr If tokenCallBackUrl isn't valid, we will fallback to older Connect signin process
     DGNDBSYNC_EXPORT static void Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir,
                                             BentleyApi::BeFileNameCR v8DllsRelativeDir, BentleyApi::BeFileNameCP realdwgAbsoluteDir,
                                             bool isPowerPlatformBased, int argc, WCharCP argv[],
                                             BentleyApi::Dgn::IDmsSupport*,
-                                            int);
+                                            int connectEnvironment, Utf8String tokenCallbackUrl, WebServices::IConnectSignInManagerPtr mgr);
     DGNDBSYNC_EXPORT static void Terminate(iModelBridge::Params const&);
     static BentleyStatus InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR realdwgDir);
     static BentleyStatus InitializeDwgSettings (Converter* v8converter);

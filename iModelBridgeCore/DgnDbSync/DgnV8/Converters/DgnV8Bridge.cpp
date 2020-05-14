@@ -320,7 +320,7 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
         _GetConverterParams().SetV8SdkRelativeDir(v8DllsRelativeDir, isPowerplatformBased);
         }
 
-    Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv, _GetParams().GetDmsSupportLibrary(), _GetParams().GetUrlEnvironment());
+    Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv, _GetParams().GetDmsSupportLibrary(), _GetParams().GetUrlEnvironment(), _GetParams().GetCallBackUrl(), _GetParams().GetConnectSigninManager());
 
     // Resolve import config file.
     BeFileName configFile;

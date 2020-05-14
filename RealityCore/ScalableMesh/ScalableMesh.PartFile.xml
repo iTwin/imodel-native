@@ -33,6 +33,7 @@
     <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"        Repository="bsicommon" />
     <SubPart PartName="BeXml"                      PartFile="iModelCore/Bentley/Bentley"                   Repository="imodel02"/>
     <SubPart PartName="BeHttp"                     PartFile="iModelCore/BeHttp/BeHttp"                    Repository="imodel02"/>
+    <SubPart PartName="WebServicesClient"          PartFile="iModelCore/WSClient/WSClient"            Repository="imodel02"/>
   </Part>
 
   <Part Name="RDSDependencies_DgnDb06" >

@@ -19,6 +19,8 @@
 #include <VersionedDgnV8Api/TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 
 #include <WebServices/Configuration/UrlProvider.h>
+#include <WebServices/Connect/IConnectSignInManager.h>
+
 
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
@@ -526,9 +528,14 @@ struct ConverterV8Txn : DgnV8Api::DgnCacheTxn
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     {
     int m_connectEnvironment = 0;
-    SMHost(int connectEnvironment)
+    Utf8String m_callbackUrl;
+    WebServices::IConnectSignInManagerPtr m_connectSignInManager = nullptr;
+
+    SMHost(int connectEnvironment, Utf8String callbackUrl, WebServices::IConnectSignInManagerPtr mgr)
         {
         m_connectEnvironment = connectEnvironment;
+        m_callbackUrl = callbackUrl;
+        m_connectSignInManager = mgr;
         }
 
     ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
@@ -536,10 +543,16 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         struct CsScalableMeshAdmin : public ScalableMesh::ScalableMeshAdmin
             {
             int m_connectEnvironment = 0;
-            CsScalableMeshAdmin(int connectEnvironment)
+            Utf8String m_callbackUrl;
+            WebServices::IConnectSignInManagerPtr m_connectSignInManager = nullptr;
+
+            CsScalableMeshAdmin(int connectEnvironment, Utf8String callbackUrl, WebServices::IConnectSignInManagerPtr mgr)
                 {
                 m_connectEnvironment = connectEnvironment;
+                m_callbackUrl = callbackUrl;
+                m_connectSignInManager = mgr;
                 }
+
             virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override
                 {
                 IScalableMeshTextureGeneratorPtr generator;
@@ -590,8 +603,18 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                     }
                 return uint32_t(m_connectEnvironment);
                 }
+
+            virtual Utf8String _SupplyTokenCallbackUrl() const override
+                {
+                return m_callbackUrl;
+                }
+
+            virtual WebServices::IConnectTokenProviderPtr _SupplyTokenProvider() const override
+                {
+                return m_connectSignInManager->GetTokenProvider("https://connect-wsg20.bentley.com");
+                }
             };
-        return *new CsScalableMeshAdmin(m_connectEnvironment);
+        return *new CsScalableMeshAdmin(m_connectEnvironment, m_callbackUrl, m_connectSignInManager);
         };
 
     };
@@ -626,7 +649,7 @@ struct CifSheetExaggeratedViewHandlerStandin : DgnV8Api::ViewHandler
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir,
                            BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[], BentleyApi::Dgn::IDmsSupport* dmsSupport,
-                           int connectEnvironment)
+                           int connectEnvironment, Utf8String tokenCallbackUrl, WebServices::IConnectSignInManagerPtr mgr)
     {
     if (!isPowerPlatformBased)
         {
@@ -701,7 +724,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
 
     DgnDomainP domain = new PresentationRulesDomain();
     DgnDomains::RegisterDomain(*domain, DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
-    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost(connectEnvironment));
+    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost(connectEnvironment, tokenCallbackUrl, mgr));
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         xdomain->_RegisterDomain(bridgeAssetsDir);
