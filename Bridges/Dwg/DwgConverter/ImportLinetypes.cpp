@@ -663,6 +663,7 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
                 this->_OnUpdateLineType (lstyleId, *linetype.get());
                 // save to our linestyle map
                 m_importedLinestyles.insert (T_DwgDgnLineStyleId(linetype->GetObjectId(), lstyleId));
+                iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Line Styles");
                 continue;
                 }
             }
@@ -681,6 +682,8 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
 
         // create a new linestyle
         this->_ImportLineType (linetype);
+
+        iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Line Styles");
         }
     
     return  BSISUCCESS;

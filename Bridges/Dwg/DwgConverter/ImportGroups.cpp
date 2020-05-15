@@ -225,13 +225,21 @@ BentleyStatus   DwgImporter::_OnUpdateGroup (DwgSourceAspects::GroupAspectCR old
 BentleyStatus   DwgImporter::_UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dwgGroup)
     {
     // the default implementation only supports GenericGroup
+    BentleyStatus status = BentleyStatus::BSIERROR;
     auto genericGroup = dynamic_cast<GenericGroupP> (&dgnGroup);
     if (nullptr != genericGroup)
         {
         GroupFactory    factory (*this, dwgGroup);
-        return factory.Update (*genericGroup);
+        status = factory.Update (*genericGroup);
+        
+        if (status == BentleyStatus::BSISUCCESS)
+            {
+            status = iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Groups");
+            if (status != BentleyStatus::BSISUCCESS)
+                this->ReportError (IssueCategory::DiskIO(), Issue::Message(), "Save point failed");
+            }
         }
-    return  BSIERROR;
+    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -240,7 +248,14 @@ BentleyStatus   DwgImporter::_UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dw
 DgnElementPtr   DwgImporter::_ImportGroup (DwgDbGroupCR group)
     {
     GroupFactory    factory (*this, group);
-    return factory.Create ();
+    auto element = factory.Create ();
+    if (element.IsValid())
+        {
+        auto status = iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Groups");
+        if (status != BentleyStatus::BSISUCCESS)
+            this->ReportError (IssueCategory::DiskIO(), Issue::Message(), "Save point failed");
+        }
+    return  element;
     }
 
 /*---------------------------------------------------------------------------------**//**

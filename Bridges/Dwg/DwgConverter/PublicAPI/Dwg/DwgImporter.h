@@ -366,9 +366,10 @@ public:
         bool                m_blockAsSharedParts;
         bool                m_filledHatchAsFilledElement;
         bool                m_treatModelspaceAs2d;
+        iModelBridge*       m_owningBridge;
 
     public:
-        Options ()
+        Options () : m_owningBridge(nullptr)
             {
             m_stableIdPolicy = StableIdPolicy::ById;
             m_time = DateTime::GetCurrentTimeUtc();
@@ -393,6 +394,7 @@ public:
             m_treatModelspaceAs2d = false;
             }
 
+        void SetOwningBridge (iModelBridge* bridge) {m_owningBridge = bridge;}
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
         void SetConfigFile (BentleyApi::BeFileNameCR fileName) {m_configFile = fileName;}
         void SetChangesFile (BentleyApi::BeFileNameCR fileName) {m_changesFile = fileName;}
@@ -421,6 +423,7 @@ public:
         void SetRunAsStandaloneApp (bool v) { m_runAsStandaloneApp = v; }
         void SetTreatModelspaceAs2D (bool v) { m_treatModelspaceAs2d = v; }
 
+        iModelBridge* GetOwningBridge () const {return m_owningBridge;}
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
         BeFileNameCR GetChangesFile() const {return m_changesFile;}

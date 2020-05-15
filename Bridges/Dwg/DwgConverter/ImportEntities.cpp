@@ -503,6 +503,7 @@ BentleyStatus   DwgImporter::_ProcessDetectionResults (IDwgChangeDetector::Detec
             {
             // new entity - insert results into BIM
             this->InsertResults (elementResults);
+            iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Elements");
             break;
             }
 
@@ -511,6 +512,7 @@ BentleyStatus   DwgImporter::_ProcessDetectionResults (IDwgChangeDetector::Detec
             // existing element - update it
             auto existingElementId = detectionResults.GetExistingElementId ();
             this->UpdateResults (elementResults, existingElementId);
+            iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Elements");
             break;
             }
 

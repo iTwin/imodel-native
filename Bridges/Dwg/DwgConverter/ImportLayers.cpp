@@ -369,6 +369,7 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
                 // cache the layer mapping
                 CategoryEntry   entry(categoryId, subcategoryId, layerIdInMasterFile, !layer->IsOff() && !layer->IsFrozen());
                 m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
+                iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Categories");
                 continue;
                 }
             }
@@ -376,7 +377,7 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
         if ((count++ % 100) == 0)
             this->Progress ();
 
-        bool        overrideName = false;
+        bool    overrideName = false;
         if (name.IsEmpty())
             {
             this->ReportIssue (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::ConfigUsingDefault(), DwgHelper::ToUtf8CP(name));
@@ -391,6 +392,8 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
             }
 
         this->_ImportLayer (*layer.get(), overrideName ? &name : nullptr);
+
+        iModelBridge::SaveChangesToConserveMemory (*m_dgndb, "Categories");
         }
 
     return  count;
