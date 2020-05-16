@@ -418,18 +418,18 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullLocalPathTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool jsonHasMember(Utf8StringCR jsonStr, Utf8CP memberName)
+/*static bool jsonHasMember(Utf8StringCR jsonStr, Utf8CP memberName)
     {
     auto json = Json::Value::From(jsonStr);
     if (json.isNull())
         return false;
     return json.isMember(memberName);
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CiviliModelBridgesORDBridgeTests, DiscloseFilesAndAffinities)
+/*TEST_F(CiviliModelBridgesORDBridgeTests, DiscloseFilesAndAffinitiesTest1)
     {
     BeFileName outDir = GetOutputDir();
     BeFileName affinityDbName(outDir);
@@ -464,7 +464,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, DiscloseFilesAndAffinities)
 
     iModelBridgeAffinityLevel level;
     ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, mid, civilBridgeId));
-    ASSERT_EQ(iModelBridgeAffinityLevel::Low, level);
+    ASSERT_EQ(iModelBridgeAffinityLevel::ExactMatch, level);
     ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, r1id, civilBridgeId));
     ASSERT_EQ(iModelBridgeAffinityLevel::ExactMatch, level);
     ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, r2id, civilBridgeId));
@@ -493,6 +493,40 @@ TEST_F(CiviliModelBridgesORDBridgeTests, DiscloseFilesAndAffinities)
     ASSERT_EQ(2, attachedToMaster.size());
     ASSERT_TRUE(attachedToMaster.find(r1id) != attachedToMaster.end());
     ASSERT_TRUE(attachedToMaster.find(r2id) != attachedToMaster.end());
+    }*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, GetAffinityTest1)
+    {
+    BeFileName outDir = GetOutputDir();
+
+    auto affinityLibraryPath = GetTestAppProductDir();
+    affinityLibraryPath.AppendToPath(L"ORDBridge.dll");
+    auto assetsPath = GetDgnPlatformAssetsDir();
+    BeFileName inputPath(assetsPath);
+    inputPath.AppendToPath(L"TestFiles\\ORD\\");
+
+    auto masterFileName = inputPath; masterFileName.AppendToPath(L"Container\\3DContainer.dgn");
+    auto refFileName = inputPath; refFileName.AppendToPath(L"Container\\SimpleORD.dgn");
+
+    auto getAffinity = (T_iModelBridge_getAffinity*)iModelBridgeRegistryUtils::GetBridgeFunction(affinityLibraryPath, "iModelBridge_getAffinity");
+    ASSERT_TRUE(getAffinity != nullptr);
+
+    WChar buffer[_MAX_PATH];
+    BeStringUtilities::Wcsncpy(buffer, _MAX_PATH, L"");
+    iModelBridgeAffinityLevel affinityLevel = iModelBridgeAffinityLevel::None;
+    getAffinity(buffer, _MAX_PATH, affinityLevel, affinityLibraryPath.c_str(), masterFileName.c_str());
+
+    ASSERT_EQ(iModelBridgeAffinityLevel::ExactMatch, affinityLevel);
+    ASSERT_EQ(0, wcscmp(L"Civil", buffer));
+
+    affinityLevel = iModelBridgeAffinityLevel::None;
+    getAffinity(buffer, _MAX_PATH, affinityLevel, affinityLibraryPath.c_str(), refFileName.c_str());
+
+    ASSERT_EQ(iModelBridgeAffinityLevel::ExactMatch, affinityLevel);
+    ASSERT_EQ(0, wcscmp(L"Civil", buffer));
     }
 
 #endif

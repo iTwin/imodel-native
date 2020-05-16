@@ -3412,47 +3412,66 @@ BentleyStatus ORDConverter::DiscloseCivilFileAndAffinity(iModelBridgeAffinityDb&
     else
         {
         //we take over here and check affinity
-        //Because we reserve the right to switch the root model in case 3d active but we have a civil 2d,
-        //then we will use the same trick here
-        ModelRefPinner modelPinner;
-        DgnV8Api::DgnFileStatus openStatus;
 
-        if (auto rootModelRefP = v8File.LoadRootModelById((Bentley::StatusInt*)&openStatus, v8File.GetDefaultModelId(), /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected()))
+        Bentley::WString applicationName;
+        if (SUCCESS == v8File.GetAuthoringProductName(applicationName))
             {
-            if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelRefP))
+            if (applicationName.Equals(Bentley::WString(ORD_AUTHORING_PRODNAME).c_str()) ||
+                applicationName.Equals(Bentley::WString(ORAIL_AUTHORING_PRODNAME).c_str()) ||
+                applicationName.Equals(Bentley::WString(OSITE_AUTHORING_PRODNAME).c_str()))
                 {
-                //in case GetPlanModelFromModel fails to discover planModel, might return the argument, so we still 
-                //need to investigate if we have any GeometricModel in the planModelRefP
-                auto cifConnPtr = ConsensusConnection::Create(*planModelRefP);
-                auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
-                if (cifModelPtr.IsValid())
-                    {
-                    auto activeGeomModelPtr = cifModelPtr->GetActiveGeometricModel();//this will return the first found, even if found in some reference attachment
-                    //therefore I will compare its dgnModelP with the planModelRefP we found above, and I will consider it failed even if 
-                    //dgnFile might match, because that means we did not locate correctly the root model.
-                    if (activeGeomModelPtr.IsValid() && activeGeomModelPtr->GetDgnModelP() == planModelRefP)
-                        {
-                        //  CIF geometric model found in current file (we might have switched the root model if 3d was the default)...
-                        affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
-                        }
-                    ///debug code:
-                    //////Bentley::DgnModelP activeGeomdgnModelP = activeGeomModelPtr->GetDgnModelP();
-                    //////Bentley::DgnModelP planModeldgnModelP = planModelRefP->GetDgnModelP();
-                    //////Bentley::DgnFileP activegeomdgnFile = activeGeomdgnModelP->GetDgnFileP();
-                    //////Bentley::DgnFileP planModeldgndgnFile = planModeldgnModelP->GetDgnFileP();
-                    //////if (activeGeomModelPtr.IsValid() && activegeomdgnFile == planModeldgndgnFile)
-                    //////    {
-                    //////    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
-                    //////    }
-                    }
-                cifConnPtr = nullptr;
+                affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
                 }
             }
-        else
+
+        if (affinityLevel != BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch)
             {
-            ORDBRIDGE_LOGE("Not valid '%s' -  root-model in file.", Utf8String(v8File.GetFileName().c_str()).c_str());
+            //Because we reserve the right to switch the root model in case 3d active but we have a civil 2d,
+            //then we will use the same trick here
+            ModelRefPinner modelPinner;
+            DgnV8Api::DgnFileStatus openStatus;
+
+            if (auto rootModelRefP = v8File.LoadRootModelById((Bentley::StatusInt*)&openStatus, v8File.GetDefaultModelId(), /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected()))
+                {
+                if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelRefP))
+                    {
+                    //in case GetPlanModelFromModel fails to discover planModel, might return the argument, so we still 
+                    //need to investigate if we have any GeometricModel in the planModelRefP
+                    auto cifConnPtr = ConsensusConnection::Create(*planModelRefP);
+                    auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
+                    if (cifModelPtr.IsValid())
+                        {
+                        auto activeGeomModelPtr = cifModelPtr->GetActiveGeometricModel();//this will return the first found, even if found in some reference attachment
+                        //therefore I will compare its dgnModelP with the planModelRefP we found above, and I will consider it failed even if 
+                        //dgnFile might match, because that means we did not locate correctly the root model.
+                        if (activeGeomModelPtr.IsValid() && activeGeomModelPtr->GetDgnModelP() == planModelRefP)
+                            {
+                            //  CIF geometric model found in current file (we might have switched the root model if 3d was the default)...
+                            if (applicationName.empty())
+                                affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                            else
+                                affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::High;
+                            }
+                        ///debug code:
+                        //////Bentley::DgnModelP activeGeomdgnModelP = activeGeomModelPtr->GetDgnModelP();
+                        //////Bentley::DgnModelP planModeldgnModelP = planModelRefP->GetDgnModelP();
+                        //////Bentley::DgnFileP activegeomdgnFile = activeGeomdgnModelP->GetDgnFileP();
+                        //////Bentley::DgnFileP planModeldgndgnFile = planModeldgnModelP->GetDgnFileP();
+                        //////if (activeGeomModelPtr.IsValid() && activegeomdgnFile == planModeldgndgnFile)
+                        //////    {
+                        //////    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                        //////    }
+                        }
+                    cifConnPtr = nullptr;
+                    }
+                }
+            else
+                {
+                ORDBRIDGE_LOGE("Not valid '%s' -  root-model in file.", Utf8String(v8File.GetFileName().c_str()).c_str());
+                }
             }
         }
+
     auto fileRowId = affinityDb.FindOrInsertFile(BeFileName(v8File.GetFileName().c_str()));
     auto bridgeRowId = affinityDb.FindOrInsertBridge(Utf8String(bridgeRegSubKey));
     return affinityDb.FindOrInsertAffinity(fileRowId, bridgeRowId, affinityLevel, nullptr);

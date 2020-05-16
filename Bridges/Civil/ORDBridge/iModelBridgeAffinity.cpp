@@ -55,8 +55,7 @@ USING_NAMESPACE_BENTLEY_ORDBRIDGE
 extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
     WCharCP affinityLibraryPath, WCharCP sourceFileName)
     {
-
-    BeStringUtilities::Wcsncpy(buffer, bufferSize, ORDBridge::GetRegistrySubKey());
+    BentleyApi::BeStringUtilities::Wcsncpy(buffer, bufferSize, ORDBridge::GetRegistrySubKey());
 
     affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::None;
     BentleyApi::BeFileName sourceFile(sourceFileName);
@@ -118,6 +117,18 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
         if (format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
             return;
 
+        Bentley::WString applicationName;
+        if (SUCCESS == dgnFilePtr->GetAuthoringProductName(applicationName))
+            {
+            if (applicationName.Equals(Bentley::WString(ORD_AUTHORING_PRODNAME).c_str()) ||
+                applicationName.Equals(Bentley::WString(ORAIL_AUTHORING_PRODNAME).c_str()) ||
+                applicationName.Equals(Bentley::WString(OSITE_AUTHORING_PRODNAME).c_str()))
+                {
+                affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                return;
+                }
+            }
+
         DgnV8Api::ModelId modelId = dgnFilePtr->GetDefaultModelId();
 
         DependencyManager::SetProcessingDisabled(false);
@@ -150,7 +161,10 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
                 if (activeGeomModelPtr.IsValid() && activeGeomModelPtr->GetDgnModelP() == planModelRefP)
                     {
                     //  CIF geometric model found in current file (we might have switched the root model if 3d was the default)...
-                    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                    if (applicationName.empty())
+                        affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
+                    else
+                        affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::High;
                     }
                 }
             cifConnPtr = nullptr;

@@ -58,6 +58,10 @@ BEGIN_ORDBRIDGE_NAMESPACE
 END_ORDBRIDGE_NAMESPACE
 
 #define CIVILBRIDGEREGISTRYKEY      L"Civil"
+#define ORD_AUTHORING_PRODNAME      L"OpenRoadsDesigner"
+#define ORAIL_AUTHORING_PRODNAME    L"OpenRailDesigner"
+#define OSITE_AUTHORING_PRODNAME    L"OpenSiteDesigner"
+
 #include "ORDConverter.h"
 #include "OBMConverter.h"
 #include "ORDBridge.h"
