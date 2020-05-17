@@ -2218,7 +2218,7 @@ PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode
     PolyfaceList clippedPolyfaces;
     for (auto& polyface : polyfaces)
         {
-        geomClipper.DoClipPolyface(clippedPolyfaces, polyface);
+        geomClipper.DoClipPolyface(clippedPolyfaces, polyface, false);
         }
 
     return clippedPolyfaces;
@@ -2624,9 +2624,7 @@ bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayPar
     if (geometry.IsNull())
         return false;
 
-    geometry->SetClipVector(clip);
-
-    m_geometries.push_back(*geometry);
+    AddGeometry(*geometry, clip);
     return true;
     }
 
@@ -2648,27 +2646,27 @@ bool GeometryAccumulator::Add(CurveVectorR curves, bool filled, DisplayParamsCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip)
     {
     bool isCurved = primitive.HasCurvedFaceOrEdge();
     IGeometryPtr geom = IGeometry::Create(ISolidPrimitivePtr(&primitive));
-    return AddGeometry(*geom, isCurved, displayParams, transform, nullptr, false);
+    return AddGeometry(*geom, isCurved, displayParams, transform, clip, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip)
     {
     bool isCurved = (surface.GetUOrder() > 2 || surface.GetVOrder() > 2);
     IGeometryPtr geom = IGeometry::Create(MSBsplineSurfacePtr(&surface));
-    return AddGeometry(*geom, isCurved, displayParams, transform, nullptr, false);
+    return AddGeometry(*geom, isCurved, displayParams, transform, clip, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip)
     {
     if (m_haveTransform)
         polyface.Transform(Transform::FromProduct(m_transform, transform));
@@ -2677,27 +2675,27 @@ bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayPara
 
     DRange3d range = polyface.PointRange();
     IGeometryPtr geom = IGeometry::Create(PolyfaceHeaderPtr(&polyface));
-    AddGeometry(*geom, false, displayParams, Transform::FromIdentity(), nullptr, range, false);
+    AddGeometry(*geom, false, displayParams, Transform::FromIdentity(), clip, range, false);
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip)
     {
     DRange3d range = body.GetEntityRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
 
-    m_geometries.push_back(*Geometry::Create(body, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    AddGeometry(*Geometry::Create(body, tf, range, GetElementId(), displayParams, GetDgnDb()), clip);
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip)
     {
     if (m_surfacesOnly)
         return true;
@@ -2714,14 +2712,14 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
     DRange3d range = DRange3d::From(range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
     Transform::FromProduct(tf, textString.ComputeTransform()).Multiply(range, range);
 
-    m_geometries.push_back(*Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb(), m_checkGlyphBoxes));
+    AddGeometry(*Geometry::Create(textString, tf, range, GetElementId(), displayParams, GetDgnDb(), m_checkGlyphBoxes), clip);
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::AddTextUnderline(TextStringR text, DisplayParamsCR params, TransformCR transform)
+bool GeometryAccumulator::AddTextUnderline(TextStringR text, DisplayParamsCR params, TransformCR transform, ClipVectorCP clip)
     {
     DSegment3d segment;
     if (!text.GetUnderline(segment))
@@ -2734,19 +2732,19 @@ bool GeometryAccumulator::AddTextUnderline(TextStringR text, DisplayParamsCR par
 
     textTf.Multiply(segment);
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreateLineString(segment.point, 2));
-    return Add(*curve, false, params, transform, nullptr, false);
+    return Add(*curve, false, params, transform, clip, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::Add(ImageGraphicR img, DisplayParamsCR params, TransformCR transform)
+bool GeometryAccumulator::Add(ImageGraphicR img, DisplayParamsCR params, TransformCR transform, ClipVectorCP clip)
     {
     DRange3d range = img.GetRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
 
-    m_geometries.push_back(*Geometry::Create(img, tf, range, GetElementId(), params, GetDgnDb()));
+    AddGeometry(*Geometry::Create(img, tf, range, GetElementId(), params, GetDgnDb()), clip);
     return true;
     }
 
@@ -3566,7 +3564,7 @@ void GeometryListBuilder::_AddBody(IBRepEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBodyR(IBRepEntityR entity)
     {
-    m_accum.Add(entity, GetMeshDisplayParams(false), GetLocalToWorldTransform());
+    m_accum.Add(entity, GetMeshDisplayParams(false), GetLocalToWorldTransform(), GetCurrentClip());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3592,8 +3590,8 @@ void GeometryListBuilder::_AddTextString(TextStringCR text)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTextStringR(TextStringR text)
     {
-    m_accum.Add(text, GetTextDisplayParams(), GetLocalToWorldTransform());
-    m_accum.AddTextUnderline(text, GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(text, GetTextDisplayParams(), GetLocalToWorldTransform(), GetCurrentClip());
+    m_accum.AddTextUnderline(text, GetLinearDisplayParams(), GetLocalToWorldTransform(), GetCurrentClip());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3647,7 +3645,7 @@ void GeometryListBuilder::AddImage2d(ImageGraphicCR img, double z) { AddImage2dR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::AddImageR(ImageGraphicR img)
     {
-    m_accum.Add(img, GetImageDisplayParams(img.GetTextureId()), GetLocalToWorldTransform());
+    m_accum.Add(img, GetImageDisplayParams(img.GetTextureId()), GetLocalToWorldTransform(), GetCurrentClip());
     if (img.HasBorder())
         {
         DPoint3d pts[5];
@@ -3724,7 +3722,7 @@ void GeometryListBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddSolidPrimitiveR(ISolidPrimitiveR primitive)
     {
-    m_accum.Add(primitive, GetMeshDisplayParams(false), GetLocalToWorldTransform());
+    m_accum.Add(primitive, GetMeshDisplayParams(false), GetLocalToWorldTransform(), GetCurrentClip());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3926,7 +3924,7 @@ void GeometryListBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surf)
     {
-    m_accum.Add(surf, GetMeshDisplayParams(false), GetLocalToWorldTransform());
+    m_accum.Add(surf, GetMeshDisplayParams(false), GetLocalToWorldTransform(), GetCurrentClip());
     }
 
 /*---------------------------------------------------------------------------------**//**

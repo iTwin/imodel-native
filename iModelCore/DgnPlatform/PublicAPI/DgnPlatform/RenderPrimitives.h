@@ -1018,6 +1018,7 @@ public:
     void ComputePlanarExpansion(double expansion);
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
+    Polyface Clone(PolyfaceHeaderR pf) const { return Polyface(*m_displayParams, pf, m_displayEdges, m_isPlanar, m_glyphImage, m_decimationTolerance); }
     Polyface Clone(DisplayParamsCR params) const { return Polyface(params, *m_polyface->Clone(), m_displayEdges, m_isPlanar, m_glyphImage, m_decimationTolerance); }
     Polyface Clone() const { return Clone(*m_displayParams); }
 };
@@ -1131,6 +1132,7 @@ public:
     DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
     Feature GetFeature() const { return m_params.IsValid() ? Feature(GetEntityId(), m_params->GetSubCategoryId(), m_params->GetClass()) : Feature(); }
+    ClipVectorCP GetClip() const { return m_clip.get(); }
 
     static IFacetOptionsPtr CreateFacetOptions(double chordTolerance, bool wantEdgeChains);
 
@@ -1433,17 +1435,22 @@ public:
     GeometryAccumulator(DgnDbR db, System& system, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
     GeometryAccumulator(DgnDbR db, System& system, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
 
-    void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
+    void AddGeometry(GeometryR geom, ClipVectorCP clip)
+        {
+        geom.SetClipVector(clip);
+        m_geometries.push_back(geom);
+        }
+
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
 
     DGNPLATFORM_EXPORT bool Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
-    DGNPLATFORM_EXPORT bool Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform);
-    DGNPLATFORM_EXPORT bool Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform);
-    bool AddTextUnderline(TextStringR, DisplayParamsCR, TransformCR);
-    bool Add(ImageGraphicR img, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP);
+    DGNPLATFORM_EXPORT bool Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP);
+    DGNPLATFORM_EXPORT bool Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP);
+    DGNPLATFORM_EXPORT bool Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP);
+    DGNPLATFORM_EXPORT bool Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP);
+    bool AddTextUnderline(TextStringR, DisplayParamsCR, TransformCR, ClipVectorCP);
+    bool Add(ImageGraphicR img, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP);
 
     bool IsEmpty() const { return m_geometries.empty(); }
     void Clear() { m_geometries.clear(); }
@@ -1544,7 +1551,7 @@ protected:
     virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0; //!< Invoked by _Finish() to obtain the finished Graphic.
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
-    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform()); }
+    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform(), GetCurrentClip()); }
     void AddCurveVector(CurveVectorR curves, bool isFilled, bool isDisjoint);
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
     void SetElementId(DgnElementId id) { m_accum.SetElementId(id); }
@@ -1565,7 +1572,7 @@ public:
     void SetAddingCurved(bool curved) { m_accum.SetAddingCurved(curved); }
     bool IsAddingCurved() const { return m_accum.IsAddingCurved(); }
 
-    void Add(GeometryR geom) { m_accum.AddGeometry(geom); }
+    void Add(GeometryR geom) { m_accum.AddGeometry(geom, GetCurrentClip()); }
 
     //! Reset this builder for reuse.
     DGNPLATFORM_EXPORT void ReInitialize(TransformCR localToWorld, TransformCR accumulatorTransform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId());

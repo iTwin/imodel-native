@@ -45,7 +45,7 @@ public:
 
     DGNPLATFORM_EXPORT void DoClipPoints(bvector<DPoint3d>& pointsOut, const bvector<DPoint3d>& pointsIn);
     DGNPLATFORM_EXPORT void DoClipStrokes(StrokesList& strokesOut, Strokes&& strokesIn);
-    DGNPLATFORM_EXPORT void DoClipPolyface(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn);
+    DGNPLATFORM_EXPORT void DoClipPolyface(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn, bool clipRasterText);
 }; // GeometryClipper
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

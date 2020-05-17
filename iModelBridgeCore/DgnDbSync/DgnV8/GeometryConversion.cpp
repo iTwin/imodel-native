@@ -813,6 +813,36 @@ void Converter::AdjustLineStyleScale(Render::GeometryParams& params, DgnV8Api::D
     params.Resolve(GetDgnDb()); // Don't leave un-resolved...need to recalculate style width...
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/20
+//=======================================================================================
+enum class TextStringConversion
+{
+    Preserve,
+    Drop,
+    Ignore,
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TextStringConversion getTextStringConversion(Bentley::TextStringCR v8Text)
+    {
+    // DgnDb does not support symbol text elements, which do not have meaningful text content, and cannot be represented as Unicode. Drop to geometry to get fidelity.
+    if (v8Text.GetProperties().GetFont().IsSymbolFont())
+        return TextStringConversion::Drop;
+
+    // No string? Then not worth converting...
+    if (Bentley::WString::IsNullOrEmpty(v8Text.GetString()))
+        return TextStringConversion::Ignore;
+
+    // 0.0 height or width? Then not worth converting... wouldn't draw, and a 0.0 height will cause a divide-by-zero since we persist width as a factor.
+    if ((0.0 == v8Text.GetProperties().GetFontSize().x) || (0.0 == v8Text.GetProperties().GetFontSize().y))
+        return TextStringConversion::Ignore;
+
+    return TextStringConversion::Preserve;
+    }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -925,9 +955,24 @@ virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR entity
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
     {
-    m_foundText = true; // Ugh, we don't have a good place to clear this...hopefully a single symbol won't contain both text and shapes...
+    switch (getTextStringConversion(v8Text))
+        {
+        case TextStringConversion::Drop:
+            m_foundText = true;
+            return Bentley::ERROR;
+        case TextStringConversion::Ignore:
+            return Bentley::SUCCESS;
+        default:
+            TextStringPtr clone;
+            Converter::ConvertTextString(clone, v8Text, *m_context->GetCurrentModel()->GetDgnFileP(), m_converter);
+            auto elemGeom = GeometricPrimitive::Create(clone);
+            AddSymbolGeometry(elemGeom, false);
 
-    return Bentley::ERROR; // Is there any reason we shouldn't always drop symbol text?
+            v8Text.DrawTextAdornments(*m_context);
+            v8Text.DrawTextBackground(*m_context);
+
+            return Bentley::SUCCESS;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -948,7 +993,11 @@ void AddSymbolGeometry(GeometricPrimitivePtr& geometry, bool isFilled)
     m_converter.InitGeometryParams(geomParams, m_currentDisplayParams, *m_context, true, m_v8Model);
 
     if (isFilled && Render::FillDisplay::Never == geomParams.GetFillDisplay() && m_foundText)
+        {
         geomParams.SetFillDisplay(Render::FillDisplay::Always); // Dropped glyph regions should always be drawn filled...
+        if (!geomParams.IsLineColorFromSubCategoryAppearance())
+            geomParams.SetFillColor(geomParams.GetLineColor()); // ...and should not have outline.
+        }
 
     m_symbolParams.push_back(geomParams);
     }
@@ -2318,16 +2367,10 @@ virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
     DgnV8 also supports additional adornment (e.g. underline/overline) and fraction options, which must also be special-cased.
     */
 
-    // DgnDb does not support symbol text elements, which do not have meaningful text content, and cannot be represented as Unicode. Drop to geometry to get fidelity.
-    if (v8Text.GetProperties().GetFont().IsSymbolFont())
+    auto conversion = getTextStringConversion(v8Text);
+    if (TextStringConversion::Drop == conversion)
         return Bentley::ERROR;
-
-    // No string? Then not worth converting...
-    if (Bentley::WString::IsNullOrEmpty(v8Text.GetString()))
-        return Bentley::SUCCESS;
-
-    // 0.0 height or width? Then not worth converting... wouldn't draw, and a 0.0 height will cause a divide-by-zero since we persist width as a factor.
-    if ((0.0 == v8Text.GetProperties().GetFontSize().x) || (0.0 == v8Text.GetProperties().GetFontSize().y))
+    else if (TextStringConversion::Ignore == conversion)
         return Bentley::SUCCESS;
 
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
@@ -4328,16 +4371,10 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
             DgnV8 also supports additional adornment (e.g. underline/overline) and fraction options, which must also be special-cased.
             */
 
-            // DgnDb does not support symbol text elements, which do not have meaningful text content, and cannot be represented as Unicode. Drop to geometry to get fidelity.
-            if (v8Text.GetProperties().GetFont().IsSymbolFont())
+            auto conversion = getTextStringConversion(v8Text);
+            if (TextStringConversion::Drop == conversion)
                 return Bentley::ERROR;
-
-            // No string? Then not worth converting...
-            if (Bentley::WString::IsNullOrEmpty(v8Text.GetString()))
-                return Bentley::SUCCESS;
-
-            // 0.0 height or width? Then not worth converting... wouldn't draw, and a 0.0 height will cause a divide-by-zero since we persist width as a factor.
-            if ((0.0 == v8Text.GetProperties().GetFontSize().x) || (0.0 == v8Text.GetProperties().GetFontSize().y))
+            else if (TextStringConversion::Ignore == conversion)
                 return Bentley::SUCCESS;
 
             DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();

@@ -193,24 +193,19 @@ void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, Strokes&& strokesIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClipPolyface(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn)
+void GeometryClipper::DoClipPolyface(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn, bool clipRasterText)
     {
-    if (nullptr != m_clip)
+    // Raster text clipping is deferred because UV params must be fixed up after polyface collection.
+    if (nullptr != m_clip && (clipRasterText || nullptr == polyfaceIn.GetGlyphImage()))
         {
         PolyfaceClipper pfClipper;
 
         pfClipper.ClipPolyface(polyfaceIn.GetPolyface(), m_clip, true);
         if (pfClipper.HasOutput())
             {
-            DisplayParamsCR displayParams = polyfaceIn.GetDisplayParams();
-            bool displayEdges = polyfaceIn.DisplayEdges();
-            bool isPlanar = polyfaceIn.IsPlanar();
-
             bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
-                {
-                polyfacesOut.push_back(Polyface(displayParams, *clippedPolyfaceQuery->Clone(), displayEdges, isPlanar));
-                }
+                polyfacesOut.push_back(polyfaceIn.Clone(*clippedPolyfaceQuery->Clone()));
             }
         }
     else

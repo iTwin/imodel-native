@@ -950,9 +950,10 @@ struct DeferredGlyph
     Polyface m_polyface;
     DgnElementId m_elemId;
     double m_rangePixels;
+    ClipVectorCPtr m_clip;
     bool m_isContained;
 
-    DeferredGlyph(Polyface& polyface, DgnElementId elemId, double rangePixels, bool isContained) : m_polyface(polyface), m_elemId(elemId), m_rangePixels(rangePixels), m_isContained(isContained) {}
+    DeferredGlyph(Polyface& polyface, DgnElementId elemId, double rangePixels, bool isContained, ClipVectorCP clip) : m_polyface(polyface), m_elemId(elemId), m_rangePixels(rangePixels), m_isContained(isContained), m_clip(clip) {}
     void* GetKey();
 };
 
@@ -1033,6 +1034,7 @@ protected:
     GeometryOptions     m_options;
     MeshBuilderSet      m_builders;
     DRange3d            m_contentRange = DRange3d::NullRange();
+    ClipVectorCP        m_currClip = nullptr;
     bool                m_didDecimate = false;
 
     MeshBuilderR GetMeshBuilder(MeshBuilderKey const& key, uint32_t numVertices);
@@ -3567,7 +3569,18 @@ void ElementMeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
             param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
             }
 
-        AddPolyface(deferredGlyph.m_polyface, deferredGlyph.m_elemId, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
+        if (deferredGlyph.m_clip.IsValid())
+            {
+            GeometryClipper clipper(deferredGlyph.m_clip.get());
+            PolyfaceList clipped;
+            clipper.DoClipPolyface(clipped, deferredGlyph.m_polyface, true);
+            for (auto& poly : clipped)
+                AddPolyface(poly, deferredGlyph.m_elemId, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
+            }
+        else
+            {
+            AddPolyface(deferredGlyph.m_polyface, deferredGlyph.m_elemId, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
+            }
 
         SetViewIndependentOrigin(nullptr);
         }
@@ -3603,8 +3616,13 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     auto strokes = geom.GetStrokes(GetTolerance(), *this);
     m_loader.GetLoader().Preprocess(polyfaces, strokes);
 
+    // Record current ClipVector for deferred polyfaces (raster text)
+    m_currClip = geom.GetClip();
+
     AddStrokes(strokes, geom.GetEntityId(), rangePixels, isContained);
     AddPolyfaces(polyfaces, geom.GetEntityId(), rangePixels, isContained);
+
+    m_currClip = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3621,7 +3639,8 @@ void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, DgnElementId elemId, d
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementMeshGenerator::AddDeferredPolyface(Polyface& tilePolyface, DgnElementId elemId, double rangePixels, bool isContained)
     {
-    m_deferredGlyphs.push_back(DeferredGlyph(tilePolyface, elemId, rangePixels, isContained)); // defer processing these until we are finished so we can make texture atlas of glyphs
+    // Defer processing these until we are finished so we can make texture atlas of glyphs.
+    m_deferredGlyphs.push_back(DeferredGlyph(tilePolyface, elemId, rangePixels, isContained, m_currClip));
     void* key = m_deferredGlyphs.back().GetKey();
     if (m_uniqueGlyphKeys.find(key) == m_uniqueGlyphKeys.end())
         m_uniqueGlyphKeys.insert(key);
