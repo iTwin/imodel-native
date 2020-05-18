@@ -124,6 +124,7 @@
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
     <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" />
     <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient"/>
+    <SubPart PartName="iModelHubClient" PartFile="iModelCore/WSClient/WSClient"/>
   </Part>
 
   <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke">
