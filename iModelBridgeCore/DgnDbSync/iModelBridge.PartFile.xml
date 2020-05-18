@@ -314,6 +314,7 @@
         <SubPart PartName="PublicApi"/>
         <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
         <SubPart PartName="VersionedV8_InternalSDK" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+        <SubPart PartName="PublicAPI" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
         </Bindings>
