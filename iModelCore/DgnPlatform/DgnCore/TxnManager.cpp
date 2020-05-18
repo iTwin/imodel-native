@@ -1182,10 +1182,9 @@ DbResult TxnManager::ApplyChanges(ChangeStream& changeset, TxnAction action, boo
     if (!m_initTableHandlers) {
         m_dgndb.Elements().ClearCache();
         m_dgndb.Models().ClearCache();
-    }
-
-    if (!IsInAbandon())
+    } else if (!IsInAbandon()) {
         OnBeginApplyChanges();
+    }
 
     bool wasTracking = EnableTracking(false);
     DbResult result = changeset.ApplyChanges(m_dgndb, rebase, invert); // this actually updates the database with the changes
