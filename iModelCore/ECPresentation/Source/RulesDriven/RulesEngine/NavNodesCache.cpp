@@ -810,7 +810,7 @@ void NodesCache::OnRulesetVariablesUsed(RulesetVariables const& variables, Utf8S
     updateStmt->Step();
 
     // Clean up old ruleset variables
-    static Utf8CP deleteQuery = 
+    static Utf8CP deleteQuery =
         "DELETE FROM " NODESCACHE_TABLENAME_Variables " WHERE [Id] IN ("
         "   SELECT [Id] FROM " NODESCACHE_TABLENAME_Variables
         "   WHERE [RulesetId] = ? "
@@ -2991,6 +2991,54 @@ static DbResult QueryOldestRuleset(BeSQLite::Db& db, Utf8StringR rulesetId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void RemoveRuleset(BeSQLite::Db& db, Utf8StringCR rulesetId)
+    {
+    static Utf8CP rulesetsQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Rulesets "] WHERE [RulesetId] = ?";
+    Statement rulesetsStmt(db, rulesetsQuery);
+    BeAssert(rulesetsStmt.IsPrepared());
+    rulesetsStmt.BindText(1, rulesetId, Statement::MakeCopy::No);
+    rulesetsStmt.Step();
+
+    static Utf8CP hierarchyLevelsQuery = "DELETE FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] WHERE [RulesetId] = ?";
+    Statement hierarchyLevelsStmt(db, hierarchyLevelsQuery);
+    BeAssert(hierarchyLevelsStmt.IsPrepared());
+    hierarchyLevelsStmt.BindText(1, rulesetId, Statement::MakeCopy::No);
+    hierarchyLevelsStmt.Step();
+
+    static Utf8CP variablesQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Variables "] WHERE [RulesetId] = ?";
+    Statement variablesStmt(db, variablesQuery);
+    BeAssert(variablesStmt.IsPrepared());
+    variablesStmt.BindText(1, rulesetId, Statement::MakeCopy::No);
+    variablesStmt.Step();
+
+    static Utf8CP dataSourcesQuery = "DELETE FROM [" NODESCACHE_TABLENAME_DataSources "] WHERE NOT EXISTS("
+        "SELECT [hl].[Id] FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl WHERE [hl].[Id] = [HierarchyLevelId])";
+    db.ExecuteSql(dataSourcesQuery);
+
+    static Utf8CP dataSourceClassesQuery = "DELETE FROM [" NODESCACHE_TABLENAME_DataSourceClasses "] WHERE NOT EXISTS("
+        "SELECT [ds].[Id] FROM [" NODESCACHE_TABLENAME_DataSources "] ds WHERE [ds].[Id] = [DataSourceId])";
+    db.ExecuteSql(dataSourceClassesQuery);
+
+    static Utf8CP nodesOrderQuery = "DELETE FROM [" NODESCACHE_TABLENAME_NodesOrder "] WHERE NOT EXISTS("
+        "SELECT [ds].[Id] FROM [" NODESCACHE_TABLENAME_DataSources "] ds WHERE [ds].[Id] = [DataSourceId])";
+    db.ExecuteSql(nodesOrderQuery);
+
+    static Utf8CP nodesQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Nodes "] WHERE NOT EXISTS("
+        "SELECT [ds].[Id] FROM [" NODESCACHE_TABLENAME_DataSources "] ds WHERE [ds].[Id] = [DataSourceId])";
+    db.ExecuteSql(nodesQuery);
+
+    static Utf8CP nodesKeysQuery = "DELETE FROM [" NODESCACHE_TABLENAME_NodeKeys "] WHERE NOT EXISTS("
+        "SELECT [n].[Id] FROM [" NODESCACHE_TABLENAME_Nodes "] n WHERE [n].[Id] = [NodeId])";
+    db.ExecuteSql(nodesKeysQuery);
+
+    static Utf8CP nodeInstancesQuery = "DELETE FROM [" NODESCACHE_TABLENAME_NodeInstances "] WHERE NOT EXISTS("
+        "SELECT [n].[Id] FROM [" NODESCACHE_TABLENAME_Nodes "] n WHERE [n].[Id] = [NodeId])";
+    db.ExecuteSql(nodeInstancesQuery);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::LimitCacheSize()
@@ -3001,20 +3049,21 @@ void NodesCache::LimitCacheSize()
 
     m_db.GetDefaultTransaction()->Commit();
     m_db.TryExecuteSql("PRAGMA synchronous=0");
+    m_db.TryExecuteSql("PRAGMA foreign_keys=off");
     m_db.GetDefaultTransaction()->Begin();
 
     Utf8String rulesetId;
     while (GetCacheFileSize(m_db.GetDbFileName()) > m_sizeLimit && BE_SQLITE_ROW == QueryOldestRuleset(m_db, rulesetId))
         {
-        static Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Rulesets "] WHERE [RulesetId] = ?";
-        Statement deleteStmt(m_db, deleteQuery);
-        BeAssert(deleteStmt.IsPrepared());
-        deleteStmt.BindText(1, rulesetId, Statement::MakeCopy::No);
-        deleteStmt.Step();
-        deleteStmt.Finalize();
+        RemoveRuleset(m_db, rulesetId);
         m_db.GetDefaultTransaction()->Commit();
         DbResult vacuumResult = m_db.TryExecuteSql("VACUUM");
         BeAssert(BE_SQLITE_OK == vacuumResult);
         m_db.GetDefaultTransaction()->Begin();
         }
+
+    m_db.GetDefaultTransaction()->Commit();
+    m_db.TryExecuteSql("PRAGMA synchronous=2");
+    m_db.TryExecuteSql("PRAGMA foreign_keys=on");
+    m_db.GetDefaultTransaction()->Begin();
     }
