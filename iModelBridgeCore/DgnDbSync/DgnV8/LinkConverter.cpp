@@ -418,8 +418,8 @@ BentleyStatus LinkConverter::ImportLinksOnElement(DgnV8LinkTreeNodeCR linkTreeNo
     Bentley::DgnFileLinkCP fileLink = dynamic_cast<Bentley::DgnFileLinkCP>(dgnLink);
     if (fileLink)
         {
-        if (m_converter.GetConfig().GetOptionValueBool("EmbedDgnLinkFiles", true))
-            return ImportEmbeddedFileLink(*fileLink, sourceElementId);
+        //if (m_converter.GetConfig().GetOptionValueBool("EmbedDgnLinkFiles", true))
+        //    return ImportEmbeddedFileLink(*fileLink, sourceElementId);
 
         return SUCCESS;
         }
