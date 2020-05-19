@@ -3314,7 +3314,6 @@ void ORDConverter::DetectFeaturizedElementsWithIncorrectClass()
     auto rowCount = stmt.GetValueInt(0);
     if (rowCount > 0)
         {
-        BeAssert(false);
         ORDBRIDGE_LOGW("%d featurized elements still exist with incorrect dynamic class.", rowCount);
         }
     }

@@ -20,7 +20,28 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
     {
     ASSERT_TRUE(RunTestApp(WCharCP(L"Corridor.dgn"), WCharCP(L"ORDCorridorTest.bim"), false));
-    VerifyConvertedElementCount("ORDCorridorTest.bim", 1, 1);
+    auto dgnDbPtr = VerifyConvertedElementCount("ORDCorridorTest.bim", 1, 1);
+    // All elements but a TemplateDrop in this dataset are featurized - only 1 Graphic3d expected
+    ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT COUNT(*) FROM generic.Graphic3d");
+    ASSERT_TRUE(stmt.IsPrepared());
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDPlanModelDiscoveryTest)
+    {
+    ASSERT_TRUE(RunTestApp(WCharCP(L"Corridor - 3d model active.dgn"), WCharCP(L"ORDPlanModelDiscoveryTest.bim"), false));
+    auto dgnDbPtr = VerifyConvertedElementCount("ORDPlanModelDiscoveryTest.bim", 1, 1);
+    // All elements but a TemplateDrop in this dataset are featurized - only 1 Graphic3d expected
+    ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT COUNT(*) FROM generic.Graphic3d");
+    ASSERT_TRUE(stmt.IsPrepared());
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
