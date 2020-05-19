@@ -2253,15 +2253,64 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             }
         else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
-            BeAssert(ca.IsValid());
-            if (ca.IsNull())
+            IECInstancePtr newCA = newContainer.GetCustomAttribute(schemaName, className);
+            if (containerType == SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class && 
+                    className.EqualsIAscii("IsMixin") && schemaName.EqualsIAscii("CoreCustomAttributes"))
+                {
+                /* SCHEMA_EVOLUTION_RULE AppliesToEntityClass can modified only if old value is dervied from new value
+                    * Both old and new class specified in 'AppliesToEntityClass' is read from ECDb so they must exist by the this CA is processed.
+                    * Old  value should be derived class of new class assigned.
+                */
+                ECClassCR ctxClass = reinterpret_cast<ECClassCR>(newContainer);
+                if (containerType == SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class)
+                ECValue oldAppliesToValue, newAppliesToValue;
+                auto resolveClass = [&](IECCustomAttributeContainerCR container) {
+                    ECValue appliesToValue;
+                    IECInstancePtr ca = container.GetCustomAttribute(schemaName, className);
+                    ca->GetValue(appliesToValue, "AppliesToEntityClass");
+                    if (appliesToValue.IsNull() || !appliesToValue.IsString())
+                        return (ECClassCP)nullptr;
+
+                    Utf8String targetAlias, targetClassName;
+                    if (ECClass::ParseClassName(targetAlias, targetClassName, appliesToValue.GetUtf8CP()) != ECObjectsStatus::Success)
+                        return (ECClassCP)nullptr;
+
+                    if (targetAlias.empty())
+                        targetAlias = ctxClass.GetSchema().GetName();
+
+                    return ctx.GetSchemaManager().GetClass(targetAlias, targetClassName, SchemaLookupMode::AutoDetect);
+                };
+
+                // RULE: Old and new class must already exist in ECDb.
+                ECClassCP oldApplyToClass = resolveClass(oldContainer);
+                ECClassCP newApplyToClass = resolveClass(newContainer);
+                if (!oldApplyToClass)
+                    {
+                    BeAssert(oldApplyToClass != nullptr);
+                    return ERROR;
+                    }
+                if (newApplyToClass == nullptr)
+                    {
+                    ctx.Issues().ReportV("ECSchema Upgrade failed. MixIn %s: Modifing 'AppliesToEntityClass' from %s to %s failed because new class assigned to 'AppliesToEntityClass' must already exist.",
+                                            ctxClass.GetFullName(), oldApplyToClass->GetFullName(), newApplyToClass->GetFullName(), oldApplyToClass->GetFullName(), newApplyToClass->GetFullName());
+                    return ERROR;
+                    }
+                if (!oldApplyToClass->Is(newApplyToClass))
+                    {
+                    ctx.Issues().ReportV("ECSchema Upgrade failed. MixIn %s: Modifing 'AppliesToEntityClass' from %s to %s is only supported %s derived from %s.",
+                                            ctxClass.GetFullName(), oldApplyToClass->GetFullName(), newApplyToClass->GetFullName(), oldApplyToClass->GetFullName(), newApplyToClass->GetFullName());
+                    return ERROR;
+                    }
+                }
+            
+            BeAssert(newCA.IsValid());
+            if (newCA.IsNull())
                 return ERROR;
 
-            if (ImportClass(ctx, ca->GetClass()) != SUCCESS)
+            if (ImportClass(ctx, newCA->GetClass()) != SUCCESS)
                 return ERROR;
 
-            if (ReplaceCAEntry(ctx, *ca, ca->GetClass().GetId(), containerId, containerType, 0) != SUCCESS)
+            if (ReplaceCAEntry(ctx, *newCA, newCA->GetClass().GetId(), containerId, containerType, 0) != SUCCESS)
                 return ERROR;
             }
 

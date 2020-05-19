@@ -557,7 +557,155 @@ TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingPriority)
     ASSERT_EQ(1050, foo->GetPropertyP("P5")->GetPriority());
     }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_Generalized)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>SubElement</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SubElement'>"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='Text' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>SubElement</BaseClass>"
+        "       <BaseClass>IOptionA</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
 
+    ASSERT_EQ(SUCCESS, SetupECDb("appliesToEntityClass.ecdb", schemaItem));
+    [&]() 
+        {
+        auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
+        auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
+        ECValue appliesToValue;
+        ca->GetValue(appliesToValue, "AppliesToEntityClass");
+        ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
+        ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "SubElement");
+        }();
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SubElement'>"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='Text' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>SubElement</BaseClass>"
+        "       <BaseClass>IOptionA</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    [&]() 
+        {
+        auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
+        auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
+        ECValue appliesToValue;
+        ca->GetValue(appliesToValue, "AppliesToEntityClass");
+        ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
+        ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "Element");
+        }();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_Specialized)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>SubElement</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SubElement'>"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='Text' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>SubElement</BaseClass>"
+        "       <BaseClass>IOptionA</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("appliesToEntityClass_props.ecdb", schemaItem));
+    [&]() 
+        {
+        auto mixIn = m_ecdb.Schemas().GetClass("TestSchema", "IOptionA");
+        auto ca = mixIn->GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
+        ECValue appliesToValue;
+        ca->GetValue(appliesToValue, "AppliesToEntityClass");
+        ASSERT_FALSE(appliesToValue.IsNull() || !appliesToValue.IsString());
+        ASSERT_STRCASEEQ(appliesToValue.GetUtf8CP(), "SubElement");
+        }();
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IOptionA' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>SupportOption</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SubElement'>"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='Text' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>SubElement</BaseClass>"
+        "       <BaseClass>IOptionA</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
+
+    // ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass' from TestSchema:SubElement to TestSchema:SupportOption is only 
+    // supported TestSchema:SubElement derived from TestSchema:SupportOption.ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass' 
+    // from TestSchema:SubElement to TestSchema:SupportOption is only supported TestSchema:SubElement derived from TestSchema:SupportOption.
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------

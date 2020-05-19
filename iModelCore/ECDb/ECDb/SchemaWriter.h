@@ -128,6 +128,10 @@ struct SchemaWriter final
                     .Append(ACCEPT, "ECDbMap", "DbIndexList", MODIFIED)
                         .Append(ACCEPT, "Indexes.Properties", MODIFIED); // allow to modify Properties of existing Indexes
 
+                rules
+                    .Append(ACCEPT, "CoreCustomAttributes", "IsMixin", MODIFIED)
+                        .Append(ACCEPT, "AppliesToEntityClass", MODIFIED); // allow to modify AppliesToEntityClass
+
                 rules.Append(REJECT, "ECDbMap", "*", ALL);
                 rules.Append(REJECT, "CoreCustomAttributes", "IsMixin", ALL);
                 rules.Append(ACCEPT, "*", "*", ALL);
