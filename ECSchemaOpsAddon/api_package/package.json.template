@@ -1,0 +1,23 @@
+{
+  "name": "@bentley/ecschema-ops",
+  "license": "UNLICENSED",
+  "version": "${PACKAGE_VERSION}",
+  "main": "ECSchemaOpsNative.js",
+  "keywords": [
+    "Bentley",
+    "ECObjects"
+  ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/imodeljs/imodeljs"
+  },
+  "description":  "ECSchemaOps addon api",
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  },
+  "scripts": {
+    "postinstall": "node ./installNativePlatform.js"
+  },
+  "types": "./ECSchemaOpsNative.d.ts"
+}

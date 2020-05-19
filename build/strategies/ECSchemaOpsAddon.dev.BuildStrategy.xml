@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <!-- This is a "developer" strategy for ECSchemaOpsAddon -->
+    <ImportStrategy Name="ECSchemaOpsAddon"/>
+
+    <DefaultTarget PartName="ECSchemaOpsAddon.Dev"/>
+
+</BuildStrategy>

@@ -173,6 +173,12 @@
             "program": "${workspaceFolder}/iModelJsNodeAddon/api_package/ts/lib/test/index.js"
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "ecschema-ops unit tests",
+            "program": "${workspaceFolder}/ECSchemaOpsAddon/api_package/ts/lib/test/index.js",
+        },
+        {
             "name": "Launch imodel-bank tests (C++)",
             "type": "cppvsdbg",
             "request": "launch",

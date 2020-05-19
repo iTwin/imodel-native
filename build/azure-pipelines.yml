@@ -403,6 +403,20 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'RealityCore'))
         artifact: RealityCoreNuget_x64
 
+      - task: archiveandpublishartifact@0
+        displayName: Save ecschema-ops-win32-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-win32-x64
+          artifactName: ecschema-ops-win32-x64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save ecschema-ops
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops
+          artifactName: ecschema-ops
+
   # ================================================================================================
   - job: build_linuxx64
     displayName: Build Linux x64
@@ -460,6 +474,13 @@ jobs:
           rootFolderOrFile: $(Build.BinariesDirectory)/LinuxX64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing-linux-x64
           artifactName: imodel-bank-licensing-linux-x64
 
+      - task: archiveandpublishartifact@0
+        displayName: Save ecschema-ops-linux-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-linux-x64
+          artifactName: ecschema-ops-linux-x64
+
   # ================================================================================================
   - job: build_macosx64
     displayName: Build MacOS x64
@@ -493,6 +514,13 @@ jobs:
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/MacOSX64/imodeljsnodeaddon_pkgs/imodeljs-darwin-x64
           artifactName: imodeljs-darwin-x64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save ecschema-ops-darwin-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-darwin-x64
+          artifactName: ecschema-ops-darwin-x64
   
   # ================================================================================================
   - job: build_iosarm64
@@ -533,6 +561,13 @@ jobs:
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/iOSARM64/imodeljsnodeaddon_pkgs/imodeljs-ios-arm64
           artifactName: imodeljs-ios-arm64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save ecschema-ops-ios-arm64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-ios-arm64
+          artifactName: ecschema-ops-ios-arm64
   
   # ================================================================================================
   - job: build_iosx64
@@ -573,6 +608,13 @@ jobs:
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/iOSX64/imodeljsnodeaddon_pkgs/imodeljs-ios-x64
           artifactName: imodeljs-ios-x64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save ecschema-ops-ios-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-ios-x64
+          artifactName: ecschema-ops-ios-x64
   
   # ================================================================================================
   - job: build_androidarm64

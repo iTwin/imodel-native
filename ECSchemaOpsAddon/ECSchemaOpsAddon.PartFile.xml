@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+  <Part Name="ECSchemaOpsAddon.Dev" PrgOutputDir="ECSchemaOpsAddon">
+    <SubPart PartName="ECSchemaOpsMakePackages"/>
+    <SubPart PartName="RunUnitTests"/>
+  </Part>
+
+  <Part Name="JsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke">
+    <NpmDependency>${SrcRoot}imodel02/ECSchemaOpsAddon/api_package/ts/</NpmDependency>
+    <Bindings>
+      <Files>
+        Delivery/ECSchemaOpsNative.js
+        Delivery/ECSchemaOpsNative.d.ts
+      </Files>
+    </Bindings>
+  </Part>
+  
+  <Part Name="ECSchemaOpsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,linuxX64,MacOSx64" PrgOutputDir="ECSchemaOpsAddon">
+    <SubProduct ProductName="ECSchemaOpsAddon"/>
+    <SubPart PartName="JsApiDeclarations"/>
+  </Part>
+
+  <Product Name="ECSchemaOpsAddon">
+    <SubProduct ProductName="ECSchemaOpsAddon-Windows" />
+    <SubProduct ProductName="ECSchemaOpsAddon-Linux" />
+    <SubProduct ProductName="ECSchemaOpsAddon-Darwin" />
+  </Product>
+
+  <Product Name="ECSchemaOpsAddon-Windows" OnlyPlatforms="x64">
+    <SubPart PartName="ECSchemaOpsLib-Dynamic" LibType="Dynamic" />
+    <Directories DirectoryListName="ecschema-ops-delivery-list" />
+  </Product>
+
+  <Product Name="ECSchemaOpsAddon-Linux" OnlyPlatforms="Linux*">
+    <SubPart PartName="ECSchemaOpsLib-Static" LibType="Static" />
+    <Directories DirectoryListName="ecschema-ops-delivery-list" />
+  </Product>
+
+  <Product Name="ECSchemaOpsAddon-Darwin" OnlyPlatforms="MacOSX64">
+    <SubPart PartName="ECSchemaOpsLib-Static" LibType="Static" />
+    <Directories DirectoryListName="ecschema-ops-delivery-list" />
+  </Product>
+
+  <ProductDirectoryList ListName="ecschema-ops-delivery-list">
+    <ProductDirectory Name="AddonRoot" Path="" />
+    <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="StaticAssemblies" LibType="Static" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
+  </ProductDirectoryList>
+
+  <Part Name="ECSchemaOpslib" BentleyBuildMakeFile="ECSchemaOps.mke" >
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
+    <SubPart PartName="ECSchemaOpsLibCommon" />
+    <Bindings>
+      <Files ProductDirectoryName="Assemblies">Delivery/ecschema-ops.node</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="ECSchemaOpsLibCommon" BentleyBuildMakeFile="ECSchemaOps.mke" >
+    <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects"/>
+    <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
+  </Part>
+
+  <Part Name="ECSchemaOpsLib-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <SubPart PartName="ECSchemaOpslib"/>
+    <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
+  </Part>
+
+  <Part Name="ECSchemaOpslib-Static" OnlyPlatforms="Linux*,MacOS*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="ECSchemaOps.mke">
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
+    <SubPart PartName="ECSchemaOpsLibCommon"/>
+    <Bindings>
+        <Files ProductDirectoryName="StaticAssemblies">Delivery/ecschema-ops.node</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke">
+      <SubPart PartName="ECSchemaOpsMakePackages"/>
+  </Part>
+
+</BuildContext>

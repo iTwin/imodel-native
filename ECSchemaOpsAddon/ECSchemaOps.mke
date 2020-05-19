@@ -1,0 +1,101 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+CLANG_ALLOW_UNDEFINED=1
+%include mdl.mki
+
+appName  = ecschema-ops-addon
+
+# I get the impression that node addons names should be all lower case. At least, that's what I see out there.
+
+baseDir     = $(_MakeFilePath)
+
+commonDir   = $(baseDir)common/
+buildToolsDir = $(baseDir)buildTools/
+
+cDefs + -DBUILDING_NODE_EXTENSION -DEXTERNAL_NAPI
+
+%if $(TARGET_PLATFORM) == "MacOS"
+  cDefs + -D_DARWIN_USE_64_BIT_INODE=1
+%endif
+
+o = $(OutputRootDir)Build/ecschema-ops-addon/
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Compile
+#----------------------------------------------------------------------
+#
+# Burn the package version # into the code
+#
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+$(o)ecschema-ops-package-version.h: $(baseDir)/ecschema-ops-package-version.h $(baseDir)/package_version.txt
+    $(msg)
+    $(copyCmd) "$<" $@
+    python $(baseDir)makePackageVersionHeaderFile.py $@ $(baseDir)/package_version.txt
+    ~time
+
+cIncs + -I$(o)
+
+# DLM_NAME and CCompPDBName must be the same.
+CCompPDBName    =% $(appName)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ECSchemaOpsNative$(oext) : $(baseDir)ECSchemaOpsNative.cpp $(baseDir)ECSchemaOps.h ${MultiCompileDepends}
+
+$(o)SchemaUtil$(oext) : $(baseDir)SchemaUtil.cpp $(baseDir)SchemaUtil.h ${MultiCompileDepends}
+
+$(o)ECSchemaOps$(oext) : $(baseDir)ECSchemaOps.cpp $(baseDir)ECSchemaOps.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the shared library (.node) file
+#----------------------------------------------------------------------
+# DLM_NAME and CCompPDBName must be the same.
+DLM_NAME            =% $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOENTRY         = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%include $(baseDir)ECSchemaOps_input_libs.mki
+
+%ifdef __unix
+    THIN_ARCHIVE_NAME = libECSchemaOpsAddon.inputs.a
+
+    %include $(sharedMki)rollUpSubPartsLibsThin.mki
+
+    DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
+
+    %ifdef __apple
+        # OSX Specific library
+        LINKER_LIBRARIES  + -framework CoreFoundation
+        LINKER_LIBRARIES  + -framework CFNetwork
+        # This is a hack, Mac is not set up with the various context definitions like linux
+        BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
+    %endif
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
+
+%else
+    LINKER_LIBRARIES  + $(ContextSubpartsLibs)napi.lib
+
+    %include $(sharedMki)linkLibrary.mki
+
+%endif
+
+#----------------------------------------------------------------------
+#   Deliver the shared library using the .node extension
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/ecschema-ops.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+    $(LinkFirstDepToFirstTarget)
+

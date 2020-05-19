@@ -1,0 +1,25 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+# Use `bb pull` to do the `npm install`.
+# Since this builds into $SrcRoot, always clean and rebuild.
+
+srcDir = $(_MakeFilePath)
+outDir = $(_MakeFilePath)lib/
+
+always:
+    ~chdir $(srcDir)
+    -python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run clean
+
+$(outDir)ECSchemaOpsNative.js $(outDir)ECSchemaOpsNative.d.ts : $(srcDir)src/ECSchemaOpsNative.ts
+    ~chdir $(srcDir)
+    python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run build
+
+$(BuildContext)Delivery/ECSchemaOpsNative.js : $(outDir)ECSchemaOpsNative.js
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ECSchemaOpsNative.d.ts : $(outDir)ECSchemaOpsNative.d.ts
+    $(LinkFirstDepToFirstTarget)

@@ -109,6 +109,14 @@
             "depends" : [
                 "iModelBridgeCore"
             ]
+        },
+        {
+            "name": "ECSchemaOpsAddon",
+            "archs": "x64+linuxx64+macosx64",
+            "version_file": "$SRCROOT/iModel02/ECSchemaOpsAddon/package_version.txt",
+            "depends" : [
+                "ECObjects"
+            ]
         }
     ],
 
