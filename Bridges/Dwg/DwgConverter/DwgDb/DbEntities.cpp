@@ -1577,7 +1577,7 @@ DwgDbStatus     DwgDbBlockReference::OpenSpatialFilter (DwgDbSpatialFilterPtr& f
 
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbFilterPtr   odFilter = OdDbIndexFilterManager::getFilter (this, OdDbSpatialFilter::desc(), FromDwgDbOpenMode(mode));
-    if (odFilter.isNull() || !(filterOut = DwgDbSpatialFilter::Cast(odFilter.get())).isNull())
+    if (!odFilter.isNull() && !(filterOut = DwgDbSpatialFilter::Cast(odFilter.detach())).isNull() && filterOut->isReadEnabled())
         status = DwgDbStatus::Success;
 
 #elif DWGTOOLKIT_RealDwg
