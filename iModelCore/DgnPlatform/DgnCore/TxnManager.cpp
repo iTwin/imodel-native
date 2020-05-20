@@ -748,8 +748,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
         if (SUCCESS != status) {
             LOG.errorv("Cancelling txn due to fatal validation error.");
-            OnEndValidate();
-            return CancelChanges(dataChangeSet); // roll back entire txn
+            return OnCommitStatus::Abort;
         }
     }
 
