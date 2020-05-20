@@ -10,11 +10,11 @@
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
 struct QueryBasedNodesProviderTests : NodesProviderTests
-    {    
+    {
     ECEntityClassCP m_widgetClass;
     ECEntityClassCP m_gadgetClass;
     ECEntityClassCP m_sprocketClass;
-    
+
     void SetUp() override;
     };
 
@@ -35,16 +35,16 @@ void QueryBasedNodesProviderTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     {
-    HierarchyLevelInfo const* cachedHierarchyLevel = nullptr;
-    DataSourceInfo const* cachedDataSource = nullptr;
+    HierarchyLevelIdentifier cachedHierarchyLevel;
+    DataSourceIdentifier cachedDataSource;
     int nodesCached = 0;
-    m_nodesCache.SetCacheHierarchyLevelHandler([&](HierarchyLevelInfo& hl)
+    m_nodesCache.SetCacheHierarchyLevelHandler([&](HierarchyLevelIdentifier& hl)
         {
-        cachedHierarchyLevel = &hl;
+        cachedHierarchyLevel = hl;
         });
-    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, RulesetVariables const&)
+    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds)
         {
-        cachedDataSource = &ds;
+        cachedDataSource = ds.GetIdentifier();
         });
     m_nodesCache.SetCacheNodeHandler([&](JsonNavNodeR, NodeVisibility)
         {
@@ -68,9 +68,9 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     RulesetVariables variables;
 
     // verify the data source is still invalid
-    ASSERT_TRUE(nullptr != cachedHierarchyLevel);
-    ASSERT_TRUE(nullptr != cachedDataSource);
-    EXPECT_FALSE(m_nodesCache.IsInitialized(*cachedDataSource, variables));
+    ASSERT_TRUE(cachedHierarchyLevel.IsValid());
+    ASSERT_TRUE(cachedDataSource.IsValid());
+    EXPECT_FALSE(m_nodesCache.IsInitialized(cachedDataSource, variables));
     EXPECT_EQ(2, provider->GetNodesCount());
 
     // force initialization
@@ -81,7 +81,8 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     EXPECT_EQ(1, nodesCached);
 
     // verify the nodes cache is empty
-    EXPECT_TRUE(m_nodesCache.GetHierarchyLevel(*cachedHierarchyLevel, variables).IsNull());
+    EXPECT_TRUE(m_nodesCache.GetHierarchyLevel(*m_providerContextFactory.Create(*m_connection, cachedHierarchyLevel.GetRulesetId().c_str(), cachedHierarchyLevel.GetLocale().c_str(),
+        cachedHierarchyLevel.GetPhysicalParentNodeId(), nullptr, -1, variables), cachedHierarchyLevel).IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**

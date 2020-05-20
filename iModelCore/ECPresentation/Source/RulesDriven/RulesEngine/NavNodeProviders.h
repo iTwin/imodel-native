@@ -59,6 +59,41 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2020
++===============+===============+===============+===============+===============+======*/
+struct OptimizationFlagsContainer
+{
+private:
+    OptimizationFlagsContainer const* m_parentContainer;
+    bool m_isFullLoadDisabled;
+    bool m_isPostProcessingDisabled;
+    bool m_isUpdatesDisabled;
+    bool m_isCheckingChildren;
+
+public:
+    OptimizationFlagsContainer()
+        : m_isFullLoadDisabled(false), m_isPostProcessingDisabled(false), m_isUpdatesDisabled(false), m_isCheckingChildren(false), m_parentContainer(nullptr)
+        {}
+    OptimizationFlagsContainer(OptimizationFlagsContainer const&) = delete;
+    OptimizationFlagsContainer(OptimizationFlagsContainer&&) = delete;
+
+    OptimizationFlagsContainer const* GetParentContainer() const {return m_parentContainer;}
+    void SetParentContainer(OptimizationFlagsContainer const* parentContainer) {BeAssert(parentContainer != this);  m_parentContainer = parentContainer; }
+
+    bool IsFullNodesLoadDisabled(bool checkParent = true) const {return m_isFullLoadDisabled || checkParent && m_parentContainer && m_parentContainer->IsFullNodesLoadDisabled();}
+    void SetDisableFullLoad(bool value) {m_isFullLoadDisabled = value;}
+
+    bool IsPostProcessingDisabled(bool checkParent = true) const {return m_isPostProcessingDisabled || checkParent && m_parentContainer && m_parentContainer->IsPostProcessingDisabled();}
+    void SetDisablePostProcessing(bool value) {m_isPostProcessingDisabled = value;}
+
+    bool IsUpdatesDisabled(bool checkParent = true) const {return m_isUpdatesDisabled || checkParent && m_parentContainer && m_parentContainer->IsUpdatesDisabled();}
+    void SetIsUpdatesDisabled(bool value) {m_isUpdatesDisabled = value;}
+
+    bool IsCheckingChildren(bool checkParent = true) const {return m_isCheckingChildren || checkParent && m_parentContainer && m_parentContainer->IsCheckingChildren();}
+    void SetIsCheckingChildren(bool value) {m_isCheckingChildren = value;}
+};
+
+/*=================================================================================**//**
 * Context for NavNodesProvider implementations.
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
@@ -72,14 +107,12 @@ private:
     uint64_t const* m_physicalParentNodeId;
     uint64_t const* m_virtualParentNodeId;
     IProvidersIndexAllocatorPtr m_providersIndexAllocator;
-    mutable HierarchyLevelInfo m_hierarchyLevelInfo;
-    mutable DataSourceInfo m_dataSourceInfo;
+    mutable HierarchyLevelIdentifier m_hierarchyLevelIdentifier;
+    mutable DataSourceIdentifier m_dataSourceIdentifier;
     bset<ArtifactsCapturer*> m_artifactsCapturers;
 
     // optimization flags
-    bool m_isFullLoadDisabled;
-    bool m_isUpdatesDisabled;
-    bool m_isCheckingChildren;
+    OptimizationFlagsContainer m_optFlags;
     bool m_hasPageSize;
     bool m_mayHaveArtifacts;
     size_t m_pageSize;
@@ -127,8 +160,9 @@ public:
     ECPRESENTATION_EXPORT void SetVirtualParentNodeId(uint64_t id);
     void SetVirtualParentNode(NavNodeCR node) {SetVirtualParentNodeId(node.GetNodeId());}
     NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, JsonNavNodeCP parentNode) const;
-    HierarchyLevelInfo const& GetHierarchyLevelInfo() const;
-    DataSourceInfo const& GetDataSourceInfo() const;
+    NavNodesProviderPtr CreatePartialNodesProvider(NavNodesProviderContextR, DataSourceIdentifier const&) const;
+    HierarchyLevelIdentifier const& GetHierarchyLevelIdentifier() const;
+    DataSourceIdentifier const& GetDataSourceIdentifier() const;
     bvector<RulesetVariableEntry> GetRelatedRulesetVariables() const;
     IProvidersIndexAllocator& GetProvidersIndexAllocator() const {return *m_providersIndexAllocator;}
     void SetProvidersIndexAllocator(IProvidersIndexAllocator& allocator) {m_providersIndexAllocator = &allocator;}
@@ -138,13 +172,9 @@ public:
     void RemoveArtifactsCapturer(ArtifactsCapturer* capturer) {m_artifactsCapturers.erase(capturer);}
 
     // optimization flags
-    bool IsFullNodesLoadDisabled() const {return m_isFullLoadDisabled;}
-    void SetDisableFullLoad(bool value) {m_isFullLoadDisabled = value;}
-    bool IsUpdatesDisabled() const {return m_isUpdatesDisabled;}
-    void SetIsUpdatesDisabled(bool value) { m_isUpdatesDisabled = value; }
-    bool NeedsFullLoad() const {return !IsFullNodesLoadDisabled();}
-    bool IsCheckingChildren() const {return m_isCheckingChildren;}
-    void SetIsCheckingChildren(bool value) {m_isCheckingChildren = value;}
+    OptimizationFlagsContainer const& GetOptimizationFlags() const {return m_optFlags;}
+    OptimizationFlagsContainer& GetOptimizationFlags() {return m_optFlags;}
+    bool NeedsFullLoad() const {return !GetOptimizationFlags().IsFullNodesLoadDisabled();}
     void SetPageSize(size_t value) {m_pageSize = value; m_hasPageSize = true;}
     bool HasPageSize() const {return m_hasPageSize;}
     size_t GetPageSize() const {return m_pageSize;}
@@ -169,6 +199,38 @@ public:
     ECPRESENTATION_EXPORT void SetQueryContext(NavNodesProviderContextCR other);
     NavigationQueryBuilder& GetQueryBuilder() const;
     IUsedClassesListener* GetUsedClassesListener() const;
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2019
++===============+===============+===============+===============+===============+======*/
+struct IProvidedNodesPostProcessor
+{
+protected:
+    virtual NavNodesProviderPtr _PostProcessProvider(NavNodesProviderCR) const = 0;
+public:
+    virtual ~IProvidedNodesPostProcessor() {}
+    NavNodesProviderPtr PostProcessProvider(NavNodesProviderCR processedProvider) const {return _PostProcessProvider(processedProvider);}
+};
+
+/*=================================================================================**//**
+* The post-processor makes sure display label grouping nodes are not displayed if they
+* have no siblings. Instead, it returns children of the grouping node.
+* @bsiclass                                     Grigas.Petraitis                11/2019
++===============+===============+===============+===============+===============+======*/
+struct DisplayLabelGroupingNodesPostProcessor : IProvidedNodesPostProcessor
+{
+protected:
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _PostProcessProvider(NavNodesProviderCR) const override;
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2020
++===============+===============+===============+===============+===============+======*/
+struct DisplayLabelSortingPostProcessor : IProvidedNodesPostProcessor
+{
+protected:
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _PostProcessProvider(NavNodesProviderCR) const override;
 };
 
 /*=================================================================================**//**
@@ -207,10 +269,6 @@ enum HasChildrenFlag
     HASCHILDREN_Unknown
     };
 
-struct NodesCountContext;
-struct NodesCheckContext;
-struct DisabledFullNodesLoadContext;
-
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017
 +===============+===============+===============+===============+===============+======*/
@@ -232,9 +290,6 @@ struct NavNodesProvider : RefCountedBase
 {
     struct SpecificationsVisitor;
     friend struct NavNodesProviderContext;
-    friend struct NodesCountContext;
-    friend struct NodesCheckContext;
-    friend struct DisabledFullNodesLoadContext;
     typedef IteratorWrapper<JsonNavNodePtr> Iterator;
 
 private:
@@ -249,16 +304,17 @@ protected:
     ECPRESENTATION_EXPORT NavNodesProvider(NavNodesProviderContextCR context);
     HasChildrenFlag AnyChildSpecificationReturnsNodes(JsonNavNodeR parentNode, bool captureChildrenArtifacts) const;
     NavNodesProviderPtr GetCachedProvider() const;
-    void FinalizeNode(JsonNavNodeR, bool customizeLabel) const;
+    ECPRESENTATION_EXPORT void FinalizeNode(JsonNavNodeR) const;
     ECPRESENTATION_EXPORT void InitializeNodes() const;
     bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
     bool ShouldReturnChildNodes(JsonNavNodeR node) const;
-    NavNodesProviderPtr CreateProvider(JsonNavNodeR node, bool customizeLabel) const;
-    NavNodesProviderPtr CreateProviderForCachedNode(JsonNavNodeR node, bool customizeLabel) const;
+    NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
+    NavNodesProviderPtr CreateProviderForCachedNode(JsonNavNodeR node) const;
     void EvaluateArtifacts(JsonNavNodeCR node) const;
 
     virtual bool _IsCacheable() const = 0;
     virtual ProviderNodesInitializationStrategy _GetInitializationStrategy() const {return ProviderNodesInitializationStrategy::Automatic;}
+    virtual void _OnPostInitialize() {}
     virtual bool _InitializeNodes() {return true;}
 
     virtual Iterator _CreateFrontIterator() const = 0;
@@ -272,6 +328,8 @@ protected:
     virtual bool _HasNodes() const = 0;
     virtual size_t _GetNodesCount() const = 0;
 
+    virtual NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const = 0;
+
 public:
     virtual ~NavNodesProvider() {}
     NavNodesProviderContextR GetContextR() const {return *m_context;}
@@ -279,7 +337,8 @@ public:
     MultiNavNodesProviderCP AsMultiProvider() const {return _AsMultiProvider();}
     EmptyNavNodesProviderCP AsEmptyProvider() const {return _AsEmptyProvider();}
     SingleNavNodeProviderCP AsSingleProvider() const {return _AsSingleProvider();}
-    ECPRESENTATION_EXPORT void Initialize() const;
+    ECPRESENTATION_EXPORT DataSourceIdentifier const& GetIdentifier() const;
+    ECPRESENTATION_EXPORT void Initialize();
     ECPRESENTATION_EXPORT void FinalizeNodes();
     ECPRESENTATION_EXPORT bool GetNode(JsonNavNodePtr& node, size_t index) const;
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
@@ -290,6 +349,9 @@ public:
     ECPRESENTATION_EXPORT Iterator begin() const;
     Iterator end() const {return _CreateBackIterator();}
     JsonNavNodePtr operator[](size_t index) const {JsonNavNodePtr node; return GetNode(node, index) ? node : nullptr;}
+    ECPRESENTATION_EXPORT NavNodesProviderPtr PostProcess(bvector<IProvidedNodesPostProcessor const*> const&);
+    ECPRESENTATION_EXPORT NavNodesProviderCPtr PostProcess(bvector<IProvidedNodesPostProcessor const*> const&) const;
+    NavNodesProviderPtr FindNestedProvider(DataSourceIdentifier const& identifier) const {return _FindNestedProvider(identifier);}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,43 +365,38 @@ template<typename T> static T WithInitialize(T provider)
     }
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                10/2018
-+===============+===============+===============+===============+===============+======*/
-enum class ProviderCacheType
-    {
-    None,       // always create fresh data provider
-    Combined,   // create cached data provider for physical parent node
-    Full,       // create cached data provider for virtual parent node
-    Partial,    // create cached data provider for a single part of hierarchy level
-    };
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
 struct INodesProviderFactory
 {
 protected:
-    virtual NavNodesProviderPtr _Create(NavNodesProviderContextR, JsonNavNodeCP, ProviderCacheType) const = 0;
+    virtual bvector<IProvidedNodesPostProcessor const*> _GetPostProcessors() const = 0;
+    virtual NavNodesProviderPtr _Create(NavNodesProviderContextR, JsonNavNodeCP) const = 0;
 public:
     virtual ~INodesProviderFactory() {}
-    NavNodesProviderPtr Create(NavNodesProviderContextR context, JsonNavNodeCP parent, ProviderCacheType cacheType) const {return _Create(context, parent, cacheType);}
+    bvector<IProvidedNodesPostProcessor const*> GetPostProcessors() const {return _GetPostProcessors();}
+    NavNodesProviderPtr Create(NavNodesProviderContextR context, JsonNavNodeCP parent) const {return _Create(context, parent);}
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                02/2017
+* @bsiclass                                     Grigas.Petraitis                05/2020
 +===============+===============+===============+===============+===============+======*/
-struct DisabledFullNodesLoadContext
-    {
-    NavNodesProviderCR m_provider;
-    bool m_wasFullLoadDisabled;
-    DisabledFullNodesLoadContext(NavNodesProviderCR provider)
-        : m_provider(provider)
-        {
-        m_wasFullLoadDisabled = m_provider.GetContext().IsFullNodesLoadDisabled();
-        m_provider.GetContextR().SetDisableFullLoad(true);
-        }
-    ~DisabledFullNodesLoadContext() {m_provider.GetContextR().SetDisableFullLoad(m_wasFullLoadDisabled);}
-    };
+#define DEFINE_OPTIMIZATION_FLAG_CONTEXT(name, getter, setter) \
+    struct name \
+        { \
+        NavNodesProviderCR m_provider; \
+        bool m_initialValue; \
+        name(NavNodesProviderCR provider) \
+            : m_provider(provider) \
+            { \
+            m_initialValue = m_provider.GetContext().GetOptimizationFlags().getter(false); \
+            m_provider.GetContextR().GetOptimizationFlags().setter(true); \
+            } \
+        ~name() {m_provider.GetContextR().GetOptimizationFlags().setter(m_initialValue);} \
+        };
+DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledFullNodesLoadContext, IsFullNodesLoadDisabled, SetDisableFullLoad);
+DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledPostProcessingContext, IsPostProcessingDisabled, SetDisablePostProcessing);
+DEFINE_OPTIMIZATION_FLAG_CONTEXT(NodesChildrenCheckContext, IsCheckingChildren, SetIsCheckingChildren);
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2016
@@ -357,6 +414,7 @@ protected:
     EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
     Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<JsonNavNodePtr>>());}
     Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<JsonNavNodePtr>>());}
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override {return nullptr;}
 public:
     static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextR context)
         {
@@ -371,10 +429,9 @@ struct SingleNavNodeProvider : NavNodesProvider
 {
 private:
     JsonNavNodePtr m_node;
-    bool m_customizeLabel;
 private:
-    SingleNavNodeProvider(JsonNavNode& node, NavNodesProviderContextCR context, bool customizeLabel)
-        : NavNodesProvider(context), m_node(&node), m_customizeLabel(customizeLabel)
+    SingleNavNodeProvider(JsonNavNode& node, NavNodesProviderContextCR context)
+        : NavNodesProvider(context), m_node(&node)
         {}
 protected:
     bool _IsCacheable() const override {return false;}
@@ -383,7 +440,7 @@ protected:
         if (0 != index)
             return false;
         node = m_node;
-        FinalizeNode(*node, m_customizeLabel);
+        FinalizeNode(*node);
         return true;
         }
     bool _HasNodes() const override {return true;}
@@ -391,10 +448,11 @@ protected:
     SingleNavNodeProviderCP _AsSingleProvider() const override {return this;}
     Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this));}
     Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this, GetNodesCount()));}
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override {return nullptr;}
 public:
-    static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context, bool customizeLabel)
+    static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context)
         {
-        return WithInitialize(new SingleNavNodeProvider(node, context, customizeLabel));
+        return WithInitialize(new SingleNavNodeProvider(node, context));
         }
     };
 
@@ -416,11 +474,25 @@ protected:
     ECPRESENTATION_EXPORT virtual size_t _GetNodesCount() const override;
     ECPRESENTATION_EXPORT virtual Iterator _CreateFrontIterator() const override;
     ECPRESENTATION_EXPORT virtual Iterator _CreateBackIterator() const override;
+    ECPRESENTATION_EXPORT virtual NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override;
 public:
     static RefCountedPtr<MultiNavNodesProvider> Create(NavNodesProviderContextCR context) {return new MultiNavNodesProvider(context);}
-    void AddProvider(NavNodesProvider& provider) {m_providers.push_back(&provider);}
+    void SetProviders(bvector<NavNodesProviderPtr> providers)
+        {
+        m_providers = providers;
+        for (NavNodesProviderPtr const& provider : m_providers)
+            {
+            provider->GetContextR().GetOptimizationFlags().SetParentContainer(
+                (&provider->GetContext() != &GetContext()) ? &GetContext().GetOptimizationFlags() : nullptr);
+            }
+        }
+    void AddProvider(NavNodesProvider& provider)
+        {
+        provider.GetContextR().GetOptimizationFlags().SetParentContainer(
+            (&provider.GetContext() != &GetContext()) ? &GetContext().GetOptimizationFlags() : nullptr);
+        m_providers.push_back(&provider);
+        }
     void RemoveProvider(NavNodesProvider& provider) {m_providers.erase(std::find(m_providers.begin(), m_providers.end(), &provider));}
-    void SetProviders(bvector<NavNodesProviderPtr> const& providers) {m_providers = providers;}
     void ClearProviders() {m_providers.clear();}
     bvector<NavNodesProviderPtr>& GetNodeProvidersR() {return m_providers;}
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_providers;}
@@ -433,10 +505,11 @@ struct BVectorNodesProvider : NavNodesProvider
 {
 private:
     bvector<JsonNavNodePtr> m_nodes;
+    bool m_shouldFinalize;
 
 private:
-    BVectorNodesProvider(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes)
-        : NavNodesProvider(context), m_nodes(nodes)
+    BVectorNodesProvider(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes, bool finalize)
+        : NavNodesProvider(context), m_nodes(nodes), m_shouldFinalize(finalize)
         {}
 
 protected:
@@ -446,19 +519,22 @@ protected:
         if (index < GetNodesCount())
             {
             node = m_nodes[index];
+            if (m_shouldFinalize)
+                FinalizeNode(*node);
             return true;
             }
         return false;
         }
     bool _HasNodes() const override {return !m_nodes.empty();}
     size_t _GetNodesCount() const override {return m_nodes.size();}
-    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<bvector<JsonNavNodePtr>, JsonNavNodePtr>>(m_nodes));}
-    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<bvector<JsonNavNodePtr>, JsonNavNodePtr>>(m_nodes, m_nodes.size()));}
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this, GetNodesCount()));}
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override { return nullptr; }
 
 public:
-    static RefCountedPtr<BVectorNodesProvider> Create(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes)
+    static RefCountedPtr<BVectorNodesProvider> Create(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes, bool finalize = false)
         {
-        return new BVectorNodesProvider(context, nodes);
+        return new BVectorNodesProvider(context, nodes, finalize);
         }
 };
 
@@ -492,13 +568,13 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2019
 +===============+===============+===============+===============+===============+======*/
-struct IProvidedNodesPostProcessor
+struct IProvidedNodesPostProcessorDeprecated
 {
 protected:
     virtual NavNodesProviderPtr _PostProcessNodeRequest(NavNodesProviderCR, JsonNavNodeCR, size_t index) const = 0;
     virtual NavNodesProviderPtr _PostProcessCountRequest(NavNodesProviderCR, size_t count) const = 0;
 public:
-    virtual ~IProvidedNodesPostProcessor() {}
+    virtual ~IProvidedNodesPostProcessorDeprecated() {}
     NavNodesProviderPtr PostProcessNodeRequest(NavNodesProviderCR processedProvider, JsonNavNodeCR node, size_t index) const {return _PostProcessNodeRequest(processedProvider, node, index);}
     NavNodesProviderPtr PostProcessCountRequest(NavNodesProviderCR processedProvider, size_t count) const {return _PostProcessCountRequest(processedProvider, count);}
 };
@@ -506,17 +582,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2019
 +===============+===============+===============+===============+===============+======*/
-struct DisplayLabelGroupingNodesPostProcessor : IProvidedNodesPostProcessor
-{
-protected:
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _PostProcessNodeRequest(NavNodesProviderCR processedProvider, JsonNavNodeCR node, size_t index) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _PostProcessCountRequest(NavNodesProviderCR processedProvider, size_t count) const override;
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2019
-+===============+===============+===============+===============+===============+======*/
-struct SameLabelGroupingNodesPostProcessor : IProvidedNodesPostProcessor
+struct SameLabelGroupingNodesPostProcessorDeprecated : IProvidedNodesPostProcessorDeprecated
 {
 private:
     bset<ECClassCP> m_groupedClasses;
@@ -529,7 +595,7 @@ protected:
     NavNodesProviderPtr _PostProcessNodeRequest(NavNodesProviderCR processedProvider, JsonNavNodeCR, size_t) const override {return CreatePostProcessedProvider(processedProvider);}
     NavNodesProviderPtr _PostProcessCountRequest(NavNodesProviderCR processedProvider, size_t count) const override {return CreatePostProcessedProvider(processedProvider);}
 public:
-    SameLabelGroupingNodesPostProcessor(PresentationRuleSetCR ruleset, bvector<ChildNodeRuleCP> const& rules, ECSchemaHelper const& schemaHelper, IJsonLocalState const* localState)
+    SameLabelGroupingNodesPostProcessorDeprecated(PresentationRuleSetCR ruleset, bvector<ChildNodeRuleCP> const& rules, ECSchemaHelper const& schemaHelper, IJsonLocalState const* localState)
         {
         InitGroupedClasses(ruleset, rules, schemaHelper, localState);
         }
@@ -538,15 +604,15 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2019
 +===============+===============+===============+===============+===============+======*/
-struct PostProcessingNodesProvider : NavNodesProvider
+struct PostProcessingNodesProviderDeprecated : NavNodesProvider
 {
 private:
     NavNodesProviderCPtr m_wrappedProvider;
-    bvector<std::unique_ptr<IProvidedNodesPostProcessor const>> m_postProcessors;
+    bvector<std::unique_ptr<IProvidedNodesPostProcessorDeprecated const>> m_postProcessors;
     mutable NavNodesProviderCPtr m_processedProvider;
 
 private:
-    ECPRESENTATION_EXPORT PostProcessingNodesProvider(NavNodesProviderCR wrappedProvider);
+    ECPRESENTATION_EXPORT PostProcessingNodesProviderDeprecated(NavNodesProviderCR wrappedProvider);
     NavNodesProviderCPtr GetProcessedProvider() const;
 
 protected:
@@ -556,13 +622,14 @@ protected:
     ECPRESENTATION_EXPORT bool _HasNodes() const override;
     Iterator _CreateFrontIterator() const override {return GetProcessedProvider()->begin();}
     Iterator _CreateBackIterator() const override {return GetProcessedProvider()->end();}
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const& identifier) const override {return GetProcessedProvider()->FindNestedProvider(identifier);}
 
 public:
-    static RefCountedPtr<PostProcessingNodesProvider> Create(NavNodesProviderCR provider)
+    static RefCountedPtr<PostProcessingNodesProviderDeprecated> Create(NavNodesProviderCR provider)
         {
-        return WithInitialize(new PostProcessingNodesProvider(provider));
+        return WithInitialize(new PostProcessingNodesProviderDeprecated(provider));
         }
-    void RegisterPostProcessor(std::unique_ptr<IProvidedNodesPostProcessor const> processor) {m_postProcessors.push_back(std::move(processor));}
+    void RegisterPostProcessor(std::unique_ptr<IProvidedNodesPostProcessorDeprecated const> processor) {m_postProcessors.push_back(std::move(processor));}
 };
 
 /*=================================================================================**//**
@@ -582,12 +649,14 @@ private:
 
 protected:
     bool _IsCacheable() const override {return true;}
+    void _OnPostInitialize() override;
     bool _InitializeNodes() override;
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
     Iterator _CreateFrontIterator() const override {return m_provider->begin();}
     Iterator _CreateBackIterator() const override {return m_provider->end();}
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const& identifier) const override {return m_provider->FindNestedProvider(identifier);}
 
 public:
     static RefCountedPtr<CustomNodesProvider> Create(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification)
@@ -603,23 +672,26 @@ public:
 struct QueryBasedNodesProvider : MultiNavNodesProvider
 {
     struct Savepoint;
-
     using NavNodesProvider::GetNode;
+
+    // internally the provider splits query in pages of this size using LIMIT & OFFSET
+    ECPRESENTATION_EXPORT static size_t const PageSize;
 
 private:
     NavigationQueryCPtr m_query;
     mutable bmap<ECClassId, bool> m_usedClassIds;
     size_t m_offset;
+    bool m_isPartial;
 
 private:
-    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&);
-    void InitializeDataSource();
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&, bool);
     bool InitializeProvidersFromCache();
     bool InitializeProvidersForAllNodes();
     bool InitializeProvidersForPagedQueries(size_t nodesCount, size_t pageSize);
 
 protected:
     bool _IsCacheable() const override {return true;}
+    void _OnPostInitialize() override;
     ProviderNodesInitializationStrategy _GetInitializationStrategy() const override {return ProviderNodesInitializationStrategy::Manual;}
     bool _InitializeNodes() override;
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
@@ -629,9 +701,9 @@ protected:
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context,
-        NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>())
+        NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>(), bool isPartial = false)
         {
-        return WithInitialize(new QueryBasedNodesProvider(context, query, usedClassIds));
+        return WithInitialize(new QueryBasedNodesProvider(context, query, usedClassIds, isPartial));
         }
     bmap<ECClassId, bool> const& GetUsedClassIds() const {return m_usedClassIds;}
     void SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const&);
@@ -692,6 +764,7 @@ protected:
     Iterator _CreateBackIterator() const override;
     virtual BeSQLite::CachedStatementPtr _GetNodesStatement() const = 0;
     virtual BeSQLite::CachedStatementPtr _GetCountStatement() const = 0;
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override {return nullptr;}
 
 public:
     virtual ~SQLiteCacheNodesProvider();
@@ -703,16 +776,16 @@ public:
 struct CachedCombinedHierarchyLevelProvider : SQLiteCacheNodesProvider
 {
 private:
-    CombinedHierarchyLevelInfo m_info;
+    CombinedHierarchyLevelIdentifier m_info;
 private:
-    CachedCombinedHierarchyLevelProvider(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, CombinedHierarchyLevelInfo info)
+    CachedCombinedHierarchyLevelProvider(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, CombinedHierarchyLevelIdentifier info)
         : SQLiteCacheNodesProvider(context, cache, statements), m_info(info)
         {}
 protected:
     BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
     BeSQLite::CachedStatementPtr _GetCountStatement() const override;
 public:
-    static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, CombinedHierarchyLevelInfo info)
+    static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, CombinedHierarchyLevelIdentifier info)
         {
         return WithInitialize(new CachedCombinedHierarchyLevelProvider(context, cache, statements, info));
         }
@@ -746,17 +819,18 @@ struct CachedPartialDataSourceProvider : SQLiteCacheNodesProvider
 {
 private:
     uint64_t m_dataSourceId;
+    bool m_wantOnlyVisibleNodes;
 private:
-    CachedPartialDataSourceProvider(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t dataSourceId)
-        : SQLiteCacheNodesProvider(context, cache, statements), m_dataSourceId(dataSourceId)
+    CachedPartialDataSourceProvider(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t dataSourceId, bool loadOnlyVisibleNodes)
+        : SQLiteCacheNodesProvider(context, cache, statements), m_dataSourceId(dataSourceId), m_wantOnlyVisibleNodes(loadOnlyVisibleNodes)
         {}
 protected:
     BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
     BeSQLite::CachedStatementPtr _GetCountStatement() const override;
 public:
-    static RefCountedPtr<CachedPartialDataSourceProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t dataSourceId)
+    static RefCountedPtr<CachedPartialDataSourceProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t dataSourceId, bool loadOnlyVisibleNodes = false)
         {
-        return WithInitialize(new CachedPartialDataSourceProvider(context, cache, statements, dataSourceId));
+        return WithInitialize(new CachedPartialDataSourceProvider(context, cache, statements, dataSourceId, loadOnlyVisibleNodes));
         }
 };
 
@@ -820,6 +894,7 @@ protected:
     SingleNavNodeProviderCP _AsSingleProvider() const override {return m_singleNodeProvider.get();}
     Iterator _CreateFrontIterator() const override {return m_singleNodeProvider->begin();}
     Iterator _CreateBackIterator() const override {return m_singleNodeProvider->end();}
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override {return nullptr;}
 public:
     static RefCountedPtr<CachedNodeProvider> Create(NavNodesProviderContextCR context, uint64_t id)
         {

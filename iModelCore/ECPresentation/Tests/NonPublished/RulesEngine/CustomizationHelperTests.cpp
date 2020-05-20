@@ -35,20 +35,20 @@ struct CustomizationHelperTests : ECPresentationTest
     TestNodesCache m_nodesCache;
 
     CustomizationHelperTests() : m_nodesFactory("CustomizationHelperTests"), m_nodesCache(m_connections) {}
-    
+
     static void SetUpTestCase();
     static void TearDownTestCase();
-    
+
     void SetUp() override
         {
         ECPresentationTest::SetUp();
         if (!s_project->GetECDb().GetDefaultTransaction()->IsActive())
             s_project->GetECDb().GetDefaultTransaction()->Begin();
-        
+
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests", 1, 0, false, "", "", "", false);
-        m_context = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", 0, 
+        m_context = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", 0,
             std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache,
             m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_context->SetQueryContext(m_connections, *m_connection, nullptr);
@@ -109,22 +109,8 @@ void CustomizationHelperTests::TearDownTestCase()
 TEST_F (CustomizationHelperTests, CustomizeNode_NodeWasCustomized)
     {
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "type");
-    CustomizationHelper::Customize(*m_context, *node, false);
+    CustomizationHelper::Customize(*m_context, *node);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Pranciskus.Ambrazas               03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (CustomizationHelperTests, CustomizeNode_ApplyOnlyDescriptionOverride)
-    {
-    LabelOverrideP labelOverride = new LabelOverride("ThisNode.Type=\"type\"", 1, "\"overridedLabel\"", "\"overridedDescription\"");
-    m_ruleset->AddPresentationRule(*labelOverride);
-    JsonNavNodePtr node = CreateNode("label", "description", "imageId", "type");
-    CustomizationHelper::Customize(*m_context, *node, false);
-    ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
-    ASSERT_STREQ("label", node->GetLabelDefinition().GetDisplayValue().c_str());
-    ASSERT_STREQ("overridedDescription", node->GetDescription().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,7 +121,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLabelAndDescriptionOverride
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.Type=\"type\"", 1, "\"overridedLabel\"", "\"overridedDescription\"");
     m_ruleset->AddPresentationRule(*labelOverride);
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "type");
-    CustomizationHelper::Customize(*m_context, *node, true);
+    CustomizationHelper::Customize(*m_context, *node);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("overridedLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ("overridedDescription", node->GetDescription().c_str());
@@ -149,7 +135,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyStyleOverride)
     StyleOverrideP styleOverride = new StyleOverride("ThisNode.Type=\"customType\"", 1, "\"overridedForeColor\"", "\"overridedBackColor\"", "\"overridedFontStyle\"");
     m_ruleset->AddPresentationRule(*styleOverride);
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "customType");
-    CustomizationHelper::Customize(*m_context, *node, false);
+    CustomizationHelper::Customize(*m_context, *node);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("overridedForeColor", node->GetForeColor().c_str());
     ASSERT_STREQ("overridedBackColor", node->GetBackColor().c_str());
@@ -164,7 +150,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyImageIdOverride)
     ImageIdOverrideP imageIdOverride = new ImageIdOverride("ThisNode.Type=\"customType\"", 1, "\"overridedImageId\"");
     m_ruleset->AddPresentationRule(*imageIdOverride);
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "customType");
-    CustomizationHelper::Customize(*m_context, *node, false);
+    CustomizationHelper::Customize(*m_context, *node);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("overridedImageId", node->GetCollapsedImageId().c_str());
     }
@@ -177,7 +163,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyCheckboxRules)
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("ThisNode.Type=\"customType\"", 1, false, "", false, false, "");
     m_ruleset->AddPresentationRule(*checkBoxRule);
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "customType");
-    CustomizationHelper::Customize(*m_context, *node, false);
+    CustomizationHelper::Customize(*m_context, *node);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_TRUE(node->IsCheckboxVisible());
     ASSERT_TRUE(node->IsCheckboxEnabled());
@@ -193,7 +179,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
     provider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue) { localizedValue = "localized"; return true; });
     m_context->SetLocalizationContext(provider);
     JsonNavNodePtr node = CreateNode("@Namespace:Id@", "description", "imageId", "type");
-    CustomizationHelper::Customize(*m_context, *node, false);
+    CustomizationHelper::Customize(*m_context, *node);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
@@ -208,7 +194,7 @@ TEST_F(CustomizationHelperTests, CustomizeNode_ApplyExtendedDataRules)
     rule->AddItem("key2", "ThisNode.Label & \" \" & ThisNode.Type");
     m_ruleset->AddPresentationRule(*rule);
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "customType");
-    CustomizationHelper::Customize(*m_context, *node, false);
+    CustomizationHelper::Customize(*m_context, *node);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     EXPECT_EQ(2, node->GetUsersExtendedData().GetJson().MemberCount());
     EXPECT_STREQ("test string", node->GetUsersExtendedData().GetJson()["key1"].GetString());
@@ -243,7 +229,7 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     uint64_t parentNodeId = parentNode->GetNodeId();
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
-    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", &parentNodeId, 
+    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", &parentNodeId,
         std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache,
         m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);
@@ -254,7 +240,7 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
 
     StyleOverrideP styleOverride = new StyleOverride("ParentNode.Type=\"ParentType\"", 1, "\"overridenForeColor\"", "\"overridenBackColor\"", "\"overridenFontStyle\"");
     m_ruleset->AddPresentationRule(*styleOverride);
-    CustomizationHelper::Customize(*childContext, *thisNode, false);
+    CustomizationHelper::Customize(*childContext, *thisNode);
     ASSERT_TRUE(NavNodeExtendedData(*thisNode).IsCustomized());
     ASSERT_STREQ("overridenForeColor", thisNode->GetForeColor().c_str());
     ASSERT_STREQ("overridenBackColor", thisNode->GetBackColor().c_str());

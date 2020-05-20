@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr HierarchiesComparer::CreateProvider(IConnectionCR connection, HierarchyLevelInfo const& info) const
+NavNodesProviderPtr HierarchiesComparer::CreateProvider(IConnectionCR connection, HierarchyLevelIdentifier const& info) const
     {
     // create the nodes provider context
     NavNodesProviderContextPtr context = m_context.GetProviderContextsFactory().Create(connection, info.GetRulesetId().c_str(),
@@ -20,7 +20,8 @@ NavNodesProviderPtr HierarchiesComparer::CreateProvider(IConnectionCR connection
 
     // create the provider
     JsonNavNodeCPtr parentNode = (nullptr != info.GetPhysicalParentNodeId()) ? m_context.GetNodesCache().GetNode(*info.GetPhysicalParentNodeId()) : nullptr;
-    return m_context.GetProvidersFactory().Create(*context, parentNode.get(), ProviderCacheType::None);
+    NavNodesProviderPtr provider = m_context.GetProvidersFactory().Create(*context, parentNode.get());
+    return provider->PostProcess(m_context.GetProvidersFactory().GetPostProcessors());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -77,7 +78,7 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
         for (size_t i = oldIndexStart; i < oldIndex; ++i)
             {
             JsonNavNodePtr node = oldDs->GetNode(i);
-            m_context.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelInfo(), *node);
+            m_context.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), *node);
             LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Removed: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
             }
 
@@ -86,7 +87,7 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
             {
             JsonNavNodePtr node = newDs->GetNode(i);
             CustomizeNode(nullptr, *node, rhsProvider);
-            m_context.Reporter().Added(rhsProvider.GetContext().GetHierarchyLevelInfo(), *node, i);
+            m_context.Reporter().Added(rhsProvider.GetContext().GetHierarchyLevelIdentifier(), *node, i);
             LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Added: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
             }
 
@@ -105,7 +106,7 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
     for (size_t i = oldIndex; i < oldDs->GetSize(); ++i)
         {
         JsonNavNodePtr node = oldDs->GetNode(i);
-        m_context.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelInfo(), *node);
+        m_context.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), *node);
         LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Removed: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
         }
 
@@ -114,7 +115,7 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
         {
         JsonNavNodePtr node = newDs->GetNode(i);
         CustomizeNode(nullptr, *node, rhsProvider);
-        m_context.Reporter().Added(rhsProvider.GetContext().GetHierarchyLevelInfo(), *node, i);
+        m_context.Reporter().Added(rhsProvider.GetContext().GetHierarchyLevelIdentifier(), *node, i);
         LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Added: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
         }
     }
@@ -127,14 +128,14 @@ void HierarchiesComparer::CompareNodes(NavNodesProviderCR lhsProvider, JsonNavNo
     CustomizeNode(&lhsNode, rhsNode, rhsProvider);
 
     bvector<JsonChange> changes = NavNodesHelper::GetChanges(lhsNode, rhsNode);
-    m_context.Reporter().Changed(rhsProvider.GetContext().GetHierarchyLevelInfo(), lhsNode, rhsNode, changes);
+    m_context.Reporter().Changed(rhsProvider.GetContext().GetHierarchyLevelIdentifier(), lhsNode, rhsNode, changes);
     LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareNodes] Node '%s' changes: %" PRIu64, rhsNode.GetLabelDefinition().GetDisplayValue().c_str(), (uint64_t)changes.size()).c_str(), NativeLogging::LOG_TRACE);
 
     if (m_context.ShouldTraverseRecursively())
         {
-        HierarchyLevelInfo lhsChildrenInfo(lhsProvider.GetContext().GetConnection().GetId(), lhsProvider.GetContext().GetRuleset().GetRuleSetId(),
+        HierarchyLevelIdentifier lhsChildrenInfo(lhsProvider.GetContext().GetConnection().GetId(), lhsProvider.GetContext().GetRuleset().GetRuleSetId(),
             lhsProvider.GetContext().GetLocale(), lhsNode.GetNodeId(), 0);
-        HierarchyLevelInfo rhsChildrenInfo(rhsProvider.GetContext().GetConnection().GetId(), rhsProvider.GetContext().GetRuleset().GetRuleSetId(),
+        HierarchyLevelIdentifier rhsChildrenInfo(rhsProvider.GetContext().GetConnection().GetId(), rhsProvider.GetContext().GetRuleset().GetRuleSetId(),
             rhsProvider.GetContext().GetLocale(), rhsNode.GetNodeId(), 0);
         Compare(rhsProvider.GetContext().GetConnection(), lhsChildrenInfo, rhsChildrenInfo);
         }
@@ -153,7 +154,7 @@ void HierarchiesComparer::CustomizeNode(JsonNavNodeCP lhsNode, JsonNavNodeR rhsN
     bool shouldCustomize = (nullptr == lhsNode || NavNodeExtendedData(*lhsNode).IsCustomized());
     if (shouldCustomize && !NavNodeExtendedData(rhsNode).IsCustomized())
         {
-        CustomizationHelper::Customize(newNodeProvider.GetContext(), rhsNode, NavNodesHelper::IsCustomNode(rhsNode));
+        CustomizationHelper::Customize(newNodeProvider.GetContext(), rhsNode);
         updatedParts |= IHierarchyCache::UPDATE_NodeItself | IHierarchyCache::UPDATE_NodeKey;
         }
 
@@ -181,7 +182,7 @@ void HierarchiesComparer::CustomizeNode(JsonNavNodeCP lhsNode, JsonNavNodeR rhsN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchiesComparer::Compare(IConnectionCacheCR connections, HierarchyLevelInfo const& lhs, HierarchyLevelInfo const& rhs) const
+void HierarchiesComparer::Compare(IConnectionCacheCR connections, HierarchyLevelIdentifier const& lhs, HierarchyLevelIdentifier const& rhs) const
     {
     if (!lhs.GetConnectionId().Equals(rhs.GetConnectionId()))
         {
@@ -198,20 +199,23 @@ void HierarchiesComparer::Compare(IConnectionCacheCR connections, HierarchyLevel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchiesComparer::Compare(IConnectionCR connection, HierarchyLevelInfo const& lhs, HierarchyLevelInfo const& rhs) const
+void HierarchiesComparer::Compare(IConnectionCR connection, HierarchyLevelIdentifier const& lhs, HierarchyLevelIdentifier const& rhs) const
     {
     Savepoint txn(connection.GetDb(), "Compare");
     BeAssert(txn.IsActive());
     BeAssert(lhs.GetConnectionId().Equals(connection.GetId()));
     BeAssert(rhs.GetConnectionId().Equals(connection.GetId()));
 
-    NavNodesProviderPtr lhsProvider = m_context.GetNodesCache().GetCombinedHierarchyLevel(lhs, m_context.GetVariables(), false);
+    NavNodesProviderContextPtr lhsContext = m_context.GetProviderContextsFactory().Create(connection, lhs.GetRulesetId().c_str(),
+        lhs.GetLocale().c_str(), lhs.GetPhysicalParentNodeId(), nullptr, -1, m_context.GetVariables());
+    NavNodesProviderCPtr lhsProvider = m_context.GetNodesCache().GetCombinedHierarchyLevel(*lhsContext, lhs, false);
     if (lhsProvider.IsNull())
         {
         BeAssert(false && "Could not find a data source to compare with");
         return;
         }
-    m_context.Reporter().FoundLhsProvider(*lhsProvider);
+    lhsProvider = lhsProvider->PostProcess(m_context.GetProvidersFactory().GetPostProcessors());
+    m_context.Reporter().FoundLhsProvider(*lhsProvider, lhs);
 
     NavNodesProviderPtr rhsProvider = CreateProvider(connection, rhs);
     if (rhsProvider.IsValid() && m_context.Reporter().StartCompare(*lhsProvider, *rhsProvider))

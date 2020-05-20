@@ -83,7 +83,8 @@ RulesetVariables::RulesetVariables(bvector<RulesetVariableEntry> const& variable
 RulesetVariables::RulesetVariables(Utf8CP variables)
     : RulesetVariables()
     {
-    m_variables.Parse(variables);
+    if (variables)
+        m_variables.Parse(variables);
     }
 
 /*---------------------------------------------------------------------------------**//**

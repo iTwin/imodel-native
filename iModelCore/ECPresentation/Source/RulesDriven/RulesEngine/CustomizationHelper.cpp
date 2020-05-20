@@ -28,13 +28,14 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
+bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride()
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
         m_context.GetRulesetVariables(), &m_context.GetUsedVariablesListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
+    bool customizeLabel = !NavNodeExtendedData(m_node).IsLabelCustomized();
     if (nullptr != labelOverride)
         {
         ECValue value;
@@ -312,7 +313,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomizationHelper::Customize(NavNodesProviderContextCR context, JsonNavNodeR node, bool customizeLabel)
+void CustomizationHelper::Customize(NavNodesProviderContextCR context, JsonNavNodeR node)
     {
     NavNodeExtendedData extendedData(node);
     if (extendedData.IsCustomized())
@@ -324,7 +325,7 @@ void CustomizationHelper::Customize(NavNodesProviderContextCR context, JsonNavNo
 
     JsonNavNodePropertiesSetter setter(node);
     NavNodeCustomizer customizer(context, node, parentNode.get(), setter);
-    customizer.ApplyLabelAndDescriptionOverride(customizeLabel);
+    customizer.ApplyLabelAndDescriptionOverride();
     customizer.ApplyStyleOverride();
     customizer.ApplyImageIdOverride();
     customizer.ApplyCheckboxRules();
@@ -332,6 +333,7 @@ void CustomizationHelper::Customize(NavNodesProviderContextCR context, JsonNavNo
     customizer.ApplyExtendedDataRules();
 
     NavNodeExtendedData(node).SetIsCustomized(true);
+    NavNodeExtendedData(node).SetIsLabelCustomized(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

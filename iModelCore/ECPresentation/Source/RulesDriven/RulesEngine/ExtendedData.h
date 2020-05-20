@@ -109,6 +109,7 @@ struct ContentSetItemExtendedData : ItemExtendedData
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECClassId              "c"
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECInstanceId           "i"
 #define NAVNODE_EXTENDEDDATA_Locale                             "Locale"
+#define NAVNODE_EXTENDEDDATA_IsLabelCustomized                  "IsLabelCustomized"
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
@@ -120,6 +121,9 @@ struct NavNodeExtendedData : ItemExtendedData
     NavNodeExtendedData(NavNodeExtendedData const& other) : ItemExtendedData(other) {}
     NavNodeExtendedData(NavNodeR node) : ItemExtendedData(node) {}
     NavNodeExtendedData(NavNodeCR node) : ItemExtendedData(node) {}
+
+    bool IsLabelCustomized() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_IsLabelCustomized) ? GetJson()[NAVNODE_EXTENDEDDATA_IsLabelCustomized].GetBool() : false;}
+    void SetIsLabelCustomized(bool value) {AddMember(NAVNODE_EXTENDEDDATA_IsLabelCustomized, rapidjson::Value(value));}
 
     bool HasSpecificationHash() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_SpecificationHash);}
     Utf8CP GetSpecificationHash() const {return GetJson()[NAVNODE_EXTENDEDDATA_SpecificationHash].GetString();}

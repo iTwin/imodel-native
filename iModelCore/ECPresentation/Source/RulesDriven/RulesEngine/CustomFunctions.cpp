@@ -734,21 +734,6 @@ struct AreDoublesEqualByValueScalar : ECPresentation::ScalarFunction
 +===============+===============+===============+===============+===============+======*/
 struct GetSortingValueScalar : CachingScalarFunction<bmap<Utf8String, std::shared_ptr<Utf8String>>>
 {
-private:
-    static const unsigned PADDING = 10;
-
-private:
-    static bool IsInteger(int c) {return '0' <= c && c <= '9';}
-    static Utf8String GetPaddedNumber(Utf8CP chars, int length)
-        {
-        Utf8String padded;
-        padded.reserve(PADDING);
-        for (int i = length; i < PADDING; i++)
-            padded.append("0");
-        padded.append(chars, length);
-        return padded;
-        }
-
 public:
     GetSortingValueScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetSortingValue, 1, DbValueType::TextVal, manager)
@@ -762,36 +747,7 @@ public:
         if (GetCache().end() == iter)
             {
             Utf8String inputStr = LabelDefinition::FromString(input)->GetDisplayValue();
-            Utf8CP inputP = inputStr.c_str();
-            Utf8CP numberBegin = nullptr;
-            Utf8String output;
-            output.reserve(strlen(inputP));
-            while (nullptr != inputP && 0 != *inputP)
-                {
-                if (IsInteger(*inputP))
-                    {
-                    if (nullptr == numberBegin)
-                        {
-                        numberBegin = inputP;
-                        output.reserve(output.size() + PADDING + strlen(inputP));
-                        }
-                    }
-                else
-                    {
-                    if (nullptr != numberBegin)
-                        {
-                        output.append(GetPaddedNumber(numberBegin, (int)(inputP - numberBegin)));
-                        numberBegin = nullptr;
-                        }
-                    Utf8Char c = *inputP;
-                    output.append(1, (Utf8Char)std::tolower(c));
-                    }
-                inputP++;
-                }
-            if (nullptr != numberBegin)
-                output.append(GetPaddedNumber(numberBegin, (int)(inputP - numberBegin)));
-
-            iter = GetCache().Insert(inputStr, std::make_shared<Utf8String>(output)).first;
+            iter = GetCache().Insert(inputStr, std::make_shared<Utf8String>(ValueHelpers::PadNumbersInString(inputStr))).first;
             }
 
         ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);

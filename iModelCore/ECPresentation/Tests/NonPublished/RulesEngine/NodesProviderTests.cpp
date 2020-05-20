@@ -56,22 +56,22 @@ void NodesProviderTests::Cache(JsonNavNodeR node)
     {
     NavNodeExtendedData extendedData(node);
     uint64_t virtualParentId = extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0;
-    HierarchyLevelInfo hlInfo = m_nodesCache.FindHierarchyLevel(extendedData.GetConnectionId(), 
+    HierarchyLevelIdentifier hlInfo = m_nodesCache.FindHierarchyLevel(extendedData.GetConnectionId(),
         extendedData.GetRulesetId(), extendedData.GetLocale(), extendedData.HasVirtualParentId() ? &virtualParentId : nullptr);
     if (!hlInfo.IsValid())
         {
-        hlInfo = HierarchyLevelInfo(extendedData.GetConnectionId(), extendedData.GetRulesetId(), 
+        hlInfo = HierarchyLevelIdentifier(extendedData.GetConnectionId(), extendedData.GetRulesetId(),
             extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
         m_nodesCache.Cache(hlInfo);
         }
-    RulesetVariables variables;
-    DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), { 0 }, variables);
-    if (!dsInfo.IsValid())
+    DataSourceIdentifier identifier(hlInfo.GetId(), {0});
+    DataSourceInfo dsInfo = m_nodesCache.FindDataSource(identifier, RulesetVariables());
+    if (!dsInfo.GetIdentifier().IsValid())
         {
-        dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
-        m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<RulesetVariableEntry>());
+        dsInfo = DataSourceInfo(identifier, RulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
+        m_nodesCache.Cache(dsInfo);
         }
-    m_nodesCache.Cache(node, dsInfo, 0, NodeVisibility::Visible);
+    m_nodesCache.Cache(node, dsInfo.GetIdentifier(), 0, NodeVisibility::Visible);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,7 +196,7 @@ TEST_F(MultiNavNodesProviderTests, Iteration_SteppingThroughEmptyNestedProviders
         TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
         };
     NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, nodes1);
-    
+
     bvector<JsonNavNodePtr> nodes2 = {
         TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3")
         };
@@ -261,7 +261,7 @@ TEST_F(MultiNavNodesProviderTests, Iteration_SkippingItemsWithOneNestedProvider)
     NavNodesProviderPtr provider = BVectorNodesProvider::Create(*m_context, nodes);
 
     RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
-    multiProvider->SetProviders({ provider });
+    multiProvider->SetProviders({provider});
 
     auto iter = multiProvider->begin();
     ASSERT_NE(iter, multiProvider->end());
@@ -385,4 +385,87 @@ TEST_F(MultiNavNodesProviderTests, Iteration_SkippingItemsPastTheEndOfTheLastPro
 
     iter += 4;
     ASSERT_EQ(iter, multiProvider->end());
+    }
+
+#define EXPECT_OPTIMIZATION_FLAGS_ENABLED() \
+    EXPECT_TRUE(GetContext().GetOptimizationFlags().IsCheckingChildren()); \
+    EXPECT_TRUE(GetContext().GetOptimizationFlags().IsFullNodesLoadDisabled()); \
+    EXPECT_TRUE(GetContext().GetOptimizationFlags().IsPostProcessingDisabled());
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2020
++===============+===============+===============+===============+===============+======*/
+struct OptimizationFlagsTestingProvider : NavNodesProvider
+{
+private:
+    JsonNavNodePtr m_node;
+private:
+    OptimizationFlagsTestingProvider(NavNodesProviderContextCR context, JsonNavNodeP node)
+        : NavNodesProvider(context), m_node(node)
+        {}
+protected:
+    bool _IsCacheable() const override {return false;}
+    bool _GetNode(JsonNavNodePtr& node, size_t index) const override
+        {
+        EXPECT_OPTIMIZATION_FLAGS_ENABLED();
+        node = m_node;
+        return node.IsValid();
+        }
+    bool _HasNodes() const override
+        {
+        EXPECT_OPTIMIZATION_FLAGS_ENABLED();
+        return m_node.IsValid();
+        }
+    size_t _GetNodesCount() const override
+        {
+        EXPECT_OPTIMIZATION_FLAGS_ENABLED();
+        return m_node.IsValid() ? 1 : 0;
+        }
+    Iterator _CreateFrontIterator() const override
+        {
+        EXPECT_OPTIMIZATION_FLAGS_ENABLED();
+        return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this));
+        }
+    Iterator _CreateBackIterator() const override
+        {
+        EXPECT_OPTIMIZATION_FLAGS_ENABLED();
+        return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this, GetNodesCount()));
+        }
+    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override {return nullptr;}
+public:
+    static RefCountedPtr<OptimizationFlagsTestingProvider> Create(NavNodesProviderContextCR context, JsonNavNodeP node)
+        {
+        auto myContext = NavNodesProviderContext::Create(context);
+        myContext->GetOptimizationFlags().SetParentContainer(&context.GetOptimizationFlags());
+        return new OptimizationFlagsTestingProvider(*myContext, node);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_PassesDownOptimizationFlags)
+    {
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders(
+        {
+        OptimizationFlagsTestingProvider::Create(*m_context, nullptr),
+        OptimizationFlagsTestingProvider::Create(*m_context, TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2").get()),
+        OptimizationFlagsTestingProvider::Create(*m_context, nullptr),
+        OptimizationFlagsTestingProvider::Create(*m_context, TestNodesHelper::CreateCustomNode(*m_connection, "4", "4", "4").get()),
+        OptimizationFlagsTestingProvider::Create(*m_context, TestNodesHelper::CreateCustomNode(*m_connection, "5", "5", "5").get()),
+        });
+
+    DisabledFullNodesLoadContext disableFullLoad(*multiProvider);
+    DisabledPostProcessingContext disablePostProcessing(*multiProvider);
+    NodesChildrenCheckContext checkingChildren(*multiProvider);
+
+    int nodesCount = 0;
+    for (auto node : *multiProvider)
+        {
+        ++nodesCount;
+        // expectations are verified in nested providers
+        }
+    EXPECT_EQ(3, nodesCount);
+    EXPECT_EQ(multiProvider->end(), multiProvider->begin() + 3);
     }

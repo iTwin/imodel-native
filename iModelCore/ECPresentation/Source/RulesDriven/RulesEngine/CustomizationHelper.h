@@ -45,7 +45,7 @@ private:
 public:
     NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonNavNodeCR node, JsonNavNodeCP parentNode, ICustomizablePropertiesSetter const& setter);
     ~NavNodeCustomizer();
-    bool ApplyLabelAndDescriptionOverride(bool customizeLabel);
+    bool ApplyLabelAndDescriptionOverride();
     bool ApplyStyleOverride();
     bool ApplyImageIdOverride();
     bool ApplyCheckboxRules();
@@ -58,7 +58,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct CustomizationHelper
     {
-    ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR, JsonNavNode&, bool customizeLabel);
+    ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR, JsonNavNode&);
     ECPRESENTATION_EXPORT static void Customize(ContentProviderContextCR, ContentDescriptorCR, ContentSetItemR);
     ECPRESENTATION_EXPORT static NodeArtifacts EvaluateArtifacts(NavNodesProviderContextCR, JsonNavNodeCR);
     };

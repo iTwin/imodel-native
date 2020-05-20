@@ -55,14 +55,14 @@ struct UpdateContext
 private:
     bmap<uint64_t, uint64_t> m_remapInfo;
     bset<uint64_t> m_removedNodeIds;
-    bset<CombinedHierarchyLevelInfo> m_handledHierarchies;
+    bset<CombinedHierarchyLevelIdentifier> m_handledHierarchies;
     bset<Utf8String> m_reportedContentRulesetIds;
 public:
     bmap<uint64_t, uint64_t>& GetRemapInfo() {return m_remapInfo;}
     bset<uint64_t>& GetRemovedNodeIds() {return m_removedNodeIds;}
     bset<uint64_t> const& GetRemovedNodeIds() const {return m_removedNodeIds;}
-    bset<CombinedHierarchyLevelInfo>& GetHandledHierarchies() {return m_handledHierarchies;}
-    bset<CombinedHierarchyLevelInfo> const& GetHandledHierarchies() const {return m_handledHierarchies;}
+    bset<CombinedHierarchyLevelIdentifier>& GetHandledHierarchies() {return m_handledHierarchies;}
+    bset<CombinedHierarchyLevelIdentifier> const& GetHandledHierarchies() const {return m_handledHierarchies;}
     bset<Utf8String>& GetReportedContentRulesetIds() {return m_reportedContentRulesetIds;}
 };
 
@@ -81,14 +81,14 @@ private:
     INodesProviderFactoryCR m_nodesProviderFactory;
 
 private:
-    bool IsHierarchyRemoved(UpdateContext const&, NodesCache const&, HierarchyLevelInfo const&) const;
+    bool IsHierarchyRemoved(UpdateContext const&, NodesCache const&, HierarchyLevelIdentifier const&) const;
     void UpdateParentHierarchy(bvector<IUpdateTaskPtr>&, UpdateContext&, NodesCache const&, NavNodesProviderCR, NavNodesProviderCR) const;
 
 public:
     HierarchyUpdater(UpdateTasksFactory const& tasksFactory, IConnectionCacheCR connections, INodesCacheManager const& nodesCacheManager, INodesProviderContextFactoryCR contextFactory, INodesProviderFactoryCR providerFactory)
         : m_tasksFactory(tasksFactory), m_connections(connections), m_nodesCacheManager(nodesCacheManager), m_contextFactory(contextFactory), m_nodesProviderFactory(providerFactory)
         {}
-    void Update(bvector<IUpdateTaskPtr>&, UpdateContext&, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
+    void Update(bvector<IUpdateTaskPtr>&, UpdateContext&, HierarchyLevelIdentifier const&, HierarchyLevelIdentifier const&) const;
 };
 
 /*=================================================================================**//**
@@ -107,7 +107,7 @@ public:
 
     // hierarchy-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemapNodeIdsTask(NodesCache&, bmap<uint64_t, uint64_t> const&) const;
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, HierarchyLevelInfo const&) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, HierarchyLevelIdentifier const&) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemoveHierarchyLevelTask(NodesCache&, BeSQLite::BeGuidCR removalId) const;
 
     // content-related update tasks
@@ -136,12 +136,12 @@ private:
 private:
     bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
     bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, Utf8CP rulesetId, Utf8CP settingId) const;
-    void AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext&, bvector<HierarchyLevelInfo> const&) const;
+    void AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext&, bvector<HierarchyLevelIdentifier> const&) const;
     void AddTask(bvector<IUpdateTaskPtr>& tasks, IUpdateTask& task) const;
     void AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, IUpdateTask& task) const;
     void ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const;
     void DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies = true, bool updateContent = true) const;
-    bvector<HierarchyLevelInfo> GetAffectedHierarchyLevels(IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
+    bvector<HierarchyLevelIdentifier> GetAffectedHierarchyLevels(IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
 
 public:
     ECPRESENTATION_EXPORT UpdateHandler(INodesCacheManager const&, ContentCache*, IConnectionManagerCR, INodesProviderContextFactoryCR,

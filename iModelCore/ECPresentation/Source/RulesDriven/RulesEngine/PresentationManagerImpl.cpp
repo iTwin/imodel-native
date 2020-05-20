@@ -400,17 +400,17 @@ public:
 struct RulesDrivenECPresentationManagerImpl::NodesProviderFactory : INodesProviderFactory
 {
 private:
+    bvector<std::unique_ptr<IProvidedNodesPostProcessor>> m_postProcessors;
     RulesDrivenECPresentationManagerImpl& m_manager;
 
 private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                11/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static NavNodesProviderPtr WithPostProcessing(NavNodesProviderCR provider, bvector<ChildNodeRuleCP> const& rules)
+    static NavNodesProviderPtr WithDeprecatedPostProcessing(NavNodesProviderCR provider, bvector<ChildNodeRuleCP> const& rules)
         {
-        RefCountedPtr<PostProcessingNodesProvider> postProcessingProvider = PostProcessingNodesProvider::Create(provider);
-        postProcessingProvider->RegisterPostProcessor(std::make_unique<DisplayLabelGroupingNodesPostProcessor>());
-        postProcessingProvider->RegisterPostProcessor(std::make_unique<SameLabelGroupingNodesPostProcessor>(provider.GetContext().GetRuleset(),
+        RefCountedPtr<PostProcessingNodesProviderDeprecated> postProcessingProvider = PostProcessingNodesProviderDeprecated::Create(provider);
+        postProcessingProvider->RegisterPostProcessor(std::make_unique<SameLabelGroupingNodesPostProcessorDeprecated>(provider.GetContext().GetRuleset(),
             rules, provider.GetContext().GetSchemaHelper(), provider.GetContext().GetLocalState()));
         return postProcessingProvider;
         }
@@ -423,10 +423,19 @@ private:
         std::transform(ruleSpecs.begin(), ruleSpecs.end(), std::back_inserter(rules), [](TRuleSpecification const& ruleSpec){return &ruleSpec.GetRule();});
         return rules;
         }
+
+protected:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                05/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bvector<IProvidedNodesPostProcessor const*> _GetPostProcessors() const override
+        {
+        return ContainerHelpers::TransformContainer<bvector<IProvidedNodesPostProcessor const*>>(m_postProcessors, [](auto const& ptr){return ptr.get();});
+        }
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                03/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
+    NavNodesProviderPtr _Create(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
         {
         RulesPreprocessor preprocessor(*m_manager.m_connections, context.GetConnection(), context.GetRuleset(),
             context.GetLocale(), context.GetRulesetVariables(), &context.GetUsedVariablesListener(),
@@ -439,7 +448,7 @@ private:
             if (!specs.empty())
                 {
                 LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[NodesProviderFactory::CreateProvider] Creating root nodes provider from %" PRIu64 " specs", (uint64_t)specs.size()).c_str(), NativeLogging::LOG_TRACE);
-                provider = WithPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs), MapRules(specs));
+                provider = WithDeprecatedPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs), MapRules(specs));
                 }
             else
                 {
@@ -454,7 +463,7 @@ private:
                 {
                 LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[NodesProviderFactory::CreateProvider] Creating child nodes provider for %s from %" PRIu64 " specs",
                     parent->GetLabelDefinition().GetDisplayValue().c_str(), (uint64_t)specs.size()).c_str(), NativeLogging::LOG_TRACE);
-                provider = WithPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs, *parent), MapRules(specs));
+                provider = WithDeprecatedPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs, *parent), MapRules(specs));
                 }
             else
                 {
@@ -463,65 +472,17 @@ private:
                 }
             }
         if (provider.IsNull())
-            {
-            if (nullptr != parent)
-                context.SetChildNodeContext(nullptr, *parent);
-            else
-                context.SetRootNodeContext(nullptr);
             provider = EmptyNavNodesProvider::Create(context);
-            }
-        return provider;
-        }
-
-protected:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                03/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr _Create(NavNodesProviderContextR context, JsonNavNodeCP parent, ProviderCacheType cacheType) const override
-        {
-        NavNodesProviderPtr provider;
-        switch (cacheType)
-            {
-            case ProviderCacheType::None:
-                break;
-            case ProviderCacheType::Partial:
-                LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Partial` in cache", NativeLogging::LOG_TRACE);
-                provider = context.GetNodesCache().GetDataSource(context.GetDataSourceInfo(), context.GetRulesetVariables());
-                break;
-            case ProviderCacheType::Full:
-                {
-                LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Full` in cache", NativeLogging::LOG_TRACE);
-                uint64_t parentId = parent ? parent->GetNodeId() : 0;
-                HierarchyLevelInfo info = context.GetNodesCache().FindHierarchyLevel(context.GetConnection().GetId().c_str(),
-                    context.GetRuleset().GetRuleSetId().c_str(), context.GetLocale().c_str(), parent ? &parentId : nullptr);
-                if (info.IsValid())
-                    provider = context.GetNodesCache().GetHierarchyLevel(info, context.GetRulesetVariables());
-                break;
-                }
-            case ProviderCacheType::Combined:
-                {
-                LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Combined` in cache", NativeLogging::LOG_TRACE);
-                CombinedHierarchyLevelInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(),
-                    context.GetLocale(), parent ? parent->GetNodeId() : 0);
-                provider = context.GetNodesCache().GetCombinedHierarchyLevel(info, context.GetRulesetVariables());
-                break;
-                }
-            }
-        if (provider.IsNull())
-            {
-            LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Have no provider, creating one.", NativeLogging::LOG_TRACE);
-            provider = CreateProvider(context, parent);
-            }
-        else
-            {
-            LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Found a provider, adopting it.", NativeLogging::LOG_TRACE);
-            provider->GetContextR().Adopt(context);
-            }
         return provider;
         }
 
 public:
-    NodesProviderFactory(RulesDrivenECPresentationManagerImpl& mgr) : m_manager(mgr) {}
+    NodesProviderFactory(RulesDrivenECPresentationManagerImpl& mgr)
+        : m_manager(mgr)
+        {
+        m_postProcessors.push_back(std::make_unique<DisplayLabelGroupingNodesPostProcessor>());
+        m_postProcessors.push_back(std::make_unique<DisplayLabelSortingPostProcessor>());
+        }
 };
 
 /*=================================================================================**//**
@@ -577,6 +538,11 @@ protected:
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
         context->SetQueryContext(*m_manager.m_connections, connection, m_manager.m_usedClassesListener);
 
+        if (nullptr != parentNodeId)
+            context->SetChildNodeContext(nullptr, *nodesCache->GetNode(*parentNodeId));
+        else
+            context->SetRootNodeContext(nullptr);
+
         ILocalizationProvider const* localizationProvider = m_manager.GetLocalizationProvider();
         if (nullptr != localizationProvider)
             context->SetLocalizationContext(*localizationProvider);
@@ -585,7 +551,7 @@ protected:
             context->SetPageSize(pageSize);
 
         context->SetPropertyFormattingContext(m_manager.GetECPropertyFormatter(), UnitSystem::Undefined);
-        context->SetIsUpdatesDisabled(m_manager.m_mode == Mode::ReadOnly);
+        context->GetOptimizationFlags().SetIsUpdatesDisabled(m_manager.m_mode == Mode::ReadOnly);
         context->SetCancelationToken(cancelationToken);
         _l2 = nullptr;
 
@@ -790,14 +756,23 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     if (context.IsNull())
         return nullptr;
 
-    // create the nodes provider
-    NavNodesProviderPtr provider = m_nodesProviderFactory->Create(*context, nullptr, ProviderCacheType::Combined);
+    // look for cached provider
+    NavNodesProviderPtr provider = context->GetNodesCache().GetCombinedHierarchyLevel(*context, context->GetHierarchyLevelIdentifier());
+    if (provider.IsValid())
+        provider->GetContextR().Adopt(connection, &cancelationToken);
+
+    // if not found, create the nodes provider
+    if (provider.IsNull())
+        provider = m_nodesProviderFactory->Create(*context, nullptr);
+
+    // finally, post-process
+    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
 
     // cache the provider in quick cache
-    if (provider.IsValid() && 0 != pageSize)
+    if (0 != pageSize)
         {
         RulesetVariables relatedVariables(context->GetRelatedRulesetVariables());
-        CombinedHierarchyLevelInfo info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), 0);
+        CombinedHierarchyLevelIdentifier info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), 0);
         static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider, relatedVariables);
         }
 
@@ -850,14 +825,23 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
         return EmptyDataSource<NavNodePtr>::Create();
         }
 
-    // create the nodes provider
-    NavNodesProviderPtr provider = m_nodesProviderFactory->Create(*context, jsonParent.get(), ProviderCacheType::Combined);
+    // look for cached provider
+    NavNodesProviderPtr provider = context->GetNodesCache().GetCombinedHierarchyLevel(*context, context->GetHierarchyLevelIdentifier());
+    if (provider.IsValid())
+        provider->GetContextR().Adopt(connection, &cancelationToken);
+
+    // if not found, create the nodes provider
+    if (provider.IsNull())
+        provider = m_nodesProviderFactory->Create(*context, jsonParent.get());
+
+    // finally, post-process
+    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
 
     // cache the provider in quick cache
-    if (provider.IsValid())
+    if (0 != pageSize)
         {
         RulesetVariables relatedVariables(context->GetRelatedRulesetVariables());
-        CombinedHierarchyLevelInfo info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), parentNodeId);
+        CombinedHierarchyLevelIdentifier info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), parentNodeId);
         static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider, relatedVariables);
         }
 
@@ -1321,18 +1305,16 @@ struct CompareReporter : IHierarchyChangesReporter
 private:
     IUpdateRecordsHandler& m_updateRecordsHandler;
 protected:
-    void _OnFoundLhsProvider(NavNodesProviderCR) override {}
-    bool _OnStartCompare(NavNodesProviderCR, NavNodesProviderCR) override { return true; }
-    void _OnEndCompare(NavNodesProviderCR, NavNodesProviderCP) override {}
-    void _Added(HierarchyLevelInfo const& hli, JsonNavNodeCR node, size_t index) override
+    bool _OnStartCompare(NavNodesProviderCR, NavNodesProviderCR) override {return true;}
+    void _Added(HierarchyLevelIdentifier const& hli, JsonNavNodeCR node, size_t index) override
         {
         m_updateRecordsHandler.Accept(HierarchyUpdateRecord(hli.GetRulesetId(), node, index));
         }
-    void _Removed(HierarchyLevelInfo const& hli, JsonNavNodeCR node) override
+    void _Removed(HierarchyLevelIdentifier const& hli, JsonNavNodeCR node) override
         {
         m_updateRecordsHandler.Accept(HierarchyUpdateRecord(hli.GetRulesetId(), node));
         }
-    void _Changed(HierarchyLevelInfo const& hli, JsonNavNodeCR lhsNode, JsonNavNodeCR rhsNode, bvector<JsonChange> const& changes) override
+    void _Changed(HierarchyLevelIdentifier const& hli, JsonNavNodeCR lhsNode, JsonNavNodeCR rhsNode, bvector<JsonChange> const& changes) override
         {
         if (!changes.empty())
             m_updateRecordsHandler.Accept(HierarchyUpdateRecord(hli.GetRulesetId(), rhsNode, changes));
@@ -1371,8 +1353,8 @@ void RulesDrivenECPresentationManagerImpl::_CompareHierarchies(IUpdateRecordsHan
     nodesCache->OnRulesetUsed(*lhsRuleset);
     nodesCache->OnRulesetUsed(*rhsRuleset);
 
-    HierarchyLevelInfo lhsInfo(connection.GetId(), lhsRulesetId, options.GetLocale(), 0, 0);
-    HierarchyLevelInfo rhsInfo(connection.GetId(), rhsRulesetId, options.GetLocale(), 0, 0);
+    HierarchyLevelIdentifier lhsInfo(connection.GetId(), lhsRulesetId, options.GetLocale(), 0, 0);
+    HierarchyLevelIdentifier rhsInfo(connection.GetId(), rhsRulesetId, options.GetLocale(), 0, 0);
     CompareReporter reporter(handler);
     HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, *m_nodesProviderContextFactory, *m_nodesProviderFactory, reporter, true, std::make_unique<RulesetVariables>(options.GetRulesetVariables())));
     comparer.Compare(*m_connections, lhsInfo, rhsInfo);

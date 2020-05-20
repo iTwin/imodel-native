@@ -34,17 +34,17 @@ struct NodesProviderTests : ECPresentationTest
     TestECDbUsedClassesListener m_usedClassesListener;
 
     uint64_t m_providerIndex;
-    
-    NodesProviderTests() 
-        : m_providerContextFactory(m_connections), m_nodesCache(m_connections, &m_providerContextFactory),
+
+    NodesProviderTests()
+        : m_providerContextFactory(m_connections), m_nodesCache(m_connections),
         m_providerIndex(0)
         {}
 
     static void SetUpTestCase();
     static void TearDownTestCase();
-    
+
     virtual void SetUp() override;
     virtual void TearDown() override;
-    
+
     void Cache(JsonNavNodeR node);
     };

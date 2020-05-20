@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/ECPresentationTypes.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
@@ -39,11 +39,11 @@ private:
     // Property formatting context
     IECPropertyFormatter const* m_propertyFormatter;
     ECPresentation::UnitSystem m_unitSystem;
-    
+
     // localization context
     bool m_isLocalizationContext;
     ILocalizationProvider const* m_localizationProvider;
-    
+
     // ECDb context
     bool m_isQueryContext;
     IConnectionManagerCP m_connections;
@@ -54,10 +54,10 @@ private:
     void Init();
 
 protected:
-    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, Utf8String locale, std::unique_ptr<RulesetVariables>, ECExpressionsCache&, 
+    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, Utf8String locale, std::unique_ptr<RulesetVariables>, ECExpressionsCache&,
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
-    
+
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR);
     ECPRESENTATION_EXPORT void SetQueryContext(RulesDrivenProviderContextCR other);
 
@@ -86,7 +86,7 @@ public:
     bool IsPropertyFormattingContext() const {return nullptr != m_propertyFormatter;}
     IECPropertyFormatter const& GetECPropertyFormatter() const {BeAssert(IsPropertyFormattingContext()); return *m_propertyFormatter;}
     ECPresentation::UnitSystem GetUnitSystem() const {BeAssert(IsPropertyFormattingContext()); return m_unitSystem;}
-    
+
     // localization context
     ECPRESENTATION_EXPORT void SetLocalizationContext(ILocalizationProvider const& provider);
     ECPRESENTATION_EXPORT void SetLocalizationContext(RulesDrivenProviderContextCR other);

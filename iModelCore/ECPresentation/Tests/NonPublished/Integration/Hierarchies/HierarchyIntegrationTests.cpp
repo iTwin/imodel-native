@@ -9093,3 +9093,115 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Cre
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     EXPECT_EQ(1, childNodes.GetSize());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#269433
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SortsCombinedHierarchyLevelsByDisplayLabel, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_To_B" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="categorizes" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortsCombinedHierarchyLevelsByDisplayLabel)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP rel = GetClass("A_To_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("1"));});
+    IECInstancePtr b12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("3"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a1, *b11);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a1, *b12);
+
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("2"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a2, *b2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, true, false, false, false,
+        "", classA->GetFullName(), true));
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"A\"", 1000, false);
+    rules->AddPresentationRule(*childRule);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward)),
+        }));
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classB->GetFullName(), "Label"));
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(3, rootNodes.GetSize());
+    VerifyNodeInstance(*rootNodes[0], *b11);
+    VerifyNodeInstance(*rootNodes[1], *b2);
+    VerifyNodeInstance(*rootNodes[2], *b12);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetsAllResultsWhenNumberOfNodesExceedsQueryBasedProviderPageSize, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetsAllResultsWhenNumberOfNodesExceedsQueryBasedProviderPageSize)
+    {
+    ECClassCP classA = GetClass("A");
+
+    size_t numberOfNodes = QueryBasedNodesProvider::PageSize + 1;
+    bvector<IECInstancePtr> instances;
+    for (size_t i = 0; i < numberOfNodes; ++i)
+        {
+        instances.push_back(RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&i](IECInstanceR instance)
+            {
+            instance.SetValue("Label", ECValue(std::to_string(i).c_str()));
+            }));
+        }
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), "Label"));
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", classA->GetFullName(), false));
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodesPage1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(0, 500), options.GetJson()).get(); });
+    ASSERT_EQ(500, rootNodesPage1.GetSize());
+    for (size_t i = 0; i < 500; ++i)
+        VerifyNodeInstance(*rootNodesPage1[i], *instances[i]);
+
+    DataContainer<NavNodeCPtr> rootNodesPage2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(500, 500), options.GetJson()).get(); });
+    ASSERT_EQ(500, rootNodesPage2.GetSize());
+    for (size_t i = 0; i < 500; ++i)
+        VerifyNodeInstance(*rootNodesPage2[i], *instances[i + 500]);
+
+    DataContainer<NavNodeCPtr> rootNodesPage3 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(1000, 500), options.GetJson()).get(); });
+    ASSERT_EQ(1, rootNodesPage3.GetSize());
+    for (size_t i = 0; i < 1; ++i)
+        VerifyNodeInstance(*rootNodesPage3[i], *instances[i + 1000]);
+    }

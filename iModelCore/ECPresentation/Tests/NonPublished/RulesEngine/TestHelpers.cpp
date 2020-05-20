@@ -589,21 +589,22 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, JsonNavNodeR node
     {
     NavNodeExtendedData extendedData(node);
     uint64_t virtualParentId = extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0;
-    HierarchyLevelInfo hlInfo = cache.FindHierarchyLevel(extendedData.GetConnectionId(),
+    HierarchyLevelIdentifier hlInfo = cache.FindHierarchyLevel(extendedData.GetConnectionId(),
         extendedData.GetRulesetId(), extendedData.GetLocale(), extendedData.HasVirtualParentId() ? &virtualParentId : nullptr);
     if (!hlInfo.IsValid())
         {
-        hlInfo = HierarchyLevelInfo(extendedData.GetConnectionId(), extendedData.GetRulesetId(),
+        hlInfo = HierarchyLevelIdentifier(extendedData.GetConnectionId(), extendedData.GetRulesetId(),
             extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
         cache.Cache(hlInfo);
         }
-    DataSourceInfo dsInfo = cache.FindDataSource(hlInfo.GetId(), { 0 }, RulesetVariables());
-    if (!dsInfo.IsValid())
+    DataSourceIdentifier identifier(hlInfo.GetId(), {0});
+    DataSourceInfo dsInfo = cache.FindDataSource(identifier, RulesetVariables());
+    if (!dsInfo.GetIdentifier().IsValid())
         {
-        dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
-        cache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<RulesetVariableEntry>());
+        dsInfo = DataSourceInfo(identifier, RulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
+        cache.Cache(dsInfo);
         }
-    cache.Cache(node, dsInfo, 0, NodeVisibility::Visible);
+    cache.Cache(node, dsInfo.GetIdentifier(), 0, NodeVisibility::Visible);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -83,6 +83,8 @@ public:
             std::move((ruleset.*rootRulesGetter)().begin(), (ruleset.*rootRulesGetter)().end(), std::back_inserter(rootRules));
         return GetCustomizationRulesForSpecificationInternal(ruleset, spec, rootRules);
         }
+
+    ChildNodeSpecificationCP FindChildNodeSpecification(Utf8StringCR specificationHash) const;
 /** @} */
 };
 

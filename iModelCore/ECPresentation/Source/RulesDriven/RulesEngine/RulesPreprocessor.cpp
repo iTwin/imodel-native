@@ -514,6 +514,52 @@ ChildNodeRuleSpecificationsList RulesPreprocessor::_GetChildNodeSpecifications(C
     return specs;
     }
 
+#define RETURN_IF_NOT_NULL(expr) \
+    { \
+    auto result = expr; \
+    if (result != nullptr) \
+        return result; \
+    }
+
+template<typename TRule> static ChildNodeSpecificationCP FindSpecificationByHash(bvector<TRule> const& rules, Utf8StringCR hash);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static ChildNodeSpecificationCP FindSpecificationByHash(ChildNodeSpecificationList const& specs, Utf8StringCR hash)
+    {
+    for (auto const& spec : specs)
+        {
+        if (spec->GetHash().Equals(hash))
+            return spec;
+
+        RETURN_IF_NOT_NULL(FindSpecificationByHash(spec->GetNestedRules(), hash));
+        }
+    return nullptr;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TRule> static ChildNodeSpecificationCP FindSpecificationByHash(bvector<TRule> const& rules, Utf8StringCR hash)
+    {
+    for (auto const& rule : rules)
+        {
+        RETURN_IF_NOT_NULL(FindSpecificationByHash(rule->GetSpecifications(), hash));
+        for (auto const& subCond : rule->GetSubConditions())
+            RETURN_IF_NOT_NULL(FindSpecificationByHash(subCond->GetSpecifications(), hash));
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ChildNodeSpecificationCP RulesPreprocessor::FindChildNodeSpecification(Utf8StringCR specificationHash) const
+    {
+    RETURN_IF_NOT_NULL(FindSpecificationByHash(m_ruleset.GetRootNodesRules(), specificationHash));
+    RETURN_IF_NOT_NULL(FindSpecificationByHash(m_ruleset.GetChildNodesRules(), specificationHash));
+    return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

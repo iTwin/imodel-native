@@ -835,3 +835,58 @@ Utf8String ValueHelpers::GetECValueTypeName(ECValueCR value)
             return "";
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsInteger(int c) {return '0' <= c && c <= '9';}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+#define PADDING 10
+static Utf8String GetPaddedNumber(Utf8CP chars, int length)
+    {
+    Utf8String padded;
+    padded.reserve(PADDING);
+    for (int i = length; i < PADDING; i++)
+        padded.append("0");
+    padded.append(chars, length);
+    return padded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ValueHelpers::PadNumbersInString(Utf8StringCR inputStr)
+    {
+    Utf8CP inputP = inputStr.c_str();
+    Utf8CP numberBegin = nullptr;
+    Utf8String output;
+    output.reserve(strlen(inputP));
+    while (nullptr != inputP && 0 != *inputP)
+        {
+        if (IsInteger(*inputP))
+            {
+            if (nullptr == numberBegin)
+                {
+                numberBegin = inputP;
+                output.reserve(output.size() + PADDING + strlen(inputP));
+                }
+            }
+        else
+            {
+            if (nullptr != numberBegin)
+                {
+                output.append(GetPaddedNumber(numberBegin, (int)(inputP - numberBegin)));
+                numberBegin = nullptr;
+                }
+            Utf8Char c = *inputP;
+            output.append(1, (Utf8Char)std::tolower(c));
+            }
+        inputP++;
+        }
+    if (nullptr != numberBegin)
+        output.append(GetPaddedNumber(numberBegin, (int)(inputP - numberBegin)));
+    return output;
+    }

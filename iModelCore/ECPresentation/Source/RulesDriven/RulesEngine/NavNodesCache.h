@@ -84,30 +84,31 @@ protected:
     virtual NodeVisibility _GetNodeVisibility(uint64_t nodeId) const = 0;
     virtual bvector<uint64_t> _GetNodeIndex(uint64_t nodeId) const = 0;
 
-    virtual HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const = 0;
-    virtual DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index, RulesetVariables const& variables) const = 0;
-    virtual DataSourceInfo _FindDataSource(uint64_t nodeId) const = 0;
+    virtual HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const = 0;
+    virtual bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int partsToGet) const = 0;
+    virtual DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int partsToGet) const = 0;
+    virtual DataSourceInfo _FindDataSource(uint64_t nodeId, int partsToGet) const = 0;
 
-    virtual NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, RulesetVariables const&, bool) const = 0;
-    virtual NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, RulesetVariables const&, bool) const = 0;
-    virtual NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, RulesetVariables const&, bool) const = 0;
-    virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId, RulesetVariables const&, bool) const = 0;
+    virtual NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR context, CombinedHierarchyLevelIdentifier const&, bool) const = 0;
+    virtual NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const&, bool) const = 0;
+    virtual NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const&, bool, bool) const = 0;
+    virtual NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, uint64_t nodeId, bool, bool) const = 0;
 
-    virtual void _Cache(HierarchyLevelInfo&) = 0;
-    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, RulesetVariables const&) = 0;
-    virtual void _Cache(JsonNavNodeR, DataSourceInfo const&, bvector<uint64_t> const&, NodeVisibility) = 0;
+    virtual void _Cache(HierarchyLevelIdentifier&) = 0;
+    virtual void _Cache(DataSourceInfo&) = 0;
+    virtual void _Cache(JsonNavNodeR, DataSourceIdentifier const&, bvector<uint64_t> const&, NodeVisibility) = 0;
 
     virtual void _Update(uint64_t, JsonNavNodeCR, int partsToUpdate) = 0;
-    virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, RulesetVariables const*) = 0;
+    virtual void _Update(DataSourceInfo const&, int partsToUpdate) = 0;
 
     virtual void _MakePhysical(JsonNavNodeCR) = 0;
     virtual void _MakeVirtual(JsonNavNodeCR) = 0;
     virtual void _MakeHidden(JsonNavNodeCR) = 0;
 
-    virtual bool _IsInitialized(CombinedHierarchyLevelInfo const&, RulesetVariables const&) const = 0;
-    virtual bool _IsInitialized(HierarchyLevelInfo const&, RulesetVariables const&) const = 0;
-    virtual bool _IsInitialized(DataSourceInfo const&, RulesetVariables const&) const = 0;
-    virtual void _FinalizeInitialization(DataSourceInfo const&) = 0;
+    virtual bool _IsInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&) const = 0;
+    virtual bool _IsInitialized(HierarchyLevelIdentifier const&, RulesetVariables const&) const = 0;
+    virtual bool _IsInitialized(DataSourceIdentifier const&, RulesetVariables const&) const = 0;
+    virtual void _FinalizeInitialization(DataSourceIdentifier const&) = 0;
 
     virtual SavepointPtr _CreateSavepoint() = 0;
 
@@ -120,45 +121,40 @@ public:
     NodeVisibility GetNodeVisibility(uint64_t nodeId) const {return _GetNodeVisibility(nodeId);}
     bvector<uint64_t> GetNodeIndex(uint64_t nodeId) const {return _GetNodeIndex(nodeId);}
 
-    HierarchyLevelInfo FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const {return _FindHierarchyLevel(connectionId, rulesetId, locale, virtualParentNodeId);}
-    DataSourceInfo FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index, RulesetVariables const& variables) const {return _FindDataSource(hierarchyLevelId, index, variables);}
-    DataSourceInfo FindDataSource(uint64_t nodeId) const {return _FindDataSource(nodeId);}
+    HierarchyLevelIdentifier FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const {return _FindHierarchyLevel(connectionId, rulesetId, locale, virtualParentNodeId);}
+    bvector<DataSourceInfo> FindDataSources(CombinedHierarchyLevelIdentifier const& hlIdentifier, RulesetVariables const& variables, int partsToGet = 0) const {return _FindDataSources(hlIdentifier, variables, partsToGet);}
+    DataSourceInfo FindDataSource(DataSourceIdentifier const& identifier, RulesetVariables const& variables, int partsToGet = 0) const {return _FindDataSource(identifier, variables, partsToGet);}
+    DataSourceInfo FindDataSource(uint64_t nodeId, int partsToGet = 0) const {return _FindDataSource(nodeId, partsToGet);}
 
     //! Get data source for the combined hierarchy level for specified physical parent node
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const& info, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetCombinedHierarchyLevel(info, variables, onlyInitialized);}
+    NavNodesProviderPtr GetCombinedHierarchyLevel(NavNodesProviderContextR context, CombinedHierarchyLevelIdentifier const& info, bool onlyInitialized = true) const {return _GetCombinedHierarchyLevel(context, info, onlyInitialized);}
     //! Get data source for the whole hierarchy level.
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetHierarchyLevel(HierarchyLevelInfo const& info, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetHierarchyLevel(info, variables, onlyInitialized);}
+    NavNodesProviderPtr GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const& info, bool onlyInitialized = true) const {return _GetHierarchyLevel(context, info, onlyInitialized);}
     //! Get partial data source (which is a subset of a hierarchy level).
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetDataSource(DataSourceInfo const& info, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetDataSource(info, variables, onlyInitialized);}
+    NavNodesProviderPtr GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const& info, bool onlyInitialized = true, bool onlyVisible = false) const {return _GetDataSource(context, info, onlyInitialized, onlyVisible);}
     //! Get partial data source the node with the supplied ID belongs to.
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetDataSource(uint64_t nodeId, RulesetVariables const& variables, bool onlyInitialized = true) const {return _GetDataSource(nodeId, variables, onlyInitialized);}
+    NavNodesProviderPtr GetDataSource(NavNodesProviderContextR context, uint64_t nodeId, bool onlyInitialized = true, bool onlyVisible = false) const {return _GetDataSource(context, nodeId, onlyInitialized, onlyVisible);}
 
-    void Cache(HierarchyLevelInfo& info) {_Cache(info);}
-    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, RulesetVariables const& relatedVariables)
-        {
-        _Cache(info, filter, relatedClassIds, relatedVariables);
-        }
-    void Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, bvector<uint64_t> const& index, NodeVisibility visibility) {_Cache(node, dsInfo, index, visibility);}
-    void Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, uint64_t index, NodeVisibility visibility) {_Cache(node, dsInfo, {index}, visibility);}
+    void Cache(HierarchyLevelIdentifier& info) {_Cache(info);}
+    void Cache(DataSourceInfo& info) {_Cache(info);}
+    void Cache(JsonNavNodeR node, DataSourceIdentifier const& dsInfo, bvector<uint64_t> const& index, NodeVisibility visibility) {_Cache(node, dsInfo, index, visibility);}
+    void Cache(JsonNavNodeR node, DataSourceIdentifier const& dsInfo, uint64_t index, NodeVisibility visibility) {_Cache(node, dsInfo, {index}, visibility);}
 
     void Update(uint64_t nodeId, JsonNavNodeCR node, int partsToUpdate) {_Update(nodeId, node, partsToUpdate);}
-    void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, RulesetVariables const* relatedVariables)
-        {
-        _Update(info, filter, relatedClassIds, relatedVariables);
-        }
+    void Update(DataSourceInfo const& info, int partsToUpdate) {_Update(info, partsToUpdate);}
 
     void MakePhysical(JsonNavNodeCR node) {_MakePhysical(node);}
     void MakeVirtual(JsonNavNodeCR node) {_MakeVirtual(node);}
     void MakeHidden(JsonNavNodeCR node) {_MakeHidden(node);}
 
-    bool IsInitialized(CombinedHierarchyLevelInfo const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
-    bool IsInitialized(HierarchyLevelInfo const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
-    bool IsInitialized(DataSourceInfo const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
-    void FinalizeInitialization(DataSourceInfo const& info) {_FinalizeInitialization(info);}
+    bool IsInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
+    bool IsInitialized(HierarchyLevelIdentifier const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
+    bool IsInitialized(DataSourceIdentifier const& info, RulesetVariables const& variables) const {return _IsInitialized(info, variables);}
+    void FinalizeInitialization(DataSourceIdentifier const& info) {_FinalizeInitialization(info);}
 
     SavepointPtr CreateSavepoint() {return _CreateSavepoint();}
 
@@ -218,9 +214,9 @@ private:
     ECPRESENTATION_EXPORT NodesCache(IConnectionCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, bool);
     BentleyStatus Initialize(BeFileNameCR directory, IConnectionCR, NodesCacheType);
 
-    void CacheNode(DataSourceInfo const&, NavNodeR, bvector<uint64_t> const&, NodeVisibility visibility);
-    void CacheEmptyHierarchyLevel(HierarchyLevelInfo& info);
-    void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, uint64_t variablesId);
+    void CacheNode(DataSourceIdentifier const&, NavNodeR, bvector<uint64_t> const&, NodeVisibility visibility);
+    void CacheEmptyHierarchyLevel(HierarchyLevelIdentifier& info);
+    void CacheEmptyDataSource(DataSourceIdentifier&, DataSourceFilter const&, uint64_t variablesId, Utf8StringCR specificationHash, Utf8StringCR nodeTypes, bool isPartial);
     void CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const&);
     uint64_t CacheRelatedVariables(Utf8StringCR rulesetId, RulesetVariables const& variables);
     bool HasRelatedSettingsChanged(uint64_t datasourceId, Utf8StringCR rulesetId) const;
@@ -228,14 +224,15 @@ private:
     void CacheNodeInstanceKeys(NavNodeCR);
     void ChangeVisibility(uint64_t nodeId, NodeVisibility visibility);
     void LimitCacheSize();
-    void ResetDataSource(DataSourceInfo const&);
-    bvector<DataSourceInfo> GetDataSourcesWithChangedUserSettings(CombinedHierarchyLevelInfo const&) const;
-    bvector<DataSourceInfo> GetDataSourcesWithChangedUserSettings(HierarchyLevelInfo const&) const;
-    HierarchyLevelInfo GetParentHierarchyLevelInfo(uint64_t nodeId) const;
+    void ResetDataSource(DataSourceIdentifier const&);
+    bvector<DataSourceIdentifier> GetDataSourcesWithChangedUserSettings(CombinedHierarchyLevelIdentifier const&) const;
+    bvector<DataSourceIdentifier> GetDataSourcesWithChangedUserSettings(HierarchyLevelIdentifier const&) const;
+    HierarchyLevelIdentifier GetParentHierarchyLevelIdentifier(uint64_t nodeId) const;
+    DataSourceInfo CreateDataSourceInfo(DataSourceIdentifier, int partsToGet) const;
 
-    void AddQuick(CombinedHierarchyLevelInfo, NavNodesProviderR, RulesetVariables const&);
-    void RemoveQuick(CombinedHierarchyLevelInfo const&, RulesetVariables const* = nullptr);
-    NavNodesProviderPtr GetQuick(CombinedHierarchyLevelInfo const&, RulesetVariables const&) const;
+    void AddQuick(CombinedHierarchyLevelIdentifier, NavNodesProviderR, RulesetVariables const&);
+    void RemoveQuick(CombinedHierarchyLevelIdentifier const&, RulesetVariables const* = nullptr);
+    NavNodesProviderPtr GetQuick(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&) const;
 
     void AddQuick(JsonNavNodeR) const;
     void RemoveQuick(uint64_t) const;
@@ -247,25 +244,26 @@ protected:
     ECPRESENTATION_EXPORT JsonNavNodePtr _GetNode(uint64_t) const override;
     ECPRESENTATION_EXPORT NodeVisibility _GetNodeVisibility(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(uint64_t nodeId) const override;
-    ECPRESENTATION_EXPORT HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const override;
-    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const&, RulesetVariables const& variables) const override;
-    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t nodeId) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, RulesetVariables const&, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, RulesetVariables const&, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, RulesetVariables const&, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(uint64_t nodeId, RulesetVariables const&, bool) const override;
-    ECPRESENTATION_EXPORT void _Cache(HierarchyLevelInfo&) override;
-    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, RulesetVariables const&) override;
-    ECPRESENTATION_EXPORT void _Cache(JsonNavNodeR, DataSourceInfo const&, bvector<uint64_t> const&, NodeVisibility) override;
+    ECPRESENTATION_EXPORT HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const override;
+    ECPRESENTATION_EXPORT bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int) const override;
+    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int) const override;
+    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t nodeId, int) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR, CombinedHierarchyLevelIdentifier const&, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR, HierarchyLevelIdentifier const&, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR, DataSourceIdentifier const&, bool, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR, uint64_t nodeId, bool, bool) const override;
+    ECPRESENTATION_EXPORT void _Cache(HierarchyLevelIdentifier&) override;
+    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&) override;
+    ECPRESENTATION_EXPORT void _Cache(JsonNavNodeR, DataSourceIdentifier const&, bvector<uint64_t> const&, NodeVisibility) override;
     ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR, int partsToUpdate) override;
-    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, RulesetVariables const*) override;
+    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, int partsToUpdate) override;
     ECPRESENTATION_EXPORT void _MakePhysical(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeVirtual(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeHidden(JsonNavNodeCR) override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(CombinedHierarchyLevelInfo const&, RulesetVariables const&) const override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(HierarchyLevelInfo const&, RulesetVariables const&) const override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(DataSourceInfo const&, RulesetVariables const&) const override;
-    ECPRESENTATION_EXPORT void _FinalizeInitialization(DataSourceInfo const&) override;
+    ECPRESENTATION_EXPORT bool _IsInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&) const override;
+    ECPRESENTATION_EXPORT bool _IsInitialized(HierarchyLevelIdentifier const&, RulesetVariables const&) const override;
+    ECPRESENTATION_EXPORT bool _IsInitialized(DataSourceIdentifier const&, RulesetVariables const&) const override;
+    ECPRESENTATION_EXPORT void _FinalizeInitialization(DataSourceIdentifier const&) override;
     ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint() override;
     BeMutex& _GetMutex() override { return m_mutex; }
 
@@ -273,26 +271,26 @@ protected:
     ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR, RulesetVariables const&) const override;
 
 public:
-    ECPRESENTATION_EXPORT static std::unique_ptr<NodesCache> Create(IConnectionCR, BeFileNameCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, 
+    ECPRESENTATION_EXPORT static std::unique_ptr<NodesCache> Create(IConnectionCR, BeFileNameCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR,
         NodesCacheType type, bool cacheUpdateData);
     ECPRESENTATION_EXPORT ~NodesCache();
 
-    ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR, RulesetVariables const&);
+    ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelIdentifier const&, NavNodesProviderR, RulesetVariables const&);
 
     ECPRESENTATION_EXPORT bool IsNodeCached(uint64_t nodeId) const;
     ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(Utf8CP rulesetId, Utf8CP locale) const;
     ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(uint64_t parentNodeId) const;
 
-    ECPRESENTATION_EXPORT HierarchyLevelInfo FindHierarchyLevel(uint64_t id) const;
+    ECPRESENTATION_EXPORT HierarchyLevelIdentifier FindHierarchyLevel(uint64_t id) const;
 
-    ECPRESENTATION_EXPORT BeSQLite::BeGuid CreateRemovalId(CombinedHierarchyLevelInfo const&);
+    ECPRESENTATION_EXPORT BeSQLite::BeGuid CreateRemovalId(CombinedHierarchyLevelIdentifier const&);
     ECPRESENTATION_EXPORT void RemoveHierarchyLevel(BeSQLite::BeGuidCR removalId);
 
     ECPRESENTATION_EXPORT void RemapNodeIds(bmap<uint64_t, uint64_t> const&);
     ECPRESENTATION_EXPORT bool HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNodeIds) const;
 
-    ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(IConnectionCR connection, bset<ECInstanceKey> const&) const;
-    ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(Utf8CP rulesetId, Utf8CP settingId) const;
+    ECPRESENTATION_EXPORT bvector<HierarchyLevelIdentifier> GetRelatedHierarchyLevels(IConnectionCR connection, bset<ECInstanceKey> const&) const;
+    ECPRESENTATION_EXPORT bvector<HierarchyLevelIdentifier> GetRelatedHierarchyLevels(Utf8CP rulesetId, Utf8CP settingId) const;
 
     ECPRESENTATION_EXPORT void Clear(Utf8CP rulesetId = nullptr);
     ECPRESENTATION_EXPORT void Persist();

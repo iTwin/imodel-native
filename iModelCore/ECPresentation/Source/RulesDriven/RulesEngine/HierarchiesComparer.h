@@ -16,20 +16,20 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct IHierarchyChangesReporter
 {
 protected:
-    virtual void _OnFoundLhsProvider(NavNodesProviderCR) {}
+    virtual void _OnFoundLhsProvider(NavNodesProviderCR, CombinedHierarchyLevelIdentifier const&) {}
     virtual bool _OnStartCompare(NavNodesProviderCR, NavNodesProviderCR) {return true;}
     virtual void _OnEndCompare(NavNodesProviderCR, NavNodesProviderCP) {}
-    virtual void _Added(HierarchyLevelInfo const&, JsonNavNodeCR, size_t) {}
-    virtual void _Removed(HierarchyLevelInfo const&, JsonNavNodeCR) {}
-    virtual void _Changed(HierarchyLevelInfo const&, JsonNavNodeCR, JsonNavNodeCR, bvector<JsonChange> const&) {}
+    virtual void _Added(HierarchyLevelIdentifier const&, JsonNavNodeCR, size_t) {}
+    virtual void _Removed(HierarchyLevelIdentifier const&, JsonNavNodeCR) {}
+    virtual void _Changed(HierarchyLevelIdentifier const&, JsonNavNodeCR, JsonNavNodeCR, bvector<JsonChange> const&) {}
 public:
     ~IHierarchyChangesReporter() {}
-    void FoundLhsProvider(NavNodesProviderCR provider) {_OnFoundLhsProvider(provider);}
+    void FoundLhsProvider(NavNodesProviderCR provider, CombinedHierarchyLevelIdentifier const& hlInfo) {_OnFoundLhsProvider(provider, hlInfo);}
     bool StartCompare(NavNodesProviderCR lhs, NavNodesProviderCR rhs) {return _OnStartCompare(lhs, rhs);}
     void EndCompare(NavNodesProviderCR lhs, NavNodesProviderCP rhs) {_OnEndCompare(lhs, rhs);}
-    void Added(HierarchyLevelInfo const& hli, JsonNavNodeCR node, size_t index) {_Added(hli, node, index);}
-    void Removed(HierarchyLevelInfo const& hli, JsonNavNodeCR node) {_Removed(hli, node);}
-    void Changed(HierarchyLevelInfo const& hli, JsonNavNodeCR lhsNode, JsonNavNodeCR rhsNode, bvector<JsonChange> const& changes) {_Changed(hli, lhsNode, rhsNode, changes);}
+    void Added(HierarchyLevelIdentifier const& hli, JsonNavNodeCR node, size_t index) {_Added(hli, node, index);}
+    void Removed(HierarchyLevelIdentifier const& hli, JsonNavNodeCR node) {_Removed(hli, node);}
+    void Changed(HierarchyLevelIdentifier const& hli, JsonNavNodeCR lhsNode, JsonNavNodeCR rhsNode, bvector<JsonChange> const& changes) {_Changed(hli, lhsNode, rhsNode, changes);}
 };
 
 /*=================================================================================**//**
@@ -49,7 +49,7 @@ struct HierarchiesComparer
     public:
         Params(NodesCache& nodesCache, INodesProviderContextFactoryCR contextFactory, INodesProviderFactoryCR providerFactory,
             IHierarchyChangesReporter& changesReporter, bool traverseRecursively, std::unique_ptr<RulesetVariables> variables)
-            : m_nodesCache(nodesCache), m_contextFactory(contextFactory), m_providerFactory(providerFactory), 
+            : m_nodesCache(nodesCache), m_contextFactory(contextFactory), m_providerFactory(providerFactory),
             m_traverseRecursively(traverseRecursively), m_changesReporter(changesReporter), m_variables(std::move(variables))
             {}
         Params(Params const& other)
@@ -75,15 +75,15 @@ private:
     Context m_context;
 
 private:
-    NavNodesProviderPtr CreateProvider(IConnectionCR, HierarchyLevelInfo const&) const;
-    void Compare(IConnectionCR, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
+    NavNodesProviderPtr CreateProvider(IConnectionCR, HierarchyLevelIdentifier const&) const;
+    void Compare(IConnectionCR, HierarchyLevelIdentifier const&, HierarchyLevelIdentifier const&) const;
     void CompareDataSources(NavNodesProviderCR oldProvider, NavNodesProviderR newProvider) const;
     void CompareNodes(NavNodesProviderCR lhsProvider, JsonNavNodeCR oldNode, NavNodesProviderCR newProvider, JsonNavNodeR newNode) const;
     void CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR newNode, NavNodesProviderCR newNodeProvider) const;
 
 public:
     HierarchiesComparer(Params const& params) : m_context(params) {}
-    void Compare(IConnectionCacheCR connections, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
+    void Compare(IConnectionCacheCR connections, HierarchyLevelIdentifier const&, HierarchyLevelIdentifier const&) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

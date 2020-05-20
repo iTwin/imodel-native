@@ -137,7 +137,7 @@ rapidjson::Document JsonNavNode::GetJson() const
     if (m_isCheckboxVisible)
         json.AddMember(NAVNODE_IsCheckboxVisible, m_isCheckboxVisible, json.GetAllocator());
     if (m_isExpanded)
-        json.AddMember(NAVNODE_IsExpanded, m_isExpanded, json.GetAllocator());    
+        json.AddMember(NAVNODE_IsExpanded, m_isExpanded, json.GetAllocator());
     if (m_labelDefinition.IsValid())
         json.AddMember(NAVNODE_LabelDefinition, m_labelDefinition->ToInternalJson(&json.GetAllocator()), json.GetAllocator());
     return json;
@@ -298,6 +298,7 @@ void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR con
     extendedData.SetECClassId(instanceKeys.front().GetClassId()); // TODO: setting id from the first key - what if there are more keys with different class ids?
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
+    extendedData.SetIsLabelCustomized(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,6 +339,7 @@ void JsonNavNodesFactory::InitECClassGroupingNode(JsonNavNodeR node, Utf8StringC
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecClass.GetId());
+    extendedData.SetIsLabelCustomized(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -358,6 +360,7 @@ void JsonNavNodesFactory::InitDisplayLabelGroupingNode(JsonNavNodeR node, Utf8St
     extendedData.SetInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
+    extendedData.SetIsLabelCustomized(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -387,6 +390,7 @@ void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8Stri
         extendedData.SetPropertyValueRangeIndex(groupingValue.GetInt());
     else
         extendedData.SetPropertyValue(groupingValue);
+    extendedData.SetIsLabelCustomized(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -409,6 +413,7 @@ void JsonNavNodesFactory::InitECRelationshipGroupingNode(JsonNavNodeR node, Utf8
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecRelationshipClass.GetId());
+    extendedData.SetIsLabelCustomized(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

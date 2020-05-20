@@ -56,6 +56,8 @@ public:
     static Utf8String GetDbValueAsString(RapidJsonValueCR);
 
     static Utf8String GetECValueTypeName(ECN::ECValueCR);
+
+    static Utf8String PadNumbersInString(Utf8StringCR str);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -5538,7 +5538,7 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesDuringH
     IConnectionCPtr connection = m_manager->GetConnections().GetConnection(m_db);
 
     // expect user settings have been tracked
-    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
+    bvector<HierarchyLevelIdentifier> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
     ASSERT_EQ(1, hierarchies.size());
     ASSERT_EQ(connection->GetId(), hierarchies[0].GetConnectionId());
     ASSERT_EQ(rules->GetRuleSetId(), hierarchies[0].GetRulesetId());
@@ -5638,7 +5638,7 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesWithVir
     IConnectionCPtr connection = m_manager->GetConnections().GetConnection(m_db);
 
     // expect user settings have been tracked
-    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
+    bvector<HierarchyLevelIdentifier> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
     ASSERT_EQ(1, hierarchies.size());
     ASSERT_EQ(connection->GetId(), hierarchies[0].GetConnectionId());
     ASSERT_EQ(rules->GetRuleSetId(), hierarchies[0].GetRulesetId());
