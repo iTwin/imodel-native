@@ -1169,7 +1169,11 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
     INavNodeKeysContainerCPtr nodeKeys = inputKeys.GetAllNavNodeKeys();
     ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, contentFlags, options.GetLocale(), options.GetUnitSystem(), *nodeKeys, selectionInfo);
     ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, RulesetVariables(options.GetRulesetVariables()));
-    return provider.IsValid() ? provider->GetContentDescriptor() : nullptr;
+    if (provider.IsNull())
+        return nullptr;
+
+    provider->GetContextR().Adopt(connection, &cancelationToken);
+    return provider->GetContentDescriptor();
     }
 
 /*---------------------------------------------------------------------------------**//**
