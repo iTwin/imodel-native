@@ -346,7 +346,8 @@ bool   DmsHelper::CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileD
         L"PWDIR=${registryread{\"HKEY_CURRENT_USER\\SOFTWARE\\Bentley\\ProjectWise\\Path\"}}\n"
         L"%if !exists ($(PWDIR)) # Fallback to machine level settings)\n"
         L"PWDIR=${registryread{\"HKEY_LOCAL_MACHINE\\SOFTWARE\\Bentley\\ProjectWise\\Path\"}}\n"
-        L"%endif %endif");
+        L"%endif\n"
+        L"%endif");
     m_fileWritePtr->PutLine(PWDIR.c_str(), true);
 
     // TODO for v8i Dgnv8/v8i/Config
