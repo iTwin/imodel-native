@@ -269,7 +269,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
     std::vector<ECPropertyCP> propertiesToMap;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        if (&property->GetClass() == &m_ecClass ||
+        if ((&property->GetClass() == &m_ecClass && !property->GetBaseProperty()) ||
             inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::NotInherited)
             {
             //Property map that should not be inherited -> must be mapped
