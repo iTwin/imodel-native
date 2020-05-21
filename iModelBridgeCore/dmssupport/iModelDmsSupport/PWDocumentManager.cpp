@@ -243,7 +243,7 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
         BentleyApi::BeFileName portableFileName(portableName);
         BentleyApi::WString refFileName = portableFileName.GetFileNameAndExtension();
         BentleyApi::WString dirPath(BentleyApi::BeFileName::GetDirectoryName(portableName));
-        BentleyApi::BeFileName::AppendToPath(dirPath, m_DMSHelper->_GetFolderId().c_str());
+        BentleyApi::BeFileName::AppendToPath(dirPath, m_DMSHelper->_GetFolderIdByFileId().c_str());
         BentleyApi::BeFileName::AppendToPath(dirPath, refFileName.c_str());
         BentleyApi::BeFileName fullFileName(dirPath);
         if (SUCCESS != ExtractMonikerFromXml(dmsMoniker, customXMLString) && fullFileName.DoesPathExist())
@@ -255,7 +255,7 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
         if (NULL != fullPathIn && BentleyApi::BeFileName::DoesPathExist(fullPathIn))
             return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
 
-        folderId = m_DMSHelper->_GetFolderId(dmsMoniker);
+        folderId = m_DMSHelper->_GetFolderIdByFileId(dmsMoniker);
         BentleyApi::BeFileName portableFileName(portableName);
         BentleyApi::WString refFileName = portableFileName.GetFileNameAndExtension();
         BentleyApi::WString dirPath(BentleyApi::BeFileName::GetDirectoryName(searchPathIn));

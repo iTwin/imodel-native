@@ -9,7 +9,7 @@
 #include <rapidjson/document.h>
 #include <Bentley/BeTextFile.h>
 #include <WebServices/Configuration/UrlProvider.h>
-
+#include <regex>
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -127,8 +127,8 @@ Utf8String       DmsHelper::GetToken()
 bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
     m_inputFileMoniker = m_repositoryUrl;
-    m_inputFile = fileLocation;
-    return _StageDocuments(m_inputFile);
+    m_inputFileLocation = fileLocation;
+    return _StageDocuments(m_inputFileLocation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,13 +208,17 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
                 if (!fullDirPath.DoesPathExist())
                     BeFileName::CreateNewDirectory(fullDirPath);
 
-                // Added folderId into collection
-                m_fileFolderIds.Insert(fileId, parentId);
+                // Added fileIdToFolderId in collection
+                m_fileIdToFolderIdMap.Insert(fileId, parentId);
                 }
             }
         else
+            {
             fullDirPath.append(dirPath);
-
+            m_inputFileParentId = Utf8String(parentId.c_str());
+            }
+        // Added fileNameToFileId in collection
+        m_fileNameToFileIdMap.Insert(fileName, fileId);
         fullDirPath.AppendToPath(fileName.c_str());
         if (downloadRef)
             fileLocation = fullDirPath;
@@ -276,7 +280,7 @@ StatusInt   DmsHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vishal.Shingare                  12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString   DmsHelper::_GetFolderId(WStringCR pwMoniker)
+WString   DmsHelper::_GetFolderIdByFileId(WStringCR pwMoniker)
     {
     Utf8String fileId = Utf8String();
     WString folderId = WString();
@@ -295,13 +299,31 @@ WString   DmsHelper::_GetFolderId(WStringCR pwMoniker)
             return  folderId;
         fileId = guids[2];
         }
-    if (m_fileFolderIds.count(WString(fileId.c_str(), 0)) != 0)
+    if (m_fileIdToFolderIdMap.count(WString(fileId.c_str(), 0)) != 0)
         {
-        auto nodeItr = m_fileFolderIds.find(WString(fileId.c_str(), 0));
+        auto nodeItr = m_fileIdToFolderIdMap.find(WString(fileId.c_str(), 0));
         folderId = nodeItr->second;
         return folderId;
         }
     return folderId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vishal.Shingare                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+WString   DmsHelper::_GetFileIdByFileName(WStringCR fileName)
+    {
+    WString fileId = WString();
+    if (!fileName.empty())
+        {
+        auto  nodeItr = m_fileNameToFileIdMap.find(fileName);
+        if (m_fileNameToFileIdMap.end() != (nodeItr))
+            {
+            fileId = nodeItr->second;
+            return fileId;
+            }
+        }
+    return fileId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -400,16 +422,27 @@ iMBridgeDocPropertiesAccessor* DmsHelper::_GetDocumentPropertiersAccessor()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vishal.Shingare                  05/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      DmsHelper::GetDocumentGuid(Utf8String inputMoniker)
+WString      DmsHelper::GetDocumentGuid(WStringCR fileName)
     {
-    if (inputMoniker.empty())
-        return Utf8String();
+    WString m_documentGuid = WString();
 
-    int length = inputMoniker.length();
-    if (GetRepositoryType().EqualsI(PWREPOSITORYTYPE))
-        return inputMoniker.substr(length - 37, 36);
+    if (!fileName.empty())
+        m_documentGuid = _GetFileIdByFileName(BeFileName::GetFileNameAndExtension(fileName.c_str()));
 
-    return inputMoniker.substr(length - 36, 36);
+    return m_documentGuid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vishal.Shingare                  05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool      DmsHelper::ValidateMoniker(Utf8StringCR pwMoniker)
+    {
+    const std::regex rgx("pw:(\\\\|//)[^{](.*?)D\\{([A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12})\\}");
+    std::string str(pwMoniker.c_str());
+    if (std::regex_match(str, rgx))
+        return true;
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -417,21 +450,38 @@ Utf8String      DmsHelper::GetDocumentGuid(Utf8String inputMoniker)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DmsHelper::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
     {
-    if (GetRepositoryType().EqualsI(PWREPOSITORYTYPE) && !m_inputFileMoniker.empty() && 0 == fn.CompareToI(m_inputFile))
-        props.m_desktopURN.Assign(WString(m_inputFileMoniker.c_str(), 0).c_str());
-    else if (!m_inputFileMoniker.empty() && 0 == fn.CompareToI(m_inputFile))
+    WString m_documentGuid = WString();
+    Utf8String m_documentURN = Utf8String();
+    if (GetRepositoryType().EqualsI(PWREPOSITORYTYPE))
         {
-        if (m_projectShareUrl.empty())
-            m_projectShareUrl = UrlProvider::Urls::ProjectShareReactPortal.Get().append(m_inputFileMoniker);
+        if (!ValidateMoniker(m_inputFileMoniker))
+            return BentleyStatus::ERROR;
 
-        props.m_desktopURN.Assign(WString(m_projectShareUrl.c_str(), 0).c_str());
+        if (0 == fn.CompareToI(m_inputFileLocation) && !m_inputFileMoniker.empty())
+            m_documentGuid = WString(m_inputFileMoniker.substr(m_inputFileMoniker.length() - (m_guidLength + 1), m_guidLength).c_str(), 0);
+        else
+            m_documentGuid = GetDocumentGuid(fn.c_str());
+
+        m_documentURN = Utf8PrintfString("%s%s}", m_inputFileMoniker.substr(0, m_inputFileMoniker.length() - (m_guidLength + 1)).c_str(), Utf8String(m_documentGuid).ToUpper().c_str());
+        props.m_desktopURN = m_documentURN;
         }
+    else if (GetRepositoryType().EqualsI(PSREPOSITORYTYPE))
+        {
+        if (!m_inputFileMoniker.empty() && 0 == fn.CompareToI(m_inputFileLocation))
+            m_documentGuid = WString(m_inputFileMoniker.substr(m_inputFileMoniker.length() - m_guidLength, m_guidLength).c_str(), 0);
+        else
+            m_documentGuid = GetDocumentGuid(fn.c_str());
 
-    if (m_documentGuid.empty())
-        m_documentGuid = GetDocumentGuid(m_inputFileMoniker).ToUpper();
+        if (m_projectShareUrl.empty())
+            m_projectShareUrl = UrlProvider::Urls::ProjectShareReactPortal.Get();
 
-    if (!m_documentGuid.empty())
-        props.m_docGuid = m_documentGuid;
+        m_documentURN = Utf8PrintfString("%s%s%s", m_projectShareUrl.c_str(), m_inputFileMoniker.substr(0, m_inputFileMoniker.length() - m_guidLength).c_str(), Utf8String(m_documentGuid).c_str());
+        props.m_webURN = m_documentURN;
+        }
+    else
+        return BentleyStatus::ERROR;
+
+    props.m_docGuid = Utf8String(m_documentGuid.ToUpper());
 
     return BentleyStatus(0);
     }

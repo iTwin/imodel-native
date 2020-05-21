@@ -21,19 +21,22 @@ struct DmsHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
         Utf8String m_accessToken;
         Utf8String m_repositoryType;
         Utf8String m_datasource;
-        Utf8String m_inputFileMoniker;
         Utf8String m_projectShareUrl;
-        Utf8String m_documentGuid;
-        BeFileName m_inputFile;
+        Utf8String m_inputFileMoniker;
+        Utf8String m_inputFileParentId;
+        BeFileName m_inputFileLocation;
         WString m_cfgfilePath;
-        bmap<WString, WString> m_fileFolderIds;
+        const int m_guidLength = 36;
+        bmap<WString, WString> m_fileIdToFolderIdMap;
+        bmap<WString, WString> m_fileNameToFileIdMap;
         AzureBlobStorageHelper* m_azureHelper = nullptr;
         IConnectTokenProvider* m_tokenProvider = nullptr;
         int m_maxRetries;
         DmsClient* m_dmsClient = nullptr;
         Utf8String GetToken();
         bool CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileData);
-        Utf8String GetDocumentGuid(Utf8String inputMoniker);
+        WString GetDocumentGuid(WStringCR fileName);
+        bool ValidateMoniker(Utf8StringCR pwMoniker);
         IMODEL_DMSSUPPORT_EXPORT virtual bool _Initialize() override;
         IMODEL_DMSSUPPORT_EXPORT virtual bool _UnInitialize() override;
         IMODEL_DMSSUPPORT_EXPORT virtual bool _UnInitializeSession() override;
@@ -57,7 +60,8 @@ struct DmsHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
         IMODEL_DMSSUPPORT_EXPORT virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
         IMODEL_DMSSUPPORT_EXPORT virtual bool _StageInputFile(BeFileNameCR fileLocation) override;
         IMODEL_DMSSUPPORT_EXPORT virtual bool _StageDocuments(BeFileNameR fileLocation, bool downloadWS = false, bool downloadRef = false);
-        IMODEL_DMSSUPPORT_EXPORT WString _GetFolderId(WStringCR pwMoniker = WString());
+        IMODEL_DMSSUPPORT_EXPORT WString _GetFolderIdByFileId(WStringCR pwMoniker = WString());
+        IMODEL_DMSSUPPORT_EXPORT WString _GetFileIdByFileName(WStringCR pwMoniker);
 
         void _SetDependecy(IConnectTokenProvider* tokenProvider, DmsClient* dmsClient, AzureBlobStorageHelper* azureHelper)
             {
