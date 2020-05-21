@@ -3241,7 +3241,7 @@ TEST_F(MstnBridgeTests, TestRegistryUpgrade)
         ASSERT_EQ(BeSQLite::BE_SQLITE_OK, testRegistry.Open());
 
         auto insert = testRegistry.GetDb().GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge,Affinity) VALUES(?,?,?)");
-        ASSERT_TRUE(insert.IsValid()) << "should have been upgraded to schema version 1.1, where fwk_BridgeAssignments has a column called Affinity";
+        ASSERT_TRUE(insert.IsValid()) << "should have been upgraded to schema version 1.1 or better, where fwk_BridgeAssignments has a column called Affinity";
         }
 
     if (true)
@@ -3251,7 +3251,7 @@ TEST_F(MstnBridgeTests, TestRegistryUpgrade)
         Utf8String propStr;
         ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, db.QueryProperty(propStr, s_schemaVerPropSpec));
         BeSQLite::ProfileVersion ver(propStr.c_str());
-        ASSERT_TRUE(ver.GetMajor() == 1 && ver.GetMinor() == 1) << "registry db should have been upgraded to 1.1";
+        ASSERT_TRUE(ver.GetMajor() == 1 && ver.GetMinor() >= 1) << "registry db should have been upgraded to 1.1 or better";
         }
     }
 

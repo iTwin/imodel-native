@@ -2679,16 +2679,11 @@ void RootModelConverter::DiscloseReferenceAttachments(iModelBridgeAffinityDb& af
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverter::DiscloseFilesAndAffinities(iModelBridgeAffinityDb& affinityDb)
     {
-    if (m_rootFile->IsIModel() && !m_params.DiscloseEmbeddedRefs())
-        {
-        // i.dgn file
-        return DiscloseFileAndAffinity(affinityDb, *m_rootFile);
-        }
-
-    // Normal dgn file
-
     for (auto v8File : m_v8Files)
         {
+        if (v8File->IsEmbeddedFile() && !m_params.DiscloseEmbeddedRefs())
+            continue;
+
         auto status = DiscloseFileAndAffinity(affinityDb, *v8File);
         if (status != BSISUCCESS)
             return status;

@@ -1106,9 +1106,11 @@ TEST_F(iModelBridgeTests, TestAffinityDb)
     auto b3 = db->InsertBridge("b3");
     ASSERT_NE(0, b1);
     ASSERT_NE(0, b2);
+    ASSERT_NE(0, b3);
 
     ASSERT_EQ(b1, db->FindBridge("b1"));
     ASSERT_EQ(b2, db->FindBridge("b2"));
+    ASSERT_EQ(b3, db->FindBridge("b3"));
 
     auto f1 = db->InsertFile(BeFileName(L"f1"));
     auto f2 = db->InsertFile(BeFileName(L"f2"));
@@ -1144,6 +1146,98 @@ TEST_F(iModelBridgeTests, TestAffinityDb)
     ASSERT_EQ(3, assignments.size());
     ASSERT_TRUE(assignments[BeFileName(L"f1")] == "b1");
     ASSERT_TRUE(assignments[BeFileName(L"f2")] == "b2");
+    ASSERT_TRUE(assignments[BeFileName(L"f3")] == "b2");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, TestDeleteCompetingAffinities)
+    {
+    auto testDir = getiModelBridgeTestsOutputDir(L"TestDeleteCompetingAffinities");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    BeFileName affinityDbFilename(testDir);
+    affinityDbFilename.AppendToPath(L"affinity.db");
+    RefCountedPtr<iModelBridgeAffinityDb> db = iModelBridgeAffinityDb::OpenOrCreate(affinityDbFilename);
+
+    auto b1 = db->InsertBridge("b1");
+    auto b2 = db->InsertBridge("b2");
+    auto b3 = db->InsertBridge("b3");
+
+    ASSERT_TRUE(db->GetBridgename(b1).Equals("b1"));
+    ASSERT_TRUE(db->GetBridgename(b3).Equals("b3"));
+
+    auto f1 = db->InsertFile(BeFileName(L"f1"));
+    auto f2 = db->InsertFile(BeFileName(L"f2"));
+    auto f3 = db->InsertFile(BeFileName(L"f3"));
+
+    db->InsertAffinity(f1, b1, iModelBridgeAffinityLevel::Medium, nullptr);    // b1 has the highest affinity for f1
+    db->InsertAffinity(f1, b2, iModelBridgeAffinityLevel::Low, nullptr);
+    db->InsertAffinity(f2, b2, iModelBridgeAffinityLevel::Low, nullptr);       // b1, b2, and b3 have the same affinity for f2
+    db->InsertAffinity(f2, b1, iModelBridgeAffinityLevel::Low, nullptr);
+    db->InsertAffinity(f2, b3, iModelBridgeAffinityLevel::Low, nullptr);
+    db->InsertAffinity(f3, b1, iModelBridgeAffinityLevel::Low, nullptr);     // b2 has the the highest affinity for f3
+    db->InsertAffinity(f3, b2, iModelBridgeAffinityLevel::High, nullptr);
+
+    iModelBridgeAffinityLevel foundAffinity;
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f1, b1));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Medium, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f1, b2));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f2, b1));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f2, b2));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f2, b3));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f3, b1));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f3, b2));
+    ASSERT_EQ(iModelBridgeAffinityLevel::High, foundAffinity);
+
+    bvector<int64_t> competingBridges;
+    bvector<int64_t> ambiguousFiles;
+    db->FindDuplicateAffinities([&competingBridges, &ambiguousFiles](int64_t fileRowId, iModelBridgeAffinityLevel affinity, bvector<int64_t> const& bridges)
+        {
+        for (auto i = bridges.begin(); i != bridges.end(); ++i)
+            competingBridges.push_back(*i);
+        ambiguousFiles.push_back(fileRowId);
+        });
+
+    ASSERT_EQ(1, ambiguousFiles.size());
+    ASSERT_EQ(f2, ambiguousFiles.front());
+    ASSERT_EQ(3, competingBridges.size());
+    ASSERT_TRUE(std::find(competingBridges.begin(), competingBridges.end(), b1) != competingBridges.end());
+    ASSERT_TRUE(std::find(competingBridges.begin(), competingBridges.end(), b2) != competingBridges.end());
+    ASSERT_TRUE(std::find(competingBridges.begin(), competingBridges.end(), b3) != competingBridges.end());
+
+    db->DeleteCompetingAffinities(b1); // where there are equal affinities, choose b1 (delete the others)
+
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f2, b1)) << "b1's affinity for f2 should have been preserved";
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_NE(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f2, b2)) << "b2's affinity for f2 should have been deleted";
+    ASSERT_NE(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f2, b3)) << "b3's affinity for f2 should have been deleted";
+
+    // (the other file affinities should be intact)
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f1, b1));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Medium, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f1, b2));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f3, b1));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, foundAffinity);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, nullptr, f3, b2));
+    ASSERT_EQ(iModelBridgeAffinityLevel::High, foundAffinity);
+
+    std::map<BeFileName, Utf8String> assignments;
+    db->ComputeAssignments([&assignments] (BeFileNameCR file, Utf8StringCR bridge, iModelBridgeAffinityLevel affinity) {
+        wprintf(L"%ls <- %ls @ %d\n", file.c_str(), WString(bridge.c_str(), true).c_str(), affinity);
+        assignments[file] = bridge;
+    });
+
+    ASSERT_EQ(3, assignments.size());
+    ASSERT_TRUE(assignments[BeFileName(L"f1")] == "b1");
+    ASSERT_TRUE(assignments[BeFileName(L"f2")] == "b1") << "b1 should get the assignment to f2";
     ASSERT_TRUE(assignments[BeFileName(L"f3")] == "b2");
     }
 

@@ -21,7 +21,7 @@ BeSQLite::DbResult iModelBridgeAffinityDb::CreateSchema()
      || BeSQLite::BE_SQLITE_OK != (res = m_db.CreateTable("Model", "id INTEGER PRIMARY KEY AUTOINCREMENT, File INTEGER NOT NULL, SourceIdentifier TEXT, Description TEXT, JsonData TEXT, FOREIGN KEY(File) REFERENCES File(id), UNIQUE(File,SourceIdentifier)"))
      || BeSQLite::BE_SQLITE_OK != (res = m_db.CreateTable("Bridge", "id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL UNIQUE COLLATE NoCase"))
      || BeSQLite::BE_SQLITE_OK != (res = m_db.CreateTable("Attachment", "Parent INTEGER NOT NULL, Child INTEGER NOT NULL, JsonData TEXT, FOREIGN KEY(Parent) REFERENCES Model(id), FOREIGN KEY(Child) REFERENCES Model(id), UNIQUE(Parent,Child)"))
-     || BeSQLite::BE_SQLITE_OK != (res = m_db.CreateTable("Affinity", "File INTEGER NOT NULL, Bridge INTEGER NOT NULL, Level INTEGER NOT NULL, JsonData TEXT, FOREIGN KEY(File) REFERENCES File(id), FOREIGN KEY(Bridge) REFERENCES Bridge(id)"))
+     || BeSQLite::BE_SQLITE_OK != (res = m_db.CreateTable("Affinity", "File INTEGER NOT NULL, Bridge INTEGER NOT NULL, Level INTEGER NOT NULL, JsonData TEXT, FOREIGN KEY(File) REFERENCES File(id), FOREIGN KEY(Bridge) REFERENCES Bridge(id), UNIQUE(File,Bridge,Level)"))
      || BeSQLite::BE_SQLITE_OK != (res = m_db.SaveChanges())) // do this after changing the schema, to avoid performance problems when we prepare statements.
         {
         // The low-level code should have logged a detailed BeSQLite error
@@ -387,6 +387,73 @@ void iModelBridgeAffinityDb::ComputeAssignments(std::function<T_ProcessAssignmen
         }
     }
 
+struct Affinity
+    {
+    int64_t file;
+    int64_t bridge;
+    int level;
+    };
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeAffinityDb::DeleteCompetingAffinities(int64_t preferredBridge)
+    {
+    bmap<int, bset<int64_t>> affinityToFiles;
+    if (true)
+        {
+        Statement stmt;
+        stmt.Prepare(m_db, "SELECT Level, File from Affinity where Bridge=?");
+        stmt.BindInt64(1, preferredBridge);
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            affinityToFiles[stmt.GetValueInt(0)].insert(stmt.GetValueInt64(1));
+            }
+        }
+    if (affinityToFiles.empty())
+        return;
+
+    bvector<Affinity> affinitiesToDelete;
+    if (true)
+        {
+        Statement stmt;
+        stmt.Prepare(m_db, "SELECT Level, File, Bridge from Affinity where Bridge != ?");
+        stmt.BindInt64(1, preferredBridge);
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            Affinity affinity;
+            affinity.level = stmt.GetValueInt(0);
+            affinity.file = stmt.GetValueInt64(1);
+            affinity.bridge = stmt.GetValueInt64(2);
+            auto iFiles = affinityToFiles.find(affinity.level);
+            if (iFiles == affinityToFiles.end())
+                continue;
+            auto iFile = iFiles->second.find(affinity.file);
+            if (iFile == iFiles->second.end())
+                continue;
+            affinitiesToDelete.push_back(affinity);
+            }
+        }
+    
+    if (affinitiesToDelete.empty())
+        return;
+
+    if (true)
+        {
+        Statement stmt;
+        stmt.Prepare(m_db, "delete from Affinity WHERE File=? AND Bridge=? AND Level=?");
+        for (auto const& affinity: affinitiesToDelete)
+            {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindInt64(1, affinity.file);
+            stmt.BindInt64(2, affinity.bridge);
+            stmt.BindInt(3, affinity.level);
+            stmt.Step();
+            }
+        }
+    }
+
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -415,5 +482,39 @@ void iModelBridgeAffinityDb::QueryAttachmentsToFile(int64_t parentFileRowId, std
     for (auto file : filesOfChildModels)
         {
         proc(file);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelBridgeAffinityDb::GetBridgename(int64_t bridgeId)
+    {
+    auto stmt = m_db.GetCachedStatement("select name from Bridge where ROWID=?");
+    stmt->BindInt64(1, bridgeId);
+    if (BE_SQLITE_ROW == stmt->Step())
+        return stmt->GetValueText(0);
+    return "";
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeAffinityDb::FindDuplicateAffinities(std::function<T_ProcessDuplicateAffinity> const& proc)
+    {
+    auto reportDupsStmt = m_db.GetCachedStatement("select File, Level, COUNT(*) c FROM Affinity GROUP BY File, Level HAVING c > 1");
+    while (BE_SQLITE_ROW == reportDupsStmt->Step())
+        {
+        auto fileId = reportDupsStmt->GetValueInt64(0);
+        auto level = (iModelBridgeAffinityLevel) reportDupsStmt->GetValueInt(1);
+
+        bvector<int64_t> bridges;
+        auto getBridgeIdsStmt = m_db.GetCachedStatement("select bridge from Affinity where File=? and Level=?");
+        getBridgeIdsStmt->BindInt64(1, fileId);
+        getBridgeIdsStmt->BindInt(2, level);
+        while (BE_SQLITE_ROW == getBridgeIdsStmt->Step())
+            bridges.push_back(getBridgeIdsStmt->GetValueInt64(0));
+
+        proc(fileId, level, bridges);
         }
     }

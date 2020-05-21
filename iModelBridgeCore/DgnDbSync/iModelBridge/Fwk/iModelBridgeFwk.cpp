@@ -3189,10 +3189,6 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
             error.m_description.Assign(WPrintfString(L"Cannot open %ls", m_briefcaseName.c_str()).c_str());
             }
         }
-    else
-        {
-        m_briefcaseDgnDb->AbandonChanges();
-        }
 
     m_briefcaseDgnDb = nullptr;
 

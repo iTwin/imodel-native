@@ -46,7 +46,7 @@ USING_NAMESPACE_BENTLEY_DGN
 
 static bmap<BeFileName, CPLSpawnedProcess*> s_affinityCalculators;
 static bset<BeFileName> s_badAffinityCalculators;
-static ProfileVersion s_schemaVer(1,1,0,0);
+static ProfileVersion s_schemaVer(1,2,0,0);
 static BeSQLite::PropertySpec s_schemaVerPropSpec("SchemaVersion", "be_iModelBridgeFwk", BeSQLite::PropertySpec::Mode::Normal, BeSQLite::PropertySpec::Compress::No);
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,6 +129,8 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
         MUSTBEOK(m_stateDb.CreateTable("Recommendations", "LocalFilePath TEXT NOT NULL COLLATE NoCase, Bridge TEXT NOT NULL COLLATE NoCase"));
         MUSTBEOK(m_stateDb.CreateTable("DiscloseNotSupported", "Bridge TEXT NOT NULL UNIQUE COLLATE NoCase, FOREIGN KEY(Bridge) REFERENCES fwk_InstalledBridges(Name)"));
 
+        MUSTBEOK(m_stateDb.CreateTable("EqualAffinities", "Bridge TEXT NOT NULL UNIQUE COLLATE NoCase, LocalFilePath TEXT NOT NULL COLLATE NoCase, Affinity BIGINT"));
+
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
 
         MUSTBEOK(m_stateDb.SaveChanges());
@@ -162,8 +164,9 @@ BeSQLite::DbResult iModelBridgeRegistryBase::UpgradeMinorVersion(ProfileVersion 
     BeAssert(storedVer.GetMajor() == s_schemaVer.GetMajor());
 
     auto ver = storedVer;
+    auto minorVersion = ver.GetMinor();
 
-    if (ver.GetMinor() == 0)
+    if (minorVersion == 0)
         {
         // 1.0 -> 1.1
         auto stmt = m_stateDb.GetCachedStatement("alter table fwk_BridgeAssignments add Affinity INT");
@@ -182,9 +185,23 @@ BeSQLite::DbResult iModelBridgeRegistryBase::UpgradeMinorVersion(ProfileVersion 
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
 
         MUSTBEOK(m_stateDb.SaveChanges());
+
+        minorVersion = 1;
         }
 
-    // When we go to 1.2, add incremental update logic here
+    if (minorVersion == 1)
+        {
+        // 1.1 -> 1.2
+        MUSTBEOK(m_stateDb.CreateTable("EqualAffinities", "Bridge TEXT NOT NULL UNIQUE COLLATE NoCase, LocalFilePath TEXT NOT NULL COLLATE NoCase, Affinity BIGINT"));
+
+        MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
+
+        MUSTBEOK(m_stateDb.SaveChanges());
+
+        minorVersion = 2;
+        }
+
+    // When we go to 1.3, add incremental update logic here
 
     return BE_SQLITE_OK;
     }
@@ -559,6 +576,8 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
 
         if (thisBridge.m_affinity == bestBridge.m_affinity)
             {
+            // TODO: Write a record to "EqualAffinities" table.
+
             if (!parentBridgeName.empty() &&  0 == thisBridge.m_bridgeRegSubKey.CompareToI(parentBridgeName))
                 {
                 bestBridge = thisBridge;
@@ -877,6 +896,34 @@ BentleyStatus   iModelBridgeRegistryBase::DiscloseFilesAndComputeAssignments()
         EnsureDocumentPropertiesFor(m_masterFilePath, nullptr); // If the affinity function didn't report it, we must record the file, even if we don't report any affinity to it.
         }
 
+    affinityDb->FindDuplicateAffinities([this, affinityDb](int64_t fileRowId, iModelBridgeAffinityLevel affinity, bvector<int64_t> const& bridges)
+        {
+        BeFileName fileName = affinityDb->GetFilename(fileRowId);
+        Utf8String bridgeNames;
+        Utf8CP sep = "";
+        for (auto bridgeId : bridges)
+            {
+            auto bridgeName = affinityDb->GetBridgename(bridgeId);
+
+            auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO EqualAffinities (Bridge,LocalFilePath,Affinity) VALUES(?,?,?)");
+            insertAssignment->BindText(1, bridgeName, Statement::MakeCopy::No);
+            insertAssignment->BindText(2, Utf8String(fileName), Statement::MakeCopy::Yes);
+            insertAssignment->BindInt(3, affinity);
+            auto rc = insertAssignment->Step();
+            BeAssert(BE_SQLITE_DONE == rc);
+
+            bridgeNames.append(sep).append(bridgeName);
+            sep = ", ";
+            }
+
+        LOG.warningv(L"EqualAffinities file=%ls, bridges=%s, affinity=%d", fileName.c_str(), WString(bridgeNames.c_str(), true).c_str(), affinity);
+        });
+
+    // In cases where mstn bridge and another bridge have the same affinity for the same file, delete the other affinity and let mstn get the assignment.
+    auto mstnBridgeRowId = affinityDb->FindBridge("IModelBridgeForMstn");
+    if (0 != mstnBridgeRowId)
+        affinityDb->DeleteCompetingAffinities(mstnBridgeRowId);
+
     affinityDb->ComputeAssignments([this](BeFileNameCR filePath, Utf8StringCR bridgeRegSubKeyA, iModelBridgeAffinityLevel affinity)
         {
         WString bridgeRegSubKey(bridgeRegSubKeyA.c_str(), true);
@@ -931,7 +978,7 @@ void iModelBridgeRegistryBase::UpdateAssignmentsOfReferences(iModelBridgeAffinit
         if (BSISUCCESS == QueryBridgeAssignedToDocument(&assignment, childFileName))
             {
             auto originalBridge = assignment.m_bridgeRegSubKey;
-            ComputeBridgeAffinityInParentContext(assignment, false, parentBridgeRegSubKey); // (*may* reassign assignment.m_bridgeRegSubKey to parentBridgeRegSubKey)
+            ComputeBridgeAffinityInParentContext(assignment, false, parentBridgeRegSubKey); // (*may* reassign assignment.m_bridgeRegSubKey to parentBridgeRegSubKey -- only affects a few foreign formats)
             if (!assignment.m_bridgeRegSubKey.EqualsI(originalBridge))
                 {
                 uint64_t newAssigedBridgeRowId;
@@ -944,7 +991,7 @@ void iModelBridgeRegistryBase::UpdateAssignmentsOfReferences(iModelBridgeAffinit
                 BeAssert(BeSQLite::BE_SQLITE_DONE == rc);
                 }
             }
-        UpdateAssignmentsOfReferences(db, parentFileRowIdsSeen, childFileRowId, parentBridgeRegSubKey);
+        UpdateAssignmentsOfReferences(db, parentFileRowIdsSeen, childFileRowId, assignment.m_bridgeRegSubKey);
     });
     }
 

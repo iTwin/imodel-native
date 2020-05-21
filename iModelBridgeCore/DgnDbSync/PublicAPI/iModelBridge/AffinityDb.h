@@ -70,6 +70,9 @@ public:
     //! @return 0 if the bridge is not found in the affinity db; otherwise, the non-zero rowid of the bridge record in the affinity db.
     AFFINITY_DB_EXPORT int64_t FindBridge(Utf8StringCR bridgeRegSubKey);
 
+    //! Look up the name of a bridge by its ROWID.
+    AFFINITY_DB_EXPORT Utf8String GetBridgename(int64_t bridgeRowId);
+
     //! Record a bridge in the affinity db.
     //! @param bridgeRegSubKey The registry subkey that identifies the bridge
     //! @return The rowid of the new record in the affinity db, or 0 if there was an error writing to the affinity db.
@@ -134,6 +137,9 @@ public:
     //! @see FindAttachment, InsertAttachment 
     AFFINITY_DB_EXPORT BentleyStatus FindOrInsertAttachment(int64_t parentModelRowId, int64_t childModelRowId, JsonValueCP jsonData);
 
+    //! Prefer the specified bridge over any other bridge where they have the same affinity
+    AFFINITY_DB_EXPORT void DeleteCompetingAffinities(int64_t preferredBridge);
+
     //! The signature of a function that ComputeAssignments may call.
     //! @param file The file to be bridged
     //! @param bridge The bridge that should be used process this file.
@@ -153,6 +159,10 @@ public:
     //! @param parentFileRowId The parent file
     //! @param proc Called on each file that is attached to the parent file.
     AFFINITY_DB_EXPORT void QueryAttachmentsToFile(int64_t parentFileRowId, std::function<T_ProcessFile> const& proc);
+
+    typedef void T_ProcessDuplicateAffinity(int64_t fileRowId, iModelBridgeAffinityLevel affinity, bvector<int64_t> const& bridges);
+
+    AFFINITY_DB_EXPORT void FindDuplicateAffinities(std::function<T_ProcessDuplicateAffinity> const& proc);
 
 };
 
