@@ -493,6 +493,7 @@ struct iModelBridge
         {
         bool                 m_isValid;         //!< Is this definition valid?
         Utf8String           m_coordSysKeyName; //!< the coordinate system key name
+        Utf8String           m_verticalDatum  ; //!< the vertical datum name
         DPoint3d             m_originUors;      //!< The XYZ coordinates of the origin
         BentleyApi::GeoPoint m_geoPoint;        //!< The longitude and latitude of the origin
         double               m_azimuthAngle;    //!< The angle, clockwise from true north in decimal degrees, of the rotation to be applied.

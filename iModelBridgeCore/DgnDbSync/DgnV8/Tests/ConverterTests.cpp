@@ -8,6 +8,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <iModelBridge/iModelBridge.h>
 
+
 struct CrashControlMonitor : DgnV8::Converter::Monitor
     {
     enum class ModelAction {Nothing, Save, Crash};
@@ -385,6 +386,318 @@ TEST_F(ConverterTests, InputGCS)
     ASSERT_NEAR(gpt.latitude, 40.0, 1.0);
     ASSERT_NEAR(gpt.longitude, -75.0, 1.0);
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                 05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+// Not really a conversion test proper but rather a command line parse for --input-gcs parameter
+TEST_F(ConverterTests, InputGCS_specificationByKeynameOrAzmea)
+{
+
+    iModelBridge::GCSDefinition gcsDef;
+
+    Utf8String jsonGCSDefinition1 = "{"
+        "\"gcs\" : {"
+        "\"coordinateSystemKeyName\":\"NAD27.BLM-16N.ft\""
+        "}}";
+
+    iModelBridge::Params params1;
+
+    BentleyApi::Json::Value json1 = BentleyApi::Json::Value::From(jsonGCSDefinition1.c_str());
+    ASSERT_TRUE(BSISUCCESS == params1.ParseJsonArgs(json1, true));
+    ASSERT_TRUE(BSISUCCESS == params1.ParseJsonArgs(json1, false));
+
+    ASSERT_TRUE(params1.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseDefault);
+
+    gcsDef = params1.GetInputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.empty());
+
+
+
+    gcsDef = params1.GetOutputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.empty());
+
+    Utf8String jsonGCSDefinition2 = "{"
+        "\"gcs\" : {"
+        "\"coordinateSystemKeyName\":\"NAD27.BLM-16N.ft\","
+        "\"verticalDatum\":\"GEOID\""
+        "}}";
+
+    iModelBridge::Params params2;
+
+    BentleyApi::Json::Value json2 = BentleyApi::Json::Value::From(jsonGCSDefinition2.c_str());
+    ASSERT_TRUE(BSISUCCESS == params2.ParseJsonArgs(json2, true));
+    ASSERT_TRUE(BSISUCCESS == params2.ParseJsonArgs(json2, false));
+
+    ASSERT_TRUE(params2.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseDefault);
+
+
+    gcsDef = params2.GetInputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("GEOID"));
+
+    gcsDef = params2.GetOutputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("GEOID"));
+
+    Utf8String jsonGCSDefinition3 = "{"
+        "\"gcs\" : {"
+        "\"verticalDatum\":\"NAVD88\","
+        "\"coordinateSystemKeyName\":\"NAD27.BLM-16N.ft\""
+        "}}";
+
+    iModelBridge::Params params3;
+
+    BentleyApi::Json::Value json3 = BentleyApi::Json::Value::From(jsonGCSDefinition3.c_str());
+    ASSERT_TRUE(BSISUCCESS == params3.ParseJsonArgs(json3, true));
+    ASSERT_TRUE(BSISUCCESS == params3.ParseJsonArgs(json3, false));
+
+    ASSERT_TRUE(params3.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseDefault);
+
+
+    gcsDef = params3.GetInputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NAVD88"));
+
+    gcsDef = params3.GetOutputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NAVD88"));
+
+    Utf8String jsonGCSDefinition4 = "{"
+        "\"gcs\" : {"
+        "\"gcsCalculationMethod\":\"default\","
+        "\"verticalDatum\":\"NAVD88\","
+        "\"coordinateSystemKeyName\":\"NAD27.BLM-16N.ft\""
+        "}}";
+
+    iModelBridge::Params params4;
+
+    BentleyApi::Json::Value json4 = BentleyApi::Json::Value::From(jsonGCSDefinition4.c_str());
+    ASSERT_TRUE(BSISUCCESS == params4.ParseJsonArgs(json4, true));
+    ASSERT_TRUE(params4.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseDefault);
+
+    ASSERT_TRUE(BSISUCCESS == params4.ParseJsonArgs(json4, false));
+
+    gcsDef = params4.GetInputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NAVD88"));
+
+    gcsDef = params4.GetOutputGcs();
+
+    Utf8String jsonGCSDefinition5 = "{"
+        "\"gcs\" : {"
+        "\"gcsCalculationMethod\":\"reproject\","
+        "\"verticalDatum\":\"NAVD88\","
+        "\"coordinateSystemKeyName\":\"NAD27.BLM-16N.ft\""
+        "}}";
+
+    iModelBridge::Params params5;
+
+    BentleyApi::Json::Value json5 = BentleyApi::Json::Value::From(jsonGCSDefinition5.c_str());
+    ASSERT_TRUE(BSISUCCESS == params5.ParseJsonArgs(json5, true));
+
+    ASSERT_TRUE(params5.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseReprojection);
+
+    ASSERT_TRUE(BSISUCCESS == params5.ParseJsonArgs(json5, false));
+
+    gcsDef = params5.GetInputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NAVD88"));
+
+    gcsDef = params5.GetOutputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NAVD88"));
+
+
+    Utf8String jsonGCSDefinition6 = "{"
+        "\"gcs\" : {"
+        "\"gcsCalculationMethod\":\"transform\","
+        "\"verticalDatum\":\"NAVD88\","
+        "\"coordinateSystemKeyName\":\"NAD27.BLM-16N.ft\""
+        "}}";
+
+    iModelBridge::Params params6;
+
+    BentleyApi::Json::Value json6 = BentleyApi::Json::Value::From(jsonGCSDefinition6.c_str());
+    ASSERT_TRUE(BSISUCCESS == params6.ParseJsonArgs(json6, true));
+
+    ASSERT_TRUE(params6.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseGcsTransform);
+
+    ASSERT_TRUE(BSISUCCESS == params6.ParseJsonArgs(json6, false));
+
+    gcsDef = params6.GetInputGcs();
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NAVD88"));
+
+    gcsDef = params6.GetOutputGcs();
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NAVD88"));
+
+    Utf8String jsonGCSDefinition7 = "{"
+        "\"gcs\" : {"
+        "\"gcsCalculationMethod\":\"transformscaled\","
+        "\"verticalDatum\":\"NGVD29\","
+        "\"coordinateSystemKeyName\":\"NAD27.BLM-16N.ft\""
+        "}}";
+
+    iModelBridge::Params params7;
+
+    BentleyApi::Json::Value json7 = BentleyApi::Json::Value::From(jsonGCSDefinition7.c_str());
+    ASSERT_TRUE(BSISUCCESS == params7.ParseJsonArgs(json7, true));
+
+    ASSERT_TRUE(params7.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseGcsTransformWithScaling);
+
+    ASSERT_TRUE(BSISUCCESS == params7.ParseJsonArgs(json7, false));
+
+    gcsDef = params7.GetInputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NGVD29"));
+
+    gcsDef = params7.GetOutputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(!gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.Equals("NAD27.BLM-16N.ft"));
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("NGVD29"));
+
+    Utf8String jsonGCSDefinition8 = "{"
+        "\"gcs\" : {"
+        "\"verticalDatum\":\"GEOID\","
+        "\"azmea\": {"
+        "\"azimuthAngle\": 2.34,"
+        "\"geoPoint\": {"
+        "\"latitude\": 47.48,"
+        "\"longitude\": 71.24,"
+        "\"elevation\": 0.0"
+        "}}}}";
+
+    iModelBridge::Params params8;
+
+    BentleyApi::Json::Value json8 = BentleyApi::Json::Value::From(jsonGCSDefinition8.c_str());
+    ASSERT_TRUE(BSISUCCESS == params8.ParseJsonArgs(json8, true));
+
+    ASSERT_TRUE(params8.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseDefault);
+
+    ASSERT_TRUE(BSISUCCESS == params8.ParseJsonArgs(json8, false));
+
+    gcsDef = params8.GetInputGcs();
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("GEOID"));
+    ASSERT_NEAR(gcsDef.m_azimuthAngle, 2.34, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.latitude, 47.48, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.longitude, 71.24, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.elevation, 0.0, 0.00001);
+
+
+    gcsDef = params8.GetOutputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("GEOID"));
+    ASSERT_NEAR(gcsDef.m_azimuthAngle, 2.34, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.latitude, 47.48, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.longitude, 71.24, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.elevation, 0.0, 0.00001);
+
+
+    Utf8String jsonGCSDefinition9 = "{"
+        "\"gcs\" : {"
+        "\"gcsCalculationMethod\":\"transform\","
+        "\"verticalDatum\":\"ELLIPSOID\","
+        "\"azmea\": {"
+        "\"azimuthAngle\": 12.34,"
+        "\"geoPoint\": {"
+        "\"latitude\": 57.48,"
+        "\"longitude\": 121.24,"
+        "\"elevation\": 12.0"
+        "}}}}";
+    iModelBridge::Params params9;
+
+    BentleyApi::Json::Value json9 = BentleyApi::Json::Value::From(jsonGCSDefinition9.c_str());
+    ASSERT_TRUE(BSISUCCESS == params9.ParseJsonArgs(json9, true));
+
+    ASSERT_TRUE(params9.GetGCSCalculationMethod() == iModelBridge::GCSCalculationMethod::UseGcsTransform);
+
+    ASSERT_TRUE(BSISUCCESS == params9.ParseJsonArgs(json9, false));
+
+    gcsDef = params9.GetInputGcs();
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("ELLIPSOID"));
+    ASSERT_NEAR(gcsDef.m_azimuthAngle, 12.34, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.latitude, 57.48, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.longitude, 121.24, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.elevation, 12.0, 0.00001);
+
+    gcsDef = params9.GetOutputGcs();
+
+    ASSERT_TRUE(gcsDef.m_isValid);
+    ASSERT_TRUE(gcsDef.m_coordSysKeyName.empty());
+    ASSERT_TRUE(gcsDef.m_verticalDatum.Equals("ELLIPSOID"));
+    ASSERT_NEAR(gcsDef.m_azimuthAngle, 12.34, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.latitude, 57.48, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.longitude, 121.24, 0.00001);
+    ASSERT_NEAR(gcsDef.m_geoPoint.elevation, 12.0, 0.00001);
+
+    Utf8String jsonGCSDefinitionWrong1 = "{"
+        "\"gcs\" : {"
+        "\"gcsCalculationMethod\":\"transform\","
+        "\"verticalDatum\":\"ANYTHING\","
+        "\"azmea\": {"
+        "\"azimuthAngle\": 12.34,"
+        "\"geoPoint\": {"
+        "\"latitude\": 57.48,"
+        "\"longitude\": 121.24,"
+        "\"elevation\": 12.0"
+        "}}}}";
+    iModelBridge::Params paramsWrong1;
+
+    BentleyApi::Json::Value jsonWrong1 = BentleyApi::Json::Value::From(jsonGCSDefinitionWrong1.c_str());
+    ASSERT_TRUE(BSISUCCESS != paramsWrong1.ParseJsonArgs(jsonWrong1, true));
+
+    gcsDef = paramsWrong1.GetInputGcs();
+    ASSERT_TRUE(!gcsDef.m_isValid);
+
+
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17

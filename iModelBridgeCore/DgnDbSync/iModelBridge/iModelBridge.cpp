@@ -507,15 +507,35 @@ DgnGCSPtr iModelBridge::GCSDefinition::CreateGcs(DgnDbR db)
     if (!m_isValid)
         return nullptr;
 
-    if (!m_coordSysKeyName.empty() && !m_coordSysKeyName.Equals("AZMEA"))
-        return DgnGCS::CreateGCS(WString(m_coordSysKeyName.c_str(), BentleyCharEncoding::Utf8).c_str(), db);
+    DgnGCSPtr gcs;
 
-    auto gcs = DgnGCS::CreateGCS(db);
-    if (BSISUCCESS != gcs->InitAzimuthalEqualArea(NULL, L"WGS84", L"METER", m_geoPoint.longitude, m_geoPoint.latitude, m_azimuthAngle, 1.0, m_originUors.x, m_originUors.y, 0))
+    if (!m_coordSysKeyName.empty() && !m_coordSysKeyName.Equals("AZMEA"))
         {
-        BeAssert(false && "missing basegeocoord dat files?");
-        return nullptr;
+        gcs = DgnGCS::CreateGCS(WString(m_coordSysKeyName.c_str(), BentleyCharEncoding::Utf8).c_str(), db);
         }
+    else
+        {
+        gcs = DgnGCS::CreateGCS(db);
+        if (BSISUCCESS != gcs->InitAzimuthalEqualArea(NULL, L"WGS84", L"METER", m_geoPoint.longitude, m_geoPoint.latitude, m_azimuthAngle, 1.0, m_originUors.x, m_originUors.y, 0))
+            {
+            BeAssert(false && "missing basegeocoord dat files?");
+            return nullptr;
+            }
+        }
+
+    if (gcs.IsValid() && gcs->IsValid() && !m_verticalDatum.empty())
+    {
+        if (m_verticalDatum.Equals("NAVD88"))
+            gcs->SetVerticalDatumCode(GeoCoordinates::vdcNAVD88);
+        else if (m_verticalDatum.Equals("NGVD29"))
+            gcs->SetVerticalDatumCode(GeoCoordinates::vdcNGVD29);
+        else if (m_verticalDatum.Equals("GEOID"))
+            gcs->SetVerticalDatumCode(GeoCoordinates::vdcGeoid);
+        else if (m_verticalDatum.Equals("ELLIPSOID"))
+            gcs->SetVerticalDatumCode(GeoCoordinates::vdcFromDatum);
+    }
+
+    gcs->SetReprojectElevation(true);
 
     return gcs;
     }
@@ -533,10 +553,12 @@ void iModelBridge::Params::SetGcsJson(JsonValueR json, GCSDefinition const& gcsD
     if (gcsCalculationMethod != GCSCalculationMethod::UseDefault)
         json[json_gcs()]["gcsCalculationMethod"] = GCSCalculationMethodToString(gcsCalculationMethod);
 
+    if (!gcsDef.m_verticalDatum.empty())  
+        json[json_gcs()]["verticalDatum"] = gcsDef.m_verticalDatum;
+
     if (!gcsDef.m_coordSysKeyName.empty())
         {
-        auto& member = json[json_gcs()]["coordinateSystemKeyName"];
-        member["key"] = gcsDef.m_coordSysKeyName;
+        json[json_gcs()]["coordinateSystemKeyName"] = gcsDef.m_coordSysKeyName;
         return;
         }
 
@@ -566,6 +588,15 @@ BentleyStatus iModelBridge::Params::ParseGcsJson(GCSDefinition& gcsDef, GCSCalcu
     if (json.isMember("coordinateSystemKeyName"))
         {
         gcsDef.m_coordSysKeyName = json["coordinateSystemKeyName"].asCString();
+        if (json.isMember("verticalDatum"))  // Vertical datum is possible but optional when GCS keyname defined.
+            gcsDef.m_verticalDatum = json["verticalDatum"].asCString();
+
+        // Validate vertical datum
+        if (!gcsDef.m_verticalDatum.empty() && !gcsDef.m_verticalDatum.Equals("GEOID") && !gcsDef.m_verticalDatum.Equals("ELLIPSOID") && !gcsDef.m_verticalDatum.Equals("NAVD88") && !gcsDef.m_verticalDatum.Equals("NGVD29"))
+            return BSIERROR;
+
+        gcsDef.m_isValid = true;
+
         return BSISUCCESS;
         }
 
@@ -577,6 +608,16 @@ BentleyStatus iModelBridge::Params::ParseGcsJson(GCSDefinition& gcsDef, GCSCalcu
         gcsDef.m_geoPoint.latitude = geoPoint["latitude"].asDouble();
         gcsDef.m_geoPoint.longitude = geoPoint["longitude"].asDouble();
         gcsDef.m_geoPoint.elevation = geoPoint["elevation"].asDouble();
+
+        if (json.isMember("verticalDatum"))  // Vertical datum is possible but optional when azmea defined.
+            gcsDef.m_verticalDatum = json["verticalDatum"].asCString();
+
+        // Validate vertical datum
+        if (!gcsDef.m_verticalDatum.empty() && !gcsDef.m_verticalDatum.Equals("GEOID") && !gcsDef.m_verticalDatum.Equals("ELLIPSOID") && !gcsDef.m_verticalDatum.Equals("NAVD88") && !gcsDef.m_verticalDatum.Equals("NGVD29"))
+            return BSIERROR;
+
+        gcsDef.m_isValid = true;
+
         return BSISUCCESS;
         }
 
