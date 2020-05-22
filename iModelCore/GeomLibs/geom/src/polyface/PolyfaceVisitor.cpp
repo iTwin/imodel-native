@@ -993,7 +993,15 @@ bool   PolyfaceVisitor::TryGetDistanceParameter (size_t index, DPoint2dR distanc
     faceData[index].ConvertParamToDistance (distanceParam, param[index]);
     return true;
     }
-
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+PolyfaceVisitorPtr PolyfaceVisitor::AttachWithWrap(PolyfaceQueryCR parentMesh, bool allData, uint32_t numWrap)
+    {
+    auto visitor = Attach(parentMesh, allData);
+    visitor->SetNumWrap(numWrap);
+    return visitor;
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/

@@ -3073,7 +3073,12 @@ GEOMDLLIMPEXP bvector<BoolTypeForVector> &Visible ();
 //!  return the (reference to) the array indicating where vertex indices were read from the attached mesh.
 GEOMDLLIMPEXP bvector<size_t>& IndexPosition ();
 //!  Save data for traversing the given parentMesh
+//! If allData is false, only load coordinate (Point()) array.
+//! Note that the default numWrap is zero.
 GEOMDLLIMPEXP static PolyfaceVisitorPtr Attach (PolyfaceQueryCR  parentMesh, bool allData = true);
+//!  As with Attach, create a visitor to iterate facets in parentMesh.
+//!  Immediately do SetNumWrap(numWrap)
+GEOMDLLIMPEXP static PolyfaceVisitorPtr AttachWithWrap(PolyfaceQueryCR parentMesh, bool allData, uint32_t numWrap);
 //!  return reference to the attached mesh as a PolyfaceQuery
 GEOMDLLIMPEXP PolyfaceQueryCR GetClientPolyfaceQueryCR () const;
 

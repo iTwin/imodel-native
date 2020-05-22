@@ -771,7 +771,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
     size_t                              currentFaceIndex = 0, thisFaceIndex;
     FacetFaceData                       faceData;
                                                                        
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::AttachWithWrap (*this, true, 1); visitor->AdvanceToNextFace(); )
         {
         if (TryGetFacetFaceDataAtReadIndex (visitor->GetReadIndex(), faceData, thisFaceIndex))
             {
@@ -884,7 +884,7 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     size_t                              currentFaceIndex = 0, thisFaceIndex;
     FacetFaceData                       faceData;
                                                                        
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::AttachWithWrap (*this, true, 1); visitor->AdvanceToNextFace(); )
         {
         if (TryGetFacetFaceDataAtReadIndex (visitor->GetReadIndex(), faceData, thisFaceIndex))
             {
