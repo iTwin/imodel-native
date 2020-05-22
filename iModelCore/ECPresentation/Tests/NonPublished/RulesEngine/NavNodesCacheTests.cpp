@@ -597,7 +597,7 @@ TEST_F(NodesCacheTests, GetFilteredNodesProvider_FindsRootNode)
     FillWithNodes(info, nodes);
 
     // filter
-    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale");
+    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale", RulesetVariables());
 
     // verify filtered node
     EXPECT_EQ(1, provider->GetNodesCount());
@@ -621,7 +621,7 @@ TEST_F(NodesCacheTests, GetFilteredNodes_DoesntFindNodesFromDifferentLocales)
     FillWithNodes(info, nodes);
 
     // filter
-    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale");
+    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale", RulesetVariables());
 
     // verify filtered node
     EXPECT_EQ(0, provider->GetNodesCount());
@@ -641,7 +641,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichDoesntHaveC
 
     // expect provider to contain the node
     NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection,
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str());
+        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), RulesetVariables());
     ASSERT_TRUE(provider.IsValid());
     EXPECT_EQ(1, provider->GetNodesCount());
 
@@ -665,7 +665,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichHasUnitiali
     EXPECT_FALSE(m_cache->GetNode(nodes[0]->GetNodeId())->DeterminedChildren());
 
     // expect provider to contain the node
-    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str());
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), RulesetVariables());
     ASSERT_TRUE(provider.IsValid());
     ASSERT_EQ(1, provider->GetNodesCount());
 
@@ -686,7 +686,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasIni
 
     // expect provider to be empty
     NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection,
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str());
+        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), RulesetVariables());
     ASSERT_TRUE(provider.IsValid());
     EXPECT_EQ(0, provider->GetNodesCount());
     }

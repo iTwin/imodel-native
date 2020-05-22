@@ -938,8 +938,9 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
             ;
         }
 
+    RulesetVariables variables(options.GetRulesetVariables());
     // first we need to make sure the hierarchy is fully traversed so we can search in cache
-    NavNodesProviderCPtr provider = nodesCache->GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetLocale());
+    NavNodesProviderCPtr provider = nodesCache->GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetLocale(), variables);
     if (provider.IsNull())
         return bvector<NavNodeCPtr>();
 
@@ -948,7 +949,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
         TraverseHierarchy(*this, connection, *node, options, cancelationToken);
 
     // now we can filter nodes in cache
-    NavNodesProviderPtr filteredProvider = nodesCache->GetFilteredNodesProvider(filterText, connection, options.GetRulesetId(), options.GetLocale());
+    NavNodesProviderPtr filteredProvider = nodesCache->GetFilteredNodesProvider(filterText, connection, options.GetRulesetId(), options.GetLocale(), variables);
     bvector<NavNodeCPtr> result;
     for (JsonNavNodeCPtr node : *filteredProvider)
         result.push_back(node);

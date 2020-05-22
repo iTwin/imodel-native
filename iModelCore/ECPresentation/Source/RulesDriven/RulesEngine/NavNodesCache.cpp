@@ -3058,18 +3058,18 @@ void NodesCache::Persist() {BeMutexHolder lock(m_mutex); m_db.SaveChanges();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale) const
+NavNodesProviderPtr NodesCache::GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, RulesetVariables const& variables) const
     {
-    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, locale, nullptr, nullptr);
+    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, locale, nullptr, nullptr, -1, variables);
     return context.IsValid() ? NodesWithUndeterminedChildrenProvider::Create(*context, m_db, m_statements) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::GetFilteredNodesProvider(Utf8CP filter, IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale) const
+NavNodesProviderPtr NodesCache::GetFilteredNodesProvider(Utf8CP filter, IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, RulesetVariables const& variables) const
     {
-    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, locale, nullptr, nullptr);
+    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, locale, nullptr, nullptr, -1, variables);
     return context.IsValid() ? FilteredNodesProvider::Create(*context, m_db, m_statements, filter) : nullptr;
     }
 
