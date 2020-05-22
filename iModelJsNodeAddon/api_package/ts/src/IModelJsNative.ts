@@ -237,6 +237,7 @@ export declare namespace IModelJsNative {
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
     public importSchemas(schemaFileNames: string[]): DbResult;
+    public importXmlSchemas(serializedXmlSchemas: string[]): DbResult;
     public inBulkOperation(): boolean;
     public insertCodeSpec(name: string, jsonProperties: string): ErrorStatusOrResult<IModelStatus, string>;
     public insertElement(elemProps: string): ErrorStatusOrResult<IModelStatus, string>;

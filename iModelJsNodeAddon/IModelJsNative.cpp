@@ -1953,6 +1953,14 @@ public:
         return Napi::Number::New(Env(), (int)result);
         }
 
+    Napi::Value ImportXmlSchemas(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, serializedXmlSchemas, Env().Undefined());
+        DbResult result = JsInterop::ImportXmlSchemas(GetDgnDb(), serializedXmlSchemas);
+        return Napi::Number::New(Env(), (int)result);
+        }
+
     Napi::Value FindGeometryPartReferences(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2599,6 +2607,7 @@ public:
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
+            InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),

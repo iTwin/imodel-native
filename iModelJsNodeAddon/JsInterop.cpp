@@ -1011,6 +1011,41 @@ DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Chris.Lawson                    05/20
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& serializedXmlSchemas)
+    {
+    if (0 == serializedXmlSchemas.size())
+        return BE_SQLITE_NOTFOUND;
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+    bvector<ECSchemaCP> schemas;
+
+    for (Utf8String schemaXml : serializedXmlSchemas)
+        {
+        ECSchemaPtr schema;
+        SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext);
+        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
+            continue;
+
+        if (SchemaReadStatus::Success != schemaStatus)
+            return BE_SQLITE_ERROR;
+
+        schemas.push_back(schema.get());
+        }
+
+    if (0 == schemas.size())
+        return BE_SQLITE_NOTFOUND;
+
+    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    if (status != SchemaStatus::Success)
+        return DgnDb::SchemaStatusToDbResult(status, true);
+
+    return dgndb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                09/18
 //---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
