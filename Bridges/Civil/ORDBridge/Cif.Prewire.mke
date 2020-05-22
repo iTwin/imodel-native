@@ -338,7 +338,7 @@ $(modifiedV8HeadersOutputBaseDir).stamp : $[@wildcard $(CifSdk)PublicAPI/Cif/*.h
     %endif
     !~@mkdir ${modifiedV8HeadersOutputBaseDir}
     !~@mkdir $(o)
-    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedV8HeadersOutputBaseDir} -d$(CifSdk)PublicAPI/Cif $(cleanopt) --includeDirPrefix=$(includeV8DirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefixV8
+    python $(SrcRoot)bsicommon/build/ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedV8HeadersOutputBaseDir} -d$(CifSdk)PublicAPI/Cif $(cleanopt) --includeDirPrefix=$(includeV8DirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefixV8
     >$(o)replacementsV8
 \"Bentley.h\"!<VersionedDgnV8Api\/Bentley\/Bentley.h>
 \"BeAssert.h\"!<VersionedDgnV8Api\/Bentley\/BeAssert.h>
@@ -378,7 +378,7 @@ $(modifiedCifHeadersOutputBaseDir).stamp : $[@wildcard $(modifiedV8HeadersOutput
     %endif
     !~@mkdir ${modifiedCifHeadersOutputBaseDir}
     !~@mkdir $(o)
-    ModifyIncludesCifToBim.py $(PUBLISH_VERBOSE) -o${modifiedCifHeadersOutputBaseDir} -d$(modifiedV8HeadersOutputBaseDir) $(cleanopt) --includeDirPrefix=$(includeCifDirPrefix) --symbolPrefix="CIF" --symbolsToPrefix=$(o)symbolsToPrefixCif
+    python $(SrcRoot)bsicommon/build/ModifyIncludesCifToBim.py $(PUBLISH_VERBOSE) -o${modifiedCifHeadersOutputBaseDir} -d$(modifiedV8HeadersOutputBaseDir) $(cleanopt) --includeDirPrefix=$(includeCifDirPrefix) --symbolPrefix="CIF" --symbolsToPrefix=$(o)symbolsToPrefixCif
     >$(o)replacementsCif
 \"Geom\/BinaryRangeHeap.h\"!<VersionedDgnV8Api\/Geom\/BinaryRangeHeap.h>
     <

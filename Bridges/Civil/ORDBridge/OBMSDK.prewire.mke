@@ -62,7 +62,7 @@ $(modifiedOBMSDKHeadersOutputBaseDir).stamp : $[@wildcard $(OBMSdk)include/OpenB
     %endif
     !~@mkdir ${modifiedOBMSDKHeadersOutputBaseDir}
     !~@mkdir $(o)
-    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedOBMSDKHeadersOutputBaseDir} -d$(OBMSdk)include/OpenBridgeModeler $(cleanopt) --includeDirPrefix= --symbolPrefix=DGNV8 --symbolsToPrefix=$(o)symbolsToPrefixOBMSDK
+    python $(SrcRoot)bsicommon/build/ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedOBMSDKHeadersOutputBaseDir} -d$(OBMSdk)include/OpenBridgeModeler $(cleanopt) --includeDirPrefix= --symbolPrefix=DGNV8 --symbolsToPrefix=$(o)symbolsToPrefixOBMSDK
     >$(o)replacementsOBMSDK
 \<Cif\/!<CifApi\/Cif\/
 AlignmentPtr!ISHOULDNEVERBEHERE
