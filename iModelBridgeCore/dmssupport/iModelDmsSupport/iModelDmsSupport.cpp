@@ -30,7 +30,7 @@ extern "C"
         return new AzureBlobStorageHelper();
 
     if (sessionType == SessionType::PWShare)
-         return new DmsHelper(callBackurl, accessToken, maxReties);
+         return new DmsHelper(callBackurl, accessToken, maxReties, PSREPOSITORYTYPE);
 
     if (sessionType == SessionType::PWDIDMS)
          return new DmsHelper(callBackurl, accessToken, maxReties, PWREPOSITORYTYPE, datasource);
