@@ -586,8 +586,10 @@ TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, GetFilteredNodesProvider_FindsRootNode)
     {
+    RulesetVariables variables({ RulesetVariableEntry("var_id", rapidjson::Value("value1")) });
+
     // create root data source
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
+    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables);
 
     // create the root nodes
     bvector<JsonNavNodePtr> nodes = {
@@ -596,14 +598,18 @@ TEST_F(NodesCacheTests, GetFilteredNodesProvider_FindsRootNode)
         };
     FillWithNodes(info, nodes);
 
-    // filter
-    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale", RulesetVariables());
-
+    // filter nodes
+    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale", variables);
     // verify filtered node
     EXPECT_EQ(1, provider->GetNodesCount());
     JsonNavNodePtr node;
     ASSERT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node->Equals(*nodes[0]));
+
+    // try to filter nodes with different ruleset variables
+    NavNodesProviderPtr emptyProvider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale", RulesetVariables());
+    // verify that no nodes were found
+    EXPECT_EQ(0, emptyProvider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -632,8 +638,10 @@ TEST_F(NodesCacheTests, GetFilteredNodes_DoesntFindNodesFromDifferentLocales)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichDoesntHaveChildHierarchyLevel)
     {
+    RulesetVariables variables({ RulesetVariableEntry("var_id", rapidjson::Value("value1")) });
+
     // create root data source
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale");
+    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables);
     auto nodes = FillWithNodes(info, 1);
 
     // expect the node to have undetermined children
@@ -641,7 +649,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichDoesntHaveC
 
     // expect provider to contain the node
     NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection,
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), RulesetVariables());
+        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), variables);
     ASSERT_TRUE(provider.IsValid());
     EXPECT_EQ(1, provider->GetNodesCount());
 
@@ -649,6 +657,12 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichDoesntHaveC
     provider->GetNode(expectedNode, 0);
     EXPECT_EQ(expectedNode->GetNodeId(), nodes[0]->GetNodeId());
     EXPECT_TRUE(expectedNode->DeterminedChildren());
+
+    // expect empty provider if different variables are used
+    NavNodesProviderPtr emptyProvider = m_cache->GetUndeterminedNodesProvider(*m_connection,
+        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), RulesetVariables());
+    ASSERT_TRUE(emptyProvider.IsValid());
+    EXPECT_EQ(0, emptyProvider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -656,16 +670,18 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichDoesntHaveC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichHasUnitializedChildHierarchyLevel)
     {
+    RulesetVariables variables({ RulesetVariableEntry("var_id", rapidjson::Value("value1")) });
+
     // create root data source
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale");
+    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0, true, variables);
     auto nodes = FillWithNodes(info, 1);
-    CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodes[0]->GetNodeId(), false);
+    CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", nodes[0]->GetNodeId(), false, variables);
 
     // expect the node to have undetermined children
     EXPECT_FALSE(m_cache->GetNode(nodes[0]->GetNodeId())->DeterminedChildren());
 
     // expect provider to contain the node
-    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), RulesetVariables());
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), variables);
     ASSERT_TRUE(provider.IsValid());
     ASSERT_EQ(1, provider->GetNodesCount());
 
@@ -673,6 +689,12 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichHasUnitiali
     provider->GetNode(expectedNode, 0);
     EXPECT_EQ(expectedNode->GetNodeId(), nodes[0]->GetNodeId());
     EXPECT_TRUE(expectedNode->DeterminedChildren());
+
+    // expect empty provider if different variables are used
+    NavNodesProviderPtr emptyProvider = m_cache->GetUndeterminedNodesProvider(*m_connection,
+        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), RulesetVariables());
+    ASSERT_TRUE(emptyProvider.IsValid());
+    EXPECT_EQ(0, emptyProvider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
