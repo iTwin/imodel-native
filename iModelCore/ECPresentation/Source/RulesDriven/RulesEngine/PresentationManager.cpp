@@ -82,6 +82,7 @@ protected:
     IConnection* _GetConnection(Utf8CP connectionId) const override {return m_wrapped->GetConnection(connectionId);}
     IConnection* _GetConnection(ECDbCR ecdb) const override {return m_wrapped->GetConnection(ecdb);}
     IConnectionPtr _CreateConnection(ECDbR ecdb) override {return m_wrapped->CreateConnection(ecdb);}
+    void _CloseConnections() override {m_wrapped->CloseConnections();}
     void _AddListener(IConnectionsListener& listener) const override
         {
         BeMutexHolder lock(m_mutex);
@@ -261,6 +262,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
     {
+    GetImpl().GetConnections().CloseConnections();
     DELETE_AND_CLEAR(m_tasksManager);
     DELETE_AND_CLEAR(m_impl);
     }
@@ -683,10 +685,13 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(Content
     if (descriptor.GetSelectionInfo())
         dependencies.push_back(std::make_shared<TaskDependencyOnSelection>(*descriptor.GetSelectionInfo()));
 
-    return m_tasksManager->CreateAndExecute<ContentCPtr>([&, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts, context](IECPresentationTaskWithResult<ContentCPtr> const& task)
+    return m_tasksManager->CreateAndExecute<ContentCPtr>([&, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts, context](IECPresentationTaskWithResult<ContentCPtr> const& task) -> ContentCPtr
         {
         context.OnTaskStart();
-        return m_impl->GetContent(*GetTaskConnection(task), *descriptor, pageOpts, *task.GetCancelationToken());
+        ContentCPtr content = m_impl->GetContent(*GetTaskConnection(task), *descriptor, pageOpts, *task.GetCancelationToken());
+        if (content.IsValid())
+            return Content::Create(content->GetDescriptor(), *PreloadedDataSource<ContentSetItemCPtr>::Create(content->GetContentSet().GetDataSource()));
+        return nullptr;
         }, dependencies, true, options.GetPriority());
     }
 

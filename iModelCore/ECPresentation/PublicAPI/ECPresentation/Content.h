@@ -1205,27 +1205,26 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
     //! in that field.
     // @bsiclass                                    Grigas.Petraitis            06/2017
     //===================================================================================
-    struct FieldProperty
+    struct FieldPropertyIdentifier
     {
     private:
-        ContentDescriptor::ECPropertiesField const* m_field;
+        Utf8String m_fieldName;
         size_t m_propertyIndex;
     public:
-        FieldProperty() : m_field(nullptr), m_propertyIndex(0) {}
-        FieldProperty(ContentDescriptor::ECPropertiesField const& field, size_t propertyIndex)
-            : m_field(&field), m_propertyIndex(propertyIndex)
+        FieldPropertyIdentifier() : m_propertyIndex(-1) {}
+        FieldPropertyIdentifier(ContentDescriptor::ECPropertiesField const& field, size_t propertyIndex)
+            : m_fieldName(field.GetUniqueName()), m_propertyIndex(propertyIndex)
             {}
-        bool operator<(FieldProperty const& other) const
+        bool operator<(FieldPropertyIdentifier const& other) const
             {
             if (m_propertyIndex != other.m_propertyIndex)
                 return m_propertyIndex < other.m_propertyIndex;
-            return m_field->GetUniqueName().CompareTo(other.m_field->GetUniqueName()) < 0;
+            return m_fieldName.CompareTo(other.m_fieldName) < 0;
             }
-        ContentDescriptor::ECPropertiesField const& GetField() const {return *m_field;}
-        ContentDescriptor::Property const& GetProperty() const {return m_field->GetProperties()[m_propertyIndex];}
+        Utf8StringCR GetFieldName() const {return m_fieldName;}
         size_t GetPropertyIndex() const {return m_propertyIndex;}
     };
-    typedef bmap<FieldProperty, bvector<ECClassInstanceKey>> FieldPropertyInstanceKeyMap;
+    typedef bmap<FieldPropertyIdentifier, bvector<ECClassInstanceKey>> FieldPropertyInstanceKeyMap;
 
 private:
     ECClassCP m_class;
@@ -1240,10 +1239,10 @@ private:
 
 private:
     ContentSetItem(bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId, rapidjson::Document&& values,
-        rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap&& fieldPropertyInstanceKeys)
+        rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys)
         : m_class(nullptr), m_keys(keys), m_displayLabelDefinition(&displayLabelDefinition), m_imageId(imageId),
         m_values(std::move(values)), m_displayValues(std::move(displayValues)), m_extendedData(rapidjson::kObjectType),
-        m_mergedFieldNames(mergedFieldNames), m_fieldPropertyInstanceKeys(std::move(fieldPropertyInstanceKeys))
+        m_mergedFieldNames(mergedFieldNames), m_fieldPropertyInstanceKeys(fieldPropertyInstanceKeys)
         {}
 //__PUBLISH_SECTION_END__
 public:
@@ -1268,10 +1267,10 @@ public:
     //! @param[in] fieldPropertyInstanceKeys ECClassInstanceKeys of related instances for each field in this record.
     static ContentSetItemPtr Create(bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId,
         rapidjson::Document&& values, rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames,
-        FieldPropertyInstanceKeyMap&& fieldPropertyInstanceKeys)
+        FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys)
         {
         return new ContentSetItem(keys, displayLabelDefinition, imageId, std::move(values), std::move(displayValues),
-            mergedFieldNames, std::move(fieldPropertyInstanceKeys));
+            mergedFieldNames, fieldPropertyInstanceKeys);
         }
 
     //! Serialize this item to JSON.
@@ -1291,7 +1290,7 @@ public:
     ECPRESENTATION_EXPORT bool IsMerged(Utf8StringCR fieldName) const;
 
     //! Get the ECInstance keys whose values are contained in the field with the specified name.
-    ECPRESENTATION_EXPORT bvector<ECClassInstanceKey> const& GetPropertyValueKeys(FieldProperty const&) const;
+    ECPRESENTATION_EXPORT bvector<ECClassInstanceKey> const& GetPropertyValueKeys(FieldPropertyIdentifier const&) const;
 
     //! Get the ECClass whose values are contained in this record.
     //! @note May be null when the record contains multiple merged values of different classes.

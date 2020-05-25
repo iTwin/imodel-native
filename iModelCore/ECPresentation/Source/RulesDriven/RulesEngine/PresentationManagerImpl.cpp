@@ -626,6 +626,7 @@ NodesCache* RulesDrivenECPresentationManagerImpl::GetNodesCache(IConnectionCR co
 RulesDrivenECPresentationManagerImpl::~RulesDrivenECPresentationManagerImpl()
     {
     m_connections->DropListener(*this);
+    m_connections->CloseConnections();
     DELETE_AND_CLEAR(m_updateHandler);
     DELETE_AND_CLEAR(m_contentCache);
     DELETE_AND_CLEAR(m_nodesFactory);
@@ -1275,9 +1276,16 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
     {
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDistinctValues]", NativeLogging::LOG_TRACE);
     SpecificationContentProviderCPtr contentProvider = GetContentProvider(connection, cancelationToken, descriptor);
-    if (contentProvider.IsNull() || nullptr == contentProvider->GetContentDescriptor())
+    if (contentProvider.IsNull())
         {
-        LoggingHelper::LogMessage(Log::Content, "No content", NativeLogging::LOG_ERROR);
+        LoggingHelper::LogMessage(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDistinctValues] Failed to create content", NativeLogging::LOG_ERROR);
+        return PagingDataSource<DisplayValueGroupCPtr>::Create();
+        }
+
+    contentProvider->GetContextR().Adopt(connection, &cancelationToken);
+    if (nullptr == contentProvider->GetContentDescriptor())
+        {
+        LoggingHelper::LogMessage(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDistinctValues] No content", NativeLogging::LOG_ERROR);
         return PagingDataSource<DisplayValueGroupCPtr>::Create();
         }
 

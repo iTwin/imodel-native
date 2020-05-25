@@ -5,6 +5,7 @@
 #include "TestHelpers.h"
 #include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
 #include "../../../Source/RulesDriven/RulesEngine/PresentationManagerImpl.h"
+#include "../../../Source/RulesDriven/RulesEngine/ContentCache.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -86,10 +87,14 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImplTests::TearDown()
     {
+    m_connections->CloseConnections();
     m_connection = nullptr;
     DELETE_AND_CLEAR(m_impl);
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
 struct NeverCanceledToken : ICancelationToken
 {
 private:
@@ -170,6 +175,157 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, ClosesNodesCacheWhenConnection
     m_connections->NotifyConnectionClosed(*connection);
     nodesCache = m_impl->GetNodesCache(*connection);
     ASSERT_TRUE(nullptr == nodesCache);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, UsesCorrectConnectionToGetDescriptorAfterProviderWasCached)
+    {
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentRuleP rule = new ContentRule();
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "ECDbMeta:ECEnumerationDef", true));
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    auto cancelationToken = NeverCanceledToken::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(ruleset->GetRuleSetId().c_str());
+
+    RefCountedPtr<TestConnection> connection1 = m_connections->CreateConnection(s_project->GetECDb());
+    IConnectionPtr connection2 = m_connections->CreateSecondaryConnection(*connection1);
+
+    m_impl->GetContentDescriptor(*connection1, "", 0, *KeySet::Create(), nullptr, options, *cancelationToken);
+
+    SpecificationContentProviderPtr provider = m_impl->GetContentCache().GetProviders(*connection1).front();
+    provider->InvalidateDescriptor();
+
+    // don't expect this connection to be used from now on
+    connection1->SetUsageListener([](Utf8StringCR) { FAIL(); });
+
+    m_impl->GetContentDescriptor(*connection2, "", 0, *KeySet::Create(), nullptr, options, *cancelationToken);
+
+    connection1->SetUsageListener(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, UsesCorrectConnectionToGetContentAfterProviderWasCached)
+    {
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentRuleP rule = new ContentRule();
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "ECDbMeta:ECEnumerationDef", true));
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    auto cancelationToken = NeverCanceledToken::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(ruleset->GetRuleSetId().c_str());
+
+    RefCountedPtr<TestConnection> connection1 = m_connections->CreateConnection(s_project->GetECDb());
+    IConnectionPtr connection2 = m_connections->CreateSecondaryConnection(*connection1);
+
+    auto descriptor = m_impl->GetContentDescriptor(*connection1, "", 0, *KeySet::Create(), nullptr, options, *cancelationToken);
+    m_impl->GetContent(*connection1, *descriptor, PageOptions(), *cancelationToken);
+
+    SpecificationContentProviderPtr provider = m_impl->GetContentCache().GetProviders(*connection1).front();
+    provider->InvalidateContent();
+
+    // don't expect this connection to be used from now on
+    connection1->SetUsageListener([](Utf8StringCR) { FAIL(); });
+
+    m_impl->GetContent(*connection2, *descriptor, PageOptions(), *cancelationToken);
+
+    connection1->SetUsageListener(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, UsesCorrectConnectionToGetContentSetSizeAfterProviderWasCached)
+    {
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentRuleP rule = new ContentRule();
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "ECDbMeta:ECEnumerationDef", true));
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    auto cancelationToken = NeverCanceledToken::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(ruleset->GetRuleSetId().c_str());
+
+    RefCountedPtr<TestConnection> connection1 = m_connections->CreateConnection(s_project->GetECDb());
+    IConnectionPtr connection2 = m_connections->CreateSecondaryConnection(*connection1);
+
+    auto descriptor = m_impl->GetContentDescriptor(*connection1, "", 0, *KeySet::Create(), nullptr, options, *cancelationToken);
+    m_impl->GetContentSetSize(*connection1, *descriptor, *cancelationToken);
+
+    SpecificationContentProviderPtr provider = m_impl->GetContentCache().GetProviders(*connection1).front();
+    provider->InvalidateContent();
+
+    // don't expect this connection to be used from now on
+    connection1->SetUsageListener([](Utf8StringCR) { FAIL(); });
+
+    m_impl->GetContentSetSize(*connection2, *descriptor, *cancelationToken);
+
+    connection1->SetUsageListener(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, UsesCorrectConnectionToGetDisplayLabelAfterProviderWasCached)
+    {
+    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("ECDbMeta", "ECEnumerationDef");
+
+    auto cancelationToken = NeverCanceledToken::Create();
+    auto keys = KeySet::Create({ECClassInstanceKey(ecClass, ECInstanceId((uint64_t)1))});
+
+    RefCountedPtr<TestConnection> connection1 = m_connections->CreateConnection(s_project->GetECDb());
+    IConnectionPtr connection2 = m_connections->CreateSecondaryConnection(*connection1);
+
+    m_impl->GetDisplayLabel(*connection1, *keys, *cancelationToken);
+
+    SpecificationContentProviderPtr provider = m_impl->GetContentCache().GetProviders(*connection1).front();
+    provider->InvalidateDescriptor();
+    provider->InvalidateContent();
+
+    // don't expect this connection to be used from now on
+    connection1->SetUsageListener([](Utf8StringCR) { FAIL(); });
+
+    m_impl->GetDisplayLabel(*connection2, *keys, *cancelationToken);
+
+    connection1->SetUsageListener(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, UsesCorrectConnectionToGetDistinctValuesAfterProviderWasCached)
+    {
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentRuleP rule = new ContentRule();
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "ECDbMeta:ECEnumerationDef", true));
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    auto cancelationToken = NeverCanceledToken::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(ruleset->GetRuleSetId().c_str());
+
+    RefCountedPtr<TestConnection> connection1 = m_connections->CreateConnection(s_project->GetECDb());
+    IConnectionPtr connection2 = m_connections->CreateSecondaryConnection(*connection1);
+
+    auto descriptor = m_impl->GetContentDescriptor(*connection1, "", 0, *KeySet::Create(), nullptr, options, *cancelationToken);
+    m_impl->GetDistinctValues(*connection1, *descriptor, descriptor->GetVisibleFields().front()->GetUniqueName(), PageOptions(), *cancelationToken);
+
+    SpecificationContentProviderPtr provider = m_impl->GetContentCache().GetProviders(*connection1).front();
+    provider->InvalidateDescriptor();
+    provider->InvalidateContent();
+
+    // don't expect this connection to be used from now on
+    connection1->SetUsageListener([](Utf8StringCR) { FAIL(); });
+
+    m_impl->GetDistinctValues(*connection2, *descriptor, descriptor->GetVisibleFields().front()->GetUniqueName(), PageOptions(), *cancelationToken);
+
+    connection1->SetUsageListener(nullptr);
     }
 
 /*=================================================================================**//**

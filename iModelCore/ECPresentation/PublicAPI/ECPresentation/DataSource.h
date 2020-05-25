@@ -197,6 +197,8 @@ public:
     //! Constructor. Creates a container using the supplied data source.
     DataContainer(TDataSource const& source) : m_source(&source) {}
 
+    TDataSource const& GetDataSource() const {return *m_source;}
+
     //! Get an item at the supplied index.
     TItem operator[](size_t index) const {return m_source->Get(index);}
     //! Get an item at the supplied index.

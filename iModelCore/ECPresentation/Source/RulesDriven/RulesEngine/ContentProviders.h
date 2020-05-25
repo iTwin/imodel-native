@@ -120,7 +120,7 @@ public:
 
     ECPRESENTATION_EXPORT IDataSourceCPtr<DisplayValueGroupCPtr> GetDistinctValues(Utf8StringCR fieldName) const;
 
-    void InvalidateContent();
+    ECPRESENTATION_EXPORT void InvalidateContent();
 };
 
 /*=================================================================================**//**
@@ -153,8 +153,8 @@ public:
         }
     ~SpecificationContentProvider();
     SpecificationContentProviderPtr Clone() const {return new SpecificationContentProvider(*this);}
-
     ECPRESENTATION_EXPORT void SetContentDescriptor(ContentDescriptorCR descriptor);
+    void InvalidateDescriptor() {m_descriptor = nullptr;}
 };
 
 /*=================================================================================**//**

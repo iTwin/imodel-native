@@ -41,7 +41,7 @@ struct NodesCacheTests : ECPresentationTest
 
     virtual void TearDown() override
         {
-        m_connections.ClearConnections();
+        m_connections.CloseConnections();
         m_cache = nullptr;
         s_project->GetECDb().AbandonChanges();
         }
@@ -2409,7 +2409,7 @@ struct DiskNodesCacheLocationTests : ECPresentationTest
 
     virtual void TearDown() override
         {
-        m_connections.ClearConnections();
+        m_connections.CloseConnections();
         s_project->GetECDb().AbandonChanges();
         }
 

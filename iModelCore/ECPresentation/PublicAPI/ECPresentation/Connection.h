@@ -115,14 +115,10 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE IConnectionManager : IConnectionCache
 {
 protected:
-    //! @see AddListener
     virtual void _AddListener(IConnectionsListener&) const = 0;
-
-    //! @see DropListener
     virtual void _DropListener(IConnectionsListener&) const = 0;
-
-    //! @see CreateConnection
     virtual IConnectionPtr _CreateConnection(ECDbR) = 0;
+    virtual void _CloseConnections() = 0;
 
 public:
     //! Add listener which listens for connection events.
@@ -135,10 +131,13 @@ public:
 
     //! Create a connection to the specified ECDb.
     IConnectionPtr CreateConnection(ECDbR ecdb) {return _CreateConnection(ecdb);}
+
+    //! Force close all connections
+    void CloseConnections() {_CloseConnections();}
 };
 
 //=======================================================================================
-//! Manager that stores currently open connections and can get one of them by 
+//! Manager that stores currently open connections and can get one of them by
 //! connection ID.
 // @bsiclass                                    Grigas.Petraitis                11/2016
 //=======================================================================================
@@ -163,6 +162,7 @@ protected:
     ECPRESENTATION_EXPORT void _AddListener(IConnectionsListener&) const override;
     ECPRESENTATION_EXPORT void _DropListener(IConnectionsListener&) const override;
     ECPRESENTATION_EXPORT IConnectionPtr _CreateConnection(ECDbR) override;
+    ECPRESENTATION_EXPORT void _CloseConnections() override;
 
 public:
     ECPRESENTATION_EXPORT ConnectionManager();

@@ -2599,27 +2599,27 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 
     ContentSetItemCPtr record = contentSet.Get(0);
 
-    ContentSetItem::FieldProperty fp0(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp0(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(1, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetMyidFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp1(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp1(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(1, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetDescriptionFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp2(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp2(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(1, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetWidgetFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp3(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp3(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
     ASSERT_EQ(1, widgetMyIdFieldInstanceKeys.size());
     EXPECT_EQ(widgetKey, widgetMyIdFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp4(*descriptor->GetVisibleFields()[4]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp4(*descriptor->GetVisibleFields()[4]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> widgetIntpropertyFieldInstanceKeys = record->GetPropertyValueKeys(fp4);
     ASSERT_EQ(1, widgetIntpropertyFieldInstanceKeys.size());
     EXPECT_EQ(widgetKey, widgetIntpropertyFieldInstanceKeys[0]);
@@ -2662,12 +2662,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    ContentSetItem::FieldProperty fp00(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
-    ContentSetItem::FieldProperty fp01(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 1);
-    ContentSetItem::FieldProperty fp10(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
-    ContentSetItem::FieldProperty fp11(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 1);
-    ContentSetItem::FieldProperty fp20(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
-    ContentSetItem::FieldProperty fp30(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp00(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp01(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 1);
+    ContentSetItem::FieldPropertyIdentifier fp10(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp11(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 1);
+    ContentSetItem::FieldPropertyIdentifier fp20(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp30(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
 
     ContentSetItemCPtr record0 = contentSet.Get(0); // gadget
 
@@ -2759,19 +2759,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 
     ContentSetItemCPtr record = contentSet.Get(0);
 
-    ContentSetItem::FieldProperty fp0(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp0(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(2, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetMyidFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetMyidFieldInstanceKeys[1]);
 
-    ContentSetItem::FieldProperty fp1(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp1(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(2, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetDescriptionFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetDescriptionFieldInstanceKeys[1]);
 
-    ContentSetItem::FieldProperty fp2(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp2(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(2, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetWidgetFieldInstanceKeys[0]);
@@ -2821,32 +2821,32 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 
     ContentSetItemCPtr record = contentSet.Get(0);
 
-    ContentSetItem::FieldProperty fp00(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp00(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp00);
     ASSERT_EQ(1, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetMyidFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp01(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 1);
+    ContentSetItem::FieldPropertyIdentifier fp01(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 1);
     bvector<ECClassInstanceKey> sprocketMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp01);
     ASSERT_EQ(1, sprocketMyidFieldInstanceKeys.size());
     EXPECT_EQ(sprocketKey, sprocketMyidFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp10(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp10(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp10);
     ASSERT_EQ(1, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetDescriptionFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp11(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 1);
+    ContentSetItem::FieldPropertyIdentifier fp11(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 1);
     bvector<ECClassInstanceKey> sprocketDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp11);
     ASSERT_EQ(1, sprocketDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(sprocketKey, sprocketDescriptionFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp20(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp20(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp20);
     ASSERT_EQ(1, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetWidgetFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp30(*content->GetDescriptor().GetVisibleFields()[3]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp30(*content->GetDescriptor().GetVisibleFields()[3]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> sprocketGadgetFieldInstanceKeys = record->GetPropertyValueKeys(fp30);
     ASSERT_EQ(1, sprocketGadgetFieldInstanceKeys.size());
     EXPECT_EQ(sprocketKey, sprocketGadgetFieldInstanceKeys[0]);
@@ -2901,18 +2901,18 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[8]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp(*descriptor->GetVisibleFields()[8]->AsPropertiesField(), 0);
 
     ContentSetItemCPtr widgetRecord = contentSet.Get(0);
     bvector<ECClassInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
     EXPECT_TRUE(widgetKeys.empty());
-    EXPECT_TRUE(widgetRecord->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].IsNull());
+    EXPECT_TRUE(widgetRecord->AsJson()["Values"][fp.GetFieldName().c_str()].IsNull());
 
     ContentSetItemCPtr sprocketRecord = contentSet.Get(1);
     bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
     ASSERT_EQ(1, sprocketKeys.size());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget), sprocketKeys[0]);
-    EXPECT_STREQ("Gadget", sprocketRecord->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].GetString());
+    EXPECT_STREQ("Gadget", sprocketRecord->AsJson()["Values"][fp.GetFieldName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2975,13 +2975,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    ContentSetItem::FieldProperty fp(*content->GetDescriptor().GetVisibleFields()[7]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp(*content->GetDescriptor().GetVisibleFields()[7]->AsPropertiesField(), 0);
     ContentSetItemCPtr record = contentSet.Get(0);
     bvector<ECClassInstanceKey> keys = record->GetPropertyValueKeys(fp);
     ASSERT_EQ(2, keys.size());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget1), keys[0]);
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget2), keys[1]);
-    EXPECT_STREQ("Gadget", record->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].GetString());
+    EXPECT_STREQ("Gadget", record->AsJson()["Values"][fp.GetFieldName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3031,7 +3031,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(3, contentSet.GetSize());
 
-    ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[9]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp(*descriptor->GetVisibleFields()[9]->AsPropertiesField(), 0);
 
     ContentSetItemCPtr widgetRecord = contentSet.Get(0);
     bvector<ECClassInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
@@ -3045,7 +3045,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
     ASSERT_EQ(1, sprocketKeys.size());
     EXPECT_EQ(ECClassInstanceKey(m_gadgetClass, ECInstanceId()), sprocketKeys[0]);
-    EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].IsNull());
+    EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetFieldName().c_str()].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3119,7 +3119,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
 
     ContentSetItemCPtr record = contentSet.Get(0);
     bvector<ECClassInstanceKey> keys = record->GetPropertyValueKeys(fp);
@@ -3167,22 +3167,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
 
     ContentSetItemCPtr record = contentSet.Get(0);
 
-    ContentSetItem::FieldProperty fp0(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp0(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(1, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetMyidFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp1(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp1(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(1, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetDescriptionFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp2(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp2(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(1, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetWidgetFieldInstanceKeys[0]);
 
-    ContentSetItem::FieldProperty fp3(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp3(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
     ASSERT_EQ(1, widgetMyIdFieldInstanceKeys.size());
     EXPECT_FALSE(widgetMyIdFieldInstanceKeys[0].IsValid());
@@ -3235,25 +3235,25 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
 
     ContentSetItemCPtr record = contentSet.Get(0);
 
-    ContentSetItem::FieldProperty fp0(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp0(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(2, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetMyidFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetMyidFieldInstanceKeys[1]);
 
-    ContentSetItem::FieldProperty fp1(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp1(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(2, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetDescriptionFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetDescriptionFieldInstanceKeys[1]);
 
-    ContentSetItem::FieldProperty fp2(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp2(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(2, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetWidgetFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetWidgetFieldInstanceKeys[1]);
 
-    ContentSetItem::FieldProperty fp3(*content->GetDescriptor().GetVisibleFields()[3]->AsPropertiesField(), 0);
+    ContentSetItem::FieldPropertyIdentifier fp3(*content->GetDescriptor().GetVisibleFields()[3]->AsPropertiesField(), 0);
     bvector<ECClassInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
     ASSERT_EQ(2, widgetMyIdFieldInstanceKeys.size());
     EXPECT_FALSE(widgetMyIdFieldInstanceKeys[0].IsValid());

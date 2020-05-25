@@ -446,7 +446,7 @@ public:
                 size_t propertyIndex = 0;
                 for (ContentDescriptor::Property const& p : pair.first->GetProperties())
                     {
-                    ContentSetItem::FieldProperty fieldProperty(*pair.first, propertyIndex++);
+                    ContentSetItem::FieldPropertyIdentifier fieldProperty(*pair.first, propertyIndex++);
                     for (ECClassInstanceKeyCR key : *sourceVector)
                         {
                         if (key.GetClass()->Is(&p.GetPropertyClass()))
@@ -458,9 +458,9 @@ public:
                 {
                 // here we know exactly which property was changed, so just copy all ECInstanceKeys in that field
                 // to the output map
-                ContentSetItem::FieldProperty fieldProperty(*pair.first, pair.second);
+                ContentSetItem::FieldPropertyIdentifier fieldProperty(*pair.first, pair.second);
                 bvector<ECClassInstanceKey> const* sourceVector = &m_primaryKeys;
-                auto relatedFieldKeyIter = m_relatedFieldKeys.find(&fieldProperty.GetField());
+                auto relatedFieldKeyIter = m_relatedFieldKeys.find(pair.first);
                 if (m_relatedFieldKeys.end() != relatedFieldKeyIter)
                     sourceVector = &relatedFieldKeyIter->second;
                 std::copy(sourceVector->begin(), sourceVector->end(), std::back_inserter(keys[fieldProperty]));

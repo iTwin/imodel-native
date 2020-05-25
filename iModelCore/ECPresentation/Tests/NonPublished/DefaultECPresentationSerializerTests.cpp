@@ -2032,8 +2032,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
     ContentDescriptor::ECPropertiesField ecPropertiesField(ContentDescriptor::Category(), "field1", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     ContentDescriptor::ECPropertiesField ecPropertiesField1(ContentDescriptor::Category(), "field2", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
     ContentSetItem::FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys;
-    fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField, 0), keys);
-    fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField1, 1), keys);
+    fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldPropertyIdentifier(ecPropertiesField, 0), keys);
+    fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldPropertyIdentifier(ecPropertiesField1, 1), keys);
     ContentSetItemPtr contentSetItem = ContentSetItem::Create(keys, *LabelDefinition::Create("DisplayLabelText"), "ImageIdText", std::move(values),
                                                               std::move(displayValues), mergedFieldNames, std::move(fieldPropertyInstanceKeys));
     contentSetItem->SetClass(testClass);
@@ -2111,7 +2111,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetItemSerializationNoClassS
     rapidjson::Document values(rapidjson::kObjectType);
     rapidjson::Document displayValues(rapidjson::kObjectType);
     ContentSetItemPtr contentSetItem = ContentSetItem::Create({ECClassInstanceKey()}, *LabelDefinition::Create(), "", std::move(values), std::move(displayValues),
-                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECClassInstanceKey>>());
+                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldPropertyIdentifier, bvector<ECClassInstanceKey>>());
     rapidjson::Document actual = contentSetItem->AsJson(ContentSetItem::SerializationFlags::SERIALIZE_ClassInfo);
 
     rapidjson::Document expected;
@@ -2137,7 +2137,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
     rapidjson::Document values(rapidjson::kObjectType);
     rapidjson::Document displayValues(rapidjson::kObjectType);
     ContentSetItemPtr contentSetItem = ContentSetItem::Create({primaryKey}, *LabelDefinition::Create(), "", std::move(values), std::move(displayValues),
-                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECClassInstanceKey>>());
+                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldPropertyIdentifier, bvector<ECClassInstanceKey>>());
     RefCountedPtr<TestContentDataSource> dataSource = TestContentDataSource::Create();
     dataSource->AddContentSetItem(contentSetItem);
 

@@ -426,9 +426,9 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentSetItem cons
         rapidjson::Value fieldValueKeys(rapidjson::kObjectType);
         for (auto pair : contentSetItem.GetFieldInstanceKeys())
             {
-            Utf8CP fieldName = pair.first.GetField().GetUniqueName().c_str();
+            Utf8CP fieldName = pair.first.GetFieldName().c_str();
             if (!fieldValueKeys.HasMember(fieldName))
-                fieldValueKeys.AddMember(rapidjson::StringRef(fieldName), rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
+                fieldValueKeys.AddMember(rapidjson::Value(fieldName, json.GetAllocator()), rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             rapidjson::Value& fieldProperties = fieldValueKeys[fieldName];
 
             rapidjson::Value propertyKeys(rapidjson::kArrayType);

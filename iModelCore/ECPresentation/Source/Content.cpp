@@ -1118,7 +1118,7 @@ bool ContentSetItem::IsMerged(Utf8StringCR fieldName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECClassInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldProperty const& fp) const
+bvector<ECClassInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldPropertyIdentifier const& fp) const
     {
     auto iter = m_fieldPropertyInstanceKeys.find(fp);
     if (m_fieldPropertyInstanceKeys.end() == iter)

@@ -214,6 +214,7 @@ public:
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManagerImpl();
     ECPRESENTATION_EXPORT void Initialize();
     ECPRESENTATION_EXPORT NodesCache* GetNodesCache(IConnectionCR connection);
+    ContentCache& GetContentCache() {return *m_contentCache;}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
