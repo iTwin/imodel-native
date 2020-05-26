@@ -98,9 +98,19 @@ bool Converter::IsEmbeddedFileName0(wchar_t const* fn)
 Utf8String Converter::GetFileBaseName(DgnV8FileCR ff)
     {
     Utf8String fn(BeFileName::GetFileNameWithoutExtension(ff.GetEmbeddedName().c_str()));
-    size_t idot = fn.find(".");
-    if (idot != Utf8String::npos)
-        fn.erase(idot);
+    // Only want to get rid of the ending if the extension had been '.i.dgn'
+    if (fn.EndsWith(".i"))
+        {
+        size_t idot = fn.find_last_of(".");
+        if (idot != Utf8String::npos)
+            fn.erase(idot);
+        }
+    if (fn.EndsWith(".dgn"))
+        {
+        size_t idot = fn.find_last_of(".");
+        if (idot != Utf8String::npos)
+            fn.erase(idot);
+        }
     return fn;
     }
 
