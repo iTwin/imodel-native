@@ -31,12 +31,18 @@
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_31_0_249_x64"/>
     </Part>
 
+    <Part Name="PublicAPI" BentleyBuildMakeFile="BRepCore.PreWire.mke">
+        <Bindings>
+            <PublicAPI Domain="BRepCore" />
+        </Bindings>
+    </Part>
+
     <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
     <Part Name="BRepCore" BentleyBuildMakeFile="BRepCore.mke" ApiNumber="M02">
         <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
+        <SubPart PartName="PublicAPI"/>
         <SubPart PartName="PsolidShim"/>
         <Bindings>
-            <PublicAPI Domain="BRepCore" />
             <Libs>Delivery/$(libprefix)BRepCore$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BRepCore$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>

@@ -7,6 +7,7 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
         <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
         <SubPart PartName="Core" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
+        <SubPart PartName="PublicAPI" PartFile="iModelCore/BRepCore/BRepCore" Repository="imodel02"/>
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>

@@ -14,13 +14,6 @@ always:
     !~mkdir $(o)
 
 #----------------------------------------------------------------------
-# Put the BRepCore publicAPI file into the output directory so it
-# is available to other builds.
-#----------------------------------------------------------------------
-always:
-   ~linkdir "$(OutBuildContexts)BRepCore/PublicAPI/BRepCore=$(baseDir)PublicAPI/BRepCore"
-
-#----------------------------------------------------------------------
 #
 #   Define __BREPCORE_BUILD__ symbol, so that class declarations will
 #   know to specify dllexport, rather than dllimport (the default)
