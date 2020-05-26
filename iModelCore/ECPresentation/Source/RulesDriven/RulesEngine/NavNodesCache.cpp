@@ -2935,6 +2935,7 @@ JsonNavNodeCPtr NodesCache::_LocateNode(IConnectionCR connection, Utf8StringCR r
 void NodesCache::AddQuick(CombinedHierarchyLevelIdentifier info, NavNodesProviderR provider, RulesetVariables const& relatedVariables)
     {
     BeMutexHolder lockQuick(m_quickCacheMutex);
+    provider.GetContextR().GetOptimizationFlags().SetParentContainer(nullptr);
     RemoveQuick(info, &relatedVariables);
     m_quickDataSourceCache.push_back(bpair<QuickDataSourceCacheKey, NavNodesProviderPtr>(QuickDataSourceCacheKey(info, relatedVariables), &provider));
     if (m_quickDataSourceCache.size() > NODESCACHE_QUICK_Size)

@@ -760,22 +760,24 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     // look for cached provider
     NavNodesProviderPtr provider = context->GetNodesCache().GetCombinedHierarchyLevel(*context, context->GetHierarchyLevelIdentifier());
     if (provider.IsValid())
-        provider->GetContextR().Adopt(connection, &cancelationToken);
+        provider->DeepAdopt(connection, &cancelationToken);
 
     // if not found, create the nodes provider
     if (provider.IsNull())
         provider = m_nodesProviderFactory->Create(*context, nullptr);
 
-    // finally, post-process
-    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
-
     // cache the provider in quick cache
     if (0 != pageSize)
         {
+        // note: provider is cached before post-processing because we don't want post-process already handled
+        // providers which happens if we post-process before caching
         RulesetVariables relatedVariables(context->GetRelatedRulesetVariables());
         CombinedHierarchyLevelIdentifier info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), 0);
         static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider, relatedVariables);
         }
+
+    // finally, post-process
+    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
 
     return NavNodesDataSource::Create(*provider);
     }
@@ -829,22 +831,24 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     // look for cached provider
     NavNodesProviderPtr provider = context->GetNodesCache().GetCombinedHierarchyLevel(*context, context->GetHierarchyLevelIdentifier());
     if (provider.IsValid())
-        provider->GetContextR().Adopt(connection, &cancelationToken);
+        provider->DeepAdopt(connection, &cancelationToken);
 
     // if not found, create the nodes provider
     if (provider.IsNull())
         provider = m_nodesProviderFactory->Create(*context, jsonParent.get());
 
-    // finally, post-process
-    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
-
     // cache the provider in quick cache
     if (0 != pageSize)
         {
+        // note: provider is cached before post-processing because we don't want post-process already handled
+        // providers which happens if we post-process before caching
         RulesetVariables relatedVariables(context->GetRelatedRulesetVariables());
         CombinedHierarchyLevelIdentifier info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), parentNodeId);
         static_cast<NodesCache&>(context->GetNodesCache()).CacheHierarchyLevel(info, *provider, relatedVariables);
         }
+
+    // finally, post-process
+    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
 
     return NavNodesDataSource::Create(*provider);
     }
@@ -1174,7 +1178,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
     if (provider.IsNull())
         return nullptr;
 
-    provider->GetContextR().Adopt(connection, &cancelationToken);
+    provider->GetContextR().ShallowAdopt(connection, &cancelationToken);
     return provider->GetContentDescriptor();
     }
 
@@ -1199,7 +1203,7 @@ ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(IConnectionCR conn
 
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContent] Initialize", NativeLogging::LOG_TRACE);
     SpecificationContentProviderPtr provider = cachedProvider->Clone();
-    provider->GetContextR().Adopt(connection, &cancelationToken);
+    provider->GetContextR().ShallowAdopt(connection, &cancelationToken);
     provider->SetContentDescriptor(descriptor);
     provider->SetPageOptions(pageOpts);
     provider->Initialize();
@@ -1232,7 +1236,7 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(IConnectionCR co
         }
 
     SpecificationContentProviderPtr provider = cachedProvider->Clone();
-    provider->GetContextR().Adopt(connection, &cancelationToken);
+    provider->GetContextR().ShallowAdopt(connection, &cancelationToken);
     provider->SetContentDescriptor(descriptor);
 
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentSetSize] Query size", NativeLogging::LOG_TRACE);
@@ -1282,7 +1286,7 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
         return PagingDataSource<DisplayValueGroupCPtr>::Create();
         }
 
-    contentProvider->GetContextR().Adopt(connection, &cancelationToken);
+    contentProvider->GetContextR().ShallowAdopt(connection, &cancelationToken);
     if (nullptr == contentProvider->GetContentDescriptor())
         {
         LoggingHelper::LogMessage(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDistinctValues] No content", NativeLogging::LOG_ERROR);

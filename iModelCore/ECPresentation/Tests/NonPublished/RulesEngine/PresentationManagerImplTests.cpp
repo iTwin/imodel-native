@@ -328,6 +328,38 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, UsesCorrectConnectionToGetDist
     connection1->SetUsageListener(nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, UsesCorrectConnectionToGetNodesAfterProviderWasCachedInQuickCache)
+    {
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    RootNodeRuleP rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", "ECDbMeta:ECClassDef", true));
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    auto cancelationToken = NeverCanceledToken::Create();
+    RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str());
+
+    RefCountedPtr<TestConnection> connection1 = m_connections->CreateConnection(s_project->GetECDb());
+    IConnectionPtr connection2 = m_connections->CreateSecondaryConnection(*connection1);
+
+    // this should cause the provider to be cached in the quick cache
+    EXPECT_LT(NODESCACHE_QUICK_Boundary, m_impl->GetRootNodesCount(*connection1, options, *cancelationToken));
+    auto nodes1 = m_impl->GetRootNodes(*connection1, PageOptions(0, 20), options, *cancelationToken);
+    std::for_each(nodes1->begin(), nodes1->end(), [](NavNodeCPtr const&){});
+    nodes1 = nullptr;
+
+    // don't expect this connection to be used from now on
+    connection1->SetUsageListener([](Utf8StringCR) { FAIL(); });
+
+    auto nodes2 = m_impl->GetRootNodes(*connection2, PageOptions(20, 20), options, *cancelationToken);
+    std::for_each(nodes2->begin(), nodes2->end(), [](NavNodeCPtr const&) {});
+
+    connection1->SetUsageListener(nullptr);
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017
 +===============+===============+===============+===============+===============+======*/

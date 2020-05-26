@@ -431,7 +431,6 @@ protected:
         EXPECT_OPTIMIZATION_FLAGS_ENABLED();
         return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this, GetNodesCount()));
         }
-    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) const override {return nullptr;}
 public:
     static RefCountedPtr<OptimizationFlagsTestingProvider> Create(NavNodesProviderContextCR context, JsonNavNodeP node)
         {

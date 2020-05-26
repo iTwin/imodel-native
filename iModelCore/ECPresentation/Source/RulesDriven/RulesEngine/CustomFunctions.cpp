@@ -2199,9 +2199,6 @@ void CustomFunctionsInjector::Register(IConnectionCR connection, bool primary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomFunctionsInjector::Unregister(IConnectionCR connection, bool primary)
     {
-    if (!connection.IsOpen())
-        return;
-
     BeSQLite::DbCR db = primary ? connection.GetECDb() : connection.GetDb();
     for (ScalarFunction* func : m_scalarFunctions)
         {

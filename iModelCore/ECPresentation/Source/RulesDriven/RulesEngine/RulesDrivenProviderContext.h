@@ -76,9 +76,9 @@ public:
     ECPRESENTATION_EXPORT ICancelationTokenCR GetCancelationToken() const;
     void SetCancelationToken(ICancelationTokenCP token) {m_cancelationToken = token;}
     Utf8StringCR GetLocale() const {return m_locale;}
-    ECPRESENTATION_EXPORT void Adopt(IConnectionCR, ICancelationTokenCP);
-    ECPRESENTATION_EXPORT void Adopt(RulesDrivenProviderContextCR);
-    ECPRESENTATION_EXPORT void AdoptToSameConnection(ICancelationTokenCP);
+    ECPRESENTATION_EXPORT void ShallowAdopt(IConnectionCR, ICancelationTokenCP);
+    ECPRESENTATION_EXPORT void ShallowAdopt(RulesDrivenProviderContextCR);
+    ECPRESENTATION_EXPORT void ShallowAdoptToSameConnection(ICancelationTokenCP);
 
     // Property formatting context
     ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&, ECPresentation::UnitSystem);

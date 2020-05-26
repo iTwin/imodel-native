@@ -378,7 +378,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
         bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(connection);
         for (SpecificationContentProviderPtr& provider : affectedContentProviders)
             {
-            provider->GetContextR().AdoptToSameConnection(nullptr);
+            provider->GetContextR().ShallowAdoptToSameConnection(nullptr);
             AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, updateContext, *provider));
             }
         }
@@ -410,7 +410,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
         bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(rulesetId, settingId);
         for (SpecificationContentProviderPtr& provider : affectedContentProviders)
             {
-            provider->GetContextR().AdoptToSameConnection(nullptr);
+            provider->GetContextR().ShallowAdoptToSameConnection(nullptr);
             AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, updateContext, *provider));
             }
         }

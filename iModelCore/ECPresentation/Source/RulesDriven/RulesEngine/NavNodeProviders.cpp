@@ -23,7 +23,7 @@
 struct NavNodesProvider::SpecificationsVisitor : PresentationRuleSpecificationVisitor
 {
 private:
-    bvector<NavNodesProviderPtr> m_nodeProviders;
+    bvector<NavNodesProviderCPtr> m_nodeProviders;
     NavNodesProviderContext const* m_context;
 
 private:
@@ -49,7 +49,7 @@ protected:
 public:
     SpecificationsVisitor() : m_context(nullptr) {}
     void SetContext(NavNodesProviderContextCR context) {m_context = &context;}
-    bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_nodeProviders;}
+    bvector<NavNodesProviderCPtr> const& GetNodeProviders() const {return m_nodeProviders;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -352,7 +352,7 @@ NavNodesProviderPtr NavNodesProviderContext::CreateHierarchyLevelProvider(NavNod
         NavNodesProviderPtr provider = m_nodesCache->GetCombinedHierarchyLevel(context, context.GetHierarchyLevelIdentifier());
         if (provider.IsValid())
             {
-            provider->GetContextR().Adopt(context);
+            provider->DeepAdopt(context);
             return provider;
             }
         }
@@ -367,7 +367,7 @@ NavNodesProviderPtr NavNodesProviderContext::CreatePartialNodesProvider(NavNodes
     NavNodesProviderPtr provider = m_nodesCache->GetDataSource(context, id);
     if (provider.IsValid())
         {
-        provider->GetContextR().Adopt(context);
+        provider->DeepAdopt(context);
         return provider;
         }
     return m_providerFactory.Create(context, context.GetVirtualParentNode().get());
@@ -995,6 +995,21 @@ NavNodesProviderCPtr NavNodesProvider::PostProcess(bvector<IProvidedNodesPostPro
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void NavNodesProvider::DeepAdopt(IConnectionCR connection, ICancelationTokenCP cancelationToken) const
+    {
+    GetContextR().ShallowAdopt(connection, cancelationToken);
+
+    auto multi = AsMultiProvider();
+    if (multi != nullptr)
+        {
+        for (auto const& nestedProvider : multi->GetNodeProviders())
+            nestedProvider->DeepAdopt(connection, cancelationToken);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 EmptyNavNodesProvider::EmptyNavNodesProvider(NavNodesProviderContextR context)
@@ -1014,7 +1029,7 @@ bool EmptyNavNodesProvider::_InitializeNodes()
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomNodesProvider::CustomNodesProvider(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification)
-    : NavNodesProvider(context), m_specification(specification)
+    : MultiNavNodesProvider(context), m_specification(specification)
     {
     GetContextR().SetMayHaveArtifacts(HasNodeArtifactRules(GetContext().GetRuleset(), specification));
     }
@@ -1050,7 +1065,7 @@ bool CustomNodesProvider::_InitializeNodes()
             return false;
             }
         EvaluateArtifacts(*cachedNode);
-        m_provider = CreateProviderForCachedNode(*cachedNode);
+        AddProvider(*CreateProviderForCachedNode(*cachedNode));
         return true;
         }
 
@@ -1085,42 +1100,9 @@ bool CustomNodesProvider::_InitializeNodes()
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *node, parent.IsValid() ? parent->GetKey().get() : nullptr));
     EvaluateArtifacts(*node);
     GetContext().GetNodesCache().Cache(*node, GetContext().GetDataSourceIdentifier(), 0, NodeVisibility::Visible);
-    m_provider = CreateProvider(*node);
+    AddProvider(*CreateProvider(*node));
     GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceIdentifier());
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
-    {
-    if (m_provider.IsNull())
-        return false;
-
-    return m_provider->GetNode(node, index);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomNodesProvider::_HasNodes() const
-    {
-    if (m_provider.IsNull())
-        return false;
-
-    return m_provider->HasNodes();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t CustomNodesProvider::_GetNodesCount() const
-    {
-    if (m_provider.IsNull())
-        return 0;
-
-    return m_provider->GetNodesCount();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1781,7 +1763,7 @@ size_t MultiSpecificationNodesProvider::_GetNodesCount() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MultiNavNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
     {
-    for (NavNodesProviderPtr const& provider : m_providers)
+    for (NavNodesProviderCPtr const& provider : m_providers)
         {
         if (provider.IsNull())
             continue;
@@ -1802,7 +1784,7 @@ bool MultiNavNodesProvider::RequiresFullLoad() const
     if (GetContext().RequiresFullProviderLoad())
         return true;
 
-    for (NavNodesProviderPtr const& provider : m_providers)
+    for (NavNodesProviderCPtr const& provider : m_providers)
         {
         if (provider.IsValid() && provider->GetContext().RequiresFullProviderLoad())
             return true;
@@ -1817,7 +1799,7 @@ bool MultiNavNodesProvider::_HasNodes() const
     {
     bool requiresFullLoad = RequiresFullLoad();
     bool hasNodes = false;
-    for (NavNodesProviderPtr const& provider : m_providers)
+    for (NavNodesProviderCPtr const& provider : m_providers)
         {
         if (provider.IsNull())
             continue;
@@ -1836,7 +1818,7 @@ size_t MultiNavNodesProvider::_GetNodesCount() const
     {
     bool requiresFullLoad = RequiresFullLoad();
     size_t count = 0;
-    for (NavNodesProviderPtr const& provider : m_providers)
+    for (NavNodesProviderCPtr const& provider : m_providers)
         {
         if (GetContext().GetCancelationToken().IsCanceled())
             {
@@ -1864,8 +1846,8 @@ size_t MultiNavNodesProvider::_GetNodesCount() const
 struct NestedProvidersBasedIteratorImpl : IteratorImpl<JsonNavNodePtr>
 {
 private:
-    bvector<NavNodesProviderPtr> const& m_providers;
-    bvector<NavNodesProviderPtr>::const_iterator m_providerIterator;
+    bvector<NavNodesProviderCPtr> const& m_providers;
+    bvector<NavNodesProviderCPtr>::const_iterator m_providerIterator;
     NavNodesProvider::Iterator m_currNodesIterator;
     size_t m_currNodePosInProvider;
 private:
@@ -1946,15 +1928,15 @@ protected:
         }
     JsonNavNodePtr _GetCurrent() const override {return *m_currNodesIterator;}
 public:
-    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderPtr> const& providers)
+    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderCPtr> const& providers)
         : m_providers(providers), m_providerIterator(providers.begin()), m_currNodePosInProvider(0)
         {
         m_currNodesIterator = CreateNodesIterator();
         }
-    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderPtr> const& providers, bvector<NavNodesProviderPtr>::const_iterator providerIter)
+    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderCPtr> const& providers, bvector<NavNodesProviderCPtr>::const_iterator providerIter)
         : m_providers(providers), m_providerIterator(providerIter), m_currNodePosInProvider(0)
         {}
-    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderPtr> const& providers, bvector<NavNodesProviderPtr>::const_iterator providerIter, NavNodesProvider::Iterator currNodesIterator, size_t currNodePosInProvider)
+    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderCPtr> const& providers, bvector<NavNodesProviderCPtr>::const_iterator providerIter, NavNodesProvider::Iterator currNodesIterator, size_t currNodePosInProvider)
         : m_providers(providers), m_providerIterator(providerIter), m_currNodesIterator(currNodesIterator), m_currNodePosInProvider(currNodePosInProvider)
         {}
 };
@@ -1972,14 +1954,14 @@ NavNodesProvider::Iterator MultiNavNodesProvider::_CreateBackIterator() const {r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr MultiNavNodesProvider::_FindNestedProvider(DataSourceIdentifier const& identifier) const
+NavNodesProviderCPtr MultiNavNodesProvider::_FindNestedProvider(DataSourceIdentifier const& identifier) const
     {
-    for (NavNodesProviderPtr const& provider : m_providers)
+    for (NavNodesProviderCPtr const& provider : m_providers)
         {
         if (provider->GetIdentifier() == identifier)
             return provider;
 
-        NavNodesProviderPtr nested = provider->FindNestedProvider(identifier);
+        NavNodesProviderCPtr nested = provider->FindNestedProvider(identifier);
         if (nested.IsValid())
             return nested;
         }
@@ -2028,11 +2010,11 @@ static bool CompareNodePtrsByLabel(JsonNavNodePtr const& lhs, JsonNavNodePtr con
 struct DelayedLabelSortingNodesProvider : MultiNavNodesProvider
 {
 private:
-    bvector<NavNodesProviderPtr> m_dataSources;
+    bvector<NavNodesProviderCPtr> m_dataSources;
     mutable bvector<JsonNavNodePtr> m_sortedNodes;
 
 private:
-    DelayedLabelSortingNodesProvider(NavNodesProviderContext const& context, bvector<NavNodesProviderPtr> providers)
+    DelayedLabelSortingNodesProvider(NavNodesProviderContext const& context, bvector<NavNodesProviderCPtr> providers)
         : MultiNavNodesProvider(context), m_dataSources(providers)
         {
         SetProviders(providers);
@@ -2044,7 +2026,7 @@ private:
             return;
 
         auto _l = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "Sorting nodes at post-processing step");
-        for (NavNodesProviderPtr const& provider : m_dataSources)
+        for (NavNodesProviderCPtr const& provider : m_dataSources)
             {
             DisabledFullNodesLoadContext disableFullLoad(*provider);
             size_t sizeBefore = m_sortedNodes.size();
@@ -2090,7 +2072,7 @@ protected:
         }
 
 public:
-    static RefCountedPtr<DelayedLabelSortingNodesProvider> Create(NavNodesProviderContext const& context, bvector<NavNodesProviderPtr> providers)
+    static RefCountedPtr<DelayedLabelSortingNodesProvider> Create(NavNodesProviderContext const& context, bvector<NavNodesProviderCPtr> providers)
         {
         return new DelayedLabelSortingNodesProvider(context, providers);
         }
@@ -2109,7 +2091,9 @@ private:
 private:
     InsertByIndexNodesProvider(NavNodesProviderContext const& context, NavNodesProviderCR source, bvector<JsonNavNodePtr> nodesToInsert)
         : NavNodesProvider(context), m_source(&source), m_nodesToInsert(nodesToInsert)
-        {}
+        {
+        source.GetContextR().GetOptimizationFlags().SetParentContainer(&context.GetOptimizationFlags());
+        }
 
     void InitResult() const
         {
@@ -2133,7 +2117,7 @@ private:
 
 protected:
     bool _IsCacheable() const override {return false;}
-    NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const& id) const override {return m_source->FindNestedProvider(id);}
+    NavNodesProviderCPtr _FindNestedProvider(DataSourceIdentifier const& id) const override {return m_source->FindNestedProvider(id);}
     size_t _GetNodesCount() const override {return m_source->GetNodesCount() + m_nodesToInsert.size();}
     bool _HasNodes() const override {return !m_nodesToInsert.empty() || m_source->HasNodes();}
 
@@ -2266,10 +2250,10 @@ NavNodesProviderPtr DisplayLabelSortingPostProcessor::_PostProcessProvider(NavNo
     bmap<Utf8String, bvector<JsonNavNodePtr>> deprecatedSameLabelPostProcessedNodes;
 
     // group adjacent label-sorted providers by specification hash and node types
-    bvector<bpair<DataSourcesMergeKey, bvector<NavNodesProviderPtr>>> providers;
+    bvector<bpair<DataSourcesMergeKey, bvector<NavNodesProviderCPtr>>> providers;
     for (DataSourceInfo const& info : dsInfos)
         {
-        NavNodesProviderPtr provider;
+        NavNodesProviderCPtr provider;
         if (context.GetNodesCache().IsInitialized(info.GetIdentifier(), context.GetRulesetVariables()))
             provider = context.GetNodesCache().GetDataSource(*CreateContextForSameHierarchyLevel(context, true), info.GetIdentifier(), true, true);
         else
@@ -2280,7 +2264,7 @@ NavNodesProviderPtr DisplayLabelSortingPostProcessor::_PostProcessProvider(NavNo
             continue;
             }
 
-        provider->GetContextR().Adopt(context);
+        provider->DeepAdopt(context);
         if (!provider->HasNodes())
             continue;
 
@@ -2302,7 +2286,7 @@ NavNodesProviderPtr DisplayLabelSortingPostProcessor::_PostProcessProvider(NavNo
         if (mergeWithPrevious)
             providers.back().second.push_back(provider);
         else
-            providers.push_back(make_bpair(mergeKey, bvector<NavNodesProviderPtr>{provider}));
+            providers.push_back(make_bpair(mergeKey, bvector<NavNodesProviderCPtr>{provider}));
         }
 
     // create a merged provider
@@ -2327,14 +2311,14 @@ NavNodesProviderPtr DisplayLabelSortingPostProcessor::_PostProcessProvider(NavNo
         auto sameLabelGroupedNodesIter = deprecatedSameLabelPostProcessedNodes.find(entry.first.m_specHash);
         if (entry.second.size() == 1)
             {
-            NavNodesProviderPtr provider = entry.second.back();
+            NavNodesProviderCPtr provider = entry.second.back();
             if (sameLabelGroupedNodesIter != deprecatedSameLabelPostProcessedNodes.end())
                 provider = InsertByIndexNodesProvider::Create(*CreateContextForSameHierarchyLevel(*mergedProviderContext, true), *provider, sameLabelGroupedNodesIter->second);
             mergedProvider->AddProvider(*provider);
             }
         else
             {
-            bvector<NavNodesProviderPtr> sortedProviders = entry.second;
+            bvector<NavNodesProviderCPtr> sortedProviders = entry.second;
             if (sameLabelGroupedNodesIter != deprecatedSameLabelPostProcessedNodes.end())
                 {
                 std::sort(sameLabelGroupedNodesIter->second.begin(), sameLabelGroupedNodesIter->second.end(), CompareNodePtrsByLabel);
@@ -2559,7 +2543,7 @@ static NavNodesProviderContextPtr CreatePostProcessingProviderContext(NavNodesPr
 * @bsimethod                                    Grigas.Petraitis                11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 PostProcessingNodesProviderDeprecated::PostProcessingNodesProviderDeprecated(NavNodesProviderCR wrappedProvider)
-    : NavNodesProvider(*CreatePostProcessingProviderContext(wrappedProvider.GetContext())), m_wrappedProvider(&wrappedProvider)
+    : MultiNavNodesProvider(*CreatePostProcessingProviderContext(wrappedProvider.GetContext())), m_wrappedProvider(&wrappedProvider), m_isPostProcessed(false)
     {
     OptimizationFlagsContainer const* parentContainer = wrappedProvider.GetContext().GetOptimizationFlags().GetParentContainer();
     GetContextR().GetOptimizationFlags().SetParentContainer(parentContainer);
@@ -2571,27 +2555,28 @@ PostProcessingNodesProviderDeprecated::PostProcessingNodesProviderDeprecated(Nav
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderCPtr PostProcessingNodesProviderDeprecated::GetProcessedProvider() const
     {
-    if (m_processedProvider.IsNull())
+    if (!m_isPostProcessed)
         {
+        NavNodesProviderPtr provider;
         JsonNavNodePtr node;
         if (m_wrappedProvider->GetNode(node, 0))
             {
             for (auto const& postProcessor : m_postProcessors)
                 {
-                NavNodesProviderPtr processed = postProcessor->PostProcessNodeRequest(m_processedProvider.IsValid() ? *m_processedProvider : *m_wrappedProvider, *node, 0);
+                NavNodesProviderPtr processed = postProcessor->PostProcessNodeRequest(provider.IsValid() ? *provider : *m_wrappedProvider, *node, 0);
                 if (processed.IsNull())
                     continue;
 
-                m_processedProvider = processed;
+                provider = processed;
 
-                if (!m_processedProvider->GetNode(node, 0))
+                if (!provider->GetNode(node, 0))
                     break;
                 }
             }
-        if (m_processedProvider.IsNull())
-            m_processedProvider = m_wrappedProvider;
+        const_cast<PostProcessingNodesProviderDeprecated*>(this)->AddProvider(provider.IsValid() ? *provider : *m_wrappedProvider);
+        m_isPostProcessed = true;
         }
-    return m_processedProvider;
+    return GetNodeProviders().front();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2607,8 +2592,8 @@ bool PostProcessingNodesProviderDeprecated::_GetNode(JsonNavNodePtr& node, size_
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t PostProcessingNodesProviderDeprecated::_GetNodesCount() const
     {
-    if (m_processedProvider.IsValid())
-        return m_processedProvider->GetNodesCount();
+    if (m_isPostProcessed)
+        return GetProcessedProvider()->GetNodesCount();
 
     size_t count = 0;
     {
@@ -2631,7 +2616,10 @@ size_t PostProcessingNodesProviderDeprecated::_GetNodesCount() const
         }
 
     if (!GetContext().GetOptimizationFlags().IsCheckingChildren())
-        m_processedProvider = processed;
+        {
+        const_cast<PostProcessingNodesProviderDeprecated*>(this)->AddProvider(processed.IsValid() ? *processed : *m_wrappedProvider);
+        m_isPostProcessed = true;
+        }
 
     return count;
     }

@@ -188,7 +188,7 @@ ICancelationTokenCR RulesDrivenProviderContext::GetCancelationToken() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::Adopt(IConnectionCR connection, ICancelationTokenCP token)
+void RulesDrivenProviderContext::ShallowAdopt(IConnectionCR connection, ICancelationTokenCP token)
     {
     m_cancelationToken = token;
     if (m_connection != &connection)
@@ -202,21 +202,15 @@ void RulesDrivenProviderContext::Adopt(IConnectionCR connection, ICancelationTok
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::Adopt(RulesDrivenProviderContextCR other)
+void RulesDrivenProviderContext::ShallowAdopt(RulesDrivenProviderContextCR other)
     {
-    m_cancelationToken = &other.GetCancelationToken();
-    if (m_connection != &other.GetConnection())
-        {
-        m_connection = &other.GetConnection();
-        DELETE_AND_CLEAR(m_schemaHelper);
-        m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, &m_ecexpressionsCache);
-        }
+    ShallowAdopt(other.GetConnection(), &other.GetCancelationToken());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::AdoptToSameConnection(ICancelationTokenCP token)
+void RulesDrivenProviderContext::ShallowAdoptToSameConnection(ICancelationTokenCP token)
     {
-    Adopt(*m_connections->GetConnection(m_connection->GetId().c_str()), token);
+    ShallowAdopt(*m_connections->GetConnection(m_connection->GetId().c_str()), token);
     }
