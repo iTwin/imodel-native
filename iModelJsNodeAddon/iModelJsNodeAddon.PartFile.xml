@@ -14,7 +14,9 @@
     <Bindings>
       <Files>
         Delivery/IModelJsNative.js
+        Delivery/IModelJsNative.js.map
         Delivery/IModelJsNative.d.ts
+        Delivery/IModelJsNative.d.ts.map
       </Files>
     </Bindings>
   </Part>
