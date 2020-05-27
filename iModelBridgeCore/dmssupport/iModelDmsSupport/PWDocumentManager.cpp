@@ -181,10 +181,17 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromPW(WCharCP portab
             if (!parentDir.DoesPathExist())
                 continue;
             BentleyApi::BeFileName::FixPathName(parentDir, path.c_str(), false);
+            if (!parentDir.IsDirectory())
+                parentDir = parentDir.GetDirectoryName();
+
             bool foundRefDir = false;
             while (!parentDir.empty())
                 {
-                BentleyApi::WString dirName = parentDir.GetFileNameWithoutExtension();
+                BentleyApi::BeFileName dirName = parentDir;// .PopDir();
+                BentleyApi::WString tempDirName = dirName.PopDir();
+                BentleyApi::WString temp(parentDir.substr(tempDirName.length() + 1).c_str());
+                temp.Trim(WCSDIR_SEPARATOR);
+                dirName = BentleyApi::BeFileName(temp);
                 int cfolderId, cdocId;
                 if (2 == swscanf(dirName.c_str(), L"%d_%d", &cfolderId, &cdocId))
                     {
