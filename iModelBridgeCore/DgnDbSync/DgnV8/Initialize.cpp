@@ -875,7 +875,10 @@ BentleyStatus Converter::GetAffinityEx(WCharP buffer, const size_t bufferSize, i
     if (SUCCESS == file->GetAuthoringProductName(applicationName))
         {
         BeStringUtilities::Wcsncpy(buffer, bufferSize, applicationName.c_str());
-        affinityLevel = iModelBridge::Affinity::High;
+        if (0 != applicationName.CompareToI(L"iModelBridgeForMstn"))
+            affinityLevel = iModelBridge::Affinity::High;
+        else
+            affinityLevel = iModelBridge::Affinity::Low;
         return BSISUCCESS;
         }
 
