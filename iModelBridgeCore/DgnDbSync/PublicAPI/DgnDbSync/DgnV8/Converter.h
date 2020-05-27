@@ -2890,6 +2890,7 @@ private:
         RepositoryLinkId   m_v8fileId;             //  Foreign file ID or RSC handle
         DgnV8Api::ElementId  m_v8componentKey;       //  Element ID or RSC ID
         uint32_t             m_v8componentType;      //  LsResourceType or LsElementType
+        uint32_t             m_v8rscFileHandle;
 public:
         V8Location(DgnV8Api::LsCacheComponent const& component, Converter&);
         V8Location() : m_isElement(false), m_v8componentKey(0), m_v8componentType(0) {}

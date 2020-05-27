@@ -348,6 +348,7 @@ bool LineStyleConverter::V8Location::operator<(const V8Location &rhs) const
     if (m_v8componentKey < rhs.m_v8componentKey) return true;         if (m_v8componentKey > rhs.m_v8componentKey) return false;
     if (m_v8componentType < rhs.m_v8componentType) return true;       if (m_v8componentType > rhs.m_v8componentType) return false;
     if (m_isElement < rhs.m_isElement) return true;                   if (m_isElement > rhs.m_isElement) return false;
+    if (m_v8rscFileHandle < rhs.m_v8rscFileHandle) return true;       if (m_v8rscFileHandle > rhs.m_v8rscFileHandle) return false;
     return m_v8fileId < rhs.m_v8fileId;
     }
 
@@ -360,12 +361,8 @@ LineStyleConverter::V8Location::V8Location(DgnV8Api::LsCacheComponent const& com
 
     m_isElement         = lsLoc->IsElement();
     m_v8componentKey    = lsLoc->GetIdentKey();
+    m_v8rscFileHandle   = lsLoc->GetRscFile();
 
-    //  We don't bother recording RscFileHandle because we assume that during a session the
-    //  search paths through resource files will be the same every time
-    //  and that a search for the same ID and type will yield the same resource. Therefore,
-    //  we don't try to check location based on RscFileHandle.  We only do a file test
-    //  if the component definition comes from an element.
     if (m_isElement)
         m_v8fileId = converter.GetRepositoryLinkId(*lsLoc->GetSourceFile());
 

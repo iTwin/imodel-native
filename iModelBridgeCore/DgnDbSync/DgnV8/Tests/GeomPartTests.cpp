@@ -40,7 +40,7 @@ TEST_F(GeomPartTests, NormalCells)
     {
     constexpr int expectedGeomPartCount = 16;
     const     int expectedGeomPartAspectCount = 16;
-    constexpr int expectedRefGeomPartCount = 13;
+    constexpr int expectedRefGeomPartCount = 15;
     const     int expectedRefGeomPartAspectCount = 3; // of the 13, only 3 are (shared) cells. The rest are LineStyles. We don't (yet) create aspects for them.
 
     LineUpFiles(L"chair_array.bim", L"chair_array.dgn", true);
@@ -94,7 +94,7 @@ TEST_F(GeomPartTests, NormalCells)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeomPartTests, SharedCells)
     {
-    constexpr int expectedGeomPartCount = 13;
+    constexpr int expectedGeomPartCount = 15;
     const     int expectedGeomPartAspectCount = 3; // of the 13, only 3 are (shared) cells. The rest are LineStyles. We don't (yet) create aspects for them.
 
     LineUpFiles(L"HalfScaleSCOverride1.bim", L"HalfScaleSCOverride1.dgn", true);
