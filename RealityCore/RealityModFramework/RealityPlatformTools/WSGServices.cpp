@@ -795,7 +795,6 @@ ProxyManager::ProxyManager()
 //-------------------------------------------------------------------------------------
 ConnectTokenManager* ConnectTokenManager::s_ctInstance = nullptr;
 WebServices::IConnectTokenProviderPtr ConnectTokenManager::m_tokenProvider(NULL);
-bool ConnectTokenManager::m_isFromTokenProvider = false;
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Vishal.Shingare              04/2020
@@ -814,7 +813,6 @@ void ConnectTokenManager::SetTokenProvider(Utf8String callBackurl, Utf8String ac
 void ConnectTokenManager::SetTokenProvider(WebServices::IConnectTokenProviderPtr provider)
     {
     m_tokenProvider = provider;
-    m_isFromTokenProvider = true;
     }
 
 //-------------------------------------------------------------------------------------

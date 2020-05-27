@@ -206,7 +206,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
     if (doUpload)
         {
-        if (!_GetParams().GetCallBackUrl().empty())
+        if (!_GetParams().GetCallBackUrl().empty() || !_GetParams().GetAccessToken().empty())
             ConnectTokenManager::SetTokenProvider(_GetParams().GetCallBackUrl(), _GetParams().GetAccessToken());
         else
             {

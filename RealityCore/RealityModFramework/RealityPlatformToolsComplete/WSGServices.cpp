@@ -12,27 +12,24 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
 //-------------------------------------------------------------------------------------
 void ConnectTokenManager::RefreshToken() const
     {
-    if(m_tokenCallback)
+    if (m_tokenCallback)
         return m_tokenCallback(m_token, m_tokenRefreshTimer);
 
-    if (nullptr == m_tokenProvider)
-        {
-        m_token = Utf8String();
-        return;
-        }
-
     m_token = Utf8String("Authorization: ");
-    if (m_isFromTokenProvider)
-        m_token.append(" Token ");
-    else
-        m_token.append(" Bearer ");
+
     Utf8String tokenStr = Utf8String();
     WebServices::ISecurityTokenPtr tokenPtr = nullptr;
+    if (m_tokenProvider != nullptr)
+        {
+        if (dynamic_pointer_cast<iModel::Hub::OidcTokenProvider>(m_tokenProvider) || dynamic_pointer_cast<iModel::Hub::OidcStaticTokenProvider>(m_tokenProvider))
+            m_token.append(" Bearer ");
+        else
+            m_token.append(" Token ");
 
-    tokenPtr = m_tokenProvider->GetToken();
-    if (tokenPtr == nullptr)
-        tokenPtr = m_tokenProvider->UpdateToken()->GetResult();
-
+        tokenPtr = m_tokenProvider->GetToken();
+        if (tokenPtr == nullptr)
+            tokenPtr = m_tokenProvider->UpdateToken()->GetResult();
+        }
     if (tokenPtr != nullptr)
         {
         tokenStr = tokenPtr->ToAuthorizationString();

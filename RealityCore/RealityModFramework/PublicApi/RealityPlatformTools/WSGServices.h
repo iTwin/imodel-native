@@ -552,7 +552,6 @@ public:
 
 private:
     static WebServices::IConnectTokenProviderPtr       m_tokenProvider;
-    static bool                                        m_isFromTokenProvider;
     mutable Utf8String                  m_token;
     mutable time_t                      m_tokenRefreshTimer;
     RequestConstructor_TokenCallBack    m_tokenCallback;
