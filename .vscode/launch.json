@@ -8,13 +8,13 @@
             "name": "(Windows) iModelBridgeGetAffinityHost.exe",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeGetAffinityHost.exe",
+            "program": "${env:OutRoot}Winx64/Product/iModelBridgeAssign/iModelBridgeGetAffinityHost/iModelBridgeGetAffinityHost.exe",
             "args": [
                 "d:/tmp2/disclosereferences.bim",
-                "${env:OutRoot}Winx64/Product/MstnBridge/DgnV8BridgeM02.dll",
-                "${env:OutRoot}Winx64/Product/MstnBridge/assets",
-                "D:/dgn/test/sourceFiles/Designs/A_Composition Render.dgn",
-                "IModelBridgeForMstn"
+                "C:\\Users\\Sam.Wilson\\AppData\\Local\\imodelbridges\\OpenBuildingsDesigner\\imodelbridgeaffinity.dll",
+                "C:\\Users\\Sam.Wilson\\AppData\\Local\\imodelbridges\\OpenBuildingsDesigner\\IModel02PlatformAssets",
+                "D:/dgn/test/sourceFiles/Designs/A_Composition Drawing.dgn",
+                "OpenBuildingsDesigner"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

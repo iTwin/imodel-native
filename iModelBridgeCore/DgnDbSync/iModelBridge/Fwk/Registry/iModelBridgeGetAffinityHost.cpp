@@ -4,11 +4,41 @@
 *--------------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwkRegistry.h>
 #include <Logging/bentleylogging.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 #define LOG (*LoggingManager::GetLogger(L"iModelBridgeRegistry"))
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addToPath(BeFileNameCR dir)
+    {
+    WPrintfString newPath(L"PATH=%ls;", dir.c_str());
+
+    wchar_t *oldPath;
+    size_t len;
+    errno_t err = _wdupenv_s(&oldPath, &len, L"PATH");
+    if (err)
+        return;
+    newPath.append(oldPath);
+    free(oldPath);
+    _wputenv(newPath.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addMdlSysAsNeededToPath(BeFileNameCR dir)
+    {
+    BeFileName msan(dir);
+    msan.AppendToPath(L"MdlSys");
+    msan.AppendToPath(L"AsNeeded");
+    if (msan.DoesPathExist())
+        addToPath(msan);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -24,7 +54,7 @@ int iModelBridgeRegistryUtils::ComputeAffinityMain(int argc, WCharCP argv[])
         WCharCP assetsPathStr = argv[3];
         WCharCP sourceFileNameStr = argv[4];
         WCharCP bridgeRegSubkey = argv[5];
-        
+
         BeFileName affinityLibraryPath(affinityLibraryPathStr);
 
         auto DiscloseFilesAndAffinities = (T_iModelBridge_discloseFilesAndAffinities*)iModelBridgeRegistryUtils::GetBridgeFunction(affinityLibraryPath, "iModelBridge_discloseFilesAndAffinities");
@@ -33,6 +63,9 @@ int iModelBridgeRegistryUtils::ComputeAffinityMain(int argc, WCharCP argv[])
             LOG.warningv(L"%ls - does not export the iModelBridge_discloseFilesAndAffinities function. This bridge should be upgraded to implement that function.", affinityLibraryPath.c_str());
             return -1;
             }
+    
+        addMdlSysAsNeededToPath(affinityLibraryPath.GetDirectoryName()); // Needed only when loading and calling into OBD bridge's affinity dll
+
         return DiscloseFilesAndAffinities(outputFileName, affinityLibraryPathStr, assetsPathStr, sourceFileNameStr, bridgeRegSubkey);
         }
 
