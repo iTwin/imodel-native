@@ -1958,6 +1958,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Gro
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *b);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *c);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *d);
 
@@ -1981,15 +1982,25 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Gro
     VerifyNodeInstance(*rootNodes[0], *a);
 
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
-    ASSERT_EQ(2, classGroupingNodes.GetSize());
+    ASSERT_EQ(3, classGroupingNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[0]->GetType().c_str());
-    EXPECT_STREQ("C", classGroupingNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("B", classGroupingNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[1]->GetType().c_str());
-    EXPECT_STREQ("D", classGroupingNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("C", classGroupingNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[2]->GetType().c_str());
+    EXPECT_STREQ("D", classGroupingNodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
-    ASSERT_EQ(1, childNodes.GetSize());
-    VerifyNodeInstance(*childNodes[0], *d);
+    DataContainer<NavNodeCPtr> childNodes0 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes0.GetSize());
+    VerifyNodeInstance(*childNodes0[0], *b);
+
+    DataContainer<NavNodeCPtr> childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes1.GetSize());
+    VerifyNodeInstance(*childNodes1[0], *c);
+
+    DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[2], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes2.GetSize());
+    VerifyNodeInstance(*childNodes2[0], *d);
     }
 
 /*---------------------------------------------------------------------------------**//**

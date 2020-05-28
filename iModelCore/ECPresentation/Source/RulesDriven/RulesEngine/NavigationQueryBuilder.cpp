@@ -2957,6 +2957,7 @@ static void FilterRelationshipPathsByTargetClass(bvector<RelatedClassPath>& path
         if (&path.back().GetTargetClass().GetClass() != &targetClass)
             path.back().GetTargetClass().SetClass(targetClass);
 
+        path.back().GetTargetClass().SetIsSelectPolymorphic(false);
         filtered.push_back(path);
         }
     filtered.swap(paths);
