@@ -478,7 +478,7 @@ jobs:
         displayName: Save ecschema-ops-linux-x64
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
         inputs:
-          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-linux-x64
+          rootFolderOrFile: $(Build.BinariesDirectory)/LinuxX64/ecschemaopsaddon_pkgs/ecschema-ops-linux-x64
           artifactName: ecschema-ops-linux-x64
 
   # ================================================================================================
@@ -519,7 +519,7 @@ jobs:
         displayName: Save ecschema-ops-darwin-x64
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
         inputs:
-          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-darwin-x64
+          rootFolderOrFile: $(Build.BinariesDirectory)/MacOSX64/ecschemaopsaddon_pkgs/ecschema-ops-darwin-x64
           artifactName: ecschema-ops-darwin-x64
   
   # ================================================================================================
@@ -561,13 +561,6 @@ jobs:
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/iOSARM64/imodeljsnodeaddon_pkgs/imodeljs-ios-arm64
           artifactName: imodeljs-ios-arm64
-
-      - task: archiveandpublishartifact@0
-        displayName: Save ecschema-ops-ios-arm64
-        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
-        inputs:
-          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-ios-arm64
-          artifactName: ecschema-ops-ios-arm64
   
   # ================================================================================================
   - job: build_iosx64
@@ -608,13 +601,6 @@ jobs:
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/iOSX64/imodeljsnodeaddon_pkgs/imodeljs-ios-x64
           artifactName: imodeljs-ios-x64
-
-      - task: archiveandpublishartifact@0
-        displayName: Save ecschema-ops-ios-x64
-        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ECSchemaOpsAddon'))
-        inputs:
-          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/ecschemaopsaddon_pkgs/ecschema-ops-ios-x64
-          artifactName: ecschema-ops-ios-x64
   
   # ================================================================================================
   - job: build_androidarm64
