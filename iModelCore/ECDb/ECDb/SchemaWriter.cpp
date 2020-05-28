@@ -2140,9 +2140,50 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
         }
     if (constraintChange.ConstraintClasses().IsChanged())
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing the constraint classes is not supported.",
-                                  relationshipName, constraintEndStr);
-        return ERROR;
+        /*  SCHEMA_EVOLUTION_RULE: Allow 'ECRelationshipConstraintClass' to change from child to parent.
+            Notes: This rule would be applied to relationship that is mapped using LinkTable or EndTable map strategy.
+        */
+        const size_t nNewCount = newConstraint.GetConstraintClasses().size();
+        const size_t nOldCount = oldConstraint.GetConstraintClasses().size();
+        if (nOldCount != nNewCount)
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing the constraint classes is not supported",
+                                    relationshipName, constraintEndStr);
+            return ERROR;
+            }
+        
+        const ECClassCP newConstraintClass = newConstraint.GetConstraintClasses().front();
+        ECClassCP resolvedNewConstraintClass = ctx.GetSchemaManager().GetClass(newConstraintClass->GetSchema().GetName(), newConstraintClass->GetName(), SchemaLookupMode::ByName);
+        if (resolvedNewConstraintClass == nullptr)
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: New constraint class '%s' must be already present in ECDb.",
+                                    relationshipName, constraintEndStr, newConstraintClass->GetFullName());
+            return ERROR;
+            }
+
+        ECClassCP oldConstraintClass = oldConstraint.GetConstraintClasses().front();
+        if (!oldConstraintClass->Is(resolvedNewConstraintClass))
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: New constraint class '%s' must be ancestor  of Old constraint class '%s'.",
+                                    relationshipName, constraintEndStr, newConstraintClass->GetFullName(), oldConstraintClass->GetFullName());
+            return ERROR;
+            }
+
+        auto stmt = ctx.GetECDb().GetCachedStatement("SELECT Id FROM " TABLE_RelationshipConstraint " WHERE RelationshipEnd=? AND RelationshipClassId=?");
+        stmt->BindInt(1, isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
+        stmt->BindId(2, containerId);
+        if (stmt->Step() != BE_SQLITE_ROW)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        auto constraintId = stmt->GetValueUInt64(0);
+        SqlUpdateBuilder updater(TABLE_RelationshipConstraintClass);
+        updater.AddSetExp("ClassId", resolvedNewConstraintClass->GetId().GetValue());
+        updater.AddWhereExp("ConstraintId", constraintId);
+        if (updater.ExecuteSql(ctx.GetECDb()) != SUCCESS)
+            return ERROR;
         }
 
     if (constraintChange.RoleLabel().IsChanged())

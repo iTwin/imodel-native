@@ -13240,7 +13240,142 @@ TEST_F(SchemaUpgradeTestFixture, UpdateReferencesFromDifferentContext)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                  03/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateRelationshipConstraintClassGeneralize)
+    {
+    SchemaItem schemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="LinearReferencing" alias="lr" version="02.00.02" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract" description="">
+                <ECCustomAttributes>
+                    <IsMixin xmlns='CoreCustomAttributes.01.00.00'>
+                        <AppliesToEntityClass>GeometricElement3d</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>        
+            <ECEntityClass typeName="ILinearLocationElement" description="" modifier="Abstract">
+                <BaseClass>ILinearlyLocated</BaseClass>
+                <ECCustomAttributes>
+                    <IsMixin xmlns='CoreCustomAttributes.01.00.00'>
+                        <AppliesToEntityClass>GeometricElement3d</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ILinearLocationLocatesElement" strength="referencing" modifier="None" description="">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="linearly-locates">
+                    <Class class="ILinearLocationElement"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="linearly-located by">
+                    <Class class="GeometricElement3d"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="LinearLocationElement" description="" modifier="Abstract">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <BaseClass>ILinearLocationElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Element" modifier="Abstract" description="">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>)xml");
 
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    [&]() 
+        {
+        auto aILinearLocationElement = m_ecdb.Schemas().GetClass("LinearReferencing", "ILinearLocationElement");
+        auto aILinearlyLocated = m_ecdb.Schemas().GetClass("LinearReferencing", "ILinearlyLocated");
+        auto aILinearLocationLocatesElement = m_ecdb.Schemas().GetClass("LinearReferencing", "ILinearLocationLocatesElement")->GetRelationshipClassCP();
+        ECValue r;
+        aILinearLocationElement->GetCustomAttributeLocal("IsMixin")->GetValue(r, "AppliesToEntityClass");
+        ASSERT_STREQ("GeometricElement3d", r.GetUtf8CP());
+
+        aILinearlyLocated->GetCustomAttributeLocal("IsMixin")->GetValue(r, "AppliesToEntityClass");
+        ASSERT_STREQ("GeometricElement3d", r.GetUtf8CP());
+
+        auto aConstraintClass = aILinearLocationLocatesElement->GetTarget().GetConstraintClasses().front();
+        ASSERT_STREQ("GeometricElement3d", aConstraintClass->GetName().c_str());
+        }();
+    SchemaItem updatedSchema(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="LinearReferencing" alias="lr" version="02.00.02" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract" description="">
+                <ECCustomAttributes>
+                    <IsMixin xmlns='CoreCustomAttributes.01.00.00'>
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>        
+            <ECEntityClass typeName="ILinearLocationElement" description="" modifier="Abstract">
+                <BaseClass>ILinearlyLocated</BaseClass>
+                <ECCustomAttributes>
+                    <IsMixin xmlns='CoreCustomAttributes.01.00.00'>
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ILinearLocationLocatesElement" strength="referencing" modifier="None" description="">
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="linearly-locates">
+                    <Class class="ILinearLocationElement"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="linearly-located by">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="LinearLocationElement" description="" modifier="Abstract">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <BaseClass>ILinearLocationElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Element" modifier="Abstract" description="">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(updatedSchema)) << "Import schema with smaller read version";
+    [&]() 
+        {
+        auto aILinearLocationElement = m_ecdb.Schemas().GetClass("LinearReferencing", "ILinearLocationElement");
+        auto aILinearlyLocated = m_ecdb.Schemas().GetClass("LinearReferencing", "ILinearlyLocated");
+        auto aILinearLocationLocatesElement = m_ecdb.Schemas().GetClass("LinearReferencing", "ILinearLocationLocatesElement")->GetRelationshipClassCP();
+        ECValue r;
+        aILinearLocationElement->GetCustomAttributeLocal("IsMixin")->GetValue(r, "AppliesToEntityClass");
+        ASSERT_STREQ("Element", r.GetUtf8CP());
+
+        aILinearlyLocated->GetCustomAttributeLocal("IsMixin")->GetValue(r, "AppliesToEntityClass");
+        ASSERT_STREQ("Element", r.GetUtf8CP());
+
+        auto aConstraintClass = aILinearLocationLocatesElement->GetTarget().GetConstraintClasses().front();
+        ASSERT_STREQ("Element", aConstraintClass->GetName().c_str());
+        }();
+    }
 
 
 END_ECDBUNITTESTS_NAMESPACE
