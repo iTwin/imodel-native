@@ -4509,6 +4509,57 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty", *query);
         }
 
+    //ContentInstancesOfSpecificClasses_DoesNotJoinClassesForExcludedDescriptorFields
+        {
+        Utf8CP testName = "ContentInstancesOfSpecificClasses_DoesNotJoinClassesForExcludedDescriptorFields";
+        ECClassCR classA = *GetECClass(testName, "A");
+        ECClassCR classB = *GetECClass(testName, "B");
+        ECClassCR classC = *GetECClass(testName, "C");
+        ECClassCR classD = *GetECClass(testName, "D");
+        ECClassCR classE = *GetECClass(testName, "E");
+        ECRelationshipClassCR relAB = *GetECClass(testName, "A_To_B")->GetRelationshipClassCP();
+        ECRelationshipClassCR relAC = *GetECClass(testName, "A_To_C")->GetRelationshipClassCP();
+        ECRelationshipClassCR relDA = *GetECClass(testName, "D_To_A")->GetRelationshipClassCP();
+        ECRelationshipClassCR relEA = *GetECClass(testName, "E_To_A")->GetRelationshipClassCP();
+
+        RelatedClassPath relatedPropertyPathAB{RelatedClass(classA, SelectClass(classB, true), relAB, true, TABLE_ALIAS("rel", classB, 0), TABLE_ALIAS("rel", relAB, 0))};
+        RelatedClassPath relatedPropertyPathAC{RelatedClass(classA, SelectClass(classC, true), relAC, true, TABLE_ALIAS("rel", classC, 0), TABLE_ALIAS("rel", relAC, 0))};
+        RelatedClass navigationPropertyPathAD(classA, SelectClass(classD, true), relDA, false, TABLE_ALIAS("nav", classD, 0), TABLE_ALIAS("nav", relDA, 0));
+        RelatedClass navigationPropertyPathAE(classA, SelectClass(classE, true), relEA, false, TABLE_ALIAS("nav", classE, 0), TABLE_ALIAS("nav", relEA, 0));
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(classA, false));
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
+            relatedPropertyPathAB,
+            relatedPropertyPathAC,
+            });
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            navigationPropertyPathAD,
+            navigationPropertyPathAE,
+            });
+
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
+        AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", classA, *classA.GetPropertyP("PropA")));
+        AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property(TABLE_ALIAS("nav", classE, 0), classA, *classA.GetPropertyP("NavE")));
+
+        auto cKeyField = new ContentDescriptor::ECInstanceKeyField();
+        AddField(*descriptor, *cKeyField);
+
+        field = &AddField(*descriptor, CreateCategory(classC), CreateProperty(TABLE_ALIAS("rel", classC, 0), classC, *classC.GetPropertyP("PropC"),
+            relatedPropertyPathAC, RelationshipMeaning::RelatedInstance));
+        field->SetUniqueName(RELATED_FIELD_NAME(&classA, &classC, "PropC"));
+        field->SetLabel("C PropC");
+        cKeyField->AddKeyField(*field->AsPropertiesField());
+        cKeyField->SetUniqueName(cKeyField->CreateName());
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &classA, *query), "this");
+        query->From(classA, false, "this");
+        query->Join(navigationPropertyPathAE);
+        query->Join(relatedPropertyPathAC);
+        RegisterQuery(testName, *query);
+        }
+
     // ContentRelatedInstances_ReturnsForwardRelatedInstanceQueryWhenSelectedOneInstanceNode
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();

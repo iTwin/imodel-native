@@ -86,15 +86,35 @@ static ComplexContentQueryPtr WrapQueryIntoGroupingClause(ComplexContentQueryR q
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void JoinRelatedClasses(ComplexContentQueryR query, SelectClassInfo const& selectInfo)
+static void JoinRelatedClasses(ComplexContentQueryR query, SelectClassInfo const& selectInfo, bvector<ContentDescriptor::Field*> const& usedFields)
     {
+    bset<Utf8String> usedClassAliases;
+    for (ContentDescriptor::Field const* field : usedFields)
+        {
+        if (field->IsPropertiesField())
+            {
+            for (ContentDescriptor::Property const& prop : field->AsPropertiesField()->GetProperties())
+                {
+                usedClassAliases.insert(prop.GetPrefix());
+                if (!prop.GetPathFromSelectToPropertyClass().empty())
+                    usedClassAliases.insert(prop.GetPathFromSelectToPropertyClass().back().GetTargetClassAlias());
+                }
+            }
+        }
+
     // join navigation properties
     for (RelatedClass const& navPropertyClass : selectInfo.GetNavigationPropertyClasses())
-        query.Join(navPropertyClass, true);
+        {
+        if (usedClassAliases.end() != usedClassAliases.find(navPropertyClass.GetTargetClassAlias()))
+            query.Join(navPropertyClass, true);
+        }
 
     // join related properties
     for (RelatedClassPath const& path : selectInfo.GetRelatedPropertyPaths())
-        query.Join(path, true);
+        {
+        if (usedClassAliases.end() != usedClassAliases.find(path.back().GetTargetClassAlias()))
+            query.Join(path, true);
+        }
 
     // join related instances
     for (RelatedClassPathCR path : selectInfo.GetRelatedInstancePaths())
@@ -124,7 +144,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
         // handle related classes
-        JoinRelatedClasses(*classQuery, selectClassInfo);
+        JoinRelatedClasses(*classQuery, selectClassInfo, descriptor.GetAllFields());
 
         // exclude derived classes if necessary
         QueryBuilderHelpers::FilterOutExcludes(*classQuery, "this", selectClassInfo.GetSelectClass().GetDerivedExcludedClasses(), m_params.GetConnection().GetECDb().Schemas());
@@ -206,7 +226,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
         classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
         // handle related classes
-        JoinRelatedClasses(*classQuery, selectClassInfo);
+        JoinRelatedClasses(*classQuery, selectClassInfo, descriptor.GetAllFields());
 
         // exclude derived classes if necessary
         QueryBuilderHelpers::FilterOutExcludes(*classQuery, "this", selectClassInfo.GetSelectClass().GetDerivedExcludedClasses(), m_params.GetConnection().GetECDb().Schemas());
@@ -254,7 +274,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
         // handle related classes
-        JoinRelatedClasses(*classQuery, selectClassInfo);
+        JoinRelatedClasses(*classQuery, selectClassInfo, descriptor.GetAllFields());
 
         // exclude derived classes if necessary
         QueryBuilderHelpers::FilterOutExcludes(*classQuery, "this", selectClassInfo.GetSelectClass().GetDerivedExcludedClasses(), m_params.GetConnection().GetECDb().Schemas());

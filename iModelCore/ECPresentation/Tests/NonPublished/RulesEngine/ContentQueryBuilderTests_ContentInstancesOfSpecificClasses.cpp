@@ -382,3 +382,88 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_DoesNotJoinClassesForExcludedDescriptorFields, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="int" />
+        <ECNavigationProperty propertyName="NavD" relationshipName="D_To_A" direction="Backward" />
+        <ECNavigationProperty propertyName="NavE" relationshipName="E_To_A" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="D" />
+    <ECEntityClass typeName="E" />
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="A_To_C" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="D_To_A" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="D"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="A"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="E_To_A" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="E"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="A"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_DoesNotJoinClassesForExcludedDescriptorFields)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECRelationshipClassCP relAB = GetECClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relAC = GetECClass("A_To_C")->GetRelationshipClassCP();
+
+    ContentInstancesOfSpecificClassesSpecification spec(1, "", classA->GetFullName(), false);
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification({new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward)}),
+        {new PropertySpecification("PropB")}, RelationshipMeaning::RelatedInstance));
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification({new RelationshipStepSpecification(relAC->GetFullName(), RequiredRelationDirection_Forward)}),
+        {new PropertySpecification("PropC")}, RelationshipMeaning::RelatedInstance));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    bvector<ContentDescriptor::Field const*> excludedFields = ContainerHelpers::TransformContainer<bvector<ContentDescriptor::Field const*>>(descriptor->GetVisibleFields());
+    excludedFields.erase(std::remove_if(excludedFields.begin(), excludedFields.end(), [](ContentDescriptor::Field const* f)
+        {
+        return f->GetLabel().Equals("PropA") || f->GetLabel().Equals("C PropC")  || f->GetLabel().Equals("NavE");
+        }), excludedFields.end());
+    ASSERT_EQ(2, excludedFields.size()); // B and D
+
+    for (ContentDescriptor::Field const* field : excludedFields)
+        descriptor->RemoveField(*field);
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery(BeTest::GetNameOfCurrentTest());
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
