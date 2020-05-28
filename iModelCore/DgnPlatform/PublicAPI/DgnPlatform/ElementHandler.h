@@ -181,6 +181,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SectionDrawing, Dgn::SectionDrawing, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for SectionDrawingLocation
+    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingLocation : SpatialLocation
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SectionDrawingLocation, Dgn::SectionDrawingLocation, SectionDrawingLocation, SpatialLocation, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for InformationRecordElement
     struct EXPORT_VTABLE_ATTRIBUTE InformationRecord : InformationContent
     {

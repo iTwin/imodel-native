@@ -2688,20 +2688,87 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_DgnElement
+//! This enum is a subset of V8's DetailingSymbolType enum and the values must match.
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing: Drawing
+enum class SectionType
+{
+    Section = 3,
+    Detail = 4,
+    Elevation = 5,
+    Plan = 6,
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Drawing
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SectionDrawing, Drawing)
     friend struct dgn_ElementHandler::SectionDrawing;
 
+    BE_PROP_NAME(SectionType);
+    BE_PROP_NAME(SpatialView);
+
+    BE_JSON_NAME(drawingToSpatialTransform);
+    BE_JSON_NAME(sheetToSpatialTransform);
 protected:
     explicit SectionDrawing(CreateParams const& params) : T_Super(params) {}
 
+    bool GetTransform(TransformR transform, Utf8CP accessor) const
+        {
+        auto json = m_jsonProperties[accessor];
+        if (json.isNull())
+            return false;
+
+        JsonUtils::TransformFromJson(transform, json);
+        return true;
+        }
 public:
     //! Creates a new SectionDrawing in the specified DocumentListModel
     //! @param[in] model Create the SectionDrawing element in this DocumentListModel
     //! @param[in] name This name will be used to form the SectionDrawing element's DgnCode
     DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, Utf8StringCR name);
+
+    SectionType GetSectionType() const
+        {
+        auto type = static_cast<SectionType>(GetPropertyValueInt32(prop_SectionType()));
+        switch (type)
+            {
+            case SectionType::Section:
+            case SectionType::Detail:
+            case SectionType::Elevation:
+            case SectionType::Plan:
+                return type;
+            }
+
+        return SectionType::Section;
+        }
+
+    DgnDbStatus SetSectionType(SectionType sectionType) { return SetPropertyValue(prop_SectionType(), static_cast<int32_t>(sectionType)); }
+
+    DgnViewId GetSpatialViewId() const { return GetPropertyValueId<DgnViewId>(prop_SpatialView()); }
+    DgnDbStatus SetSpatialViewId(DgnViewId viewId) { return SetPropertyValue(prop_SpatialView(), viewId, ECN::ECClassId()); }
+
+    void SetDrawingToSpatialTransform(TransformCR transform) { JsonUtils::TransformToJson(m_jsonProperties[json_drawingToSpatialTransform()], transform); }
+    void SetSheetToSpatialTransform(TransformCR transform) { JsonUtils::TransformToJson(m_jsonProperties[json_sheetToSpatialTransform()], transform); }
+
+    bool GetDrawingToSpatialTransform(TransformR transform) const { return GetTransform(transform, json_drawingToSpatialTransform()); }
+    bool GetSheetToSpatialTransform(TransformR transform) const { return GetTransform(transform, json_sheetToSpatialTransform()); }
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingLocation : SpatialLocationElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SectionDrawingLocation, SpatialLocationElement)
+
+    BE_PROP_NAME(SectionView);
+public:
+    explicit SectionDrawingLocation(CreateParams const& params) : T_Super(params) { }
+
+    DgnViewId GetSectionViewId() const { return GetPropertyValueId<DgnViewId>(prop_SectionView()); }
+    DgnDbStatus SetSectionViewId(DgnViewId viewId) { return SetPropertyValue(prop_SectionView(), viewId, ECN::ECClassId()); }
 };
 
 //=======================================================================================

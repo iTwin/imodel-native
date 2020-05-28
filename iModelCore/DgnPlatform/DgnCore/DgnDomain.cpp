@@ -869,9 +869,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
-    DgnClassId classId = m_dgndb.Schemas().GetClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
-    BeAssert((classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?");
-    return classId;
+    return m_dgndb.Schemas().GetClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

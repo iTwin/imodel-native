@@ -88,6 +88,7 @@
 #define BIS_CLASS_RoleElement               "RoleElement"
 #define BIS_CLASS_RoleModel                 "RoleModel"
 #define BIS_CLASS_SectionDrawing            "SectionDrawing"
+#define BIS_CLASS_SectionDrawingLocation    "SectionDrawingLocation"
 #define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
 #define BIS_CLASS_SectionLocation           "SectionLocation"
 #define BIS_CLASS_Sheet                     "Sheet"

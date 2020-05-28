@@ -61,6 +61,7 @@ HANDLER_DEFINE_MEMBERS(InformationCarrier)
 HANDLER_DEFINE_MEMBERS(Document)
 HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
+HANDLER_DEFINE_MEMBERS(SectionDrawingLocation)
 HANDLER_DEFINE_MEMBERS(DriverBundle)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Category);
@@ -144,6 +145,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocation::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SectionDrawingLocation::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingGraphic::GetHandler());
     RegisterHandler(dgn_ElementHandler::UrlLinkHandler::GetHandler());
