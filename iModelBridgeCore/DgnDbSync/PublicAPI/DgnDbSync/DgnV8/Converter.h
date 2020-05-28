@@ -792,7 +792,6 @@ struct Converter
         L10N_STRING(InvalidRange)                // =="Invalid Range"==
         L10N_STRING(InvisibleElementFilteredOut) // =="Element [%s] is invisible. It was not converted."==
         L10N_STRING(LargeBRep)                   // =="Large BRep processed as surfaces."==
-        L10N_STRING(LevelDefinitionChange)       // =="Level [%s] has changed in [%s]: %s. Update is not possible. You must do a full conversion."==
         L10N_STRING(LevelDisplayInconsistent)    // =="Level [%s] is turned on for some attachments but is turned off for [%s]"==
         L10N_STRING(LevelNotFoundInRoot)         // =="Level [%s] found in tile file [%s] but not in root file [%s]. The root file must define all levels."==
         L10N_STRING(LevelSymbologyInconsistent)  // =="Level [%s] has a different definition in [%s] than in other files or attachments: %s"==

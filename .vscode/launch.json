@@ -107,8 +107,9 @@
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8Converter/DgnV8Converter.exe",
             "args": [
-                "--input=d:/dgn/WB_TT2/-3.DGN",
-                "--output=d:/tmp"
+                "--input=D:\\dgn\\test\\sourceFiles\\inconsistentLevelDefs\\4550_70_00_001_0001_362141_22_021.dgn.i.dgn",
+                "--output=d:\\tmp3\\test.bim",
+                "--update"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

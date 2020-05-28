@@ -41,7 +41,7 @@ bool Converter::IsDefaultLevel(DgnV8Api::LevelHandle const& level)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendToList(Utf8StringR lst, Utf8CP item)
+static void appendToString(Utf8StringR lst, Utf8CP item)
     {
     if (!lst.empty())
         lst.append(", ");
@@ -51,43 +51,41 @@ static void appendToList(Utf8StringR lst, Utf8CP item)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename ITEMTYPE> static int compareItems(Utf8StringR result, Utf8CP desc, ITEMTYPE const& v0, ITEMTYPE const& v1)
+template<typename ITEMTYPE> static int formatValueDifference(Utf8StringR result, Utf8CP desc, ITEMTYPE const& v0, ITEMTYPE const& v1)
     {
     if (v0 == v1)
         return 0;
         
-    appendToList(result, Utf8PrintfString("%s (%d vs. %d)", desc, v0, v1).c_str());
+    appendToString(result, Utf8PrintfString("%s (%d vs. %d)", desc, v0, v1).c_str());
     return (v0 < v1)? -1: 1;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<> int compareItems(Utf8StringR result, Utf8CP desc, double const& v0, double const& v1)
+template<> int formatValueDifference(Utf8StringR result, Utf8CP desc, double const& v0, double const& v1)
     {
     int i = BeNumerical::Compare(v0, v1);
     if (i == 0)
         return 0;
         
-    appendToList(result, Utf8PrintfString("%s (%lf vs. %lf)", desc, v0, v1).c_str());
+    appendToString(result, Utf8PrintfString("%s (%lf vs. %lf)", desc, v0, v1).c_str());
     return i;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int compareAppearance(Utf8StringR result, DgnSubCategory::Appearance const& a0, DgnSubCategory::Appearance const& a1)
+static void formatAppearanceDifferences(Utf8StringR result, DgnSubCategory::Appearance const& a0, DgnSubCategory::Appearance const& a1)
     {
-    if (0 != compareItems(result, "color",  a0.GetColor().GetValue(), a1.GetColor().GetValue())
-     || 0 != compareItems(result, "weight", a0.GetWeight(), a1.GetWeight())
-     || 0 != compareItems(result, "style",  a0.GetStyle().GetValueUnchecked(), a1.GetStyle().GetValueUnchecked())
-     || 0 != compareItems(result, "displayPriority",  a0.GetDisplayPriority(), a1.GetDisplayPriority())
-     || 0 != compareItems(result, "material",  a0.GetRenderMaterial().GetValueUnchecked(), a1.GetRenderMaterial().GetValueUnchecked())
-     || 0 != compareItems(result, "locate",  a0.GetDontLocate(), a1.GetDontLocate())
-     || 0 != compareItems(result, "snap",  a0.GetDontSnap(), a1.GetDontSnap())
-     || 0 != compareItems(result, "transparency",  a0.GetTransparency(), a1.GetTransparency()))
-        return 1;
-    return 0;
+    formatValueDifference(result, "color",  a0.GetColor().GetValue(), a1.GetColor().GetValue());
+    formatValueDifference(result, "weight", a0.GetWeight(), a1.GetWeight());
+    formatValueDifference(result, "style",  a0.GetStyle().GetValueUnchecked(), a1.GetStyle().GetValueUnchecked());
+    formatValueDifference(result, "displayPriority",  a0.GetDisplayPriority(), a1.GetDisplayPriority());
+    formatValueDifference(result, "material",  a0.GetRenderMaterial().GetValueUnchecked(), a1.GetRenderMaterial().GetValueUnchecked());
+    formatValueDifference(result, "locate",  a0.GetDontLocate(), a1.GetDontLocate());
+    formatValueDifference(result, "snap",  a0.GetDontSnap(), a1.GetDontSnap());
+    formatValueDifference(result, "transparency",  a0.GetTransparency(), a1.GetTransparency());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,6 +240,8 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
         //  We've already created a category by this name. Map this V8 level to it.
         if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
             LOG_LEVEL.tracev("merged level [%s] (%d) -> [%s] (%d)", Utf8String(level.GetName()).c_str(), level.GetLevelId(), dbCategoryName.c_str(), dbCategoryId.GetValue());
+
+        CheckNoLevelChange(level, dbCategoryId, v8File);
         }
     else
         {
@@ -436,12 +436,11 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
         return;
 
     bool maybeMakeSubCategories = !GetParams().NeverCopyLevel(); 
-    IssueSeverity issueSeverity = maybeMakeSubCategories? IssueSeverity::Info: IssueSeverity::Error;
 
     if (DgnV8Api::LevelCacheErrorCode::CannotFindLevel == v8Level->GetStatus())
         {
-        if (IssueSeverity::Error == issueSeverity)
-            ReportIssueV(issueSeverity, IssueCategory::VisualFidelity(), Issue::LevelDisplayInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str());
+        if (!maybeMakeSubCategories)
+            ReportIssueV(IssueSeverity::Error, IssueCategory::VisualFidelity(), Issue::LevelDisplayInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str());
         return;
         }
 
@@ -449,7 +448,7 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
     if (!isV8LevelOn && theView.GetCategorySelector().IsCategoryViewed(categoryId))
         {
         forceInvisible = true;
-		if (IssueSeverity::Error == issueSeverity)
+		if (!maybeMakeSubCategories)
             ReportIssueV(IssueSeverity::Info, IssueCategory::VisualFidelity(), Issue::LevelDisplayInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str());
         }
 
@@ -466,8 +465,8 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
             if (v8LevelId != DGNV8_LEVEL_DEFAULT_LEVEL_ID)  // We expect "Default" to be defined differently in different files. Only report on real levels that differ.
                 {
                 Utf8String diff;
-                compareAppearance(diff, dgnDbSubCategory->GetAppearance(), appearanceInAttachment);
-		        if (IssueSeverity::Error == issueSeverity)
+                formatAppearanceDifferences(diff, dgnDbSubCategory->GetAppearance(), appearanceInAttachment);
+		        if (!maybeMakeSubCategories)
 	                ReportIssueV(IssueSeverity::Info, IssueCategory::VisualFidelity(), Issue::LevelSymbologyInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str(), diff.c_str());
                 }
             }
@@ -496,9 +495,11 @@ void Converter::CheckNoLevelChange(DgnV8Api::LevelHandle const& v8Level, DgnCate
     if (dgnDbSubCategory.IsNull() || newAppearance.IsEqual(dgnDbSubCategory->GetAppearance()))
         return;
 
+    // Note: we don't know if this difference is caused by a change in the level definition or a difference (inconsistency) in the way the level is defined in this file vs other files that were processed first.
+
     Utf8String diff;
-    compareAppearance(diff, dgnDbSubCategory->GetAppearance(), newAppearance);
-    ReportIssueV(IssueSeverity::Error, IssueCategory::VisualFidelity(), Issue::LevelDefinitionChange(), nullptr, Bentley::Utf8String(v8Level.GetName()).c_str(), Bentley::Utf8String(v8File.GetFileName()).c_str(), diff.c_str());
+    formatAppearanceDifferences(diff, dgnDbSubCategory->GetAppearance(), newAppearance);
+    ReportIssueV(IssueSeverity::Error, IssueCategory::VisualFidelity(), Issue::LevelSymbologyInconsistent(), nullptr, Bentley::Utf8String(v8Level.GetName()).c_str(), Bentley::Utf8String(v8File.GetFileName()).c_str(), diff.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
