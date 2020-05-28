@@ -134,6 +134,7 @@ struct MeshMaterial
 //=======================================================================================
 struct CesiumTileWriter : Dgn::Tile::IO::Writer
 {
+    bmap<TextureCP, Utf8String> m_textures;
     void AddTextureSampler(Utf8StringCR sampler, TextureCR texture);
     Utf8String AddTextureImage (TextureCR texture, Utf8StringCR idStr);
     Json::Value CreateMaterialJson(MeshMaterial const& material, Utf8StringCR idStr);
@@ -628,6 +629,10 @@ void CesiumTileWriter::AddTextureSampler(Utf8StringCR sampler, TextureCR texture
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String CesiumTileWriter::AddTextureImage (TextureCR texture, Utf8StringCR idStr)
     {
+    auto existingTexture = m_textures.find(&texture);
+    if (existingTexture != m_textures.end())
+        return existingTexture->second;
+
     Render::ImageSourceCP imageSource = texture.GetImageSource();
     BeAssert(imageSource->IsValid());
 
@@ -668,6 +673,7 @@ Utf8String CesiumTileWriter::AddTextureImage (TextureCR texture, Utf8StringCR id
     m_json["bufferViews"][bvImageId]["byteLength"] = static_cast<uint32_t>(imageData.size());
     AddBinaryData (imageData.data(), imageData.size());
 
+    m_textures.Insert(&texture, textureId);
     return textureId;
     }
 
