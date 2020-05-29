@@ -1,0 +1,154 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+$(o)node$(oext) : $(baseDir)node/src/node.cc ${MultiCompileDepends}
+
+$(o)env$(oext) : $(baseDir)node/src/env.cc ${MultiCompileDepends}
+
+$(o)node_options$(oext) : $(baseDir)node/src/node_options.cc ${MultiCompileDepends}
+
+$(o)node_worker$(oext) : $(baseDir)node/src/node_worker.cc ${MultiCompileDepends}
+
+$(o)async_wrap$(oext) : $(baseDir)node/src/async_wrap.cc ${MultiCompileDepends}
+
+$(o)node_messaging$(oext) : $(baseDir)node/src/node_messaging.cc ${MultiCompileDepends}
+
+$(o)node_serdes$(oext) : $(baseDir)node/src/node_serdes.cc ${MultiCompileDepends}
+
+$(o)handle_wrap$(oext) : $(baseDir)node/src/handle_wrap.cc ${MultiCompileDepends}
+
+$(o)sharedarraybuffer_metadata$(oext) : $(baseDir)node/src/sharedarraybuffer_metadata.cc ${MultiCompileDepends}
+
+$(o)node_buffer$(oext) : $(baseDir)node/src/node_buffer.cc ${MultiCompileDepends}
+
+$(o)string_bytes$(oext) : $(baseDir)node/src/string_bytes.cc ${MultiCompileDepends}
+
+$(o)node_encoding$(oext) : $(baseDir)node/src/node_encoding.cc ${MultiCompileDepends}
+
+$(o)node_process$(oext) : $(baseDir)node/src/node_process.cc ${MultiCompileDepends}
+
+$(o)node_code_cache_stub$(oext) : $(baseDir)node/src/node_code_cache_stub.cc ${MultiCompileDepends}
+
+$(o)exceptions$(oext) : $(baseDir)node/src/exceptions.cc ${MultiCompileDepends}
+
+$(o)util$(oext) : $(baseDir)node/src/util.cc ${MultiCompileDepends}
+
+$(o)callback_scope$(oext) : $(baseDir)node/src/callback_scope.cc ${MultiCompileDepends}
+
+$(o)bootstrapper$(oext) : $(baseDir)node/src/bootstrapper.cc ${MultiCompileDepends}
+
+$(o)node_api$(oext) : $(baseDir)node/src/node_api.cc ${MultiCompileDepends}
+
+$(o)node_constants$(oext) : $(baseDir)node/src/node_constants.cc ${MultiCompileDepends}
+
+$(o)module_wrap$(oext) : $(baseDir)node/src/module_wrap.cc ${MultiCompileDepends}
+
+$(o)node_url$(oext) : $(baseDir)node/src/node_url.cc ${MultiCompileDepends}
+
+$(o)node_util$(oext) : $(baseDir)node/src/node_util.cc ${MultiCompileDepends}
+
+$(o)node_contextify$(oext) : $(baseDir)node/src/node_contextify.cc ${MultiCompileDepends}
+
+$(o)node_watchdog$(oext) : $(baseDir)node/src/node_watchdog.cc ${MultiCompileDepends}
+
+$(o)node_file$(oext) : $(baseDir)node/src/node_file.cc ${MultiCompileDepends}
+
+$(o)stream_base$(oext) : $(baseDir)node/src/stream_base.cc ${MultiCompileDepends}
+
+$(o)node_stat_watcher$(oext) : $(baseDir)node/src/node_stat_watcher.cc ${MultiCompileDepends}
+
+$(o)stream_wrap$(oext) : $(baseDir)node/src/stream_wrap.cc ${MultiCompileDepends}
+
+$(o)stream_pipe$(oext) : $(baseDir)node/src/stream_pipe.cc ${MultiCompileDepends}
+
+$(o)node_config$(oext) : $(baseDir)node/src/node_config.cc ${MultiCompileDepends}
+
+$(o)process_wrap$(oext) : $(baseDir)node/src/process_wrap.cc ${MultiCompileDepends}
+
+$(o)uv$(oext) : $(baseDir)node/src/uv.cc ${MultiCompileDepends}
+
+$(o)node_types$(oext) : $(baseDir)node/src/node_types.cc ${MultiCompileDepends}
+
+$(o)node_perf$(oext) : $(baseDir)node/src/node_perf.cc ${MultiCompileDepends}
+
+$(o)timer_wrap$(oext) : $(baseDir)node/src/timer_wrap.cc ${MultiCompileDepends}
+
+$(o)tty_wrap$(oext) : $(baseDir)node/src/tty_wrap.cc ${MultiCompileDepends}
+
+$(o)udp_wrap$(oext) : $(baseDir)node/src/udp_wrap.cc ${MultiCompileDepends}
+
+$(o)pipe_wrap$(oext) : $(baseDir)node/src/pipe_wrap.cc ${MultiCompileDepends}
+
+$(o)tcp_wrap$(oext) : $(baseDir)node/src/tcp_wrap.cc ${MultiCompileDepends}
+
+$(o)connection_wrap$(oext) : $(baseDir)node/src/connection_wrap.cc ${MultiCompileDepends}
+
+$(o)connect_wrap$(oext) : $(baseDir)node/src/connect_wrap.cc ${MultiCompileDepends}
+
+$(o)signal_wrap$(oext) : $(baseDir)node/src/signal_wrap.cc ${MultiCompileDepends}
+
+$(o)string_decoder$(oext) : $(baseDir)node/src/string_decoder.cc ${MultiCompileDepends}
+
+$(o)node_os$(oext) : $(baseDir)node/src/node_os.cc ${MultiCompileDepends}
+
+$(o)node_http_parser$(oext) : $(baseDir)node/src/node_http_parser.cc ${MultiCompileDepends}
+
+$(o)js_stream$(oext) : $(baseDir)node/src/js_stream.cc ${MultiCompileDepends}
+
+$(o)cares_wrap$(oext) : $(baseDir)node/src/cares_wrap.cc ${MultiCompileDepends}
+
+$(o)node_domain$(oext) : $(baseDir)node/src/node_domain.cc ${MultiCompileDepends}
+
+$(o)tls_wrap$(oext) : $(baseDir)node/src/tls_wrap.cc ${MultiCompileDepends}
+
+$(o)node_crypto$(oext) : $(baseDir)node/src/node_crypto.cc ${MultiCompileDepends}
+
+$(o)node_crypto_bio$(oext) : $(baseDir)node/src/node_crypto_bio.cc ${MultiCompileDepends}
+
+$(o)node_crypto_clienthello$(oext) : $(baseDir)node/src/node_crypto_clienthello.cc ${MultiCompileDepends}
+
+$(o)node_zlib$(oext) : $(baseDir)node/src/node_zlib.cc ${MultiCompileDepends}
+
+$(o)spawn_sync$(oext) : $(baseDir)node/src/spawn_sync.cc ${MultiCompileDepends}
+
+$(o)node_platform$(oext) : $(baseDir)node/src/node_platform.cc ${MultiCompileDepends}
+
+$(o)inspector_agent$(oext) : $(baseDir)node/src/inspector_agent.cc ${MultiCompileDepends}
+
+$(o)inspector_io$(oext) : $(baseDir)node/src/inspector_io.cc ${MultiCompileDepends}
+
+$(o)inspector_js_api$(oext) : $(baseDir)node/src/inspector_js_api.cc ${MultiCompileDepends}
+
+$(o)inspector_socket_server$(oext) : $(baseDir)node/src/inspector_socket_server.cc ${MultiCompileDepends}
+
+$(o)inspector_socket$(oext) : $(baseDir)node/src/inspector_socket.cc ${MultiCompileDepends}
+
+$(o)main_thread_interface$(oext) : $(baseDir)node/src/inspector/main_thread_interface.cc ${MultiCompileDepends}
+
+$(o)node_string$(oext) : $(baseDir)node/src/inspector/node_string.cc ${MultiCompileDepends}
+
+$(o)worker_inspector$(oext) : $(baseDir)node/src/inspector/worker_inspector.cc ${MultiCompileDepends}
+
+$(o)tracing_agent$(oext) : $(baseDir)node/src/inspector/tracing_agent.cc ${MultiCompileDepends}
+
+$(o)worker_agent$(oext) : $(baseDir)node/src/inspector/worker_agent.cc ${MultiCompileDepends}
+
+$(o)agent$(oext) : $(baseDir)node/src/tracing/agent.cc ${MultiCompileDepends}
+
+$(o)trace_event$(oext) : $(baseDir)node/src/tracing/trace_event.cc ${MultiCompileDepends}
+
+$(o)traced_value$(oext) : $(baseDir)node/src/tracing/traced_value.cc ${MultiCompileDepends}
+
+$(o)node_trace_writer$(oext) : $(baseDir)node/src/tracing/node_trace_writer.cc ${MultiCompileDepends}
+
+$(o)node_trace_buffer$(oext) : $(baseDir)node/src/tracing/node_trace_buffer.cc ${MultiCompileDepends}
+
+$(o)NodeTracing$(oext) : $(baseDir)node/src/node/inspector/protocol/NodeTracing.cpp ${MultiCompileDepends}
+
+$(o)NodeWorker$(oext) : $(baseDir)node/src/node/inspector/protocol/NodeWorker.cpp ${MultiCompileDepends}
+
+$(o)Protocol$(oext) : $(baseDir)node/src/node/inspector/protocol/Protocol.cpp ${MultiCompileDepends}
+
+$(o)debug_utils$(oext) : $(baseDir)node/src/debug_utils.cc ${MultiCompileDepends}

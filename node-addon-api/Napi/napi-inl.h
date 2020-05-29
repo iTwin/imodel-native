@@ -12,7 +12,7 @@
 
 #include <cstring>
 #include <type_traits>
-#include <Bentley/BentleyConfig.h>
+
 namespace Napi {
 
 // Helpers to handle functions exposed from C++.
@@ -205,15 +205,6 @@ struct AccessorCallbackData {
 ////////////////////////////////////////////////////////////////////////////////
 // Module registration
 ////////////////////////////////////////////////////////////////////////////////
-
-
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-	extern "C" void imodeljs_register_addon(char const*, Napi::ModuleRegisterCallback);
- 
-	#define NODE_API_MODULE(modname, regfunc) \
-    	extern "C"  void imodeljs_addon_entry_point() {imodeljs_register_addon(#modname, regfunc);}
-    
-#else
     
 #define NODE_API_MODULE(modname, regfunc)                 \
   napi_value __napi_ ## regfunc(napi_env env,             \
@@ -233,7 +224,7 @@ inline napi_value RegisterModule(napi_env env,
                                        Napi::Object(env, exports)));
   });
 }
-#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // Env class
 ////////////////////////////////////////////////////////////////////////////////
@@ -708,13 +699,7 @@ inline std::string String::Utf8Value() const {
   std::string value;
   value.reserve(length + 1);
   value.resize(length);
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-  size_t returnSize;
-  status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), &returnSize);
-  value.resize(returnSize - 1);
-#else
-    status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), nullptr);
-#endif
+  status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), nullptr);
   NAPI_THROW_IF_FAILED(_env, status, "");
   return value;
 }
@@ -1692,35 +1677,19 @@ inline Function::Function(napi_env env, napi_value value) : Object(env, value) {
 }
 
 inline Value Function::operator ()(const std::initializer_list<napi_value>& args) const {
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-  return Call(nullptr, args);
-#else
   return Call(Env().Undefined(), args);
-#endif
 }
 
 inline Value Function::Call(const std::initializer_list<napi_value>& args) const {
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-  return Call(nullptr, args);
-#else
   return Call(Env().Undefined(), args);
-#endif
 }
 
 inline Value Function::Call(const std::vector<napi_value>& args) const {
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-  return Call(nullptr, args);
-#else
   return Call(Env().Undefined(), args);
-#endif
 }
 
 inline Value Function::Call(size_t argc, const napi_value* args) const {
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-  return Call(nullptr, argc, args);
-#else
   return Call(Env().Undefined(), argc, args);
-#endif
 }
 
 inline Value Function::Call(napi_value recv, const std::initializer_list<napi_value>& args) const {

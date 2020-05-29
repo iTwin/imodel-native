@@ -11,16 +11,6 @@
 		41029E2C243FBF5C00D53F43 /* IModelJsHost.mm in Sources */ = {isa = PBXBuildFile; fileRef = 41029E2B243FBF5C00D53F43 /* IModelJsHost.mm */; };
 		413D70CF243E7F7500BB56F0 /* IModelJsHost.h in Headers */ = {isa = PBXBuildFile; fileRef = 413D70CD243E7F7500BB56F0 /* IModelJsHost.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		413D70D0243E7F7500BB56F0 /* IModelJsNative.h in Headers */ = {isa = PBXBuildFile; fileRef = 413D70CE243E7F7500BB56F0 /* IModelJsNative.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		413D70DF243E80DB00BB56F0 /* FileSystem.h in Headers */ = {isa = PBXBuildFile; fileRef = 413D70D5243E80DB00BB56F0 /* FileSystem.h */; };
-		413D70E0243E80DB00BB56F0 /* VM.m in Sources */ = {isa = PBXBuildFile; fileRef = 413D70D6243E80DB00BB56F0 /* VM.m */; };
-		413D70E1243E80DB00BB56F0 /* WindowTimers.h in Headers */ = {isa = PBXBuildFile; fileRef = 413D70D7243E80DB00BB56F0 /* WindowTimers.h */; };
-		413D70E2243E80DB00BB56F0 /* NativeModule.h in Headers */ = {isa = PBXBuildFile; fileRef = 413D70D8243E80DB00BB56F0 /* NativeModule.h */; };
-		413D70E3243E80DB00BB56F0 /* XMLHttpRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 413D70D9243E80DB00BB56F0 /* XMLHttpRequest.h */; };
-		413D70E4243E80DB00BB56F0 /* FileSystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 413D70DA243E80DB00BB56F0 /* FileSystem.m */; };
-		413D70E5243E80DB00BB56F0 /* VM.h in Headers */ = {isa = PBXBuildFile; fileRef = 413D70DB243E80DB00BB56F0 /* VM.h */; };
-		413D70E6243E80DB00BB56F0 /* XMLHttpRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 413D70DC243E80DB00BB56F0 /* XMLHttpRequest.m */; };
-		413D70E7243E80DB00BB56F0 /* NativeModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 413D70DD243E80DB00BB56F0 /* NativeModule.m */; };
-		413D70E8243E80DB00BB56F0 /* WindowTimers.m in Sources */ = {isa = PBXBuildFile; fileRef = 413D70DE243E80DB00BB56F0 /* WindowTimers.m */; };
 		41D3B002243E6BA400B401A3 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41D3B001243E6BA400B401A3 /* CoreFoundation.framework */; };
 		41D3B00D243E7B1100B401A3 /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41D3B00C243E7B1100B401A3 /* JavaScriptCore.framework */; };
 		41D3B00F243E7B5100B401A3 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41D3B00E243E7B5100B401A3 /* UIKit.framework */; };
@@ -34,16 +24,6 @@
 		41029E2B243FBF5C00D53F43 /* IModelJsHost.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = IModelJsHost.mm; sourceTree = "<group>"; };
 		413D70CD243E7F7500BB56F0 /* IModelJsHost.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IModelJsHost.h; path = IModelJsNative/IModelJsNative/IModelJsHost.h; sourceTree = SOURCE_ROOT; };
 		413D70CE243E7F7500BB56F0 /* IModelJsNative.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IModelJsNative.h; path = IModelJsNative/IModelJsNative/IModelJsNative.h; sourceTree = SOURCE_ROOT; };
-		413D70D5243E80DB00BB56F0 /* FileSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
-		413D70D6243E80DB00BB56F0 /* VM.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VM.m; sourceTree = "<group>"; };
-		413D70D7243E80DB00BB56F0 /* WindowTimers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WindowTimers.h; sourceTree = "<group>"; };
-		413D70D8243E80DB00BB56F0 /* NativeModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NativeModule.h; sourceTree = "<group>"; };
-		413D70D9243E80DB00BB56F0 /* XMLHttpRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XMLHttpRequest.h; sourceTree = "<group>"; };
-		413D70DA243E80DB00BB56F0 /* FileSystem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FileSystem.m; sourceTree = "<group>"; };
-		413D70DB243E80DB00BB56F0 /* VM.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VM.h; sourceTree = "<group>"; };
-		413D70DC243E80DB00BB56F0 /* XMLHttpRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XMLHttpRequest.m; sourceTree = "<group>"; };
-		413D70DD243E80DB00BB56F0 /* NativeModule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NativeModule.m; sourceTree = "<group>"; };
-		413D70DE243E80DB00BB56F0 /* WindowTimers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WindowTimers.m; sourceTree = "<group>"; };
 		41D3AFF3243E6A8D00B401A3 /* IModelJsNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IModelJsNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		41D3AFF7243E6A8D00B401A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		41D3B001243E6BA400B401A3 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -71,23 +51,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		413D70D4243E80DB00BB56F0 /* Bindings */ = {
-			isa = PBXGroup;
-			children = (
-				413D70D5243E80DB00BB56F0 /* FileSystem.h */,
-				413D70D6243E80DB00BB56F0 /* VM.m */,
-				413D70D7243E80DB00BB56F0 /* WindowTimers.h */,
-				413D70D8243E80DB00BB56F0 /* NativeModule.h */,
-				413D70D9243E80DB00BB56F0 /* XMLHttpRequest.h */,
-				413D70DA243E80DB00BB56F0 /* FileSystem.m */,
-				413D70DB243E80DB00BB56F0 /* VM.h */,
-				413D70DC243E80DB00BB56F0 /* XMLHttpRequest.m */,
-				413D70DD243E80DB00BB56F0 /* NativeModule.m */,
-				413D70DE243E80DB00BB56F0 /* WindowTimers.m */,
-			);
-			path = Bindings;
-			sourceTree = "<group>";
-		};
 		41D3AFE9243E6A8D00B401A3 = {
 			isa = PBXGroup;
 			children = (
@@ -110,7 +73,6 @@
 			children = (
 				41029E2B243FBF5C00D53F43 /* IModelJsHost.mm */,
 				41E72258243F98BF00C78FD3 /* Config.xcconfig */,
-				413D70D4243E80DB00BB56F0 /* Bindings */,
 				41D3B014243E7CF300B401A3 /* IModelJsNative */,
 				41D3AFF7243E6A8D00B401A3 /* Info.plist */,
 			);
@@ -146,13 +108,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				413D70E1243E80DB00BB56F0 /* WindowTimers.h in Headers */,
-				413D70DF243E80DB00BB56F0 /* FileSystem.h in Headers */,
 				413D70D0243E7F7500BB56F0 /* IModelJsNative.h in Headers */,
-				413D70E2243E80DB00BB56F0 /* NativeModule.h in Headers */,
-				413D70E3243E80DB00BB56F0 /* XMLHttpRequest.h in Headers */,
 				413D70CF243E7F7500BB56F0 /* IModelJsHost.h in Headers */,
-				413D70E5243E80DB00BB56F0 /* VM.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,12 +205,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				413D70E0243E80DB00BB56F0 /* VM.m in Sources */,
-				413D70E6243E80DB00BB56F0 /* XMLHttpRequest.m in Sources */,
-				413D70E4243E80DB00BB56F0 /* FileSystem.m in Sources */,
-				413D70E8243E80DB00BB56F0 /* WindowTimers.m in Sources */,
 				41029E2C243FBF5C00D53F43 /* IModelJsHost.mm in Sources */,
-				413D70E7243E80DB00BB56F0 /* NativeModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

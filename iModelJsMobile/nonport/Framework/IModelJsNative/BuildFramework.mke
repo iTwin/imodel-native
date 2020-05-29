@@ -78,13 +78,6 @@ LinkOptions + -framework UIKit
 # %include dlmlink.mki
 %include $(sharedMki)linkLibrary.mki
 
-
-#----------------------------------------------------------------------
-# Deliver System JavaScript library required by runtime
-#----------------------------------------------------------------------
-always:
-    ~linkdir "$(BuildContext)Delivery/system=$(baseDir)/system"
-
 always:
     python $(baseDir)configure.py $(TARGET_PROCESSOR_ARCHITECTURE) $(libs) $(fwk)
     xcrun xcodebuild build\

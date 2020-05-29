@@ -1,0 +1,1 @@
+#define NGHTTP2_VERSION ""

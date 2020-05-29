@@ -8,20 +8,21 @@ NOSTRICT=1
 nameToDefine = __IMODELJS_BUILD__
 %include cdefapnd.mki
 
+nameToDefine = NODE_WANT_INTERNALS
+%include cdefapnd.mki
+
+nameToDefine = HAVE_OPENSSL
+%include cdefapnd.mki
+
+nameToDefine = HAVE_INSPECTOR
+%include cdefapnd.mki
+
+nameToDefine = NODE_USE_V8_PLATFORM
+%include cdefapnd.mki
+
 baseDir = $(_MakeFilePath)
 publicApiSourceDr = $(baseDir)PublicAPI/iModelJs/
 appName = iModelJs
-
-%if $(TARGET_PLATFORM) == "Windows" || $(TARGET_PLATFORM) == "WinRT" || $(TARGET_PLATFORM) == "Android" || $(TARGET_PLATFORM) == "Linux"
-    USE_V8 = 1
-    nodeApiDir = $(baseDir)v8/
-    cDefs + -DUSING_V8_SHARED=1
-%elif $(TARGET_PLATFORM) == "iOS" || $(TARGET_PLATFORM) == "MacOS"
-    USE_JAVASCRIPT_CORE=1
-    nodeApiDir = $(baseDir)jsc/
-%else
-    %error Unsupported platform
-%endif
 
 o = $(OutputRootDir)build/$(appName)/
 
@@ -38,71 +39,45 @@ o = $(OutputRootDir)build/$(appName)/
 $(BuildContext)PublicAPI/iModelJs : $(baseDir)PublicAPI/iModelJs
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+always:
+    python $(baseDir)/node/tools/js2c.py $(o)node_javascript.cc
+
 #--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------
-MultiCompileDepends = $(_MakeFileSpec) $(publicApiSourceDr)iModelJs.h \
-                                       $(publicApiSourceDr)iModelJsServicesTier.h \
-                                       $(publicApiSourceDr)iModelJsUtilities.h \
-                                       $(baseDir)iModelJsInternal.h
+%if $(TARGET_PLATFORM) == "iOS" || $(TARGET_PLATFORM) == "MacOS"
+    cIncs + -I$(BuildContext)VendorAPI/libuv/
+    cIncs + -I$(BuildContext)VendorAPI/google_v8/
+    cIncs + -I$(baseDir)node/
+    cIncs + -I$(baseDir)node/src/
+    cIncs + -I$(baseDir)node/deps/cares/include/
+    cIncs + -I$(baseDir)node/deps/cares/src/
+    cIncs + -I$(baseDir)node/deps/cares/config/darwin/
+    cIncs + -I$(baseDir)node/deps/http_parser/
+    cIncs + -I$(baseDir)node/deps/brotli/c/include/
+    cIncs + -I$(BuildContext)VendorAPI/icu4c/
+    
+    # The V8 engine is compiled without RTTI, so node must be also.
+    LLVMCommonCompOpts + -fno-rtti
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec) $(publicApiSourceDr)MobileBackend.h
 
 %include MultiCppCompileRule.mki
 
-$(o)ServicesTierHost$(oext) : $(baseDir)ServicesTierHost.cpp ${MultiCompileDepends}
+$(o)MobileBackend$(oext) : $(baseDir)MobileBackend.cpp ${MultiCompileDepends}
 
-$(o)ServicesTierScripts$(oext) : $(baseDir)ServicesTierScripts.cpp ${MultiCompileDepends}
+$(o)NodeStubs$(oext) : $(baseDir)NodeStubs.cpp ${MultiCompileDepends}
 
-$(o)ServicesTierUvHost$(oext) : $(baseDir)ServicesTierUvHost.cpp ${MultiCompileDepends}
+%include NodeSources.mki
 
-$(o)ServicesTierNodeHost$(oext) : $(baseDir)ServicesTierNodeHost.cpp ${MultiCompileDepends}
+$(o)node_javascript$(oext) : $(o)node_javascript.cc ${MultiCompileDepends}
 
-$(o)Utilities$(oext) : $(baseDir)Utilities.cpp ${MultiCompileDepends}
-
-$(o)ServicesTierEnvironment$(oext) : $(baseDir)ServicesTierEnvironment.cpp ${MultiCompileDepends}
-
-$(o)ServicesTierExtension$(oext) : $(baseDir)ServicesTierExtension.cpp ${MultiCompileDepends}
-
-$(o)ServicesTierUtilities$(oext) : $(baseDir)ServicesTierUtilities.cpp ${MultiCompileDepends}
+%include NodeDepsSources.mki
 
 %include MultiCppCompileGo.mki
 
 iModelJsObjs =% $(MultiCompileObjectList)
-
-#--------------------------------------------------------------------------------------
-#   Compile our version of node-addon-api
-#--------------------------------------------------------------------------------------
-
-nodeAddonApiPublicApiSourceDir = $(BuildContext)VendorAPI/Napi/
-
-napiHeaders = $(nodeAddonApiPublicApiSourceDir)napi.h
-
-cDefs + -DUSING_UV_SHARED=1
-cDefs + -DEXTERNAL_NAPI=1
-cIncs + -I$(nodeAddonApiPublicApiSourceDir)
-
-$(o)node_internals$(oext) : $(baseDir)node_internals.cc $(napiHeaders) ${MultiCompileDepends}
-
-imodelJsObjs + $(o)node_internals$(oext) 
-
-%if defined (USE_V8)
-
-    $(o)node_api$(oext)       : $(nodeApiDir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
-
-    $(o)v8_node_internalsi$(oext) : $(nodeApiDir)v8_node_internals.cc $(napiHeaders) ${MultiCompileDepends}
-
-    imodelJsObjs + $(o)node_api$(oext) $(o)v8_node_internalsi$(oext)
-
-%elif defined(USE_JAVASCRIPT_CORE)
-
-    $(o)node_api$(oext)       : $(nodeApiDir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
-
-    imodelJsObjs + $(o)node_api$(oext)
-
-%else
-
-    %error unsupported JavaScript engine
-
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Pull in the addon's object files
@@ -124,12 +99,6 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-
 %include $(BuildContext)SubParts/imodeljs-addon-build-tools/IModelJsNative_input_libs.mki
-
-%if $(TARGET_PLATFORM) == "Windows"
-    LINKER_LIBRARIES + $(ContextLibPrefix)v8$(stlibext) $(ContextLibPrefix)v8_libbase$(stlibext) $(ContextLibPrefix)v8_libplatform$(stlibext)
-    LINKER_LIBRARIES + advapi32.lib iphlpapi.lib psapi.lib shell32.lib user32.lib userenv.lib ws2_32.lib
-%endif
 
 %include $(sharedMki)linkLibrary.mki

@@ -15,12 +15,12 @@
 
 @implementation AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    /*
-    NSURL* mainJS = [[NSURL alloc] initWithString:@"main"];
-    [[IModelJsHost sharedInstance] loadBackend:mainJS
-                                   :@[@"Assets"] // directory containing the mainJS
-                                    :@"Assets"]; // allow presentation rules to load
-     */
+    
+    //NSURL* mainJS = [[NSURL alloc] initWithString:@"main"];
+    //[[IModelJsHost sharedInstance] loadBackend:mainJS
+    //                               :@[@"Assets"] // directory containing the mainJS
+    //                                :@"Assets"]; // allow presentation rules to load
+     
     return YES;
 }
 

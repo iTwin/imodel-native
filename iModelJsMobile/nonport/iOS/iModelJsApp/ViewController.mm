@@ -348,12 +348,10 @@ didReceiveServerRedirectForProvisionalNavigation:(WKNavigation *)navigation {
         //for( NSString* key in _appInfo.env.allKeys) {
          //   setenv(key.UTF8String, [_appInfo.env objectForKey:key].UTF8String , 1);
         //}
- 
-        NSString* appRoot =  [@"Assets" stringByAppendingPathComponent:appIdArg];
-        NSURL* mainJS = [[NSURL alloc] initWithString:_appInfo.backend];
-        [[IModelJsHost sharedInstance] loadBackend:mainJS
-                                                  :@[appRoot] // directory containing the mainJS
-                                                  :appRoot]; // allow presentation rules to load
+        NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
+        NSString* appRoot =  [appFolderPath stringByAppendingPathComponent:[@"Assets" stringByAppendingPathComponent:appIdArg]];
+        NSURL* mainJs = [[NSURL alloc] initFileURLWithPath:[appRoot stringByAppendingPathComponent:_appInfo.backend ]];
+        [[IModelJsHost sharedInstance] loadBackend:mainJs]; 
         
         dispatch_async(dispatch_get_main_queue(), ^() {
             [self setupWebViewForApp];

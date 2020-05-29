@@ -75,6 +75,7 @@
     <!-- SubPart PartName="VendorAPI" PartFile="iModelJsMobile" Repository="iModelJsMobile"/-->
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
+    <SubPart PartName="iModelHubClient-PublicAPI" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02" />
     <Bindings>
         <Directory SourceName="Delivery/imodeljs-addon-objs" SubPartDirectory="imodeljs-addon-objs" />
         <Files SubPartDirectory="imodeljs-addon-build-tools">

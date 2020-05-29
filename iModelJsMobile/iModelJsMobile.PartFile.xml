@@ -12,9 +12,18 @@
         <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
         <SubPart PartName="libuv" PartFile="libuv" Repository="Thirdparty-libuv" />
+        <SubPart PartName="OpenSSL" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <!-- SubPart PartName="VendorAPI"/ -->
         <SubPart PartName="iModelJsNative-Mobile" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
         <SubPart PartName="iModelJsApiDeclarations" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
         <SubPart PartName="iModelJsWindows-Only-SubParts" />
+
+        <!-- Begin iOS Only -->
+        <SubPart LibType="Static" PartName="google_v8" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <!-- End iOS Only -->
+
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
+
         <Bindings>
             <PublicAPI Domain="iModelJs" />
             <Libs>Delivery/$(libprefix)iModelJs$(libext)</Libs>
@@ -30,9 +39,6 @@
      ======================================================================================================== -->
     <Part Name="AppleFramework" BentleyBuildMakeFile="nonport/Framework/IModelJsNative/BuildFramework.mke" ApiNumber="M02">
         <SubPart PartName="iModelJs" LibType="Static" />
-        <Bindings>
-            <Directory ProductDirectoryName="Assets" ProductSubDirectory="system" SourceName="Delivery/system"/>
-        </Bindings>
     </Part>
     <Part Name="MakePackages" BentleyBuildMakeFile="package/makePackages.mke">
         <SubProduct ProductName="iModelJsHost"/>

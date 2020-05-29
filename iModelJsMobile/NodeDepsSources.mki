@@ -1,0 +1,144 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+$(o)http_parser$(oext) : $(baseDir)node/deps/http_parser/http_parser.c ${MultiCompileDepends}
+
+$(o)ares_llist$(oext) : $(baseDir)node/deps/cares/src/ares_llist.c ${MultiCompileDepends}
+
+$(o)ares_create_query$(oext) : $(baseDir)node/deps/cares/src/ares_create_query.c ${MultiCompileDepends}
+
+$(o)ares_library_init$(oext) : $(baseDir)node/deps/cares/src/ares_library_init.c ${MultiCompileDepends}
+
+$(o)ares_expand_name$(oext) : $(baseDir)node/deps/cares/src/ares_expand_name.c ${MultiCompileDepends}
+
+$(o)ares_expand_string$(oext) : $(baseDir)node/deps/cares/src/ares_expand_string.c ${MultiCompileDepends}
+
+$(o)ares__close_sockets$(oext) : $(baseDir)node/deps/cares/src/ares__close_sockets.c ${MultiCompileDepends}
+
+$(o)ares_llist$(oext) : $(baseDir)node/deps/cares/src/ares_llist.c ${MultiCompileDepends}
+
+$(o)ares_getnameinfo$(oext) : $(baseDir)node/deps/cares/src/ares_getnameinfo.c ${MultiCompileDepends}
+
+$(o)ares_init$(oext) : $(baseDir)node/deps/cares/src/ares_init.c ${MultiCompileDepends}
+
+$(o)ares_destroy$(oext) : $(baseDir)node/deps/cares/src/ares_destroy.c ${MultiCompileDepends}
+
+$(o)ares_data$(oext) : $(baseDir)node/deps/cares/src/ares_data.c ${MultiCompileDepends}
+
+$(o)ares__timeval$(oext) : $(baseDir)node/deps/cares/src/ares__timeval.c ${MultiCompileDepends}
+
+$(o)ares_gethostbyaddr$(oext) : $(baseDir)node/deps/cares/src/ares_gethostbyaddr.c ${MultiCompileDepends}
+
+$(o)ares_cancel$(oext) : $(baseDir)node/deps/cares/src/ares_cancel.c ${MultiCompileDepends}
+
+$(o)ares_free_string$(oext) : $(baseDir)node/deps/cares/src/ares_free_string.c ${MultiCompileDepends}
+
+$(o)ares_free_hostent$(oext) : $(baseDir)node/deps/cares/src/ares_free_hostent.c ${MultiCompileDepends}
+
+$(o)ares__read_line$(oext) : $(baseDir)node/deps/cares/src/ares__read_line.c ${MultiCompileDepends}
+
+$(o)ares__get_hostent$(oext) : $(baseDir)node/deps/cares/src/ares__get_hostent.c ${MultiCompileDepends}
+
+$(o)ares_mkquery$(oext) : $(baseDir)node/deps/cares/src/ares_mkquery.c ${MultiCompileDepends}
+
+$(o)ares_nowarn$(oext) : $(baseDir)node/deps/cares/src/ares_nowarn.c ${MultiCompileDepends}
+
+$(o)ares_options$(oext) : $(baseDir)node/deps/cares/src/ares_options.c ${MultiCompileDepends}
+
+$(o)ares_parse_a_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_a_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_aaaa_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_aaaa_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_mx_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_mx_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_naptr_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_naptr_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_ns_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_ns_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_ptr_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_ptr_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_soa_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_soa_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_srv_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_srv_reply.c ${MultiCompileDepends}
+
+$(o)ares_parse_txt_reply$(oext) : $(baseDir)node/deps/cares/src/ares_parse_txt_reply.c ${MultiCompileDepends}
+
+$(o)ares_platform$(oext) : $(baseDir)node/deps/cares/src/ares_platform.c ${MultiCompileDepends}
+
+$(o)ares_process$(oext) : $(baseDir)node/deps/cares/src/ares_process.c ${MultiCompileDepends}
+
+$(o)ares_query$(oext) : $(baseDir)node/deps/cares/src/ares_query.c ${MultiCompileDepends}
+
+$(o)ares_search$(oext) : $(baseDir)node/deps/cares/src/ares_search.c ${MultiCompileDepends}
+
+$(o)ares_send$(oext) : $(baseDir)node/deps/cares/src/ares_send.c ${MultiCompileDepends}
+
+$(o)ares_strcasecmp$(oext) : $(baseDir)node/deps/cares/src/ares_strcasecmp.c ${MultiCompileDepends}
+
+$(o)ares_strdup$(oext) : $(baseDir)node/deps/cares/src/ares_strdup.c ${MultiCompileDepends}
+
+$(o)ares_strerror$(oext) : $(baseDir)node/deps/cares/src/ares_strerror.c ${MultiCompileDepends}
+
+$(o)ares_strsplit$(oext) : $(baseDir)node/deps/cares/src/ares_strsplit.c ${MultiCompileDepends}
+
+$(o)ares_timeout$(oext) : $(baseDir)node/deps/cares/src/ares_timeout.c ${MultiCompileDepends}
+
+$(o)ares_version$(oext) : $(baseDir)node/deps/cares/src/ares_version.c ${MultiCompileDepends}
+
+$(o)ares_writev$(oext) : $(baseDir)node/deps/cares/src/ares_writev.c ${MultiCompileDepends}
+
+$(o)bitncmp$(oext) : $(baseDir)node/deps/cares/src/bitncmp.c ${MultiCompileDepends}
+
+$(o)inet_net_pton$(oext) : $(baseDir)node/deps/cares/src/inet_net_pton.c ${MultiCompileDepends}
+
+$(o)inet_ntop$(oext) : $(baseDir)node/deps/cares/src/inet_ntop.c ${MultiCompileDepends}
+
+$(o)dictionary$(oext) : $(baseDir)node/deps/brotli/c/common/dictionary.c ${MultiCompileDepends}
+
+$(o)transform$(oext) : $(baseDir)node/deps/brotli/c/common/transform.c ${MultiCompileDepends}
+
+$(o)bit_reader$(oext) : $(baseDir)node/deps/brotli/c/dec/bit_reader.c ${MultiCompileDepends}
+
+$(o)decode$(oext) : $(baseDir)node/deps/brotli/c/dec/decode.c ${MultiCompileDepends}
+
+$(o)huffman$(oext) : $(baseDir)node/deps/brotli/c/dec/huffman.c ${MultiCompileDepends}
+
+$(o)state$(oext) : $(baseDir)node/deps/brotli/c/dec/state.c ${MultiCompileDepends}
+
+$(o)backward_references$(oext) : $(baseDir)node/deps/brotli/c/enc/backward_references.c ${MultiCompileDepends}
+
+$(o)backward_references_hq$(oext) : $(baseDir)node/deps/brotli/c/enc/backward_references_hq.c ${MultiCompileDepends}
+
+$(o)bit_cost$(oext) : $(baseDir)node/deps/brotli/c/enc/bit_cost.c ${MultiCompileDepends}
+
+$(o)block_splitter$(oext) : $(baseDir)node/deps/brotli/c/enc/block_splitter.c ${MultiCompileDepends}
+
+$(o)brotli_bit_stream$(oext) : $(baseDir)node/deps/brotli/c/enc/brotli_bit_stream.c ${MultiCompileDepends}
+
+$(o)cluster$(oext) : $(baseDir)node/deps/brotli/c/enc/cluster.c ${MultiCompileDepends}
+
+$(o)compress_fragment$(oext) : $(baseDir)node/deps/brotli/c/enc/compress_fragment.c ${MultiCompileDepends}
+
+$(o)compress_fragment_two_pass$(oext) : $(baseDir)node/deps/brotli/c/enc/compress_fragment_two_pass.c ${MultiCompileDepends}
+
+$(o)dictionary_hash$(oext) : $(baseDir)node/deps/brotli/c/enc/dictionary_hash.c ${MultiCompileDepends}
+
+$(o)encode$(oext) : $(baseDir)node/deps/brotli/c/enc/encode.c ${MultiCompileDepends}
+
+$(o)encoder_dict$(oext) : $(baseDir)node/deps/brotli/c/enc/encoder_dict.c ${MultiCompileDepends}
+
+$(o)entropy_encode$(oext) : $(baseDir)node/deps/brotli/c/enc/entropy_encode.c ${MultiCompileDepends}
+
+$(o)histogram$(oext) : $(baseDir)node/deps/brotli/c/enc/histogram.c ${MultiCompileDepends}
+
+$(o)literal_cost$(oext) : $(baseDir)node/deps/brotli/c/enc/literal_cost.c ${MultiCompileDepends}
+
+$(o)memory$(oext) : $(baseDir)node/deps/brotli/c/enc/memory.c ${MultiCompileDepends}
+
+$(o)metablock$(oext) : $(baseDir)node/deps/brotli/c/enc/metablock.c ${MultiCompileDepends}
+
+$(o)static_dict$(oext) : $(baseDir)node/deps/brotli/c/enc/static_dict.c ${MultiCompileDepends}
+
+$(o)utf8_util$(oext) : $(baseDir)node/deps/brotli/c/enc/utf8_util.c ${MultiCompileDepends}

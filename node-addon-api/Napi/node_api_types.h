@@ -4,9 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <Bentley/BentleyConfig.h>
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-#include <JavaScriptCore/JavaScriptCore.h>
-#endif
 
 #if !defined __cplusplus || (defined(_MSC_VER) && _MSC_VER < 1900)
     typedef uint16_t char16_t;
@@ -15,11 +12,7 @@
 // JSVM API types are all opaque pointers for ABI stability
 // typedef undefined structs instead of void* for compile time type safety
 typedef struct napi_env__* napi_env;
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-typedef JSValueRef napi_value;
-#else
 typedef struct napi_value__ *napi_value;
-#endif
 typedef struct napi_ref__* napi_ref;
 typedef struct napi_handle_scope__* napi_handle_scope;
 typedef struct napi_escapable_handle_scope__* napi_escapable_handle_scope;
@@ -150,33 +143,4 @@ typedef struct {
   const char* release;
 } napi_node_version;
 
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-struct napi_env__ {
-private:
-  JSContextGroupRef m_jscContextGroup;
-  JSContextRef m_jscContext;
-
-public:
-  explicit napi_env__(JSContextGroupRef jscContextGroup): m_jscContextGroup(jscContextGroup), last_error() 
-    {
-      m_jscContext = JSGlobalContextCreateInGroup(m_jscContextGroup, nullptr);
-    }
-  ~napi_env__() {}
-  bool IsExceptionPending() const { return false;}
-  JSContextRef GetContext() const { return m_jscContext;}
-  napi_extended_error_info last_error;
-};
-
-struct napi_ref__ {
-    JSValueRef value;
-    uint32_t refCount;
-};
-
-struct napi_handle_scope__ {
-};
-
-struct napi_escapable_handle_scope__ {
-};
-
-#endif
 #endif  // SRC_NODE_API_TYPES_H_
