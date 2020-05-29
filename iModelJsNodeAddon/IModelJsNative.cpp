@@ -3743,7 +3743,7 @@ public:
         if (m_ecsqlValue == nullptr)
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
-        return toJsString(Env(), m_ecsqlValue->GetText());
+        return toJsString(Env(), m_ecsqlValue->IsNull() ? "" : m_ecsqlValue->GetText());
         }
 
     Napi::Value GetEnum(Napi::CallbackInfo const& info)
