@@ -28,6 +28,11 @@ configs = [
         'dir': os.path.join(os.environ['BUILD_BINARIESDIRECTORY'], 'LinuxX64', 'imodelbankaddon_pkgs', 'imodel-bank-linux-x64'),
         'strategy': 'iModelBankAddon',
         'glob': '*.node'
+    },
+    {
+        'dir': os.path.join(os.environ['BUILD_BINARIESDIRECTORY'], 'LinuxX64', 'ecschemaopsaddon_pkgs', 'ecschema-ops-linux-x64'),
+        'strategy': 'ECSchemaOpsAddon',
+        'glob': '*.node'
     }
 ]
 
