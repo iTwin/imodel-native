@@ -39,9 +39,6 @@ typedef struct BlockcacheMessage BlockcacheMessage;
 ** szBlk:
 **   Block size in bytes for the blocks in pBlkFile.
 **
-** zBlkFile:
-**   Name of block cache file used for this file.
-**
 ** pBlkFile:
 **   File descriptor opened on block cache file.
 **
@@ -88,7 +85,7 @@ struct BlockcacheFile {
   char *zAccount;                 /* Account name used by connected daemon */
   char *zContainer;               /* Container name */
   sqlite3_int64 szBlk;            /* Block size */
-  char *zBlkFile;                 /* Name of block file */
+  char *pFree;                    /* Free when closing file */
   sqlite3_file *pBlkFile;         /* File descriptor open on block-cache file */
 
   u32 lockMask;                   /* Mask of current shm-locks */
@@ -253,6 +250,33 @@ static const sqlite3_io_methods bcv_io_methods = {
 };
 
 
+int bcv_socket_is_valid(BCV_SOCKET_TYPE s){
+#ifdef __WIN32__
+  return (s!=INVALID_SOCKET);
+#else
+  return (s>=0);
+#endif
+}
+
+void bcv_close_socket(BCV_SOCKET_TYPE s){
+#ifdef __WIN32__
+  shutdown(s, SD_BOTH);
+  closesocket(s);
+#else
+  shutdown(s, SHUT_RDWR);
+  close(s);
+#endif
+}
+
+void bcv_socket_init(){
+#ifdef __WIN32__
+  WORD v;
+  WSADATA wsa;
+  v = MAKEWORD(2,2);
+  WSAStartup(v, &wsa);
+#endif
+}
+
 /*
 ** VFS and IO methods use "return BCV_RETURN(rc);" instead of "return rc;"
 ** to make it easier to figure out where errors are coming from when using
@@ -294,7 +318,7 @@ static int bcvSendMessage(BCV_SOCKET_TYPE fd, BlockcacheMessage *pMsg){
   );
 
   nMsg += pMsg->nData;
-  if( pMsg->eType==BCV_MESSAGE_REQUEST ){
+  if( pMsg->eType==BCV_MESSAGE_REQUEST || pMsg->eType==BCV_MESSAGE_QUERY ){
     nMsg += sizeof(u32);
   }
   aMsg = sqlite3_malloc(nMsg);
@@ -302,7 +326,7 @@ static int bcvSendMessage(BCV_SOCKET_TYPE fd, BlockcacheMessage *pMsg){
 
   aMsg[0] = (u8)pMsg->eType;
   bcvPutU32(&aMsg[1], nMsg);
-  if( pMsg->eType==BCV_MESSAGE_REQUEST ){
+  if( pMsg->eType==BCV_MESSAGE_REQUEST || pMsg->eType==BCV_MESSAGE_QUERY ){
     bcvPutU32(&aMsg[5], pMsg->iVal);
   }
   if( pMsg->nData ){
@@ -475,8 +499,8 @@ static int bcvClose(sqlite3_file *pFile){
   if( p->pBlkFile && p->pBlkFile->pMethods ){
     p->pBlkFile->pMethods->xClose(p->pBlkFile);
   }
-  sqlite3_free(p->zBlkFile);
-  p->zBlkFile = 0;
+  sqlite3_free(p->pFree);
+  p->pFree = 0;
   sqlite3_free(p->aUsed);
   sqlite3_free(p->aBlkArray);
   sqlite3_free(p->zContainer);
@@ -768,6 +792,7 @@ static int bcvFileControl(sqlite3_file *pFile, int op, void *pArg){
         sqlite3_free(reply.pFree);
         rc = reply.iVal;
       }
+      sqlite3_free(zMsg);
     }
   }
 
@@ -855,7 +880,7 @@ static int bcvShmLock(sqlite3_file *pFile, int offset, int n, int flags){
 */
 static void bcvShmBarrier(sqlite3_file *pFile){
   sqlite3_file *pOrig = ORIGFILE(pFile);
-  return pOrig->pMethods->xShmBarrier(pOrig);
+  pOrig->pMethods->xShmBarrier(pOrig);
 }
 
 /* 
@@ -1041,9 +1066,7 @@ static int bcvReadTextFile(const char *zFile, char **pzText){
   memset(pFile, 0, pVfs->szOsFile);
 
   rc = pVfs->xOpen(pVfs, zFile, pFile, f, &f);
-  if( rc!=SQLITE_OK ){
-    sqlite3_free(pFile);
-  }else{
+  if( rc==SQLITE_OK ){
     rc = pFile->pMethods->xFileSize(pFile, &sz);
   }
 
@@ -1070,6 +1093,27 @@ static int bcvReadTextFile(const char *zFile, char **pzText){
   return rc;
 }
 
+int bcvMakeFilename(char **pzFile, char **ppFree){
+  int rc = SQLITE_NOMEM;
+  *ppFree = 0;
+  if( *pzFile ){
+    char *zFile = *pzFile;
+    int nFile = strlen(zFile);
+    char *pFree;
+    *ppFree = pFree = sqlite3_malloc(nFile + 4 + 2);
+    if( pFree==0 ){
+      *pzFile = 0;
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pFree, 0, nFile+4+2);
+      memcpy(&pFree[4], zFile, nFile);
+      *pzFile = &pFree[4];
+    }
+    sqlite3_free(zFile);
+  }
+  return rc;
+}
+
 static int bcvAutoAttach(
   const char *zFile,              /* File-name to open */
   const char *zSas,               /* URI bcv_sas= parameter */
@@ -1082,6 +1126,7 @@ static int bcvAutoAttach(
   char *zContainer = 0;
   char *zPort = 0;
   char *zFree = 0;
+  char *pFree = 0;
   int bReadonly = bReadflag;
   const char *zSasToken = zSas;
   BCV_SOCKET_TYPE fd;
@@ -1091,7 +1136,8 @@ static int bcvAutoAttach(
   for(i1=i2-1; i1>0 && zFile[i1]!='/'; i1--);
   if( zFile[i1]!='/' ) return SQLITE_ERROR;
 
-  zPortfile = sqlite3_mprintf("%.*s%s%c", i1+1, zFile,BCV_PORTNUMBER_FILE,'\0');
+  zPortfile = sqlite3_mprintf("%.*s%s", i1+1, zFile, BCV_PORTNUMBER_FILE);
+  bcvMakeFilename(&zPortfile, &pFree);
   zContainer = sqlite3_mprintf("%.*s", i2-i1-1, &zFile[i1+1]);
   if( zPortfile==0 || zContainer==0 ){
     rc = SQLITE_NOMEM;
@@ -1166,9 +1212,9 @@ static int bcvAutoAttach(
   }
 
   sqlite3_free(zPort);
-  sqlite3_free(zPortfile);
   sqlite3_free(zContainer);
   sqlite3_free(zFree);
+  sqlite3_free(pFree);
   return rc;
 }
 
@@ -1210,29 +1256,26 @@ static int bcvOpen(
         p->bDaemon = sqlite3_uri_boolean(zName, "daemon", 0);
         rc = bcvConnectDaemon(p);
         if( rc==SQLITE_OK ){
-          int nCachefile = strlen(BCV_CACHEFILE_NAME);
           int nName = strlen(zName);
           int f = SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_READWRITE;
-          char *zNew;
+          char *zNew = 0;
+          char *pFree = 0;
+          int ii;
+          int nSlash = 0;
     
-          zNew = (char*)sqlite3_malloc(nName + nCachefile + 2);
+          for(ii=nName-1; ii>0; ii--){
+            if( zName[ii]=='/' || zName[ii]=='\\' ){
+              if( (++nSlash)==2 ) break;
+            }
+          }
+          zNew = sqlite3_mprintf("%.*s%s", ii+1, zName, BCV_CACHEFILE_NAME);
+          bcvMakeFilename(&zNew, &pFree);
           if( zNew==0 ){
             rc = SQLITE_IOERR_NOMEM;
           }else{
-            int ii;
-            int nSlash = 0;
-            memcpy(zNew, zName, nName+1);
-            for(ii=nName-1; ii>0; ii--){
-              if( zNew[ii]=='/' || zNew[ii]=='\\' ){
-                if( (++nSlash)==2 ) break;
-              }
-            }
-            memcpy(&zNew[ii+1], BCV_CACHEFILE_NAME, nCachefile);
-            zNew[ii+1+nCachefile+0] = '\0';
-            zNew[ii+1+nCachefile+1] = '\0';
             p->pBlkFile = (sqlite3_file*)(((u8*)pOrig) + pOrigVfs->szOsFile);
             rc = pOrigVfs->xOpen(pOrigVfs, zNew, p->pBlkFile, f, &f);
-            p->zBlkFile = zNew;
+            p->pFree = pFree;
           }
         }
       }
@@ -1623,5 +1666,136 @@ int sqlite3_bcv_sas_callback(
 int sqlite3_bcv_init(const char *unused){
   sqlite3_bcv_register(1);
   return SQLITE_OK;
+}
+
+static int bcvQueryDaemon(
+  const char *zDir,
+  const char *zQuery,
+  int flags,
+  BlockcacheMessage *pReply,
+  char **pzErr
+){
+  char *zPort = 0;
+  char *zPortfile = 0;
+  char *pFree = 0;
+  int rc = SQLITE_OK;
+  int bOpen = 0;
+  BCV_SOCKET_TYPE fd;
+  BlockcacheMessage msg;
+
+  memset(&fd, 0, sizeof(fd));
+  memset(&msg, 0, sizeof(msg));
+  memset(pReply, 0, sizeof(BlockcacheMessage));
+
+  zPortfile = sqlite3_mprintf("%s/%s", zDir, BCV_PORTNUMBER_FILE);
+  bcvMakeFilename(&zPortfile, &pFree);
+  if( zPortfile==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = bcvReadTextFile(zPortfile, &zPort);
+    if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
+      rc = SQLITE_BCV_CANTCONNECT1;
+      *pzErr = sqlite3_mprintf("failed to open daemon directory: %s", zDir);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    int iPort = bcvParseInt((const u8*)zPort, -1);
+    rc = bcvConnectSocket(iPort, &fd);
+    bOpen = (rc==SQLITE_OK);
+    if( rc!=SQLITE_OK ){
+      rc = SQLITE_BCV_CANTCONNECT2;
+      *pzErr = sqlite3_mprintf("failed to connect to daemon: %s", zDir);
+    }
+  }
+  sqlite3_free(zPort);
+  sqlite3_free(pFree);
+
+  if( rc==SQLITE_OK ){
+    msg.eType = BCV_MESSAGE_QUERY;
+    msg.iVal = flags;
+    msg.aData = (u8*)zQuery;
+    msg.nData = strlen(zQuery);
+    rc = bcvSendMessage(fd, &msg);
+    if( rc==SQLITE_OK ){
+      rc = bcvReceiveMessage(fd, pReply);
+    }
+    if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
+      rc = SQLITE_BCV_CANTCONNECT3;
+      *pzErr = sqlite3_mprintf("error communicating with daemon: %s", zDir);
+    }
+  }
+
+  if( bOpen ) bcv_close_socket(fd);
+  return rc;
+}
+
+/*
+** Send a message to a local daemon process to attach a new container.
+*/
+int sqlite3_bcv_attach(
+  const char *zDir,               /* Directory of daemon process to contact */
+  const char *zContainer,         /* Container to attach */
+  const char *zSas,               /* SAS token (if any) */
+  int flags,                      /* SQLITE_BCVATTACH_X flags */
+  char **pzErr                    /* OUT: error message (if any) */
+){
+  int rc = SQLITE_OK;
+  BlockcacheMessage reply;
+  char *zQuery = 0;
+
+  memset(&reply, 0, sizeof(reply));
+
+  if( pzErr ) *pzErr = 0;
+  zQuery = sqlite3_mprintf("bcv_%s=%s%s%s", 
+      ((flags & SQLITE_BCVATTACH_READONLY) ? "readonly" : "attach"), 
+      zContainer, (zSas ? "?" : ""), (zSas ? zSas : "")
+  );
+  if( zQuery==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = bcvQueryDaemon(zDir, zQuery, flags, &reply, pzErr);
+    sqlite3_free(zQuery);
+  }
+
+  if( rc==SQLITE_OK && reply.iVal!=SQLITE_OK ){
+    rc = reply.iVal;
+    if( reply.aData ) *pzErr = sqlite3_mprintf("%s", (char*)reply.aData);
+  }
+
+  sqlite3_free(reply.pFree);
+  return rc;
+}
+
+/*
+** Send a message to a local daemon process to detach a container.
+*/
+int sqlite3_bcv_detach(
+  const char *zDir,               /* Directory of daemon process to contact */
+  const char *zContainer,         /* Container to detach */
+  char **pzErr                    /* OUT: error message (if any) */
+){
+  int rc = SQLITE_OK;
+  BlockcacheMessage reply;
+  char *zQuery = 0;
+
+  memset(&reply, 0, sizeof(reply));
+
+  if( pzErr ) *pzErr = 0;
+  zQuery = sqlite3_mprintf("bcv_detach=%s", zContainer);
+  if( zQuery==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = bcvQueryDaemon(zDir, zQuery, 0, &reply, pzErr);
+    sqlite3_free(zQuery);
+  }
+
+  if( rc==SQLITE_OK && reply.iVal!=SQLITE_OK ){
+    rc = reply.iVal;
+    if( reply.aData ) *pzErr = sqlite3_mprintf("%s", (char*)reply.aData);
+  }
+
+  sqlite3_free(reply.pFree);
+  return rc;
 }
 

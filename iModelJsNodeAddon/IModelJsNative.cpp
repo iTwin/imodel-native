@@ -29,6 +29,7 @@
 #include <Bentley/BeThreadLocalStorage.h>
 #include "presentation/ECPresentationUtils.h"
 #include "presentation/UpdateRecordsHandler.h"
+#include <BeSQLite/BlobDaemon.h>
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 #include "KeyTarInterop.h"
@@ -39,7 +40,6 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_EC
-
 /*
  *  See README-Private.md for Rules to Check in Code Reviews
  */
@@ -99,13 +99,13 @@ USING_NAMESPACE_BENTLEY_EC
     if (ARGUMENT_IS_NOT_STRING(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a string", retval)\
     }\
-    Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
+    Utf8String var = info[i].As<Napi::String>().Utf8Value();
 
 #define REQUIRE_ARGUMENT_STRING_ASYNC(i, var, deferred)\
     if (ARGUMENT_IS_NOT_STRING(i)) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a string")\
     }\
-    Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
+    Utf8String var = info[i].As<Napi::String>().Utf8Value();
 
 #define REQUIRE_ARGUMENT_STRING_ID(i, strId, T, id, retval)\
     REQUIRE_ARGUMENT_STRING(i, strId, retval)\
@@ -120,7 +120,7 @@ USING_NAMESPACE_BENTLEY_EC
     for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {\
         Napi::Value arrValue = arr[arrIndex];\
         if (arrValue.IsString())\
-            var.push_back(arrValue.As<Napi::String>().Utf8Value().c_str());\
+            var.push_back(arrValue.As<Napi::String>().Utf8Value());\
     }\
 
 #define REQUIRE_ARGUMENT_STRING_ARRAY_ASYNC(i, var, deferred)\
@@ -135,7 +135,7 @@ USING_NAMESPACE_BENTLEY_EC
             Utf8PrintfString msg("Argument " #i " must be an array of strings. Item at index %d is not a strings", arrIndex);\
             REJECT_DEFERRED_AND_RETURN(deferred, msg.c_str())\
         }\
-        var.push_back(arrValue.As<Napi::String>().Utf8Value().c_str());\
+        var.push_back(arrValue.As<Napi::String>().Utf8Value());\
     }
 
 #define REQUIRE_ARGUMENT_NUMBER(i, var, retval)\
@@ -2512,16 +2512,6 @@ public:
         return Napi::Number::New(info.Env(), (int)status);
         }
 
-    static Napi::Value UnsafeSetBriefcaseId(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
-        REQUIRE_ARGUMENT_INTEGER(1, briefcaseId, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
-        OPTIONAL_ARGUMENT_STRING(2, dbGuid, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
-        OPTIONAL_ARGUMENT_STRING(3, projectGuid, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
-
-        DbResult status = JsInterop::UnsafeSetBriefcaseId(BeFileName(dbName), BeBriefcaseId(briefcaseId), dbGuid, projectGuid);
-        return Napi::Number::New(info.Env(), (int)status);
-        }
 
     // ========================================================================================
     // Test method handler
@@ -2681,7 +2671,8 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
 
     public:
         NativeRevisionUtility(Napi::CallbackInfo const& info) : BeObjectWrap<NativeRevisionUtility>(info) {}
-        ~NativeRevisionUtility() {SetInDestructor();}
+        ~NativeRevisionUtility() {SetInDestructor();
+    }
 
         // Check if val is really a NativeRevisionUtility peer object
         static bool InstanceOf(Napi::Value val)
@@ -5363,7 +5354,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
 
             return deferred.Promise();
             }
-    
+
     static Napi::Value EntitlementWorkflow(Napi::CallbackInfo const& info)
     {
             Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
@@ -5373,8 +5364,8 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             BeVersion appVersion = BeVersion(appVersionStr.c_str());
             REQUIRE_ARGUMENT_STRING_ASYNC(2, projectId, deferred);
             REQUIRE_ARGUMENT_INTEGER_ASYNC(3, authType, deferred);
-            REQUIRE_ARGUMENT_INTEGER_ARRAY_ASYNC(4, productIds, deferred);// does this need casting? 
-            REQUIRE_ARGUMENT_STRING_ASYNC(5, deviceId, deferred);            
+            REQUIRE_ARGUMENT_INTEGER_ARRAY_ASYNC(4, productIds, deferred);// does this need casting?
+            REQUIRE_ARGUMENT_STRING_ASYNC(5, deviceId, deferred);
             REQUIRE_ARGUMENT_STRING_ASYNC(6, correlationId, deferred);
 
             Utf8String errorMessage = "";
@@ -5388,10 +5379,10 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             {
                 //Most exceptions should be caught, logged, and handled in the CPC Saas client, but just in case
                 errorMessage.Sprintf("Exception occured : %s", e.what());
-                REJECT_DEFERRED_AND_RETURN(deferred, errorMessage.c_str());                
+                REJECT_DEFERRED_AND_RETURN(deferred, errorMessage.c_str());
             }
 
-            return deferred.Promise();            
+            return deferred.Promise();
     }
 
     public:
@@ -6390,7 +6381,6 @@ static void Init(Napi::Env env, Napi::Object exports)
     }
 };
 
-
 #if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 //=======================================================================================
 //! @bsiclass
@@ -7027,6 +7017,80 @@ static void onNodeExiting(void*)
     }
 #endif
 
+static Napi::Object toJsResult(Napi::Object& retVal, BlobStore::Result val) {
+    retVal["result"] = (int)val.m_status;
+    retVal["errMsg"] = val.m_error;
+    return retVal;
+}
+static Utf8String stringMember(Napi::Object const& obj, Utf8CP name) {
+    auto member = obj.Get(name);
+    return member.IsString() ? member.ToString().Utf8Value() : "";
+}
+struct JsBlobStore : BlobStore {
+    Napi::Value m_callback;
+
+    JsBlobStore(StorageType type, Utf8StringCR accountName, Utf8StringCR sasKey, Utf8StringCR containerName, Napi::Object const& obj) : BlobStore(type, accountName, sasKey, containerName) {
+        m_callback = obj.Get("onProgress");
+    }
+    int _OnProgress(uint64_t nDone, uint64_t nTotal) override {
+        if (!m_callback.IsFunction())
+            return 0;
+        return m_callback.As<Napi::Function>().Call({ Napi::Number::New(m_callback.Env(), nDone), Napi::Number::New(m_callback.Env(), nTotal) }).ToNumber().Int32Value();
+    }
+};
+
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod                                    Keith.Bentley                    05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Value runDaemonCommand(Napi::CallbackInfo const& info) {
+    auto retVal = Napi::Object::New(info.Env());
+    retVal["result"] = (int)BE_SQLITE_ERROR;
+    retVal["errMsg"] = "";
+
+    REQUIRE_ARGUMENT_STRING(0, command, retVal);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, args, retVal);
+    auto account = stringMember(args, "account");
+    if (account.empty())
+        THROW_TYPE_EXCEPTION_AND_RETURN("no account supplied", retVal)
+    auto sasKey = stringMember(args, "sasKey");
+    if (sasKey.empty())
+        THROW_TYPE_EXCEPTION_AND_RETURN("no sasKey supplied", retVal)
+    auto container = stringMember(args, "container");
+    if (container.empty())
+        THROW_TYPE_EXCEPTION_AND_RETURN("no container supplied", retVal)
+    if (0 == command.compare("attach") || 0 == command.compare("detach")) {
+        auto daemonDir = stringMember(args, "daemonDir");
+        if (daemonDir.empty())
+            THROW_TYPE_EXCEPTION_AND_RETURN("no daemonDir supplied", retVal)
+        if (0 == command.compare("attach"))
+            return toJsResult(retVal, BlobDaemon::AttachContainer(daemonDir, container, sasKey, !args.Get("writeable").ToBoolean()));
+        return toJsResult(retVal, BlobDaemon::DetachContainer(daemonDir, container));
+    }
+    int storageType = args.Get("storageType").ToNumber();
+    if (storageType < BlobStore::StorageType::AZURE || storageType > BlobStore::StorageType::GOOGLE)
+        storageType = BlobStore::StorageType::AZURE_SAS;
+
+    auto localFile = stringMember(args, "localFile");
+    auto dbAlias = stringMember(args, "dbAlias");
+
+    JsBlobStore handle((BlobStore::StorageType)storageType, account, sasKey, container, args);
+    if (0 == command.compare("copy"))
+        return toJsResult(retVal, handle.CopyDatabase(dbAlias, stringMember(args, "toAlias")));
+    if (0 == command.compare("create"))
+        return toJsResult(retVal, handle.CreateContainer());
+    if (0 == command.compare("destroy"))
+        return toJsResult(retVal, handle.DestroyContainer());
+    if (0 == command.compare("upload"))
+        return toJsResult(retVal, handle.UploadDatabase(localFile, dbAlias));
+    if (0 == command.compare("download"))
+        return toJsResult(retVal, handle.DownloadDatabase(dbAlias, localFile));
+    if (0 == command.compare("delete"))
+        return toJsResult(retVal, handle.DeleteDatabase(dbAlias));
+
+    retVal["errMsg"] = "illegal command";
+    return retVal;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -7060,7 +7124,6 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     NativeECSchemaXmlContext::Init(env, exports);
     SnapRequest::Init(env, exports);
     NativeUlasClient::Init(env, exports);
-    //CPC normal client wrapper -- Add here
     DisableNativeAssertions::Init(env, exports);
     NativeImportContext::Init(env, exports);
     NativeDevTools::Init(env, exports);
@@ -7087,6 +7150,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
         Napi::PropertyDescriptor::Function(env, exports, "getObjectRefCountFromVault", &getObjectRefCountFromVault),
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "setNopBriefcaseManager", &setNopBriefcaseManager),
+        Napi::PropertyDescriptor::Function(env, exports, "runDaemonCommand", &runDaemonCommand),
         });
 
     return exports;

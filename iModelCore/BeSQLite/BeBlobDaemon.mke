@@ -12,7 +12,7 @@ SubpartLibs = $(BuildContext)SubParts/Libs/
 DEBUG_INFO_IN_OBJ=
 o = $(PartBuildDir)
 
-appName = BCVDaemon
+appName = BeBlobDaemon
 CCompPDBName = $(appName)
 
 always:
@@ -32,6 +32,8 @@ $(o)simplexml$(oext): $(SQLiteDir)simplexml.c ${MultiCompileDepends}
 $(o)sqlite3$(oext): $(SQLiteDir)sqlite3.c ${MultiCompileDepends}
 
 $(o)blockcachevfsd$(oext): $(SQLiteDir)blockcachevfsd.c ${MultiCompileDepends}
+
+$(o)bcvutil$(oext): $(SQLiteDir)bcvutil.c ${MultiCompileDepends}
 
 $(o)blockcachevfs$(oext): $(SQLiteDir)blockcachevfs.c ${MultiCompileDepends}
 

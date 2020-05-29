@@ -184,6 +184,7 @@
   ");"
 
 #include "bcv_socket.h"
+#include "bcv_int.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -197,7 +198,6 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <curl/curl.h>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <openssl/md5.h>
@@ -215,7 +215,6 @@
 #include "simplexml.h"
 
 /* Default values of various command line parameters. */
-#define BCV_DEFAULT_NAMEBYTES        16
 #define BCV_DEFAULT_CACHEFILE_SIZE   (1024*1024*1024)
 #define BCV_DEFAULT_NWRITE           10
 #define BCV_DEFAULT_NDELETE          10
@@ -223,54 +222,6 @@
 #define BCV_DEFAULT_DELETETIME       3600
 #define BCV_DEFAULT_GCTIME           3600
 #define BCV_DEFAULT_RETRYTIME        10
-#define BCV_DEFAULT_BLOCKSIZE        (4*1024*1024)
-
-/* Current version of manifest file format */
-#define BCV_MANIFEST_VERSION 3
-
-/* Block identifiers must be between 12 and 32 bytes in size. Between
-** 96 and 256 bits of content-hash/random-values to guarantee uniqueness.  */
-#define BCV_MIN_NAMEBYTES            12
-#define BCV_MAX_NAMEBYTES            32
-
-/* Minimum required name-size to use md5 hashing. */
-#define BCV_MIN_MD5_NAMEBYTES        24
-
-#define BCV_FSNAMEBYTES(namebytes) (((namebytes)*2)+4+1)
-#define BCV_MAX_FSNAMEBYTES BCV_FSNAMEBYTES(BCV_MAX_NAMEBYTES)
-
-#define NAMEBYTES(pManifest)    ((pManifest)->nNamebytes)
-#define GCENTRYBYTES(pManifest) (NAMEBYTES(pManifest) + 8)
-
-#define BCV_DATEBUFFER_SIZE          128
-
-#define BCV_AZURE_VERSION_HDR  "x-ms-version:2015-02-21"
-#define BCV_AZURE_BLOBTYPE_HDR "x-ms-blob-type:BlockBlob"
-#define BCV_AZURE_MIMETYPE_HDR "Content-Type:application/octet-stream"
-
-#define BCV_MANIFEST_FILE            "manifest.bcv"
-
-#define BCV_HTTP_OK       200
-#define BCV_HTTP_NOTFOUND 404
-
-/* Number of bytes in the database id that is part of each db header */
-#define BCV_DBID_SIZE 16
-
-/* Space in bytes available within manifest file for database display 
-** name. This is the maximum length of the utf-8 version of a db name,
-** including a nul-terminator.  */
-#define BCV_DBNAME_SIZE 128
-
-/* Size of manifiest header with no databases. */
-#define BCV_MANIFEST_HEADER_BYTES 20
-
-/* Extra bytes in manifest header for each db */
-#define BCV_MANIFEST_DBHEADER_BYTES (                   \
-    3*4+BCV_DBID_SIZE+BCV_DBNAME_SIZE   \
-)
-
-#define BCV_CACHEFILE_NAME "cachefile.bcv\0"
-#define BCV_DATABASE_NAME  "blocksdb.bcv"
 
 /*
 ** Message protocol message types.
@@ -294,14 +245,6 @@
 
 #define BCV_MESSAGE_ERROR_REPLY    'e'
 
-
-#define MIN(a,b)  ((a)<(b) ? (a) : (b))
-#define MAX(a,b)  ((a)>(b) ? (a) : (b))
-
-typedef unsigned int u32;
-typedef unsigned char u8;
-typedef sqlite3_uint64 u64;
-typedef sqlite3_int64 i64;
 
 typedef struct CommandSwitches CommandSwitches;
 struct CommandSwitches {
@@ -341,153 +284,19 @@ struct CommandSwitches {
 #define BCV_LOG_UPLOAD  0x08
 #define BCV_LOG_CACHE   0x10
 
-#define BCV_STORAGE_AZURE  0
-#define BCV_STORAGE_GOOGLE 1
+static void fatal_sql_error(sqlite3 *db, const char *zMsg){
+  fprintf(stderr, "FATAL: SQL error in %s (rc=%d) (errmsg=%s)\n", 
+      zMsg, sqlite3_errcode(db), sqlite3_errmsg(db)
+  );
+  exit(-1);
+}
 
-typedef struct AccessPoint AccessPoint;
-struct AccessPoint {
-  int bDoNotUse;                  /* This is a template, not for actual use */
-  int eStorage;                   /* BCV_STORAGE_XXX constant */
-  const char *zAccount;
-  const char *zAccessKey;
-  const char *zEmulator;
-  char *zSas;                     /* Shared access signature */
-  char *zSlashAccountSlash;
-  u8 *aKey;                       /* zAccessKey decoded from base64 */
-  int nKey;                       /* Size of buffer aKey[] in bytes */
-};
 
-typedef struct CurlRequest CurlRequest;
-struct CurlRequest {
-  CURL *pCurl;
-  struct curl_slist *pList;
-  int bVerbose;
-  int bGen;                       /* True if have seen x-goog-metageneration */
-  char *zStatus;
-  char *zETag;
-};
-
-typedef struct MemoryDownload MemoryDownload;
-struct MemoryDownload {
-  CurlRequest *pCurl;
-  long iRes;                      /* HTTP response code */
-  int nByte;                      /* Bytes of content in a[] */
-  int nAlloc;                     /* Number of bytes allocated a[] */
-  u8 *a;                          /* Buffer containing download */
-};
-
-/*
-** Structure used as context for a curl CURLOPT_READFUNCTION and
-** CURLOPT_SEEKFUNCTION when uploading a blob that is present in main
-** memory (usually a manifest file).
-*/
-typedef struct MemoryUpload MemoryUpload;
-struct MemoryUpload {
-  int iOff;                       /* Current offset within a[] */
-  int nByte;                      /* Bytes of content in a[] */
-  u8 *a;                          /* Buffer containing data */
-};
-
-/*
-** Structure used as context for a curl CURLOPT_READFUNCTION and
-** CURLOPT_SEEKFUNCTION when uploading a blob that is a part of a
-** file on disk.
-*/
-typedef struct FileUpload FileUpload;
-struct FileUpload {
-  i64 iStart;                     /* Offset of part of file to upload */
-  int iOff;                       /* Current offset in file */
-  int nByte;                      /* Total bytes of data to read from disk */
-  int szUpload;                   /* Total bytes of data to upload */
-  int fd;                         /* File descriptor open on file */
-};
-
-typedef struct FileDownload FileDownload;
-struct FileDownload {
-  int fd;                         /* File descriptor to write data to */
-  i64 iStart;                     /* Starting offset in file fd */
-  int iOff;                       /* Current offset in block */
-};
-
-typedef struct ObjectName ObjectName;
-struct ObjectName {
-  char *zName;
-  ObjectName *pNext;
-};
-
-typedef struct ClistParse ClistParse;
-struct ClistParse {
-  int bExists;
-  const char *zExists;
-  ObjectName *pList;
-};
-
-typedef struct FilesParse FilesParse;
-typedef struct FilesParseEntry FilesParseEntry;
-
-struct FilesParseEntry {
-  char *zName;
-  char *zModified;
-  FilesParseEntry *pNext;
-};
-struct FilesParse {
-  FilesParseEntry *pList;
-  char *zNextMarker;
-};
-
-typedef struct Manifest Manifest;
-typedef struct ManifestDb ManifestDb;
-struct Manifest {
-  int nRef;                       /* Number of pointers to this object */
-  int nDb;                        /* Number of databases */
-  int szBlk;                      /* Block size */
-  int nNamebytes;                 /* Bytes in each block name */
-  ManifestDb *aDb;                /* Array of nDb databases */
-
-  int bDelFree;                   /* If true, aDelBlk must be freed */
-  int nDelBlk;                    /* Number of blocks in delete array */
-  u8 *aDelBlk;                    /* Array of delete blocks */
-
-  char *zETag;                    /* e-tag value for this manifest */
-  u8 *pFree;                      /* Blob of data to free */
-};
-
-/*
-** A ManifestHash object is a hash-table containing all block-ids from all
-** databases from a single Manifest object (block-ids on the delete-list
-** are not part of the hash table).
-*/
-typedef struct ManifestHash ManifestHash;
-struct ManifestHash {
-  int nHash;                      /* Number of hash buckets */
-  u8 *aHash[0];                   /* Array of nHash hash buckets */
-};
-
-/*
-** aBlkOrig, nBlkOrig, bBlkOrigFree:
-**   aBlkOrig[] contains the block array for the database as it existed
-**   when the manifest file was downloaded. nBlkArray is the number of
-**   blocks it contains. If the manifest is serialized and uploaded, this is
-**   the block array that will form part of the new manifest. If bBlkOrigFree
-**   is non-zero, then aBlkOrig[] must be freed using sqlite3_free when this
-**   object is deallocated.
-**
-** aBlkLocal, nBlkLocal, nBlkLocalAlloc:
-*/
-struct ManifestDb {
-  u8 aId[BCV_DBID_SIZE];          /* Database id */
-  char zDName[BCV_DBNAME_SIZE];   /* Database display name */
-  int iVersion;                   /* Database version */
-
-  /* Original block array (as it exists or existed in cloud storage. */
-  u8 *aBlkOrig;
-  int nBlkOrig;
-  int bBlkOrigFree;
-
-  /* Current block array */
-  u8 *aBlkLocal;
-  int nBlkLocal;
-  int nBlkLocalAlloc;
+typedef struct SelectOption SelectOption;
+struct SelectOption {
+  const char *zOpt;
+  u32 mask;
+  int eVal;
 };
 
 /*
@@ -505,473 +314,28 @@ static void fatal_error(const char *zFmt, ...){
   exit(-1);
 }
 
-static void fatal_oom_error(void){
-  fprintf(stderr, "FATAL: out-of-memory error\n");
-  exit(-1);
-}
-
-static void fatal_sql_error(sqlite3 *db, const char *zMsg){
-  fprintf(stderr, "FATAL: SQL error in %s (rc=%d) (errmsg=%s)\n", 
-      zMsg, sqlite3_errcode(db), sqlite3_errmsg(db)
-  );
-  exit(-1);
-}
-
-/*
-** Wrapper around sqlite3_mprintf() that calls fatal_oom_error() if an 
-** OOM occurs.
-*/
-static char *bcvMprintf(const char *zFmt, ...){
-  char *zRet;
-  va_list ap;
-  va_start(ap, zFmt);
-  zRet = sqlite3_vmprintf(zFmt, ap);
-  va_end(ap);
-  if( zRet==0 ) fatal_oom_error();
-  return zRet;
-}
-
-static void *bcvMalloc(int nByte){
-  void *p = sqlite3_malloc(nByte);
-  assert( nByte!=0 );
-  if( p==0 ) fatal_oom_error();
-  return p;
-}
-
-static void *bcvRealloc(void *a, int nByte){
-  void *p = sqlite3_realloc(a, nByte);
-  assert( nByte!=0 );
-  if( p==0 ) fatal_oom_error();
-  return p;
-}
-
-static void *bcvMallocZero(int nByte){
-  void *p = bcvMalloc(nByte);
-  memset(p, 0, nByte);
-  return p;
-}
-
-/*
-** Return a duplicate of the nIn byte buffer at aIn[]. It is the 
-** responsibility of the caller to eventually free the returned buffer
-** by passing a pointer to it to sqlite3_free().
-*/
-static u8 *bcvMemdup(int nIn, const u8 *aIn){
-  u8 *aRet = bcvMalloc(nIn+1);
-  memcpy(aRet, aIn, nIn);
-  aRet[nIn] = 0x00;
-  return aRet;
-}
-
-static char *bcvStrdup(const char *zIn){
-  char *zNew = 0;
-  if( zIn ){
-    zNew = (char*)bcvMemdup(strlen(zIn), (const u8*)zIn);
+static void curlFatalIfNot2XX(
+  CurlRequest *p, 
+  CURLcode res, 
+  const char *zPre
+){
+  long httpcode;
+  if( res!=CURLE_OK ){
+    fatal_error("%s: %s\n", zPre, curl_easy_strerror(res));
   }
-  return zNew;
-}
-
-static int bcvStrcmp(const char *zLeft, const char *zRight){
-  if( zLeft==zRight ){
-    return 0;
-  }else if( zLeft==0 ){
-    return -1;
-  }else if( zRight==0 ){
-    return +1;
+  curl_easy_getinfo(p->pCurl, CURLINFO_RESPONSE_CODE, &httpcode);
+  if( (httpcode / 100)!=2 ){
+    fatal_error("%s (%d) - %s", zPre, httpcode, p->zStatus);
   }
-  return strcmp(zLeft, zRight);
 }
 
-static int bcvStrlen(const char *z){
-  return (z ? strlen(z) : 0);
-}
 
-static void fatal_system_error(const char *zApi, int iError){
+void fatal_system_error(const char *zApi, int iError){
   char *zBuf = bcvMalloc(1000);
   strerror_r(iError, zBuf, 1000);
   zBuf[999] = '\0';
   fatal_error("%s - %s", zApi, zBuf);
 }
-
-static i64 sqlite_timestamp(void){
-  i64 iRet = 0;
-  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
-  pVfs->xCurrentTimeInt64(pVfs, &iRet);
-  return iRet;
-}
-
-static i64 compute_timestamp(
-  int iYear,                      /* Year */
-  int iMonth,                     /* Month (jan=1, dec=12) */
-  int iDay,                       /* Day of month */
-  int iHour,                      /* Hour of day */
-  int iMin,                       /* Minute of hour */
-  int iSecond                     /* Hour of day */
-){
-  i64 iJD;                        /* Return value */
-  int Y, M, D, A, B, X1, X2;
-
-  assert( iMonth>=1 && iMonth<=12 );
-  assert( iDay>=1 && iDay<=31 );
-  assert( iHour>=0 && iHour<=23 );
-  assert( iMin>=0 && iMin<=59 );
-  assert( iSecond>=0 && iSecond<=59 );
-
-  Y = iYear;
-  M = iMonth;
-  D = iDay;
-
-  if( M<=2 ){
-    Y--;
-    M += 12;
-  }
-  A = Y/100;
-  B = 2 - A + (A/4);
-  X1 = 36525*(Y+4716)/100;
-  X2 = 306001*(M+1)/10000;
-  iJD = (sqlite3_int64)((X1 + X2 + D + B - 1524.5 ) * 86400000);
-
-  iJD += iHour*3600000 + iMin*60000 + iSecond*1000;
-  return iJD;
-}
-
-static int bcv_isdigit(char c){
-  return c>='0' && c<='9';
-}
-static int bcv_isspace(char c){
-  return (c==' ' || c=='\n' || c=='\r' || c=='\t');
-}
-
-static int parse_number(const char *zNum, int *piVal){
-  int i = 0;
-  int iVal = 0;
-  for(i=0; zNum[i]; i++){
-    char c = zNum[i];
-    if( !bcv_isdigit(c) ) break;
-    iVal = iVal*10 + (c-'0');
-  }
-  *piVal = iVal;
-  return i;
-}
-  
-
-/*
-** This function parses a GMT timestamp in the following format:
-**
-**    "Sun, 06 Nov 1994 08:49:37 GMT"
-**
-** and returns the equivalent time in SQLite integer timestamp format - the
-** julian day multiplied by 86400000 (the number of ms in a day).
-*/
-static i64 parse_azure_timestamp(const char *zTime){
-  const char *azMonth[] = {
-    0, "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  };
-  int iDay, iMonth, iYear;
-  int iHour, iMin, iSec;
-  int iCur;
-
-  for(iCur=0; zTime[iCur] && !bcv_isdigit(zTime[iCur]); iCur++);
-  iCur += parse_number(&zTime[iCur], &iDay);
-  if( zTime[iCur++]!=' ' ) goto parse_failed;
-  for(iMonth=1; iMonth<=12; iMonth++){
-    if( memcmp(&zTime[iCur], azMonth[iMonth], 3)==0 ) break;
-  }
-  if( iMonth>12 ) goto parse_failed;
-  iCur+=3;
-  if( zTime[iCur++]!=' ' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iYear);
-  if( zTime[iCur++]!=' ' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iHour);
-  if( zTime[iCur++]!=':' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iMin);
-  if( zTime[iCur++]!=':' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iSec);
-
-  return compute_timestamp(iYear, iMonth, iDay, iHour, iMin, iSec);
-
- parse_failed:
-  fatal_error("failed to parse timestamp: %s", zTime);
-  return 0;
-}
-
-static i64 parse_google_timestamp(const char *zTime){
-  int iDay, iMonth, iYear;
-  int iHour, iMin, iSec;
-  int iCur = 0;
-
-  iCur += parse_number(&zTime[iCur], &iYear);
-  if( zTime[iCur++]!='-' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iMonth);
-  if( zTime[iCur++]!='-' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iDay);
-  if( zTime[iCur++]!='T' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iHour);
-  if( zTime[iCur++]!=':' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iMin);
-  if( zTime[iCur++]!=':' ) goto parse_failed;
-  iCur += parse_number(&zTime[iCur], &iSec);
-
-  return compute_timestamp(iYear, iMonth, iDay, iHour, iMin, iSec);
-
- parse_failed:
-  fatal_error("failed to parse timestamp: %s", zTime);
-  return 0;
-}
-
-static i64 parse_timestamp(int eStorage, const char *zTime){
-  i64 iRet;
-  if( eStorage==BCV_STORAGE_AZURE ){
-    iRet = parse_azure_timestamp(zTime);
-  }else{
-    iRet = parse_google_timestamp(zTime);
-  }
-  return iRet;
-}
-
-/* 
-** Primitives to read and write 32-bit big-endian integers. 
-*/
-static u32 bcvGetU16(const u8 *a){
-  return ((u32)a[0] << 8) + ((u32)a[1] << 0);
-}
-static void bcvPutU32(u8 *a, u32 iVal){
-  a[0] = (iVal>>24) & 0xFF;
-  a[1] = (iVal>>16) & 0xFF;
-  a[2] = (iVal>> 8) & 0xFF;
-  a[3] = (iVal>> 0) & 0xFF;
-}
-static u32 bcvGetU32(const u8 *a){
-  return ((u32)a[0] << 24) + ((u32)a[1] << 16) 
-       + ((u32)a[2] << 8) + ((u32)a[3] << 0);
-}
-static void bcvPutU64(u8 *a, u64 iVal){
-  a[0] = (iVal>>56) & 0xFF;
-  a[1] = (iVal>>48) & 0xFF;
-  a[2] = (iVal>>40) & 0xFF;
-  a[3] = (iVal>>32) & 0xFF;
-  a[4] = (iVal>>24) & 0xFF;
-  a[5] = (iVal>>16) & 0xFF;
-  a[6] = (iVal>> 8) & 0xFF;
-  a[7] = (iVal>> 0) & 0xFF;
-}
-
-static u64 bcvGetU64(const u8 *a){
-  return ((u64)a[0] << 56)
-       + ((u64)a[1] << 48)
-       + ((u64)a[2] << 40)
-       + ((u64)a[3] << 32)
-       + ((u64)a[4] << 24)
-       + ((u64)a[5] << 16)
-       + ((u64)a[6] <<  8)
-       + ((u64)a[7] <<  0);
-}
-
-static size_t curlHeaderFunction(char *buf, size_t sz, size_t n, void *pUser){
-  CurlRequest *p = (CurlRequest*)pUser;
-  int nByte = (sz * n);
-  if( p->zStatus==0 ){
-    p->zStatus = bcvMprintf("%.*s", nByte-1, buf);
-  }else if( p->bGen==0 && nByte>6 && sqlite3_strnicmp(buf, "ETag: ", 6)==0 ){
-    p->zETag = bcvMprintf("%.*s", nByte-8, &buf[6]);
-  }else if( nByte>19 && sqlite3_strnicmp(buf, "x-goog-generation: ", 19)==0 ){
-    sqlite3_free(p->zETag);
-    p->zETag = bcvMprintf("%.*s", nByte-21, &buf[19]);
-    p->bGen = 1;
-  }
-  return (size_t)nByte;
-}
-
-static void curlRequestInit(CurlRequest *p, int bVerbose){
-  memset(p, 0, sizeof(CurlRequest));
-  p->pCurl = curl_easy_init();
-  if( bVerbose ){
-    p->bVerbose = 1;
-    curl_easy_setopt(p->pCurl, CURLOPT_VERBOSE, 1L);
-  }
-  curl_easy_setopt(p->pCurl, CURLOPT_HEADERFUNCTION, curlHeaderFunction);
-  curl_easy_setopt(p->pCurl, CURLOPT_HEADERDATA, (void*)p);
-}
-
-static void curlRequestReset(CurlRequest *p){
-  curl_easy_reset(p->pCurl);
-  curl_slist_free_all(p->pList);
-  p->pList = 0;
-  if( p->bVerbose ){
-    curl_easy_setopt(p->pCurl, CURLOPT_VERBOSE, 1L);
-  }
-  curl_easy_setopt(p->pCurl, CURLOPT_HEADERFUNCTION, curlHeaderFunction);
-  curl_easy_setopt(p->pCurl, CURLOPT_HEADERDATA, (void*)p);
-  sqlite3_free(p->zStatus);
-  sqlite3_free(p->zETag);
-  p->zStatus = 0;
-  p->zETag = 0;
-}
-
-static void curlRequestFinalize(CurlRequest *p){
-  curl_easy_cleanup(p->pCurl);
-  curl_slist_free_all(p->pList);
-  sqlite3_free(p->zStatus);
-  sqlite3_free(p->zETag);
-  memset(p, 0, sizeof(CurlRequest));
-}
-
-static const char aBase64Encode[] = 
-                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                       "abcdefghijklmnopqrstuvwxyz"
-                       "0123456789+/";
-static u8 aBase64Decode[256];
-
-static void base64_init(void){
-  int i;
-  memset(aBase64Decode, 0x80, sizeof(aBase64Decode));
-  for(i=0; i<sizeof(aBase64Encode); i++){
-    aBase64Decode[(int)aBase64Encode[i]] = (char)i;
-  }
-  aBase64Decode[(int)'='] = 0;
-}
-
-/*
-** The first argument passed to this function is a blob of data encoded using 
-** base64 encoding, with no embedded spaces or newlines. This function
-** decodes the base64 and returns a pointer to a buffer containing the
-** same binary data. It is the responsibility of the caller to
-** free the returned buffer using sqlite3_free(). Before returning (*pnOut)
-** is set to the number of bytes in the returned buffer.
-*/
-static u8 *base64_decode(const char *zBase64, int *pnOut){
-  unsigned char *aOut = 0;
-  const unsigned char *zIn = (const unsigned char*)zBase64;
-  int nIn = strlen((const char*)zIn);
-  if( nIn>0 && (nIn%4)==0 ){
-    int iOut = 0;
-    int i;
-
-    /* Figure out the length in bytes of the output */
-    int nOut = (nIn/4) * 3;
-    if( zBase64[nIn-1]=='=' ) nOut--;
-    if( zBase64[nIn-2]=='=' ) nOut--;
-
-    /* Allocate space for the output */
-    aOut = (u8*)bcvMalloc(nOut);
-
-    for(i=0; i<nIn; i+=4){
-
-      if( aBase64Decode[ zIn[i+0] ]==0x80 
-       || aBase64Decode[ zIn[i+1] ]==0x80 
-       || aBase64Decode[ zIn[i+2] ]==0x80 
-       || aBase64Decode[ zIn[i+3] ]==0x80 
-      ){
-        fatal_error("cannot decode base64 data - illegal character");
-      }else{
-        u32 v = (aBase64Decode[ zIn[i+0] ] << 18) +
-                (aBase64Decode[ zIn[i+1] ] << 12) +
-                (aBase64Decode[ zIn[i+2] ] <<  6) +
-                (aBase64Decode[ zIn[i+3] ] <<  0);
-        aOut[iOut++] = (v>>16) & 0xFF;
-        if( iOut<nOut ) aOut[iOut++] = (v>>8) & 0xFF;
-        if( iOut<nOut ) aOut[iOut++] = (v>>0) & 0xFF;
-      }
-    }
-
-    assert( iOut==nOut );
-    *pnOut = iOut;
-  }else{
-    fatal_error("cannot decode base64 data - length is %d bytes", nIn);
-  }
-
-  return aOut;
-}
-
-/*
-** Encode the binary data in buffer aIn[] (size nIn bytes) as a
-** nul-terminated base64 string. Return a pointer to the buffer. It is
-** the responsibility of the caller to eventually free the returned 
-** buffer using sqlite3_free().
-*/
-static char *base64_encode(const unsigned char *aIn, int nIn){
-  int i;
-  int nOut = ((nIn + 2) / 3) * 4;
-  char *zOut = sqlite3_malloc(nOut+1);
-  int iOut = 0;
-
-  for(i=0; i<nIn; i+=3){
-    u32 v = aIn[i] << 16;
-    if( i+1<nIn ) v |= aIn[i+1] << 8;
-    if( i+2<nIn ) v |= aIn[i+2] << 0;
-    zOut[iOut++] = aBase64Encode[(v >> 18) & 0x3F];
-    zOut[iOut++] = aBase64Encode[(v >> 12) & 0x3F];
-    zOut[iOut++] = aBase64Encode[(v >>  6) & 0x3F];
-    zOut[iOut++] = aBase64Encode[(v >>  0) & 0x3F];
-  }
-  assert( iOut==nOut );
-
-  zOut[iOut] = '\0';
-  if( (nIn % 3)==1 ){
-    assert( zOut[iOut-2]=='A' && zOut[iOut-1]=='A' );
-    zOut[iOut-2] = '=';
-    zOut[iOut-1] = '=';
-  }
-  if( (nIn % 3)==2 ){
-    assert( zOut[iOut-1]=='A' );
-    zOut[iOut-1] = '=';
-  }
-
-  return zOut;
-}
-
-/*
-** Hex encode the blob passed via the only two arguments to this function
-** into buffer aBuf[].
-*/
-static void hex_encode(const unsigned char *aIn, int nIn, char *aBuf){
-  static const char aDigit[] = "0123456789ABCDEF";
-  int i;
-
-  for(i=0; i<nIn; i++){
-    aBuf[i*2] = aDigit[ (aIn[i] >> 4) ];
-    aBuf[i*2+1] = aDigit[ (aIn[i] & 0xF) ];
-  }
-  aBuf[i*2] = '\0';
-}
-
-/*
-** Attempt to decode the nIn byte hexadecimal string indicated by aIn and write
-** the results to aBuf[]. If a non-hex character is encountered, return
-** non-zero immediately. The final contents of aBuf[] is undefined in this
-** case. Otherwise, if decoding is successful, return zero.
-*/
-static int hex_decode(const char *aIn, int nIn, u8 *aBuf){
-  static const int aCharMap[] = {
-   -1,-1,-1,-1,-1,-1,-1,-1,  -1,-1,-1,-1,-1,-1,-1,-1,      /* 0x00-0x0F */
-   -1,-1,-1,-1,-1,-1,-1,-1,  -1,-1,-1,-1,-1,-1,-1,-1,      /* 0x10-0x1F */
-   -1,-1,-1,-1,-1,-1,-1,-1,  -1,-1,-1,-1,-1,-1,-1,-1,      /* 0x20-0x2F */
-    0, 1, 2, 3, 4, 5, 6, 7,   8, 9,-1,-1,-1,-1,-1,-1,      /* 0x30-0x3F */
-   -1,10,11,12,13,14,15,-1,  -1,-1,-1,-1,-1,-1,-1,-1,      /* 0x40-0x4F */
-   -1,-1,-1,-1,-1,-1,-1,-1,  -1,-1,-1,-1,-1,-1,-1,-1,      /* 0x50-0x5F */
-   -1,10,11,12,13,14,15,-1,  -1,-1,-1,-1,-1,-1,-1,-1,      /* 0x60-0x6F */
-  };
-  int i;
-
-  if( nIn%2 ) return 1;
-  for(i=0; i<nIn; i+=2){
-    u8 a = (u8)aIn[i];
-    u8 b = (u8)aIn[i+1];
-    if( a>=sizeof(aCharMap) || aCharMap[a]<0 ) return 1;
-    if( b>=sizeof(aCharMap) || aCharMap[b]<0 ) return 1;
-    aBuf[i/2] = (aCharMap[a]<<4) + aCharMap[b];
-  }
-
-  return 0;
-}
-
-typedef struct SelectOption SelectOption;
-struct SelectOption {
-  const char *zOpt;
-  u32 mask;
-  int eVal;
-};
 
 static int select_option(
   const char *zOpt, 
@@ -1266,7 +630,7 @@ static void parse_more_switches(
           fatal_error("error reading file %s", azArg[i]);
         }
 
-        memset(azParse, 0, sizeof(azParse));
+        memset((char**)azParse, 0, sizeof(azParse));
         nParse = 0;
         p = aBuf;
         while( nParse<sizeof(azParse)/sizeof(azParse[0]) ){
@@ -1386,6 +750,9 @@ static void parse_more_switches(
         ** official Azure storage emulator app. They're published as part of
         ** Azure documentation. So the access-key being included here need not
         ** alarm anybody - it's not a secret.  */
+        sqlite3_free(pCmd->zEmulator);
+        sqlite3_free(pCmd->zAccount);
+        sqlite3_free(pCmd->zAccessKey);
         pCmd->zEmulator = bcvStrdup(azArg[i]);
         pCmd->zAccount = bcvStrdup("devstoreaccount1");
         pCmd->zAccessKey = bcvStrdup(
@@ -1430,7 +797,7 @@ static void parse_switches(
   u32 mask
 ){
   memset(pCmd, 0, sizeof(CommandSwitches));
-  return parse_more_switches(pCmd, azArg, nArg, piFail, mask);
+  parse_more_switches(pCmd, azArg, nArg, piFail, mask);
 }
 
 static void free_parse_switches(CommandSwitches *pCmd){
@@ -1447,57 +814,16 @@ static void missing_required_switch(const char *zSwitch){
   fatal_error("missing required switch: %s\n", zSwitch);
 }
 
-static void azure_date_header(char *zBuffer){
-  static const char *nameOfDay[] = {
-    "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
-  };
-
-  static const char *nameOfMonth[] = {
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  };
-
-  time_t t = time(NULL);
-  struct tm tm = *gmtime(&t);
-
-  sprintf(zBuffer, "x-ms-date:%s, %02d %s %d %02d:%02d:%02d GMT",
-      nameOfDay[tm.tm_wday],          // Day of week name
-      tm.tm_mday,                     // Day
-      nameOfMonth[tm.tm_mon],         // Month name
-      tm.tm_year + 1900,              // Year
-      tm.tm_hour,                     // Hour
-      tm.tm_min,                      // Minute
-      tm.tm_sec);                     // Second
-}
-
-static char *azure_auth_header(AccessPoint *pA, const char *zStringToSign){
-  unsigned char aDigest[SHA256_DIGEST_LENGTH];
-  u32 nDigest = SHA256_DIGEST_LENGTH;
-  HMAC_CTX *pHmac;
-  char *zSig = 0;
-  char *zAuth = 0;
-
-  assert( pA->bDoNotUse==0 );
-  
-  pHmac = HMAC_CTX_new();
-  HMAC_CTX_reset(pHmac);
-  HMAC_Init_ex(pHmac, pA->aKey, pA->nKey, EVP_sha256(), NULL);
-  HMAC_Update(pHmac, (const u8*)zStringToSign, strlen(zStringToSign));
-  HMAC_Final(pHmac, aDigest, &nDigest);
-  HMAC_CTX_free(pHmac);
-
-  zSig = base64_encode(aDigest, (int)nDigest);
-  zAuth = sqlite3_mprintf("Authorization: SharedKey %s:%s", pA->zAccount, zSig);
-
-  sqlite3_free(zSig);
-  return zAuth;
-}
-
 static void bcvAccessPointNew(
   AccessPoint *p, 
   CommandSwitches *pCmd,
   int bTemplate
 ){
+  int eType = SQLITE_BCV_AZURE;
+  const char *zUser = pCmd->zAccount;
+  const char *zKey = pCmd->zAccessKey;
+  char *zErr = 0;
+
   assert( pCmd->eStorage==BCV_STORAGE_AZURE
        || pCmd->eStorage==BCV_STORAGE_GOOGLE
   );
@@ -1526,1180 +852,28 @@ static void bcvAccessPointNew(
     }
   }
 
-  memset(p, 0, sizeof(AccessPoint));
-  p->zAccount = pCmd->zAccount ? pCmd->zAccount : pCmd->zProject;
-  p->zAccessKey = pCmd->zAccessKey;
-  p->zEmulator = pCmd->zEmulator;
-  p->zSas = bcvStrdup(pCmd->zSas);
-  p->bDoNotUse = bTemplate;
-  p->eStorage = pCmd->eStorage;
-
   if( pCmd->eStorage==BCV_STORAGE_AZURE ){
-    if( p->zAccessKey ){
-      p->aKey = base64_decode(p->zAccessKey, &p->nKey);
+    if( pCmd->zEmulator ){
+      zUser = pCmd->zEmulator;
+      if( pCmd->zAccessKey==0 ){
+        eType = SQLITE_BCV_AZURE_EMU_SAS;
+        zKey = pCmd->zSas;
+      }else{
+        eType = SQLITE_BCV_AZURE_EMU;
+      }
     }
-    if( p->zEmulator ){
-      p->zSlashAccountSlash = bcvMprintf("/%s/%s/", p->zAccount, p->zAccount);
-    }else{
-      p->zSlashAccountSlash = bcvMprintf("/%s/", p->zAccount);
+    else if( pCmd->zSas ){
+      eType = SQLITE_BCV_AZURE_SAS;
+      zKey = pCmd->zSas;
     }
-  }
-}
-
-static void bcvAccessPointFree(AccessPoint *p){
-  sqlite3_free(p->zSlashAccountSlash);
-  sqlite3_free(p->aKey);
-  sqlite3_free(p->zSas);
-}
-
-static void bcvAccessPointCopy(AccessPoint *pTo, AccessPoint *pFrom){
-  memset(pTo, 0, sizeof(AccessPoint));
-  pTo->zAccount = pFrom->zAccount;
-  pTo->zAccessKey = pFrom->zAccessKey;
-  pTo->zEmulator = pFrom->zEmulator;
-
-  pTo->zSas = bcvStrdup(pFrom->zSas);
-  pTo->zSlashAccountSlash = bcvStrdup(pFrom->zSlashAccountSlash);
-  pTo->eStorage = pFrom->eStorage;
-
-  if( pFrom->aKey ){
-    pTo->aKey = bcvMemdup(pFrom->nKey, pFrom->aKey);
-    pTo->nKey = pFrom->nKey;
-  }
-}
-
-#define STR_(x) #x
-#define STR(x) STR_(x)
-
-static char *azure_base_uri(AccessPoint *p){
-  char *zRet;
-  if( p->zEmulator ){
-    zRet = bcvMprintf("http://%s/%s/", p->zEmulator, p->zAccount);
   }else{
-    zRet = bcvMprintf("https://%s.blob.core.windows.net/", p->zAccount);
-  }
-  return zRet;
-}
-
-size_t uploadReadFunction(char *pBuffer, size_t n1, size_t n2, void *pFd){
-  int fd = *(int*)pFd;
-  size_t nRead;
-  nRead = read(fd, pBuffer, n1*n2);
-  return nRead;
-}
-size_t uploadSeekFunction(void *pFd, curl_off_t offset, int origin){
-  int fd = *(int*)pFd;
-  lseek(fd, offset, origin);
-  return CURL_SEEKFUNC_OK;
-}
-
-/*
-** The following two functions are used as CURLOPT_READFUNCTION and
-** CURLOPT_SEEKFUNCTION callbacks when uploading a blob that is in 
-** main memory (a manifest file). The context pointer points to an
-** instance of type MemoryUpload.
-*/
-static size_t memoryUploadRead(char *pBuffer, size_t n1, size_t n2, void *pCtx){
-  int nReq;
-  MemoryUpload *p = (MemoryUpload*)pCtx;
-  nReq = MIN(n1*n2, p->nByte-p->iOff);
-  memcpy(pBuffer, &p->a[p->iOff], nReq);
-  p->iOff += nReq;
-  return nReq;
-}
-static size_t memoryUploadSeek(void *pCtx, curl_off_t offset, int origin){
-  MemoryUpload *p = (MemoryUpload*)pCtx;
-  p->iOff = (int)offset;
-  return CURL_SEEKFUNC_OK;
-}
-
-/*
-** Version of curlFetchBlob() for Azure storage.
-*/
-static void curlAzureFetchBlob(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zRes = 0;                 /* Canonicalized resource */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s%s/%s", zBase, zContainer, zFile);
-  zRes = bcvMprintf("%s%s/%s", pA->zSlashAccountSlash, zContainer, zFile);
-
-  assert( pA->zAccessKey || pA->zSas );
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "GET\n\n\n\n\n\n\n\n\n\n\n\n%s\n%s\n%s", 
-        zDate, BCV_AZURE_VERSION_HDR, zRes
-    );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z?%s", zUrl, pA->zSas);
+    zUser = pCmd->zProject;
+    zKey = pCmd->zSas;
   }
 
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zRes);
-  sqlite3_free(zAuth);
-}
-
-static void curlAzurePutBlob(
-  CurlRequest *p,
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile,
-  const char *zETag,              /* If-Match tag (or NULL) */
-  int nByte                       /* Size of file in bytes */
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s%s/%s", zBase, zContainer, zFile);
-
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "PUT\n\n\n%d\n\n%s\n\n\n%s\n\n\n\n%s\n%s\n%s\n%s%s/%s", 
-        nByte, 
-        "application/octet-stream", 
-        zETag ? zETag : "",
-        BCV_AZURE_BLOBTYPE_HDR, 
-        zDate, BCV_AZURE_VERSION_HDR,
-        pA->zSlashAccountSlash,
-        zContainer, zFile
-    );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z?%s", zUrl, pA->zSas);
+  if( bcvAccessPointInit(p, eType, zUser, zKey, &zErr) ){
+    fatal_error("error configuring accesspoint: %s", zErr);
   }
-
-  if( zETag ){
-    char *zHdr = bcvMprintf("If-Match:%s", zETag);
-    p->pList = curl_slist_append(p->pList, zHdr);
-    sqlite3_free(zHdr);
-  }
-
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_BLOBTYPE_HDR);
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_MIMETYPE_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt(p->pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)nByte);
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zAuth);
-}
-
-/*
-** Version of curlFetchBlob() for Google storage.
-*/
-static void curlGoogleFetchBlob(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zAuth = 0;                /* Authorization header */
-
-  zUrl = bcvMprintf("https://storage.googleapis.com/%s/%s", zContainer, zFile);
-
-  zAuth = bcvMprintf("Authorization: Bearer %s", pA->zSas);
-  p->pList = curl_slist_append(p->pList, zAuth);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_MIMETYPE_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zUrl);
-  sqlite3_free(zAuth);
-}
-
-static void curlGooglePutBlob(
-  CurlRequest *p,
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile,
-  const char *zETag,              /* If-Match tag (or NULL) */
-  int nByte                       /* Size of file in bytes */
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zAuth = 0;                /* Authorization header */
-
-  zUrl = bcvMprintf("https://storage.googleapis.com/%s/%s", zContainer, zFile);
-
-  zAuth = bcvMprintf("Authorization: Bearer %s", pA->zSas);
-  p->pList = curl_slist_append(p->pList, zAuth);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_MIMETYPE_HDR);
-  if( zETag ){
-    char *zIf = bcvMprintf("x-goog-if-generation-match: %s", zETag);
-    p->pList = curl_slist_append(p->pList, zIf);
-    sqlite3_free(zIf);
-  }
-
-  curl_easy_setopt(p->pCurl, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt(p->pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)nByte);
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zUrl);
-  sqlite3_free(zAuth);
-}
-
-/*
-** Configure the CurlRequest object indicated by the first argument to 
-** download file zFile from container zContainer, using the specified 
-** account and shared access-key.
-**
-** This function does not configure a function to deal with the fetched
-** data. Doing so before the request is sent is the responsibility of
-** the caller.
-*/
-static void curlFetchBlob(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile
-){
-  switch( pA->eStorage ){
-    case BCV_STORAGE_AZURE:
-      curlAzureFetchBlob(p, pA, zContainer, zFile);
-      break;
-    case BCV_STORAGE_GOOGLE:
-      curlGoogleFetchBlob(p, pA, zContainer, zFile);
-      break;
-  }
-}
-
-static void curlPutBlob(
-  CurlRequest *p,
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile,
-  const char *zETag,              /* If-Match tag (or NULL) */
-  int nByte                       /* Size of file in bytes */
-){
-  switch( pA->eStorage ){
-    case BCV_STORAGE_AZURE:
-      curlAzurePutBlob(p, pA, zContainer, zFile, zETag, nByte);
-      break;
-    case BCV_STORAGE_GOOGLE:
-      curlGooglePutBlob(p, pA, zContainer, zFile, zETag, nByte);
-      break;
-  }
-}
-
-static void curlAzureCreateContainer(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s%s?restype=container", zBase, zContainer);
-
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "PUT\n\n\n\n\n\n\n\n\n\n\n\n%s\n%s\n%s%s\nrestype:container", 
-        zDate, BCV_AZURE_VERSION_HDR,
-        pA->zSlashAccountSlash,
-        zContainer
-    );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z&%s", zUrl, pA->zSas);
-  }
-
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt(p->pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)0);
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zAuth);
-}
-
-static void curlGoogleCreateContainer(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zAuth = 0;                /* Authorization header */
-  char *zProject = 0;             /* Project id header */
-
-  zUrl = bcvMprintf("https://storage.googleapis.com/%s", zContainer);
-  zAuth = bcvMprintf("Authorization: Bearer %s", pA->zSas);
-  zProject = bcvMprintf("x-goog-project-id: %s", pA->zAccount);
-
-  p->pList = curl_slist_append(p->pList, zAuth);
-  p->pList = curl_slist_append(p->pList, zProject);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_MIMETYPE_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt(p->pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)0);
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zUrl);
-  sqlite3_free(zProject);
-  sqlite3_free(zAuth);
-}
-
-static void curlCreateContainer(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer
-){
-  switch( pA->eStorage ){
-    case BCV_STORAGE_AZURE:
-      curlAzureCreateContainer(p, pA, zContainer);
-      break;
-    case BCV_STORAGE_GOOGLE:
-      curlGoogleCreateContainer(p, pA, zContainer);
-      break;
-  }
-}
-
-static size_t bdIgnore(
-  char *pData, 
-  size_t nSize, 
-  size_t nMember, 
-  void *pCtx
-){
-  return nSize*nMember;
-}
-
-static void curlAzureDeleteBlob(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s%s/%s", zBase, zContainer, zFile);
-
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "DELETE\n\n\n\n\n\n\n\n\n\n\n\n%s\n%s\n%s%s/%s", 
-        zDate, BCV_AZURE_VERSION_HDR,
-        pA->zSlashAccountSlash,
-        zContainer, zFile
-    );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z?%s", zUrl, pA->zSas);
-  }
-
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_CUSTOMREQUEST, "DELETE");
-  curl_easy_setopt(p->pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)0);
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-  curl_easy_setopt(p->pCurl, CURLOPT_WRITEFUNCTION, bdIgnore);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zAuth);
-}
-
-static void curlGoogleDeleteBlob(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zAuth = 0;                /* Authorization header */
-
-  zUrl = bcvMprintf("https://storage.googleapis.com/%s/%s", zContainer, zFile);
-
-  zAuth = bcvMprintf("Authorization: Bearer %s", pA->zSas);
-  p->pList = curl_slist_append(p->pList, zAuth);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_MIMETYPE_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_CUSTOMREQUEST, "DELETE");
-  curl_easy_setopt(p->pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)0);
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-  curl_easy_setopt(p->pCurl, CURLOPT_WRITEFUNCTION, bdIgnore);
-
-  sqlite3_free(zUrl);
-  sqlite3_free(zAuth);
-}
-
-static void curlDeleteBlob(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zFile
-){
-  switch( pA->eStorage ){
-    case BCV_STORAGE_AZURE:
-      curlAzureDeleteBlob(p, pA, zContainer, zFile);
-      break;
-    case BCV_STORAGE_GOOGLE:
-      curlGoogleDeleteBlob(p, pA, zContainer, zFile);
-      break;
-  }
-}
-
-static void curlDestroyContainer(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s%s?restype=container", zBase, zContainer);
-
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "DELETE\n\n\n\n\n\n\n\n\n\n\n\n%s\n%s\n%s%s\nrestype:container", 
-        zDate, BCV_AZURE_VERSION_HDR,
-        pA->zSlashAccountSlash,
-        zContainer
-    );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z&%s", zUrl, pA->zSas);
-  }
-
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_CUSTOMREQUEST, "DELETE");
-  curl_easy_setopt(p->pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)0);
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zAuth);
-}
-
-static void curlAzureListFiles(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zNextMarker
-){
-  static const int nMaxResults = 200;
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zRes = 0;                 /* Canonicalized resource */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];/* HTTP date header */
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s%s?restype=container&comp=list&maxresults=%d"
-      "&marker=%s", 
-      zBase, zContainer, nMaxResults, zNextMarker
-  );
-  zRes = bcvMprintf("%s%s", pA->zSlashAccountSlash, zContainer);
-
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "GET\n\n\n\n\n\n\n\n\n\n\n\n%s\n%s\n%s\ncomp:list"
-        "\nmarker:%s\nmaxresults:%d\nrestype:container",
-        zDate, BCV_AZURE_VERSION_HDR, zRes, zNextMarker, nMaxResults
-    );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z&%s", zUrl, pA->zSas);
-  }
-
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zRes);
-  sqlite3_free(zAuth);
-}
-
-static void curlGoogleListFiles(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zNextMarker
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zAuth = 0;                /* Authorization header */
-  int nMaxResults = 200;
-
-  zUrl = bcvMprintf("https://storage.googleapis.com/%s?max-keys=%d%s%s",
-      zContainer, nMaxResults, 
-      zNextMarker?"&marker=":"", zNextMarker?zNextMarker:""
-  );
-
-  zAuth = bcvMprintf("Authorization: Bearer %s", pA->zSas);
-  p->pList = curl_slist_append(p->pList, zAuth);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zUrl);
-  sqlite3_free(zAuth);
-}
-
-static void curlListFiles(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zContainer,
-  const char *zNextMarker
-){
-  switch( pA->eStorage ){
-    case BCV_STORAGE_AZURE:
-      curlAzureListFiles(p, pA, zContainer, zNextMarker);
-      break;
-    case BCV_STORAGE_GOOGLE:
-      curlGoogleListFiles(p, pA, zContainer, zNextMarker);
-      break;
-  }
-}
-
-static void curlListContainers(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zPrefix
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zRes = 0;                 /* Canonicalized resource */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];/* HTTP date header */
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s?comp=list%s%s", 
-      zBase, zPrefix?"&prefix=":"", zPrefix?zPrefix:""
-  );
-  zRes = bcvMprintf("%s", pA->zSlashAccountSlash);
-
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "GET\n\n\n\n\n\n\n\n\n\n\n\n%s\n%s\n%s\ncomp:list%s%s",
-        zDate, BCV_AZURE_VERSION_HDR, zRes,
-        zPrefix ? "\nprefix:" : "",
-        zPrefix ? zPrefix : ""
-        );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z&%s", zUrl, pA->zSas);
-  }
-
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zRes);
-  sqlite3_free(zAuth);
-}
-
-static void curlFatalIfNot2XX(
-  CurlRequest *p, 
-  CURLcode res, 
-  const char *zPre
-){
-  long httpcode;
-  if( res!=CURLE_OK ){
-    fatal_error("%s: %s\n", zPre, curl_easy_strerror(res));
-  }
-  curl_easy_getinfo(p->pCurl, CURLINFO_RESPONSE_CODE, &httpcode);
-  if( (httpcode / 100)!=2 ){
-    fatal_error("%s (%d) - %s", zPre, httpcode, p->zStatus);
-  }
-}
-
-#if 0
-static void curlFatalIfNot(
-  CurlRequest *p, 
-  CURLcode res, 
-  int code, 
-  const char *zPre
-){
-  long httpcode;
-  if( res!=CURLE_OK ){
-    fatal_error("%s: %s\n", zPre, curl_easy_strerror(res));
-  }
-  curl_easy_getinfo(p->pCurl, CURLINFO_RESPONSE_CODE, &httpcode);
-  if( httpcode!=code ){
-    fatal_error("%s (%d) - %s", zPre, httpcode, p->zStatus);
-  }
-}
-#endif
-
-static size_t memoryDownloadWrite(
-  char *pData, 
-  size_t nSize, 
-  size_t nMember, 
-  void *pCtx
-){
-  MemoryDownload *p = (MemoryDownload*)pCtx;
-  size_t sz = (nSize * nMember);
-
-  if( p->a==0 ){
-    curl_easy_getinfo(p->pCurl->pCurl, CURLINFO_RESPONSE_CODE, &p->iRes);
-    p->nAlloc = MAX(1024, sz+1);
-    p->a = bcvMalloc( p->nAlloc );
-  }else{
-    while( p->nAlloc<(p->nByte+sz+1) ){
-      p->nAlloc = p->nAlloc*2;
-    }
-    p->a = bcvRealloc(p->a, p->nAlloc);
-  }
-
-  memcpy(&p->a[p->nByte], pData, sz);
-  p->nByte += sz;
-  p->a[p->nByte] = '\0';
-
-  return sz;
-}
-
-static size_t fileDownloadWrite(
-  char *pData, 
-  size_t nSize, 
-  size_t nMember, 
-  void *pCtx
-){
-  FileDownload *p = (FileDownload*)pCtx;
-  size_t sz = (nSize * nMember);
-  size_t res;
-
-  lseek(p->fd, p->iStart+p->iOff, SEEK_SET);
-  res = write(p->fd, pData, sz);
-  p->iOff += sz;
-
-  return res;
-}
-
-static void *clistNameHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_CONTENT ){
-    ClistParse *p = simpleXmlGetUserData(parser);
-    int n = strlen(szValue);
-    if( p->zExists==0 ){
-      ObjectName *pName;
-      pName = (ObjectName*)bcvMalloc(sizeof(ObjectName) + n + 1);
-      pName->zName = (char*)&pName[1];
-      memcpy(pName->zName, szValue, n+1);
-      pName->pNext = p->pList;
-      p->pList = pName;
-    }else if( 0==bcvStrcmp(szValue, p->zExists) ){
-      p->bExists = 1;
-    }
-  }
-  return clistNameHandler;
-}
-static void *clistContainerHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_SUBTAG ){
-    if( 0==bcvStrcmp("Name", szName) ){
-      return clistNameHandler;
-    }
-    return 0;
-  }
-  return clistContainerHandler;
-}
-static void *clistTagHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_SUBTAG && 0==bcvStrcmp("Container", szName) ){
-    return clistContainerHandler;
-  }
-  return clistTagHandler;
-}
-
-#if 0
-static void bcvListContainers(
-  CurlRequest *pCurl, 
-  ClistParse *pParse,
-  AccessPoint *pA,
-  const char *zContainer
-){
-  MemoryDownload md;
-  CURLcode res;
-
-  curlListContainers(pCurl, pA, zContainer);
-
-  memset(&md, 0, sizeof(MemoryDownload));
-  md.pCurl = pCurl;
-  curl_easy_setopt(pCurl->pCurl, CURLOPT_WRITEFUNCTION, memoryDownloadWrite);
-  curl_easy_setopt(pCurl->pCurl, CURLOPT_WRITEDATA, (void*)&md);
-
-  res = curl_easy_perform(pCurl->pCurl);
-  if( res!=CURLE_OK ){
-    fatal_error("clist failed: %s\n", curl_easy_strerror(res));
-  }
-
-  if( md.iRes==200 ){
-    SimpleXmlParser x;
-    x = simpleXmlCreateParser((const char*)md.a, md.nByte);
-    simpleXmlPushUserData(x, (void*)pParse);
-    simpleXmlParse(x, clistTagHandler);
-    simpleXmlDestroyParser(x);
-  }else{
-    fatal_error("clist failed - %d %s", md.iRes, (char*)md.a);
-  }
-  sqlite3_free(md.a);
-}
-#endif
-
-static void *bcvAzureFilesModifiedHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_CONTENT ){
-    FilesParse *p = simpleXmlGetUserData(parser);
-    int n = strlen(szValue);
-    char *zBuf = (char*)bcvMalloc(n+1);
-    memcpy(zBuf, szValue, n+1);
-    p->pList->zModified = zBuf;
-  }
-  return bcvAzureFilesModifiedHandler;
-}
-
-static void *bcvAzureFilesNameHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_CONTENT ){
-    FilesParse *p = simpleXmlGetUserData(parser);
-    int n = strlen(szValue);
-    FilesParseEntry *pNew;
-    pNew = (FilesParseEntry*)bcvMallocZero(sizeof(FilesParseEntry) + n + 1);
-    pNew->zName = (char*)&pNew[1];
-    memcpy(pNew->zName, szValue, n+1);
-    pNew->pNext = p->pList;
-    p->pList = pNew;
-  }
-  return bcvAzureFilesNameHandler;
-}
-
-static void *bcvAzureFilesMarkerHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_CONTENT ){
-    FilesParse *p = simpleXmlGetUserData(parser);
-    if( p->zNextMarker==0 ){
-      p->zNextMarker = bcvStrdup(szValue);
-    }
-  }
-  return bcvAzureFilesMarkerHandler;
-}
-
-static void *bcvAzureFilesTagHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_SUBTAG ){
-    if( 0==bcvStrcmp("Name", szName) ){
-      return bcvAzureFilesNameHandler;
-    }else
-    if( 0==bcvStrcmp("Last-Modified", szName) ){
-      return bcvAzureFilesModifiedHandler;
-    }else
-    if( 0==bcvStrcmp("NextMarker", szName) ){
-      return bcvAzureFilesMarkerHandler;
-    }
-  }
-  return bcvAzureFilesTagHandler;
-}
-
-static void *bcvGoogleFilesTagHandler(
-    SimpleXmlParser parser,
-    SimpleXmlEvent event,
-    const char* szName,
-    const char* szAttribute,
-    const char* szValue
-){
-  if( event==ADD_SUBTAG ){
-    if( 0==bcvStrcmp("Key", szName) ){
-      return bcvAzureFilesNameHandler;
-    }else
-    if( 0==bcvStrcmp("LastModified", szName) ){
-      return bcvAzureFilesModifiedHandler;
-    }
-    if( 0==bcvStrcmp("NextMarker", szName) ){
-      return bcvAzureFilesMarkerHandler;
-    }
-  }
-  return bcvGoogleFilesTagHandler;
-}
-
-static void bcvParseFiles(
-  int eStorage,
-  const u8 *aBuf, int nBuf,
-  FilesParse *pParse
-){
-  SimpleXmlParser x;
-  assert( eStorage==BCV_STORAGE_AZURE || eStorage==BCV_STORAGE_GOOGLE );
-  sqlite3_free(pParse->zNextMarker);
-  pParse->zNextMarker = 0;
-  x = simpleXmlCreateParser((const char*)aBuf, nBuf);
-  simpleXmlPushUserData(x, (void*)pParse);
-  if( eStorage==BCV_STORAGE_AZURE ){
-    simpleXmlParse(x, bcvAzureFilesTagHandler);
-  }else{
-    simpleXmlParse(x, bcvGoogleFilesTagHandler);
-  }
-  simpleXmlDestroyParser(x);
-}
-
-static void bcvParseFilesClear(FilesParse *pParse){
-  FilesParseEntry *p;
-  FilesParseEntry *pNext;
-  for(p=pParse->pList; p; p=pNext){
-    pNext = p->pNext;
-    sqlite3_free(p->zModified);
-    sqlite3_free(p);
-  }
-  sqlite3_free(pParse->zNextMarker);
-  memset(pParse, 0, sizeof(FilesParse));
-}
-
-
-static int manifestBlockSize(const u8 *a, int n){
-  return (int)bcvGetU32(&a[4]);
-}
-static int manifestDatabaseCount(const u8 *a, int n){
-  return (int)bcvGetU32(&a[8]);
-}
-static int manifestGCBlkCount(const u8 *a, int n){
-  return (int)bcvGetU32(&a[12]);
-}
-static int manifestNamebytes(const u8 *a, int n){
-  return (int)bcvGetU32(&a[16]);
-}
-
-static char *manifestDatabaseId(const u8 *a, int n, int iDb){
-  int iOff = BCV_MANIFEST_HEADER_BYTES 
-           + iDb*BCV_MANIFEST_DBHEADER_BYTES
-           + 12;
-  return (char*)&a[iOff];
-}
-static char *manifestDatabaseName(const u8 *a, int n, int iDb){
-  int iOff = BCV_MANIFEST_HEADER_BYTES 
-           + iDb*BCV_MANIFEST_DBHEADER_BYTES
-           + 12 + BCV_DBID_SIZE; 
-  return (char*)&a[iOff];
-}
-static int manifestBlockCount(const u8 *a, int n, int iDb){
-  return (int)bcvGetU32(&a[
-    BCV_MANIFEST_HEADER_BYTES + iDb*BCV_MANIFEST_DBHEADER_BYTES + 8
-  ]);
-}
-static int manifestDatabaseVersion(const u8 *a, int n, int iDb){
-  return bcvGetU32(
-      &a[BCV_MANIFEST_HEADER_BYTES + iDb*BCV_MANIFEST_DBHEADER_BYTES]
-  );
-}
-
-static u8 *manifestBlockArray(u8 *a, int n, int iDb){
-  int iOff = (int)bcvGetU32(&a[
-      BCV_MANIFEST_HEADER_BYTES + iDb*BCV_MANIFEST_DBHEADER_BYTES + 4
-  ]);
-  return &a[iOff];
-}
-static u8 *manifestGCBlkArray(u8 *a, int n){
-  int nDb = manifestDatabaseCount(a, n);
-  return &a[BCV_MANIFEST_HEADER_BYTES + nDb*BCV_MANIFEST_DBHEADER_BYTES];
-}
-
-/*
-** Parse the manifest in buffer a[], size n bytes, and return a Manifest
-** structure with ref-count set to 1 reflecting the results.
-*/
-static Manifest *bcvManifestParse(u8 *a, int n, char *zETag){
-  Manifest *pNew;
-  int nDb;
-  int i;
-  u32 iVersion;
-
-  iVersion = bcvGetU32(a);
-  if( iVersion!=BCV_MANIFEST_VERSION ){
-    fatal_error("bad manifest version - expected %d, found %d.",
-        BCV_MANIFEST_VERSION, iVersion
-    );
-  }
-  
-  nDb = manifestDatabaseCount(a, n);
-  pNew = (Manifest*)bcvMallocZero(
-      sizeof(Manifest) + (nDb+1)*sizeof(ManifestDb)
-  );
-
-  pNew->aDb = (ManifestDb*)&pNew[1];
-  pNew->nDb = nDb;
-  pNew->szBlk = manifestBlockSize(a, n);
-  pNew->nNamebytes = manifestNamebytes(a, n);
-  pNew->nDelBlk = manifestGCBlkCount(a, n);
-  pNew->aDelBlk = manifestGCBlkArray(a, n);
-  pNew->pFree = a;
-  pNew->zETag = zETag;
-  pNew->nRef = 1;
-
-  for(i=0; i<nDb; i++){
-    ManifestDb *pDb = &pNew->aDb[i];
-    memcpy(pDb->aId, manifestDatabaseId(a, n, i), BCV_DBID_SIZE);
-    memcpy(pDb->zDName, manifestDatabaseName(a, n, i), BCV_DBNAME_SIZE);
-    pDb->iVersion = manifestDatabaseVersion(a, n, i);
-    pDb->aBlkLocal = pDb->aBlkOrig = manifestBlockArray(a, n, i);
-    pDb->nBlkLocal = pDb->nBlkOrig = manifestBlockCount(a, n, i);
-    if( i>0 && memcmp(pDb[-1].aId, pDb[0].aId, BCV_DBID_SIZE)>=0 ){
-      assert( 0 );
-      fatal_error("corrupt manifest file - ids out of order");
-    }
-  }
-
-  if( pNew->nNamebytes<BCV_MIN_NAMEBYTES 
-   || pNew->nNamebytes>BCV_MAX_NAMEBYTES
-  ){
-    fatal_error("corrupt manifest file - namebytes value out of range (%d)",
-        pNew->nNamebytes
-    );
-  }
-
-  return pNew;
-}
-
-static u8 *bcvManifestCompose(Manifest *p, int *pnOut){
-  int nByte;                      /* Bytes required for new manifest */
-  u8 *aNew;                       /* New serialized manifest */
-  int i;
-  int iOff;
-  int iGCOff;
-
-  /* Calculate the size of the serialized manifest */
-  nByte = BCV_MANIFEST_HEADER_BYTES 
-        + p->nDb * BCV_MANIFEST_DBHEADER_BYTES
-        + p->nDelBlk * GCENTRYBYTES(p);
-  for(i=0; i<p->nDb; i++){
-    nByte += p->aDb[i].nBlkOrig * NAMEBYTES(p);
-  }
-
-  aNew = (u8*)bcvMalloc(nByte);
-
-  /* Serialize the manifest header */
-  bcvPutU32(&aNew[0], BCV_MANIFEST_VERSION);/* Manifest version */
-  bcvPutU32(&aNew[4], p->szBlk);            /* Block size */
-  bcvPutU32(&aNew[8], p->nDb);              /* Database count */
-  bcvPutU32(&aNew[12], p->nDelBlk);         /* GC block count */
-  bcvPutU32(&aNew[16], p->nNamebytes);      /* Bytes of data in block names */
-  assert( p->nNamebytes>=BCV_MIN_NAMEBYTES );
-  assert( p->nNamebytes<=BCV_MAX_NAMEBYTES );
-
-  /* Copy in the GC block array, if any */
-  iGCOff = BCV_MANIFEST_HEADER_BYTES + p->nDb * BCV_MANIFEST_DBHEADER_BYTES;
-  if( p->nDelBlk>0 ){
-    memcpy(&aNew[iGCOff], p->aDelBlk, p->nDelBlk*GCENTRYBYTES(p));
-  }
-
-  /* Serialize each of the database headers. And copy the block arrays. */
-  iOff = iGCOff + p->nDelBlk * GCENTRYBYTES(p);
-  for(i=0; i<p->nDb; i++){
-    ManifestDb *pDb = &p->aDb[i];
-    u8 *aHdr = &aNew[BCV_MANIFEST_HEADER_BYTES + i*BCV_MANIFEST_DBHEADER_BYTES];
-    bcvPutU32(&aHdr[0], pDb->iVersion);
-    bcvPutU32(&aHdr[4], iOff);
-    bcvPutU32(&aHdr[8], pDb->nBlkOrig);
-    memcpy(&aHdr[12], pDb->aId, BCV_DBID_SIZE);
-    memcpy(&aHdr[12+BCV_DBID_SIZE], pDb->zDName, BCV_DBNAME_SIZE);
-    memcpy(&aNew[iOff], pDb->aBlkOrig, pDb->nBlkOrig*NAMEBYTES(p));
-    iOff += pDb->nBlkOrig * NAMEBYTES(p);
-  }
-
-  assert( iOff==nByte );
-  *pnOut = nByte;
-  return aNew;
-}
-
-static void bcvManifestFree(Manifest *p){
-  if( p ){
-    int i;
-    for(i=0; i<p->nDb; i++){
-      ManifestDb *pDb = &p->aDb[i];
-      assert( (pDb->nBlkLocalAlloc==0)==(pDb->aBlkLocal==pDb->aBlkOrig) );
-      if( pDb->bBlkOrigFree ) sqlite3_free(pDb->aBlkOrig);
-      if( pDb->nBlkLocalAlloc ) sqlite3_free(pDb->aBlkLocal);
-    }
-    if( p->bDelFree ){
-      sqlite3_free(p->aDelBlk);
-    }
-    sqlite3_free(p->pFree);
-    sqlite3_free(p->zETag);
-    sqlite3_free(p);
-  }
-}
-
-static void bcvManifestDeref(Manifest *p){
-  if( p ){
-    p->nRef--;
-    assert( p->nRef>=0 );
-    if( p->nRef==0 ){
-      bcvManifestFree(p);
-    }
-  }
-}
-
-static Manifest *bcvManifestRef(Manifest *p){
-  p->nRef++;
-  return p;
-}
-
-/*
-** Return a copy of the Manifest object passed as the only argument.
-*/
-static Manifest *bcvManifestDup(Manifest *p){
-  Manifest *pNew;
-  int i;
-  int nByte;
-
-  nByte = sizeof(Manifest) + (p->nDb+1) * sizeof(ManifestDb);
-
-  pNew = (Manifest*)bcvMallocZero(nByte);
-  pNew->nDb = p->nDb;
-  pNew->szBlk = p->szBlk;
-  pNew->nNamebytes = p->nNamebytes;
-  pNew->aDb = (ManifestDb*)&pNew[1];
-  for(i=0; i<pNew->nDb; i++){
-    ManifestDb *pNewDb = &pNew->aDb[i];
-    ManifestDb *pOldDb = &p->aDb[i];
-
-    memcpy(pNewDb->aId, pOldDb->aId, BCV_DBID_SIZE);
-    memcpy(pNewDb->zDName, pOldDb->zDName, BCV_DBNAME_SIZE);
-    assert( pOldDb->nBlkLocal>=pOldDb->nBlkOrig );
-
-    assert( (!pOldDb->nBlkLocalAlloc)==(pOldDb->aBlkLocal==pOldDb->aBlkOrig));
-    pNewDb->nBlkOrig = pOldDb->nBlkOrig;
-    if( pOldDb->nBlkOrig>0 ){
-      int nByte = pOldDb->nBlkOrig*NAMEBYTES(p);
-      pNewDb->aBlkOrig = (u8*)bcvMalloc(nByte);
-      memcpy(pNewDb->aBlkOrig, pOldDb->aBlkOrig, nByte);
-      pNewDb->nBlkOrig = pOldDb->nBlkOrig;
-      pNewDb->bBlkOrigFree = 1;
-    }
-    if( pOldDb->nBlkLocalAlloc ){
-      int nByte = pOldDb->nBlkLocal*NAMEBYTES(p);
-      pNewDb->aBlkLocal = (u8*)bcvMalloc(nByte);
-      memcpy(pNewDb->aBlkLocal, pOldDb->aBlkLocal, nByte);
-      pNewDb->nBlkLocal = pNewDb->nBlkLocalAlloc = pOldDb->nBlkLocal;
-    }else{
-      pNewDb->nBlkLocal = pNewDb->nBlkOrig;
-      pNewDb->aBlkLocal = pNewDb->aBlkOrig;
-    }
-    pNewDb->iVersion = pOldDb->iVersion;
-  }
-
-  if( p->nDelBlk ){
-    nByte = p->nDelBlk * GCENTRYBYTES(p);
-    pNew->aDelBlk = (u8*)bcvMalloc(nByte);
-    memcpy(pNew->aDelBlk, p->aDelBlk, nByte);
-    pNew->nDelBlk = p->nDelBlk;
-    pNew->bDelFree = 1;
-  }
-
-  pNew->zETag = bcvStrdup(p->zETag);
-  pNew->nRef = 1;
-  return pNew;
 }
 
 /*
@@ -2739,135 +913,85 @@ static Manifest *bcvManifestGetParsed(
   const char *zContainer,
   int *pnByte
 ){
-  int n;
-  u8 *a;
+  char *zErr = 0;
+  Manifest *pRet = 0;
+  int rc = 0;
+  int n = 0;
+  u8 *a = 0;
   char *zETag = 0;
   a = bcvGetManifest(pCurl, pA, zContainer, &n, &zETag);
   if( pnByte ) *pnByte = n;
-  return bcvManifestParse(a, n, zETag);
-}
-
-static void bcvManifestPutParsed(
-  CurlRequest *pCurl,
-  Manifest *p,
-  AccessPoint *pA,
-  const char *zContainer
-){
-  MemoryUpload mu;
-  u8 *aMan = 0;
-  int nMan = 0;
-  CURLcode res;
-  char *zIfMatch = 0;
-
-  assert( pCurl->pList==0 );
-  assert( p->nDb==0 || p->zETag );
-
-  aMan = bcvManifestCompose(p, &nMan);
-  curlPutBlob(pCurl, pA, zContainer, BCV_MANIFEST_FILE, p->zETag, nMan);
-  memset(&mu, 0, sizeof(MemoryUpload));
-  mu.a = aMan;
-  mu.nByte = nMan;
-  curl_easy_setopt(pCurl->pCurl, CURLOPT_READFUNCTION, memoryUploadRead);
-  curl_easy_setopt(pCurl->pCurl, CURLOPT_READDATA, (void*)&mu);
-  curl_easy_setopt(pCurl->pCurl, CURLOPT_SEEKFUNCTION, memoryUploadSeek);
-  curl_easy_setopt(pCurl->pCurl, CURLOPT_SEEKDATA, (void*)&mu);
-
-  res = curl_easy_perform(pCurl->pCurl);
-  curlFatalIfNot2XX(pCurl, res, "manifest upload failed");
-
-  curlRequestReset(pCurl);
-  sqlite3_free(aMan);
-  sqlite3_free(zIfMatch);
-}
-
-static int bcvManifestNameToIndex(Manifest *p, const char *zDb){
-  int i;
-  for(i=0; i<p->nDb; i++){
-    if( 0==bcvStrcmp(zDb, p->aDb[i].zDName) ){
-      break;
-    }
+  rc = bcvManifestParse(a, n, zETag, &pRet, &zErr);
+  if( rc!=SQLITE_OK ){
+    fatal_error("error parsing manifest: %s", zErr);
   }
-  return (i<p->nDb ? i : -1);
+  return pRet;
 }
 
-/*
-** The first argument points to a NAMEBYTES byte buffer
-** containing a block-id. Format the block-id as text and write it to
-** buffer aBuf[], which must be at leat BCV_FILESYSTEM_BLOCKID_BYTES
-** in size.
-*/
-static void bcvBlockidToText(Manifest *p, const u8 *pBlk, char *aBuf){
-  hex_encode(pBlk, NAMEBYTES(p), aBuf);
-  memcpy(&aBuf[NAMEBYTES(p)*2], ".bcv", 5);
-}
+static void bcvOpenHandle(CommandSwitches *pCmd, sqlite3_bcv **ppBcv){
+  int eType = SQLITE_BCV_AZURE;
+  const char *zUser = pCmd->zAccount;
+  const char *zKey = pCmd->zAccessKey;
+  int rc;
 
-static int bcvMHashBucket(ManifestHash *pHash, u8 *pBlk){
-  return (int)(bcvGetU32(pBlk) % pHash->nHash);
-}
-
-/*
-** Build and return a ManifestHash object for the manifest passed as
-** the only argument. Exclude blocks from database iExclude from the hash.
-*/
-static ManifestHash *bcvMHashBuild(Manifest *pMan, int iExclude){
-  ManifestHash *pHash = 0;
-  if( NAMEBYTES(pMan)>=BCV_MIN_MD5_NAMEBYTES ){
-    int nBlock = 0;               /* Number of blocks in manifest */
-    int nHash = 1;                /* Number of hash buckets */
-    int nByte;                    /* Bytes of space to allocate */
-    int i;
-
-    for(i=0; i<pMan->nDb; i++){
-      if( i!=iExclude ){
-        nBlock += pMan->aDb[i].nBlkOrig;
-      }
+  assert( pCmd->eStorage==BCV_STORAGE_AZURE
+       || pCmd->eStorage==BCV_STORAGE_GOOGLE
+  );
+  if( pCmd->eStorage==BCV_STORAGE_AZURE ){
+    if( pCmd->zAccount==0 ){
+      missing_required_switch("-account");
     }
-
-    while( nHash<nBlock ) nHash = nHash*2;
-    nHash = nHash*2;
-    nByte = sizeof(ManifestHash)+sizeof(u8*)*nHash;
-    pHash = (ManifestHash*)bcvMallocZero(nByte);
-    pHash->nHash = nHash;
-
-    for(i=0; i<pMan->nDb; i++){
-      if( i!=iExclude ){
-        int iBlk;
-        ManifestDb *pDb = &pMan->aDb[i];
-        for(iBlk=0; iBlk<pDb->nBlkOrig; iBlk++){
-          u8 *pBlk = &pDb->aBlkOrig[iBlk*NAMEBYTES(pMan)];
-          int iHash = bcvMHashBucket(pHash, pBlk);
-          while( pHash->aHash[iHash] ) iHash = (iHash + 1) % pHash->nHash;
-          pHash->aHash[iHash] = pBlk;
-        }
-      }
+    if( pCmd->zProject ){
+      fatal_error("cannot use -project with azure storage");
+    }
+    if( pCmd->zAccessKey==0 && pCmd->zSas==0 ){
+      missing_required_switch("-accesskey or -sas");
+    }
+  }else{
+    if( pCmd->zAccount ){
+      fatal_error("cannot use -account with google storage");
+    }
+    if( pCmd->zAccessKey ){
+      fatal_error("cannot use -accesskey with google storage");
+    }
+    if( pCmd->zEmulator ){
+      fatal_error("cannot use -emulator with google storage");
+    }
+    if( pCmd->zSas==0 ){
+      fatal_error("missing required switch for google storage: -sas");
     }
   }
 
-  return pHash;
-}
-
-/*
-** Free a hash object allocated by bcvMHashBuild().
-*/
-static void bcvMHashFree(ManifestHash *pHash){
-  sqlite3_free(pHash);
-}
-
-/*
-** Search the hash table for a block-id that matches the nPrefix byte 
-** prefix aPrefix[]. Return a pointer to the first such block-id found,
-** or NULL if there is no such block id in the hash table.
-*/
-static u8 *bcvMHashMatch(ManifestHash *pHash, u8 *aPrefix, int nPrefix){
-  if( pHash ){
-    int iHash = bcvMHashBucket(pHash, aPrefix);
-    while( pHash->aHash[iHash] ){
-      if( 0==memcmp(pHash->aHash[iHash], aPrefix, nPrefix) ){
-        return pHash->aHash[iHash];
+  if( pCmd->eStorage==BCV_STORAGE_AZURE ){
+    if( pCmd->zEmulator ){
+      zUser = pCmd->zEmulator;
+      if( pCmd->zSas ){
+        eType = SQLITE_BCV_AZURE_EMU_SAS;
+        zKey = pCmd->zSas;
+      }else{
+        eType = SQLITE_BCV_AZURE_EMU;
       }
-      iHash = (iHash + 1) % pHash->nHash;
     }
+    else if( pCmd->zSas ){
+      eType = SQLITE_BCV_AZURE_SAS;
+      zKey = pCmd->zSas;
+    }
+  }else{
+    zUser = pCmd->zProject;
+    zKey = pCmd->zSas;
   }
+
+  rc = sqlite3_bcv_open(eType, zUser, zKey, pCmd->zContainer, ppBcv);
+  if( rc!=SQLITE_OK ){
+    fatal_error("error (%d): %s\n", rc, sqlite3_bcv_errmsg(*ppBcv));
+  }else{
+    sqlite3_bcv_config(*ppBcv, SQLITE_BCVCONFIG_VERBOSE, (int)pCmd->bVerbose);
+  }
+}
+
+static int xProgress(void *pCtx, sqlite3_int64 nDone, sqlite3_int64 nTotal){
+  fprintf(stdout, ".");
+  fflush(stdout);
   return 0;
 }
 
@@ -2878,31 +1002,19 @@ static u8 *bcvMHashMatch(ManifestHash *pHash, u8 *aPrefix, int nPrefix){
 ** file must already exist.
 */
 static int main_upload(int argc, char **argv){
-  CURLcode res;
-  CurlRequest curl;
-  int nDbfile;
   CommandSwitches cmd;
-  int fd;                         /* fd open on database file */
-  int i;
-  struct stat buf;                /* Used to fstat() database file */
-  int nBlock;                     /* Number of blocks */
-  AccessPoint ap;
-  Manifest *p = 0;
-  ManifestDb *pDb = 0;
-  ManifestHash *pMHash = 0;
   int iFail = 0;
   int *ptr;
   const char *zDbfile;
   const char *zName;
-  MemoryUpload mu;                /* For uploading block files */
-  u8 aId[BCV_DBID_SIZE];          /* New database id */
+  sqlite3_bcv *pBcv;
+  int rc;
 
   /* Parse command line */
   if( argc<=2 ){
     fprintf(stderr, "Usage: %s upload ?SWITCHES? DBFILE ?NAME?\n", argv[0]);
     exit(1);
   }
-
   ptr = &iFail;
   while( iFail<argc-4 ){
     parse_switches(&cmd, (const char**)&argv[2], argc-3, ptr,
@@ -2917,116 +1029,23 @@ static int main_upload(int argc, char **argv){
   }else{
     zDbfile = (const char*)argv[argc-1];
     zName = &zDbfile[strlen(zDbfile)];
-    while( zName>zDbfile && zName[-1]!='/' ) zName--;
+    while( zName>zDbfile && zName[-1]!='/' && zName[-1]!='\\' ) zName--;
   }
   if( cmd.zContainer==0 ) missing_required_switch("-container");
-  bcvAccessPointNew(&ap, &cmd, 0);
-  curlRequestInit(&curl, cmd.bVerbose);
 
-  /* Check that the database name is not too long for the manifest format */
-  nDbfile = strlen(zDbfile);
-  if( nDbfile>=BCV_DBNAME_SIZE ){
-    fatal_error("database name \"%s\" is too long (max = %d bytes)",
-        zDbfile, BCV_DBNAME_SIZE-1
-    );
+  bcvOpenHandle(&cmd, &pBcv);
+  sqlite3_bcv_config(pBcv, SQLITE_BCVCONFIG_PROGRESS, (void*)0, xProgress);
+
+  rc = sqlite3_bcv_upload(pBcv, zDbfile, zName);
+  if( rc ){
+    fprintf(stderr, "error (%d): %s\n", rc, sqlite3_bcv_errmsg(pBcv));
+  }else{
+    fprintf(stdout, "\n");
   }
-
-  /* Download the manifest file. */
-  p = bcvManifestGetParsed(&curl, &ap, cmd.zContainer, 0);
-
-  /* Check that the db name is not already in the manifest. */
-  i = bcvManifestNameToIndex(p, zName);
-  if( i>=0 ) fatal_error("duplicate database name - \"%s\"", zName);
-
-  /* Open the database file to be uploaded. */
-  fd = open(zDbfile, O_RDONLY|O_BINARY);
-  if( fd<0 ){
-    fatal_error("failed to open file \"%s\" - %s\n", zDbfile, strerror(errno));
-  }
-  fstat(fd, &buf);
-  nBlock = ((u64)buf.st_size + p->szBlk-1) / p->szBlk;
-
-  /* Extend manifest to include new database */
-  sqlite3_randomness(BCV_DBID_SIZE, aId);
-  for(i=0; i<p->nDb; i++){
-    if( memcmp(aId, p->aDb[i].aId, BCV_DBID_SIZE)<0 ) break;
-  }
-  pDb = &p->aDb[i];
-  if( i<p->nDb ) memmove(&pDb[1], pDb, (p->nDb-i)*sizeof(ManifestDb));
-  p->nDb++;
-  pDb->iVersion = 1;
-  memset(pDb->zDName, 0, BCV_DBNAME_SIZE);
-  memcpy(pDb->aId, aId, BCV_DBID_SIZE);
-  memcpy(pDb->zDName, zName, strlen(zName));
-  if( nBlock>0 ){
-    assert( pDb->nBlkLocalAlloc==0 );
-    pDb->nBlkLocal = pDb->nBlkLocalAlloc = nBlock;
-    pDb->aBlkLocal = (u8*)bcvMalloc(nBlock * NAMEBYTES(p));
-  }
-
-  memset(&mu, 0, sizeof(MemoryUpload));
-  mu.a = (u8*)bcvMalloc(p->szBlk);
-
-  pMHash = bcvMHashBuild(p, -1);
-  for(i=0; i<nBlock; i++){
-    int rres;
-    char aBuf[BCV_MAX_FSNAMEBYTES];
-    u8 *aBlk = &pDb->aBlkLocal[i * NAMEBYTES(p)];
-
-    mu.nByte = (i==nBlock-1 ? buf.st_size % p->szBlk : p->szBlk);
-    mu.iOff = 0;
-    rres = (int)read(fd, mu.a, mu.nByte);
-    if( rres!=mu.nByte ){
-      fatal_error("failed to read %d bytes from offset %lld of %s (fd=%d)", mu.nByte, 
-          (i64)i*p->szBlk, zDbfile, fd
-      );
-    }
-
-    if( NAMEBYTES(p)>=BCV_MIN_MD5_NAMEBYTES ){
-      u8 *pMatch;
-      assert( MD5_DIGEST_LENGTH==16 );
-      MD5(mu.a, mu.nByte, aBlk);
-      pMatch = bcvMHashMatch(pMHash, aBlk, MD5_DIGEST_LENGTH);
-      if( pMatch ){
-        memcpy(aBlk, pMatch, NAMEBYTES(p));
-        continue;
-      }else{
-        sqlite3_randomness(
-            NAMEBYTES(p) - MD5_DIGEST_LENGTH, &aBlk[MD5_DIGEST_LENGTH]
-        );
-      }
-    }else{
-      sqlite3_randomness(NAMEBYTES(p), aBlk);
-    }
-
-    bcvBlockidToText(p, aBlk, aBuf);
-    curlPutBlob(&curl, &ap, cmd.zContainer, aBuf, 0, mu.nByte);
-
-    curl_easy_setopt(curl.pCurl, CURLOPT_READFUNCTION, memoryUploadRead);
-    curl_easy_setopt(curl.pCurl, CURLOPT_READDATA, (void*)&mu);
-    curl_easy_setopt(curl.pCurl, CURLOPT_SEEKFUNCTION, memoryUploadSeek);
-    curl_easy_setopt(curl.pCurl, CURLOPT_SEEKDATA, (void*)&mu);
-    res = curl_easy_perform(curl.pCurl);
-    curlFatalIfNot2XX(&curl, res, "block upload failed");
-    curlRequestReset(&curl);
-    fprintf(stdout, ".");
-    fflush(stdout);
-  }
-  bcvMHashFree(pMHash);
-  sqlite3_free(mu.a);
-  assert( pDb->bBlkOrigFree==0 );
-  pDb->aBlkOrig = pDb->aBlkLocal;
-  pDb->nBlkOrig = pDb->nBlkLocal;
-  pDb->bBlkOrigFree = 1;
-  pDb->nBlkLocalAlloc = 0;
-  bcvManifestPutParsed(&curl, p, &ap, cmd.zContainer);
-
-  curlRequestFinalize(&curl);
-  close(fd);
-  bcvAccessPointFree(&ap);
+  sqlite3_bcv_close(pBcv);
   free_parse_switches(&cmd);
-  bcvManifestFree(p);
-  return 0;
+
+  return rc;
 }
 
 /*
@@ -3036,20 +1055,12 @@ static int main_upload(int argc, char **argv){
 */
 static int main_download(int argc, char **argv){
   CommandSwitches cmd;
-  CURLcode res;
-  AccessPoint ap;
-  CurlRequest curl;
+  int iFail = 0;
+  int *ptr = 0;
   const char *zRemote = 0;
   const char *zLocal = 0;
-
-  int iDb;                        /* Database index in manifest */
-  int i;
-  FileDownload fd;
-  int iFail = 0;
-  int *ptr;
-
-  Manifest *p;
-  ManifestDb *pDb;
+  sqlite3_bcv *pBcv = 0;
+  int rc;
 
   /* Parse command line */
   if( argc<=2 ){
@@ -3072,75 +1083,19 @@ static int main_download(int argc, char **argv){
     zLocal = zRemote = (const char*)argv[argc-1];
   }
   if( cmd.zContainer==0 ) missing_required_switch("-container");
-  bcvAccessPointNew(&ap, &cmd, 0);
-  curlRequestInit(&curl, cmd.bVerbose);
 
-  /* Grab the manifest file */
-  p = bcvManifestGetParsed(&curl, &ap, cmd.zContainer, 0);
+  bcvOpenHandle(&cmd, &pBcv);
+  sqlite3_bcv_config(pBcv, SQLITE_BCVCONFIG_PROGRESS, (void*)0, xProgress);
 
-  /* Search manifest for the requested file. Error out if it is not there. */
-  iDb = bcvManifestNameToIndex(p, zRemote);
-  if( iDb<0 ) fatal_error("database not found: %s", zRemote);
-  pDb = &p->aDb[iDb];
-
-  /* Open the local file (to download to) */
-  memset(&fd, 0, sizeof(FileDownload));
-  fd.fd = open(zLocal, O_CREAT|O_RDWR|O_BINARY, 0644);
-  if( fd.fd<0 ){
-    fatal_error("cannot open local file for writing: %s", zLocal);
+  rc = sqlite3_bcv_download(pBcv, zRemote, zLocal);
+  if( rc ){
+    fprintf(stderr, "error (%d): %s\n", rc, sqlite3_bcv_errmsg(pBcv));
+  }else{
+    fprintf(stdout, "\n");
   }
-
-  for(i=0; i<pDb->nBlkLocal; i++){
-    long iRes;
-    char aBuf[BCV_MAX_FSNAMEBYTES];
-    bcvBlockidToText(p, &pDb->aBlkLocal[NAMEBYTES(p)*i], aBuf);
-    fd.iStart = (i64)i*p->szBlk;
-    fd.iOff = 0;
-    curlFetchBlob(&curl, &ap, cmd.zContainer, aBuf);
-    curl_easy_setopt(curl.pCurl, CURLOPT_WRITEFUNCTION, fileDownloadWrite);
-    curl_easy_setopt(curl.pCurl, CURLOPT_WRITEDATA, (void*)&fd);
-    res = curl_easy_perform(curl.pCurl);
-    if( res!=CURLE_OK ){
-      fatal_error("Download failed: %s (%s)", aBuf, curl_easy_strerror(res));
-    }
-    curl_easy_getinfo(curl.pCurl, CURLINFO_RESPONSE_CODE, &iRes);
-    if( iRes!=200 ){
-      fatal_error("Download failed: %s (http code=%d)", aBuf, iRes);
-    }
-    curlRequestReset(&curl);
-  }
-
-  curlRequestFinalize(&curl);
-  bcvAccessPointFree(&ap);
-  bcvManifestFree(p);
-  return 0;
-}
-
-static void bcvDeleteBlocks(Manifest *pMan, int iDb){
-  ManifestDb *pDb = &pMan->aDb[iDb];
-  u8 *aGC = 0;
-  i64 iTime = 0;
-  u8 aTime[8];
-  int i;
-
-  iTime = sqlite_timestamp();
-  bcvPutU64(aTime, iTime);
-
-  assert( pDb->nBlkOrig==pDb->nBlkLocal );
-  aGC = (u8*)bcvMalloc((pMan->nDelBlk+pDb->nBlkOrig) * GCENTRYBYTES(pMan));
-  if( pMan->nDelBlk ){
-    memcpy(aGC, pMan->aDelBlk, pMan->nDelBlk * GCENTRYBYTES(pMan));
-  }
-  for(i=0; i<pDb->nBlkOrig; i++){
-    memcpy(&aGC[(pMan->nDelBlk+i)*GCENTRYBYTES(pMan)], 
-           &pDb->aBlkOrig[i*NAMEBYTES(pMan)],
-           NAMEBYTES(pMan)
-    );
-    memcpy(&aGC[(pMan->nDelBlk+i)*GCENTRYBYTES(pMan)+16], aTime, 8);
-  }
-  pMan->nDelBlk += pDb->nBlkOrig;
-  pMan->aDelBlk = aGC;
-  pMan->bDelFree = 1;
+  sqlite3_bcv_close(pBcv);
+  free_parse_switches(&cmd);
+  return rc;
 }
 
 /*
@@ -3149,14 +1104,10 @@ static void bcvDeleteBlocks(Manifest *pMan, int iDb){
 ** Make a copy of a database within cloud storage.
 */
 static int main_copy(int argc, char **argv){
-  CurlRequest curl;
   const char *zDbFrom, *zDbTo;
-  int nDbTo;
-  int iFrom, iTo;
-  ManifestDb *pFrom, *pTo;
   CommandSwitches cmd;
-  Manifest *p = 0;
-  AccessPoint ap;
+  int rc;
+  sqlite3_bcv *pBcv = 0;
 
   /* Parse command line */
   if( argc<4 ){
@@ -3165,119 +1116,19 @@ static int main_copy(int argc, char **argv){
   }
   zDbFrom = argv[argc-2];
   zDbTo = argv[argc-1];
-  nDbTo = strlen(zDbTo);
   parse_switches(&cmd, (const char**)&argv[2], argc-4, 0,
     COMMANDLINE_CONTAINER | COMMAND_AUTH
   );
-  if( cmd.zAccount==0 )   missing_required_switch("-account");
-  if( cmd.zContainer==0 ) missing_required_switch("-container");
-  if( cmd.zAccessKey==0 ) missing_required_switch("-accesskey");
-  bcvAccessPointNew(&ap, &cmd, 0);
-  curlRequestInit(&curl, cmd.bVerbose);
 
-  /* Download the manifest file. */
-  p = bcvManifestGetParsed(&curl, &ap, cmd.zContainer, 0);
-
-  iTo = bcvManifestNameToIndex(p, zDbTo);
-  if( iTo<0 ){
-    u8 aId[BCV_DBID_SIZE];
-    sqlite3_randomness(BCV_DBID_SIZE, aId);
-    for(iTo=0; iTo<p->nDb; iTo++){
-      if( memcmp(aId, p->aDb[iTo].aId, BCV_DBID_SIZE)<0 ) break;
-    }
-    if( iTo<p->nDb ){
-      memmove(&p->aDb[iTo+1], &p->aDb[iTo], sizeof(ManifestDb)*(p->nDb-iTo));
-    }
-    p->nDb++;
-    pTo = &p->aDb[iTo];
-    memset(pTo, 0, sizeof(ManifestDb));
-    memcpy(pTo->aId, aId, BCV_DBID_SIZE);
-    memcpy(pTo->zDName, zDbTo, nDbTo);
-  }else{
-    bcvDeleteBlocks(p, iTo);
-    pTo = &p->aDb[iTo];
-    pTo->aBlkOrig = pTo->aBlkLocal = 0;
-    pTo->nBlkOrig = pTo->nBlkLocal = 0;
+  bcvOpenHandle(&cmd, &pBcv);
+  rc = sqlite3_bcv_copy(pBcv, zDbFrom, zDbTo);
+  if( rc ){
+    fprintf(stderr, "error (%d): %s\n", rc, sqlite3_bcv_errmsg(pBcv));
   }
-
-  /* Check that the from-db name is in the manifest. */
-  iFrom = bcvManifestNameToIndex(p, zDbFrom);
-  if( iFrom<0 ) fatal_error("no such database: %s", zDbFrom);
-  pFrom = &p->aDb[iFrom];
-
-  pTo->nBlkLocal = pTo->nBlkOrig = pFrom->nBlkOrig;
-  pTo->aBlkOrig = (u8*)bcvMallocZero(pTo->nBlkOrig*NAMEBYTES(p));
-  pTo->aBlkLocal = pTo->aBlkOrig;
-  memcpy(pTo->aBlkOrig, pFrom->aBlkOrig, pTo->nBlkOrig*NAMEBYTES(p));
-  pTo->iVersion++;
-
-  bcvManifestPutParsed(&curl, p, &ap, cmd.zContainer);
-
-  curlRequestFinalize(&curl);
-  bcvAccessPointFree(&ap);
-  bcvManifestFree(p);
-  return 0;
-}
-
-/*
-** Command: $argv[0] clist ?SWITCHES?
-**
-** List all containers in the specified account.
-*/
-static int main_clist(int argc, char **argv){
-  MemoryDownload md;
-  CommandSwitches cmd;
-  CURLcode res;
-  CurlRequest curl;
-  AccessPoint ap;
-
-  /* Parse command line */
-  parse_switches(&cmd, (const char**)&argv[2], argc-2, 0, COMMAND_AUTH);
-  if( cmd.zAccount==0 )   missing_required_switch("-account");
-  if( cmd.zAccessKey==0 ) missing_required_switch("-accesskey");
-  bcvAccessPointNew(&ap, &cmd, 0);
-
-  curlRequestInit(&curl, cmd.bVerbose);
-  curlListContainers(&curl, &ap, cmd.zContainer);
-
-  memset(&md, 0, sizeof(MemoryDownload));
-  md.pCurl = &curl;
-  curl_easy_setopt(curl.pCurl, CURLOPT_WRITEFUNCTION, memoryDownloadWrite);
-  curl_easy_setopt(curl.pCurl, CURLOPT_WRITEDATA, (void*)&md);
-
-  res = curl_easy_perform(curl.pCurl);
-  if( res!=CURLE_OK ){
-    fprintf(stderr, "clist failed: %s\n", curl_easy_strerror(res));
-    exit(-1);
-  }
-
-  if( md.iRes==200 ){
-    SimpleXmlParser x;
-    int nContainer = 0;
-    ObjectName *p = 0;
-    ObjectName *pNext = 0;
-    ClistParse clist;
-    memset(&clist, 0, sizeof(ClistParse));
-    x = simpleXmlCreateParser((char*)md.a, md.nByte);
-    simpleXmlPushUserData(x, (void*)&clist);
-    simpleXmlParse(x, clistTagHandler);
-    simpleXmlDestroyParser(x);
-    for(p=clist.pList; p; p=pNext){
-      printf("%s\n", p->zName);
-      nContainer++;
-      pNext = p->pNext;
-      sqlite3_free(p);
-    }
-    printf("%d total\n", nContainer);
-  }else{
-    fatal_error("clist failed - %d %s", md.iRes, (char*)md.a);
-  }
-
-  sqlite3_free(md.a);
-  curlRequestFinalize(&curl);
+  sqlite3_bcv_close(pBcv);
   free_parse_switches(&cmd);
-  bcvAccessPointFree(&ap);
-  return 0;
+
+  return rc;
 }
 
 /*
@@ -3417,13 +1268,10 @@ static int main_manifest(int argc, char **argv){
 }
 
 static int main_delete(int argc, char **argv){
-  CurlRequest curl;
   const char *zDbfile;
   CommandSwitches cmd;
-  Manifest *p = 0;
-  ManifestDb *pDb = 0;
-  int iDb;
-  AccessPoint ap;
+  sqlite3_bcv *pBcv = 0;
+  int rc;
 
   /* Parse command line */
   if( argc<=2 ){
@@ -3434,45 +1282,24 @@ static int main_delete(int argc, char **argv){
   parse_switches(&cmd, (const char**)&argv[2], argc-3, 0,
     COMMANDLINE_CONTAINER | COMMAND_AUTH
   );
-  if( cmd.zAccount==0 )   missing_required_switch("-account");
   if( cmd.zContainer==0 ) missing_required_switch("-container");
-  if( cmd.zAccessKey==0 ) missing_required_switch("-accesskey");
-  bcvAccessPointNew(&ap, &cmd, 0);
-  curlRequestInit(&curl, cmd.bVerbose);
 
-
-  /* Download the manifest file. */
-  p = bcvManifestGetParsed(&curl, &ap, cmd.zContainer, 0);
-
-  /* Check that the db name is in the manifest. */
-  iDb = bcvManifestNameToIndex(p, zDbfile);
-  if( iDb<0 ) fatal_error("no such database: %s", zDbfile);
-  pDb = &p->aDb[iDb];
-
-  /* Move blocks to the delete list */
-  bcvDeleteBlocks(p, iDb);
-
-  assert( pDb->bBlkOrigFree==0 && pDb->nBlkLocalAlloc==0 );
-  if( iDb<p->nDb-1 ){
-    memmove(pDb, &pDb[1], (p->nDb-iDb-1)*sizeof(ManifestDb));
+  bcvOpenHandle(&cmd, &pBcv);
+  rc = sqlite3_bcv_delete(pBcv, zDbfile);
+  if( rc ){
+    fprintf(stderr, "error (%d): %s\n", rc, sqlite3_bcv_errmsg(pBcv));
   }
-  p->nDb--;
+  sqlite3_bcv_close(pBcv);
+  free_parse_switches(&cmd);
 
-  bcvManifestPutParsed(&curl, p, &ap, cmd.zContainer);
-
-  curlRequestFinalize(&curl);
-  bcvAccessPointFree(&ap);
-  bcvManifestFree(p);
-  return 0;
+  return rc;
 }
 
 static int main_create(int argc, char **argv){
-  CurlRequest curl;
   const char *zCont;              /* Name of new container */
   CommandSwitches cmd;
-  CURLcode res;
-  Manifest man;
-  AccessPoint ap;
+  sqlite3_bcv *pBcv = 0;
+  int rc;
 
   /* Parse command line */
   if( argc<=2 ){
@@ -3483,35 +1310,25 @@ static int main_create(int argc, char **argv){
   parse_switches(&cmd, (const char**)&argv[2], argc-3, 0,
       COMMAND_CREATE | COMMAND_AUTH
   ); 
-  if( cmd.szBlk<=0 ) cmd.szBlk = BCV_DEFAULT_BLOCKSIZE;
-  if( cmd.nNamebytes<=0 ) cmd.nNamebytes = BCV_DEFAULT_NAMEBYTES;
-  bcvAccessPointNew(&ap, &cmd, 0);
-  curlRequestInit(&curl, cmd.bVerbose);
 
-  if( cmd.bClobber==0 ){
-    curlCreateContainer(&curl, &ap, zCont);
-    res = curl_easy_perform(curl.pCurl);
-    curlFatalIfNot2XX(&curl, res, "create container failed");
-    curlRequestReset(&curl);
+  cmd.zContainer = (char*)zCont;
+  bcvOpenHandle(&cmd, &pBcv);
+  cmd.zContainer = 0;
+  rc = sqlite3_bcv_create(pBcv, cmd.nNamebytes, cmd.szBlk);
+  if( rc!=SQLITE_OK ){
+    fprintf(stderr, "error (%d): %s\n", rc, sqlite3_bcv_errmsg(pBcv));
   }
-
-  memset(&man, 0, sizeof(man));
-  man.szBlk = cmd.szBlk;
-  man.nNamebytes = cmd.nNamebytes;
-  bcvManifestPutParsed(&curl, &man, &ap, zCont);
-
+  sqlite3_bcv_close(pBcv);
   free_parse_switches(&cmd);
-  bcvAccessPointFree(&ap);
-  curlRequestFinalize(&curl);
-  return 0;
+
+  return rc;
 }
 
 static int main_destroy(int argc, char **argv){
-  CurlRequest curl;
   const char *zCont;              /* Name of new container */
   CommandSwitches cmd;
-  CURLcode res;
-  AccessPoint ap;
+  sqlite3_bcv *pBcv = 0;
+  int rc;
 
   /* Parse command line */
   if( argc<=2 ){
@@ -3520,18 +1337,16 @@ static int main_destroy(int argc, char **argv){
   }
   zCont = argv[argc-1];
   parse_switches(&cmd, (const char**)&argv[2], argc-3, 0, COMMAND_AUTH);
-  if( cmd.zAccount==0 )   missing_required_switch("-account");
-  if( cmd.zAccessKey==0 ) missing_required_switch("-accesskey");
-  bcvAccessPointNew(&ap, &cmd, 0);
-  curlRequestInit(&curl, cmd.bVerbose);
-
-  curlDestroyContainer(&curl, &ap, zCont);
-  res = curl_easy_perform(curl.pCurl);
-  curlFatalIfNot2XX(&curl, res, "destroy container failed");
-
-  bcvAccessPointFree(&ap);
-  curlRequestFinalize(&curl);
-  return 0;
+  cmd.zContainer = (char*)zCont;
+  bcvOpenHandle(&cmd, &pBcv);
+  cmd.zContainer = 0;
+  rc = sqlite3_bcv_destroy(pBcv);
+  if( rc ){
+    fprintf(stderr, "error (%d): %s\n", rc, sqlite3_bcv_errmsg(pBcv));
+  }
+  sqlite3_bcv_close(pBcv);
+  free_parse_switches(&cmd);
+  return rc;
 }
 
 /**************************************************************************
@@ -3650,6 +1465,23 @@ struct DCurlRequest {
   DCollect *pCollect;             /* GC this request is a part of */
 };
 
+/*
+** The pAttachClient, pPollClient and pNextPollClient lists are clients
+** that require replies to bcv_attach or bcv_readonly messages. Possibly
+** with the SQLITE_BCVATTACH_POLL flag set.
+**
+** pAttachClient clients are waiting on the initial download of the manifest
+** for a reply. If there is a problem with the manifest file, an error is
+** returned and the container detached automatically. pPollClient clients are
+** waiting on the result of a currently outstanding poll operation.
+** pNextPollClient need to wait until the current outstanding
+** poll is finished, then for the conclusion of the next one. See functions:
+**
+**     bdAddContainer()
+**     bdDownloadBlockDone()
+**
+** for implementation details.
+*/
 struct DContainer {
   char *zName;
   int bReadonly;                  /* True for a read-only container */
@@ -3661,8 +1493,11 @@ struct DContainer {
   AccessPoint ap;                 /* Access point for this container */
   DCheckpoint *pCheckpointList;   /* List of ongoing upload operations */
   DContainer *pNext;
-  DClient *pAttachClient;         /* Client waiting on bcv_attach reply */
   int iSasShmZero;                /* Countdown to *-shm zeroing */
+
+  int bAutoDetach;
+  DClient *pPollClient;
+  DClient *pNextPollClient;
 };
 
 /*
@@ -4039,14 +1874,13 @@ static int bdParseMessage(
       pMsg->iVal = (int)bcvGetU32(aBody);
       break;
 
-    case BCV_MESSAGE_QUERY_REPLY:
+    case BCV_MESSAGE_QUERY:
       pMsg->iVal = (int)bcvGetU32(aBody);
       pMsg->nBlobByte = nBody-4;
       pMsg->aBlob = &aBody[4];
       break;
 
     case BCV_MESSAGE_DONE:
-    case BCV_MESSAGE_QUERY:
     case BCV_MESSAGE_WREQUEST:
       pMsg->nBlobByte = nBody;
       pMsg->aBlob = aBody;
@@ -4812,6 +2646,13 @@ static int bdHttpCode(DCurlRequest *pReq, CURLMsg *pMsg){
   return (int)httpcode;
 }
 
+static const char *bdRequestError(DCurlRequest *pReq, CURLMsg *pMsg){
+  if( pMsg->data.result!=CURLE_OK ){
+    return curl_easy_strerror(pMsg->data.result);
+  }
+  return pReq->req.zStatus;
+}
+
 /*
 ** Arguments pReq and pMsg are as passed to a bdCurlRun() callback. The
 ** expected http response code for a successful operation is c1. If it is
@@ -5358,7 +3199,8 @@ static int bdUploadBlock(DUpload *p){
 
       /* Generate a new, permanent, block-id to upload the block to. */
       sqlite3_randomness(nNamebytes, aPermid);
-      if( p->pMHash ){
+      assert( p->pMHash );
+      if( nNamebytes>=BCV_MIN_MD5_NAMEBYTES ){
         assert( MD5_DIGEST_LENGTH==16 );
         MD5(pCurl->aBuf, pCurl->nBuf, aPermid);
         pMatch = bcvMHashMatch(p->pMHash, aPermid, MD5_DIGEST_LENGTH);
@@ -5739,6 +3581,63 @@ static void bdUploadBlockDone(DCurlRequest *pCurl, CURLMsg *pMsg){
 }
 
 /*
+** Return a copy of the Manifest object passed as the only argument.
+*/
+static Manifest *bcvManifestDup(Manifest *p){
+  Manifest *pNew;
+  int i;
+  int nByte;
+
+  nByte = sizeof(Manifest) + (p->nDb+1) * sizeof(ManifestDb);
+
+  pNew = (Manifest*)bcvMallocZero(nByte);
+  pNew->nDb = p->nDb;
+  pNew->szBlk = p->szBlk;
+  pNew->nNamebytes = p->nNamebytes;
+  pNew->aDb = (ManifestDb*)&pNew[1];
+  for(i=0; i<pNew->nDb; i++){
+    ManifestDb *pNewDb = &pNew->aDb[i];
+    ManifestDb *pOldDb = &p->aDb[i];
+
+    memcpy(pNewDb->aId, pOldDb->aId, BCV_DBID_SIZE);
+    memcpy(pNewDb->zDName, pOldDb->zDName, BCV_DBNAME_SIZE);
+    assert( pOldDb->nBlkLocal>=pOldDb->nBlkOrig );
+
+    assert( (!pOldDb->nBlkLocalAlloc)==(pOldDb->aBlkLocal==pOldDb->aBlkOrig));
+    pNewDb->nBlkOrig = pOldDb->nBlkOrig;
+    if( pOldDb->nBlkOrig>0 ){
+      int nByte = pOldDb->nBlkOrig*NAMEBYTES(p);
+      pNewDb->aBlkOrig = (u8*)bcvMalloc(nByte);
+      memcpy(pNewDb->aBlkOrig, pOldDb->aBlkOrig, nByte);
+      pNewDb->nBlkOrig = pOldDb->nBlkOrig;
+      pNewDb->bBlkOrigFree = 1;
+    }
+    if( pOldDb->nBlkLocalAlloc ){
+      int nByte = pOldDb->nBlkLocal*NAMEBYTES(p);
+      pNewDb->aBlkLocal = (u8*)bcvMalloc(nByte);
+      memcpy(pNewDb->aBlkLocal, pOldDb->aBlkLocal, nByte);
+      pNewDb->nBlkLocal = pNewDb->nBlkLocalAlloc = pOldDb->nBlkLocal;
+    }else{
+      pNewDb->nBlkLocal = pNewDb->nBlkOrig;
+      pNewDb->aBlkLocal = pNewDb->aBlkOrig;
+    }
+    pNewDb->iVersion = pOldDb->iVersion;
+  }
+
+  if( p->nDelBlk ){
+    nByte = p->nDelBlk * GCENTRYBYTES(p);
+    pNew->aDelBlk = (u8*)bcvMalloc(nByte);
+    memcpy(pNew->aDelBlk, p->aDelBlk, nByte);
+    pNew->nDelBlk = p->nDelBlk;
+    pNew->bDelFree = 1;
+  }
+
+  pNew->zETag = bcvStrdup(p->zETag);
+  pNew->nRef = 1;
+  return pNew;
+}
+
+/*
 ** Process a BCV_MESSAGE_UPLOAD message received from a client (always
 ** an upload thread in this process).
 */
@@ -5846,9 +3745,12 @@ static void bdClientUpload(
 
       /* If blocks are being truncated away, add them to the delete list now. */
       for(iBlk=pDb->nBlkLocal; iBlk<pDb->nBlkOrig; iBlk++){
-        u8 *aGC = &pMan->aDelBlk[pMan->nDelBlk*GCENTRYBYTES(pMan)];
-        memcpy(aGC, &pDb->aBlkOrig[NAMEBYTES(pMan)*iBlk], NAMEBYTES(pMan));
-        pMan->nDelBlk++;
+        u8 *aBlock = &pDb->aBlkOrig[NAMEBYTES(pMan)*iBlk];
+        if( 0==bcvMHashMatch(pNew->pMHash, aBlock, NAMEBYTES(pMan)) ){
+          u8 *aGC = &pMan->aDelBlk[pMan->nDelBlk*GCENTRYBYTES(pMan)];
+          memcpy(aGC, aBlock, NAMEBYTES(pMan));
+          pMan->nDelBlk++;
+        }
       }
     }
 
@@ -6034,7 +3936,7 @@ static int bdOpenLocalFile(
   sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
   sqlite3_file *pNew;
   int rc;
-  char *zPath = bcvMprintf("%s%s%s%c", zCont, zCont?"/":"", zDb, '\0');
+  char *zPath = bcvMprintf("%s%s%s", zCont, zCont?"/":"", zDb);
   int nPath = strlen(zPath);
   char *zOpen;
 
@@ -6044,8 +3946,8 @@ static int bdOpenLocalFile(
     f |= SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
   }
 
-  pNew = (sqlite3_file*)bcvMallocZero(pVfs->szOsFile + nPath + 2);
-  zOpen = &((char*)pNew)[pVfs->szOsFile];
+  pNew = (sqlite3_file*)bcvMallocZero(pVfs->szOsFile + 4 + nPath + 2);
+  zOpen = &((char*)pNew)[pVfs->szOsFile + 4];
   memcpy(zOpen, zPath, nPath);
   sqlite3_free(zPath);
 
@@ -6058,7 +3960,6 @@ static int bdOpenLocalFile(
   *ppFile = pNew;
   return rc;
 }
-
 
 /*
 ** This is called when a new manifest is downloaded that contains 
@@ -6214,7 +4115,7 @@ static void bdDelContainer(
   char *zRet = 0;
 
   pCont = bdFindContainer(pCtx, zCont);
-  if( pCont==0 || pCont->pAttachClient ){
+  if( pCont==0 || pCont->bAutoDetach ){
     zRet = bcvMprintf("no such container: %s", zCont);
   }else{
     Manifest *pMan = pCont->pManifest;
@@ -6261,6 +4162,7 @@ static void bdDelContainer(
   reply.eType = BCV_MESSAGE_QUERY_REPLY;
   if( zRet ){
     reply.aBlob = (u8*)zRet;
+    reply.iVal = SQLITE_ERROR;
   }else{
     reply.aBlob = (u8*)"ok";
   }
@@ -6308,6 +4210,7 @@ static void bdSendErrorReply(
 static void bdAddContainer(
   DaemonCtx *pCtx,                /* Daemon context */
   DClient *pClient,               /* Client to reply to */
+  int flags,
   const char *zCont,              /* New container to attach */
   int bReadonly                   /* 1 -> bcv_readonly, 0 -> bcv_attach */
 ){
@@ -6327,15 +4230,20 @@ static void bdAddContainer(
 
   pCont = bdFindContainer(pCtx, zCopy);
   if( pCont ){
-    if( pCont->pAttachClient ){
+    if( pCont->bAutoDetach ){
       /* Some other client has already sent a bcv_attach or bcv_readonly
       ** message to this daemon to attach this container and is waiting
       ** for the manifest file to download. This client will wait on the 
       ** same reply from the cloud storage system. If this is a bcv_readonly
       ** command, ignore the SAS token in case the other client provided
       ** a read/write SAS token.  */
-      pClient->pNextWaiting = pCont->pAttachClient;
-      pCont->pAttachClient = pClient;
+      if( flags & SQLITE_BCVATTACH_POLL ){
+        pClient->pNextWaiting = pCont->pNextPollClient;
+        pCont->pNextPollClient = pClient;
+      }else{
+        pClient->pNextWaiting = pCont->pPollClient;
+        pCont->pPollClient = pClient;
+      }
       if( bReadonly ){
         zSas = 0;
       }
@@ -6359,7 +4267,13 @@ static void bdAddContainer(
         }
       }
       if( ii==pMan->nDb ){
-        bdSendQueryReply(pCtx, pClient, SQLITE_OK, "ok");
+        if( flags & SQLITE_BCVATTACH_POLL ){
+          pClient->pNextWaiting = pCont->pNextPollClient;
+          pCont->pNextPollClient = pClient;
+          pCont->iPollTime = sqlite_timestamp();
+        }else{
+          bdSendQueryReply(pCtx, pClient, SQLITE_OK, "ok");
+        }
       }
     }
   }else{
@@ -6367,7 +4281,9 @@ static void bdAddContainer(
     int nCont = strlen(zCopy);
 
     if( zSas==0 && pCtx->ap_template.zAccessKey==0 ){
-      bdSendQueryReply(pCtx, pClient, SQLITE_OK,"attach requires an sas token");
+      bdSendQueryReply(
+          pCtx, pClient, SQLITE_ERROR, "attach requires an sas token"
+      );
       sqlite3_free(zCopy);
       return;
     }
@@ -6395,7 +4311,8 @@ static void bdAddContainer(
 
     /* Reply to the client after the manifest has been polled. If an error
     ** occurs, the container will be automatically detached at that point.  */
-    pCont->pAttachClient = pClient;
+    pCont->pPollClient = pClient;
+    pCont->bAutoDetach = 1;
   }
 
   if( zSas ){
@@ -6415,6 +4332,7 @@ static void bdAddContainer(
 static void bdPragmaQuery(
   DaemonCtx *p,                   /* Daemon object */
   DClient *pClient,               /* Client that sent QUERY message */
+  int flags,
   const char *zName,              /* Name of pragma */
   const char *zArg                /* Argument passed to pragma */
 ){
@@ -6432,11 +4350,11 @@ static void bdPragmaQuery(
     bdClientMessageSend(p, pClient, &reply);
   }else
   if( sqlite3_stricmp("bcv_attach", zName)==0 ){
-    bdAddContainer(p, pClient, zArg, 0);
-  }else 
+    bdAddContainer(p, pClient, flags, zArg, 0);
+  }else
   if( sqlite3_stricmp("bcv_readonly", zName)==0 ){
-    bdAddContainer(p, pClient, zArg, 1);
-  }else 
+    bdAddContainer(p, pClient, flags, zArg, 1);
+  }else
   if( sqlite3_stricmp("bcv_detach", zName)==0 ){
     bdDelContainer(p, pClient, zArg);
   }else{
@@ -6473,7 +4391,7 @@ static void bdHandleClientQuery(
   if( bPragma ){
     char *z1 = bcvMprintf("%.*s", i, (char*)pMsg->aBlob);
     char *z2 = bcvMprintf("%.*s", pMsg->nBlobByte-i-1,(char*)&pMsg->aBlob[i+1]);
-    bdPragmaQuery(p, pClient, z1, z2);
+    bdPragmaQuery(p, pClient, pMsg->iVal, z1, z2);
     sqlite3_free(z1);
     sqlite3_free(z2);
   }else{
@@ -6717,8 +4635,15 @@ static void bdDownloadManifestDone(DCurlRequest *p, CURLMsg *pMsg){
   if( bNew && bFail==0 ){
     int iNew;                     /* Index into pNew->aDb[] */
     int iOld;                     /* Index into pOld->aDb[] */
-    Manifest *pNew = bcvManifestParse(p->aBuf, p->nBuf, zETag);
+    Manifest *pNew = 0;
     Manifest *pOld = pCont->pManifest;
+    int rc;
+    char *zErr = 0;
+
+    rc = bcvManifestParse(p->aBuf, p->nBuf, zETag, &pNew, &zErr);
+    if( rc!=SQLITE_OK ){
+      fatal_error("error parsing manifest: %s", zErr);
+    }
 
     p->aBuf = 0;
     p->nBuf = 0;
@@ -6809,48 +4734,70 @@ static void bdDownloadManifestDone(DCurlRequest *p, CURLMsg *pMsg){
       assert( iOld<pOld->nDb );
       bcvManifestDeref(pNew);
       daemon_error("cannot use new manifest due to local changes");
-      if( pCont->pAttachClient==0 ){
+      if( pCont->bAutoDetach==0 ){
         bdFatalConflict(pCtx, pCont, iOld);
       }
     }
   }
 
-  /* If DContainer.pAttachClient is not NULL, it points to a daemon client
-  ** that sent a "PRAGMA bcv_attach = zCont" message to attach this 
-  ** container (or the client for the command line equivalent) and is waiting
-  ** for a reply.  */
-  if( pCont->pAttachClient ){
-    DClient *pClient = pCont->pAttachClient;
+  /* Send QUERY_REPLY messages to any clients waiting for them. Messages must
+  ** be sent to all clients in the pPollClient list, and in the pNextPollClient
+  ** list as well if an error has occurred. Additionally, if an error has
+  ** occurred and the bAutoDetach flag is set, detach the container.  
+  */
+  if( bFail || (bNew && bInstall==0) ){
+    /* An error has occurred. Add the pNextPollClient list to the end of
+    ** the pPollClient list so that those clients get messages too. */
+    DClient **ppC;
+    for(ppC=&pCont->pPollClient; *ppC; ppC=&((*ppC)->pNextWaiting));
+    *ppC = pCont->pNextPollClient;
+    pCont->pNextPollClient = 0;
+  }
+  if( pCont->pPollClient ){
+    DClient *pClient;
     DMessage reply;
-    pCont->pAttachClient = 0;
     memset(&reply, 0, sizeof(reply));
     reply.eType = BCV_MESSAGE_QUERY_REPLY;
-    if( bFail || (bNew && bInstall==0) ){
-      DContainer **pp;
-      if( bFail ){
-        reply.aBlob = (u8*)"failed to load manifest";
-      }else{
-        reply.aBlob = (u8*)"cannot attach due to local changes";
-      }
 
-      /* Detach the container. */
-      for(pp=&pCtx->pContainerList; *pp!=pCont; pp=&((*pp)->pNext));
-      *pp = pCont->pNext;
-      bdContainerFree(pCont);
-      pCont = 0;
+    if( bFail ){
+      int httpcode = bdHttpCode(p, pMsg);
+      reply.iVal = (httpcode>=400) ? httpcode : SQLITE_ERROR;
+      reply.aBlob = (u8*)bcvMprintf(
+          "failed to load manifest for %s: %s",
+          pCont->zName, bdRequestError(p, pMsg)
+      );
+    }else if( bNew && bInstall==0 ){
+      reply.aBlob = (u8*)bcvMprintf("cannot attach due to local changes");
+      reply.iVal = SQLITE_ERROR;
     }else{
       bdAllocateHash(pCtx);
-      reply.aBlob = (u8*)"ok";
+      reply.aBlob = (u8*)bcvMprintf("ok");
     }
-
-    reply.nBlobByte = strlen((char*)reply.aBlob);
-    bdClientMessageSend(pCtx, pClient, &reply);
+    reply.nBlobByte = bcvStrlen((const char*)reply.aBlob);
+    
+    for(pClient=pCont->pPollClient; pClient; pClient=pClient->pNextWaiting){
+      bdClientMessageSend(pCtx, pClient, &reply);
+    }
+    pCont->pPollClient = 0;
+    sqlite3_free(reply.aBlob);
+  }
+  if( pCont->bAutoDetach && (bFail || (bNew && bInstall==0)) ){
+    /* Detach the container. */
+    DContainer **pp;
+    for(pp=&pCtx->pContainerList; *pp!=pCont; pp=&((*pp)->pNext));
+    *pp = pCont->pNext;
+    bdContainerFree(pCont);
+    pCont = 0;
   }
 
   if( pCont ){
+    pCont->bAutoDetach = 0;
     assert( pCont->eOp==CONTAINER_OP_POLL );
     pCont->eOp = CONTAINER_OP_NONE;
-    pCont->iPollTime = sqlite_timestamp() + p->pDaemonCtx->cmd.nPollTime*1000;
+    pCont->iPollTime = sqlite_timestamp();
+    if( pCont->pNextPollClient==0 ){
+      pCont->iPollTime += p->pDaemonCtx->cmd.nPollTime*1000;
+    }
   }
 }
 
@@ -6859,6 +4806,8 @@ static void bdDownloadManifestDone(DCurlRequest *p, CURLMsg *pMsg){
 ** file for container pCont.
 */
 static void bdPollManifest(DaemonCtx *p, DContainer *pCont){
+  assert( pCont->eOp==CONTAINER_OP_NONE );
+
   if( bdRequireSas(pCont) ){
     daemon_event_log(p, "bdPollManifest(\"%s\") requires SAS, iSasShmZero=%d",
         pCont->zName, pCont->iSasShmZero
@@ -6887,6 +4836,10 @@ static void bdPollManifest(DaemonCtx *p, DContainer *pCont){
     pCont->eOp = CONTAINER_OP_POLL;
     bdCurlRun(p, pCurl, pCont, bdDownloadManifestDone);
     daemon_log(p, BCV_LOG_POLL, "polling manifest for container %s", zCont);
+    if( pCont->pPollClient==0 ){
+      pCont->pPollClient = pCont->pNextPollClient;
+      pCont->pNextPollClient = 0;
+    }
   }
 }
 
@@ -7445,7 +5398,6 @@ static void bdCleanup(DaemonCtx *p){
 }
 
 static void bdOpenDatabaseFile(
-  sqlite3_vfs *pVfs,              /* VFS for accessing file-system */
   int iPort,                      /* Port that daemon is listening on */
   const char *zCont,              /* Container name */
   const char *zDb,                /* Database (file) name */
@@ -7574,22 +5526,18 @@ static void bdWritePortNumber(DaemonCtx *pCtx){
 */
 static int main_daemon(int argc, char **argv){
   CommandSwitches *pCmd;
-  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
-  sqlite3_file *pFile = 0;
   CurlRequest curl;               /* Used to grab intitial manifests */
   DaemonCtx *p = 0;
   int iCont;
   const char **azArg = (const char**)&argv[2];
   int nArg = argc-2;
   int rc;
-  int f;
   int iPort;                      /* Port that daemon listens on */
   i64 nUsed;
   i64 iGCTime;                    /* Time for first GC attempt */
   sqlite3_stmt *pReader = 0;      /* For reading "block" table */
   sqlite3_stmt *pIter = 0;        /* For reading "manifest" table */
 
-  pFile = (sqlite3_file*)bcvMallocZero(pVfs->szOsFile);
   p = (DaemonCtx*)bcvMallocZero(sizeof(DaemonCtx));
   p->pMulti = curl_multi_init();
   pCmd = &p->cmd;
@@ -7662,9 +5610,14 @@ static int main_daemon(int argc, char **argv){
     memcpy(pNew->zName, zCont, nCont);
     bcvAccessPointCopy(&pNew->ap, &p->ap_template);
     if( nMan>0 ){
-      pMan = bcvManifestParse(bcvMemdup(nMan, aMan), nMan, bcvStrdup(zETag));
+      u8 *aDup = bcvMemdup(nMan, aMan);
+      char *zErr = 0;
+      rc = bcvManifestParse(aDup, nMan, bcvStrdup(zETag), &pMan, &zErr);
+      if( rc!=SQLITE_OK ){
+        fatal_error("corrupt manifest in db: %s", zErr);
+      }
       bdManifestInstall(p, pNew, pMan, 0, 0);
-      pNew->iPollTime = sqlite_timestamp();
+      pNew->iPollTime = sqlite_timestamp(); /* poll for new manifest ASAP */
     }else{
       pMan = bcvManifestGetParsed(&curl, &pNew->ap, zCont, &nMan);
       bdManifestInstall(p, pNew, pMan, pMan->pFree, nMan);
@@ -7674,7 +5627,7 @@ static int main_daemon(int argc, char **argv){
     bdMkdir(zCont);
     for(iDb=0; iDb<pNew->pManifest->nDb; iDb++){
       ManifestDb *pDb = &pNew->pManifest->aDb[iDb];
-      bdOpenDatabaseFile(pVfs, iPort, zCont, pDb->zDName, pDb->aId);
+      bdOpenDatabaseFile(iPort, zCont, pDb->zDName, pDb->aId);
     }
 
     pNew->pNext = p->pContainerList;
@@ -7755,12 +5708,10 @@ static int main_daemon(int argc, char **argv){
   daemon_event_log(p, "added %d dirty blocks to hash", p->nCacheEntry);
 
   /* Open the cache file */
-  f = SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
-  rc = pVfs->xOpen(pVfs, BCV_CACHEFILE_NAME, pFile, f, &f);
+  rc = bdOpenLocalFile(".", BCV_CACHEFILE_NAME, 0, &p->pCacheFile);
   if( rc!=SQLITE_OK ){
     fatal_error("failed to open cachefile: %s", BCV_CACHEFILE_NAME);
   }
-  p->pCacheFile = pFile;
 
   /* If the -readymessage option was passed, output the message "ready\n"
   ** on stdout to indicate that initialization has finished and database
@@ -7798,17 +5749,10 @@ static int main_daemon(int argc, char **argv){
 ** container. 
 */
 static int main_attach(int argc, char **argv, int bAttach){
-  sqlite3_file *pFile = 0;        /* File handle for portnumber.bcv */
-  char aPort[64];                 /* Contents of portnumber.bcv */
-  int iPort = 0;                  /* Port number to connect to */
   char *zDir = 0;                 /* Directory argument */
   char *zCont = 0;                /* Container argument */
-  BCV_SOCKET_TYPE s;              /* Socket connection to daemon */
-  struct sockaddr_in addr;        /* 127.0.0.1:iPort */
-  DMessage msg;
-  DMessage reply;
-  int rc;
-  u8 *aFree = 0;
+  int rc = SQLITE_OK;
+  char *zErr = 0;
 
   if( argc<4 ){
     fprintf(stderr, "Usage: %s %s ?SWITCHES? DIRECTORY CONTAINER\n", 
@@ -7819,60 +5763,16 @@ static int main_attach(int argc, char **argv, int bAttach){
   zDir = argv[2];
   zCont = argv[3];
 
-  memset(aPort, 0, sizeof(aPort));
-  rc = bdOpenLocalFile(zDir, "portnumber.bcv", 1, &pFile);
-  if( rc==SQLITE_OK ){
-    i64 nByte;
-    rc = pFile->pMethods->xFileSize(pFile, &nByte);
-    if( rc==SQLITE_OK ){
-      if( nByte>=sizeof(aPort) ){
-        rc = SQLITE_ERROR;
-      }else{
-        rc = pFile->pMethods->xRead(pFile, aPort, nByte, 0);
-      }
-    }
+  if( bAttach ){
+    rc = sqlite3_bcv_attach(zDir, zCont, 0, 0, &zErr);
+  }else{
+    rc = sqlite3_bcv_detach(zDir, zCont, &zErr);
   }
-  if( rc==SQLITE_OK ){
-    int ii;
-    for(ii=0; aPort[ii]; ii++){
-      iPort = iPort*10 + (aPort[ii] - '0');
-    }
-  }
-  bdCloseLocalFile(pFile);
   if( rc!=SQLITE_OK ){
-    fatal_error("failed to read port number from %s/portnumber.bcv", zDir);
+    fprintf(stderr, "%s\n", (zErr ? zErr : ""));
   }
-
-  s = socket(AF_INET, SOCK_STREAM, 0);
-  if( bcv_socket_is_valid(s)==0 ){
-    fatal_system_error("socket()", errno);
-  }
-
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(iPort);
-  ((u8*)&addr.sin_addr)[0] = 0x7F;
-  ((u8*)&addr.sin_addr)[1] = 0x00;
-  ((u8*)&addr.sin_addr)[2] = 0x00;
-  ((u8*)&addr.sin_addr)[3] = 0x01;
-  if( connect(s, (struct sockaddr*)&addr, sizeof(addr))<0 ){
-  printf("port is %d\n", iPort);
-    fatal_system_error("connect()", errno);
-  }
-
-  msg.eType = BCV_MESSAGE_QUERY;
-  msg.aBlob = (u8*)bcvMprintf("bcv_%s=%s", bAttach ?"attach":"detach", zCont);
-  msg.nBlobByte = strlen((char*)msg.aBlob);
-  if( bdMessageSend(s, &msg) ){
-    fatal_error("failed to send message to daemon");
-  }
-  if( bdClientMessage(s, &reply, &aFree) ){
-    fatal_error("failed to receive reply from daemon");
-  }
-  sqlite3_free(aFree);
-
-  printf("%.*s\n", reply.nBlobByte, (char*)reply.aBlob);
-  return 0;
+  sqlite3_free(zErr);
+  return rc;
 }
 
 void bcvRestoreDefaultVfs(void);
@@ -7881,7 +5781,6 @@ int main(int argc, char **argv){
   SelectOption aCmd[] = {
     { "upload",   1 , 0},
     { "download", 1 , 1},
-    { "clist",    1 , 2},
     { "list",     1 , 3},
     { "manifest", 1 , 4},
     { "delete",   1 , 5},
@@ -7900,7 +5799,6 @@ int main(int argc, char **argv){
 
   bcv_socket_init();
   curl_global_init(CURL_GLOBAL_ALL);
-  base64_init();
   OpenSSL_add_all_algorithms();
 
   sqlite3_initialize();
@@ -7914,9 +5812,6 @@ int main(int argc, char **argv){
       break;
     case 1:
       rc = main_download(argc, argv);
-      break;
-    case 2:
-      rc = main_clist(argc, argv);
       break;
     case 3:
       rc = main_list(argc, argv);

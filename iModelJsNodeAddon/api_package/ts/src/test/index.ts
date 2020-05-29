@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 import { logTest, iModelJsNative, dbFileName } from "./utils";
 import { OpenMode, DbResult, Id64Array } from "@bentley/bentleyjs-core";
-import { IModelJsNative } from "../IModelJsNative";
+import { IModelJsNative } from "../NativeLibrary";
 import { assert } from "chai";
 import * as Mocha from "mocha";
 import * as fs from "fs";

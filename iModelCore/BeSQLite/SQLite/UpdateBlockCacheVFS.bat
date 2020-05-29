@@ -32,7 +32,10 @@ fossil update trunk
 rem Copy to bentley source tree
 set BeSqlOutRoot=%SrcRoot%imodel02\iModelCore\BeSQLite\SQLite\
 
+copy src\bcv_int.h %BeSqlOutRoot%
 copy src\bcv_socket.h %BeSqlOutRoot%
+copy src\bcvutil.h %BeSqlOutRoot%
+copy src\bcvutil.c %BeSqlOutRoot%
 copy src\blockcachevfs.c %BeSqlOutRoot%
 copy src\blockcachevfs.h %BeSqlOutRoot%
 copy src\blockcachevfsd.c %BeSqlOutRoot%

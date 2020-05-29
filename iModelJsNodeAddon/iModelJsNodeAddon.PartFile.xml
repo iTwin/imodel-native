@@ -13,10 +13,18 @@
     <NpmDependency>${SrcRoot}imodel02/iModelJsNodeAddon/api_package/ts/</NpmDependency>
     <Bindings>
       <Files>
-        Delivery/IModelJsNative.js
-        Delivery/IModelJsNative.js.map
-        Delivery/IModelJsNative.d.ts
-        Delivery/IModelJsNative.d.ts.map
+        Delivery/lib/imodeljs-native.js
+        Delivery/lib/imodeljs-native.js.map
+        Delivery/lib/imodeljs-native.d.ts
+        Delivery/lib/imodeljs-native.d.ts.map
+        Delivery/lib/NativeLibrary.js
+        Delivery/lib/NativeLibrary.js.map
+        Delivery/lib/NativeLibrary.d.ts
+        Delivery/lib/NativeLibrary.d.ts.map
+        Delivery/lib/BlobDaemon.js
+        Delivery/lib/BlobDaemon.js.map
+        Delivery/lib/BlobDaemon.d.ts
+        Delivery/lib/BlobDaemon.d.ts.map
       </Files>
     </Bindings>
   </Part>
@@ -81,7 +89,7 @@
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
     <SubPart PartName="iModelHubClient-PublicAPI" PartFile="iModelCore/WSClient/WSClient" />
-    <SubPart PartName="BCVDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
+    <SubPart PartName="BeBlobDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
       <VendorNotices IfNotPresent="Continue">

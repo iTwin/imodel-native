@@ -192,6 +192,14 @@ typedef struct sqlite3_value* SqlValueP;
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
+namespace MemorySize {
+    enum : uint64_t {
+        K = 1024,
+        MEG = K * K,
+        GIG = K * MEG,
+    };
+};
+
 //=======================================================================================
 //! A 16-byte Globally Unique Id. A value of all zeros means "Invalid Id".
 // @bsiclass                                                    Keith.Bentley   02/11
@@ -2522,7 +2530,6 @@ private:
     void DoCloseDb();
     DbResult DoOpenDb(Utf8CP dbName, OpenParams const& params);
     DbResult TruncateTable(Utf8CP tableName) const;
-    DbResult ClearBriefcaseLocalValues();
     void SetupBlvSaveStmt(Statement& stmt, Utf8CP name);
     DbResult ExecBlvQueryStmt(Statement& stmt, Utf8CP name) const;
     BE_SQLITE_EXPORT DbResult DropTable(Utf8CP tableName, bool requireExists) const;

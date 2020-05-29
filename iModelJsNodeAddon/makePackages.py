@@ -12,6 +12,7 @@ import sys
 import re
 import shutil
 import subprocess
+import glob
 
 # publish a package
 def publishPackage(packagedir, doPublish, tag):
@@ -106,15 +107,16 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
     packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
-    filesToCopy = ['installNativePlatform.js', 'loadNativePlatform.js','README.md', 'LICENSE.md']
+    filesToCopy = ['installNativePlatform.js', 'README.md', 'LICENSE.md']
 
     for fileToCopy in filesToCopy:
         shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
 
-    shutil.copyfile(os.path.join(os.environ['BuildContext'], 'Delivery', 'IModelJsNative.d.ts'), os.path.join(outputpackagedir, 'IModelJsNative.d.ts'))
-    shutil.copyfile(os.path.join(os.environ['BuildContext'], 'Delivery', 'IModelJsNative.d.ts.map'), os.path.join(outputpackagedir, 'IModelJsNative.d.ts.map'))
-    shutil.copyfile(os.path.join(os.environ['BuildContext'], 'Delivery', 'IModelJsNative.js'), os.path.join(outputpackagedir, 'IModelJsNative.js'))
-    shutil.copyfile(os.path.join(os.environ['BuildContext'], 'Delivery', 'IModelJsNative.js.map'), os.path.join(outputpackagedir, 'IModelJsNative.js.map'))
+    for fileToCopy in glob.glob(os.path.join(os.environ['BuildContext'], 'Delivery', 'lib', '*.d.ts*')):
+        shutil.copy(fileToCopy, outputpackagedir)
+
+    for fileToCopy in glob.glob(os.path.join(os.environ['BuildContext'], 'Delivery', 'lib', '*.js*')):
+        shutil.copy(fileToCopy, outputpackagedir)
 
     # Generate the package.json file
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')

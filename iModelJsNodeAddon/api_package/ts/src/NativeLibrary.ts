@@ -2,12 +2,20 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+
+import * as os from "os";
+import * as path from "path";
 import {
-  BentleyStatus, ChangeSetApplyOption, ChangeSetStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String,
-  IDisposable, IModelStatus, Logger, OpenMode, RepositoryStatus, StatusCodeWithMessage,
+  BentleyStatus, ChangeSetApplyOption, ChangeSetStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger,
+  OpenMode, RepositoryStatus, StatusCodeWithMessage,
 } from "@bentley/bentleyjs-core";
-import { ElementProps, QueryLimit, QueryQuota, QueryPriority } from "@bentley/imodeljs-common";
+import { ElementProps, QueryLimit, QueryPriority, QueryQuota } from "@bentley/imodeljs-common";
+
 // *** NOTE: DO NOT add dependencies on any other packages! ***
+
+// cspell:ignore blockcache blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
+// tslint:disable: no-const-enum
+// tslint:disable:prefer-get
 
 /** Logger categories used by the native addon
  * @internal
@@ -22,8 +30,44 @@ export enum NativeLoggerCategory {
   Licensing = "Bentley.LICENSING",
 }
 
-// tslint:disable: no-const-enum
-// tslint:disable:prefer-get
+/** Find and load the native node-addon library */
+export class NativeLibrary {
+  public static get archName() {
+    // We make sure we are running in a known platform.
+    if (typeof process === "undefined" || process.platform === undefined || process.arch === undefined)
+      throw new Error("Error - unknown process");
+    return `imodeljs-${process.platform}-${process.arch}`;
+  }
+  public static get nodeAddonName() { return "imodeljs.node"; }
+  public static get libraryName() {
+    return path.join("@bentley", "imodeljs-native", NativeLibrary.archName, NativeLibrary.nodeAddonName);
+  }
+  public static get defaultCacheDir(): string {
+    let baseDir: string;
+    const homedir = os.homedir();
+    const platform = os.platform() as string;
+    switch (platform) {
+      case "win32":
+        baseDir = path.join(homedir, "AppData", "Local");
+        break;
+      case "darwin":
+      case "ios":
+        baseDir = path.join(homedir, "Library", "Caches");
+        break;
+      case "linux":
+        baseDir = path.join(homedir, ".cache");
+        break;
+      default:
+        throw new Error("Error - unknown platform");
+    }
+    return path.join(baseDir, "iModelJs");
+  }
+  private static _nativeLib?: typeof IModelJsNative;
+  public static get nativeLib() { return this.load(); }
+  public static load() {
+    return this._nativeLib ?? (this._nativeLib = require(NativeLibrary.libraryName) as typeof IModelJsNative);
+  }
+}
 
 /** Module that declares the IModelJs native code.
  * @internal
@@ -35,7 +79,7 @@ export declare namespace IModelJsNative {
   }
 
   const enum UsageType {
-    Production = 0 , Trial = 1, Beta = 2, HomeUse= 3, PreActivation = 4, Evaluation = 5, Academic = 6,  Practitioner = 7,
+    Production = 0, Trial = 1, Beta = 2, HomeUse = 3, PreActivation = 4, Evaluation = 5, Academic = 6, Practitioner = 7,
   }
 
   const enum UpgradeMode {
@@ -70,6 +114,7 @@ export declare namespace IModelJsNative {
   function getObjectRefCountFromVault(id: string): number;
   function clearLogLevelCache(): void;
   function setNopBriefcaseManager(): void;
+  function runDaemonCommand(command: string, args: any): any;
 
   /** The return type of synchronous functions that may return an error or a successful result. */
   interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
@@ -79,6 +124,7 @@ export declare namespace IModelJsNative {
     /** Result of the operation. This property is defined if the operation completed successfully */
     result?: ResultType;
   }
+
   namespace ConcurrentQuery {
     /** Configuration for concurrent query manager
      * @internal
@@ -270,7 +316,7 @@ export declare namespace IModelJsNative {
     public removePendingChangeSet(changeSetId: string): DbResult;
     public resetBriefcaseId(idValue: number): DbResult;
     public reverseAll(): IModelStatus;
-    public reverseTo(txnId: TxnIdString,allowCrossSessions?: boolean): IModelStatus;
+    public reverseTo(txnId: TxnIdString, allowCrossSessions?: boolean): IModelStatus;
     public reverseTxns(numOperations: number, allowCrossSessions?: boolean): IModelStatus;
     public saveChanges(description?: string): DbResult;
     public saveFileProperty(props: string, strValue: string | undefined, blobVal: Uint8Array | undefined): number;
@@ -559,7 +605,7 @@ export declare namespace IModelJsNative {
   /** Represent the entitlement Response.
    * @internal
    */
-  export interface Entitlement {
+  interface Entitlement {
     allowed: boolean;
     usageType: string;
     principalId: string;
@@ -571,7 +617,7 @@ export declare namespace IModelJsNative {
     NotEntitled = -1,
     Error = 0,
     EntitledButErrorUsageTracking = 1,
-    Success = 2
+    Success = 2,
   }
 
   /** Authentication methods used by the native addon
@@ -588,11 +634,11 @@ export declare namespace IModelJsNative {
     /** Sends a single request to log feature usage */
     public static postFeatureUsage(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string, principalId?: string): Promise<void>;
     public static checkEntitlement(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, correlationId?: string): Entitlement;
-    public static entitlementWorkflow(accessToken: string, appVersionStr: string, projectId: GuidString, authType: AuthType, productIds: number[], deviceId: string, correlationId: string): Promise<TrackUsageStatus>; //review params required, ? is optional
-  }   
-  
-  //class NativeCPCClient -- rename -- CPC normal client wrapper here
-  //OIDC passed as param -- up to caller to create...
+    public static entitlementWorkflow(accessToken: string, appVersionStr: string, projectId: GuidString, authType: AuthType, productIds: number[], deviceId: string, correlationId: string): Promise<TrackUsageStatus>; // review params required, ? is optional
+  }
+
+  // class NativeCPCClient -- rename -- CPC normal client wrapper here
+  // OIDC passed as param -- up to caller to create...
   // need to determine if 2 way communication between C++ and TS will be needed to keep heartbeats alive when OIDC tokens expire / need refreshed
 
   class DisableNativeAssertions implements IDisposable {
@@ -685,5 +731,4 @@ export declare namespace IModelJsNative {
      */
     public static findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
   }
-
 }

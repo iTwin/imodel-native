@@ -7,7 +7,6 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 const version = require("./package.json").version;
-const formatPackageName = require("./loadNativePlatform.js").formatPackageName;
 
 // This is the list of all supported platforms. Keep it up to date.
 const supportedPlatforms = [
@@ -52,11 +51,7 @@ function checkSupportedPlatform() {
     showErrorAndExit(`iModel.js does not run on the ${process.arch} version of ${knownPlatform.description}. iModel.js runs on ${knownPlatform.architectures.join()} only.`);
 }
 
-checkSupportedPlatform();
-
-// This platform is supported. Try to install the appropriate addon package.
-
-// Utility function to copy a directory and all subdirectories 
+// Utility function to copy a directory and all subdirectories
 function copyFolderRecursiveSync(source, target) {
   if (!fs.existsSync(target))
     fs.mkdirSync(target);
@@ -81,8 +76,11 @@ try { fs.mkdirSync(installDir); } catch (err) { }
 fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
 
 // We will then copy the results of the install from the temp directory into sub-directories below this one.
-function installNativePackage(package) {
-  const cmdLine = `npm install --no-save @bentley/${package}`;
+function installNativePackage() {
+  checkSupportedPlatform();
+
+// This platform is supported. Try to install the appropriate addon package.
+const cmdLine = `npm install --no-save @bentley/imodeljs-${process.platform}-${process.arch}@${version}`;
   console.log(cmdLine);
   exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
     if (error)
@@ -93,4 +91,4 @@ function installNativePackage(package) {
   });
 }
 
-installNativePackage(`${formatPackageName()}@${version}`);
+installNativePackage();

@@ -72,6 +72,124 @@ int sqlite3_bcv_sas_callback(
   )
 );
 
+/*
+** Send a message to a local daemon process to attach a new container.
+**
+** Parameter zDir must be passed a path identifying the directory used by
+** a running daemon process (i.e. a path identifying the same directory
+** as the -directory option passed to the daemon did). zContainer is the
+** name of the cloud storage container or bucket to attach, and zSas
+** points to a buffer containing an Azure SAS token or Google Cloud Access
+** token, if any, for the daemon process to use.
+**
+** Parameter flags contains a combination of SQLITE_BCVATTACH_X flags. See
+** comments above the definition of the flags themselves for a description
+** of the effect of each.
+**
+** If successful, SQLITE_OK (0) is returned and output parameter (*pzErr) 
+** is set to NULL. A call to this function is considered to be successful 
+** even if the specified container is already attached. If an error occurs,
+** the output parameter (*pzErr) may be set to point to a buffer containing 
+** an English language error message. It is the responsibility of the 
+** caller to eventually free such an error message buffer using 
+** sqlite3_free(). In this case, the error code returned may either be
+** an HTTP error status (a value greater or equal to 400), an SQLite error
+** code (a value greater than zero but smaller than 400), or one of the
+** SQLITE_BCV_CANTCONNECT[123] error codes defined below.
+**
+** If an error occurs within the local process, the error code is one of:
+**
+**   SQLITE_MISUSE - indicating that either the zDir or zContainer parameter
+**     was passed a NULL value,
+**
+**   SQLITE_NOMEM - indicating that a memory allocation failed, or
+**
+**   SQLITE_BCV_CANTCONNECT[123] - indicating that there was a problem 
+**     connecting to the daemon process. See below for details.
+**
+** If the daemon process is successfully contacted, but an error occurs
+** within one of the requests made to cloud storage, then an HTTP error
+** code is returned. Or, if some other error occurs within the daemon 
+** process, an SQLite error code is returned. This will usually be 
+** SQLITE_NOMEM or SQLITE_IOERR, indicating that an allocation or attempt
+** to read or write to the local file-system failed, but may also be
+** another SQLite error code, indicating some other error has occurred.
+*/
+int sqlite3_bcv_attach(
+  const char *zDir,               /* Directory of daemon process to contact */
+  const char *zContainer,         /* Container to attach */
+  const char *zSas,               /* SAS token (if any) */
+  int flags,                      /* SQLITE_BCVATTACH_X flags */
+  char **pzErr                    /* OUT: error message (if any) */
+);
+
+/*
+** The following values may be returned by sqlite3_bcv_attach() or
+** sqlite3_bcv_detach(). They should be interpreted as follows:
+**
+**   SQLITE_BCV_CANTCONNECT1:
+**     The specified directory does not exist, or is not populated by
+**     the files expected of a daemon process's working directory.
+**
+**   SQLITE_BCV_CANTCONNECT2:
+**     Establishing the localhost socket connection to the daemon process
+**     failed. 
+**
+**   SQLITE_BCV_CANTCONNECT2:
+**     The connection to the daemon process was established, but an error
+**     occured at the socket level while exchanging messages with it.
+*/
+#define SQLITE_BCV_CANTCONNECT1   (-1)
+#define SQLITE_BCV_CANTCONNECT2   (-2)
+#define SQLITE_BCV_CANTCONNECT3   (-3)
+
+/*
+** Candidate flags for the fourth argument to sqlite3_bcv_attach().
+**
+** SQLITE_BCVATTACH_READONLY:
+**   If set, the container is attached in read-only mode. If clear, it
+**   is attached in read/write mode. 
+**
+** SQLITE_BCVATTACH_POLL:
+**   If this flag is clear and the specified container is already attached 
+**   to the daemon process when sqlite3_bcv_attach() is called, the call 
+**   returns SQLITE_OK without delaying. Or, if the specified container is in
+**   the process of being attached but the initial download of the manifest 
+**   file is not complete, the call waits until the manifest had been 
+**   downloaded before returning. 
+**
+**   Setting this flag changes the behaviour so that if the specified
+**   container has already been attached when sqlite3_bcv_attach() is called,
+**   it causes the daemon process to immediately poll cloud storage for an
+**   updated manifest file. The sqlite3_bcv_attach() call does not return
+**   until after the poll operation has finished. Similarly, if the daemon
+**   is waiting for the initial download of the manifest file when
+**   sqlite3_bcv_attach() is invoked, it is caused to poll cloud storage
+**   immediately after the initial download is finished. Again, the call to
+**   sqlite3_bcv_attach() does not return until after the poll operation
+**   is finished.
+*/
+#define SQLITE_BCVATTACH_READONLY 0x0001
+#define SQLITE_BCVATTACH_POLL     0x0002
+
+/*
+** Send a message to a local daemon process to detach a container.
+**
+** If successful, SQLITE_OK is returned and output parameter (*pzErr) is
+** set to NULL. Of, if an error occurs, output parameter (*pzErr) may be set
+** to point to a buffer containing an English language error message. In this
+** case, it is the responsibility of the caller to eventually free the error 
+** message buffer using sqlite3_free().
+**
+** If an error occurs, sqlite3_bcv_detach() returns an error code that should
+** be interpreted as for sqlite3_bcv_attach().
+*/
+int sqlite3_bcv_detach(
+  const char *zDir,               /* Directory of daemon process to contact */
+  const char *zContainer,         /* Container to detach */
+  char **pzErr                    /* OUT: error message (if any) */
+);
+
 #ifdef __cplusplus
 } /* end of the extern "C" block */
 #endif

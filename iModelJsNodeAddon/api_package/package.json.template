@@ -2,7 +2,8 @@
   "name": "@bentley/imodeljs-native",
   "license": "SEE LICENSE IN LICENSE.md",
   "version": "${PACKAGE_VERSION}",
-  "main": "IModelJsNative.js",
+  "main": "imodeljs-native.js",
+  "typings": "imodeljs-native",
   "keywords": [
     "Bentley",
     "iModel"
@@ -18,6 +19,5 @@
   },
    "scripts": {
     "postinstall": "node ./installNativePlatform.js"
-   },
-  "types": "./IModelJsNative.d.ts"
+   }
 }

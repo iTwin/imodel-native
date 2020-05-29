@@ -13,19 +13,7 @@ outDir = $(_MakeFilePath)lib/
 always:
     ~chdir $(srcDir)
     -python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run clean
+    -python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run build
 
-$(outDir)IModelJsNative.js $(outDir)IModelJsNative.d.ts : $(srcDir)src/IModelJsNative.ts
-    ~chdir $(srcDir)
-    python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run build
-
-$(BuildContext)Delivery/IModelJsNative.js : $(outDir)IModelJsNative.js
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)Delivery/IModelJsNative.js.map : $(outDir)IModelJsNative.js.map
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)Delivery/IModelJsNative.d.ts : $(outDir)IModelJsNative.d.ts
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)Delivery/IModelJsNative.d.ts.map : $(outDir)IModelJsNative.d.ts.map
-    $(LinkFirstDepToFirstTarget)
+$(BuildContext)Delivery/lib : $(outDir)
+    $(LinkFirstDepToFirstTargetAsDirectory)

@@ -13,44 +13,45 @@
         </Bindings>
     </Part>
 
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="BeSQLite" BentleyBuildMakeFile="BeSQLite.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="OpenSsl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLite$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="BCVDaemon" BentleyBuildMakeFile="BCVDaemon.mke">
+    <Part Name="BeBlobDaemon" BentleyBuildMakeFile="BeBlobDaemon.mke">
         <SubPart LibType="Static" PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart LibType="Static" PartName="OpenSsl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <Files ProductDirectoryName="StaticAssemblies">
-                Delivery/BCVDaemon$(exeext)
+                Delivery/BeBlobDaemon$(exeext)
             </Files>
         </Bindings>
     </Part>
 
-    <Part Name="BCVDaemonExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Dynamic">
-        <SubPart PartName="BCVDaemon" LibType="Static"/>
+    <Part Name="BeBlobDaemonExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Dynamic">
+        <SubPart PartName="BeBlobDaemon" LibType="Static"/>
     </Part>
 
-    <Part Name="BCVDaemonExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
-        <SubPart PartName="BCVDaemon" LibType="Static"/>
+    <Part Name="BeBlobDaemonExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="BeBlobDaemon" LibType="Static"/>
     </Part>
 
-    <Part Name="BCVDaemonExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
-        <SubPart PartName="BCVDaemon" LibType="Static"/>
+    <Part Name="BeBlobDaemonExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="BeBlobDaemon" LibType="Static"/>
     </Part>
 
-    <Part Name="BCVDaemon-exe">
-        <SubPart PartName="BCVDaemonExe-Windows" LibType="Static"/>
-        <SubPart PartName="BCVDaemonExe-Linux" LibType="Static"/>
-        <SubPart PartName="BCVDaemonExe-MacOS" LibType="Static"/>
+    <Part Name="BeBlobDaemon-exe">
+        <SubPart PartName="BeBlobDaemonExe-Windows" LibType="Static"/>
+        <SubPart PartName="BeBlobDaemonExe-Linux" LibType="Static"/>
+        <SubPart PartName="BeBlobDaemonExe-MacOS" LibType="Static"/>
     </Part>
 
     <!-- ******************************** Unit Tests ************************************** -->

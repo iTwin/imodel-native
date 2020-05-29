@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { IModelJsNative } from "../IModelJsNative";
+import { IModelJsNative, NativeLibrary } from "../NativeLibrary";
 import { assert } from "@bentley/bentleyjs-core";
 
 // Parse command-line arguments
@@ -19,8 +19,8 @@ if (process.argv.length <= 2) {
   }
 }
 
-export function loadInstalledAddon(dir?: string): typeof IModelJsNative {
-  return require("@bentley/imodeljs-native/loadNativePlatform.js").loadNativePlatform(dir);
+export function loadInstalledAddon(): typeof IModelJsNative {
+  return require(NativeLibrary.libraryName);
 }
 
 export function loadLocalBuildOfAddon(): any {
@@ -46,12 +46,7 @@ export function loadLocalBuildOfAddon(): any {
 
   assert(fs.existsSync(generatedPkgsDir), `${apiPkgDir} - local build of imodeljs-native not found`);
 
-  const formatPackageName = require(path.join(apiPkgDir, "loadNativePlatform.js")).formatPackageName;
-
-  const nativePackageName = formatPackageName();
-
-  const addonFile = path.join(generatedPkgsDir, nativePackageName, "imodeljs.node");
-
+  const addonFile = path.join(generatedPkgsDir, NativeLibrary.archName, NativeLibrary.nodeAddonName);
   assert(fs.existsSync(addonFile), `${addonFile} - local build of imodeljs.node not found`);
 
   return require(addonFile);

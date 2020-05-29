@@ -2097,15 +2097,6 @@ void CachedBLV::SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false;}
 //+---------------+---------------+---------------+---------------+---------------+------
 void CachedBLV::Reset() {m_isUnset = true; m_dirty = false; m_value = 0;}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   12/12
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::ClearBriefcaseLocalValues()
-    {
-    m_dbFile->m_blvCache.Clear();
-    return TruncateTable(BEDB_TABLE_Local);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/

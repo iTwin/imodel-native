@@ -5,7 +5,11 @@
 #include "BeSQLiteNonPublishedTests.h"
 #include <BeSQLite/ChangeSet.h>
 #include <Bentley/BeDirectoryIterator.h>
-#define MEM_THRESHOLD 100 * 1024 * 1024
+
+using namespace MemorySize;
+
+#define MEM_THRESHOLD (100 * MEG)
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   06/16
 //=======================================================================================
@@ -55,8 +59,6 @@ TEST_F(BeIdSetTests, ToString)
     }
 
     enum {
-        K = (1024),
-        MEG = (K * K),
         TEST_DATA_SIZE = 160 * K,
     };
 

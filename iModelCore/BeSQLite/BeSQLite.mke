@@ -9,18 +9,18 @@
 #
 # DO NOT PUT SQLite options in this file. They should ONLY be in bentley-sqlite.c!!!!
 # DO NOT change compiler warning flags here. They should be in bentley-sqlite.c
-# DO NOT edit the sqlite3 source files. They are generated during the build, and the original 
+# DO NOT edit the sqlite3 source files. They are generated during the build, and the original
 # source comes from sqlite.org anyway.
 #
 #-----------------------------------------------------------------------------------
 
-# We used to build BeSQLite with GCC_DEFAULT_VISIBILITY=visible. That was required when we built and deployed 
+# We used to build BeSQLite with GCC_DEFAULT_VISIBILITY=visible. That was required when we built and deployed
 # our libraries as multiple .SOs or .dylibs on some *nix platforms. That was wrong on two counts. First, we no longer deliver our
-# libraries in the form of shared objects. That was unworkable. Now, apps always link all of our libraries statically. 
+# libraries in the form of shared objects. That was unworkable. Now, apps always link all of our libraries statically.
 # Second, we must ensure that our libraries and the app itself all use OUR COPY OF SQLITE.
 # That is, we don't an app or our libraries resolve a symbol such as `sqlite3_open_v2` from the libsqlite.so/dylib
 # that the app FRAMEWORK happens to have already loaded. To prevent that, we must HIDE THE SYMBOLS in our
-# copy of sqlite. That causes the linker to mark these symbols as private, telling the loader not to 
+# copy of sqlite. That causes the linker to mark these symbols as private, telling the loader not to
 # try to resolve them from other shared objects but only from definitions within the app shared object
 # (which includes our statically linked libraries, including our libBeSQLite.a).
 
@@ -62,6 +62,8 @@ $(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQL
 
 $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
+$(o)BlobDaemon$(oext) : $(baseDir)BlobDaemon.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
+
 $(o)RevisionChangesFile$(oext) : $(baseDir)RevisionChangesFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/RevisionChangesFile.h ${MultiCompileDepends}
 
 $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
@@ -83,16 +85,22 @@ CCompFpOpts=precise
 
 $(o)bentley-sqlite$(oext) : $(SQLiteDir)bentley-sqlite.c ${MultiCompileDepends}
 
+$(o)bcvutil$(oext) : $(SQLiteDir)bcvutil.c ${MultiCompileDepends}
+
+$(o)simplexml$(oext) : $(SQLiteDir)simplexml.c ${MultiCompileDepends}
+
 %include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 
 %include MultiCppCompileGo.mki
 
-objs +% $(o)bentley-sqlite$(oext)
+objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)simplexml$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)BeJsonCpp$(libext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeCurl$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeOpenSSL$(stlibext)
 
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)

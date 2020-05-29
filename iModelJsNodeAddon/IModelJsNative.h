@@ -72,7 +72,7 @@ END_TILE_NAMESPACE
 
 namespace IModelJsNative {
 
-struct JsInterop    
+struct JsInterop
 {
     static bmap<Utf8String, Utf8String> s_crashReportProperties;
     static bmap<Dgn::DgnDb*, BeFileName> s_openDgnDbFileNames;
@@ -180,7 +180,6 @@ public:
     static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames);
     static DbResult ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const &serializedXmlSchemas);
     static DbResult ImportFunctionalSchema(DgnDbR);
-    static DbResult UnsafeSetBriefcaseId(BeFileNameCR fileOrPathname, BeBriefcaseId briefcaseId, Utf8StringCR dbGuid, Utf8StringCR projectGuid);
     static BeFileName ResolveFileName(BeFileNameCR fileOrPathname);
     static RevisionStatus ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
     static RevisionStatus ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption, IConcurrencyControl* concurrencyControl);
