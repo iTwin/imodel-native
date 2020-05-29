@@ -11,7 +11,7 @@
         PartFile="ECSchemaOpsAddon/ECSchemaOpsAddon"
         PartName="ECSchemaOpsMakePackages"
         Platform="$(hostPlatform)"
-        OnlyPlatforms="x64,macosx64"
+        OnlyPlatforms="x64,macosx64,linuxx64"
         />
 
     <!-- This is part of the monorepo, so it's expected to build all dependencies. -->
