@@ -240,9 +240,9 @@ void iModelDmsSupportTests::Initialize()
     EXPECT_EQ(6, bridgeArgs.size());
 
     if (m_dmsServerArgs.m_dmsType == iModelDmsSupport::SessionType::PWDIDMS)
-        m_dmsHelper = new DmsHelper(Utf8String(), m_iModelHubArgs.m_accessToken, 1,  Utf8String("PWDI"), Utf8String(m_dmsServerArgs.m_dataSource));
+        m_dmsHelper = new DmsHelper(Utf8String(), m_iModelHubArgs.m_accessToken, 1, Utf8String("PWDI"), true, Utf8String(m_dmsServerArgs.m_dataSource));
     else
-        m_dmsHelper = new DmsHelper(Utf8String(), m_iModelHubArgs.m_accessToken, 1);
+        m_dmsHelper = new DmsHelper(Utf8String(), m_iModelHubArgs.m_accessToken, 1, Utf8String("PROJECTSHARE"), true);
     argvMaker.Clear();
     }
 

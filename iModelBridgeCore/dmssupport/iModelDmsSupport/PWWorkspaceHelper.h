@@ -21,6 +21,7 @@ struct PWWorkspaceHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
         BeFileName  m_activeWorkspaceDir;
         WString     m_inputFileMoniker;
         Utf8String  m_documentGuid;
+        bool        m_skipAssignmentCheck;
         bool        InitPwApi();
         static Utf8String GetDocumentGuid(WStringCR inputMoniker);
         virtual bool _Initialize() override;
@@ -37,7 +38,7 @@ struct PWWorkspaceHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
         //! @param fn   The name of the file that is to be converted
         //! @param bridgeRegSubKey The registry subkey that identifies the bridge
         //! @return true if the specified bridge should convert the specified file
-        virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) { return false; }
+        virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) { return m_skipAssignmentCheck; }
 
         //! Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
         //! @param[in] fn   The name of the file that is to be converted
@@ -66,7 +67,7 @@ struct PWWorkspaceHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
         virtual void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) {}
 
     public:
-        PWWorkspaceHelper(DmsSession& session);
+        PWWorkspaceHelper(DmsSession& session, bool skipAssignmentCheck = false);
         ~PWWorkspaceHelper();
         StatusInt GetFileName(WString fileName, int folderId, int documentId);
         StatusInt GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker);

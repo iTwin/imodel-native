@@ -58,12 +58,13 @@ bool   DmsHelper::_UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DmsHelper::DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries, Utf8StringCR repositoryType, Utf8StringCR datasource)
+DmsHelper::DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries, Utf8StringCR repositoryType, bool skipAssignmentCheck, Utf8StringCR datasource)
     {
     m_callbackUrl = Utf8String(callBackurl);
     m_accessToken = Utf8String(accessToken);
     m_maxRetries = maxRetries;
     m_repositoryType = Utf8String(repositoryType);
+    m_skipAssignmentCheck = skipAssignmentCheck;
     m_datasource = Utf8String(datasource);
     }
 

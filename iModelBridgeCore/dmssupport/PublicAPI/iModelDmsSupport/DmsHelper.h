@@ -21,6 +21,7 @@ struct DmsHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
         Utf8String m_accessToken;
         Utf8String m_repositoryType;
         Utf8String m_datasource;
+        bool m_skipAssignmentCheck;
         Utf8String m_projectShareUrl;
         Utf8String m_inputFileMoniker;
         Utf8String m_inputFileParentId;
@@ -47,7 +48,7 @@ struct DmsHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
             }
 
     public:
-        IMODEL_DMSSUPPORT_EXPORT DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries, Utf8StringCR repositoryType = Utf8String(), Utf8StringCR datasource = Utf8String());
+        IMODEL_DMSSUPPORT_EXPORT DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries, Utf8StringCR repositoryType = Utf8String(), bool skipAssignmentCheck = false, Utf8StringCR datasource = Utf8String());
         IMODEL_DMSSUPPORT_EXPORT ~DmsHelper();
         IMODEL_DMSSUPPORT_EXPORT virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i, bvector<WString> const& additonalFilePatterns) override
@@ -78,7 +79,7 @@ struct DmsHelper : public IDmsSupport, iMBridgeDocPropertiesAccessor
         //! @param fn   The name of the file that is to be converted
         //! @param bridgeRegSubKey The registry subkey that identifies the bridge
         //! @return true if the specified bridge should convert the specified file
-        virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) { return false; }
+        virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) { return m_skipAssignmentCheck; }
 
         //! Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
         //! @param[in] fn   The name of the file that is to be converted

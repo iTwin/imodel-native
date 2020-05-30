@@ -61,7 +61,7 @@ BentleyStatus   iModelBridgeFwk::LoadDmsLibrary(iModelBridgeError& errorContext)
     else 
         accessToken = m_iModelHubArgs->m_accessToken;	// for PWShare and other OIDC cases we use same toke as used for logging into iModelHub, in this case token in serverArgs can be undefined and saved
 
-    m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword(), m_iModelHubArgs->m_callBackurl, accessToken, Utf8String(m_dmsServerArgs.m_dataSource), m_dmsServerArgs.m_maxRetryCount, prodId);//m_dmsCredentials
+    m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword(), m_iModelHubArgs->m_callBackurl, accessToken, Utf8String(m_dmsServerArgs.m_dataSource), m_dmsServerArgs.m_maxRetryCount, prodId, m_jobEnvArgs.m_skipAssignmentCheck);//m_dmsCredentials
     
     if (nullptr == m_dmsSupport)
         {

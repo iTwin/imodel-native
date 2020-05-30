@@ -117,10 +117,10 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-PWWorkspaceHelper::PWWorkspaceHelper(DmsSession& session)
+PWWorkspaceHelper::PWWorkspaceHelper(DmsSession& session, bool skipAssignmentCheck)
     :m_initDone(false),m_session(&session), m_initPwAppDone(false)
     {
-
+    m_skipAssignmentCheck = skipAssignmentCheck;
     }
 
 /*---------------------------------------------------------------------------------**//**

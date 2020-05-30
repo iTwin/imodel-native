@@ -14,9 +14,9 @@ USING_NAMESPACE_BENTLEY_DGN
 extern "C"
     {
 
-    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, int maxReties, unsigned long productId)
+    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, int maxReties, unsigned long productId, bool skipAssignmentCheck)
         {
-        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken, datasource, maxReties, productId);
+        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken, datasource, maxReties, productId, skipAssignmentCheck);
         }
     }
 
@@ -24,16 +24,16 @@ extern "C"
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
- IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, int maxReties, unsigned long productId)
+ IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, int maxReties, unsigned long productId, bool skipAssignmentCheck)
     {
     if (sessionType == SessionType::AzureBlobStorage)
         return new AzureBlobStorageHelper();
 
     if (sessionType == SessionType::PWShare)
-         return new DmsHelper(callBackurl, accessToken, maxReties, PSREPOSITORYTYPE);
+         return new DmsHelper(callBackurl, accessToken, maxReties, PSREPOSITORYTYPE, skipAssignmentCheck);
 
     if (sessionType == SessionType::PWDIDMS)
-         return new DmsHelper(callBackurl, accessToken, maxReties, PWREPOSITORYTYPE, datasource);
+         return new DmsHelper(callBackurl, accessToken, maxReties, PWREPOSITORYTYPE, skipAssignmentCheck, datasource);
 
     // default - PWDI session
     DmsSession* session = nullptr;
@@ -42,5 +42,5 @@ extern "C"
     else
         session = new UserCredentialsSession(userName, password, sessionType, datasource);
 
-    return new PWWorkspaceHelper(*session);
+    return new PWWorkspaceHelper(*session, skipAssignmentCheck);
     };
