@@ -943,6 +943,7 @@ protected:
 public:
     BE_JSON_NAME(geometryGuid)
     BE_JSON_NAME(formatter)
+    BE_JSON_NAME(viewFlagOverrides)
 
     DGNPLATFORM_EXPORT BeSQLite::BeGuid QueryGeometryGuid() const;
 
@@ -969,6 +970,11 @@ public:
 
     virtual bool Is3d() const = 0;
     bool Is2d() const { return !Is3d(); }
+
+    //! Specifies ViewFlags that should be overridden at display time when drawing this model's contents.
+    //! e.g., if this model should always be drawn as wireframe, override the RenderMode view flag.
+    DGNPLATFORM_EXPORT Render::ViewFlagsOverrides GetViewFlagsOverrides() const;
+    DGNPLATFORM_EXPORT void SetViewFlagsOverrides(Render::ViewFlagsOverrides const& ovrs);
 };
 
 //=======================================================================================

@@ -2156,3 +2156,19 @@ Cesium::RootPtr GeometricModel::_CreateCesiumTileTree(Cesium::OutputR, Utf8Strin
     return nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::ViewFlagsOverrides GeometricModel::GetViewFlagsOverrides() const
+    {
+    return Render::ViewFlagsOverrides::FromJson(m_jsonProperties[json_viewFlagOverrides()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::SetViewFlagsOverrides(Render::ViewFlagsOverrides const& ovrs)
+    {
+    m_jsonProperties[json_viewFlagOverrides()] = ovrs.ToJson();
+    }
+

@@ -515,9 +515,6 @@ ViewportStatus DgnViewport::SetupFromViewController()
     m_sync.InvalidateRenderPlan();
     m_sync.SetValidController();
 
-    SetContinousRendering(viewDef.GetDisplayStyle().GetViewFlags().GetAnimate());
-
-
     m_trackers.CallAllHandlers(ViewChangedCaller());
     return ViewportStatus::Success;
     }

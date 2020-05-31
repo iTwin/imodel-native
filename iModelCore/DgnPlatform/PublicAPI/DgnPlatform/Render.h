@@ -56,7 +56,8 @@ private:
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden lines
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
-    uint32_t m_animate:1;          //!< Animate view (render continously).
+    uint32_t m_thematicDisplay:1;  //!< Apply thematic display (height-map, sensor-based, etc)
+    uint32_t m_ambientOcclusion:1; //!< Apply ambient occlusion
     uint32_t m_backgroundMap:1;    //!< Background (web mercator) map.
     uint32_t m_forceSurfaceDiscard: 1; //!< Forces expensive shader logic to ensure edges display in front of surfaces and planar surfaces in front of coincident non-planar surfaces.
     uint32_t m_noWhiteOnWhiteReversal: 1; //!< Disables white-on-white reversal
@@ -84,7 +85,8 @@ public:
     BE_JSON_NAME(hlMatColors);
     BE_JSON_NAME(monochrome);
     BE_JSON_NAME(edgeMask);
-    BE_JSON_NAME(animate);
+    BE_JSON_NAME(thematicDisplay);
+    BE_JSON_NAME(ambientOcclusion);
     BE_JSON_NAME(backgroundMap);
     BE_JSON_NAME(forceSurfaceDiscard);
     BE_JSON_NAME(noWhiteOnWhiteReversal);
@@ -113,7 +115,8 @@ public:
         m_noGeometryMap = 0;
         m_hLineMaterialColors = 0;
         m_edgeMask = 0;
-        m_animate = 0;
+        m_thematicDisplay = 0;
+        m_ambientOcclusion = 0;
         m_backgroundMap = 0;
         m_forceSurfaceDiscard = 0;
         m_noWhiteOnWhiteReversal = 0;
@@ -163,8 +166,10 @@ public:
     bool UseHlineMaterialColors() const {return m_hLineMaterialColors;}
     int GetEdgeMask() const {return m_edgeMask;}
     void SetEdgeMask(int val) {m_edgeMask = val;}
-    bool GetAnimate() const { return m_animate; }
-    void SetAnimate(bool val) {m_animate = val;}
+    bool GetThematicDisplay() const { return m_thematicDisplay; }
+    void SetThematicDisplay(bool val) {m_thematicDisplay = val;}
+    bool GetAmbientOcclusion() const {return m_ambientOcclusion;}
+    void SetAmbientOcclusion(bool val) {m_ambientOcclusion = val;}
     bool ShowBackgroundMap() const { return m_backgroundMap; }
     void SetShowBackgroundMap(bool val) {m_backgroundMap = val;}
     bool ForceSurfaceDiscard() const {return m_forceSurfaceDiscard;}
@@ -203,10 +208,9 @@ public:
 struct ViewFlagsOverrides
 {
 private:
-    enum PresenceFlag
+    enum PresenceFlag : uint32_t
     {
         kRenderMode,
-        kText,
         kDimensions,
         kPatterns,
         kWeights,
@@ -217,9 +221,7 @@ private:
         kMaterials,
         kVisibleEdges,
         kHiddenEdges,
-        kSourceLights,
-        kCameraLights,
-        kSolarLight,
+        kLighting,
         kShadows,
         kClipVolume,
         kConstructions,
@@ -230,6 +232,7 @@ private:
         kBackgroundMap,
         kForceSurfaceDiscard,
         kWhiteOnWhiteReversal,
+        kThematicDisplay,
     };
 
     uint32_t    m_present = 0;
@@ -238,6 +241,30 @@ private:
     void SetPresent(PresenceFlag flag) { m_present |= (1 << static_cast<uint32_t>(flag)); }
     bool IsPresent(PresenceFlag flag) const { return 0 != (m_present & (1 << static_cast<uint32_t>(flag))); }
 public:
+    BE_JSON_NAME(dimensions);
+    BE_JSON_NAME(patterns);
+    BE_JSON_NAME(weights);
+    BE_JSON_NAME(styles);
+    BE_JSON_NAME(transparency);
+    BE_JSON_NAME(fill);
+    BE_JSON_NAME(textures);
+    BE_JSON_NAME(materials);
+    BE_JSON_NAME(lighting);
+    BE_JSON_NAME(visibleEdges);
+    BE_JSON_NAME(hiddenEdges);
+    BE_JSON_NAME(shadows);
+    BE_JSON_NAME(clipVolume);
+    BE_JSON_NAME(constructions);
+    BE_JSON_NAME(monochrome);
+    BE_JSON_NAME(noGeometryMap);
+    BE_JSON_NAME(backgroundMap);
+    BE_JSON_NAME(hLineMaterialColors);
+    BE_JSON_NAME(forceSurfaceDiscard);
+    BE_JSON_NAME(whiteOnWhiteReversal);
+    BE_JSON_NAME(edgeMask);
+    BE_JSON_NAME(renderMode);
+    BE_JSON_NAME(thematicDisplay);
+
     //! Construct a ViewFlagsOverrides which overrides nothing
     ViewFlagsOverrides() { }
 
@@ -252,9 +279,7 @@ public:
     void SetShowFill(bool val) { m_values.SetShowFill(val); SetPresent(kFill); }
     void SetShowTextures(bool val) { m_values.SetShowTextures(val); SetPresent(kTextures); }
     void SetShowMaterials(bool val) { m_values.SetShowMaterials(val); SetPresent(kMaterials); }
-    void SetShowSourceLights(bool val) { m_values.SetShowSourceLights(val); SetPresent(kSourceLights); }
-    void SetShowCameraLights(bool val) { m_values.SetShowCameraLights(val); SetPresent(kCameraLights); }
-    void SetShowSolarLight(bool val) { m_values.SetShowSolarLight(val); SetPresent(kSolarLight); }
+    void SetApplyLighting(bool val) { m_values.SetShowSourceLights(val); m_values.SetShowCameraLights(val); m_values.SetShowSolarLight(val); SetPresent(kLighting); }
     void SetShowVisibleEdges(bool val) { m_values.SetShowVisibleEdges(val); SetPresent(kVisibleEdges); }
     void SetShowHiddenEdges(bool val) { m_values.SetShowHiddenEdges(val); SetPresent(kHiddenEdges); }
     void SetShowShadows(bool val) { m_values.SetShowShadows(val); SetPresent(kShadows); }
@@ -267,12 +292,17 @@ public:
     void SetRenderMode(RenderMode val) { m_values.SetRenderMode(val); SetPresent(kRenderMode); }
     void SetForceSurfaceDiscard(bool val) { m_values.SetForceSurfaceDiscard(val); SetPresent(kForceSurfaceDiscard); }
     void SetApplyWhiteOnWhiteReversal(bool val) { m_values.SetApplyWhiteOnWhiteReversal(val); SetPresent(kWhiteOnWhiteReversal); }
+    void SetThematicDisplay(bool val) { m_values.SetThematicDisplay(val); SetPresent(kThematicDisplay); }
+    void SetShowBackgroundMap(bool val) { m_values.SetShowBackgroundMap(val); SetPresent(kBackgroundMap); }
 
     bool AnyOverridden() const { return 0 != m_present; }
     void Clear() { m_present = 0; }
 
     //! Apply these overrides to the supplied ViewFlags
     DGNPLATFORM_EXPORT void Apply(ViewFlags& base) const;
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT static ViewFlagsOverrides FromJson(JsonValueCR);
 };
 
 //=======================================================================================

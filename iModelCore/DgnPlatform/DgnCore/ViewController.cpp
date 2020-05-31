@@ -32,7 +32,8 @@ void ViewFlags::FromJson(JsonValueCR val)
     m_monochrome = val[json_monochrome()].asBool();
     m_edgeMask = val[json_edgeMask()].asUInt();
     m_hLineMaterialColors = val[json_hlMatColors()].asBool();
-    m_animate = val[json_animate()].asBool();
+    m_thematicDisplay = val[json_thematicDisplay()].asBool();
+    m_ambientOcclusion = val[json_ambientOcclusion()].asBool();
     m_backgroundMap = val[json_backgroundMap()].asBool();
     m_forceSurfaceDiscard = val[json_forceSurfaceDiscard()].asBool();
     m_noWhiteOnWhiteReversal = val[json_noWhiteOnWhiteReversal()].asBool();
@@ -75,7 +76,8 @@ Json::Value ViewFlags::ToJson() const
     if (m_hLineMaterialColors) val[json_hlMatColors()] = true;
     if (m_monochrome) val[json_monochrome()] = true;
     if (m_backgroundMap) val[json_backgroundMap()] = true;
-    if (m_animate) val[json_animate()] = true;
+    if (m_thematicDisplay) val[json_thematicDisplay()] = true;
+    if (m_ambientOcclusion) val[json_ambientOcclusion()] = true;
     if (m_edgeMask!=0) val[json_edgeMask()] = m_edgeMask;
     if (m_forceSurfaceDiscard) val[json_forceSurfaceDiscard()] = true;
     if (m_noWhiteOnWhiteReversal) val[json_noWhiteOnWhiteReversal()] = true;
@@ -108,9 +110,6 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (IsPresent(kFill)) base.SetShowFill(m_values.ShowFill());
     if (IsPresent(kTextures)) base.SetShowTextures(m_values.ShowTextures());
     if (IsPresent(kMaterials)) base.SetShowMaterials(m_values.ShowMaterials());
-    if (IsPresent(kSolarLight)) base.SetShowSolarLight(m_values.ShowSolarLight());
-    if (IsPresent(kCameraLights)) base.SetShowCameraLights(m_values.ShowCameraLights());
-    if (IsPresent(kSourceLights)) base.SetShowSourceLights(m_values.ShowSourceLights());
     if (IsPresent(kVisibleEdges)) base.SetShowVisibleEdges(m_values.ShowVisibleEdges());
     if (IsPresent(kHiddenEdges)) base.SetShowHiddenEdges(m_values.ShowHiddenEdges());
     if (IsPresent(kShadows)) base.SetShowShadows(m_values.ShowShadows());
@@ -124,6 +123,106 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (IsPresent(kRenderMode)) base.SetRenderMode(m_values.GetRenderMode());
     if (IsPresent(kForceSurfaceDiscard)) base.SetForceSurfaceDiscard(m_values.ForceSurfaceDiscard());
     if (IsPresent(kWhiteOnWhiteReversal)) base.SetApplyWhiteOnWhiteReversal(m_values.ApplyWhiteOnWhiteReversal());
+    if (IsPresent(kThematicDisplay)) base.SetThematicDisplay(m_values.GetThematicDisplay());
+
+    if (IsPresent(kLighting))
+        {
+        auto lighting = m_values.ShowSolarLight() || m_values.ShowCameraLights() || m_values.ShowSourceLights();
+        base.SetShowSolarLight(lighting);
+        base.SetShowCameraLights(lighting);
+        base.SetShowSourceLights(lighting);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value ViewFlagsOverrides::ToJson() const
+    {
+    Json::Value val;
+
+    auto setBoolean = [&](PresenceFlag flag, Utf8CP name, bool value)
+        {
+        if (IsPresent(flag))
+            val[name] = value;
+        };
+
+    setBoolean(kDimensions, json_dimensions(), m_values.ShowDimensions());
+    setBoolean(kPatterns, json_patterns(), m_values.ShowPatterns());
+    setBoolean(kWeights, json_weights(), m_values.ShowWeights());
+    setBoolean(kStyles, json_styles(), m_values.ShowStyles());
+    setBoolean(kTransparency, json_transparency(), m_values.ShowTransparency());
+    setBoolean(kFill, json_fill(), m_values.ShowFill());
+    setBoolean(kTextures, json_textures(), m_values.ShowTextures());
+    setBoolean(kMaterials, json_materials(), m_values.ShowMaterials());
+    setBoolean(kLighting, json_lighting(), m_values.ShowSourceLights() || m_values.ShowCameraLights() || m_values.ShowSolarLight());
+    setBoolean(kVisibleEdges, json_visibleEdges(), m_values.ShowVisibleEdges());
+    setBoolean(kHiddenEdges, json_hiddenEdges(), m_values.ShowHiddenEdges());
+    setBoolean(kShadows, json_shadows(), m_values.ShowShadows());
+    setBoolean(kClipVolume, json_clipVolume(), m_values.ShowClipVolume());
+    setBoolean(kConstructions, json_constructions(), m_values.ShowConstructions());
+    setBoolean(kMonochrome, json_monochrome(), m_values.IsMonochrome());
+    setBoolean(kGeometryMap, json_noGeometryMap(), m_values.IgnoreGeometryMap());
+    setBoolean(kBackgroundMap, json_backgroundMap(), m_values.ShowBackgroundMap());
+    setBoolean(kHlineMaterialColors, json_hLineMaterialColors(), m_values.UseHlineMaterialColors());
+    setBoolean(kForceSurfaceDiscard, json_forceSurfaceDiscard(), m_values.ForceSurfaceDiscard());
+    setBoolean(kWhiteOnWhiteReversal, json_whiteOnWhiteReversal(), m_values.ApplyWhiteOnWhiteReversal());
+    setBoolean(kThematicDisplay, json_thematicDisplay(), m_values.GetThematicDisplay());
+
+    if (IsPresent(kEdgeMask))
+        val[json_edgeMask()] = m_values.GetEdgeMask();
+
+    if (IsPresent(kRenderMode))
+        val[json_renderMode()] = static_cast<int32_t>(m_values.GetRenderMode());
+
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewFlagsOverrides ViewFlagsOverrides::FromJson(JsonValueCR val)
+    {
+    ViewFlagsOverrides ovrs;
+    if (val.isNull() || !val.isObject())
+        return ovrs;
+
+    typedef void (ViewFlagsOverrides::*SetBoolean)(bool);
+    auto setBoolean = [&](Utf8CP name, SetBoolean set)
+        {
+        if (val[name].isBool())
+            ((ovrs).*(set))(val[name].asBool());
+        };
+
+    setBoolean(json_dimensions(), &ViewFlagsOverrides::SetShowDimensions);
+    setBoolean(json_patterns(), &ViewFlagsOverrides::SetShowPatterns);
+    setBoolean(json_weights(), &ViewFlagsOverrides::SetShowWeights);
+    setBoolean(json_styles(), &ViewFlagsOverrides::SetShowStyles);
+    setBoolean(json_transparency(), &ViewFlagsOverrides::SetShowTransparency);
+    setBoolean(json_fill(), &ViewFlagsOverrides::SetShowFill);
+    setBoolean(json_textures(), &ViewFlagsOverrides::SetShowTextures);
+    setBoolean(json_materials(), &ViewFlagsOverrides::SetShowMaterials);
+    setBoolean(json_lighting(), &ViewFlagsOverrides::SetApplyLighting);
+    setBoolean(json_visibleEdges(), &ViewFlagsOverrides::SetShowVisibleEdges);
+    setBoolean(json_hiddenEdges(), &ViewFlagsOverrides::SetShowHiddenEdges);
+    setBoolean(json_shadows(), &ViewFlagsOverrides::SetShowShadows);
+    setBoolean(json_clipVolume(), &ViewFlagsOverrides::SetShowClipVolume);
+    setBoolean(json_constructions(), &ViewFlagsOverrides::SetShowConstructions);
+    setBoolean(json_monochrome(), &ViewFlagsOverrides::SetMonochrome);
+    setBoolean(json_noGeometryMap(), &ViewFlagsOverrides::SetIgnoreGeometryMap);
+    setBoolean(json_backgroundMap(), &ViewFlagsOverrides::SetShowBackgroundMap);
+    setBoolean(json_hLineMaterialColors(), &ViewFlagsOverrides::SetUseHlineMaterialColors);
+    setBoolean(json_forceSurfaceDiscard(), &ViewFlagsOverrides::SetForceSurfaceDiscard);
+    setBoolean(json_whiteOnWhiteReversal(), &ViewFlagsOverrides::SetApplyWhiteOnWhiteReversal);
+    setBoolean(json_thematicDisplay(), &ViewFlagsOverrides::SetThematicDisplay);
+
+    if (val[json_renderMode()].isInt())
+        ovrs.SetRenderMode(static_cast<RenderMode>(val[json_renderMode()].asInt()));
+
+    if (val[json_edgeMask()].isInt())
+        ovrs.SetEdgeMask(val[json_edgeMask()].asInt());
+
+    return ovrs;
     }
 
 /*---------------------------------------------------------------------------------**//**

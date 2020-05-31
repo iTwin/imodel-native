@@ -5,6 +5,75 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <vector>
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ViewFlagsOverrides, ToFromJson)
+    {
+    struct BoolProp
+    {
+        Utf8CP name;
+        bool value;
+    };
+
+    using Ovrs = Render::ViewFlagsOverrides;
+    Json::Value intProps;
+    intProps[Ovrs::json_renderMode()] = static_cast<int32_t>(Render::RenderMode::SolidFill);
+    intProps[Ovrs::json_edgeMask()] = 2;
+
+    auto makeJson = [](std::vector<BoolProp> const& props)
+        {
+        Json::Value val;
+        for (auto const& prop : props)
+            val[prop.name] = prop.value;
+
+        return val;
+        };
+
+    Json::Value testCases[] =
+        {
+        Json::Value::GetNull(),
+        makeJson({
+                { Ovrs::json_dimensions(), true },
+                { Ovrs::json_transparency(), false },
+                { Ovrs::json_lighting(), true },
+            }),
+        intProps,
+        makeJson({
+                { Ovrs::json_dimensions(), true },
+                { Ovrs::json_patterns(), true },
+                { Ovrs::json_weights(), true },
+                { Ovrs::json_styles(), true },
+                { Ovrs::json_transparency(), true },
+                { Ovrs::json_fill(), true },
+                { Ovrs::json_textures(), true },
+                { Ovrs::json_materials(), true },
+                { Ovrs::json_lighting(), true },
+                { Ovrs::json_visibleEdges(), true },
+                { Ovrs::json_hiddenEdges(), true },
+                { Ovrs::json_shadows(), false },
+                { Ovrs::json_clipVolume(), false },
+                { Ovrs::json_constructions(), false },
+                { Ovrs::json_monochrome(), false },
+                { Ovrs::json_noGeometryMap(), false },
+                { Ovrs::json_backgroundMap(), false },
+                { Ovrs::json_hLineMaterialColors(), false },
+                { Ovrs::json_forceSurfaceDiscard(), false },
+                { Ovrs::json_whiteOnWhiteReversal(), false },
+                { Ovrs::json_thematicDisplay(), false },
+            }),
+        };
+
+    for (auto const& testCase: testCases)
+        {
+        auto input = Json::FastWriter::ToString(testCase);
+        auto ovrs = Render::ViewFlagsOverrides::FromJson(testCase);
+        auto json = ovrs.ToJson();
+        auto output = Json::FastWriter::ToString(json);
+        EXPECT_EQ(output, input);
+        }
+    }
+
 //========================================================================================
 // @bsiclass                                    Shaun.Sewall                    02/2017
 //========================================================================================
