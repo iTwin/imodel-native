@@ -1728,11 +1728,20 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::CopyAppDataFrom(DgnElementCR source) const
+void DgnElement::CopyAppDataFrom(DgnElementCR source, bool bindAspects) const
     {
     BeMutexHolder lock(GetElementsMutex());
     for (auto a : source.m_appData)
+        {
         AddAppData(*a.first, a.second.get());
+
+        if (bindAspects)
+            {
+            auto aspect = dynamic_cast<DgnElement::Aspect*>(a.second.get());
+            if (nullptr != aspect)
+                aspect->BindTo(*this);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4302,6 +4311,16 @@ DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECI
         newAspect->m_instanceId = currentAspect->m_instanceId;
     T_Super::SetAspect(el, *newAspect);
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::UniqueAspect::_BindTo(DgnElementCR el)
+    {
+    auto existing = _QueryExistingInstanceKey(el);
+    if (existing.GetClassId() == GetECClassId(el.GetDgnDb()))
+        m_instanceId = existing.GetInstanceId();
     }
 
 /*---------------------------------------------------------------------------------**//**

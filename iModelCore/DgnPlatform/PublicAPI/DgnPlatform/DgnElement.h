@@ -842,6 +842,8 @@ public:
         //! The subclass must implement this method to set the value of a property by name for this aspect
         virtual DgnDbStatus _SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex) = 0;
 
+        virtual void _BindTo(DgnElementCR) {}
+
     public:
         //! Get the Id of this aspect
         BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
@@ -849,6 +851,8 @@ public:
         Utf8CP GetECClassName() const {return _GetECClassName();}
         Utf8CP GetKeyECClassName() const {return _GetKeyECClassName();}
         Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
+
+        void BindTo(DgnElementCR el) {_BindTo(el);}
 
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
@@ -1006,6 +1010,7 @@ public:
         static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override final;
+        DGNPLATFORM_EXPORT void _BindTo(DgnElementCR) override;
         DgnDbStatus QueryActualClass(ECN::ECClassId& classId, Dgn::DgnElementCR el, Utf8CP schemaName, Utf8CP className);
 
     public:
@@ -1700,7 +1705,7 @@ public:
     DGNPLATFORM_EXPORT void ReplaceAppData(AppData::Key const& key, AppData* appData) const;
 
     //! @private
-    DGNPLATFORM_EXPORT void CopyAppDataFrom(DgnElementCR source) const;
+    DGNPLATFORM_EXPORT void CopyAppDataFrom(DgnElementCR source, bool bindAspects = true) const;
 
     //! @}
 

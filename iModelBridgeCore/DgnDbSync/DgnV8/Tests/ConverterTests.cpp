@@ -2722,3 +2722,137 @@ TEST_F(ConverterTests, UpdateElementClass)
     XDomain::UnRegister(testXdomain);
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      05/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+struct TestXDomain3 : DgnV8::XDomain
+    {
+    double m_propertyValue = 0;
+
+    void _OnFinishConversion(Converter&) override {;}
+
+    BentleyApi::BentleyStatus _ImportSchema(DgnDbR db)
+        {
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+                            <ECSchema schemaName="TestDomain" alias="td" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+                                <ECEntityClass typeName="TestAspect">
+                                    <BaseClass>bis:ElementUniqueAspect</BaseClass>
+                                    <ECProperty propertyName="Value" typeName="double" displayLabel="Value"/>
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+        BentleyApi::ECN::ECSchemaPtr readSchema;
+        auto schemaContext = BentleyApi::ECN::ECSchemaReadContext::CreateContext();
+        schemaContext->AddSchemaLocater(db.GetSchemaLocater());
+        auto readStatus = BentleyApi::ECN::ECSchema::ReadFromXmlString(readSchema, schemaXml, *schemaContext);
+        BeAssert(BentleyApi::ECN::SchemaReadStatus::Success == readStatus);
+        BentleyApi::bvector<BentleyApi::ECN::ECSchemaCP> schemas {readSchema.get()};
+        return (BentleyApi::BentleyStatus)db.ImportSchemas(schemas);
+        }
+
+    void _ProcessResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter& converter)
+        {
+        BentleyApi::ECN::ECClassCP aspectClass = converter.GetDgnDb().Schemas().GetClass("TestDomain", "TestAspect");
+        auto instance = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        instance->SetValue("Value", BentleyApi::ECN::ECValue(m_propertyValue));
+        auto status = DgnElement::GenericUniqueAspect::SetAspect(*results.m_element, *instance);
+        BeAssert(BentleyApi::Dgn::DgnDbStatus::Success == status);
+        }
+    };
+
+// Utf8CP s_v8TestSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+//                              <ECClass typeName="V8TestClass" isDomainClass="True">"
+//                                 <ECEntityClass typeName="V8TestAspect">
+//                                   <ECProperty propertyName="V8Value" typeName="double" />"
+//                                 </ECEntityClass>
+//                             </ECSchema>)xml";
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                     Sam.Wilson      05/2020
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConverterTests, InsertAndUpdateUniqueAspect)
+    {
+    LineUpFiles(L"InsertAndUpdateUniqueAspect.bim", L"Test3d.dgn", false);
+
+    DgnV8Api::ElementId v8LineElementId;
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+
+        v8editor.AddLine(&v8LineElementId, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
+        ASSERT_NE(0, v8LineElementId);
+
+        // TODO: I want this to come through as an aspect, not as the class of the converted element
+        // ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        // ECObjectsV8::ECSchemaPtr schema;
+        // ASSERT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, s_v8TestSchemaXml, *schemaContext));
+        // ASSERT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+        // DgnV8Api::ElementHandle eh(v8LineElementId, v8editor.m_defaultModel);
+        // DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        // v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"V8TestAspect");
+
+        v8editor.Save();
+        }
+
+    TestXDomain3 testXdomain;
+    testXdomain.m_propertyValue = 1.0;
+    XDomain::Register(testXdomain);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        auto lineElementC = FindV8ElementInDgnDb(*db, v8LineElementId);       
+        ASSERT_TRUE(lineElementC!= nullptr);
+        auto lineElement = lineElementC->CopyForEdit();
+        auto aspectClass = db->Schemas().GetClass("TestDomain", "TestAspect");
+        ASSERT_TRUE(aspectClass != nullptr);
+        auto aspect = DgnElement::GenericUniqueAspect::GetAspectP(*lineElement, *aspectClass);
+        ASSERT_TRUE(aspect != nullptr);
+        BentleyApi::ECN::ECValue value;
+        ASSERT_EQ(BentleyApi::ECN::ECObjectsStatus::Success, aspect->GetValue(value, "Value"));
+        ASSERT_TRUE(value.IsDouble());
+        ASSERT_EQ(testXdomain.m_propertyValue, value.GetDouble());
+        }
+
+    if (true)
+        {
+        // Make some kind of change to the element, just so that my XDomain3 gets a crack at updating its aspect.
+        // The change to the line element itself is irrelevant. I just need a way to trigger the update.
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+
+        DgnV8Api::EditElementHandle v8Eh(v8LineElementId, v8editor.m_defaultModel);
+        ASSERT_TRUE(v8Eh.IsValid());
+        Bentley::Transform xlat;
+        xlat.InitIdentity();
+        xlat.SetTranslation(Bentley::DPoint3d::From(10, 10, 10));
+        ASSERT_EQ(BentleyApi::SUCCESS, v8Eh.GetDisplayHandler()->ApplyTransform(v8Eh, DgnV8Api::TransformInfo(xlat)));
+        ASSERT_EQ(BentleyApi::SUCCESS, v8Eh.ReplaceInModel(v8Eh.GetElementRef()));
+
+        v8editor.Save();
+        }
+
+    testXdomain.m_propertyValue = 2.0;  // In this update, my xdomain handler will update the aspect's value to 2.0
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        auto lineElement = FindV8ElementInDgnDb(*db, v8LineElementId);       
+        ASSERT_TRUE(lineElement!= nullptr);
+        auto aspectClass = db->Schemas().GetClass("TestDomain", "TestAspect");
+        ASSERT_TRUE(aspectClass != nullptr);
+        auto aspect = DgnElement::GenericUniqueAspect::GetAspect(*lineElement, *aspectClass);
+        ASSERT_TRUE(aspect != nullptr);
+        BentleyApi::ECN::ECValue value;
+        ASSERT_EQ(BentleyApi::ECN::ECObjectsStatus::Success, aspect->GetValue(value, "Value"));
+        ASSERT_TRUE(value.IsDouble());
+        ASSERT_EQ(testXdomain.m_propertyValue, value.GetDouble());
+        }
+
+    XDomain::UnRegister(testXdomain);
+    }
