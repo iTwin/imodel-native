@@ -27,28 +27,41 @@ def writePackageJson(packagefile, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSI
         pf.write(str)
 
 #--------------------------------------------------------------------------------------------------
-def generatePackageForPlatform(packageDir, productDir, nodeOS, nodeCPU, packageVersion, sourceDir):
+def generatePackageForPlatform(packageDir, productDir, nodeOS, nodeCPU, packageVersion, sourceDir, frameworkName):
     # Compute the name of a directory that we can use to stage this package. This is just a temporary name.
     # The real name of the package is inside the package.json file.
     outputpackagename = 'imodeljs-' + nodeOS + '-' + nodeCPU
     outputpackagedir = os.path.join(packageDir, outputpackagename)
+    outputpackagedirsym = os.path.join(packageDir, outputpackagename + "-dsym")
     pkgtemplatedir = os.path.dirname(os.path.abspath(__file__))
     srcpackagefile = os.path.join(pkgtemplatedir, "package.json.template")
+    srcpackagefilesym = os.path.join(pkgtemplatedir, "package.json.template-dsym")
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
+    dstpackagefilesym = os.path.join(outputpackagedirsym, 'package.json')
     dstaddondir = os.path.join(outputpackagedir, 'addon')
+    copyFrameworkFrom = os.path.join(productDir, frameworkName + ".framework")
+    copyFrameworkTo = os.path.join(outputpackagedir, frameworkName + ".framework")
+    copySymFrom = os.path.join(productDir, frameworkName + ".framework.dSYM")
+    copySymTo = os.path.join(outputpackagedirsym, frameworkName + ".framework.dSYM")
+    
+    if os.path.isdir(copySymFrom):
+        shutil.copytree(copySymFrom, copySymTo, False)
+        shutil.copyfile(srcpackagefilesym, dstpackagefilesym)
+        shutil.copyfile(os.path.join(sourceDir, 'README-Public.md'), os.path.join(outputpackagedirsym, 'README.md'))
+        shutil.copyfile(os.path.join(sourceDir, 'api_package', 'LICENSE.md'), os.path.join(outputpackagedirsym, 'LICENSE.md'))
+        writePackageJson(dstpackagefilesym, NODE_OS=nodeOS, NODE_CPU=nodeCPU, PACKAGE_VERSION=packageVersion, NODE_ENGINES=' ')
 
     # NB: shutil.copytree insists on creating dstaddondir and will throw an exception if it already exists. That is why we don't call os.makedirs(dest...) here.
-    shutil.copytree(productDir, outputpackagedir, False)
+    shutil.copytree(copyFrameworkFrom, copyFrameworkTo, False)
     shutil.copyfile(srcpackagefile, dstpackagefile)
     shutil.copyfile(os.path.join(sourceDir, 'README-Public.md'), os.path.join(outputpackagedir, 'README.md'))
     shutil.copyfile(os.path.join(sourceDir, 'api_package', 'LICENSE.md'), os.path.join(outputpackagedir, 'LICENSE.md'))
-
     writePackageJson(dstpackagefile, NODE_OS = nodeOS, NODE_CPU = nodeCPU, PACKAGE_VERSION = packageVersion, NODE_ENGINES = ' ')
 
 #--------------------------------------------------------------------------------------------------
 def main():
-    if len(sys.argv) != 6:
-        print "Syntax: ", sys.argv[0], " productDir packageDir nodeOS nodeCPU sourceDir"
+    if len(sys.argv) != 7:
+        print "Syntax: ", sys.argv[0], " productDir packageDir nodeOS nodeCPU sourceDir frameworkName"
         return 1
 
     productDir = sys.argv[1].rstrip('/\\')
@@ -56,6 +69,7 @@ def main():
     nodeOS = sys.argv[3].lower()
     nodeCPU = sys.argv[4].lower()
     sourceDir = sys.argv[5]
+    frameworkName = sys.argv[6].strip()
     
     # The package semantic version number (n.m.p) is stored in a file. Inject this version number into all of the package files that we generate.
     packageVersion = ""
@@ -67,7 +81,7 @@ def main():
 
     os.makedirs(packageDir)
 
-    generatePackageForPlatform(packageDir, productDir, nodeOS, nodeCPU, packageVersion, sourceDir)
+    generatePackageForPlatform(packageDir, productDir, nodeOS, nodeCPU, packageVersion, sourceDir, frameworkName)
 
     return 0
 

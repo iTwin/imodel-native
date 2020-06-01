@@ -8,7 +8,7 @@
 # it, it's NOT directly usable as an NPM package, it's just a packaging
 # technique... so we can re-use some of the "make package" logic, but need
 # substantial changes.
-
+FrameworkName=IModelJsNative
 ProductDir = $(OutputRootDir)build/iModelJsHost/framework/
 o = $(OutputRootDir)imodeljsnodeaddon_pkgs/
 baseDir = $(_MakeFilePath)
@@ -36,4 +36,4 @@ imjsAddonDir = $(SrcRoot)imodel02/iModelJsNodeAddon/
 always:
     |-- Making package imodeljs-$(NodeOS)-$(NodeCPU) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(baseDir)makePackages.py $(ProductDir) $(o) $(NodeOS) $(NodeCPU) $(imjsAddonDir)
+    python $(baseDir)makePackages.py $(ProductDir) $(o) $(NodeOS) $(NodeCPU) $(imjsAddonDir) $(FrameworkName)
