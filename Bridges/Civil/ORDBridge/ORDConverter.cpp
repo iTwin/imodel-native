@@ -2164,17 +2164,8 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void assignORDFeatureAspect(Dgn::DgnElementR element, Utf8StringCR featureName, Utf8StringCR featureDefName, Utf8StringCR featureDescription)
     {
-    if (auto featureAspectP = DgnV8ORDBim::FeatureAspect::GetP(element))
-        {
-        featureAspectP->SetName(featureName.c_str());
-        featureAspectP->SetDefinitionName(featureDefName.c_str());
-        featureAspectP->SetDescription(featureDescription.c_str());
-        }
-    else
-        {
-        auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(featureName.c_str(), featureDefName.c_str(), featureDescription.c_str());
-        DgnV8ORDBim::FeatureAspect::Set(element, *featureAspectPtr);
-        }
+    auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(featureName.c_str(), featureDefName.c_str(), featureDescription.c_str());
+    DgnV8ORDBim::FeatureAspect::Set(element, *featureAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2205,17 +2196,8 @@ void assignORDAlignmentAspect(Dgn::DgnElementR element, Cif::AlignmentCR alignme
     if (horizCurveVectorPtr.IsValid())
         horizCurveVectorPtr->GetStartEnd(startPoint, endPoint);
 
-    if (auto alignmentAspectP = DgnV8ORDBim::AlignmentAspect::GetP(element))
-        {
-        alignmentAspectP->SetActiveProfileName(activeProfileName.c_str());
-        alignmentAspectP->SetStartPoint({startPoint.x, startPoint.y});
-        alignmentAspectP->SetEndPoint({endPoint.x, endPoint.y});
-        }
-    else
-        {
-        auto alignmentAspectPtr = DgnV8ORDBim::AlignmentAspect::Create({startPoint.x, startPoint.y}, {endPoint.x, endPoint.y}, activeProfileName.c_str());
-        DgnV8ORDBim::AlignmentAspect::Set(element, *alignmentAspectPtr);
-        }
+    auto alignmentAspectPtr = DgnV8ORDBim::AlignmentAspect::Create({startPoint.x, startPoint.y}, {endPoint.x, endPoint.y}, activeProfileName.c_str());
+    DgnV8ORDBim::AlignmentAspect::Set(element, *alignmentAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2230,19 +2212,8 @@ void assignTemplateDropAspect(Dgn::DgnElementR element, Cif::TemplateDropCR temp
     if (templatePtr.IsValid())
         templateName = Utf8String(templatePtr->GetTemplatePath().c_str());
 
-    if (auto templateDropAspectP = DgnV8ORDBim::TemplateDropAspect::GetP(element))
-        {
-        templateDropAspectP->SetInterval(templateDrop.GetInterval());
-        templateDropAspectP->SetDescription(description.c_str());
-
-        if (templatePtr.IsValid())
-            templateDropAspectP->SetTemplateName(templateName.c_str());
-        }
-    else
-        {
-        auto templateDropAspectPtr = DgnV8ORDBim::TemplateDropAspect::Create(templateDrop.GetInterval(), templateName.c_str(), description.c_str());
-        DgnV8ORDBim::TemplateDropAspect::Set(element, *templateDropAspectPtr);
-        }
+    auto templateDropAspectPtr = DgnV8ORDBim::TemplateDropAspect::Create(templateDrop.GetInterval(), templateName.c_str(), description.c_str());
+    DgnV8ORDBim::TemplateDropAspect::Set(element, *templateDropAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2265,17 +2236,8 @@ void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
             activeProfileName = Utf8String(profilePtr->GetName().c_str());
         }
 
-    if (auto corridorAspectP = DgnV8ORDBim::CorridorAspect::GetP(element))
-        {
-        corridorAspectP->SetName(name.c_str());
-        corridorAspectP->SetHorizontalName(horizontalName.c_str());
-        corridorAspectP->SetActiveProfileName(activeProfileName.c_str());
-        }
-    else
-        {
-        auto corridorAspectPtr = DgnV8ORDBim::CorridorAspect::Create(name.c_str(), horizontalName.c_str(), activeProfileName.c_str());
-        DgnV8ORDBim::CorridorAspect::Set(element, *corridorAspectPtr);
-        }
+    auto corridorAspectPtr = DgnV8ORDBim::CorridorAspect::Create(name.c_str(), horizontalName.c_str(), activeProfileName.c_str());
+    DgnV8ORDBim::CorridorAspect::Set(element, *corridorAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2283,16 +2245,8 @@ void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void assignStationRangeAspect(Dgn::DgnElementR element, double startStation, double endStation)
     {
-    if (auto stationRangeAspectP = DgnV8ORDBim::StationRangeAspect::GetP(element))
-        {
-        stationRangeAspectP->SetStartStation(startStation);
-        stationRangeAspectP->SetEndStation(endStation);
-        }
-    else
-        {
-        auto stationRangeAspectPtr = DgnV8ORDBim::StationRangeAspect::Create(startStation, endStation);
-        DgnV8ORDBim::StationRangeAspect::Set(element, *stationRangeAspectPtr);
-        }
+    auto stationRangeAspectPtr = DgnV8ORDBim::StationRangeAspect::Create(startStation, endStation);
+    DgnV8ORDBim::StationRangeAspect::Set(element, *stationRangeAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2301,16 +2255,8 @@ void assignStationRangeAspect(Dgn::DgnElementR element, double startStation, dou
 void assignSuperelevationAspect(Dgn::DgnElementR element, Cif::SuperElevationCR cifSuperelevation)
     {
     auto name = Utf8String(cifSuperelevation.GetName().c_str());
-    if (auto superelevationAspectP = DgnV8ORDBim::SuperelevationAspect::GetP(element))
-        {
-        superelevationAspectP->SetName(name.c_str());
-        superelevationAspectP->SetNormalCrossSlope(cifSuperelevation.GetNormalCrossSlope());
-        }
-    else
-        {
-        auto superelevationAspectPtr = DgnV8ORDBim::SuperelevationAspect::Create(name.c_str(), cifSuperelevation.GetNormalCrossSlope());
-        DgnV8ORDBim::SuperelevationAspect::Set(element, *superelevationAspectPtr);
-        }
+    auto superelevationAspectPtr = DgnV8ORDBim::SuperelevationAspect::Create(name.c_str(), cifSuperelevation.GetNormalCrossSlope());
+    DgnV8ORDBim::SuperelevationAspect::Set(element, *superelevationAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2347,21 +2293,9 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
         ORDBRIDGE_LOGW(Utf8PrintfString("CIF CorridorSurface '%s' '%s' - related corridor not found.", name.c_str(), description.c_str()).c_str());
         }
     
-    if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
-        {
-        corridorSurfaceAspectP->SetIsTopMesh(isTopMesh);
-        corridorSurfaceAspectP->SetIsBottomMesh(isBottomMesh);
-        corridorSurfaceAspectP->SetDescription(description.c_str());
-        corridorSurfaceAspectP->SetCorridorName(corridorName.c_str());
-        corridorSurfaceAspectP->SetHorizontalName(horizontalName.c_str());
-        corridorSurfaceAspectP->SetProfileName(profileName.c_str());
-        }
-    else
-        {
-        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str(),
-            corridorName.c_str(), horizontalName.c_str(), profileName.c_str());
-        DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
-        }
+    auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str(),
+        corridorName.c_str(), horizontalName.c_str(), profileName.c_str());
+    DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2378,16 +2312,8 @@ void assignStationRangeAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR c
 
     if (startStationAsWStr.c_str() != startStationNextCharP && endStationAsWStr.c_str() != endStationNextCharP)
         {
-        if (auto stationRangeAspectP = DgnV8ORDBim::StationRangeAspect::GetP(element))
-            {
-            stationRangeAspectP->SetStartStation(startStation);
-            stationRangeAspectP->SetEndStation(endStation);
-            }
-        else
-            {
-            auto stationRangeAspectPtr = DgnV8ORDBim::StationRangeAspect::Create(startStation, endStation);
-            DgnV8ORDBim::StationRangeAspect::Set(element, *stationRangeAspectPtr);
-            }
+        auto stationRangeAspectPtr = DgnV8ORDBim::StationRangeAspect::Create(startStation, endStation);
+        DgnV8ORDBim::StationRangeAspect::Set(element, *stationRangeAspectPtr);
         }
     }
 
@@ -2398,15 +2324,8 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::AlignmentCR cifAlignmen
     {
     double length = cifAlignment.GetLinearGeometry()->GetLength2d();
 
-    if (auto linearQuantityAspectP = DgnV8ORDBim::LinearQuantityAspect::GetP(element))
-        {
-        linearQuantityAspectP->SetLength(length);
-        }
-    else
-        {
-        auto linearQuantityAspectPtr = DgnV8ORDBim::LinearQuantityAspect::Create(length);
-        DgnV8ORDBim::LinearQuantityAspect::Set(element, *linearQuantityAspectPtr);
-        }
+    auto linearQuantityAspectPtr = DgnV8ORDBim::LinearQuantityAspect::Create(length);
+    DgnV8ORDBim::LinearQuantityAspect::Set(element, *linearQuantityAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2416,15 +2335,8 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::Linear3dConsensusItemCR
     {
     double length = cifLinear3d.GetLinearGeometry()->GetLength2d();
 
-    if (auto linearQuantityAspectP = DgnV8ORDBim::LinearQuantityAspect::GetP(element))
-        {
-        linearQuantityAspectP->SetLength(length);
-        }
-    else
-        {
-        auto linearQuantityAspectPtr = DgnV8ORDBim::LinearQuantityAspect::Create(length);
-        DgnV8ORDBim::LinearQuantityAspect::Set(element, *linearQuantityAspectPtr);
-        }
+    auto linearQuantityAspectPtr = DgnV8ORDBim::LinearQuantityAspect::Create(length);
+    DgnV8ORDBim::LinearQuantityAspect::Set(element, *linearQuantityAspectPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2466,69 +2378,34 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
 
     double volumeVal = volume.IsValid() ? volume.Value() / cubicUorsPerMeter : NAN;
     double topSurfaceAreaVal = surfaceArea.IsValid() ? surfaceArea.Value() / squaredUorsPerMeter : NAN;
-    if (auto volumetricQuantityAspectP = DgnV8ORDBim::VolumetricQuantityAspect::GetP(element))
-        {
-        volumetricQuantityAspectP->SetSlopedArea(topSurfaceAreaVal);
-        volumetricQuantityAspectP->SetVolume(volumeVal);
-        }
-    else
-        {
-        auto volumetricQuantityAspectPtr = DgnV8ORDBim::VolumetricQuantityAspect::Create(volumeVal, topSurfaceAreaVal);
-        DgnV8ORDBim::VolumetricQuantityAspect::Set(element, *volumetricQuantityAspectPtr);
-        }
+    auto volumetricQuantityAspectPtr = DgnV8ORDBim::VolumetricQuantityAspect::Create(volumeVal, topSurfaceAreaVal);
+    DgnV8ORDBim::VolumetricQuantityAspect::Set(element, *volumetricQuantityAspectPtr);
 
     if (volume.IsValid())
         {
         auto qtoVolumeClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOVolumeClassName());
-
-        if (auto qtoVolumeInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoVolumeClassCP))
-            {
-            qtoVolumeInstanceP->SetValue("NetVolume", ECN::ECValue(volumeVal));
-            qtoVolumeInstanceP->SetValue("GrossVolume", ECN::ECValue(volumeVal));
-            }
-        else
-            {
-            auto enablerP = qtoVolumeClassCP->GetDefaultStandaloneEnabler();
-            auto instancePtr = enablerP->CreateInstance();
-            instancePtr->SetValue("NetVolume", ECN::ECValue(volumeVal));
-            instancePtr->SetValue("GrossVolume", ECN::ECValue(volumeVal));
-            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
-            }
+        auto enablerP = qtoVolumeClassCP->GetDefaultStandaloneEnabler();
+        auto instancePtr = enablerP->CreateInstance();
+        instancePtr->SetValue("NetVolume", ECN::ECValue(volumeVal));
+        instancePtr->SetValue("GrossVolume", ECN::ECValue(volumeVal));
+        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
         }
 
     if (surfaceArea.IsValid())
         {
         auto qtoSurfaceAreaClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSurfaceAreaClassName());
-
-        if (auto qtoSurfaceAreaInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSurfaceAreaClassCP))
-            {
-            qtoSurfaceAreaInstanceP->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-            qtoSurfaceAreaInstanceP->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-            }
-        else
-            {
-            auto enablerP = qtoSurfaceAreaClassCP->GetDefaultStandaloneEnabler();
-            auto instancePtr = enablerP->CreateInstance();
-            instancePtr->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-            instancePtr->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
-            }
+        auto enablerP = qtoSurfaceAreaClassCP->GetDefaultStandaloneEnabler();
+        auto instancePtr = enablerP->CreateInstance();
+        instancePtr->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+        instancePtr->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
 
         auto qtoSideAreasClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSideAreasClassName());
-
-        if (auto qtoSideAreasInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSideAreasClassCP))
-            {
-            qtoSideAreasInstanceP->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
-            qtoSideAreasInstanceP->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
-            }
-        else
-            {
-            auto enablerP = qtoSideAreasClassCP->GetDefaultStandaloneEnabler();
-            auto instancePtr = enablerP->CreateInstance();
-            instancePtr->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
-            instancePtr->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
-            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
-            }
+        enablerP = qtoSideAreasClassCP->GetDefaultStandaloneEnabler();
+        instancePtr = enablerP->CreateInstance();
+        instancePtr->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
+        instancePtr->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
+        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
         }
 
     auto featureDefPtr = cifCorridorSurface.GetFeatureDefinition();
@@ -2538,16 +2415,10 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
         if (!WString::IsNullOrEmpty(featureDefName.c_str()))
             {
             auto qtoMaterialClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOMaterialClassName());
-
-            if (auto qtoMaterialInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoMaterialClassCP))
-                qtoMaterialInstanceP->SetValue("Material", ECN::ECValue(Utf8String(featureDefName.c_str()).c_str()));
-            else
-                {
-                auto enablerP = qtoMaterialClassCP->GetDefaultStandaloneEnabler();
-                auto instancePtr = enablerP->CreateInstance();
-                instancePtr->SetValue("Material", ECN::ECValue(Utf8String(featureDefName.c_str()).c_str()));
-                Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
-                }
+            auto enablerP = qtoMaterialClassCP->GetDefaultStandaloneEnabler();
+            auto instancePtr = enablerP->CreateInstance();
+            instancePtr->SetValue("Material", ECN::ECValue(Utf8String(featureDefName.c_str()).c_str()));
+            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
             }
         }
     }
@@ -3358,7 +3229,10 @@ void ORDConverter::_ConvertModels()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ORDConverter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model)
     {
-    if (fullSchemaName.Contains("Bentley_Civil") || fullSchemaName.StartsWith("Civil."))
+    if (fullSchemaName.Contains("Bentley_Civil") || 
+        fullSchemaName.StartsWith("Civil.") || 
+        fullSchemaName.StartsWith("Bentley_SurveyTools") ||
+        fullSchemaName.StartsWith("CifPropertyExtension"))
         return false;
 
     return true;
