@@ -845,7 +845,10 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         {
         existingStyle = m_dgndb->Elements().GetForEdit<DisplayStyle>(existingDef->GetDisplayStyleId());
         if (existingStyle.IsValid())
+            {
+            existingStyle->SetBackgroundColor(existingStyle->GetBackgroundColor());
             parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
+            }
         }
     if (v8displayStyle)
         ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
