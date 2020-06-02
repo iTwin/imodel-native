@@ -193,6 +193,7 @@
         <ProductDirectory Name="Assemblies"             RelativeTo="ApplicationRoot" Path="Dlls" LibType="dynamic"/>
         <ProductDirectory Name="Assemblies"             RelativeTo="ApplicationRoot" Path="Dlls" LibType="static"/>
         <ProductDirectory Name="PublisherLoggingConfigXml" RelativeTo="ApplicationRoot" Path="Dlls"/>
+        <ProductDirectory Name="CrashpadHandler"        RelativeTo="ApplicationRoot" Path="Dlls"/>
         <!-- seleceted VendorAPI list -->
         <ProductDirectory Name="NodeAddonHeaders"       RelativeTo="ApplicationRoot" Path="VendorAPI/napi"/>
         <ProductDirectory Name="PSolidHeaders"          RelativeTo="ApplicationRoot" Path="VendorAPI/psolid"/>

@@ -198,6 +198,7 @@
         <ProductDirectory Name="Assemblies"                 Deliver="false" LibType="static" />
         <ProductDirectory Name="Assemblies"                 Deliver="true"                  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="PublisherLoggingConfigXml"  Deliver="true"                  RelativeTo="ApplicationRoot" />
+        <ProductDirectory Name="CrashpadHandler"            Deliver="true"                  RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"                     Path="Assets"                   RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="Assets"                     Path="Assets" LibType="static"  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="RealDwgDbLibs"              Deliver="false" />
