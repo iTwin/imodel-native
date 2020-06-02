@@ -808,7 +808,7 @@ void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-void * getBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
+static void* getBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
     {
     BeFileName pathname(BeFileName::FileNameParts::DevAndDir, bridgeDllName);
 
@@ -821,6 +821,21 @@ void * getBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
         }
 
     return BeGetProcAddress::GetProcAddress(hinst, funcName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+static void* getProcAddress(BeFileNameCR bridgeDllName, Utf8CP funcName)
+    {
+    auto hinst = GetModuleHandleW(bridgeDllName.c_str());
+    if (!hinst)
+        {
+        LOG.fatalv(L"%ls: not found or could not be loaded", bridgeDllName.c_str());
+        return nullptr;
+        }
+
+    return BeGetProcAddress::GetProcAddress (hinst, funcName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -863,6 +878,14 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GetAffinityEx(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, DgnV8FileP file, BentleyApi::BeFileName const& affinityLibraryPath)
     {
+    if (auto iModelBridge_getAffinityEx = (T_iModelBridge_getAffinity*)getProcAddress(affinityLibraryPath, "iModelBridge_getAffinityEx"))
+        {
+        buffer[0] = 0;
+        affinityLevel = iModelBridgeAffinityLevel::None;
+        iModelBridge_getAffinityEx (buffer, bufferSize, affinityLevel, affinityLibraryPath.c_str(), file->GetFileName().c_str());
+        return BSISUCCESS;
+        }
+
     if (file->IsIModel())
         {
         // Fulfill the request of VSTS 32629 - assign an i.dgn file to MicroStation Bridge by default:
