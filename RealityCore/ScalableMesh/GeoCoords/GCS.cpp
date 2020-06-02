@@ -503,8 +503,8 @@ inline SMStatus GCS::Impl::GetNullCSWKT(WString& wkt) const
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMStatus GCS::Impl::GetBaseCSWKT(WString& wkt) const
-    {            
-    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk))
+    {
+    if(BSISUCCESS != m_geoRef.GetBase().GetCompoundCSWellKnownText(wkt, BaseGCS::wktFlavorAutodesk, false))
         return S_ERROR;  
      
     return S_SUCCESS;
