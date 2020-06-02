@@ -219,6 +219,10 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
             {
             StorePolicyInLicensingDb(policy);
             DeleteAllOtherPoliciesByKey(policy);
+            if (HasOfflineGracePeriodStarted())
+                {
+                m_licensingDb->ResetOfflineGracePeriod();
+                }
             }
 
         return policy;
@@ -242,7 +246,7 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus AccessKeyClientImpl::GetLicenseStatus()
+LicenseStatus AccessKeyClientImpl::GetLicenseStatus(Utf8StringCR projectId)
     {
     LOG.debug("AccessKeyClientImpl::GetLicenseStatus");
 
@@ -252,7 +256,7 @@ LicenseStatus AccessKeyClientImpl::GetLicenseStatus()
         return LicenseStatus::NotEntitled;
         }
 
-    return ClientImpl::GetLicenseStatus();
+    return ClientImpl::GetLicenseStatus(projectId);
     }
 
 int64_t AccessKeyClientImpl::ImportCheckout(BeFileNameCR filepath)
@@ -280,7 +284,7 @@ void AccessKeyClientImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> po
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy>> AccessKeyClientImpl::GetValidUserPolicies()
+std::list<std::shared_ptr<Policy>> AccessKeyClientImpl::GetValidUserPolicies(Utf8StringCR projectId)
     {
     LOG.debug("AccessKeyClientImpl::GetValidUserPolicies");
 

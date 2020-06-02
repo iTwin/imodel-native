@@ -52,7 +52,7 @@ public:
     LICENSING_EXPORT BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path);
 
     LICENSING_EXPORT std::list<std::shared_ptr<Policy>> GetPolicyFiles();
-    LICENSING_EXPORT std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId);
+    LICENSING_EXPORT std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId, Utf8StringCR projectId = "");
 	LICENSING_EXPORT std::list<Json::Value> GetAllCheckouts();
     LICENSING_EXPORT std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey);
     LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken, Utf8StringCR projectId);

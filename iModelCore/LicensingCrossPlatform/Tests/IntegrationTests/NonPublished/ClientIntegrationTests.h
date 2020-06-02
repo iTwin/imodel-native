@@ -24,6 +24,7 @@ public:
     BeFileName GetLicensingDbPathIntegration() const;
 
     Licensing::ClientPtr          CreateTestClient(bool signIn, Utf8StringCR productId = TEST_PRODUCT_ID) const;
+    Licensing::ClientPtr          CreateOidcTestClient() const;
     Licensing::ClientImplPtr          CreateTestClientImpl(bool signIn, Utf8StringCR productId = TEST_PRODUCT_ID) const;
 
     void TearDown();

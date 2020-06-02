@@ -70,9 +70,9 @@ protected:
     virtual std::shared_ptr<Policy> GetPolicyToken();
     virtual std::shared_ptr<Policy> GetProjectPolicyToken(Utf8StringCR projectId);
 
-    virtual std::list<std::shared_ptr<Policy>> GetValidUserPolicies();
+    virtual std::list<std::shared_ptr<Policy>> GetValidUserPolicies(Utf8StringCR projectId = "");
 	virtual std::list<std::shared_ptr<Policy>> GetValidCheckouts();
-    std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId);
+    std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId, Utf8StringCR projectId = "");
 	std::shared_ptr<Policy> SearchForCheckout(Utf8String productId, Utf8String featureString);
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
@@ -115,7 +115,7 @@ protected:
 
     void CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic<int64_t>& lastRunStartTime, size_t interval, std::function<void(void)> func);
 
-	LicenseStatus StartApplicationGeneric(std::function<std::shared_ptr<Policy>()> getPolicy);
+	LicenseStatus StartApplicationGeneric(std::function<std::shared_ptr<Policy>()> getPolicy, std::function<LicenseStatus()> getLicenseStatus);
 
 public:
     LICENSING_EXPORT ClientImpl() {};
@@ -133,7 +133,7 @@ public:
         ILicensingDbPtr licensingDb
         );
 
-	bool ValidateParamsAndDB();    
+	bool ValidateParamsAndDB();
 
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
@@ -141,15 +141,15 @@ public:
     LICENSING_EXPORT BentleyStatus StopApplication();
 
     //Features
-    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData);
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData, Utf8StringCR projectId = "");
 
     // Policy
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy(Utf8StringCR projectId);
 
     // Product status
-    virtual LICENSING_EXPORT LicenseStatus GetLicenseStatus();
-    LICENSING_EXPORT int64_t GetTrialDaysRemaining();
+    virtual LICENSING_EXPORT LicenseStatus GetLicenseStatus(Utf8StringCR projectId = "");
+    LICENSING_EXPORT int64_t GetTrialDaysRemaining(Utf8StringCR projectId = "");
 
 	//Import .belic files
 	virtual LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);

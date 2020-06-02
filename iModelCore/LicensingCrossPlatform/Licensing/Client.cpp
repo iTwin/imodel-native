@@ -100,17 +100,17 @@ BentleyStatus Client::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
-    {
-    return m_impl->MarkFeature(featureId, featureUserData);
+BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData, Utf8StringCR projectId)
+    {   
+    return m_impl->MarkFeature(featureId, featureUserData, projectId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t Client::GetTrialDaysRemaining()
-    {
-    return m_impl->GetTrialDaysRemaining();
+int64_t Client::GetTrialDaysRemaining(Utf8StringCR projectId)
+    {    
+    return m_impl->GetTrialDaysRemaining(projectId);
     }
 
 int64_t Client::ImportCheckout(BeFileNameCR filepath)

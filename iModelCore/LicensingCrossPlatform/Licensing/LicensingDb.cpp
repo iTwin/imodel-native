@@ -506,17 +506,29 @@ std::list<std::shared_ptr<Policy>> LicensingDb::GetPolicyFiles()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy>> LicensingDb::GetValidPolicyFilesForUser(Utf8StringCR userId)
+std::list<std::shared_ptr<Policy>> LicensingDb::GetValidPolicyFilesForUser(Utf8StringCR userId, Utf8StringCR projectId)
     {
-    LOG.info("GetValidPolicyFilesForUser(userId)");
-
+    bool forProject = !projectId.empty();
+    LOG.infov("GetValidPolicyFilesForUser(userId) ForProject : %s", forProject ? "true" : "false");
+    
     std::list<std::shared_ptr<Policy>> policyList;
 
     Statement stmt;
     if (m_db.IsDbOpen())
         {
-        stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE UserID = ?");
-        stmt.BindText(1, userId, Statement::MakeCopy::No);
+        if (forProject)
+            {
+            //Include project policies with cover external usage costs setting on
+            stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE (UserID = ? OR UserID = ?) AND ProjectId = ?");
+            stmt.BindText(1, userId, Statement::MakeCopy::No);
+            stmt.BindText(2, "00000000-0000-0000-0000-000000000000", Statement::MakeCopy::No);
+            stmt.BindText(3, projectId, Statement::MakeCopy::No);
+            }
+        else
+            {            
+            stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE UserID = ?");
+            stmt.BindText(1, userId, Statement::MakeCopy::No);
+            }
         bool isDone = false;
         while (!isDone)
             {
@@ -534,7 +546,14 @@ std::list<std::shared_ptr<Policy>> LicensingDb::GetValidPolicyFilesForUser(Utf8S
                 if (!policy->GetAppliesToUserId().Equals(userId))
                     {
                     // log
-                    continue;
+                    if(!forProject)
+                        {
+                        continue;
+                        }
+                    if(!policy->GetAppliesToUserId().Equals("00000000-0000-0000-0000-000000000000"))
+                        {
+                        continue;
+                        }                    
                     }
 
                 policyList.push_back(policy);

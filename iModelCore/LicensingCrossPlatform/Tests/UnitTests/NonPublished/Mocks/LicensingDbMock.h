@@ -24,7 +24,7 @@ public:
     BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path) override;
 
     std::list<std::shared_ptr<Policy>> GetPolicyFiles() override;
-    std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId) override;
+    std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId, Utf8StringCR projectId = "") override;
 	std::list<Json::Value> GetAllCheckouts() override;
     std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey) override;
     BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken, Utf8StringCR projectId) override;

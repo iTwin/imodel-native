@@ -22,7 +22,7 @@ protected:
     bool m_isAccessKeyValid;
     bool ValidateAccessKey();
     std::shared_ptr<Policy> GetPolicyToken();
-    std::list<std::shared_ptr<Policy>> GetValidUserPolicies();
+    std::list<std::shared_ptr<Policy>> GetValidUserPolicies(Utf8StringCR projectId = "");
 
 public:
     LICENSING_EXPORT AccessKeyClientImpl
@@ -41,7 +41,7 @@ public:
 	bool ValidateParamsAndDB();
 	LICENSING_EXPORT LicenseStatus StartApplication();
 
-    LICENSING_EXPORT LicenseStatus GetLicenseStatus();
+    LICENSING_EXPORT LicenseStatus GetLicenseStatus(Utf8StringCR projectId = "");
 
 	LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);
 

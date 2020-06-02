@@ -50,7 +50,7 @@ std::list<std::shared_ptr<Policy>> LicensingDbMock::GetPolicyFiles()
     return m_policyList;
     }
 
-std::list<std::shared_ptr<Policy>> LicensingDbMock::GetValidPolicyFilesForUser(Utf8StringCR userId)
+std::list<std::shared_ptr<Policy>> LicensingDbMock::GetValidPolicyFilesForUser(Utf8StringCR userId, Utf8StringCR projectId)
     {
     m_getPolicyFilesByUserCallsMap[userId]++;
     return m_userPolicyListMap[userId];

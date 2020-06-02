@@ -27,7 +27,7 @@ public:
     virtual BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path) = 0;
 
     virtual std::list<std::shared_ptr<Policy>> GetPolicyFiles() = 0;
-    virtual std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId) = 0;
+    virtual std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId, Utf8StringCR projectId = "") = 0;
 	virtual std::list<Json::Value> GetAllCheckouts() = 0;
     virtual std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey) = 0;
     virtual BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken, Utf8StringCR projectId) = 0;

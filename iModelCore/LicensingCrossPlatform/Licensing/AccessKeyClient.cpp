@@ -120,9 +120,9 @@ LicenseStatus AccessKeyClient::GetLicenseStatus()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t AccessKeyClient::GetTrialDaysRemaining()
+int64_t AccessKeyClient::GetTrialDaysRemaining(Utf8StringCR projectId)
     {
-    return m_impl->GetTrialDaysRemaining();
+    return m_impl->GetTrialDaysRemaining(projectId);
     }
 
 int64_t AccessKeyClient::ImportCheckout(BeFileNameCR filepath)

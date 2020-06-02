@@ -97,7 +97,7 @@ bool ClientImpl::ValidateParamsAndDB()
     return true;
     }
 
-LicenseStatus ClientImpl::StartApplicationGeneric(std::function<std::shared_ptr<Policy>()> getPolicy)
+LicenseStatus ClientImpl::StartApplicationGeneric(std::function<std::shared_ptr<Policy>()> getPolicy, std::function<LicenseStatus()> getLicenseStatus)
     {
     LOG.debug("ClientImpl::StartApplicationGeneric");
 
@@ -125,7 +125,7 @@ LicenseStatus ClientImpl::StartApplicationGeneric(std::function<std::shared_ptr<
         }
 
     // Get product status, this will search the DB for policy
-    LicenseStatus licStatus = GetLicenseStatus();
+    auto licStatus = getLicenseStatus();
 
     if ((LicenseStatus::Ok == licStatus) ||
         (LicenseStatus::Offline == licStatus) ||
@@ -150,7 +150,9 @@ LicenseStatus ClientImpl::StartApplicationForProject(Utf8StringCR projectId)
 
     auto getPolicy = [this, projectId]() { return GetProjectPolicyToken(projectId); };
 
-    return StartApplicationGeneric(getPolicy);
+    auto getLicenseStatus = [this, projectId] () { return GetLicenseStatus(projectId); }; 
+
+    return StartApplicationGeneric(getPolicy, getLicenseStatus);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -162,7 +164,9 @@ LicenseStatus ClientImpl::StartApplication()
 
     auto getPolicy = [this]() { return GetPolicyToken(); };
 
-    return StartApplicationGeneric(getPolicy);
+    auto getLicenseStatus = [this] () { return GetLicenseStatus(); };
+
+    return StartApplicationGeneric(getPolicy, getLicenseStatus);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -430,7 +434,7 @@ void ClientImpl::StopLogPostingHeartbeat()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
+BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData, Utf8StringCR projectId)
     {
     LOG.debug("ClientImpl::MarkFeature");
 
@@ -452,7 +456,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
         return ERROR;
         }
 
-    LicenseStatus licStatus = GetLicenseStatus();
+    LicenseStatus licStatus = GetLicenseStatus(projectId);
 
     if ((LicenseStatus::Ok != licStatus) &&
         (LicenseStatus::Offline != licStatus) &&
@@ -630,7 +634,7 @@ BentleyStatus ClientImpl::RecordUsage()
         PARTITION_ID);
 
     if (SUCCESS != m_licensingDb->RecordUsage(m_policy->GetUltimateSAPId(),
-        m_policy->GetPrincipalId(),
+        m_policy->GetInUsePrincipalId(),
         atoi(m_applicationInfo->GetProductId().c_str()),
         m_policy->GetCountry(),
         m_featureString,
@@ -669,16 +673,20 @@ std::shared_ptr<Policy> ClientImpl::GetProjectPolicyToken(Utf8StringCR projectId
             {
             StoreProjectPolicyInLicensingDb(policy, projectId);
             DeleteAllOtherPoliciesByProject(policy, projectId);
+            if (HasOfflineGracePeriodStarted())
+                {
+                m_licensingDb->ResetOfflineGracePeriod();
+                }
             }
 
         return policy;
         }
     catch (...)
         {
-        LOG.info("ClientImpl::GetPolicyToken: Call to entitlements failed, getting policy from DB");
+        LOG.info("ClientImpl::GetProjectPolicyToken: Call to entitlements failed, getting policy from DB");
 
         const auto productId = m_applicationInfo->GetProductId();
-        auto policy = SearchForPolicy(productId);
+        auto policy = SearchForPolicy(productId, projectId);
 
         // start offline grace period if there is a cached policy
         if (policy != nullptr && !HasOfflineGracePeriodStarted())
@@ -703,6 +711,10 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
             {
             StorePolicyInLicensingDb(policy);
             DeleteAllOtherPoliciesByUser(policy);
+            if (HasOfflineGracePeriodStarted())
+                {
+                m_licensingDb->ResetOfflineGracePeriod();
+                }
             }
 
         return policy;
@@ -803,11 +815,11 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyWithId(Utf8StringCR policyId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy>> ClientImpl::GetValidUserPolicies()
+std::list<std::shared_ptr<Policy>> ClientImpl::GetValidUserPolicies(Utf8StringCR projectId)
     {
     LOG.debug("ClientImpl::GetValidUserPolicies");
 
-    auto policies = m_licensingDb->GetValidPolicyFilesForUser(m_userInfo.userId);
+    auto policies = m_licensingDb->GetValidPolicyFilesForUser(m_userInfo.userId, projectId);
     return policies;
     }
 
@@ -852,12 +864,12 @@ std::shared_ptr<Policy> ClientImpl::SearchForCheckout(Utf8String productId, Utf8
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String productId)
+std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String productId, Utf8StringCR projectId)
     {
     LOG.debug("ClientImpl::SearchForPolicy");
 
     // get all of user's policies
-    auto policies = GetValidUserPolicies();
+    auto policies = GetValidUserPolicies(projectId);
 
     for (auto policy : policies)
         {
@@ -985,13 +997,13 @@ int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> poli
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientImpl::GetLicenseStatus()
+LicenseStatus ClientImpl::GetLicenseStatus(Utf8StringCR projectId)
     {
     LOG.debug("ClientImpl::GetLicenseStatus");
 
     const auto productId = m_applicationInfo->GetProductId();
 
-    auto policy = SearchForPolicy(productId);
+    auto policy = SearchForPolicy(productId, projectId);
 
     if (policy == nullptr)
         {
@@ -1037,13 +1049,13 @@ LicenseStatus ClientImpl::GetLicenseStatus()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                     Jason.Wichert   7/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t ClientImpl::GetTrialDaysRemaining()
+int64_t ClientImpl::GetTrialDaysRemaining(Utf8StringCR projectId)
     {
     LOG.debug("ClientImpl::GetTrialDaysRemaining");
 
     const auto productId = m_applicationInfo->GetProductId();
 
-    auto policy = SearchForPolicy(productId);
+    auto policy = SearchForPolicy(productId, projectId);
     if (policy == nullptr)
         {
         LOG.error("Policy not found");

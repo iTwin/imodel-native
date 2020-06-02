@@ -85,7 +85,7 @@ public:
         );
 
 	//! Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
-	//! @param[in] ClientConfig configobject, holds all the params for Client::Create, instantiates with defaults.
+	//! @param[in] config Holds all the params for Client::Create, instantiates with defaults.
 	//! Make sure to set the values needed in the config object prior to calling create(configobject)
 	LICENSING_EXPORT static ClientPtr Create
 	(
@@ -116,14 +116,16 @@ public:
     //! Marks a feature as used
     //! @param[in] featureId Feature GUID to mark
     //! @param[in] featureUserData Feature tracking metadata
-    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData);
+    //! @param[in] projectId Project GUID is for project-based licensing only 
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData, Utf8StringCR projectId = "");
 
     //! GetTrialDaysRemaining returns the days remaining in a trial or evaluation policy
     /*!
     * This method is used to get the number of days remaining in a trial or evaluation policy.
+    * call with no params unless you are using project based licensing which requires projectId
     * Returns 0 for expired, a postitive integer for the remaining number of days, and -1 for no data, or if policy is not evaluation or trial.
     */
-    LICENSING_EXPORT int64_t GetTrialDaysRemaining();
+    LICENSING_EXPORT int64_t GetTrialDaysRemaining(Utf8StringCR projectId = "");
 
 	//! ImportCheckout allows importing of a .belic file policy into the DB
 	//! -1 for error 0 for success, -2 if policy and machine signatures are a mismatch   

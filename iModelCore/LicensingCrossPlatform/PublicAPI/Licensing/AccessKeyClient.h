@@ -129,9 +129,10 @@ public:
     //! GetTrialDaysRemaining returns the days remaining in a trial or evaluation policy
     /*!
     * This method is used to get the number of days remaining in a trial or evaluation policy.
+    * call with no params unless you are using project based licensing which requires projectId
     * Returns 0 for expired, a postitive integer for the remaining number of days, and -1 for no data, or if policy is not evaluation or trial.
     */
-    LICENSING_EXPORT int64_t GetTrialDaysRemaining();
+    LICENSING_EXPORT int64_t GetTrialDaysRemaining(Utf8StringCR projectId = "");
 
 	//! ImportCheckout allows importing of a .belic file policy into the DB
 	//! -2 for machineid mismatch, -1 for error, 0 for success  

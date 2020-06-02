@@ -223,7 +223,7 @@ public:
     LICENSING_EXPORT Json::Value GetJson() const { return m_json; };
     LICENSING_EXPORT Utf8String GetPolicyId() const { return m_PolicyId; };
     LICENSING_EXPORT double GetPolicyVersion() const { return m_PolicyVersion; };
-    LICENSING_EXPORT Utf8String GetInUsePrincipalId() { return m_InUsePrincipalId; };
+    LICENSING_EXPORT Utf8String GetInUsePrincipalId() { return (!m_InUsePrincipalId.empty()) ? m_InUsePrincipalId : GetPrincipalId(); }; // right now only Evals set this
     LICENSING_EXPORT void SetInUsePrincipalId(Utf8StringCR principalId) { m_InUsePrincipalId = principalId; };
     LICENSING_EXPORT Utf8String GetPolicyCreatedOn() const { return m_PolicyCreatedOn; };
     LICENSING_EXPORT Utf8String GetPolicyExpiresOn() const { return m_PolicyExpiresOn; };
