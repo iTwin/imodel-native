@@ -40,6 +40,7 @@ struct DmsSession
         //!Return true if the session was successfully shutdown.
         bool UnInitialize();
 
+        Utf8StringCR GetDataSource() const { return m_dataSource; };
         bool SetDataSource(Utf8StringCR dataSource);
 
         //!Search path to find dependant application libraries and symbols

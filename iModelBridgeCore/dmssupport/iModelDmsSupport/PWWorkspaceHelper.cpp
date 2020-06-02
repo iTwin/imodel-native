@@ -308,6 +308,10 @@ Utf8String      PWWorkspaceHelper::GetDocumentGuid(WStringCR inputMoniker)
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, monikerFlags))
         {
         LOG.errorv("aaApi_StringsToMonikers failed for document %ls", inputMoniker.c_str());
+        int code = aaApi_GetLastErrorId();
+        auto msg = aaApi_GetLastErrorMessage();
+        auto dtl = aaApi_GetLastErrorDetail();
+        LOG.errorv("%ls, %ls, %ls", code, msg, dtl);
         return "";
         }
 
@@ -348,6 +352,10 @@ BentleyStatus   PWWorkspaceHelper::_GetDocumentProperties(iModelBridgeDocumentPr
     if (!m_documentGuid.empty())
         props.m_docGuid = m_documentGuid;
 
+    if (props.m_desktopURN.empty() && !props.m_docGuid.empty() && !m_session->GetDataSource().empty())
+        {
+        props.m_desktopURN = Utf8PrintfString("pw://%s/Documents/D{%s}", m_session->GetDataSource().c_str(), props.m_docGuid.c_str());
+        }
     return BentleyStatus(0);
     }
 
