@@ -1881,6 +1881,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (m_bridge->TestFeatureFlag("imodel-bridge-terrain-conversion"))
         m_bridge->_GetParams().SetDoTerrainModelConversion(true);
 
+    if (m_bridge->TestFeatureFlag("imodel-bridge-no-intermediate-revisions"))
+        m_bridge->_GetParams().SetPushIntermediateRevisions(iModelBridge::Params::PushIntermediateRevisions::None);
+
     bool doNotTrackRefs = false;
     TestFeatureFlag("imodel-bridge-do-not-track-references-subjects", doNotTrackRefs);
     m_bridge->_GetParams().SetDoNotTrackReferencesSubjects(doNotTrackRefs);
