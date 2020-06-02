@@ -1490,7 +1490,7 @@ public:
             DRange3dCR geomRange = geometry->GetTileRange();
             double rangePixels = (loader.Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / sharedGen.GetTolerance();
             if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance())
-                return;
+                continue;
 
             auto polyfaces = geometry->GetPolyfaces(sharedGen.GetTolerance(), sharedGen.GetOptions().m_normalMode, sharedGen);
             auto strokes = geometry->GetStrokes(sharedGen.GetTolerance(), sharedGen);
