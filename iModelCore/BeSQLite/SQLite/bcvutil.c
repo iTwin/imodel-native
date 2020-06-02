@@ -436,6 +436,7 @@ int bcvAccessPointInit(
       p->eStorage = BCV_STORAGE_AZURE;
       break;
     default:
+      p->eStorage = BCV_STORAGE_GOOGLE;
       assert( eType==SQLITE_BCV_GOOGLE );
       break;
   }
@@ -462,9 +463,10 @@ int bcvAccessPointInit(
 size_t curlHeaderFunction(char *buf, size_t sz, size_t n, void *pUser){
   CurlRequest *p = (CurlRequest*)pUser;
   int nByte = (sz * n);
-  if( p->zStatus==0 ){
+  if( nByte>5 && sqlite3_strnicmp(buf, "http/", 5)==0 ){
     int nCopy = nByte;
     while( nCopy>0 && bcv_isspace(buf[nCopy-1]) ) nCopy--;
+    sqlite3_free(p->zStatus);
     p->zStatus = bcvMprintf("%.*s", nCopy, buf);
   }else if( p->bGen==0 && nByte>6 && sqlite3_strnicmp(buf, "ETag: ", 6)==0 ){
     p->zETag = bcvMprintf("%.*s", nByte-8, &buf[6]);
@@ -498,8 +500,10 @@ void curlRequestReset(CurlRequest *p){
   curl_easy_setopt(p->pCurl, CURLOPT_HEADERDATA, (void*)p);
   sqlite3_free(p->zStatus);
   sqlite3_free(p->zETag);
+  sqlite3_free(p->zHttpUrl);
   p->zStatus = 0;
   p->zETag = 0;
+  p->zHttpUrl = 0;
 }
 
 void curlRequestFinalize(CurlRequest *p){
@@ -507,6 +511,7 @@ void curlRequestFinalize(CurlRequest *p){
   curl_slist_free_all(p->pList);
   sqlite3_free(p->zStatus);
   sqlite3_free(p->zETag);
+  sqlite3_free(p->zHttpUrl);
   memset(p, 0, sizeof(CurlRequest));
 }
 
@@ -582,6 +587,9 @@ static void curlAzureFetchBlob(
   char *zAuth = 0;                /* Authorization header */
   char *zStringToSign = 0;        /* String to sign for auth header */
   char zDate[BCV_DATEBUFFER_SIZE];
+  char *zDebugUrl = 0;
+
+  assert( p->zHttpUrl==0 );
 
   azure_date_header(zDate);
   zBase = azure_base_uri(pA);
@@ -596,9 +604,13 @@ static void curlAzureFetchBlob(
     );
     zAuth = azure_auth_header(pA, zStringToSign);
     p->pList = curl_slist_append(p->pList, zAuth);
+    zDebugUrl = zUrl;
   }else{
+    zDebugUrl = bcvMprintf("%s?<sas>", zUrl);
     zUrl = bcvMprintf("%z?%s", zUrl, pA->zSas);
   }
+  p->zHttpUrl = zDebugUrl;
+  p->eHttpMethod = BCV_HTTP_GET;
 
   p->pList = curl_slist_append(p->pList, zDate);
   p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
@@ -607,10 +619,10 @@ static void curlAzureFetchBlob(
   curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
 
   sqlite3_free(zBase);
-  sqlite3_free(zUrl);
   sqlite3_free(zStringToSign);
   sqlite3_free(zRes);
   sqlite3_free(zAuth);
+  if( zUrl!=zDebugUrl ) sqlite3_free(zUrl);
 }
 
 static void curlAzurePutBlob(
@@ -626,6 +638,7 @@ static void curlAzurePutBlob(
   char *zAuth = 0;                /* Authorization header */
   char *zStringToSign = 0;        /* String to sign for auth header */
   char zDate[BCV_DATEBUFFER_SIZE];
+  char *zDebugUrl = 0;
 
   azure_date_header(zDate);
   zBase = azure_base_uri(pA);
@@ -644,9 +657,16 @@ static void curlAzurePutBlob(
     );
     zAuth = azure_auth_header(pA, zStringToSign);
     p->pList = curl_slist_append(p->pList, zAuth);
+    zDebugUrl = zUrl;
   }else{
+    zDebugUrl = bcvMprintf("%s?<sas> %s%s%s", zUrl, 
+        zETag?"(if-match=":"", zETag?zETag:"", zETag?")":""
+    );
     zUrl = bcvMprintf("%z?%s", zUrl, pA->zSas);
   }
+  assert( p->zHttpUrl==0 );
+  p->zHttpUrl = zDebugUrl;
+  p->eHttpMethod = BCV_HTTP_PUT;
 
   if( zETag ){
     char *zHdr = bcvMprintf("If-Match:%s", zETag);
@@ -665,9 +685,9 @@ static void curlAzurePutBlob(
   curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
 
   sqlite3_free(zBase);
-  sqlite3_free(zUrl);
   sqlite3_free(zStringToSign);
   sqlite3_free(zAuth);
+  if( zUrl!=zDebugUrl ) sqlite3_free(zUrl);
 }
 
 /*
@@ -691,7 +711,9 @@ static void curlGoogleFetchBlob(
   curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
   curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
 
-  sqlite3_free(zUrl);
+  assert( p->zHttpUrl==0 );
+  p->zHttpUrl = zUrl;
+  p->eHttpMethod = BCV_HTTP_GET;
   sqlite3_free(zAuth);
 }
 
@@ -722,7 +744,8 @@ static void curlGooglePutBlob(
   curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
   curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
 
-  sqlite3_free(zUrl);
+  p->zHttpUrl = zUrl;
+  p->eHttpMethod = BCV_HTTP_PUT;
   sqlite3_free(zAuth);
 }
 
@@ -1000,7 +1023,7 @@ int curlErrorIfNot2XX(
   }
   curl_easy_getinfo(pCurl->pCurl, CURLINFO_RESPONSE_CODE, &code);
   if( (code / 100)!=2 ){
-    bcvApiError(p, SQLITE_ERROR, "%s (%d) - %s", zPre, code, pCurl->zStatus);
+    bcvApiError(p, code, "%s (%d) - %s", zPre, code, pCurl->zStatus);
   }
   return p->errCode;
 }
@@ -1222,6 +1245,7 @@ static void curlAzureDeleteBlob(
   char *zAuth = 0;                /* Authorization header */
   char *zStringToSign = 0;        /* String to sign for auth header */
   char zDate[BCV_DATEBUFFER_SIZE];
+  char *zDebugUrl = 0;
 
   azure_date_header(zDate);
   zBase = azure_base_uri(pA);
@@ -1236,9 +1260,14 @@ static void curlAzureDeleteBlob(
     );
     zAuth = azure_auth_header(pA, zStringToSign);
     p->pList = curl_slist_append(p->pList, zAuth);
+    zDebugUrl = zUrl;
   }else{
+    zDebugUrl = bcvMprintf("%s?<sas>", zUrl);
     zUrl = bcvMprintf("%z?%s", zUrl, pA->zSas);
   }
+  assert( p->zHttpUrl==0 );
+  p->zHttpUrl = zDebugUrl;
+  p->eHttpMethod = BCV_HTTP_DELETE;
 
   p->pList = curl_slist_append(p->pList, zDate);
   p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
@@ -1250,9 +1279,9 @@ static void curlAzureDeleteBlob(
   curl_easy_setopt(p->pCurl, CURLOPT_WRITEFUNCTION, bdIgnore);
 
   sqlite3_free(zBase);
-  sqlite3_free(zUrl);
   sqlite3_free(zStringToSign);
   sqlite3_free(zAuth);
+  if( zUrl!=zDebugUrl ) sqlite3_free(zUrl);
 }
 
 static void curlGoogleDeleteBlob(
@@ -1276,7 +1305,9 @@ static void curlGoogleDeleteBlob(
   curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
   curl_easy_setopt(p->pCurl, CURLOPT_WRITEFUNCTION, bdIgnore);
 
-  sqlite3_free(zUrl);
+  assert( p->zHttpUrl==0 );
+  p->zHttpUrl = zUrl;
+  p->eHttpMethod = BCV_HTTP_DELETE;
   sqlite3_free(zAuth);
 }
 
@@ -1351,6 +1382,7 @@ static void curlAzureListFiles(
   char *zAuth = 0;                /* Authorization header */
   char *zStringToSign = 0;        /* String to sign for auth header */
   char zDate[BCV_DATEBUFFER_SIZE];/* HTTP date header */
+  char *zDebugUrl = 0;
 
   azure_date_header(zDate);
   zBase = azure_base_uri(pA);
@@ -1369,8 +1401,12 @@ static void curlAzureListFiles(
     zAuth = azure_auth_header(pA, zStringToSign);
     p->pList = curl_slist_append(p->pList, zAuth);
   }else{
+    zDebugUrl = bcvMprintf("%s&<sas>", zUrl);
     zUrl = bcvMprintf("%z&%s", zUrl, pA->zSas);
   }
+  assert( p->zHttpUrl==0 );
+  p->eHttpMethod = BCV_HTTP_GET;
+  p->zHttpUrl = zDebugUrl;
 
   p->pList = curl_slist_append(p->pList, zDate);
   p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
@@ -1379,10 +1415,10 @@ static void curlAzureListFiles(
   curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
 
   sqlite3_free(zBase);
-  sqlite3_free(zUrl);
   sqlite3_free(zStringToSign);
   sqlite3_free(zRes);
   sqlite3_free(zAuth);
+  if( zUrl!=zDebugUrl ) sqlite3_free(zUrl);
 }
 
 static void curlGoogleListFiles(
@@ -1406,7 +1442,9 @@ static void curlGoogleListFiles(
   curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
   curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
 
-  sqlite3_free(zUrl);
+  assert( p->zHttpUrl==0 );
+  p->eHttpMethod = BCV_HTTP_GET;
+  p->zHttpUrl = zUrl;
   sqlite3_free(zAuth);
 }
 
@@ -1425,52 +1463,6 @@ void curlListFiles(
       break;
   }
 }
-
-static void curlListContainers(
-  CurlRequest *p, 
-  AccessPoint *pA,
-  const char *zPrefix
-){
-  char *zUrl = 0;                 /* URL to fetch */
-  char *zBase = 0;                /* Base URI for all requests */
-  char *zRes = 0;                 /* Canonicalized resource */
-  char *zAuth = 0;                /* Authorization header */
-  char *zStringToSign = 0;        /* String to sign for auth header */
-  char zDate[BCV_DATEBUFFER_SIZE];/* HTTP date header */
-
-  azure_date_header(zDate);
-  zBase = azure_base_uri(pA);
-  zUrl = bcvMprintf("%s?comp=list%s%s", 
-      zBase, zPrefix?"&prefix=":"", zPrefix?zPrefix:""
-  );
-  zRes = bcvMprintf("%s", pA->zSlashAccountSlash);
-
-  if( pA->zAccessKey ){
-    zStringToSign = bcvMprintf(
-        "GET\n\n\n\n\n\n\n\n\n\n\n\n%s\n%s\n%s\ncomp:list%s%s",
-        zDate, BCV_AZURE_VERSION_HDR, zRes,
-        zPrefix ? "\nprefix:" : "",
-        zPrefix ? zPrefix : ""
-        );
-    zAuth = azure_auth_header(pA, zStringToSign);
-    p->pList = curl_slist_append(p->pList, zAuth);
-  }else{
-    zUrl = bcvMprintf("%z&%s", zUrl, pA->zSas);
-  }
-
-  p->pList = curl_slist_append(p->pList, zDate);
-  p->pList = curl_slist_append(p->pList, BCV_AZURE_VERSION_HDR);
-
-  curl_easy_setopt(p->pCurl, CURLOPT_URL, zUrl);
-  curl_easy_setopt(p->pCurl, CURLOPT_HTTPHEADER, p->pList);
-
-  sqlite3_free(zBase);
-  sqlite3_free(zUrl);
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zRes);
-  sqlite3_free(zAuth);
-}
-
 
 size_t memoryDownloadWrite(
   char *pData, 
@@ -2052,7 +2044,7 @@ int sqlite3_bcv_upload(
     curl_easy_setopt(curl.pCurl, CURLOPT_SEEKFUNCTION, memoryUploadSeek);
     curl_easy_setopt(curl.pCurl, CURLOPT_SEEKDATA, (void*)&mu);
     res = curl_easy_perform(curl.pCurl);
-    if( curlErrorIfNot2XX(p, &curl, res, "block upload failed") ){
+    if( curlErrorIfNot2XX(p, &curl, res, "upload block failed") ){
       goto update_out;
     }
     if( p->xProgress ){
@@ -2234,7 +2226,7 @@ int sqlite3_bcv_download(
     curl_easy_setopt(curl.pCurl, CURLOPT_WRITEFUNCTION, fileDownloadWrite);
     curl_easy_setopt(curl.pCurl, CURLOPT_WRITEDATA, (void*)&fd);
     res = curl_easy_perform(curl.pCurl);
-    curlErrorIfNot2XX(p, &curl, res, "download failed");
+    curlErrorIfNot2XX(p, &curl, res, "download block failed");
     curlRequestReset(&curl);
 
     if( p->xProgress ){
@@ -2327,7 +2319,7 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
   man.szBlk = szBlock;
   man.nNamebytes = szName;
 
-  if( SQLITE_ERROR==bcvManifestUploadParsed(p, &man) ){
+  if( bcvManifestUploadParsed(p, &man) ){
     CurlRequest curl;
     CURLcode res;
 

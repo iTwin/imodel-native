@@ -132,7 +132,7 @@ USING_NAMESPACE_BENTLEY_EC
     for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {\
         Napi::Value arrValue = arr[arrIndex];\
         if (!arrValue.IsString()) {\
-            Utf8PrintfString msg("Argument " #i " must be an array of strings. Item at index %d is not a strings", arrIndex);\
+            Utf8PrintfString msg("Argument " #i " must be an array of strings. Item at index %d is not a string", arrIndex);\
             REJECT_DEFERRED_AND_RETURN(deferred, msg.c_str())\
         }\
         var.push_back(arrValue.As<Napi::String>().Utf8Value());\
@@ -391,19 +391,24 @@ static Utf8String getOptionalStringProperty(Napi::Object obj, Utf8CP propName, U
     return obj.Get(propName).ToString().Utf8Value().c_str();
     }
 
-Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) { return Napi::String::New(env, val, len); }
-Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, std::strlen(val)); }
+Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) {
+    if (nullptr == val) {
+        val = "";
+        len = 0;
+    }
+    return Napi::String::New(env, val, len);
+}
+Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, NAPI_AUTO_LENGTH); }
 Napi::String toJsString(Napi::Env env, Utf8StringCR str) { return toJsString(env, str.c_str(), str.length()); }
 Napi::String toJsString(Napi::Env env, BeInt64Id id) { return toJsString(env, id.ToHexStr()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ObjRefVault::Slot::Slot(Slot &&r)
-    {
+ObjRefVault::Slot::Slot(Slot&& r) {
     m_refCount = std::move(r.m_refCount);
     m_objRef = std::move(r.m_objRef);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19

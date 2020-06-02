@@ -21,8 +21,14 @@ static Napi::ObjectReference s_logger;
 static Napi::ObjectReference s_jobUtility;
 static Napi::Env *s_env;
 
-Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) { return Napi::String::New(env, val, len); }
-Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, std::strlen(val)); }
+Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) {
+    if (nullptr == val) {
+        val = "";
+        len = 0;
+    }
+    return Napi::String::New(env, val, len);
+}
+Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, NAPI_AUTO_LENGTH); }
 Napi::String toJsString(Napi::Env env, Utf8StringCR str) { return toJsString(env, str.c_str(), str.length()); }
 Napi::String toJsString(Napi::Env env, BeInt64Id id) { return toJsString(env, id.ToHexStr()); }
 
@@ -40,13 +46,13 @@ static void logMessageToJobUtility(Utf8CP msg, Napi::Env& env)
         return;
         }
 
-  
+
     auto msgJS = toJsString(env, msg);
 
     method({ msgJS });
     }
 
-static void setBriefcaseIdJobUtility(uint32_t bcid) 
+static void setBriefcaseIdJobUtility(uint32_t bcid)
     {
     auto env = s_jobUtility.Env();
     Napi::HandleScope scope(env);
@@ -60,14 +66,14 @@ static void setBriefcaseIdJobUtility(uint32_t bcid)
         return;
         }
 
-    WPrintfString str(L"%u", bcid);        
+    WPrintfString str(L"%u", bcid);
     Utf8String tempsUtf8String(str);
     Utf8CP msg = tempsUtf8String.c_str();
-  
+
     auto msgJS = toJsString(env, msg);
 
     method({ msgJS });
-    }    
+    }
 
 static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg, Napi::Env& env)
     {
@@ -89,23 +95,23 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
     auto catJS = toJsString(env, category);
     auto msgJS = toJsString(env, msg);
 
-    method({catJS, msgJS});            
-    } 
+    method({catJS, msgJS});
+    }
 
 static void LogTrace(Utf8CP msg, Napi::Env& env)
     {
     logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_TRACE, msg, env);
-    } 
+    }
 /*
-static void LogInfo(Utf8CP msg)         
+static void LogInfo(Utf8CP msg)
     {
         logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_INFO, msg);
-    }        
+    }
 */
 static void LogError(Utf8CP msg, Napi::Env& env)
     {
     logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_WARNING, msg, env);
-    }      
+    }
 
 namespace BridgeNative {
 
@@ -160,7 +166,7 @@ namespace BridgeNative {
 // ***********************************************************************************
 // Functions outside of namespace BridgeNative
 // ***********************************************************************************
-Value _RunBridge(const CallbackInfo& info) 
+Value _RunBridge(const CallbackInfo& info)
     {
     Env env = info.Env();
     Napi::String str = info[0].As<Napi::String>();
@@ -218,7 +224,7 @@ wchar_t const** argv = argptrs.data();\
 }
 
 // Note: Used by OidcTokenProvider.cpp.
-Napi::Function RequestTokenFunction() 
+Napi::Function RequestTokenFunction()
     {
     auto env = s_jobUtility.Env();
     Napi::HandleScope scope(env);
@@ -238,7 +244,7 @@ static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t lin
     {
     WPrintfString str(L"BridgeAddon.cpp: ASSERT: (%ls) @ %ls:%u\n", message, file, line);
     NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv(str.c_str());
-    }    
+    }
 
 //=======================================================================================
 // @bsistruct                                   John.Majerle                  10/18
@@ -252,48 +258,48 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
 
     // TBI-149402-DisableSeqLogging
     //      We have a working theory that SEQ logging inside a single threaded node.exe process
-    //      is the cause of our STATUS_STACK_BUFFER_OVERRUN error.  When this error occcurs, 
+    //      is the cause of our STATUS_STACK_BUFFER_OVERRUN error.  When this error occcurs,
     //      the process exists and no SEQ messages are sent out.
     // BridgeNative::JsInterop::InitLogging();
 
     if (doLogging)
         {
-        LogTrace("BridgeAddon.cpp: RunBridge() BEGIN",env);    
+        LogTrace("BridgeAddon.cpp: RunBridge() BEGIN",env);
         logMessageToJobUtility("BridgeAddon.cpp: RunBridge() BEGIN",env);                 // [NEEDSWORK] This line just for testing.  Remove later.
         }
-    
+
     // Convert JSON string into a JSON object
     Json::Value json;
-    Json::Reader::Parse(jsonString, json); 
+    Json::Reader::Parse(jsonString, json);
 
     bvector<WString> args;
 
-    args.push_back(L"BridgeAddon");    
+    args.push_back(L"BridgeAddon");
 
     SET_ARG("server_user", L"server-user")                  // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
     SET_ARG("server_password", L"server-password")          // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
-    SET_ARG("server_project", L"server-project") 
-    SET_ARG("server_oidcCallBackUrl", L"server-oidcCallBackUrl") 
-    SET_ARG("server_repository", L"server-repository") 
-    SET_ARG("server_environment", L"server-environment") 
+    SET_ARG("server_project", L"server-project")
+    SET_ARG("server_oidcCallBackUrl", L"server-oidcCallBackUrl")
+    SET_ARG("server_repository", L"server-repository")
+    SET_ARG("server_environment", L"server-environment")
 
     // These may need to be quoted?
-    SET_ARG("fwk_assetsDir", L"fwk-assetsDir") 
-    SET_ARG("fwk_bridgeAssetsDir", L"fwk-bridgeAssetsDir") 
-    SET_ARG("fwk_bridge_library", L"fwk-bridge-library") 
-    SET_ARG("fwk_staging_dir", L"fwk-staging-dir") 
-    SET_ARG("fwk_input", L"fwk-input") 
+    SET_ARG("fwk_assetsDir", L"fwk-assetsDir")
+    SET_ARG("fwk_bridgeAssetsDir", L"fwk-bridgeAssetsDir")
+    SET_ARG("fwk_bridge_library", L"fwk-bridge-library")
+    SET_ARG("fwk_staging_dir", L"fwk-staging-dir")
+    SET_ARG("fwk_input", L"fwk-input")
 
     // For files located in a DMS (Document Management System)
-    SET_ARG("dms_library", L"dms-library") 
+    SET_ARG("dms_library", L"dms-library")
     SET_ARG("dms_inputFileUrn", L"dms-inputFileUrn")
-    SET_ARG("dms_type", L"dms-type")  
+    SET_ARG("dms_type", L"dms-type")
 
-    // Optional 
-    SET_ARG("server_project_guid", L"server-project-guid"); 
-    SET_ARG("server_briefcaseId", L"server-briefcaseId") 
-    SET_ARG("fwk_status_message_sink_url", L"fwk-status-message-sink-url");  
-    SET_ARG("fwk_status_message_interval", L"fwk-status-message-interval"); 
+    // Optional
+    SET_ARG("server_project_guid", L"server-project-guid");
+    SET_ARG("server_briefcaseId", L"server-briefcaseId")
+    SET_ARG("fwk_status_message_sink_url", L"fwk-status-message-sink-url");
+    SET_ARG("fwk_status_message_interval", L"fwk-status-message-interval");
     SET_ARG("fwk_bridge_regsubkey", L"fwk-bridge-regsubkey");
     SET_ARG("fwk_input_sheet", L"fwk-input-sheet");
     SET_ARG("fwk_revision_comment", L"fwk-revision-comment");
@@ -306,11 +312,11 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
     SET_ARG("imodel_bank_url", L"imodel-bank-url");
     SET_ARG("imodel_bank_access_token", L"imodel-bank-access-token");
 
-    SET_ARG("fwk_jobrequest_guid", L"fwk-jobrequest-guid");  
+    SET_ARG("fwk_jobrequest_guid", L"fwk-jobrequest-guid");
 
-    SET_ARG_NO_VALUE("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary"); 
+    SET_ARG_NO_VALUE("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary");
     SET_ARG_NO_VALUE("fwk_skip_assignment_check", L"fwk-skip-assignment-check");
-    
+
     bvector<WCharCP> argptrs;
     MAKE_ARGC_ARGV(argptrs, args);
 
@@ -318,9 +324,9 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
         if (doLogging)
             {
             logMessageToJobUtility("BridgeAddon.cpp: RunBridge() No valid members passed in json",env);
-            LogError("BridgeAddon.cpp: RunBridge() No valid members passed in json",env); 
+            LogError("BridgeAddon.cpp: RunBridge() No valid members passed in json",env);
             }
-        return status;    
+        return status;
     }
 
     // [NEEDSWORK] This block just for testing.  Remove b4fore deployment!!!.
@@ -332,15 +338,15 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
     // }
     if (doLogging)
         {
-        LogTrace("BridgeAddon.cpp: RunBridge() argv[]:",env); 
-        
+        LogTrace("BridgeAddon.cpp: RunBridge() argv[]:",env);
+
         for(int ii = 0; ii < argc; ++ii) {
             char buffer [MAX_PATH];
             sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
             LogTrace(buffer,env);
         }
     }
-    
+
     try {
         Dgn::iModelBridgeFwk app;
 
@@ -354,8 +360,8 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
             return status;
         }
 
-        // Establish a bridge token provider 
-        // if(json.isMember("encodedToken")) { 
+        // Establish a bridge token provider
+        // if(json.isMember("encodedToken")) {
         //     // Pull the initial token value from the json object
         //     Utf8String encodedToken = json.get("encodedToken", "").asString();
 
@@ -377,8 +383,8 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
             sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d briefcaseId = %d", status, bcid);
             if (doLogging)
                 {
-                logMessageToJobUtility(buffer,env);   
-                LogTrace(buffer,env);          
+                logMessageToJobUtility(buffer,env);
+                LogTrace(buffer,env);
                 }
         }
 
@@ -386,7 +392,7 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
         if (doLogging)
             {
             logMessageToJobUtility("BridgeAddon.cpp: RunBridge() exception occurred during bridging",env);
-            LogError("BridgeAddon.cpp: RunBridge() exception occurred during bridging",env); 
+            LogError("BridgeAddon.cpp: RunBridge() exception occurred during bridging",env);
             }
         return status;
     }
@@ -394,7 +400,7 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
     if (doLogging)
         {
         logMessageToJobUtility("BridgeAddon.cpp: RunBridge() END",env); // [NEEDSWORK] This line just for testing.  Remove later.
-        LogTrace("BridgeAddon.cpp: RunBridge() END",env);       
+        LogTrace("BridgeAddon.cpp: RunBridge() END",env);
         }
 
     return status;

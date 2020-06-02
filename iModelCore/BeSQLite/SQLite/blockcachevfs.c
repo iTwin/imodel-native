@@ -318,7 +318,10 @@ static int bcvSendMessage(BCV_SOCKET_TYPE fd, BlockcacheMessage *pMsg){
   );
 
   nMsg += pMsg->nData;
-  if( pMsg->eType==BCV_MESSAGE_REQUEST || pMsg->eType==BCV_MESSAGE_QUERY ){
+  if( pMsg->eType==BCV_MESSAGE_REQUEST 
+   || pMsg->eType==BCV_MESSAGE_QUERY 
+   || pMsg->eType==BCV_MESSAGE_LOGIN 
+  ){
     nMsg += sizeof(u32);
   }
   aMsg = sqlite3_malloc(nMsg);
@@ -326,7 +329,10 @@ static int bcvSendMessage(BCV_SOCKET_TYPE fd, BlockcacheMessage *pMsg){
 
   aMsg[0] = (u8)pMsg->eType;
   bcvPutU32(&aMsg[1], nMsg);
-  if( pMsg->eType==BCV_MESSAGE_REQUEST || pMsg->eType==BCV_MESSAGE_QUERY ){
+  if( pMsg->eType==BCV_MESSAGE_REQUEST 
+   || pMsg->eType==BCV_MESSAGE_QUERY 
+   || pMsg->eType==BCV_MESSAGE_LOGIN 
+  ){
     bcvPutU32(&aMsg[5], pMsg->iVal);
   }
   if( pMsg->nData ){
@@ -504,6 +510,7 @@ static int bcvClose(sqlite3_file *pFile){
   sqlite3_free(p->aUsed);
   sqlite3_free(p->aBlkArray);
   sqlite3_free(p->zContainer);
+  sqlite3_free(p->zAccount);
   if( p->fdDaemon ){
     bcv_close_socket(p->fdDaemon);
   }
@@ -1009,25 +1016,25 @@ static int bcvConnectDaemon(BlockcacheFile *p){
             BlockcacheMessage reply;
             BlockcacheMessage login;
             memset(&reply, 0, sizeof(reply));
-            memset(&login, 0, sizeof(login));
 
+            memset(&login, 0, sizeof(login));
             login.eType = BCV_MESSAGE_LOGIN;
             login.aData = (u8*)sqlite3_mprintf("%.*s", nDb, zDb);;
-            login.nData = strlen((const char*)login.aData) + 1;
+            login.nData = strlen((const char*)login.aData);
 
-            rc = bcvSendMessage(p->fdDaemon, &login);
+            rc = bcvExchangeMessage(p, &login, &reply);
             if( rc==SQLITE_OK ){
-              rc = bcvReceiveMessage(p->fdDaemon, &reply);
-            }
-            if( rc==SQLITE_OK ){
+              int i;
+              const char *zReply = (const char*)reply.aData;
               assert( p->zContainer==0 );
+              for(i=0; i<reply.nData && zReply[i]!='/'; i++);
+              p->zContainer = sqlite3_mprintf("%.*s", i, zReply);
+              p->zAccount = sqlite3_mprintf(
+                  "%.*s", reply.nData-i-1, &zReply[i+1]
+              );
               p->szBlk = reply.iVal;
-              p->zContainer = sqlite3_malloc(reply.nData);
-              if( p->zContainer==0 ){
+              if( p->zContainer==0 || p->zAccount==0 ){
                 rc = SQLITE_NOMEM;
-              }else{
-                memcpy(p->zContainer, reply.aData, reply.nData);
-                p->zAccount = &p->zContainer[strlen(p->zContainer)+1];
               }
             }
 

@@ -76,6 +76,10 @@ typedef unsigned char u8;
 typedef sqlite3_uint64 u64;
 typedef sqlite3_int64 i64;
 
+#define BCV_HTTP_GET           1
+#define BCV_HTTP_PUT           2
+#define BCV_HTTP_DELETE        3
+
 
 typedef struct CurlRequest CurlRequest;
 struct CurlRequest {
@@ -85,6 +89,9 @@ struct CurlRequest {
   int bGen;                       /* True if have seen x-goog-metageneration */
   char *zStatus;
   char *zETag;
+
+  char *zHttpUrl;                 /* URL used by this curl request */
+  int eHttpMethod;                /* Method used by this curl request */
 };
 
 typedef struct MemoryDownload MemoryDownload;

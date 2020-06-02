@@ -34,6 +34,10 @@
 **
 ** If an error occurs, the sqlite3_bcv_errmsg() API may in some cases be used
 ** to obtain an English language error message.
+**
+** Calls that return an integer error code may return either a non-extended
+** SQLite error code (rc < 400) or an HTTP error code (rc >= 400) if an 
+** HTTP error occurs.
 */
 
 #ifdef __cplusplus
@@ -158,9 +162,14 @@ const char *sqlite3_bcv_errmsg(sqlite3_bcv *p);
 ** identifies the database to upload from the local file-system. Argument
 ** zRemote is the name the database will take within cloud storage.
 **
-** SQLITE_OK is returned if the database is successfully uploaded, or an
-** SQLite error code otherwise.
-*/
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256.
+*/ 
 int sqlite3_bcv_upload(
   sqlite3_bcv *p,
   const char *zLocal,
@@ -172,8 +181,13 @@ int sqlite3_bcv_upload(
 ** is the name of the database within cloud storage, and zLocal is the
 ** local path at which the downloaded databse will be written.
 **
-** SQLITE_OK is returned if the database is successfully uploaded, or an
-** SQLite error code otherwise.
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256.
 */
 int sqlite3_bcv_download(
   sqlite3_bcv *p,
@@ -184,7 +198,13 @@ int sqlite3_bcv_download(
 /*
 ** Create a copy of an existing cloud storage database within its container.
 **
-** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256.
 */
 int sqlite3_bcv_copy(
   sqlite3_bcv *p,
@@ -195,7 +215,13 @@ int sqlite3_bcv_copy(
 /*
 ** Delete a database from cloud storage.
 **
-** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256.
 */
 int sqlite3_bcv_delete(
   sqlite3_bcv *p,
@@ -207,14 +233,26 @@ int sqlite3_bcv_delete(
 ** already exists, it is not an error, but any existing manifest file is
 ** simply clobbered.
 **
-** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256.
 */
 int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock);
 
 /*
 ** Delete the entire cloud storage container or bucket.
 **
-** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+** If the operation is successful, SQLITE_OK is returned. Or, if
+** an HTTPS request made to the cloud storage system fails, an HTTP 
+** response code is returned. Or, if some other error occurs (for example, 
+** a failed memory allocation), a non-extended SQLite error code is 
+** returned. All HTTP response codes that may be returned are greater
+** than or equal to 400. All non-extended SQLite error codes are positive
+** integers smaller than 256.
 */
 int sqlite3_bcv_destroy(sqlite3_bcv *p);
 
