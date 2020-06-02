@@ -67,6 +67,7 @@
     <ClCompile Include="DTMElementTests.cpp" />
     <ClCompile Include="ECSchemaTests.cpp" />
     <ClCompile Include="ECTests.cpp" />
+    <ClCompile Include="GeomPartTests.cpp" />
     <ClCompile Include="GeomTestHelper.cpp" />
     <ClCompile Include="gtestmain.cpp" />
     <ClCompile Include="ImportConfigEditor.cpp" />

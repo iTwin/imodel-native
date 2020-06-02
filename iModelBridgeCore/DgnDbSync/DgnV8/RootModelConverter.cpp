@@ -1665,7 +1665,7 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
                 bool isInGroup = m_converter.GetSyncInfo().IsElementInNamedGroup(m_parentId, childElementId);
                 if (group.IsValid() && !isInGroup)
                     {
-                    if (Utf8String::IsNullOrEmpty(group->GetUserLabel()))
+                    if (Utf8String::IsNullOrEmpty(group->GetUserLabel()) || 0 == strcmp("Named Group", group->GetUserLabel()))
                         {
                         group->SetUserLabel(Utf8String(ng->GetName().c_str()).c_str());
                         group->Update();
