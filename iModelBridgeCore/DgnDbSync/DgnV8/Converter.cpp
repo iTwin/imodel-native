@@ -3864,7 +3864,12 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         }
 
     // Map in the DgnV8 model.
-    DgnModelId modelId = _MapModelIntoProject(v8Model, newModelName.c_str(), v8ModelRef.AsDgnAttachmentCP());
+    DgnModelId modelId;
+    if (!v8Model.IsDictionaryModel()) 
+        modelId = _MapModelIntoProject(v8Model, newModelName.c_str(), v8ModelRef.AsDgnAttachmentCP());
+    else
+        modelId = m_jobDefinitionModelId;
+
     if (!modelId.IsValid())
         {
         return ResolvedModelMapping();

@@ -2255,7 +2255,7 @@ struct ConvertModelACSTraverser : DgnV8Api::IACSTraversalHandler
 
         // See if this ACS already exists...if same name from different models, just keep first one...
         Utf8String    acsName(acsNameV8.c_str());
-        DgnCode       acsCode = AuxCoordSystem::CreateCode(m_v8mm.GetDgnModel(), nullptr, acsName);
+        DgnCode       acsCode = AuxCoordSystem::CreateCode(m_v8mm.GetDgnModel(), m_definitionModel, acsName);
         DgnElementId  acsId = m_v8mm.GetDgnModel().GetDgnDb().Elements().QueryElementIdByCode(acsCode);
 
         if (acsId.IsValid()) // Do we need to do something here for update???

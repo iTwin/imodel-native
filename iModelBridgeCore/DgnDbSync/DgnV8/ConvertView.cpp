@@ -1454,8 +1454,6 @@ BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, U
 
     DgnModelId targetModelId = GetDgnModel().GetModelId();
 
-    //TODO: Generate a code for a dynamic view.
-
     DgnElement::CreateParams params(m_converter.GetDgnDb(), targetModelId, sectionLocationId);
     element = elementHandler->Create(params);
     if (!element.IsValid())
@@ -1467,10 +1465,6 @@ BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, U
     if (SUCCESS != UpdateProperties(*element, viewName))
         return BSIERROR;
 
-    //TODO: Store and update the aspect
-    DgnElementId externalSourceAspectScope = m_converter.GetRepositoryLinkId(*m_viewInfo->GetRootDgnFileP());
-    auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, viewName, *m_viewInfo, m_converter.GetDgnDb());
-    aspect.AddAspect(*element);
     return SUCCESS;
     }
 
@@ -1514,47 +1508,24 @@ BentleyStatus   DynamicViewMapper::CreateRelationship(DgnElementR sectionLocatio
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::ConvertDynamicView(DgnV8Api::NamedView& namedView, TransformCR trans, DgnV8Api::ISupportCallout& callout)
     {
-    DynamicViewMapper mapper(namedView, trans, callout, *this);
-    if (SUCCESS != mapper.Init())
-        return ERROR;
-
-    DgnViewId existingViewId;
-    Utf8String v8ViewName(namedView.GetName().c_str());
-    Utf8String name = _GetNamePrefix().append(_ComputeViewName(v8ViewName, namedView.GetViewInfo()));
-
-    if (IsUpdating())
+    DgnV8Api::ElementHandle namedViewElement(namedView.GetElementRef(), NULL);
+    auto v8mm = GetResolvedModelMapping(*namedViewElement.GetDgnModelP(), Transform::FromIdentity());
+    ElementConversionResults result;
+    ChangeDetector::SearchResults changeInfo;
+    if (GetChangeDetector()._IsElementChanged(changeInfo, *this, namedViewElement, v8mm))
         {
-        DgnElementId externalSourceAspectScope = GetRepositoryLinkId(*namedView.GetViewInfo().GetRootDgnFileP());
-        SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
-
-        std::tie(aspect, existingViewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(externalSourceAspectScope, namedView.GetViewInfo(), GetDgnDb());
-        if (existingViewId.IsValid())
-            {
-            v8ViewName = aspect.GetV8ViewName();
-            }
-        else
-            {
-            existingViewId = ViewDefinition::QueryViewId(*GetJobDefinitionModel(), name);
-            }
-        }
-    DgnElementPtr element;
-    if (existingViewId.IsValid())
-        {
-        element = GetDgnDb().Elements().GetForEdit<DgnElement>(existingViewId);
-        mapper.UpdateProperties(*element, name);
-        if (element->Update().IsNull())
-            return BSIERROR;
-        }
-    else
-        {
-        if (SUCCESS != mapper.CreateSectionLocation(element, name))
+        DynamicViewMapper mapper(namedView, trans, callout, *this);
+        if (SUCCESS != mapper.Init())
             return ERROR;
 
-        if (element->Insert().IsNull())
+        Utf8String v8ViewName(namedView.GetName().c_str());
+        Utf8String name = _GetNamePrefix().append(_ComputeViewName(v8ViewName, namedView.GetViewInfo()));
+
+        if (SUCCESS != mapper.CreateSectionLocation(result.m_element, name))
             return BSIERROR;
         }
-
-    return SUCCESS;
+    ProcessConversionResults(result, changeInfo, namedViewElement, v8mm); // always call this, even if no change, so that it can mark the namedView element as having been seen.
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
