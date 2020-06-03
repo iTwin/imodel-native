@@ -437,6 +437,8 @@ int bcvAccessPointInit(
       break;
     default:
       p->eStorage = BCV_STORAGE_GOOGLE;
+      p->zAccount = zUser;
+      p->zSas = bcvStrdup(zKey);
       assert( eType==SQLITE_BCV_GOOGLE );
       break;
   }

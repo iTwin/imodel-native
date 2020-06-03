@@ -8,7 +8,10 @@ set tempDir=%imodeljsDir%
 REM Install local build of the platform-specific native platform packages for use by examples and tests
 if not exist %tempDir%\core\backend goto :badJsdir
 
+if exist %destDir% goto :doCopy
 set destDir=%tempDir%\core\backend\node_modules\@bentley\imodeljs-native
+
+:doCopy
 echo on
 xcopy /QYIS %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-native %destDir%
 xcopy /QYIS %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-win32-x64 %destDir%\imodeljs-win32-x64

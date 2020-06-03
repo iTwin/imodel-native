@@ -97,6 +97,9 @@ struct BlockcacheFile {
 
   int iPrevBlk;                   /* Within checkpoints, prev. block written */
   int iPrevLoc;                   /* Location of iPrevBlk withing cache-file */
+
+  sqlite3_int64 nMsg;             /* Message exchanges with daemon */
+  sqlite3_int64 msMsgWait;        /* Total us spent waiting */
 };
 
 /* Valid message types */
@@ -434,7 +437,11 @@ static int bcvExchangeMessage(
 ){
   int rc = SQLITE_OK;
   int ii;
+  sqlite3_vfs *pVfs = ORIGVFS(&bcv_vfs);
+  sqlite3_int64 tm1;
+  sqlite3_int64 tm2;
 
+  pVfs->xCurrentTimeInt64(pVfs, &tm1);
   for(ii=0; ii<5 && rc==SQLITE_OK; ii++){
     rc = bcvSendMessage(p->fdDaemon, pSend);
     if( rc==SQLITE_OK ){
@@ -474,6 +481,9 @@ static int bcvExchangeMessage(
       break;
     }
   }
+  pVfs->xCurrentTimeInt64(pVfs, &tm2);
+  p->msMsgWait += (tm2-tm1);
+  p->nMsg++;
 
   if( rc==SQLITE_OK && pReply->eType==BCV_MESSAGE_ERROR_REPLY ){
     sqlite3_log(SQLITE_ERROR, "error from blockcachevfsd: rc=%d msg=%.*s",
@@ -760,46 +770,56 @@ static int bcvFileControl(sqlite3_file *pFile, int op, void *pArg){
   sqlite3_file *pOrig = ORIGFILE(pFile);
   int rc;
 
-  rc = pOrig->pMethods->xFileControl(pOrig, op, pArg);
-  if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
-    char *z = *(char**)pArg;
-    z = sqlite3_mprintf("blockcachevfs/%z", z);
-    *(char**)pArg = z;
-  }
-  else if( p->bDaemon==0 && op==SQLITE_FCNTL_CKPT_DONE ){
-    assert( p->fdDaemon );
-    if( rc==SQLITE_OK || rc==SQLITE_NOTFOUND ){
-      if( p->lockMask==0 ){
-        p->bSendCkptOnClose = 1;
-      }
+  if( op==SQLITE_FCNTL_BCV_N_MSG ){
+    sqlite3_int64 *pi = (sqlite3_int64*)pArg;
+    *pi = p->nMsg;
+    rc = SQLITE_OK;
+  }else if( op==SQLITE_FCNTL_BCV_MS_MSG ){
+    sqlite3_int64 *pi = (sqlite3_int64*)pArg;
+    *pi = p->msMsgWait;
+    rc = SQLITE_OK;
+  }else{
+    rc = pOrig->pMethods->xFileControl(pOrig, op, pArg);
+    if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
+      char *z = *(char**)pArg;
+      z = sqlite3_mprintf("blockcachevfs/%z", z);
+      *(char**)pArg = z;
     }
-    p->iPrevBlk = -1;
-  }
-  else if( rc==SQLITE_NOTFOUND && op==SQLITE_FCNTL_PRAGMA ){
-    char **aPragma = (char**)pArg;
-    char *zName = aPragma[1];
-    if( memcmp("bcv_", zName, 4)==0 ){
-      char *zMsg;
-      BlockcacheMessage msg;
-      BlockcacheMessage reply;
-      memset(&msg, 0, sizeof(msg));
-      memset(&reply, 0, sizeof(reply));
-      
-      zMsg = sqlite3_mprintf("%s=%s", zName, aPragma[2] ? aPragma[2] : "");
-      if( zMsg==0 ) return SQLITE_NOMEM;
-
-      msg.eType = BCV_MESSAGE_QUERY;
-      msg.nData = strlen(zMsg);
-      msg.aData = (u8*)zMsg;
-
-      rc = bcvExchangeMessage(p, &msg, &reply);
-      if( rc==SQLITE_OK ){
-        assert( reply.eType==BCV_MESSAGE_QUERY_REPLY );
-        aPragma[0] = sqlite3_mprintf("%.*s", reply.nData, reply.aData);
-        sqlite3_free(reply.pFree);
-        rc = reply.iVal;
+    else if( p->bDaemon==0 && op==SQLITE_FCNTL_CKPT_DONE ){
+      assert( p->fdDaemon );
+      if( rc==SQLITE_OK || rc==SQLITE_NOTFOUND ){
+        if( p->lockMask==0 ){
+          p->bSendCkptOnClose = 1;
+        }
       }
-      sqlite3_free(zMsg);
+      p->iPrevBlk = -1;
+    }
+    else if( rc==SQLITE_NOTFOUND && op==SQLITE_FCNTL_PRAGMA ){
+      char **aPragma = (char**)pArg;
+      char *zName = aPragma[1];
+      if( memcmp("bcv_", zName, 4)==0 ){
+        char *zMsg;
+        BlockcacheMessage msg;
+        BlockcacheMessage reply;
+        memset(&msg, 0, sizeof(msg));
+        memset(&reply, 0, sizeof(reply));
+        
+        zMsg = sqlite3_mprintf("%s=%s", zName, aPragma[2] ? aPragma[2] : "");
+        if( zMsg==0 ) return SQLITE_NOMEM;
+  
+        msg.eType = BCV_MESSAGE_QUERY;
+        msg.nData = strlen(zMsg);
+        msg.aData = (u8*)zMsg;
+  
+        rc = bcvExchangeMessage(p, &msg, &reply);
+        if( rc==SQLITE_OK ){
+          assert( reply.eType==BCV_MESSAGE_QUERY_REPLY );
+          aPragma[0] = sqlite3_mprintf("%.*s", reply.nData, reply.aData);
+          sqlite3_free(reply.pFree);
+          rc = reply.iVal;
+        }
+        sqlite3_free(zMsg);
+      }
     }
   }
 

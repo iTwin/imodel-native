@@ -190,6 +190,28 @@ int sqlite3_bcv_detach(
   char **pzErr                    /* OUT: error message (if any) */
 );
 
+/*
+** The following two file controls may be used with blockcachevfs databases.
+** In both cases, the (void*) argument should point to an output value of 
+** type (sqlite3_int64). It is set as follows:
+**
+** SQLITE_FCNTL_BCV_N_MSG:
+**     The total number of times the client has had to wait for a message
+**     from the connected daemon process.
+**
+** SQLITE_FCNTL_BCV_MS_MSG:
+**     The total number of ms the client has spent waiting for messages
+**     from the connected daemon process.
+**
+** Example code, assuming "db" is an (sqlite3*) database handle:
+**
+**  sqlite3_int64 msWait = 0;
+**  sqlite3_file_control(db, SQLITE_FCNTL_BCV_MS_MSG, "main", (void*)&msWait);
+**  cout << "total cumulative wait time is " << msWait << "ms." << endl;
+*/
+#define SQLITE_FCNTL_BCV_N_MSG  208831313
+#define SQLITE_FCNTL_BCV_MS_MSG 208831314
+
 #ifdef __cplusplus
 } /* end of the extern "C" block */
 #endif

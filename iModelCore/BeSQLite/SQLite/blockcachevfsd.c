@@ -876,6 +876,7 @@ static void bcvAccessPointNew(
   }else{
     zUser = pCmd->zProject;
     zKey = pCmd->zSas;
+    eType = SQLITE_BCV_GOOGLE;
   }
 
   if( bcvAccessPointInit(p, eType, zUser, zKey, &zErr) ){
@@ -1628,29 +1629,6 @@ static void daemon_usage(char *argv0){
   fatal_error("Usage: %s daemon ?SWITCHES? CONTAINER [CONTAINER...]", argv0);
 }
 
-static void daemon_msg_log(const char *zFmt, ...){
-  char *zMsg;
-  va_list ap;
-  va_start(ap, zFmt);
-  zMsg = sqlite3_vmprintf(zFmt, ap);
-  fprintf(stdout, "INFO(m): %s\n", zMsg);
-  fflush(stdout);
-  sqlite3_free(zMsg);
-  va_end(ap);
-}
-
-static void daemon_event_log(DaemonCtx *p, const char *zFmt, ...){
-  va_list ap;
-  va_start(ap, zFmt);
-  if( p->cmd.mLog & BCV_LOG_EVENT ){
-    char *zMsg = sqlite3_vmprintf(zFmt, ap);
-    fprintf(stdout, "INFO(e): %s\n", zMsg);
-    fflush(stdout);
-    sqlite3_free(zMsg);
-  }
-  va_end(ap);
-}
-
 static void daemon_vlog(DaemonCtx *p, int flags, const char *zFmt, va_list ap){
   if( p->cmd.mLog & flags ){
     char *zMsg = sqlite3_vmprintf(zFmt, ap);
@@ -1666,6 +1644,24 @@ static void daemon_vlog(DaemonCtx *p, int flags, const char *zFmt, va_list ap){
     fflush(stdout);
     sqlite3_free(zMsg);
   }
+}
+
+static void daemon_event_log(DaemonCtx *p, const char *zFmt, ...){
+  va_list ap;
+  va_start(ap, zFmt);
+  daemon_vlog(p, BCV_LOG_EVENT, zFmt, ap);
+  va_end(ap);
+}
+
+static void daemon_msg_log(const char *zFmt, ...){
+  char *zMsg;
+  va_list ap;
+  va_start(ap, zFmt);
+  zMsg = sqlite3_vmprintf(zFmt, ap);
+  fprintf(stdout, "INFO(m): %s\n", zMsg);
+  fflush(stdout);
+  sqlite3_free(zMsg);
+  va_end(ap);
 }
 
 static void daemon_log(DaemonCtx *p, int flags, const char *zFmt, ...){
