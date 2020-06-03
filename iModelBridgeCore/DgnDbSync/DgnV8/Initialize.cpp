@@ -806,24 +806,6 @@ void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibr
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-static void* getBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
-    {
-    BeFileName pathname(BeFileName::FileNameParts::DevAndDir, bridgeDllName);
-
-    BeGetProcAddress::SetLibrarySearchPath(pathname);
-    auto hinst = BeGetProcAddress::LoadLibrary(bridgeDllName);
-    if (!hinst)
-        {
-        LOG.fatalv(L"%ls: not found or could not be loaded", bridgeDllName.c_str());
-        return nullptr;
-        }
-
-    return BeGetProcAddress::GetProcAddress(hinst, funcName);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 static void* getProcAddress(BeFileNameCR bridgeDllName, Utf8CP funcName)
@@ -905,7 +887,7 @@ BentleyStatus Converter::GetAffinityEx(WCharP buffer, const size_t bufferSize, i
         return BSISUCCESS;
         }
 
-    auto isMyFile = (T_iModelBridge_isMyFile*) getBridgeFunction(affinityLibraryPath, "iModelBridge_isMyFile");
+    auto isMyFile = (T_iModelBridge_isMyFile*) getProcAddress(affinityLibraryPath, "iModelBridge_isMyFile");
     if (isMyFile)
         {
         if (isMyFile(buffer, bufferSize, affinityLevel, file))
