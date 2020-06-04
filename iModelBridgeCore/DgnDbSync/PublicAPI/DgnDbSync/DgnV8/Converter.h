@@ -500,8 +500,11 @@ struct IChangeDetector
 //=======================================================================================
 struct IFinishConversion
 {
-    //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been converted.
+    //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been converted. Note: this is called only in the normal data-conversion passes.
     virtual void _OnFinishConversion(Converter&) = 0;
+
+    //! Called at the end of the "all docs processed" post-processing pass. This is not called during the data-conversion passes.
+    virtual void _OnAllDocsProcessedEnd(Converter&) {}
 };
 
 struct ISChemaImportVerifier
@@ -2751,6 +2754,8 @@ protected:
     void RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
     void RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
     void Transform2dAttachments(DgnV8ModelR v8ParentModel);
+    BentleyStatus DetectDeletedEmbeddedFiles();
+    BentleyStatus DeleteOrphanReferenceModels();
 
 
 public:
@@ -2779,9 +2784,8 @@ public:
     DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_v8Files; }
 
     DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
-    DGNDBSYNC_EXPORT BentleyStatus ConvertData();
-    DGNDBSYNC_EXPORT BentleyStatus DetectDeletedEmbeddedFiles();
-    DGNDBSYNC_EXPORT BentleyStatus DeleteOrphanReferenceModels();
+    DGNDBSYNC_EXPORT BentleyStatus ConvertData();        // called in the normal conversion passes (once for each masterfile)
+    DGNDBSYNC_EXPORT void OnAllDocsProcessed(); // called in the all-docs-processed post-processing pass (one time only, after all masterfiles have been processed)
 
     DGNDBSYNC_EXPORT int64_t FindOrInsertModelIntoAffinityDb(iModelBridgeAffinityDb& affinityDb, DgnModelRefR model, ResolvedModelMapping v8mm);
     DGNDBSYNC_EXPORT BentleyStatus DiscloseFileAndAffinity(iModelBridgeAffinityDb&, DgnV8FileR v8File);
@@ -3012,7 +3016,7 @@ struct XDomain
 
     //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted.
     virtual void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) {}
-    //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been processed.
+    //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been processed. Note: this is called only during the data-conversion passes. See also _OnAllDocsProcessedBegin.
     virtual void _OnFinishConversion(Converter&) = 0;
     //! This is invoked after _OnFinishConversion to get all the elements that have an external source aspect and were manually created during _OnFinishConversion.
     virtual DgnElementIdSet _GetManuallyCreatedElementIds(Converter&) const { return DgnElementIdSet(); };
@@ -3028,6 +3032,11 @@ struct XDomain
     //! must be handled by the XDomain
     virtual void _OnElementClassChanged(Converter& converter, DgnV8EhCR v8eh, DgnElementCR newElement, DgnElementId originalElementId) {}
 
+    //! Called before the "all docs processed" post-processing pass begins. This is not called during the data-conversion passes.
+    virtual void _OnAllDocsProcessedBegin(Converter&) {}
+
+    //! Called at the end of the "all docs processed" post-processing pass. This is not called during the data-conversion passes.
+    virtual void _OnAllDocsProcessedEnd(Converter&) {}
 };
 
 //=======================================================================================

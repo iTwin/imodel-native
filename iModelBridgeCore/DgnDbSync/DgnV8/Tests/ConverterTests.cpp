@@ -2039,10 +2039,25 @@ extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey
 //    }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+struct AllDocsProcessedTestXDomain : DgnV8::XDomain
+    {
+    int m_allDocsProcessedCalls{};
+
+    void _OnFinishConversion(Converter&) override {;}
+    void _OnAllDocsProcessedBegin(Converter&) override {++m_allDocsProcessedCalls;}
+    void _OnAllDocsProcessedEnd(Converter&) override {++m_allDocsProcessedCalls;}
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      5/19
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
     {
+    AllDocsProcessedTestXDomain allDocsProcessedMonitor;
+    XDomain::Register(allDocsProcessedMonitor);
+
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0");
     static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
     m_params.SetMatchOnEmbeddedFileBasename(true);
@@ -2120,6 +2135,8 @@ TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
 
     DoUpdate(m_dgnDbFileName, m_v8FileName, /*expectFailure*/false, /*expectUpdate*/true, /*detectDeletedDocuments*/true, /*onAllDocsProcessed*/true);
 
+    ASSERT_EQ(allDocsProcessedMonitor.m_allDocsProcessedCalls, 2);
+
     if (true)
         {
         auto db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
@@ -2157,6 +2174,8 @@ TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
 
     m_params.SetMatchOnEmbeddedFileBasename(false);
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0");
+
+    XDomain::UnRegister(allDocsProcessedMonitor);
     }
 
 TEST_F(ConverterTests, EmbeddedFileIdRecipe)

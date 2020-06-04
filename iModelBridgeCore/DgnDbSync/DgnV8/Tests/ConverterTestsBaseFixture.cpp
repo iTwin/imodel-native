@@ -422,7 +422,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             if (doDetectDeletedDocuments)
                 updater._DetectDeletedDocuments();
             if (onAllDocsProcessed)
-                updater.DetectDeletedEmbeddedFiles();
+                updater.OnAllDocsProcessed();
             }
         }
     else
@@ -449,7 +449,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             if (doDetectDeletedDocuments)
                 updater._DetectDeletedDocuments();
             // if (onAllDocsProcessed)
-            //     updater.DetectDeletedEmbeddedFiles();
+            //     updater.OnAllDocsProcessed();
             }
         }
     db->SaveChanges();

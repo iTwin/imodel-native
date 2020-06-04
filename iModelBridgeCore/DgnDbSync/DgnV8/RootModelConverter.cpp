@@ -2513,6 +2513,30 @@ BentleyStatus  RootModelConverter::ConvertData()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::OnAllDocsProcessed()
+    {
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_OnAllDocsProcessedBegin(*this);
+
+    DetectDeletedEmbeddedFiles();
+    DeleteOrphanReferenceModels();
+        
+    // TODO Detect multiply referenced models, and report an issue if the many references to them do not use the same name. PBI#291480
+    // Doing that would require selecting each InformationPartition that is "referenced by" more than on References Subject element.
+    // See Converter::OnDeleteReferencesSubject for the kind of logic we need to detect references to a partition.
+    // At this time, we only have JSON properties that record a reference from a References Subject to a partition. That is
+    // not adequate to do the queries efficiently. So, this fix will have to wait for a BIS core schema change. 
+    
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_OnAllDocsProcessedEnd(*this);
+
+    for (auto f : m_finishers)
+        f->_OnAllDocsProcessedEnd(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::_OnUpdateLevel(DgnV8Api::LevelHandle const& v8Level, DgnCategoryId cat, DgnV8FileR v8File)
