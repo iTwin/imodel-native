@@ -92,6 +92,12 @@
     <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)imodel02\Bridges\Civil\;$(SrcRoot)imodel02\Bridges\Civil\ORDBridge\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\Delivery\PublishedApi\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(OutRoot)Winx64\BuildContexts\CivilIModelBridges\PublicAPI\;$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
