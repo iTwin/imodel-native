@@ -158,6 +158,7 @@ protected:
             }
         return HierarchyLevelIdentifier();
         }
+#ifdef wip_enable_display_label_postprocessor
     bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const& hlIdentifier, RulesetVariables const&, int) const override
         {
         BeMutexHolder lock(m_mutex);
@@ -174,6 +175,7 @@ protected:
             }
         return bvector<DataSourceInfo>();
         }
+#endif
     DataSourceInfo _FindDataSource(DataSourceIdentifier const& identifier, RulesetVariables const&, int) const override
         {
         BeMutexHolder lock(m_mutex);

@@ -1848,6 +1848,7 @@ DataSourceInfo NodesCache::CreateDataSourceInfo(DataSourceIdentifier identifier,
     return info;
     }
 
+#ifdef wip_enable_display_label_postprocessor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1891,6 +1892,7 @@ bvector<DataSourceInfo> NodesCache::_FindDataSources(CombinedHierarchyLevelIdent
         }
     return infos;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

@@ -99,7 +99,9 @@ protected:
 
     virtual BeGuid _FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const&) const = 0;
     virtual HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const = 0;
+#ifdef wip_enable_display_label_postprocessor
     virtual bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int partsToGet) const = 0;
+#endif
     virtual DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int partsToGet) const = 0;
     virtual DataSourceInfo _FindDataSource(BeGuidCR nodeId, int partsToGet) const = 0;
 
@@ -134,8 +136,10 @@ public:
     bvector<uint64_t> GetNodeIndex(BeGuidCR nodeId) const {return _GetNodeIndex(nodeId);}
 
     BeGuid FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const& identifier) const {return _FindPhysicalHierarchyLevelId(identifier);}
-    HierarchyLevelIdentifier FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const {return _FindHierarchyLevel(connectionId, rulesetId, virtualParentNodeId, removalId);}
-    bvector<DataSourceInfo> FindDataSources(CombinedHierarchyLevelIdentifier const& hlIdentifier, RulesetVariables const& variables, int partsToGet = 0) const {return _FindDataSources(hlIdentifier, variables, partsToGet);}
+    HierarchyLevelIdentifier FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const { return _FindHierarchyLevel(connectionId, rulesetId, virtualParentNodeId, removalId); }
+#ifdef wip_enable_display_label_postprocessor
+    bvector<DataSourceInfo> FindDataSources(CombinedHierarchyLevelIdentifier const& hlIdentifier, RulesetVariables const& variables, int partsToGet = 0) const { return _FindDataSources(hlIdentifier, variables, partsToGet); }
+#endif
     DataSourceInfo FindDataSource(DataSourceIdentifier const& identifier, RulesetVariables const& variables, int partsToGet = 0) const {return _FindDataSource(identifier, variables, partsToGet);}
     DataSourceInfo FindDataSource(BeGuidCR nodeId, int partsToGet = 0) const {return _FindDataSource(nodeId, partsToGet);}
 
@@ -313,7 +317,9 @@ protected:
     ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(BeGuidCR nodeId) const override;
     ECPRESENTATION_EXPORT BeGuid _FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const&) const override;
     ECPRESENTATION_EXPORT HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const override;
+#ifdef wip_enable_display_label_postprocessor
     ECPRESENTATION_EXPORT bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int) const override;
+#endif
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int) const override;
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(BeGuidCR nodeId, int) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR, CombinedHierarchyLevelIdentifier const&, bool) const override;

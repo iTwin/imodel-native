@@ -220,6 +220,7 @@ HierarchyLevelIdentifier NodesCacheWrapper::_FindHierarchyLevel(Utf8CP connectio
     return m_diskCache.FindHierarchyLevel(connectionId, rulesetId, virtualParentNodeId, removalId);
     }
 
+#ifdef wip_enable_display_label_postprocessor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -255,6 +256,7 @@ bvector<DataSourceInfo> NodesCacheWrapper::_FindDataSources(CombinedHierarchyLev
 
     return persistedDataSources;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
