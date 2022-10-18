@@ -574,6 +574,11 @@ BentleyStatus NodesCache::DbFactory::InitializeCacheTables(Db& db)
             "[Visibility] INTEGER NOT NULL DEFAULT 0, "
             "[Data] TEXT NOT NULL, "
             "[Label] TEXT, "
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+            "[OrderValue] BINARY, "
+#else
+            "[OrderValue] TEXT NOT NULL, "
+#endif
             "[InstanceKeysSelectQuery] TEXT";
         EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_Nodes, ddl));
         EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Nodes_DataSourceId] ON [" NODESCACHE_TABLENAME_Nodes "]([DataSourceId])"));
@@ -622,44 +627,6 @@ BentleyStatus NodesCache::DbFactory::InitializeCacheTables(Db& db)
             "[LastUsedTime] INTEGER NOT NULL";
         EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_Rulesets, ddl));
         EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE UNIQUE INDEX [UX_Rulesets_Identifier] ON [" NODESCACHE_TABLENAME_Rulesets "]([Identifier])"));
-        }
-    if (!db.TableExists(NODESCACHE_TABLENAME_NodesOrder))
-        {
-        Utf8CP ddl =
-            "[HierarchyLevelId] " NAVNODES_CACHE_ID_TYPE " NOT NULL REFERENCES " NODESCACHE_TABLENAME_HierarchyLevels "([Id]) ON DELETE CASCADE, "
-            "[PhysicalHierarchyLevelId] " NAVNODES_CACHE_ID_TYPE " NOT NULL REFERENCES " NODESCACHE_TABLENAME_PhysicalHierarchyLevels "([Id]) ON DELETE CASCADE, "
-            "[DataSourceId] " NAVNODES_CACHE_ID_TYPE " NOT NULL REFERENCES " NODESCACHE_TABLENAME_DataSources "([Id]) ON DELETE CASCADE, "
-            "[NodeId] " NAVNODES_CACHE_ID_TYPE " PRIMARY KEY NOT NULL UNIQUE REFERENCES " NODESCACHE_TABLENAME_Nodes "([Id]) ON DELETE CASCADE, "
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-            "[OrderValue] BINARY";
-#else
-            "[OrderValue] TEXT NOT NULL";
-#endif
-        EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_NodesOrder, ddl));
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Order_PhysicalHierarchy] ON [" NODESCACHE_TABLENAME_NodesOrder "]([PhysicalHierarchyLevelId],[OrderValue])"));
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Order_HierarchyLevel] ON [" NODESCACHE_TABLENAME_NodesOrder "]([HierarchyLevelId],[OrderValue])"));
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Order_DataSource] ON [" NODESCACHE_TABLENAME_NodesOrder "]([DataSourceId],[OrderValue])"));
-        Utf8CP triggerDdl = "CREATE TRIGGER IF NOT EXISTS [TRIGG_" NODESCACHE_TABLENAME_NodesOrder "] AFTER INSERT ON [" NODESCACHE_TABLENAME_Nodes "] "
-            "BEGIN"
-            "    INSERT INTO [" NODESCACHE_TABLENAME_NodesOrder "] "
-            "    SELECT [hl].[Id], [hl].[PhysicalHierarchyLevelId], [d].[Id], NEW.[Id], "
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-            "    " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([d].[FullIndex], NEW.[Index]) "
-#else
-            "    CASE WHEN length([d].[FullIndex]) > 0 THEN ([d].[FullIndex] || '-' || NEW.[Index]) ELSE (NEW.[Index]) END "
-#endif
-            "    FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
-            "    JOIN [" NODESCACHE_TABLENAME_DataSources "] d ON [d].[HierarchyLevelId] = [hl].[Id] "
-            "    WHERE [d].[Id] = NEW.[DataSourceId]; "
-            "END";
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql(triggerDdl));
-        Utf8CP triggerPhysicalHierarchyUpdateDdl = "CREATE TRIGGER IF NOT EXISTS [TRIGG_" NODESCACHE_TABLENAME_NodesOrder "_PhysicalHierarchyLevelUpdate] AFTER UPDATE OF [PhysicalHierarchyLevelId] ON [" NODESCACHE_TABLENAME_HierarchyLevels "] "
-            "BEGIN"
-            "    UPDATE [" NODESCACHE_TABLENAME_NodesOrder "] "
-            "    SET [PhysicalHierarchyLevelId] = NEW.[PhysicalHierarchyLevelId] "
-            "    WHERE [HierarchyLevelId] = NEW.[Id]; "
-            "END";
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql(triggerPhysicalHierarchyUpdateDdl));
         }
     return SUCCESS;
     }
@@ -1458,8 +1425,8 @@ void NodesCache::CacheNode(DataSourceIdentifier const& datasourceIdentifier, Nav
 
     static Utf8CP query =
         "INSERT INTO [" NODESCACHE_TABLENAME_Nodes "] ("
-        "[Id], [DataSourceId], [Index], [Visibility], [Data], [Label], [InstanceKeysSelectQuery]"
-        ") VALUES (?, ?, ?, ?, ?, ?, ?)";
+        "[Id], [DataSourceId], [Index], [Visibility], [Data], [Label], [OrderValue], [InstanceKeysSelectQuery]"
+        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -1481,6 +1448,17 @@ void NodesCache::CacheNode(DataSourceIdentifier const& datasourceIdentifier, Nav
     Utf8String nodeStr = GetSerializedJson(NavNodesHelper::SerializeNodeToJson(node));
     stmt->BindText(bindingIndex++, nodeStr.c_str(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, node.GetLabelDefinition().GetDisplayValue(), Statement::MakeCopy::Yes);
+
+    bvector<uint64_t> orderValue;
+    ContainerHelpers::Push(orderValue, datasourceIdentifier.GetIndex());
+    ContainerHelpers::Push(orderValue, index);
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+    stmt->BindBlob(bindingIndex++, reinterpret_cast<void const*>(&orderValue.front()), orderValue.size() * sizeof(uint64_t), Statement::MakeCopy::No);
+#else
+    Utf8String orderValueStr = NodesCacheHelpers::IndexToString(orderValue, true);
+    stmt->BindText(bindingIndex++, orderValueStr.c_str(), Statement::MakeCopy::No);
+#endif
+
     if (node.GetInstanceKeysSelectQuery().IsValid())
         stmt->BindText(bindingIndex++, BeRapidJsonUtilities::ToString(node.GetInstanceKeysSelectQuery()->ToJson()), Statement::MakeCopy::Yes);
     else

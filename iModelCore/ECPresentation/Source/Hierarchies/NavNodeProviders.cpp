@@ -3888,17 +3888,16 @@ protected:
         {
         static Utf8CP query =
             "SELECT " NODE_SELECT_STMT("hl", "phl", "n", "nk")
-            "  FROM [" NODESCACHE_TABLENAME_NodesOrder "] no "
-            "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [no].[NodeId] "
+            "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
             "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
             "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
             "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] "
             "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
             "  JOIN [" NODESCACHE_TABLENAME_PhysicalHierarchyLevels "] phl ON [phl].[Id] = [hl].[PhysicalHierarchyLevelId] "
-            " WHERE  [no].[HierarchyLevelId] = ? "
+            " WHERE  [hl].[Id] = ? "
             "    AND  [n].[Visibility] != ? "
             "    AND " NODESCACHE_FUNCNAME_VariablesMatch "(+[dsv].[Variables], ?) "
-            " ORDER BY [no].[OrderValue] ";
+            " ORDER BY [n].[OrderValue]";
         return query;
         }
 
@@ -4089,17 +4088,16 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
     {
     Utf8String query =
         "SELECT " NODE_SELECT_STMT("hl", "phl", "n", "nk")
-        "  FROM [" NODESCACHE_TABLENAME_NodesOrder "] no "
-        "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [no].[NodeId] "
+        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
         "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] "
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
         "  JOIN [" NODESCACHE_TABLENAME_PhysicalHierarchyLevels "] phl ON [phl].[Id] = [hl].[PhysicalHierarchyLevelId] "
-        " WHERE  [no].[PhysicalHierarchyLevelId] = ? "
-        "    AND  [n].[Visibility] = ? "
-        "    AND " NODESCACHE_FUNCNAME_VariablesMatch "(+[dsv].[Variables], ?) "
-        " ORDER BY [no].[OrderValue] ";
+        " WHERE [phl].[Id] = ? "
+        "   AND [n].[Visibility] = ? "
+        "   AND " NODESCACHE_FUNCNAME_VariablesMatch "(+[dsv].[Variables], ?) "
+        " ORDER BY [n].[OrderValue] ";
         if (GetContext().HasPageOptions())
             query.append(" LIMIT ? OFFSET ? ");
 
@@ -4277,14 +4275,14 @@ protected:
         {
         static Utf8CP query =
             "SELECT " NODE_SELECT_STMT("hl", "phl", "n", "nk")
-            "  FROM [" NODESCACHE_TABLENAME_NodesOrder "] no "
-            "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [no].[NodeId] "
+            "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
             "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
             "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
             "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
             "  JOIN [" NODESCACHE_TABLENAME_PhysicalHierarchyLevels "] phl ON [phl].[Id] = [hl].[PhysicalHierarchyLevelId] "
-            " WHERE [no].[DataSourceId] = ? AND [n].[Visibility] != ? "
-            " ORDER BY [no].[OrderValue] ";
+            " WHERE     [ds].[Id] = ? "
+            "       AND [n].[Visibility] != ? "
+            " ORDER BY [n].[OrderValue] ";
         return query;
         }
 
@@ -4318,16 +4316,15 @@ CachedStatementPtr CachedPartialDataSourceProvider::_GetNodesStatement() const
     {
     Utf8String query =
         "SELECT " NODE_SELECT_STMT("hl", "phl", "n", "nk")
-        "  FROM [" NODESCACHE_TABLENAME_NodesOrder "] no "
-        "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [no].[NodeId] "
+        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
         "  JOIN [" NODESCACHE_TABLENAME_PhysicalHierarchyLevels "] phl ON [phl].[Id] = [hl].[PhysicalHierarchyLevelId] "
-        " WHERE [no].[DataSourceId] = ? ";
+        " WHERE [ds].[Id] = ? ";
     if (m_wantOnlyVisibleNodes)
         query.append("AND [n].[Visibility] = ? ");
-    query.append("ORDER BY [no].[OrderValue]");
+    query.append("ORDER BY [n].[OrderValue]");
     if (GetContext().HasPageOptions())
         query.append(" LIMIT ? OFFSET ? ");
 

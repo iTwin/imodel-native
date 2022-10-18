@@ -511,10 +511,6 @@ static void RemoveRuleset(BeSQLite::Db& db, BeGuidCR rulesetId)
         "SELECT [ds].[Id] FROM [" NODESCACHE_TABLENAME_DataSources "] ds WHERE [ds].[Id] = [DataSourceId])";
     db.ExecuteSql(nodesQuery);
 
-    static Utf8CP nodesOrderQuery = "DELETE FROM [" NODESCACHE_TABLENAME_NodesOrder "] WHERE NOT EXISTS("
-        "SELECT [n].[Id] FROM [" NODESCACHE_TABLENAME_Nodes "] n WHERE [n].[Id] = [NodeId])";
-    db.ExecuteSql(nodesOrderQuery);
-
     static Utf8CP nodesKeysQuery = "DELETE FROM [" NODESCACHE_TABLENAME_NodeKeys "] WHERE NOT EXISTS("
         "SELECT [n].[Id] FROM [" NODESCACHE_TABLENAME_Nodes "] n WHERE [n].[Id] = [NodeId])";
     db.ExecuteSql(nodesKeysQuery);

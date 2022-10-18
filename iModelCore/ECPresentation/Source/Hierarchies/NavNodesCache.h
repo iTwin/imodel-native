@@ -180,7 +180,6 @@ public:
 #define NODESCACHE_TABLENAME_Nodes                   "Nodes"
 #define NODESCACHE_TABLENAME_NodeKeys                "NodeKeys"
 #define NODESCACHE_TABLENAME_NodeInstances           "NodeInstances"
-#define NODESCACHE_TABLENAME_NodesOrder              "NodesOrder"
 #define NODESCACHE_TABLENAME_MergedNodes             "MergedNodes"
 #define NODESCACHE_TABLENAME_Rulesets                "Rulesets"
 
