@@ -1957,9 +1957,9 @@ DataSourceInfo NodesCache::_FindDataSource(BeGuidCR nodeId, int partsToGet) cons
 
     DataSourceIdentifier identifier(NodesCacheHelpers::GetGuid(*stmt, 0), NodesCacheHelpers::GetGuid(*stmt, 1),
 #ifdef NAVNODES_CACHE_BINARY_INDEX
-        IndexFromBlob(stmt->GetValueBlob(2), stmt->GetColumnBytes(2)), stmt->GetValueBoolean(3));
+        IndexFromBlob(stmt->GetValueBlob(2), stmt->GetColumnBytes(2)));
 #else
-        NodesCacheHelpers::IndexFromString(stmt->GetValueText(2)), stmt->GetValueBoolean(3));
+        NodesCacheHelpers::IndexFromString(stmt->GetValueText(2)));
 #endif
     return CreateDataSourceInfo(identifier, partsToGet);
     }

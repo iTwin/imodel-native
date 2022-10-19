@@ -125,10 +125,10 @@ struct NavNodesProviderContext : RulesDrivenProviderContext
         public:
             PageOptions(size_t start) : m_start(start) {}
             PageOptions(size_t start, size_t size) : m_start(start), m_size(size) {}
-
             bool HasSize() const {return m_size.IsValid();}
-            size_t GetSize() const {return m_size.Value();}
             size_t GetStart() const {return m_start;}
+            size_t GetSize() const {return m_size.Value();}
+            size_t GetAdjustedPageSize(size_t totalCount) const;
         };
 
 private:
@@ -602,18 +602,18 @@ public:
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct DirectNodesIterator
-    {
-    protected:
-        virtual NavNodePtr _NextNode() = 0;
-        virtual bool _SkippedNodesToPageStart() const = 0;
-        virtual size_t _NodesCount() const = 0;
+{
+protected:
+    virtual NavNodePtr _NextNode() = 0;
+    virtual bool _SkippedNodesToPageStart() const = 0;
+    virtual size_t _NodesCount() const = 0;
 
-    public:
-        virtual ~DirectNodesIterator() {}
-        NavNodePtr NextNode() {return _NextNode();}
-        bool SkippedNodesToPageStart() const {return _SkippedNodesToPageStart();}
-        size_t NodesCount() const {return _NodesCount();}
-    };
+public:
+    virtual ~DirectNodesIterator() {}
+    NavNodePtr NextNode() {return _NextNode();}
+    bool SkippedNodesToPageStart() const {return _SkippedNodesToPageStart();}
+    size_t NodesCount() const {return _NodesCount();}
+};
 
 /*=================================================================================**//**
 * @bsiclass

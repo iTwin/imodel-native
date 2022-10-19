@@ -540,15 +540,16 @@ void NavNodesProvider::_OnPageOptionsSet()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static size_t GetPagedNodesCount(size_t count, NavNodesProviderContext::PageOptions const& pageOptions)
+size_t NavNodesProviderContext::PageOptions::GetAdjustedPageSize(size_t totalCount) const
     {
-    if (pageOptions.GetStart() >= count || (pageOptions.HasSize() && pageOptions.GetSize() == 0))
+    if (GetStart() >= totalCount || (HasSize() && GetSize() == 0))
         return 0;
-    size_t countFromPageStart = count - pageOptions.GetStart();
-    if (!pageOptions.HasSize() || pageOptions.GetSize() > countFromPageStart)
+
+    size_t countFromPageStart = totalCount - GetStart();
+    if (!HasSize() || GetSize() > countFromPageStart)
         return countFromPageStart;
 
-    return pageOptions.GetSize();
+    return GetSize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -557,10 +558,10 @@ static size_t GetPagedNodesCount(size_t count, NavNodesProviderContext::PageOpti
 template<typename TResult>
 static TResult GetResultOrLockHierarchy(IHierarchyLevelLockerR locker, std::function<bpair<bool, TResult>()> getter)
     {
-    // if expected result is returned immediatly no need to additionally check if hierarchy level is not locked.
+    // if expected result is returned immediately no need to additionally check if hierarchy level is not locked.
     bpair<bool, TResult> result = getter();
     if (result.first)
-        return result.second;
+        return std::move(result.second);
 
     bool lockedLevel = false;
     while (true)
@@ -568,14 +569,14 @@ static TResult GetResultOrLockHierarchy(IHierarchyLevelLockerR locker, std::func
         // if hierarchy level is locked wait for it to be unlocked and try to get result
         locker.WaitForUnlock();
         result = getter();
-        // if expected result is returned or hierarchy level lock is aquired return current result
+        // if expected result is returned or hierarchy level lock is acquired return current result
         if (result.first || lockedLevel)
             break;
 
-        // attempt to aquire hierarchy level lock
+        // attempt to acquire hierarchy level lock
         lockedLevel = locker.Lock(IHierarchyLevelLocker::LockOptions::DisableLockWait);
         }
-    return result.second;
+    return std::move(result.second);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -692,7 +693,7 @@ size_t NavNodesProvider::GetNodesCount() const
     {
     auto count = GetTotalNodesCount();
     if (count.IsAccurate() && GetContext().HasPageOptions())
-        return GetPagedNodesCount(count.GetCount(), *GetContext().GetPageOptions());
+        return GetContext().GetPageOptions()->GetAdjustedPageSize(count.GetCount());
     return count.GetCount();
     }
 
@@ -1134,7 +1135,7 @@ DataSourceIdentifier const& CachingNavNodesProviderBase<TProvider>::GetOrCreateD
         m_datasourceIdentifier = GetResultOrLockHierarchy<DataSourceIdentifier>(context.GetHierarchyLevelLocker(), [&]()
             {
             DataSourceIdentifier identifier = context.GetNodesCache().FindDataSource(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index), context.GetRulesetVariables()).GetIdentifier();
-            return make_bpair<bool, DataSourceIdentifier>(identifier.IsValid(), identifier);
+        return make_bpair<bool, DataSourceIdentifier>(identifier.IsValid(), identifier);
             });
 
         if (!m_datasourceIdentifier.IsValid())
@@ -3755,7 +3756,7 @@ protected:
         if (HasVirtualNodes())
             return GetTotalNodesCount();
 
-        return m_context->HasPageOptions() ? GetPagedNodesCount(GetTotalNodesCount(), *m_context->GetPageOptions()) : GetTotalNodesCount();
+        return m_context->HasPageOptions() ? m_context->GetPageOptions()->GetAdjustedPageSize(GetTotalNodesCount()) : GetTotalNodesCount();
         }
 
     /*---------------------------------------------------------------------------------**//**
