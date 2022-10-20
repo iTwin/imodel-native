@@ -327,7 +327,6 @@ NavNodesProviderPtr NodesCacheWrapper::_GetCombinedHierarchyLevel(NavNodesProvid
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderPtr NodesCacheWrapper::_GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const& identifier, bool onlyInitialized) const
     {
-    NavNodesProviderPtr provider;
     if (IsMemoryCacheInitialized() && m_hierarchyLevelsFromDisk.end() == m_hierarchyLevelsFromDisk.find(identifier.GetId()) && NodesCacheHelpers::HierarchyLevelExists(m_memoryCache->GetDb(), identifier.GetId()))
         return m_memoryCache->GetHierarchyLevel(context, identifier, onlyInitialized);
 
@@ -337,24 +336,12 @@ NavNodesProviderPtr NodesCacheWrapper::_GetHierarchyLevel(NavNodesProviderContex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCacheWrapper::_GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const& identifier, bool onlyInitialized, bool onlyVisible) const
+std::unique_ptr<DirectNodesIterator> NodesCacheWrapper::_GetCachedDirectNodesIterator(NavNodesProviderContextCR context, DataSourceIdentifier const& identifier) const
     {
-    NavNodesProviderPtr provider;
     if (ShouldTakeDataSourceFromMemory(identifier.GetId(), identifier.GetHierarchyLevelId()))
-        return m_memoryCache->GetDataSource(context, identifier, onlyInitialized, onlyVisible);
+        return m_memoryCache->GetCachedDirectNodesIterator(context, identifier);
 
-    return m_diskCache.GetDataSource(context, identifier, onlyInitialized, onlyVisible);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCacheWrapper::_GetDataSource(NavNodesProviderContextR context, BeGuidCR nodeId, bool onlyInitialized, bool onlyVisible) const
-    {
-    if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
-        return m_memoryCache->GetDataSource(context, nodeId, onlyInitialized, onlyVisible);
-
-    return m_diskCache.GetDataSource(context, nodeId, onlyInitialized, onlyVisible);
+    return m_diskCache.GetCachedDirectNodesIterator(context, identifier);
     }
 
 /*---------------------------------------------------------------------------------**//**

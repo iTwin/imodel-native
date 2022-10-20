@@ -618,6 +618,29 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+struct BVectorDirectNodesIterator : DirectNodesIterator
+{
+private:
+    bvector<NavNodePtr> m_nodes;
+    size_t m_currentNode;
+
+protected:
+    NavNodePtr _NextNode() override
+        {
+        if (m_nodes.size() <= m_currentNode)
+            return nullptr;
+        return m_nodes.at(m_currentNode++);
+        }
+    size_t _NodesCount() const override {return m_nodes.size();}
+    bool _SkippedNodesToPageStart() const override {return false;}
+
+public:
+    BVectorDirectNodesIterator(bvector<NavNodePtr> nodes) : m_nodes(nodes), m_currentNode(0) {}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 struct NodesCreatingMultiNavNodesProvider : MultiNavNodesProvider
 {
     DEFINE_T_SUPER(MultiNavNodesProvider)
@@ -1047,29 +1070,6 @@ struct CachedCombinedHierarchyLevelProvider : SQLiteCacheNodesProvider
 
     public:
         ECPRESENTATION_EXPORT static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR physicalHierarchyLevelId);
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct CachedPartialDataSourceProvider : SQLiteCacheNodesProvider
-    {
-    private:
-        BeGuid m_dataSourceId;
-        bool m_wantOnlyVisibleNodes;
-    private:
-        CachedPartialDataSourceProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, BeGuidCR dataSourceId, bool loadOnlyVisibleNodes)
-            : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex), m_dataSourceId(dataSourceId), m_wantOnlyVisibleNodes(loadOnlyVisibleNodes)
-            {}
-    protected:
-        Utf8CP _GetName() const override { return "Cached partial hierarchy level provider"; }
-        BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
-        BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetCountStatement() const override;
-    public:
-        ECPRESENTATION_EXPORT static RefCountedPtr<CachedPartialDataSourceProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR dataSourceId, bool loadOnlyVisibleNodes = false);
-        std::unique_ptr<DirectNodesIterator> CreateDirectNodesIterator() const;
     };
 
 /*=================================================================================**//**

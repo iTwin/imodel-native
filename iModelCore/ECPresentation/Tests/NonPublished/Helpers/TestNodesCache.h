@@ -24,7 +24,7 @@ struct TestNodesCache : INavNodesCache
 {
     typedef std::function<NavNodePtr(BeGuid)> GetNodeHandler;
     typedef std::function<NavNodesProviderPtr(HierarchyLevelIdentifier const&)> GetHierarchyDataSourceHandler;
-    typedef std::function<NavNodesProviderPtr(DataSourceIdentifier const&)> GetVirtualDataSourceHandler;
+    typedef std::function<std::unique_ptr<DirectNodesIterator>(DataSourceIdentifier const&)> GetDataSourceIteratorHandler;
     typedef std::function<NavNodesProviderPtr(BeGuid)> GetParentNodeDataSourceHandler;
     typedef std::function<void(HierarchyLevelIdentifier&)> CacheHierarchyLevelHandler;
     typedef std::function<void(DataSourceInfo&)> CacheDataSourceHandler;
@@ -81,7 +81,7 @@ private:
 
     GetNodeHandler m_getNodeHandler;
     GetHierarchyDataSourceHandler m_getHierarchyDataSourceHandler;
-    GetVirtualDataSourceHandler m_getVirtualDataSourceHandler;
+    GetDataSourceIteratorHandler m_getDataSourceIteratorHandler;
     GetParentNodeDataSourceHandler m_getParentNodeDataSourceHandler;
     CacheHierarchyLevelHandler m_cacheHierarchyLevelHandler;
     CacheDataSourceHandler m_cacheDataSourceHandler;
@@ -224,31 +224,18 @@ protected:
         auto iter = m_virtualHierarchy.find(info);
         return (m_virtualHierarchy.end() != iter) ? BVectorNodesProvider::Create(context, GetFullHierarchyLevel(iter->second)) : nullptr;
         }
-    NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const& dsInfo, bool, bool) const override
+
+    std::unique_ptr<DirectNodesIterator> _GetCachedDirectNodesIterator(NavNodesProviderContextCR context, DataSourceIdentifier const& identifier) const override
         {
         BeMutexHolder lock(m_mutex);
-        if (m_getVirtualDataSourceHandler)
-            return m_getVirtualDataSourceHandler(dsInfo);
+        if (m_getDataSourceIteratorHandler)
+            return m_getDataSourceIteratorHandler(identifier);
 
-        auto iter = m_partialHierarchies.find(dsInfo);
-        return (m_partialHierarchies.end() != iter) ? BVectorNodesProvider::Create(context, iter->second.second) : nullptr;
-        }
-    NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, BeGuidCR nodeId, bool, bool) const override
-        {
-        BeMutexHolder lock(m_mutex);
-        if (m_getParentNodeDataSourceHandler)
-            return m_getParentNodeDataSourceHandler(nodeId);
+        if (!_IsInitialized(identifier, context.GetRulesetVariables()))
+            return nullptr;
 
-        NavNodePtr node = GetNode(nodeId);
-        for (auto const& entry : m_partialHierarchies)
-            {
-            for (NavNodePtr const& entryNode : entry.second.second)
-                {
-                if (entryNode == node)
-                    return GetDataSource(context, entry.first);
-                }
-            }
-        return nullptr;
+        auto iter = m_partialHierarchies.find(identifier);
+        return (m_partialHierarchies.end() != iter) ? std::make_unique<BVectorDirectNodesIterator>(iter->second.second) : nullptr;
         }
 
     void _Cache(HierarchyLevelIdentifier& info) override
@@ -377,7 +364,7 @@ public:
     TestNodesCache() {}
     void SetGetNodeHandler(GetNodeHandler handler) {m_getNodeHandler = handler;}
     void SetGetHierarchyDataSourceHandler(GetHierarchyDataSourceHandler handler) {m_getHierarchyDataSourceHandler = handler;}
-    void SetGetVirtualDataSourceHandler(GetVirtualDataSourceHandler handler) {m_getVirtualDataSourceHandler = handler;}
+    void SetGetDataSourceIteratorHandler(GetDataSourceIteratorHandler handler) {m_getDataSourceIteratorHandler = handler;}
     void SetGetParentNodeDataSourceHandler(GetParentNodeDataSourceHandler handler) {m_getParentNodeDataSourceHandler = handler;}
     void SetCacheHierarchyLevelHandler(CacheHierarchyLevelHandler handler) {m_cacheHierarchyLevelHandler = handler;}
     void SetCacheDataSourceHandler(CacheDataSourceHandler handler) {m_cacheDataSourceHandler = handler;}
