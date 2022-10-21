@@ -354,3 +354,55 @@ TEST_F(InstanceLabelOverrideContentPerformanceTests, GetPropertyPaneContentWithL
     {
     GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
     }
+
+struct ContentFilteringPerformanceTests : ContentPerformanceTests
+    {
+    BeFileName _SupplyProjectPath() const override
+        {
+        BeFileName path;
+        BeTest::GetHost().GetDocumentsRoot(path);
+        path.AppendToPath(L"Datasets");
+        path.AppendToPath(L"M - Bentley - DRWR04-IFC.bim");
+        // path.AppendToPath(L"L - SRD Hatch Internar.bim");
+        return path;
+        }
+
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("FilterContentRules");
+        ContentRule* rule = new ContentRule();
+        rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(100, false, "", { new MultiSchemaClass("BisCore", true, {"GeometricElement3d"}) }, {}, true));
+        ruleset->AddPresentationRule(*rule);
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentFilteringPerformanceTests, GetAllContent)
+    {
+    // get the descriptor
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(m_project, GetRulesetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    std::shared_ptr<Timer> _timer = std::make_shared<Timer>("Getting content size");
+    // get the content
+    ContentCPtr content = GetValidatedResponse(m_manager->GetContent(AsyncContentRequestParams::Create(m_project, *descriptor)));
+    EXPECT_EQ(14553, content->GetContentSet().GetSize());
+    _timer = nullptr;
+
+    // IFCDynamic.Footprint
+    ECClassCP filterClass = m_project.Schemas().GetClass("IFCDynamic", "Footprint");
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetInstanceFilter(InstanceFilterDefinition("this.IFCClassName=\"IfcPipeSegment\"", filterClass, {}));
+
+    // get filtered content
+    _timer = std::make_shared<Timer>("Getting filterred content size");
+    content = GetValidatedResponse(m_manager->GetContent(AsyncContentRequestParams::Create(m_project, *ovr)));
+    EXPECT_EQ(775, content->GetContentSet().GetSize());
+    _timer = nullptr;
+    }
