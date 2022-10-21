@@ -1860,7 +1860,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
     descriptor->SetSortingField(0);
     descriptor->SetSortDirection(SortDirection::Descending);
     descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
-    descriptor->SetFilterExpression("ExpressionText");
+    descriptor->SetFieldsFilterExpression("ExpressionText");
     rapidjson::Document actual = descriptor->AsJson();
 
     rapidjson::Document expected;

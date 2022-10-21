@@ -771,7 +771,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s > 1 or %s < 0", FIELD_NAME(classA, "IntProperty"), FIELD_NAME(classA, "DoubleProperty")).c_str());
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s > 1 or %s < 0", FIELD_NAME(classA, "IntProperty"), FIELD_NAME(classA, "DoubleProperty")));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -822,7 +822,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithEsc
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8String(FIELD_NAME(classA, "Property")).append(" LIKE \"%\\%%\"").c_str());
+    ovr->SetFieldsFilterExpression(Utf8String(FIELD_NAME(classA, "Property")).append(" LIKE \"%\\%%\""));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -873,7 +873,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Filters
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetUniqueName().c_str()));
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetUniqueName().c_str()));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -943,7 +943,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s = \"1\"", descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()));
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s = \"1\"", descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -15748,7 +15748,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FilterW
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("GetVariableIntValues(\"values\").AnyMatches(x => x = %s)", FIELD_NAME(classA, "IntProp")).c_str());
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("GetVariableIntValues(\"values\").AnyMatches(x => x = %s)", FIELD_NAME(classA, "IntProp")));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -16110,4 +16110,211 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SortingRule_OnlySortBaseCla
 
     ContentCPtr content = GetVerifiedContent(*descriptor);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b1.get(), b2.get(), b3.get(), a2.get(), a3.get(), a1.get()}, *content, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Filtering_UsesRelatedInsancePropertyValue, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="IntPropA" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="IntPropB" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Filtering_UsesRelatedInsancePropertyValue)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("A_B")->GetRelationshipClassCP();
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(1)); });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(2)); });
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(11)); });
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(22)); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a1, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b2);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{a1, a2});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*contentRule);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    RelatedClassPath relatedInstance = { RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "rel_alias_test"), true, SelectClass<ECClass>(*classB, "rel_class_B")) };
+    ovr->SetInstanceFilter(InstanceFilterDefinition("rel_class_B.IntPropB = 22", classA, { relatedInstance }));
+
+    ContentCPtr content = GetVerifiedContent(*ovr);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a2.get()}, *content, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Filtering_UsesDerivedClassProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="IntPropA" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="IntPropB" typeName="int"/>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Filtering_UsesDerivedClassProperty)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(1)); });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(2)); });
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(11)); });
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(22)); });
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{a1, a2});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, true));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetInstanceFilter(InstanceFilterDefinition("this.IntPropB = 22", classB, {}));
+
+    ContentCPtr content = GetVerifiedContent(*ovr);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b2.get()}, *content, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Filtering_UsesDerivedClassRelatedProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IntPropA" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="IntPropB" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="IntPropC" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="B_C" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Filtering_UsesDerivedClassRelatedProperty)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relBC = GetClass("B_C")->GetRelationshipClassCP();
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(1)); });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(2)); });
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(11)); });
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(22)); });
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("IntPropC", ECValue(111)); });
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("IntPropC", ECValue(222)); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b1, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, true));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    RelatedClassPath relatedInstance = {RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, "rel_BC"), true, SelectClass<ECClass>(*classC, "rel_class_C"))};
+    ovr->SetInstanceFilter(InstanceFilterDefinition("rel_class_C.IntPropC = 111", classB, { relatedInstance }));
+
+    ContentCPtr content = GetVerifiedContent(*ovr);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b1.get()}, *content, true);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Filtering_UsesSpecifiedClassProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="IntPropA" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="IntPropB" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="IntPropC" typeName="int"/>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Filtering_UsesSpecifiedClassProperty)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(1)); });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("IntPropA", ECValue(2)); });
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(11)); });
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("IntPropB", ECValue(22)); });
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("IntPropC", ECValue(111)); });
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("IntPropC", ECValue(222)); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, false, "",
+        bvector<MultiSchemaClass*> { new MultiSchemaClass(BeTest::GetNameOfCurrentTest(), false, bvector<Utf8String> { "A", "B", "C" })}, bvector<MultiSchemaClass*>(), true));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetInstanceFilter(InstanceFilterDefinition("this.IntPropB = 22", classB, {}));
+
+    ContentCPtr content = GetVerifiedContent(*ovr);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b2.get()}, *content, true);
     }

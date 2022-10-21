@@ -663,7 +663,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
 
     json.AddMember("contentFlags", contentDescriptor.GetContentFlags(), json.GetAllocator());
     json.AddMember("connectionId", rapidjson::Value(contentDescriptor.GetConnectionId().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("filterExpression", rapidjson::Value(contentDescriptor.GetFilterExpression().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("filterExpression", rapidjson::Value(contentDescriptor.GetFieldsFilterExpression().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("inputKeysHash", rapidjson::Value(contentDescriptor.GetInputNodeKeys().GetHash().c_str(), json.GetAllocator()), json.GetAllocator());
 
     // add the options just to keep backwards compatibility

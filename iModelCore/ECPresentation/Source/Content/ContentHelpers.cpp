@@ -15,13 +15,14 @@ bool ContentHelpers::AreDescriptorsEqual(ContentDescriptor const& lhs, ContentDe
         || lhs.GetUnitSystem() != rhs.GetUnitSystem()
         || lhs.GetSortingFieldIndex() != rhs.GetSortingFieldIndex()
         || lhs.GetSortDirection() != rhs.GetSortDirection()
-        || lhs.GetFilterExpression() != rhs.GetFilterExpression()
+        || lhs.GetFieldsFilterExpression() != rhs.GetFieldsFilterExpression()
         || lhs.GetSelectClasses().size() != rhs.GetSelectClasses().size()
         || lhs.GetCategories().size() != rhs.GetCategories().size()
         || lhs.GetAllFields().size() != rhs.GetAllFields().size()
         || lhs.GetConnectionId() != rhs.GetConnectionId()
         || lhs.GetInputNodeKeys().GetHash() != rhs.GetInputNodeKeys().GetHash()
-        || lhs.GetRulesetVariables() != rhs.GetRulesetVariables())
+        || lhs.GetRulesetVariables() != rhs.GetRulesetVariables()
+        || lhs.GetInstanceFilter() != rhs.GetInstanceFilter())
         {
         return false;
         }
