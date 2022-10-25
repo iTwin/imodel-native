@@ -8,6 +8,14 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool InstanceFiltersEqual(std::shared_ptr<InstanceFilterDefinition> lhs, std::shared_ptr<InstanceFilterDefinition> rhs)
+    {
+    return (lhs == nullptr && rhs == nullptr) || (lhs != nullptr && rhs != nullptr && *lhs == *rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentHelpers::AreDescriptorsEqual(ContentDescriptor const& lhs, ContentDescriptor const& rhs, RulesetCompareOption rulesetCompareOption)
     {
     if (lhs.GetPreferredDisplayType() != rhs.GetPreferredDisplayType()
@@ -22,7 +30,7 @@ bool ContentHelpers::AreDescriptorsEqual(ContentDescriptor const& lhs, ContentDe
         || lhs.GetConnectionId() != rhs.GetConnectionId()
         || lhs.GetInputNodeKeys().GetHash() != rhs.GetInputNodeKeys().GetHash()
         || lhs.GetRulesetVariables() != rhs.GetRulesetVariables()
-        || lhs.GetInstanceFilter() != rhs.GetInstanceFilter())
+        || !InstanceFiltersEqual(lhs.GetInstanceFilter(), rhs.GetInstanceFilter()))
         {
         return false;
         }

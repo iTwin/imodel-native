@@ -290,13 +290,13 @@ static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, Content
         }
 
     // filtering
-    if (!ovr.GetFilterExpression().empty())
+    if (!ovr.GetFieldsFilterExpression().empty())
         {
         auto filteringScope = Diagnostics::Scope::Create("Set filtering");
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Applying descriptor's filter expression: `%s`", ovr.GetFilterExpression().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Applying descriptor's filter expression: `%s`", ovr.GetFieldsFilterExpression().c_str()));
 
         auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(builderParams, ovr);
-        auto whereClause = ECExpressionsHelper(builderParams.GetECExpressionsCache()).ConvertToECSql(ovr.GetFilterExpression(), query->GetContract(), filteringExpressionContext.get());
+        auto whereClause = ECExpressionsHelper(builderParams.GetECExpressionsCache()).ConvertToECSql(ovr.GetFieldsFilterExpression(), query->GetContract(), filteringExpressionContext.get());
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Converted expression to ECSQL: `%s`", whereClause.GetClause().c_str()));
 
         if (!whereClause.GetClause().empty())
@@ -305,6 +305,50 @@ static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, Content
             QueryBuilderHelpers::Where(query, whereClause);
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsSelectClassFilteredOut(SelectClassInfo const& selectClassInfo, std::shared_ptr<InstanceFilterDefinition> filter)
+    {
+    if (!filter || selectClassInfo.GetSelectClass().GetClass().Is(filter->GetSelectClass()))
+        return false;
+
+    return !selectClassInfo.GetSelectClass().IsSelectPolymorphic() || !filter->GetSelectClass()->Is(&selectClassInfo.GetSelectClass().GetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ApplyInstanceFilter(ComplexContentQuery& query, SelectClassWithExcludes<ECClass> const& selectClass, InstanceFilterDefinition const& filter, ECExpressionsCache& cache,
+    ExpressionContextPtr expressionContext, IPresentationQueryFieldTypesProvider const* fieldTypes)
+    {
+    auto expressionClause = ECExpressionsHelper(cache).ConvertToECSql(filter.GetExpression(), fieldTypes, expressionContext.get());
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Converted expression to ECSQL: `%s`", expressionClause.GetClause().c_str()));
+
+    bool needToFilterClass = !selectClass.GetClass().Is(filter.GetSelectClass());
+    if (filter.GetRelatedInstances().empty() && !needToFilterClass)
+        {
+        query.Where(expressionClause);
+        return;
+        }
+
+    ComplexGenericQueryPtr filterQuery = ComplexGenericQuery::Create();
+    filterQuery->SelectContract(*SimpleQueryContract::Create({ *PresentationQueryContractSimpleField::Create(nullptr, "[this].[ECInstanceId]") }));
+    filterQuery->From(SelectClass<ECClass>(needToFilterClass ? *filter.GetSelectClass() : selectClass.GetClass(), "this"));
+
+    for (RelatedClassPathCR relatedPath : filter.GetRelatedInstances())
+        filterQuery->Join(relatedPath);
+
+    filterQuery->Where(expressionClause);
+
+    Utf8String whereClause;
+    if (needToFilterClass)
+        whereClause.append("[").append(selectClass.GetAlias()).append("].[ECClassId] IS (").append(filter.GetSelectClass()->GetFullName()).append(") AND ");
+    whereClause.append("[").append(selectClass.GetAlias()).append("].[ECInstanceId] IN (").append(filterQuery->ToString()).append(")");
+    
+    query.Where(QueryClauseAndBindings(whereClause, filterQuery->GetBoundValues()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,6 +379,12 @@ ContentQuerySet ContentQueryBuilder::CreateQuerySet(SelectedNodeInstancesSpecifi
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create query for class `%s`", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
 
+        if (IsSelectClassFilteredOut(*selectClassInfo, descriptor.GetInstanceFilter()))
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            continue;
+            }
+
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         classQuery->From(selectClassInfo->GetSelectClass());
 
@@ -356,6 +406,10 @@ ContentQuerySet ContentQueryBuilder::CreateQuerySet(SelectedNodeInstancesSpecifi
         auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(m_params, descriptor);
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, InstanceFilteringParams(m_params.GetECExpressionsCache(),
             filteringExpressionContext.get(), nullptr, inputFilter.get()));
+
+        // handle descriptor-level filtering
+        if (descriptor.GetInstanceFilter())
+            ApplyInstanceFilter(*classQuery, selectClassInfo->GetSelectClass(), *descriptor.GetInstanceFilter(), m_params.GetECExpressionsCache(), filteringExpressionContext.get(), contract.get());
 
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         // handle selecting property for distinct values
@@ -425,6 +479,12 @@ ContentQuerySet ContentQueryBuilder::CreateQuerySet(ContentRelatedInstancesSpeci
             recursiverlyHandledClasses.insert(key);
             }
 
+        if (IsSelectClassFilteredOut(*selectClassInfo, descriptor.GetInstanceFilter()))
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            continue;
+            }
+
         Utf8CP selectClassAlias = selectClassInfo->GetSelectClass().GetAlias().c_str();
 
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
@@ -453,6 +513,10 @@ ContentQuerySet ContentQueryBuilder::CreateQuerySet(ContentRelatedInstancesSpeci
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, InstanceFilteringParams(m_params.GetECExpressionsCache(),
             filteringExpressionContext.get(), specification.GetInstanceFilter().c_str(), inputFilter.get()));
 
+        // handle descriptor-level filtering
+        if (descriptor.GetInstanceFilter())
+            ApplyInstanceFilter(*classQuery , selectClassInfo->GetSelectClass(), *descriptor.GetInstanceFilter(), m_params.GetECExpressionsCache(), filteringExpressionContext.get(), contract.get());
+
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         // handle selecting property for distinct values
         if (descriptor.GetDistinctField() != nullptr)
@@ -476,6 +540,12 @@ ContentQuerySet ContentQueryBuilder::CreateQuerySet(ContentInstancesOfSpecificCl
     for (SelectClassInfo const* selectClassInfo : descriptor.GetSelectClasses(specification.GetHash()))
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create query for class `%s`", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+        
+        if (IsSelectClassFilteredOut(*selectClassInfo, descriptor.GetInstanceFilter()))
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            continue;
+            }
 
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = CreateContract(descriptor, *selectClassInfo, *classQuery);
@@ -489,6 +559,10 @@ ContentQuerySet ContentQueryBuilder::CreateQuerySet(ContentInstancesOfSpecificCl
         auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(m_params, descriptor);
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, InstanceFilteringParams(m_params.GetECExpressionsCache(),
             filteringExpressionContext.get(), specification.GetInstanceFilter().c_str(), nullptr));
+
+        // handle descriptor-level isntance filtering
+        if (descriptor.GetInstanceFilter())
+            ApplyInstanceFilter(*classQuery , selectClassInfo->GetSelectClass(), *descriptor.GetInstanceFilter(), m_params.GetECExpressionsCache(), filteringExpressionContext.get(), contract.get());
 
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
         // handle selecting property for distinct values

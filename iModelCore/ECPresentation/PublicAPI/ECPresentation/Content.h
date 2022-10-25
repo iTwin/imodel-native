@@ -1125,7 +1125,7 @@ private:
     SortDirection m_sortDirection;
     int m_contentFlags;
     Utf8String m_fieldsFilterExpression;
-    InstanceFilterDefinition m_instanceFilter;
+    std::shared_ptr<InstanceFilterDefinition> m_instanceFilter;
     Utf8String m_connectionId;
     INavNodeKeysContainerCPtr m_inputKeys;
     SelectionInfoCPtr m_selectionInfo;
@@ -1259,9 +1259,9 @@ public:
     Utf8StringCR GetFieldsFilterExpression() const {return m_fieldsFilterExpression; }
 
     //! Set instance filter definition.
-    void SetInstanceFilter(InstanceFilterDefinition const& filter) {m_instanceFilter = filter;}
+    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition> filter) {m_instanceFilter = filter;}
     //! Get isntance filter definition.
-    InstanceFilterDefinition const& GetInstanceFilter() const {return m_instanceFilter;}
+    std::shared_ptr<InstanceFilterDefinition> GetInstanceFilter() const {return m_instanceFilter;}
 
     //! Get the content flags.
     //! @see ContentFlags

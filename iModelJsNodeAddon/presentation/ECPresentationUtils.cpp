@@ -1275,22 +1275,25 @@ private:
 private:
     Nullable<int> m_contentFlags;
     Nullable<Utf8String> m_displayType;
-    Nullable<Utf8String> m_filterExpression;
+    Nullable<Utf8String> m_fieldsFilterExpression;
     Nullable<TSortingParams> m_sortParams;
+    std::shared_ptr<InstanceFilterDefinition> m_instanceFilter;
     TFieldsSelector m_fieldsSelector;
 
 private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> filterExpression, Nullable<TSortingParams> sortParams, TFieldsSelector fieldsSelector)
-        : m_displayType(displayType), m_contentFlags(contentFlags), m_filterExpression(filterExpression), m_sortParams(sortParams), m_fieldsSelector(fieldsSelector)
+    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> fieldsDilterExpression, Nullable<TSortingParams> sortParams, 
+        TFieldsSelector fieldsSelector, std::shared_ptr<InstanceFilterDefinition> instanceFilter)
+        : m_displayType(displayType), m_contentFlags(contentFlags), m_fieldsFilterExpression(fieldsDilterExpression), m_sortParams(sortParams), 
+        m_fieldsSelector(fieldsSelector), m_instanceFilter(instanceFilter)
         {}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static ParseResult<Nullable<Utf8String>> ParseFilterExpression(RapidJsonValueCR json)
+    static ParseResult<Nullable<Utf8String>> ParseFieldsFilterExpression(RapidJsonValueCR json)
         {
         if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression))
             return CreateParseResult<Nullable<Utf8String>>(nullptr);
@@ -1304,37 +1307,37 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static ParseResult<Nullable<InstanceFilterDefinition>> ParseInstanceFilter(ECDbCR db, RapidJsonValueCR json)
+    static ParseResult<std::shared_ptr<InstanceFilterDefinition>> ParseInstanceFilter(ECDbCR db, RapidJsonValueCR json)
         {
         if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter))
             {
             RapidJsonValueCR filterJson = json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter];
             if (!filterJson.IsObject())
-                return CreateParseError<Nullable<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to be an object");
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to be an object");
 
             if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression))
-                return CreateParseError<Nullable<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "`");
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "`");
 
             if (!filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression].IsString())
-                return CreateParseError<Nullable<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "` to be a string");
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "` to be a string");
 
             Utf8String expression = filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression].GetString();
 
             if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName))
-                return CreateParseError<Nullable<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "`");
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "`");
 
             ECClassCP selectClass = GetECClassByFullName(filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName].GetString(), db);
             if (!selectClass)
-                return CreateParseError<Nullable<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "` to be full name of a valid class");
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "` to be full name of a valid class");
 
             ParseResult<bvector<RelatedClassPath>> relatedInstances = ParseInstanceFilterRelatedInstances(filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances], db);
             if (relatedInstances.HasError())
-                return CreateParseError<Nullable<InstanceFilterDefinition>>(relatedInstances.GetError());
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>(relatedInstances.GetError());
 
-            return CreateParseResult<Nullable<InstanceFilterDefinition>>(InstanceFilterDefinition(expression, selectClass, relatedInstances.GetValue()));
+            return CreateParseResult<std::shared_ptr<InstanceFilterDefinition>>(std::make_shared<InstanceFilterDefinition>(expression, selectClass, relatedInstances.GetValue()));
             }
 
-        return CreateParseResult<Nullable<InstanceFilterDefinition>>(nullptr);
+        return CreateParseResult<std::shared_ptr<InstanceFilterDefinition>>(nullptr);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1447,9 +1450,9 @@ public:
         if (contentFlags.HasError())
             return CreateParseError<DescriptorOverrides>(contentFlags.GetError());
 
-        auto filterExpression = ParseFilterExpression(json);
-        if (filterExpression.HasError())
-            return CreateParseError<DescriptorOverrides>(filterExpression.GetError());
+        auto fieldsFilterExpression = ParseFieldsFilterExpression(json);
+        if (fieldsFilterExpression.HasError())
+            return CreateParseError<DescriptorOverrides>(fieldsFilterExpression.GetError());
 
         auto sortingParams = ParseSortingParams(db, json);
         if (sortingParams.HasError())
@@ -1459,8 +1462,12 @@ public:
         if (fieldsSelector.HasError())
             return CreateParseError<DescriptorOverrides>(fieldsSelector.GetError());
 
-        return CreateParseResult(DescriptorOverrides(displayType.GetValue(), contentFlags.GetValue(),
-            filterExpression.GetValue(), sortingParams.GetValue(), fieldsSelector.GetValue()));
+        auto instanceFilter = ParseInstanceFilter(db, json);
+        if (instanceFilter.HasError())
+            return CreateParseError<DescriptorOverrides>(instanceFilter.GetError());
+
+        return CreateParseResult(DescriptorOverrides(displayType.GetValue(), contentFlags.GetValue(), fieldsFilterExpression.GetValue(),
+            sortingParams.GetValue(), fieldsSelector.GetValue(), instanceFilter.GetValue()));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1490,9 +1497,9 @@ public:
             descriptorCopy->SetPreferredDisplayType(m_displayType.Value());
             didModifyDescriptor = true;
             }
-        if (!m_filterExpression.IsNull())
+        if (!m_fieldsFilterExpression.IsNull())
             {
-            descriptorCopy->SetFieldsFilterExpression(m_filterExpression.Value());
+            descriptorCopy->SetFieldsFilterExpression(m_fieldsFilterExpression.Value());
             didModifyDescriptor = true;
             }
         if (!m_sortParams.IsNull())
@@ -1516,6 +1523,11 @@ public:
                 didModifyDescriptor |= descriptorCopy->ExcludeFields(fields);
             else if (m_fieldsSelector.first == FieldSelectorType::Include)
                 didModifyDescriptor |= descriptorCopy->ExclusivelyIncludeFields(fields);
+            }
+        if (m_instanceFilter)
+            {
+            descriptorCopy->SetInstanceFilter(m_instanceFilter);
+            didModifyDescriptor = true;
             }
         if (didModifyDescriptor)
             descriptor = descriptorCopy;
