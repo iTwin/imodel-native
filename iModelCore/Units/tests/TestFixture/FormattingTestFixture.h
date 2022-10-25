@@ -38,7 +38,7 @@ struct FormattingTestUtils
     {
     public:
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
-        static Utf8String JsonComparisonString(Json::Value const& created, Json::Value const& test);
+        static Utf8String JsonComparisonString(BeJsDocument const& created, BeJsDocument const& test);
     };
 
 //=======================================================================================

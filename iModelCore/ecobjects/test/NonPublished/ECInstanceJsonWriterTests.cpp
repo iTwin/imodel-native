@@ -355,7 +355,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue12 = Json::Value::From(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(u8R"(
         {
            "StructProperty" : {
               "IntProperty" : 1,
@@ -390,7 +390,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
            }
         })");
 
-    auto expectedJsonValue34 = Json::Value::From(u8R"(
+    auto expectedJsonValue34 = BeJsDocument(u8R"(
         {
            "StructStructProperty" : {
               "IntProperty" : 0,
@@ -401,7 +401,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
            }
         })");
 
-    auto expectedJsonValue5 = Json::Value::From(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(u8R"(
         {
            "StructStructProperty" : {
               "IntProperty" : 0,
@@ -445,22 +445,22 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
 
     // Act
 
-    Json::Value actualJsonValue1;
+    BeJsDocument actualJsonValue1;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue1, *m_sourceStructProperty, *sourceInstance, nullptr));
 
-    Json::Value actualJsonValue2;
+    BeJsDocument actualJsonValue2;
     Utf8String baseAccessString2("");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue2, *m_sourceStructProperty, *sourceInstance, baseAccessString2.c_str()));
 
-    Json::Value actualJsonValue3;
+    BeJsDocument actualJsonValue3;
     Utf8String baseAccessString3("StructProperty");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue3, *m_structStructProperty, *sourceInstance, baseAccessString3.c_str()));
 
-    Json::Value actualJsonValue4;
+    BeJsDocument actualJsonValue4;
     Utf8String baseAccessString4("StructProperty.");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue4, *m_structStructProperty, *sourceInstance, baseAccessString4.c_str()));
 
-    Json::Value actualJsonValue5;
+    BeJsDocument actualJsonValue5;
     Utf8String baseAccessString5("StructProperty");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue5, *m_structStructProperty, *sourceInstance, baseAccessString5.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue5, *m_sourceStructProperty, *sourceInstance, nullptr));
@@ -468,19 +468,19 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
     // Assert
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue12.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue12.ToString() + "\nBut was:\n" + actualJsonValue2.ToString();
+        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue34.ToString() + "\nBut was:\n" + actualJsonValue3.ToString();
+        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue34.ToString() + "\nBut was:\n" + actualJsonValue4.ToString();
+        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.ToString() + "\nBut was:\n" + actualJsonValue5.ToString();
+        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
     }
 
 //---------------------------------------------------------------------------------------
@@ -505,7 +505,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue12 = Json::Value::From(u8R"*(
+    auto expectedJsonValue12 = BeJsDocument(u8R"*(
         {
            "StructProperty" : {
               "StringProperty" : "1.111111",
@@ -548,7 +548,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
            }
         })*");
 
-    auto expectedJsonValue34 = Json::Value::From(u8R"*(
+    auto expectedJsonValue34 = BeJsDocument(u8R"*(
         {
            "StructStructProperty" : {
               "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -563,7 +563,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
            }
         })*");
 
-    auto expectedJsonValue5 = Json::Value::From(u8R"*(
+    auto expectedJsonValue5 = BeJsDocument(u8R"*(
         {
            "StructStructProperty" : {
               "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -619,22 +619,22 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
 
     // Act
 
-    Json::Value actualJsonValue1;
+    BeJsDocument actualJsonValue1;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue1, *m_sourceStructProperty, *sourceInstance, nullptr));
 
-    Json::Value actualJsonValue2;
+    BeJsDocument actualJsonValue2;
     Utf8String baseAccessString2("");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue2, *m_sourceStructProperty, *sourceInstance, baseAccessString2.c_str()));
 
-    Json::Value actualJsonValue3;
+    BeJsDocument actualJsonValue3;
     Utf8String baseAccessString3("StructProperty");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue3, *m_structStructProperty, *sourceInstance, baseAccessString3.c_str()));
 
-    Json::Value actualJsonValue4;
+    BeJsDocument actualJsonValue4;
     Utf8String baseAccessString4("StructProperty.");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue4, *m_structStructProperty, *sourceInstance, baseAccessString4.c_str()));
 
-    Json::Value actualJsonValue5;
+    BeJsDocument actualJsonValue5;
     Utf8String baseAccessString5("StructProperty");
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue5, *m_structStructProperty, *sourceInstance, baseAccessString5.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue5, *m_sourceStructProperty, *sourceInstance, nullptr));
@@ -642,19 +642,19 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
     // Assert
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue12.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue12.ToString() + "\nBut was:\n" + actualJsonValue2.ToString();
+        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue34.ToString() + "\nBut was:\n" + actualJsonValue3.ToString();
+        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue34.ToString() + "\nBut was:\n" + actualJsonValue4.ToString();
+        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.ToString() + "\nBut was:\n" + actualJsonValue5.ToString();
+        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
     }
 
 //---------------------------------------------------------------------------------------
@@ -679,32 +679,32 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue2 = Json::Value::From(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(u8R"(
         {
            "DoubleProperty" : 1.111111
         })");
 
-    auto expectedJsonValue3 = Json::Value::From(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(u8R"(
         {
            "StringProperty" : "1.111111"
         })");
 
-    auto expectedJsonValue5 = Json::Value::From(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(u8R"(
         {
            "LooseEnumerationProperty" : 7
         })");
 
-    auto expectedJsonValue8 = Json::Value::From(u8R"(
+    auto expectedJsonValue8 = BeJsDocument(u8R"(
         {
            "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"
         })");
 
-    auto expectedJsonValue9 = Json::Value::From(u8R"(
+    auto expectedJsonValue9 = BeJsDocument(u8R"(
         {
            "StrictEnumerationProperty" : "EnumeratorB"
         })");
 
-    auto expectedJsonValue11 = Json::Value::From(u8R"(
+    auto expectedJsonValue11 = BeJsDocument(u8R"(
         {
            "DoubleProperty" : 1.111111,
            "StringProperty" : "1.111111",
@@ -712,7 +712,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
            "StrictEnumerationProperty" : "EnumeratorB"
         })");
 
-    auto expectedJsonValue12 = Json::Value::From(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(u8R"(
         {
            "DoubleProperty" : 1.111111,
            "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -725,43 +725,43 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
     Utf8String structPropertyBaseAccessString("StructProperty");
     Utf8String structStructPropertyBaseAccessString("StructProperty.StructStructProperty");
 
-    Json::Value actualJsonValue1;
+    BeJsDocument actualJsonValue1;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue1, *m_structIntProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue2;
+    BeJsDocument actualJsonValue2;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue2, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue3;
+    BeJsDocument actualJsonValue3;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue3, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue4;
+    BeJsDocument actualJsonValue4;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue4, *m_structStrictEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue5;
+    BeJsDocument actualJsonValue5;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue5, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue6;
+    BeJsDocument actualJsonValue6;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue6, *m_structStructIntProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue7;
+    BeJsDocument actualJsonValue7;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue7, *m_structStructDoubleProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue8;
+    BeJsDocument actualJsonValue8;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue8, *m_structStructStringProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue9;
+    BeJsDocument actualJsonValue9;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue9, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue10;
+    BeJsDocument actualJsonValue10;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue10, *m_structStructLooseEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue11;
+    BeJsDocument actualJsonValue11;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue12;
+    BeJsDocument actualJsonValue12;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
@@ -770,43 +770,43 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
 
     // Assert
 
-    Json::Value nullValue;
+    BeJsDocument nullValue;
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue1)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.ToString() + "\nBut was:\n" + actualJsonValue2.ToString();
+        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.ToString() + "\nBut was:\n" + actualJsonValue3.ToString();
+        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue4)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue4.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.ToString() + "\nBut was:\n" + actualJsonValue5.ToString();
+        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue6)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue6.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue7)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue7.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue7.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue8, actualJsonValue8)) <<
-        "Expected:\n" + expectedJsonValue8.ToString() + "\nBut was:\n" + actualJsonValue8.ToString();
+        "Expected:\n" + expectedJsonValue8.Stringify() + "\nBut was:\n" + actualJsonValue8.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue9, actualJsonValue9)) <<
-        "Expected:\n" + expectedJsonValue9.ToString() + "\nBut was:\n" + actualJsonValue9.ToString();
+        "Expected:\n" + expectedJsonValue9.Stringify() + "\nBut was:\n" + actualJsonValue9.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue10)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue10.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue10.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue11, actualJsonValue11)) <<
-        "Expected:\n" + expectedJsonValue11.ToString() + "\nBut was:\n" + actualJsonValue11.ToString();
+        "Expected:\n" + expectedJsonValue11.Stringify() + "\nBut was:\n" + actualJsonValue11.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue12)) <<
-        "Expected:\n" + expectedJsonValue12.ToString() + "\nBut was:\n" + actualJsonValue12.ToString();
+        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue12.Stringify();
     }
 
 //---------------------------------------------------------------------------------------
@@ -831,7 +831,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue2 = Json::Value::From(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -840,17 +840,17 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            }
         })");
 
-    auto expectedJsonValue3 = Json::Value::From(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(u8R"(
         {
            "StringProperty" : "1.111111"
         })");
 
-    auto expectedJsonValue5 = Json::Value::From(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(u8R"(
         {
            "LooseEnumerationProperty" : 7
         })");
 
-    auto expectedJsonValue7 = Json::Value::From(u8R"(
+    auto expectedJsonValue7 = BeJsDocument(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -859,17 +859,17 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            }
         })");
 
-    auto expectedJsonValue8 = Json::Value::From(u8R"(
+    auto expectedJsonValue8 = BeJsDocument(u8R"(
         {
            "StringProperty" : "π"
         })");
 
-    auto expectedJsonValue9 = Json::Value::From(u8R"(
+    auto expectedJsonValue9 = BeJsDocument(u8R"(
         {
            "StrictEnumerationProperty" : "EnumeratorB"
         })");
 
-    auto expectedJsonValue11 = Json::Value::From(u8R"(
+    auto expectedJsonValue11 = BeJsDocument(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -881,7 +881,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            "StrictEnumerationProperty" : "EnumeratorB"
         })");
 
-    auto expectedJsonValue12 = Json::Value::From(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -898,43 +898,43 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
     Utf8String structPropertyBaseAccessString("StructProperty");
     Utf8String structStructPropertyBaseAccessString("StructProperty.StructStructProperty");
 
-    Json::Value actualJsonValue1;
+    BeJsDocument actualJsonValue1;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue1, *m_structIntProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue2;
+    BeJsDocument actualJsonValue2;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue2, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue3;
+    BeJsDocument actualJsonValue3;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue3, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue4;
+    BeJsDocument actualJsonValue4;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue4, *m_structStrictEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue5;
+    BeJsDocument actualJsonValue5;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue5, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue6;
+    BeJsDocument actualJsonValue6;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue6, *m_structStructIntProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue7;
+    BeJsDocument actualJsonValue7;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue7, *m_structStructDoubleProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue8;
+    BeJsDocument actualJsonValue8;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue8, *m_structStructStringProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue9;
+    BeJsDocument actualJsonValue9;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue9, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue10;
+    BeJsDocument actualJsonValue10;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue10, *m_structStructLooseEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue11;
+    BeJsDocument actualJsonValue11;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
-    Json::Value actualJsonValue12;
+    BeJsDocument actualJsonValue12;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
@@ -944,43 +944,43 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
 
     // Assert
 
-    Json::Value nullValue;
+    BeJsDocument nullValue;
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue1)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.ToString() + "\nBut was:\n" + actualJsonValue2.ToString();
+        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.ToString() + "\nBut was:\n" + actualJsonValue3.ToString();
+        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue4)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue4.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.ToString() + "\nBut was:\n" + actualJsonValue5.ToString();
+        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue6)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue6.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue7, actualJsonValue7)) <<
-        "Expected:\n" + expectedJsonValue7.ToString() + "\nBut was:\n" + actualJsonValue7.ToString();
+        "Expected:\n" + expectedJsonValue7.Stringify() + "\nBut was:\n" + actualJsonValue7.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue8, actualJsonValue8)) <<
-        "Expected:\n" + expectedJsonValue8.ToString() + "\nBut was:\n" + actualJsonValue8.ToString();
+        "Expected:\n" + expectedJsonValue8.Stringify() + "\nBut was:\n" + actualJsonValue8.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue9, actualJsonValue9)) <<
-        "Expected:\n" + expectedJsonValue9.ToString() + "\nBut was:\n" + actualJsonValue9.ToString();
+        "Expected:\n" + expectedJsonValue9.Stringify() + "\nBut was:\n" + actualJsonValue9.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue10)) <<
-        "Expected:\n" + nullValue.ToString() + "\nBut was:\n" + actualJsonValue10.ToString();
+        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue10.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue11, actualJsonValue11)) <<
-        "Expected:\n" + expectedJsonValue11.ToString() + "\nBut was:\n" + actualJsonValue11.ToString();
+        "Expected:\n" + expectedJsonValue11.Stringify() + "\nBut was:\n" + actualJsonValue11.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue12)) <<
-        "Expected:\n" + expectedJsonValue12.ToString() + "\nBut was:\n" + actualJsonValue12.ToString();
+        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue12.Stringify();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1009,7 +1009,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
     targetInstance->SetInstanceId("targetInstanceId");
 
-    auto expectedJsonValue1 = Json::Value::From(u8R"(
+    auto expectedJsonValue1 = BeJsDocument(u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1051,7 +1051,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "instanceId" : "sourceInstanceId"
         })");
 
-    auto expectedJsonValue2 = Json::Value::From(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(u8R"(
         {
            "MyClass" : {
               "NavigationProperty" : {
@@ -1101,7 +1101,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecSchema" : "Schema.01.00"
         })");
 
-    auto expectedJsonValue3 = Json::Value::From(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1151,7 +1151,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "instanceId" : "sourceInstanceId"
         })");
 
-    auto expectedJsonValue4 = Json::Value::From(u8R"(
+    auto expectedJsonValue4 = BeJsDocument(u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1192,7 +1192,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecSchema" : "Schema.01.00"
         })");
 
-    auto expectedJsonValue5 = Json::Value::From(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(u8R"(
         {
            "AnotherSourceClass" : {
               "NavigationProperty" : {
@@ -1279,7 +1279,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "instanceId" : "targetInstanceId"
         })");
 
-    auto expectedJsonValue6 = Json::Value::From(u8R"(
+    auto expectedJsonValue6 = BeJsDocument(u8R"(
         {
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
@@ -1291,28 +1291,28 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(13), m_relationshipClass));
 
-    Json::Value actualJsonValue1;
+    BeJsDocument actualJsonValue1;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue1, *sourceInstance, nullptr, true));
 
-    Json::Value actualJsonValue2;
+    BeJsDocument actualJsonValue2;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue2, *sourceInstance, "MyClass", false, true));
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(14)));
 
-    Json::Value actualJsonValue3;
+    BeJsDocument actualJsonValue3;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue3, *sourceInstance, nullptr, true, true));
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(15), m_relationshipClass->GetId()));
 
-    Json::Value actualJsonValue4;
+    BeJsDocument actualJsonValue4;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue4, *sourceInstance, nullptr, false, false, &classLocator));
 
-    Json::Value actualJsonValue5;
+    BeJsDocument actualJsonValue5;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue5, *sourceInstance, nullptr, true, true, &classLocator));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue5, *sourceInstance, "AnotherSourceClass", false, false, &classLocator));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue5, *targetInstance, nullptr, true, false, &classLocator));
 
-    Json::Value actualJsonValue6;
+    BeJsDocument actualJsonValue6;
         {
         DISABLE_ASSERTS
         ASSERT_EQ(BSIERROR, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue6, *sourceInstance, nullptr, false));
@@ -1321,22 +1321,22 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
     // Assert
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue1.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+        "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.ToString() + "\nBut was:\n" + actualJsonValue2.ToString();
+        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.ToString() + "\nBut was:\n" + actualJsonValue3.ToString();
+        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue4.ToString() + "\nBut was:\n" + actualJsonValue4.ToString();
+        "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.ToString() + "\nBut was:\n" + actualJsonValue5.ToString();
+        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue6, actualJsonValue6)) <<
-        "Expected:\n" + expectedJsonValue6.ToString() + "\nBut was:\n" + actualJsonValue6.ToString();
+        "Expected:\n" + expectedJsonValue6.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1365,7 +1365,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
     targetInstance->SetInstanceId("targetInstanceId");
 
-    auto expectedJsonValue1 = Json::Value::From(u8R"*(
+    auto expectedJsonValue1 = BeJsDocument(u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1425,7 +1425,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "instanceId" : "sourceInstanceId"
         })*");
 
-    auto expectedJsonValue2 = Json::Value::From(u8R"*(
+    auto expectedJsonValue2 = BeJsDocument(u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1483,7 +1483,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecSchema" : "Schema.01.00"
         })*");
 
-    auto expectedJsonValue3 = Json::Value::From(u8R"*(
+    auto expectedJsonValue3 = BeJsDocument(u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1542,7 +1542,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecSchema" : "Schema.01.00"
         })*");
 
-    auto expectedJsonValue4 = Json::Value::From(u8R"*(
+    auto expectedJsonValue4 = BeJsDocument(u8R"*(
         {
            "AnotherSourceClass" : {
               "NavigationProperty" : {
@@ -1656,7 +1656,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "instanceId" : "targetInstanceId"
         })*");
 
-    auto expectedJsonValue5 = Json::Value::From(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(u8R"(
         {
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
@@ -1668,25 +1668,25 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(13), m_relationshipClass));
 
-    Json::Value actualJsonValue1;
+    BeJsDocument actualJsonValue1;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue1, *sourceInstance, nullptr, true));
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(14)));
 
-    Json::Value actualJsonValue2;
+    BeJsDocument actualJsonValue2;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue2, *sourceInstance, nullptr, false));
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(15), m_relationshipClass->GetId()));
 
-    Json::Value actualJsonValue3;
+    BeJsDocument actualJsonValue3;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue3, *sourceInstance, nullptr, false, &classLocator));
 
-    Json::Value actualJsonValue4;
+    BeJsDocument actualJsonValue4;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue4, *sourceInstance, nullptr, true, &classLocator));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue4, *sourceInstance, "AnotherSourceClass", false, &classLocator));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue4, *targetInstance, nullptr, true, &classLocator));
 
-    Json::Value actualJsonValue5;
+    BeJsDocument actualJsonValue5;
         {
         DISABLE_ASSERTS
         ASSERT_EQ(BSIERROR, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue5, *sourceInstance, nullptr, false));
@@ -1695,19 +1695,19 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
     // Assert
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue1.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+        "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.ToString() + "\nBut was:\n" + actualJsonValue2.ToString();
+        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.ToString() + "\nBut was:\n" + actualJsonValue3.ToString();
+        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue4.ToString() + "\nBut was:\n" + actualJsonValue4.ToString();
+        "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.ToString() + "\nBut was:\n" + actualJsonValue5.ToString();
+        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1734,7 +1734,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue1 = Json::Value::From(u8R"*(
+    auto expectedJsonValue1 = BeJsDocument(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xd"
@@ -1768,7 +1768,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            "className" : "Schema.SourceClass"
         })*");
 
-    auto expectedJsonValue23 = Json::Value::From(u8R"*(
+    auto expectedJsonValue23 = BeJsDocument(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe",
@@ -1803,7 +1803,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            "className" : "Schema.SourceClass"
         })*");
 
-    auto expectedJsonValue4 = Json::Value::From(u8R"*(
+    auto expectedJsonValue4 = BeJsDocument(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe",
@@ -1838,7 +1838,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            "className" : "Schema.TargetClass"
         })*");
 
-    auto expectedJsonValue5 = Json::Value::From(u8R"*(
+    auto expectedJsonValue5 = BeJsDocument(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe"
@@ -1877,24 +1877,24 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(13)));
 
-    Json::Value actualJsonValue1;
+    BeJsDocument actualJsonValue1;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue1, *sourceInstance));
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(14), m_relationshipClass));
 
-    Json::Value actualJsonValue2;
+    BeJsDocument actualJsonValue2;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue2, *sourceInstance));
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(14), m_relationshipClass->GetId()));
 
-    Json::Value actualJsonValue3;
+    BeJsDocument actualJsonValue3;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue3, *sourceInstance, &classLocator));
 
-    Json::Value actualJsonValue4;
+    BeJsDocument actualJsonValue4;
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue4, *sourceInstance, &classLocator));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue4, *targetInstance, &classLocator));
 
-    Json::Value actualJsonValue5;
+    BeJsDocument actualJsonValue5;
         {
         DISABLE_ASSERTS
         ASSERT_EQ(BSIERROR, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue5, *sourceInstance));
@@ -1903,19 +1903,19 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
     // Assert
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue1.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+        "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue23, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue23.ToString() + "\nBut was:\n" + actualJsonValue2.ToString();
+        "Expected:\n" + expectedJsonValue23.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue23, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue23.ToString() + "\nBut was:\n" + actualJsonValue3.ToString();
+        "Expected:\n" + expectedJsonValue23.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue4.ToString() + "\nBut was:\n" + actualJsonValue4.ToString();
+        "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.ToString() + "\nBut was:\n" + actualJsonValue5.ToString();
+        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1933,7 +1933,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePartialWritesIModelJsonGeometry)
 
    auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-   auto expectedJsonValue1 = Json::Value::From(u8R"(
+   auto expectedJsonValue1 = BeJsDocument(u8R"(
       {
          "StructProperty": {
             "GeometryProperty": {
@@ -1949,13 +1949,13 @@ TEST_F(ECInstanceJsonWriterTests, WritePartialWritesIModelJsonGeometry)
 
    // Act
 
-   Json::Value actualJsonValue1;
+   BeJsDocument actualJsonValue1;
    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePartialInstanceToJson(actualJsonValue1, *sourceInstance, JsonEcInstanceWriter::MemberNameCasing::KeepOriginal, nullptr));
 
    // Assert
 
    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-       "Expected:\n" + expectedJsonValue1.ToString() + "\nBut was:\n" + actualJsonValue1.ToString();
+       "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

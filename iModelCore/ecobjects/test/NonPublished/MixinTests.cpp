@@ -679,10 +679,10 @@ TEST_F(MixinTest, SerializeStandaloneMixin)
     schema->CreateMixinClass(mixin, "ExampleMixin", *entityClass);
     mixin->SetClassModifier(ECClassModifier::Abstract);
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(mixin->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneMixin.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);

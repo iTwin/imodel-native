@@ -229,7 +229,7 @@ void ECTestFixture::RoundTripSchema(ECSchemaPtr& schema, ECSchemaCP inSchema, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
+BentleyStatus ECTestUtility::ReadJsonInputFromFile(BeJsDocument& jsonInput, BeFileName& jsonFilePath)
     {
     const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
 
@@ -266,11 +266,21 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFil
 
     file.Close();
 
-    return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
+    return BeJsDocument(fileContent).hasParseError() ? ERROR : SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECTestUtility::JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b)
+    {
+    auto astr = a.Stringify();
+    auto bstr = b.Stringify();
+    return astr == bstr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @DMR Temp overloaded func
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECTestUtility::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
     {
@@ -282,12 +292,12 @@ bool ECTestUtility::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECTestUtility::JsonSchemasComparisonString(Json::Value const& createdSchema, Json::Value const& testDataSchema)
+Utf8String ECTestUtility::JsonSchemasComparisonString(BeJsDocument const& createdSchema, BeJsDocument const& testDataSchema)
     {
-    return "Created Schema   (minified): " + createdSchema.ToString() + '\n' +
-           "Test Data Schema (minified): " + testDataSchema.ToString() + '\n' +
-           "Created Schema   (pretty):\n"  + createdSchema.toStyledString() + '\n' +
-           "Test Data Schema (pretty):\n"  + testDataSchema.toStyledString();
+    return "Created Schema   (minified): " + createdSchema.Stringify() + '\n' +
+           "Test Data Schema (minified): " + testDataSchema.Stringify() + '\n' +
+           "Created Schema   (pretty):\n"  + createdSchema.Stringify(Indented) + '\n' +
+           "Test Data Schema (pretty):\n"  + testDataSchema.Stringify(Indented);
     }
 
 /*---------------------------------------------------------------------------------**//**

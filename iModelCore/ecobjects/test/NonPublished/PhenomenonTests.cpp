@@ -166,10 +166,10 @@ TEST_F(PhenomenonTests, StandaloneSchemaChildPhenomenon)
     PhenomenonP phenom;
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH*LENGTH", "ExamplePhenomenonLabel", "ExamplePhenomenonDescription");
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(phenom->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
 
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandalonePhenomenon.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);

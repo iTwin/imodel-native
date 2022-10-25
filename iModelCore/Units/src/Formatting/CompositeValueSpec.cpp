@@ -497,6 +497,14 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bve
 
     out = CompositeValueSpec(units);
 
+    // jval.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsValue paramName)
+    //     {
+    //     if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
+    //         out.SetIncludeZero(val.asBool());
+    //     else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
+    //         out.SetSpacer(val.asCString());
+    //     });
+
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         Utf8CP paramName = iter.memberName();

@@ -124,10 +124,10 @@ TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
     schema->CreatePropertyCategory(prop, "ExamplePropertyCategory");
     prop->SetPriority(5);
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(prop->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandalonePropertyCategory.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);

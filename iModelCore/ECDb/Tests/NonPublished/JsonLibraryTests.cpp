@@ -409,7 +409,7 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
     // Parse JSON value using JsonCpp
-    Json::Value jsonInput;
+    BeJsDocument jsonInput;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(jsonInput, jsonInputFile));
 
     // Parse JSON value using RapidJson

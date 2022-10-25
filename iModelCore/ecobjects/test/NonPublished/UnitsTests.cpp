@@ -1516,10 +1516,10 @@ TEST_F(UnitsTests, StandaloneSchemaChildECUnit)
     ECUnitP unit;
     schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription");
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(unit->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
 
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneUnit.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
@@ -2088,9 +2088,9 @@ TEST_F(InvertedUnitsTests, StandaloneSchemaChild)
     ECUnitP invUnit;
     schema->CreateInvertedUnit(invUnit, *unit, "ExampleInvertedUnit", *system, "ExampleUnitLabel", "ExampleUnitDescription");
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(invUnit->ToJson(schemaJson, true));
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
 
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneInvertedUnit.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
@@ -2379,10 +2379,10 @@ TEST_F(ConstantTests, StandaloneSchemaChild)
     ECUnitP unit;
     schema->CreateConstant(unit, "ExampleConstant", "M", *phenom, 10.0, 1.0, "ExampleConstantLabel", "ExampleConstantDescription");
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(unit->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
 
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneConstant.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);

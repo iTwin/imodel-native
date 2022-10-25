@@ -1421,7 +1421,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
 
         const bool isECDbEnum = ecdbEnumSchemas.find(schemaId) != ecdbEnumSchemas.end();
 
-        Json::Value benchmarkEnumValuesJson, upgradedEnumValuesJson;
+        BeJsDocument benchmarkEnumValuesJson, upgradedEnumValuesJson;
         ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(benchmarkEnumValuesJson, benchmarkEnumsStmt.GetValueText(0)));
         ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(upgradedEnumValuesJson, upgradedEnumsStmt.GetValueText(0)));
         if (BeStringUtilities::StricmpAscii(enumName,"DateTimeComponent") == 0)
@@ -1431,8 +1431,8 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
 
         for (Json::ArrayIndex i = 0; i < benchmarkEnumValuesJson.size(); i++)
             {
-            Json::Value const& benchmarkEnumValueJson = benchmarkEnumValuesJson[i];
-            Json::Value const& upgradedEnumValueJson = upgradedEnumValuesJson[i];
+            BeJsConst const& benchmarkEnumValueJson = benchmarkEnumValuesJson[i];
+            BeJsConst const& upgradedEnumValueJson = upgradedEnumValuesJson[i];
             ASSERT_TRUE(upgradedEnumValueJson.isMember("Name"));
             Utf8CP actualName = upgradedEnumValueJson["Name"].asCString();
 
@@ -1463,8 +1463,8 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
                 else
                     FAIL();
 
-                EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel")) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
-                EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
+                EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel")) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.Stringify() << " Upgraded: " << upgradedEnumValueJson.Stringify();
+                EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.Stringify() << " Upgraded: " << upgradedEnumValueJson.Stringify();
                 }
             }
         }
@@ -2251,14 +2251,14 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
     {
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Name, Id, EnumValues FROM ec_Enumeration ORDER BY Name"));
-    bmap<BeInt64Id, Json::Value> enumValues;
+    bmap<BeInt64Id, BeJsDocument> enumValues;
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Utf8CP enumName = stmt.GetValueText(0);
-        Json::Value& json = enumValues[stmt.GetValueId<BeInt64Id>(1)];
+        BeJsDocument& json = enumValues[stmt.GetValueId<BeInt64Id>(1)];
         ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(json, stmt.GetValueText(2)));
 
-        for (Json::Value& enumValue : json)
+        bool hadError = json.ForEachArrayMemberValue([&](BeJsValue::ArrayIndex, BeJsValue enumValue)
             {
             if (enumValue.isMember("StringValue"))
                 enumValue["Name"] = ECNameValidation::EncodeToValidName(enumValue["StringValue"].asCString());
@@ -2271,12 +2271,14 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
 
             if (enumValue.isMember("DisplayLabel"))
                 enumValue["Description"] = enumValue["DisplayLabel"].asCString();
-            }
+            return false;
+            });
+
         stmt.Finalize();
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE ec_Enumeration SET EnumValues=? WHERE Id=?"));
-        for (bpair<BeInt64Id, Json::Value> const& kvPair : enumValues)
+        for (auto const& kvPair : enumValues)
             {
-            ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, kvPair.second.ToString(), Statement::MakeCopy::Yes));
+            ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, kvPair.second.Stringify(), Statement::MakeCopy::Yes));
             ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(2, kvPair.first));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Reset();

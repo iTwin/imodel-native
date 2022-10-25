@@ -585,7 +585,7 @@ int TestHelper::GetFrequencyCount(Utf8StringCR source, Utf8StringCR target) cons
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus TestUtilities::ReadFile(Json::Value& json, BeFileNameCR jsonFilePath)
+BentleyStatus TestUtilities::ReadFile(BeJsDocument& json, BeFileNameCR jsonFilePath)
     {
     Utf8String jsonFileContent;
     if (SUCCESS != ReadFile(jsonFileContent, jsonFilePath))

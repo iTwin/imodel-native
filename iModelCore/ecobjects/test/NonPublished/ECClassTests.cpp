@@ -1064,10 +1064,10 @@ TEST_F(ClassTest, SerializeStandaloneEntityClass)
     entityClass->AddBaseClass(*mixinB);
     entityClass->SetCustomAttribute(*customAttr);
 
-    Json::Value schemaItemJson;
+    BeJsDocument schemaItemJson;
     EXPECT_TRUE(entityClass->ToJson(schemaItemJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECEntityClass.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1096,10 +1096,10 @@ TEST_F(ClassTest, SerializeStandaloneStructClass)
     primArrProp->SetExtendedTypeName("FooBar");
     primArrProp->SetDisplayLabel("ExPrimitiveArray");
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(structClass->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECStructClass.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1120,10 +1120,10 @@ TEST_F(ClassTest, SerializeStandaloneCustomAttributeClass)
     customAttrClass->SetClassModifier(ECClassModifier::Sealed);
     customAttrClass->SetContainerType(ECN::CustomAttributeContainerType::Schema | ECN::CustomAttributeContainerType::AnyProperty);
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(customAttrClass->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECCustomAttributeClass.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1201,8 +1201,9 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     NavigationECPropertyP navProp;
     entityClass->CreateNavigationProperty(navProp, "ExampleNavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Backward, false);
 
-    Json::Value schemaJson;
-    EXPECT_TRUE(entityClass->ToJson(schemaJson, true)); Json::Value testDataJson;
+    BeJsDocument schemaJson;
+    EXPECT_TRUE(entityClass->ToJson(schemaJson, true)); 
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithClassProperties.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1252,10 +1253,10 @@ TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerializedByD
     schema->CreateEntityClass(derivedEntityClass, "DerivedEntityClass");
     derivedEntityClass->AddBaseClass(*baseEntityClass);
 
-    Json::Value entityClassJson;
+    BeJsDocument entityClassJson;
     EXPECT_TRUE(derivedEntityClass->ToJson(entityClassJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneClassDefaultSerializeInheritedCustomAttributesAndProperties.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1288,10 +1289,10 @@ TEST_F(ClassTest, ExplicitSerializeInheritedProperties)
     primPropOverrideDerived->SetMinimumLength(3);
     primPropOverrideDerived->SetMaximumLength(12);
 
-    Json::Value entityClassJson;
+    BeJsDocument entityClassJson;
     EXPECT_TRUE(derivedEntityClass->ToJson(entityClassJson, true, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneClassExplicitlySerializeInheritedProperties.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -2356,10 +2357,10 @@ TEST_F(ClassTest, ExplicitSerializeInheritedPropertiesWithLengthGreaterThanInt32
     primPropOverrideDerived->SetMinimumLength(UINT32_MAX);
     primPropOverrideDerived->SetMaximumLength(UINT32_MAX);
 
-    Json::Value entityClassJson;
+    BeJsDocument entityClassJson;
     EXPECT_TRUE(derivedEntityClass->ToJson(entityClassJson, true, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/ExplicitSerializeInheritedPropertiesWithValueGreaterThanInt32Max.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);

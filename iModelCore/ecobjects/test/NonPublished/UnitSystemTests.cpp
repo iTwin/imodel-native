@@ -160,10 +160,10 @@ TEST_F(UnitSystemTest, StandaloneSchemaChildUnitSystem)
     UnitSystemP system;
     schema->CreateUnitSystem(system, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(system->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneUnitSystem.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);

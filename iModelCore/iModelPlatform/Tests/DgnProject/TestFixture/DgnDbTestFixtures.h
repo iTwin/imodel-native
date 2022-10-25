@@ -81,7 +81,7 @@ public:
 
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
-    bool JsonDeepEqual(Json::Value const& a, Json::Value const& b) const;
+    bool JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b) const;
 };
 
 

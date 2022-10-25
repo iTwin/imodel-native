@@ -9960,20 +9960,20 @@ TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
 
     auto compareCA = [] (IECInstanceCR expected, IECInstanceCR actual)
         {
-        Json::Value expectedJson, actualJson;
+        BeJsDocument expectedJson, actualJson;
         if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(expectedJson, expected, nullptr, true))
             return ERROR;
 
         if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(actualJson, actual, nullptr, true))
             return ERROR;
 
-        return expectedJson.compare(actualJson) == 0 ? SUCCESS : ERROR;
+        return expectedJson.isExactEqual(actualJson) == true ? SUCCESS : ERROR;
         };
 
-    Json::Value expectedCAJson, actualCAJson;
+    BeJsDocument expectedCAJson, actualCAJson;
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedCAJson, *expectedCAInstanceWithInstanceId, nullptr, true));
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualCAJson, *actualCAInstanceWithInstanceId, nullptr, true));
-    ASSERT_EQ(JsonValue(expectedCAJson), JsonValue(actualCAJson)) << "Read custom attribute instance with instance id differs from expected.";
+    ASSERT_EQ(expectedCAJson, actualCAJson) << "Read custom attribute instance with instance id differs from expected.";
 
     //*** assert custom attribute instance without instance id
     ECClassCP domainClass2 = readSchema->GetClassCP("domain2");
@@ -9988,7 +9988,7 @@ TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
     //compare rest of instance
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedCAJson, *expectedCAInstanceWithoutInstanceId, nullptr, true));
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualCAJson, *actualCAInstanceWithoutInstanceId, nullptr, true));
-    ASSERT_EQ(JsonValue(expectedCAJson), JsonValue(actualCAJson)) << "Read custom attribute instance without instance id differs from expected.";
+    ASSERT_EQ(expectedCAJson, actualCAJson) << "Read custom attribute instance without instance id differs from expected.";
     }
 
 //---------------------------------------------------------------------------------------

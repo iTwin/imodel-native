@@ -96,33 +96,36 @@ DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
         {
         int64_t enumId = stmt.GetValueInt64(0);
         Utf8CP enumName = stmt.GetValueText(1);
-        Json::Value enumValuesJson;
-        if (!Json::Reader::Parse(stmt.GetValueText(2), enumValuesJson))
+        BeJsDocument enumValuesJson = BeJsDocument(stmt.GetValueText(2));
+        if (enumValuesJson.hasParseError())
             {
             LOG.errorv("ECDb profile upgrade failed: Could not parse ECEnumeration values JSON: %s.", enumName);
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
 
-
         // now upgrade the enum values json
-        for (Json::Value& enumValueJson : enumValuesJson)
+        bool hadError = enumValuesJson.ForEachArrayMemberValue([&](BeJsValue::ArrayIndex, BeJsValue enumValueJson)
             {
             Utf8CP strVal = nullptr;
             Nullable<int32_t> intVal;
-            if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_StringValue))
+            if (enumValueJson.hasMember(ECDBMETA_PROP_ECEnumerator_StringValue))
                 strVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue].asCString();
             else if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_IntValue))
                 intVal = (int32_t) enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue].asInt();
             else
                 {
                 BeAssert(false);
-                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                return true;
                 }
 
             enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = ECEnumerator::DetermineName(enumName, strVal, intVal.IsValid() ? &intVal.Value() : nullptr);
-            }
+            return false;
+            });
 
-        enumValues[enumId] = enumValuesJson.ToString();
+        if(hadError)
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+        enumValues[enumId] = enumValuesJson.Stringify();
         }
 
     stmt.Finalize();
@@ -237,20 +240,21 @@ BentleyStatus ProfileUpgrader_4002::ConvertKoqFuses(KoqConversionContext& ctx)
         BeAssert(ctx.AreStandardSchemasDeserialized());
         UpgradedUnitFormatStrings& unitFormatStrings = koqs[stmt.GetValueId<KindOfQuantityId>(0)];
         ECSchemaId schemaId = stmt.GetValueId<ECSchemaId>(1);
-        Json::Value oldPresFusesJson;
+        BeJsDocument oldPresFusesJson = BeJsDocument(stmt.GetValueText(3));
         bvector<Utf8CP> oldPresFuses; //can use Utf8CP as the string is owned by the Json::Value (-> Json::Value must not be moved into the if statement)
         if (!stmt.IsColumnNull(3))
             {
-            if (!Json::Reader::Parse(stmt.GetValueText(3), oldPresFusesJson))
+            if (oldPresFusesJson.hasParseError())
                 {
                 LOG.error("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed. Could not parse the old presentation units.");
                 return ERROR;
                 }
 
-            for (Json::Value const& presFus : oldPresFusesJson)
+            oldPresFusesJson.ForEachArrayMemberValue([&](BeJsValue::ArrayIndex, BeJsValue presFus)
                 {
-                oldPresFuses.push_back(presFus.asCString());
-                }
+                    oldPresFuses.push_back(presFus.asCString());
+                    return false;
+                });
             }
 
         BeAssert(ctx.m_formatsSchema != nullptr);

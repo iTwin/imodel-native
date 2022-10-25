@@ -631,7 +631,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
         "    </ECEntityClass>"
         "</ECSchema>";
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaXml2)));
-   auto jResult0 = Json::Value::From(R"({
+   auto jResult0 = BeJsDocument(R"({
    "entities" : [
       {
          "baseClass" : "TestSchema:A",
@@ -686,7 +686,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
          ]
       }
    ]})");
-    auto jResult1 = Json::Value::From(R"(
+    auto jResult1 = BeJsDocument(R"(
     {
     "entities" : [
         {
@@ -816,10 +816,10 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
         InstanceFinder::SearchResults::JsonFormatOptions opts(m_ecdb);
         opts.SetUseClassNameForBaseClass(true);
         opts.SetUseClassNameForInstanceKey(true);
-        Json::Value jsonValue;
+        BeJsDocument jsonValue;
         BeJsValue jsValue(jsonValue);
         results.ToJson(jsValue, &opts);
-        return jsonValue.toStyledString();
+        return jsonValue.Stringify();
     };
 
     auto testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -828,8 +828,8 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
     ASSERT_NE(testSchema1, nullptr);
     auto result0 = InstanceFinder::FindInstances(m_ecdb, testSchema->GetId(), false);
     auto result1 = InstanceFinder::FindInstances(m_ecdb, testSchema1->GetId(), false);
-    ASSERT_STREQ(toJson(result0).c_str(), jResult0.toStyledString().c_str());
-    ASSERT_STREQ(toJson(result1).c_str(), jResult1.toStyledString().c_str());
+    ASSERT_STREQ(toJson(result0).c_str(), jResult0.Stringify(Indented).c_str());
+    ASSERT_STREQ(toJson(result1).c_str(), jResult1.Stringify(Indented).c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

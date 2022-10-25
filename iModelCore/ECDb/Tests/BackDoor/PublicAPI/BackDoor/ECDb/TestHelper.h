@@ -118,10 +118,15 @@ struct TestUtilities final
 
     public:
         static BentleyStatus ReadFile(Utf8StringR, BeFileNameCR);
-        static BentleyStatus ReadFile(Json::Value&, BeFileNameCR);
+        static BentleyStatus ReadFile(BeJsDocument&, BeFileNameCR);
         static BentleyStatus ReadFile(rapidjson::Document&, BeFileNameCR);
 
-        static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
+        static BentleyStatus ParseJson(BeJsDocument& json, Utf8StringCR jsonStr) 
+            { 
+                json.Parse(jsonStr.c_str()); 
+                return json.hasParseError() ? ERROR : SUCCESS;
+            }
+
         static BentleyStatus ParseJson(rapidjson::Document& json, Utf8StringCR jsonStr) { return json.Parse<0>(jsonStr.c_str()).HasParseError() ? ERROR : SUCCESS; }
         static Utf8String ToString(rapidjson::Value const& json)
             {

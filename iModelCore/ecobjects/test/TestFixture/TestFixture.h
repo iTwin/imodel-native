@@ -88,9 +88,10 @@ public:
 //=======================================================================================
 struct ECTestUtility
 {
-    static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
+    static BentleyStatus ReadJsonInputFromFile(BeJsDocument& jsonInput, BeFileName& jsonFilePath);
+    static bool JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b);
     static bool JsonDeepEqual(Json::Value const& a, Json::Value const& b);
-    static Utf8String JsonSchemasComparisonString(Json::Value const& createdSchema, Json::Value const& testDataSchema);
+    static Utf8String JsonSchemasComparisonString(BeJsDocument const& createdSchema, BeJsDocument const& testDataSchema);
     static bool CompareECInstances(ECN::IECInstanceCR expected, ECN::IECInstanceCR actual);
 };
 
