@@ -59,11 +59,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void _IterateInstanceKeys(NavNodeCR node, std::function<bool(ECInstanceKey)> cb) const override
+    void _IterateInstanceKeys(NavNodeKeyCR nodeKey, std::function<bool(ECInstanceKey)> cb) const override
         {
         auto scope = Diagnostics::Scope::Create("Iterate node instance keys");
 
-        if (node.GetInstanceKeysSelectQuery() == nullptr)
+        if (nodeKey.GetInstanceKeysSelectQuery() == nullptr)
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
             return;
@@ -71,17 +71,17 @@ protected:
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();
         CachedECSqlStatementPtr statement = m_context->GetConnection().GetStatementCache().GetPreparedStatement(m_context->GetConnection().GetECDb().Schemas(),
-            m_context->GetConnection().GetDb(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str());
+            m_context->GetConnection().GetDb(), nodeKey.GetInstanceKeysSelectQuery()->GetQueryString().c_str());
         if (statement.IsNull())
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), nodeKey.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
             }
 
-        if (SUCCESS != node.GetInstanceKeysSelectQuery()->BindValues(*statement))
+        if (SUCCESS != nodeKey.GetInstanceKeysSelectQuery()->BindValues(*statement))
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind values for instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), nodeKey.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
             }
 
         while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement))
@@ -99,7 +99,7 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Checking if node contains given instance key");
 
-        if (node.GetInstanceKeysSelectQuery() == nullptr)
+        if (node.GetKey()->GetInstanceKeysSelectQuery() == nullptr)
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
             return false;
@@ -107,7 +107,7 @@ protected:
 
         auto query = ComplexQueryBuilder::Create();
         query->SelectAll();
-        query->From(*node.GetInstanceKeysSelectQuery(), "keys");
+        query->From(*node.GetKey()->GetInstanceKeysSelectQuery(), "keys");
         query->Where("[keys].[ECClassId] = ? AND [keys].[ECInstanceId] = ?", { std::make_shared<BoundQueryId>(instanceKey.GetClassId()), std::make_shared<BoundQueryId>(instanceKey.GetInstanceId()) });
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();

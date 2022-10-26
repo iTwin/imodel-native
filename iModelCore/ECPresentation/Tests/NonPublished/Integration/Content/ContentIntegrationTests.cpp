@@ -15639,6 +15639,58 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ a.get() }, *content);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenGroupingNodeDependsOnAnotherRulesetVariables, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenGroupingNodeDependsOnAnotherRulesetVariables)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    // set up ruleset for hierarchy
+    PresentationRuleSetPtr nodeRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*nodeRules);
+
+    RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
+    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "GetVariableBoolValue(\"show_nodes\")", classA->GetFullName(), false));
+
+    nodeRules->AddPresentationRule(*nodeRule);
+
+    // set up ruleset for content
+    PresentationRuleSetPtr contentRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest() + Utf8String("contentRuleset"));
+    m_locater->AddRuleSet(*contentRules);
+
+    ContentRule* contentRule = new ContentRule("", 1000, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+
+    contentRules->AddPresentationRule(*contentRule);
+
+    // request nodes
+    RulesetVariables variables({ RulesetVariableEntry("show_nodes", true) });
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), variables, nullptr))); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
+
+    // request
+    KeySetPtr input = KeySet::Create(bvector<NavNodeKeyCPtr>{rootNodes[0]->GetKey()});
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), variables, nullptr, (int)ContentFlags::KeysOnly, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    ASSERT_EQ(1, content->GetContentSet().GetSize());
+    auto contentThing = content->GetContentSet()[0];
+
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ a.get() }, *content);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/

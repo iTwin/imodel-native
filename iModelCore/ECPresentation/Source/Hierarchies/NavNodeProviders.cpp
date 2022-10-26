@@ -804,7 +804,7 @@ bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentN
         areNodesSimilar = (node.GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount() == parentNode.GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount());
         if (areNodesSimilar)
             {
-            if (node.GetInstanceKeysSelectQuery() == nullptr || parentNode.GetInstanceKeysSelectQuery() == nullptr)
+            if (node.GetKey()->GetInstanceKeysSelectQuery() == nullptr || parentNode.GetKey()->GetInstanceKeysSelectQuery() == nullptr)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "Grouping node has no instance keys select query.");
                 areNodesSimilar = false;
@@ -813,8 +813,8 @@ bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentN
                 {
                 // the query returns all rows that are only returned by one of the queries
                 auto query = UnionQueryBuilder::Create({
-                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*node.GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*parentNode.GetInstanceKeysSelectQuery())),
-                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*parentNode.GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*node.GetInstanceKeysSelectQuery())),
+                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*node.GetKey()->GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*parentNode.GetKey()->GetInstanceKeysSelectQuery())),
+                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*parentNode.GetKey()->GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*node.GetKey()->GetInstanceKeysSelectQuery())),
                     });
                 static GenericQueryResultReader<bool> s_rowsExistReader([](ECSqlStatementCR){return true;});
                 SetupCustomFunctionsContext fnContext(*m_context, query->GetExtendedData());
@@ -3249,9 +3249,9 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     NavNodeExtendedData targetExtendedData(target);
     NavNodeExtendedData sourceExtendedData(source);
 
-    target.SetInstanceKeysSelectQuery(UnionQueryBuilder::Create({
-        StringQueryBuilder::Create(*target.GetInstanceKeysSelectQuery()),
-        StringQueryBuilder::Create(*source.GetInstanceKeysSelectQuery()),
+    target.GetKey()->SetInstanceKeysSelectQuery(UnionQueryBuilder::Create({
+        StringQueryBuilder::Create(*target.GetKey()->GetInstanceKeysSelectQuery()),
+        StringQueryBuilder::Create(*source.GetKey()->GetInstanceKeysSelectQuery()),
         })->CreateQuery());
 
     bvector<ECClassInstanceKey> instanceKeys = target.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();

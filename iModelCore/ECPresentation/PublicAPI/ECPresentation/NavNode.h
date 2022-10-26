@@ -51,7 +51,6 @@ private:
     bool m_isCheckboxVisible;
     bool m_isCheckboxEnabled;
     bool m_shouldAutoExpand;
-    std::unique_ptr<PresentationQuery const> m_instanceKeysSelectQuery;
 
 private:
     void InitUsersExtendedData(rapidjson::Value const* source = nullptr);
@@ -137,9 +136,6 @@ public:
     void SetShouldAutoExpand(bool value) {m_shouldAutoExpand = value;}
     //! Should this node be auto-expanded.
     bool ShouldAutoExpand() const {return m_shouldAutoExpand;}
-
-    ECPRESENTATION_EXPORT PresentationQuery const* GetInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const>);
 
     //! Get extended data injected into this node by API user
     ECPRESENTATION_EXPORT RapidJsonAccessor GetUsersExtendedData() const;

@@ -1443,9 +1443,8 @@ void NodesCache::CacheNode(BeGuidCR hierarchyLevelId, NavNodeR node)
     stmt->BindText(bindingIndex++, nodeStr.c_str(), Statement::MakeCopy::No);
 
     stmt->BindText(bindingIndex++, node.GetLabelDefinition().GetDisplayValue(), Statement::MakeCopy::Yes);
-
-    if (node.GetInstanceKeysSelectQuery() != nullptr)
-        stmt->BindText(bindingIndex++, BeRapidJsonUtilities::ToString(node.GetInstanceKeysSelectQuery()->ToJson()), Statement::MakeCopy::Yes);
+    if (node.GetKey()->GetInstanceKeysSelectQuery() != nullptr)
+        stmt->BindText(bindingIndex++, BeRapidJsonUtilities::ToString(node.GetKey()->GetInstanceKeysSelectQuery()->ToJson()), Statement::MakeCopy::Yes);
     else
         stmt->BindNull(bindingIndex++);
 

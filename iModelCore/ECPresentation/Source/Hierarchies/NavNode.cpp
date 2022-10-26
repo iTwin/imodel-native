@@ -99,6 +99,16 @@ bvector<Utf8String> NavNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBasePtr NavNodeKey::GetInstanceKeysSelectQuery() const { return m_instanceKeysSelectQuery; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void NavNodeKey::SetInstanceKeysSelectQuery(PresentationQueryBasePtr query) { m_instanceKeysSelectQuery = query; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECInstancesNodeKey::_IsSimilar(NavNodeKey const& other) const
     {
     if (!NavNodeKey::_IsSimilar(other))
@@ -265,6 +275,29 @@ bvector<Utf8String> LabelGroupingNodeKey::CreateHashPath(Utf8StringCR connection
     return CombineHashes(parentKey ? parentKey->GetHashPath() : bvector<Utf8String>(), h.GetHashString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKey::NavNodeKey(Utf8String type, Utf8String specificationIdentifier, bvector<Utf8String> hashPath)
+    : m_type(type), m_specificationIdentifier(specificationIdentifier), m_hashPath(hashPath)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKey::~NavNodeKey() {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKey::NavNodeKey(NavNodeKey const& other)
+    {
+    m_type = other.m_type;
+    m_specificationIdentifier = other.m_specificationIdentifier;
+    m_hashPath = other.m_hashPath;
+    m_instanceKeysSelectQuery = other.m_instanceKeysSelectQuery;
+    }
+
 #define NAVNODE_JSON_CHUNK_SIZE 256
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -306,8 +339,6 @@ NavNode::NavNode(NavNodeCR other)
     m_isCheckboxVisible = other.m_isCheckboxVisible;
     m_isCheckboxEnabled = other.m_isCheckboxEnabled;
     m_shouldAutoExpand = other.m_shouldAutoExpand;
-    if (other.m_instanceKeysSelectQuery)
-        m_instanceKeysSelectQuery = other.m_instanceKeysSelectQuery->Clone();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,11 +403,6 @@ RapidJsonAccessor NavNode::GetUsersExtendedData() const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQuery const* NavNode::GetInstanceKeysSelectQuery() const {return m_instanceKeysSelectQuery.get();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void NavNode::SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const> query) {m_instanceKeysSelectQuery = std::move(query);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
