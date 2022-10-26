@@ -860,6 +860,7 @@ void IModelJsECPresentationSerializer::_NavNodeKeyAsJson(ContextR, NavNodeKey co
         pathJson.PushBack(rapidjson::Value(partialHash.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
     navNodeKeyBaseJson.AddMember("pathFromRoot", pathJson, navNodeKeyBaseJson.GetAllocator());
+    navNodeKeyBaseJson.AddMember("instanceKeysSelectQuery", navNodeKey.GetInstanceKeysSelectQuery(), navNodeKeyBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
