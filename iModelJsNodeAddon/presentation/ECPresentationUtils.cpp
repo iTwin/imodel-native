@@ -971,7 +971,7 @@ static ECClassCP GetECClassByFullName(Utf8CP fullName, ECDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db)
+static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db, bool defaultIsPolymorphicValue = false)
     {
     RelatedClass invalid;
     if (!json.IsObject())
@@ -987,9 +987,9 @@ static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db)
     if (!sourceClass || !targetClass || !relationship || !relationship->IsRelationshipClass())
         return invalid;
 
-    bool isPolymorphicRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship].GetBool() : false;
     bool isForwardRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsForwardRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsForwardRelationship].GetBool() : false;
-    bool isPolymorphicTargetClass = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass].GetBool() : false;
+    bool isPolymorphicRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship].GetBool() : defaultIsPolymorphicValue;
+    bool isPolymorphicTargetClass = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass].GetBool() : defaultIsPolymorphicValue;
 
     return RelatedClass(*sourceClass, SelectClass<ECRelationshipClass>(*relationship->GetRelationshipClassCP(), "", isPolymorphicRelationship),
         isForwardRelationship, SelectClass<ECClass>(*targetClass, "", isPolymorphicTargetClass));
@@ -998,7 +998,7 @@ static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RelatedClassPath GetRelatedClassPathFromJson(RapidJsonValueCR json, ECDbCR db)
+static RelatedClassPath GetRelatedClassPathFromJson(RapidJsonValueCR json, ECDbCR db, bool defaultIsPolymorphicValue = false)
     {
     RelatedClassPath path;
     if (!json.IsArray())
@@ -1006,7 +1006,7 @@ static RelatedClassPath GetRelatedClassPathFromJson(RapidJsonValueCR json, ECDbC
 
     for (rapidjson::SizeType i = 0; i < json.Size(); ++i)
         {
-        RelatedClass rc = GetRelatedClassFromJson(json[i], db);
+        RelatedClass rc = GetRelatedClassFromJson(json[i], db, defaultIsPolymorphicValue);
         if (rc.IsValid())
             path.push_back(rc);
         }
@@ -1209,11 +1209,12 @@ static ParseResult<KeySetPtr> ParseKeysFromJson(IConnectionCR connection, RapidJ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ParseResult<bvector<RelatedClassPath>> ParseInstanceFilterRelatedInstances(RapidJsonValueCR instancesJson, ECDbCR db)
+static ParseResult<bvector<RelatedClassPath>> ParseInstanceFilterRelatedInstances(RapidJsonValueCR filterJson, ECDbCR db)
     {
-    if (instancesJson.IsNull())
+    if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances))
         return CreateParseResult(bvector<RelatedClassPath>());
 
+    RapidJsonValueCR instancesJson = filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances];
     if (!instancesJson.IsArray())
          return CreateParseError<bvector<RelatedClassPath>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances "` to be an array");
 
@@ -1224,7 +1225,7 @@ static ParseResult<bvector<RelatedClassPath>> ParseInstanceFilterRelatedInstance
         if (!instanceDef.IsObject() || !instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty))
             continue;
 
-        RelatedClassPath pathToProperty = GetRelatedClassPathFromJson(instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty], db);
+        RelatedClassPath pathToProperty = GetRelatedClassPathFromJson(instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty], db, true);
         if (pathToProperty.empty())
             continue;
 
@@ -1330,7 +1331,7 @@ private:
             if (!selectClass)
                 return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "` to be full name of a valid class");
 
-            ParseResult<bvector<RelatedClassPath>> relatedInstances = ParseInstanceFilterRelatedInstances(filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances], db);
+            ParseResult<bvector<RelatedClassPath>> relatedInstances = ParseInstanceFilterRelatedInstances(filterJson, db);
             if (relatedInstances.HasError())
                 return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>(relatedInstances.GetError());
 

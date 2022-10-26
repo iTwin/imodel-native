@@ -310,6 +310,30 @@ static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, Content
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void AssignMissingAliases(bvector<RelatedClassPath>& relatedPaths)
+    {
+    ECClassUseCounter classUseCounter;
+    for (RelatedClassPath& path : relatedPaths)
+        {
+        for (RelatedClass& step : path)
+            {
+            if (step.GetRelationship().GetAlias().empty())
+                {
+                ECClassCR relClass = step.GetRelationship().GetClass();
+                step.GetRelationship().SetAlias(RULES_ENGINE_RELATED_CLASS_ALIAS(relClass, classUseCounter.Inc(&relClass)));
+                }
+            if (step.GetTargetClass().GetAlias().empty())
+                {
+                ECClassCR targetClass = step.GetTargetClass().GetClass();
+                step.GetTargetClass().SetAlias(RULES_ENGINE_RELATED_CLASS_ALIAS(targetClass, classUseCounter.Inc(&targetClass)));
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsSelectClassFilteredOut(SelectClassInfo const& selectClassInfo, std::shared_ptr<InstanceFilterDefinition> filter)
     {
     if (!filter || selectClassInfo.GetSelectClass().GetClass().Is(filter->GetSelectClass()))
@@ -338,7 +362,9 @@ static void ApplyInstanceFilter(ComplexContentQuery& query, SelectClassWithExclu
     filterQuery->SelectContract(*SimpleQueryContract::Create({ *PresentationQueryContractSimpleField::Create(nullptr, "[this].[ECInstanceId]") }));
     filterQuery->From(SelectClass<ECClass>(needToFilterClass ? *filter.GetSelectClass() : selectClass.GetClass(), "this"));
 
-    for (RelatedClassPathCR relatedPath : filter.GetRelatedInstances())
+    bvector<RelatedClassPath> relatedPaths = filter.GetRelatedInstances();
+    AssignMissingAliases(relatedPaths);
+    for (RelatedClassPathCR relatedPath : relatedPaths)
         filterQuery->Join(relatedPath);
 
     filterQuery->Where(expressionClause);
