@@ -1188,6 +1188,7 @@ static ParseResult<KeySetPtr> ParseKeysFromJson(IConnectionCR connection, RapidJ
 
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides                                 "descriptorOverrides"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression                 "filterExpression"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression           "fieldsFilterExpression"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesSorting                          "sorting"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesSortingField                     "field"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesSortingDirection                 "direction"
@@ -1296,13 +1297,24 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     static ParseResult<Nullable<Utf8String>> ParseFieldsFilterExpression(RapidJsonValueCR json)
         {
-        if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression))
-            return CreateParseResult<Nullable<Utf8String>>(nullptr);
+        if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression))
+            {
+            if (!json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression].IsString())
+                return CreateParseError<Nullable<Utf8String>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression "` to be a string");
 
-        if (!json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].IsString())
-            return CreateParseError<Nullable<Utf8String>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "` to be a string");
+            return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression].GetString()));
+            }
+                                                                                                                                      
+        // deprecated property
+        if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression))
+            {
+            if (!json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].IsString())
+                return CreateParseError<Nullable<Utf8String>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "` to be a string");
 
-        return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].GetString()));
+            return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].GetString()));
+            }
+
+        return CreateParseResult<Nullable<Utf8String>>(nullptr);
         }
 
     /*---------------------------------------------------------------------------------**//**
