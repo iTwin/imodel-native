@@ -532,7 +532,7 @@ public:
         : m_expression(expression), m_selectClass(selectClass), m_relatedInstances(relatedInstances)
         {}
 
-    bool Equals(InstanceFilterDefinition const& other) const {return m_selectClass == other.m_selectClass && m_expression.Equals(other.m_expression) && m_relatedInstances == other.m_relatedInstances; }
+    bool Equals(InstanceFilterDefinition const& other) const {return m_selectClass == other.m_selectClass && m_expression.Equals(other.m_expression) && m_relatedInstances == other.m_relatedInstances;}
     bool operator==(InstanceFilterDefinition const& other) const {return Equals(other);}
     bool operator!=(InstanceFilterDefinition const& other) const {return !Equals(other);}
 

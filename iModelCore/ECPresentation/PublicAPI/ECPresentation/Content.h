@@ -1256,7 +1256,7 @@ public:
     //! Set fields filtering ECExpression.
     void SetFieldsFilterExpression(Utf8String expression) {m_fieldsFilterExpression = expression;}
     //! Get fields filtering ECExpression.
-    Utf8StringCR GetFieldsFilterExpression() const {return m_fieldsFilterExpression; }
+    Utf8StringCR GetFieldsFilterExpression() const {return m_fieldsFilterExpression;}
 
     //! Set instance filter definition.
     void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition> filter) {m_instanceFilter = filter;}
