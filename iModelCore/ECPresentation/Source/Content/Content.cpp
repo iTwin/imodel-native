@@ -567,6 +567,9 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     if (m_selectionInfo.IsNull() && other.m_selectionInfo.IsValid() || m_selectionInfo.IsValid() && other.m_selectionInfo.IsNull() || m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && *m_selectionInfo != *other.m_selectionInfo)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Attempting to merge descriptors with different selection infos");
 
+    if (m_instanceFilter && !other.m_instanceFilter || !m_instanceFilter && other.m_instanceFilter || m_instanceFilter && other.m_instanceFilter && *m_instanceFilter != *other.m_instanceFilter)
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Attempting to merge descriptors with different instance filters");
+
     std::unordered_map<size_t, size_t> selectClassesRemap; // index in other.m_classes => index in this->m_classes
     for (size_t i = 0; i < other.m_classes.size(); ++i)
         {
