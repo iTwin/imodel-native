@@ -1260,7 +1260,7 @@ public:
 
     //! Set instance filter definition.
     void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition> filter) {m_instanceFilter = filter;}
-    //! Get isntance filter definition.
+    //! Get instance filter definition.
     std::shared_ptr<InstanceFilterDefinition> GetInstanceFilter() const {return m_instanceFilter;}
 
     //! Get the content flags.

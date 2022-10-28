@@ -526,9 +526,7 @@ private:
     bvector<RelatedClassPath> m_relatedInstances;
 
 public:
-    InstanceFilterDefinition() : m_selectClass(nullptr) {}
-    InstanceFilterDefinition(Utf8String expression) : m_expression(expression), m_selectClass(nullptr) {}
-    InstanceFilterDefinition(Utf8String expression, ECClassCP selectClass, bvector<RelatedClassPath> const& relatedInstances)
+    InstanceFilterDefinition(Utf8String expression, ECClassCP selectClass, bvector<RelatedClassPath> relatedInstances)
         : m_expression(expression), m_selectClass(selectClass), m_relatedInstances(relatedInstances)
         {}
 

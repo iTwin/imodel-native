@@ -370,6 +370,9 @@
     <ClCompile Include="NonPublished\Unit\QueryBuilderTest.cpp">
       <Filter>Unit</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_Filtering.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\Helpers\ECDbTestProject.h">

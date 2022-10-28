@@ -8,7 +8,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool InstanceFiltersEqual(std::shared_ptr<InstanceFilterDefinition> lhs, std::shared_ptr<InstanceFilterDefinition> rhs)
+static bool InstanceFiltersEqual(InstanceFilterDefinition const* lhs, InstanceFilterDefinition const* rhs)
     {
     return (lhs == nullptr && rhs == nullptr) || (lhs != nullptr && rhs != nullptr && *lhs == *rhs);
     }
@@ -30,7 +30,7 @@ bool ContentHelpers::AreDescriptorsEqual(ContentDescriptor const& lhs, ContentDe
         || lhs.GetConnectionId() != rhs.GetConnectionId()
         || lhs.GetInputNodeKeys().GetHash() != rhs.GetInputNodeKeys().GetHash()
         || lhs.GetRulesetVariables() != rhs.GetRulesetVariables()
-        || !InstanceFiltersEqual(lhs.GetInstanceFilter(), rhs.GetInstanceFilter()))
+        || !InstanceFiltersEqual(lhs.GetInstanceFilter().get(), rhs.GetInstanceFilter().get()))
         {
         return false;
         }
