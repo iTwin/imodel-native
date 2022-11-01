@@ -202,5 +202,13 @@ Utf8String FormattingTestUtils::JsonComparisonString(BeJsDocument const& created
            "Created   (pretty):\n"  + created.Stringify(Indented) + '\n' +
            "Test Data (pretty):\n"  + test.Stringify(Indented);
     }
+// DMR - overloaded func
+Utf8String FormattingTestUtils::JsonComparisonString(Json::Value const& created, Json::Value const& test)
+    {
+    return "Created   (minified): " + created.ToString() + '\n' +
+           "Test Data (minified): " + test.ToString() + '\n' +
+           "Created   (pretty):\n"  + created.toStyledString() + '\n' +
+           "Test Data (pretty):\n"  + test.toStyledString();
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

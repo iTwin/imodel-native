@@ -949,10 +949,10 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClass)
     relationshipClass->GetSource().SetIsPolymorphic(true);
     relationshipClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(relationshipClass->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECRelationshipClass.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -998,10 +998,10 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstract
     relationshipClass->GetTarget().SetRoleLabel("TargetRoleLabel");
     relationshipClass->GetTarget().AddClass(*classA);
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(relationshipClass->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECRelationshipClassWithAbstractConstraint.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1043,10 +1043,10 @@ TEST_F(ECRelationshipClassTest, InheritedConstraintCustomAttributesShouldNotBeSe
     derivedRelationshipClass->GetTarget().AddClass(*targetClass);
     derivedRelationshipClass->GetTarget().SetRoleLabel("TargetRoleLabel");
 
-    Json::Value relationshipClassJson;
+    BeJsDocument relationshipClassJson;
     EXPECT_TRUE(derivedRelationshipClass->ToJson(relationshipClassJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName relClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/RelationshipConstraintInheritedCustomAttributes.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, relClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);

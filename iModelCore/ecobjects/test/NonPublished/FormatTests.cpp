@@ -230,10 +230,10 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     comp.SetSubLabel("\"");
     ufmt->SetCompositeSpec(comp);
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     ufmt->ToJson(schemaJson, false);
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneFormat.ecschema.json"));
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile));
 

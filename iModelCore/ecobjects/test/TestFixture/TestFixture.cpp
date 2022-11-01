@@ -270,6 +270,49 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(BeJsDocument& jsonInput, BeFi
     }
 
 //---------------------------------------------------------------------------------------
+// @DMR Temp overloaded func
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
+    {
+    const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
+
+    Utf8String fileContent;
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(jsonFilePath, BeFileAccess::Read))
+        return ERROR;
+
+    uint64_t rawSize;
+    if (BeFileStatus::Success != file.GetSize(rawSize) || rawSize > UINT32_MAX)
+        return ERROR;
+
+    uint32_t sizeToRead = (uint32_t) rawSize;
+
+    uint32_t sizeRead;
+    ScopedArray<Byte> scopedBuffer(sizeToRead);
+    Byte* buffer = scopedBuffer.GetData();
+    if (BeFileStatus::Success != file.Read(buffer, &sizeRead, sizeToRead) || sizeRead != sizeToRead)
+        return ERROR;
+
+    if (buffer[0] != utf8BOM[0] || buffer[1] != utf8BOM[1] || buffer[2] != utf8BOM[2])
+        {
+        LOG.error("Json file is expected to be encoded in UTF-8");
+        return ERROR;
+        }
+
+    for (uint32_t ii = 3; ii < sizeRead; ii++)
+        {
+        if (buffer[ii] == '\n' || buffer[ii] == '\r')
+            continue;
+        fileContent.append(1, buffer[ii]);
+        }
+
+    file.Close();
+
+    return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECTestUtility::JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b)
@@ -299,7 +342,17 @@ Utf8String ECTestUtility::JsonSchemasComparisonString(BeJsDocument const& create
            "Created Schema   (pretty):\n"  + createdSchema.Stringify(Indented) + '\n' +
            "Test Data Schema (pretty):\n"  + testDataSchema.Stringify(Indented);
     }
-
+    
+//---------------------------------------------------------------------------------------
+// @DMR Temp overloaded func
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECTestUtility::JsonSchemasComparisonString(Json::Value const& createdSchema, Json::Value const& testDataSchema)
+    {
+    return "Created Schema   (minified): " + createdSchema.ToString() + '\n' +
+           "Test Data Schema (minified): " + testDataSchema.ToString() + '\n' +
+           "Created Schema   (pretty):\n"  + createdSchema.toStyledString() + '\n' +
+           "Test Data Schema (pretty):\n"  + testDataSchema.toStyledString();
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
