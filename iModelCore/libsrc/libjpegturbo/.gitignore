@@ -1,0 +1,7 @@
+# Stuff we don't want in our repo
+
+vendor/cmakescripts
+vendor/doc
+vendor/java
+vendor/testimages
+vendor/sharedlib

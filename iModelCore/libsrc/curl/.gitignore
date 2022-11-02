@@ -1,0 +1,8 @@
+
+# Parts that we don't want to put in the source repo.
+vendor/CMake
+vendor/docs
+vendor/packages
+vendor/projects
+vendor/tests
+vendor/winbuild
