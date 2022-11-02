@@ -1,0 +1,57 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include    mdl.mki
+%include    $(SrcRoot)imodel02/iModelCore/GeomLibs/common/inc/geomlibsdev.mki
+%include    $(SharedMki)HtmlHelp.mki
+
+OutputName     = GeomLibsAPI
+InputDir       = $(OutGeomLibs)PublishedAPI/Geom/
+DOXYGEN_OUTPUT = $(OutGeomLibs)dox/
+
+InputStamp     = $(OutGeomLibs)PublishedAPI.stamp
+
+DOXYGEN_INPUT  = $(InputDir)
+
+#INCLUDE_PATH  = $(DOXYGEN_INPUT)
+$(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
+    $(msg)
+    ~mkdir $(DOXYGEN_OUTPUT)
+    > $(DOXYGEN_OUTPUT)doxygen.cfg
+    @INCLUDE      = bentley-doxygen.cfg
+    @INCLUDE      = bentley-doxygen-html-aliases.cfg
+    ENABLED_SECTIONS += ECOBJECTS_MAINPAGE
+    <
+    ~@putenv PROJECT_NAME="ECObjects SDK Documentation"
+    ~@putenv DOXYGEN_INPUT=$(DOXYGEN_INPUT)
+    ~@putenv DOXYGEN_IMAGES=$(_MakefilePath)htmlinclude
+    ~@putenv DOXYGEN_OUTPUT=$(DOXYGEN_OUTPUT)
+    ~@putenv DOXYGEN_INCLUDE=$(includeDir)
+    ~@putenv HHC=
+    %if defined (FORCE_CHM)
+        ~@putenv DOXYGEN_GENERATE_CHM=YES
+        ~@putenv CHM_FILE=$(DOXYGEN_OUTPUT)$(OutputName)
+    %else
+        ~@putenv DOXYGEN_GENERATE_CHM=NO
+        | ************************************************
+        | *  FORCE_CHM is NOT defined - not building .chm file
+        | ************************************************
+    %endif
+    ~chdir $(SrcRoot)imodel02/iModelCore/GeomLibs/docs
+    !$(doxygenCmd) $(DOXYGEN_OUTPUT)doxygen.cfg
+    %if defined (FORCE_CHM)
+        | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]
+        !-$(hhc) $(DOXYGEN_OUTPUT)html/index.hhp
+    %else
+        | ************************************************
+        | * See $(DOXYGEN_OUTPUT)html/index.html
+        | ************************************************
+    %endif
+    ~time
+
+%if defined (FORCE_CHM)
+$(ContextDeliveryDir)$(OutputName).chm: $(DOXYGEN_OUTPUT)$(OutputName).chm
+    $(LinkFirstDepToFirstTarget)
+%endif
+

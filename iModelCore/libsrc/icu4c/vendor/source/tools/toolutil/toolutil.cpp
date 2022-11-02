@@ -103,7 +103,9 @@ U_CAPI int32_t U_EXPORT2 getCurrentYear() {
 
 U_CAPI const char * U_EXPORT2
 getLongPathname(const char *pathname) {
-#if U_PLATFORM_USES_ONLY_WIN32_API
+// BENTLEY_CHANGES
+// #if U_PLATFORM_USES_ONLY_WIN32_API
+#if U_PLATFORM_USES_ONLY_WIN32_API && !defined (BENTLEY_WINRT)
     /* anticipate problems with "short" pathnames */
     static WIN32_FIND_DATAA info;
     HANDLE file=FindFirstFileA(pathname, &info);

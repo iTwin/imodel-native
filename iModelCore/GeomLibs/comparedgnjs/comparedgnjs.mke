@@ -1,0 +1,38 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+BUILD_WITH_C17=1
+
+%include mdl.mki
+
+AppName = comparedgnjs
+CCompPDBName = $(AppName)
+o = $(OutputRootDir)Build/GeomLibsTest/
+
+ProductDir = $(OutputRootDir)Product/
+collectionProduct = $(ProductDir)geomlibs-gtest/
+
+always:
+    !~@mkdir $(o)
+
+# -----------------------------------------------------
+# Compile comparedgnjs.cpp. It contains "main"
+# -----------------------------------------------------
+
+$(o)comparedgnjs$(oext) : $(baseDir)comparedgnjs.cpp $(baseDir)compareJson.h $(baseDir)compareGeometry.h
+
+# -----------------------------------------------------
+# Create comparedgnjs.exe
+# -----------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = iTwinComparedgnjs
+EXE_OBJS            = $(o)comparedgnjs$(oext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)iTwinBentley.lib
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)iTwinGeom.lib
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)iTwinGeomSerialization.lib
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(stlibprefix)iTwinJsonCpp$(stlibext)
+%include $(sharedMki)linktool.mki
+
+always:
+	~linkfile "$(collectionProduct)$(EXE_NAME)$(exeext) = $(o)$(EXE_NAME)$(exeext)"

@@ -1,0 +1,11 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+%include BeIcu4cCommon.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+$(BuildContext)Delivery/$(DataFileName) : $(_makefilepath)$(DataFileName)
+    $(LinkFirstDepToFirstTarget)

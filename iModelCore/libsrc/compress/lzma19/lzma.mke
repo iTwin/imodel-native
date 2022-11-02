@@ -1,0 +1,74 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: lzma19/lzma.mke $
+#
+#  $Copyright: (c) 2020 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# Export/make visible all functions in JsonCpp
+GCC_DEFAULT_VISIBILITY=default
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+VendorApi_liblzma = $(baseDir)../VendorAPI/liblzma19
+
+cIncs + -I$(VendorApi_liblzma)
+
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+appName             = lzma19
+CCompPDBName        = $(appName)
+o                   = $(OutputRootDir)build/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+# Make 7z single threaded on everything other than Windows.
+%if $(TARGET_PLATFORM) != "Windows"
+    cDefs + -D_7ZIP_ST
+%endif
+
+# disable checking of assignment to smaller data types. lzma does this a lot.
+# VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
+%if !defined(IS_VERACODE_BUILD)
+    VCRuntimeCheckOption = -RTCsu
+%endif
+
+MultiCompileDepends     = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)Alloc$(oext)        : $(baseDir)Alloc.c ${MultiCompileDepends}
+
+$(o)LzmaLib$(oext)      : $(baseDir)LzmaLib.c ${MultiCompileDepends}
+
+$(o)LzmaEnc$(oext)      : $(baseDir)LzmaEnc.c ${MultiCompileDepends}
+
+$(o)LzmaDec$(oext)      : $(baseDir)LzmaDec.c ${MultiCompileDepends}
+
+$(o)Lzma2Enc$(oext)     : $(baseDir)Lzma2Enc.c ${MultiCompileDepends}
+
+$(o)Lzma2Dec$(oext)     : $(baseDir)Lzma2Dec.c ${MultiCompileDepends}
+
+$(o)LzFind$(oext)       : $(baseDir)LzFind.c ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM) == "Windows"
+    $(o)MtCoder$(oext)      : $(baseDir)MtCoder.c ${MultiCompileDepends}
+
+    $(o)MtDec$(oext)      : $(baseDir)MtDec.c ${MultiCompileDepends}
+
+    $(o)LzFindMt$(oext)     : $(baseDir)LzFindMt.c ${MultiCompileDepends}
+
+    $(o)Threads$(oext)      : $(baseDir)Threads.c ${MultiCompileDepends}
+%endif
+%include MultiCppCompileGo.mki
+
+LIB_NAME                = $(appName)
+LIB_DEST                = $(o)
+LIB_TMP_DIR             = $(o)
+LIB_OBJS                = $(MultiCompileObjectList)
+LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+
+%include creatlib.mki
+

@@ -1,0 +1,104 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+BUILD_WITH_C17=1
+%include mdl.mki
+
+AppName             = BentleyGeomSerialization
+CompileOptionsMki   =% $(_MakeFilePath)../mki/GeomLibsSerialization.mki
+
+%include $(CompileOptionsMki)
+
+BuildContext        = $(OutBuildContexts)geomlibs/
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Convenience variables for our paths
+
+MySrc               =% $(_MakeFilePath)
+MyPublicApi         = $(MySrc)../../PublicAPI/GeomSerialization/
+
+o                   = $(PartBuildDir)
+ContextDelivery     = $(BuildContext)Delivery/
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Bootstrap
+
+always:
+    !~@mkdir $(o)
+    !~@mkdir $(BuildDelivery)
+
+$(BuildContext)PublicApi/GeomSerialization : ${MyPublicApi}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#--------------------------------------------------------------------------------
+#  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
+#  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
+#  need to consume the .pch.
+#----------------------------------------------------------------------
+PchExtraOptions + $(commonCOpts)
+%ifdef COMPILE_PLATFORM_GEOMETRY
+PchExtraOptions + -DCOMPILE_PLATFORM_GEOMETRY=1
+%endif
+PchCompiland    = $(_MakeFilePath)serializationPCH.cpp
+PchOutputDir    = $(o)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts  = $(UsePrecompiledHeaderOptions)
+CPchOpts   = $(UsePrecompiledHeaderOptions)
+
+#----------------------------------------------------------------------
+# Prepare to multi-compile using a uniform set of dependency blocks.
+# Note that you CANNOT change compiler options for just some of the
+# below compilands. The entire set of compilands must be content with
+# uniform treatment for multi-compilation to work.
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+nameToDefine = BuildCGJsonValueBuilder
+%include cdefapnd.mki
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+CommonDependencies = \
+    $(MyPublicApi)../Geom/GeomApi.h \
+    $(MyPublicApi)GeomLibsFlatBufferApi.h \
+    $(MyPublicApi)GeomLibsSerialization.h \
+    $(_MakeFilePath)CGNativeFactoryImplementations.h
+
+
+
+$(o)FixedStructs$(oext)             : $(MySrc)FlatBuffer/FixedStructs.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeCGWriter$(oext)               :$(MySrc)BeCGWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeJsonToCG$(oext)               : $(MySrc)BeJsonToCG.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeJsonValueBuilder$(oext)       : $(MySrc)BeJsonValueBuilder.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)IModelJsonWriter$(oext)       : $(MySrc)IModelJsonWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)IModelJsonReader$(oext)       : $(MySrc)IModelJsonReader.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_OBJECT_PCH = $(o)serializationPch$(oext)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(MultiCompileObjectList)
+DLM_NAME = iTwinGeomSerialization
+DLM_NOENTRY = 1
+DLM_NOINITFUNC = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(MultiCompileObjectList)
+DLM_NO_BENTLEY_LIB = 1
+
+LINKER_LIBRARIES = $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeom$(libext)
+LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(stlibprefix)iTwinJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(stlibext)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include $(sharedMki)linkLibrary.mki

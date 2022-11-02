@@ -1,0 +1,111 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------------------+
+#   Compile
+#---------------------------------------------------------------------------------------+
+# Change the $(o) macro and save the original so we can restore it later
+_o =% $(o)
+o = $(PresentationRulesOutputDirectory)
+always:
+    !~@mkdir $(o)
+
+%include MultiCppCompileRule.mki
+
+$(o)ChildNodeRule$(oext)                                   : $(PresentationRulesSourceDirectory)ChildNodeRule.cpp $(PresentationRulesDependencies)
+
+$(o)ChildNodeSpecification$(oext)                          : $(PresentationRulesSourceDirectory)ChildNodeSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)ContentRule$(oext)                                     : $(PresentationRulesSourceDirectory)ContentRule.cpp $(PresentationRulesDependencies)
+
+$(o)CheckBoxRule$(oext)                                    : $(PresentationRulesSourceDirectory)CheckBoxRule.cpp $(PresentationRulesDependencies)
+
+$(o)CustomizationRule$(oext)                               : $(PresentationRulesSourceDirectory)CustomizationRule.cpp $(PresentationRulesDependencies)
+
+$(o)ImageIdOverride$(oext)                                 : $(PresentationRulesSourceDirectory)ImageIdOverride.cpp $(PresentationRulesDependencies)
+
+$(o)PresentationRule$(oext)                                : $(PresentationRulesSourceDirectory)PresentationRule.cpp $(PresentationRulesDependencies)
+
+$(o)PresentationRuleSet$(oext)                             : $(PresentationRulesSourceDirectory)PresentationRuleSet.cpp $(PresentationRulesDependencies)
+
+$(o)LabelOverride$(oext)                                   : $(PresentationRulesSourceDirectory)LabelOverride.cpp $(PresentationRulesDependencies)
+
+$(o)InstanceLabelOverride$(oext)                           : $(PresentationRulesSourceDirectory)InstanceLabelOverride.cpp $(PresentationRulesDependencies)
+
+$(o)StyleOverride$(oext)                                   : $(PresentationRulesSourceDirectory)StyleOverride.cpp $(PresentationRulesDependencies)
+
+$(o)LocalizationResourceKeyDefinition$(oext)               : $(PresentationRulesSourceDirectory)LocalizationResourceKeyDefinition.cpp $(PresentationRulesDependencies)
+
+$(o)UserSettingsGroup$(oext)                               : $(PresentationRulesSourceDirectory)UserSettingsGroup.cpp $(PresentationRulesDependencies)
+
+$(o)GroupingRule$(oext)                                    : $(PresentationRulesSourceDirectory)GroupingRule.cpp $(PresentationRulesDependencies)
+
+$(o)SortingRule$(oext)                                     : $(PresentationRulesSourceDirectory)SortingRule.cpp $(PresentationRulesDependencies)
+
+$(o)ExtendedDataRule$(oext)                                : $(PresentationRulesSourceDirectory)ExtendedDataRule.cpp $(PresentationRulesDependencies)
+
+$(o)NodeArtifactsRule$(oext)                               : $(PresentationRulesSourceDirectory)NodeArtifactsRule.cpp $(PresentationRulesDependencies)
+
+$(o)AllInstanceNodesSpecification$(oext)                   : $(PresentationRulesSourceDirectory)AllInstanceNodesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)AllRelatedInstanceNodesSpecification$(oext)            : $(PresentationRulesSourceDirectory)AllRelatedInstanceNodesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)CustomNodeSpecification$(oext)                         : $(PresentationRulesSourceDirectory)CustomNodeSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)InstanceNodesOfSpecificClassesSpecification$(oext)     : $(PresentationRulesSourceDirectory)InstanceNodesOfSpecificClassesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)RelatedInstanceNodesSpecification$(oext)               : $(PresentationRulesSourceDirectory)RelatedInstanceNodesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)SearchResultInstanceNodesSpecification$(oext)          : $(PresentationRulesSourceDirectory)SearchResultInstanceNodesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)ContentSpecification$(oext)                            : $(PresentationRulesSourceDirectory)ContentSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)RelatedPropertiesSpecification$(oext)                  : $(PresentationRulesSourceDirectory)RelatedPropertiesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)ContentInstancesOfSpecificClassesSpecification$(oext)  : $(PresentationRulesSourceDirectory)ContentInstancesOfSpecificClassesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)ContentRelatedInstancesSpecification$(oext)            : $(PresentationRulesSourceDirectory)ContentRelatedInstancesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)SelectedNodeInstancesSpecification$(oext)              : $(PresentationRulesSourceDirectory)SelectedNodeInstancesSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)PropertySpecification$(oext)                           : $(PresentationRulesSourceDirectory)PropertySpecification.cpp $(PresentationRulesDependencies)
+
+$(o)CalculatedPropertySpecification$(oext)                 : $(PresentationRulesSourceDirectory)CalculatedPropertySpecification.cpp $(PresentationRulesDependencies)
+
+$(o)RelatedInstanceSpecification$(oext)                    : $(PresentationRulesSourceDirectory)RelatedInstanceSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)CommonTools$(oext)                                     : $(PresentationRulesSourceDirectory)CommonTools.cpp $(PresentationRulesDependencies)
+
+$(o)ContentModifier$(oext)                                 : $(PresentationRulesSourceDirectory)ContentModifier.cpp $(PresentationRulesDependencies)
+
+$(o)PropertyEditorSpecification$(oext)                     : $(PresentationRulesSourceDirectory)PropertyEditorSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)CustomRendererSpecification$(oext)                     : $(PresentationRulesSourceDirectory)CustomRendererSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)PropertyCategorySpecification$(oext)                   : $(PresentationRulesSourceDirectory)PropertyCategorySpecification.cpp $(PresentationRulesDependencies)
+
+$(o)RelationshipPathSpecification$(oext)                   : $(PresentationRulesSourceDirectory)RelationshipPathSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)DefaultPropertyCategoryOverride$(oext)                 : $(PresentationRulesSourceDirectory)DefaultPropertyCategoryOverride.cpp $(PresentationRulesDependencies)
+
+$(o)RequiredSchemaSpecification$(oext)                     : $(PresentationRulesSourceDirectory)RequiredSchemaSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)MultiSchemaClass$(oext)                                 : $(PresentationRulesSourceDirectory)MultiSchemaClass.cpp $(PresentationRulesDependencies)
+
+%include MultiCppCompileGo.mki
+
+PresentationRulesObjs =
+%ifdef MultiCompileObjectList
+    PresentationRulesObjs +% $(MultiCompileObjectList)
+%endif
+
+# Restore the $(o) macro
+o =% $(_o)
+
+#----------------------------------------------------------------------
+#   Link presentation rules xsd
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/PresentationRuleSetSchema.xsd : $(PresentationRulesSourceDirectory)xsd/PresentationRuleSetSchema.xsd
+    ~linkfile $@ = $<

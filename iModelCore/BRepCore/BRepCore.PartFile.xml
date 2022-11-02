@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
+    <!-- Would prefer a multiplatform upack but it uses different versions for different platforms. -->
+    <Part Name="PsolidShim">
+        <SubPart PartName="PsolidShim_AndroidARM64"/>
+        <SubPart PartName="PsolidShim_iOSArm64"/>
+        <SubPart PartName="PsolidShim_iOSX64"/>
+        <SubPart PartName="PsolidShim_LinuxX64"/>
+        <SubPart PartName="PsolidShim_MacOSArm64"/>
+        <SubPart PartName="PsolidShim_MacOSx64"/>
+        <SubPart PartName="PsolidShim_x64"/>
+    </Part>
+    <Part Name="PsolidShim_AndroidARM64" OnlyPlatforms="AndroidARM64">
+        <SubPackage PkgType="UPack" Name="psolid_AndroidArm64_34"/>
+    </Part>
+    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
+        <SubPackage PkgType="UPack" Name="psolid_iOSArm64_34"/>
+    </Part>
+    <Part Name="PsolidShim_iOSX64" OnlyPlatforms="iOSX64">
+        <SubPackage PkgType="UPack" Name="psolid_iOSX64_34"/>
+    </Part>
+    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
+        <SubPackage PkgType="UPack" Name="psolid_LinuxX64_34"/>
+    </Part>
+    <Part Name="PsolidShim_MacOSArm64" OnlyPlatforms="MacOSArm64">
+        <SubPackage PkgType="UPack" Name="psolid_MacOSArm64_34"/>
+    </Part>
+    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64">
+        <SubPackage PkgType="UPack" Name="psolid_MacOSx64_34"/>
+    </Part>
+    <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
+        <SubPackage PkgType="UPack" Name="psolid_x64_34"/>
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="BRepCore.PreWire.mke">
+        <Bindings>
+            <PublicAPI Domain="BRepCore" />
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
+    <Part Name="BRepCore" BentleyBuildMakeFile="BRepCore.mke" ExcludePlatforms="AndroidX64">
+        <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="PsolidShim"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwinBRepCore$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinBRepCore$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- ******************************** Unit Tests ************************************** -->
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <!---->
+        <SubPart PartName="BRepCore"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BRepCore" SubPartDirectory="UnitTests/BRepCore">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BRepCore/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <Product Name="BRepCore-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BRepCoreTest -dTEST_COLLECTION_PRODUCT=BRepCore-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="BRepCore-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BRepCoreTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BRepCoreTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="BRepCore-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BRepCore-Gtest -dGTEST_NAME=BRepCoreTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="BRepCore-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BRepCoreTest.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

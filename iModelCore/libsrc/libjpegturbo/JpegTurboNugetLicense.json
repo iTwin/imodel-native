@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "JpegTurboNuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "JpegTurboNuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "",
+        "copyright": "D. R. Commander",
+        "description": "A JPEG image codec that uses SIMD instructions (MMX, SSE2, AVX2, NEON, AltiVec) to accelerate baseline JPEG compression and decompression on x86, x86-64, ARM, and PowerPC systems.",
+        "homepage": "https://libjpeg-turbo.org",
+        "licenseUrl": "https://github.com/libjpeg-turbo/libjpeg-turbo/blob/master/LICENSE.md",
+        "name": "libjpeg-turbo",
+        "SPDX-ID": "(IJG OR BSD-3-Clause OR Zlib OR SEE LICENSE IN vendor/LICENSE.md)",
+        "version": "2.0.2"
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+name: test-from-open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+pr:
+  branches:
+    include:
+    - '*'
+
+resources:
+  repositories:
+    - repository: imodel-internal
+      type: github
+      name: iTwin/imodel-native-internal
+      endpoint: github.com_imodel-native
+      
+extends:
+  template: /build/templates/pipeline.yml@imodel-internal
+  parameters:
+    otherRepo: imodel-internal
+

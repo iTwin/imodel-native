@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ECv3ConversionAttributes" nameSpacePrefix="V2ToV3" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="ForceAbstract" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ForceCustomAttributeClass" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ForceEntityClass" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ForceSealed" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ForceInstantiable" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ForceStructClass" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="DropClass" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ResolvePropertyNameConflicts" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ResolveClassNameConflicts" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="OverwriteCardinality" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Cardinality" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DropConstraints" isDomainClass="False" isCustomAttributeClass="True" description="Define a semi-colon delimited list of constraint classes to drop.  Apply the custom attribute to the Source and/or Target nodes.  Use the format 'SchemaPrefix':'Class' to specify a schema.  Otherwise, it is just 'Class'">
+        <ECProperty propertyName="Drop" typeName="string" />
+    </ECClass>  
+    <ECClass typeName="IgnoreBaseClass" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Except" typeName="string"/>
+    </ECClass>
+    <ECClass typeName="OverwriteTypeName" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="TypeName" typeName="string" />
+    </ECClass>
+    <ECClass typeName="RenamedPropertiesMapping" isDomainClass="False" isCustomAttributeClass="True" description="Mapping applied to a class for when a property name is renamed during schema conversion.  Format of the string is: OriginalPropertyName|NewPropertyName.  Multiple mappings are separated by a ;">
+        <ECProperty propertyName="PropertyMapping" typeName="string" description="Mapping of original property name(s) to new name(s)." />
+    </ECClass>
+    <ECClass typeName="OldPersistenceUnit" isDomainClass="False" isCustomAttributeClass="True" description="Old persistence unit applied to a property for converting from the old unit to the new one during schema conversion.">
+        <ECProperty propertyName="Name" typeName="string" description="Name of the old persistence unit to use for conversion to the new unit."/>
+    </ECClass>
+    <ECClass typeName="IsFlattened" isDomainClass="False" isCustomAttributeClass="True" description="Used to indicate that this schema was flattened during conversion.  All base class properties were merged into each class, and all extra base classes were dropped.  This means polymorphism no longer works natively." />
+    <ECClass typeName="OldDerivedClasses" isDomainClass="False" isCustomAttributeClass="True" description="Used when a schema has been flattened to preserve polymorphism.  Will contain a list of direct derived classes that no longer are derived.  Can be used to create 'polymorphic' queries.">
+        <ECProperty propertyName="Classes" typeName="string" description="Semi-colon delimited list of old derived classes." />
+    </ECClass>
+    <ECClass typeName="Extension" isDomainClass="False" isCustomAttributeClass="True" description="Used to indicate that the property this custom attribute is applied to is an extension property.">
+        <ECProperty propertyName="Origin" typeName="string" description="Extension origin." />
+    </ECClass>
+</ECSchema>

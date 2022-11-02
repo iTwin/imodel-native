@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "CurlNuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "CurlNuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "",
+        "copyright": "Daniel Stenberg, daniel@haxx.se, and many contributors, see the THANKS file.",
+        "description": "The multiprotocol file transfer library.",
+        "homepage": "https://curl.haxx.se/libcurl",
+        "licenseUrl": "https://curl.haxx.se/docs/copyright.html",
+        "name": "Curl",
+        "SPDX-ID": "curl",
+        "version": "7.74.0"
+        }
+    ]
+}

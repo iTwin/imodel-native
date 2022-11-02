@@ -1,0 +1,66 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY              = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
+%if ($[@findstring GCC, $(BUILD_TOOLSET)] != " ") || ($[@findstring LINUX_CLANG, $(BUILD_TOOLSET)] != " ")
+    # Export/make visible all functions in this library.
+    GCC_DEFAULT_VISIBILITY = default
+%endif
+
+%include mdl.mki
+
+%include BeIcu4cCommon.mki
+
+BuildDir    = $(PartBuildDir)
+o = $(BuildDir)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(BuildDir):
+        !~@mkdir $@
+%endif
+
+LinuxGccCommonOptions + -Wno-unused-function
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(BuildDir)stubdata$(oext) : $(SourceDir)stubdata/stubdata.cpp ${MultiCompileDepends}
+
+%include $(_MakeFilePath)BeIcu4cLibrary.Compilands.mki
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(BuildDir)
+DLM_EXPORT_DEST = $(BuildDir)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_NAME = $(appName)
+DLM_NO_BENTLEY_LIB = 1
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(BuildDir)
+DLM_OBJECT_FILES = $(objs)
+
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
+    LINKER_LIBRARIES + -lc++
+%endif
+
+%if defined (BENTLEY_TOOL_CONTEXT_NAME)
+    %if $(BENTLEY_TOOL_CONTEXT_NAME) == "LinuxGcc"
+        LINKER_LIBRARIES + -ldl
+    %endif
+%endif
+
+%if defined (DLM_NO_IMPLIB)
+    %error DLM_NO_IMPLIB
+%endif
+
+%include $(sharedMki)linkLibrary.mki

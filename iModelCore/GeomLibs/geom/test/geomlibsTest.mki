@@ -1,0 +1,34 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+%ifdef BmakeGeomlibs
+always:
+	bmake $(SrcRoot)imodel02/iModelCore/GeomLibs/geom/build/BentleyGeom/BentleyGeom.mke
+
+%endif
+
+nameToDefine = _VARIADIC_MAX=10
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------------------------
+#   Libs
+#----------------------------------------------------------------------------------------
+geomExportLib = $(baseGeom_lib)BentleyGeom.lib
+geomFlatBufferExportLib = $(baseGeom_lib)BentleyGeomFlatBuffer.lib
+%ifdef USE_GEOM_STATIC
+libsUsed = $(BuildContext)Delivery\geom_static.lib $(BuildContext)SubParts/Libs/Bentley.lib 
+
+nameToDefine=jmdlgeom_static=1
+%include cdefapnd.mki
+
+%else
+libsUsed = $(geomExportLib) $(BuildContext)SubParts/Libs/Bentley.lib
+%endif
+
+appName             = GeomLibsTest
+PUBLIC_API_HEADERS              = $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/
+HEADER_ROOTS = $(PUBLIC_API_HEADERS)
+
+

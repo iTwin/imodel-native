@@ -8325,5 +8325,4 @@ xmlExpCtxtNbCons(xmlExpCtxtPtr ctxt) {
 }
 
 #endif /* LIBXML_EXPR_ENABLED */
-
 #endif /* LIBXML_REGEXP_ENABLED */

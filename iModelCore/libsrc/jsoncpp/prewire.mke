@@ -1,0 +1,16 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+JsonCppInclude      = $(baseDir)include/json/
+BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
+
+#--------------------------------------------------------------------------------------
+# The JsonCpp API is defined in the json/* headers
+#--------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)PublicAPI/json=${JsonCppInclude}"
+    ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"

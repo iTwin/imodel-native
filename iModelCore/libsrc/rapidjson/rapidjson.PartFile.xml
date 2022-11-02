@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+    
+    <Part Name="rapidjsonapi" BentleyBuildMakeFile="rapidjson.prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="rapidjson"/>
+            <VendorNotices>Delivery/rapidjson-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <NuGetProduct Name="RapidJsonNuget" LicenseFile="RapidJsonNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="rapidjsonapi"/>
+    </NuGetProduct>
+
+</BuildContext>

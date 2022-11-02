@@ -1,0 +1,460 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+# Export/make visible all functions in libcurl
+GCC_DEFAULT_VISIBILITY  = default
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+nameToDefine        = BUILDING_LIBCURL=1
+%include cdefapnd.mki
+
+%if defined (CREATE_STATIC_LIBRARIES)
+    nameToDefine    = CURL_STATICLIB=1
+    %include cdefapnd.mki
+%endif
+
+SourceDir           = $(_MakeFilePath)vendor/
+
+AresDir = $(_MakeFilePath)ares/
+AresLibDir = $(AresDir)src/lib/
+
+BeCurlLibDir        = $(SourceDir)lib/
+BeCurlDepends       = $(_MakeFileSpec) $(_MakeFilePath)BeCurlConfig.h
+MultiCompileDepends = $(_MakeFileSpec) $(BeCurlDepends)
+appName             = BeCurl
+o                   = $(OutBuildDir)BeCurl/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------------------------
+#   Include search path
+#----------------------------------------------------------------------------------------
+dirToSearch = $(BeCurlLibDir)
+%include cincapnd.mki
+
+dirToSearch = ${BuildContext}/VendorAPI/zlib
+%include cincapnd.mki
+
+dirToSearch = $(AresDir)/include
+%include cincapnd.mki
+
+CCompOpts + -DHAVE_LIBZ
+CCompOpts + -DHAVE_ZLIB_H
+#----------------------------------------------------------
+# MultiCompile sources
+#----------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)amigaos$(oext) : $(BeCurlLibDir)amigaos.c ${MultiCompileDepends}
+
+$(o)asyn-ares$(oext) : $(BeCurlLibDir)asyn-ares.c ${MultiCompileDepends}
+
+$(o)asyn-thread$(oext) : $(BeCurlLibDir)asyn-thread.c ${MultiCompileDepends}
+
+$(o)altsvc$(oext) : $(BeCurlLibDir)altsvc.c ${MultiCompileDepends}
+
+$(o)base64$(oext) : $(BeCurlLibDir)base64.c ${MultiCompileDepends}
+
+$(o)bufref$(oext) : $(BeCurlLibDir)bufref.c ${MultiCompileDepends}
+
+$(o)c-hyper$(oext) : $(BeCurlLibDir)c-hyper.c ${MultiCompileDepends}
+
+$(o)conncache$(oext) : $(BeCurlLibDir)conncache.c ${MultiCompileDepends}
+
+$(o)connect$(oext) : $(BeCurlLibDir)connect.c ${MultiCompileDepends}
+
+$(o)content_encoding$(oext) : $(BeCurlLibDir)content_encoding.c ${MultiCompileDepends}
+
+$(o)cookie$(oext) : $(BeCurlLibDir)cookie.c ${MultiCompileDepends}
+
+$(o)curl_addrinfo$(oext) : $(BeCurlLibDir)curl_addrinfo.c ${MultiCompileDepends}
+
+$(o)curl_des$(oext) : $(BeCurlLibDir)curl_des.c ${MultiCompileDepends}
+
+$(o)curl_endian$(oext) : $(BeCurlLibDir)curl_endian.c ${MultiCompileDepends}
+
+$(o)curl_fnmatch$(oext) : $(BeCurlLibDir)curl_fnmatch.c ${MultiCompileDepends}
+
+$(o)curl_gethostname$(oext) : $(BeCurlLibDir)curl_gethostname.c ${MultiCompileDepends}
+
+$(o)curl_get_line$(oext) : $(BeCurlLibDir)curl_get_line.c ${MultiCompileDepends}
+
+$(o)curl_gssapi$(oext) : $(BeCurlLibDir)curl_gssapi.c ${MultiCompileDepends}
+
+$(o)curl_memrchr$(oext) : $(BeCurlLibDir)curl_memrchr.c ${MultiCompileDepends}
+
+$(o)curl_multibyte$(oext) : $(BeCurlLibDir)curl_multibyte.c ${MultiCompileDepends}
+
+$(o)curl_ntlm_core$(oext) : $(BeCurlLibDir)curl_ntlm_core.c ${MultiCompileDepends}
+
+$(o)curl_ntlm_wb$(oext) : $(BeCurlLibDir)curl_ntlm_wb.c ${MultiCompileDepends}
+
+$(o)curl_rtmp$(oext) : $(BeCurlLibDir)curl_rtmp.c ${MultiCompileDepends}
+
+$(o)curl_sasl$(oext) : $(BeCurlLibDir)curl_sasl.c ${MultiCompileDepends}
+
+$(o)curl_sspi$(oext) : $(BeCurlLibDir)curl_sspi.c ${MultiCompileDepends}
+
+$(o)curl_threads$(oext) : $(BeCurlLibDir)curl_threads.c ${MultiCompileDepends}
+
+$(o)dict$(oext) : $(BeCurlLibDir)dict.c ${MultiCompileDepends}
+
+$(o)doh$(oext) : $(BeCurlLibDir)doh.c ${MultiCompileDepends}
+
+$(o)dotdot$(oext) : $(BeCurlLibDir)dotdot.c ${MultiCompileDepends}
+
+$(o)easy$(oext) : $(BeCurlLibDir)easy.c ${MultiCompileDepends}
+
+$(o)escape$(oext) : $(BeCurlLibDir)escape.c ${MultiCompileDepends}
+
+$(o)file$(oext) : $(BeCurlLibDir)file.c ${MultiCompileDepends}
+
+$(o)fileinfo$(oext) : $(BeCurlLibDir)fileinfo.c ${MultiCompileDepends}
+
+$(o)fopen$(oext) : $(BeCurlLibDir)fopen.c ${MultiCompileDepends}
+
+$(o)formdata$(oext) : $(BeCurlLibDir)formdata.c ${MultiCompileDepends}
+
+$(o)ftp$(oext) : $(BeCurlLibDir)ftp.c ${MultiCompileDepends}
+
+$(o)ftplistparser$(oext) : $(BeCurlLibDir)ftplistparser.c ${MultiCompileDepends}
+
+$(o)getenv$(oext) : $(BeCurlLibDir)getenv.c ${MultiCompileDepends}
+
+$(o)getinfo$(oext) : $(BeCurlLibDir)getinfo.c ${MultiCompileDepends}
+
+$(o)gopher$(oext) : $(BeCurlLibDir)gopher.c ${MultiCompileDepends}
+
+$(o)h2h3$(oext) : $(BeCurlLibDir)h2h3.c ${MultiCompileDepends}
+
+$(o)hash$(oext) : $(BeCurlLibDir)hash.c ${MultiCompileDepends}
+
+$(o)headers$(oext) : $(BeCurlLibDir)headers.c ${MultiCompileDepends}
+
+$(o)hmac$(oext) : $(BeCurlLibDir)hmac.c ${MultiCompileDepends}
+
+$(o)hostasyn$(oext) : $(BeCurlLibDir)hostasyn.c ${MultiCompileDepends}
+
+$(o)hostip$(oext) : $(BeCurlLibDir)hostip.c ${MultiCompileDepends}
+
+$(o)hostip4$(oext) : $(BeCurlLibDir)hostip4.c ${MultiCompileDepends}
+
+$(o)hostip6$(oext) : $(BeCurlLibDir)hostip6.c ${MultiCompileDepends}
+
+$(o)hostsyn$(oext) : $(BeCurlLibDir)hostsyn.c ${MultiCompileDepends}
+
+$(o)hsts$(oext) : $(BeCurlLibDir)hsts.c ${MultiCompileDepends}
+
+$(o)http$(oext) : $(BeCurlLibDir)http.c ${MultiCompileDepends}
+
+$(o)http2$(oext) : $(BeCurlLibDir)http2.c ${MultiCompileDepends}
+
+$(o)http_aws_sigv4$(oext) : $(BeCurlLibDir)http_aws_sigv4.c ${MultiCompileDepends}
+
+$(o)http_chunks$(oext) : $(BeCurlLibDir)http_chunks.c ${MultiCompileDepends}
+
+$(o)http_digest$(oext) : $(BeCurlLibDir)http_digest.c ${MultiCompileDepends}
+
+$(o)http_negotiate$(oext) : $(BeCurlLibDir)http_negotiate.c ${MultiCompileDepends}
+
+$(o)http_ntlm$(oext) : $(BeCurlLibDir)http_ntlm.c ${MultiCompileDepends}
+
+$(o)http_proxy$(oext) : $(BeCurlLibDir)http_proxy.c ${MultiCompileDepends}
+
+$(o)idn_win32$(oext) : $(BeCurlLibDir)idn_win32.c ${MultiCompileDepends}
+
+$(o)if2ip$(oext) : $(BeCurlLibDir)if2ip.c ${MultiCompileDepends}
+
+$(o)imap$(oext) : $(BeCurlLibDir)imap.c ${MultiCompileDepends}
+
+$(o)inet_ntop$(oext) : $(BeCurlLibDir)inet_ntop.c ${MultiCompileDepends}
+
+$(o)inet_pton$(oext) : $(BeCurlLibDir)inet_pton.c ${MultiCompileDepends}
+
+$(o)krb5$(oext) : $(BeCurlLibDir)krb5.c ${MultiCompileDepends}
+
+$(o)ldap$(oext) : $(BeCurlLibDir)ldap.c ${MultiCompileDepends}
+
+$(o)llist$(oext) : $(BeCurlLibDir)llist.c ${MultiCompileDepends}
+
+$(o)md4$(oext) : $(BeCurlLibDir)md4.c ${MultiCompileDepends}
+
+$(o)md5$(oext) : $(BeCurlLibDir)md5.c ${MultiCompileDepends}
+
+$(o)memdebug$(oext) : $(BeCurlLibDir)memdebug.c ${MultiCompileDepends}
+
+$(o)mprintf$(oext) : $(BeCurlLibDir)mprintf.c ${MultiCompileDepends}
+
+$(o)multi$(oext) : $(BeCurlLibDir)multi.c ${MultiCompileDepends}
+
+$(o)netrc$(oext) : $(BeCurlLibDir)netrc.c ${MultiCompileDepends}
+
+$(o)nonblock$(oext) : $(BeCurlLibDir)nonblock.c ${MultiCompileDepends}
+
+$(o)openldap$(oext) : $(BeCurlLibDir)openldap.c ${MultiCompileDepends}
+
+$(o)parsedate$(oext) : $(BeCurlLibDir)parsedate.c ${MultiCompileDepends}
+
+$(o)pingpong$(oext) : $(BeCurlLibDir)pingpong.c ${MultiCompileDepends}
+
+$(o)pop3$(oext) : $(BeCurlLibDir)pop3.c ${MultiCompileDepends}
+
+$(o)progress$(oext) : $(BeCurlLibDir)progress.c ${MultiCompileDepends}
+
+$(o)rand$(oext) : $(BeCurlLibDir)rand.c ${MultiCompileDepends}
+
+$(o)rtsp$(oext) : $(BeCurlLibDir)rtsp.c ${MultiCompileDepends}
+
+$(o)select$(oext) : $(BeCurlLibDir)select.c ${MultiCompileDepends}
+
+$(o)sendf$(oext) : $(BeCurlLibDir)sendf.c ${MultiCompileDepends}
+
+$(o)share$(oext) : $(BeCurlLibDir)share.c ${MultiCompileDepends}
+
+$(o)slist$(oext) : $(BeCurlLibDir)slist.c ${MultiCompileDepends}
+
+$(o)smb$(oext) : $(BeCurlLibDir)smb.c ${MultiCompileDepends}
+
+$(o)smtp$(oext) : $(BeCurlLibDir)smtp.c ${MultiCompileDepends}
+
+$(o)socks$(oext) : $(BeCurlLibDir)socks.c ${MultiCompileDepends}
+
+$(o)socks_gssapi$(oext) : $(BeCurlLibDir)socks_gssapi.c ${MultiCompileDepends}
+
+$(o)socks_sspi$(oext) : $(BeCurlLibDir)socks_sspi.c ${MultiCompileDepends}
+
+$(o)speedcheck$(oext) : $(BeCurlLibDir)speedcheck.c ${MultiCompileDepends}
+
+$(o)splay$(oext) : $(BeCurlLibDir)splay.c ${MultiCompileDepends}
+
+$(o)strcase$(oext) : $(BeCurlLibDir)strcase.c ${MultiCompileDepends}
+
+$(o)strdup$(oext) : $(BeCurlLibDir)strdup.c ${MultiCompileDepends}
+
+$(o)strerror$(oext) : $(BeCurlLibDir)strerror.c ${MultiCompileDepends}
+
+$(o)strtok$(oext) : $(BeCurlLibDir)strtok.c ${MultiCompileDepends}
+
+$(o)strtoofft$(oext) : $(BeCurlLibDir)strtoofft.c ${MultiCompileDepends}
+
+$(o)system_win32$(oext) : $(BeCurlLibDir)system_win32.c ${MultiCompileDepends}
+
+$(o)telnet$(oext) : $(BeCurlLibDir)telnet.c ${MultiCompileDepends}
+
+$(o)tftp$(oext) : $(BeCurlLibDir)tftp.c ${MultiCompileDepends}
+
+$(o)timediff$(oext) : $(BeCurlLibDir)timediff.c ${MultiCompileDepends}
+
+$(o)timeval$(oext) : $(BeCurlLibDir)timeval.c ${MultiCompileDepends}
+
+$(o)transfer$(oext) : $(BeCurlLibDir)transfer.c ${MultiCompileDepends}
+
+$(o)url$(oext) : $(BeCurlLibDir)url.c ${MultiCompileDepends}
+
+$(o)urlapi$(oext) : $(BeCurlLibDir)urlapi.c ${MultiCompileDepends}
+
+$(o)version$(oext) : $(BeCurlLibDir)version.c ${MultiCompileDepends}
+
+$(o)warnless$(oext) : $(BeCurlLibDir)warnless.c ${MultiCompileDepends}
+
+$(o)wildcard$(oext) : $(BeCurlLibDir)wildcard.c ${MultiCompileDepends}
+
+$(o)cleartext$(oext) : $(BeCurlLibDir)vauth/cleartext.c ${MultiCompileDepends}
+
+$(o)cram$(oext) : $(BeCurlLibDir)vauth/cram.c ${MultiCompileDepends}
+
+$(o)digest$(oext) : $(BeCurlLibDir)vauth/digest.c ${MultiCompileDepends}
+
+$(o)digest_sspi$(oext) : $(BeCurlLibDir)vauth/digest_sspi.c ${MultiCompileDepends}
+
+$(o)gsasl$(oext) : $(BeCurlLibDir)vauth/gsasl.c ${MultiCompileDepends}
+
+$(o)krb5_gssapi$(oext) : $(BeCurlLibDir)vauth/krb5_gssapi.c ${MultiCompileDepends}
+
+$(o)krb5_sspi$(oext) : $(BeCurlLibDir)vauth/krb5_sspi.c ${MultiCompileDepends}
+
+$(o)ntlm$(oext) : $(BeCurlLibDir)vauth/ntlm.c ${MultiCompileDepends}
+
+$(o)ntlm_sspi$(oext) : $(BeCurlLibDir)vauth/ntlm_sspi.c ${MultiCompileDepends}
+
+$(o)oauth2$(oext) : $(BeCurlLibDir)vauth/oauth2.c ${MultiCompileDepends}
+
+$(o)spnego_gssapi$(oext) : $(BeCurlLibDir)vauth/spnego_gssapi.c ${MultiCompileDepends}
+
+$(o)spnego_sspi$(oext) : $(BeCurlLibDir)vauth/spnego_sspi.c ${MultiCompileDepends}
+
+$(o)vauth$(oext) : $(BeCurlLibDir)vauth/vauth.c ${MultiCompileDepends}
+
+$(o)gskit$(oext) : $(BeCurlLibDir)vtls/gskit.c ${MultiCompileDepends}
+
+$(o)gtls$(oext) : $(BeCurlLibDir)vtls/gtls.c ${MultiCompileDepends}
+
+$(o)hostcheck$(oext) : $(BeCurlLibDir)vtls/hostcheck.c ${MultiCompileDepends}
+
+$(o)mbedtls$(oext) : $(BeCurlLibDir)vtls/mbedtls.c ${MultiCompileDepends}
+
+$(o)nss$(oext) : $(BeCurlLibDir)vtls/nss.c ${MultiCompileDepends}
+
+$(o)openssl$(oext) : $(BeCurlLibDir)vtls/openssl.c ${MultiCompileDepends}
+
+$(o)rustls$(oext) : $(BeCurlLibDir)vtls/rustls.c ${MultiCompileDepends}
+
+$(o)schannel$(oext) : $(BeCurlLibDir)vtls/schannel.c ${MultiCompileDepends}
+
+$(o)sectransp$(oext) : $(BeCurlLibDir)vtls/sectransp.c ${MultiCompileDepends}
+
+$(o)vtls$(oext) : $(BeCurlLibDir)vtls/vtls.c ${MultiCompileDepends}
+
+$(o)wolfssl$(oext) : $(BeCurlLibDir)vtls/wolfssl.c ${MultiCompileDepends}
+
+$(o)x509asn1$(oext) : $(BeCurlLibDir)vtls/x509asn1.c ${MultiCompileDepends}
+
+$(o)mime$(oext) : $(BeCurlLibDir)mime.c ${MultiCompileDepends}
+
+$(o)setopt$(oext) : $(BeCurlLibDir)setopt.c ${MultiCompileDepends}
+
+$(o)sha256$(oext) : $(BeCurlLibDir)sha256.c ${MultiCompileDepends}
+
+$(o)curl_ctype$(oext) : $(BeCurlLibDir)curl_ctype.c ${MultiCompileDepends}
+
+$(o)curl_path$(oext) : $(BeCurlLibDir)curl_path.c ${MultiCompileDepends}
+
+$(o)curl_range$(oext) : $(BeCurlLibDir)curl_range.c ${MultiCompileDepends}
+
+$(o)schannel_verify$(oext) : $(BeCurlLibDir)vtls/schannel_verify.c ${MultiCompileDepends}
+
+$(o)socketpair$(oext) : $(BeCurlLibDir)socketpair.c ${MultiCompileDepends}
+
+$(o)dynbuf$(oext) : $(BeCurlLibDir)dynbuf.c ${MultiCompileDepends}
+
+$(o)rename$(oext) : $(BeCurlLibDir)rename.c ${MultiCompileDepends}
+
+$(o)version_win32$(oext) : $(BeCurlLibDir)version_win32.c ${MultiCompileDepends}
+
+$(o)mqtt$(oext) : $(BeCurlLibDir)mqtt.c ${MultiCompileDepends}
+
+$(o)keylog$(oext) : $(BeCurlLibDir)vtls/keylog.c ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "iOS" && $(TARGET_PLATFORM) != "Android"
+
+    $(o)ares_library_init$(oext) : $(AresLibDir)ares_library_init.c ${MultiCompileDepends}
+
+    $(o)ares_init$(oext) : $(AresLibDir)ares_init.c ${MultiCompileDepends}
+
+    $(o)ares_cancel$(oext) : $(AresLibDir)ares_cancel.c ${MultiCompileDepends}
+
+    $(o)ares_getsock$(oext) : $(AresLibDir)ares_getsock.c ${MultiCompileDepends}
+
+    $(o)ares_timeout$(oext) : $(AresLibDir)ares_timeout.c ${MultiCompileDepends}
+
+    $(o)ares_process$(oext) : $(AresLibDir)ares_process.c ${MultiCompileDepends}
+
+    $(o)ares_getaddrinfo$(oext) : $(AresLibDir)ares_getaddrinfo.c ${MultiCompileDepends}
+
+    $(o)ares_freeaddrinfo$(oext) : $(AresLibDir)ares_freeaddrinfo.c ${MultiCompileDepends}
+
+    $(o)ares_options$(oext) : $(AresLibDir)ares_options.c ${MultiCompileDepends}
+
+    $(o)ares_destroy$(oext) : $(AresLibDir)ares_destroy.c ${MultiCompileDepends}
+
+    $(o)ares_llist$(oext) : $(AresLibDir)ares_llist.c ${MultiCompileDepends}
+
+    $(o)ares__close_sockets$(oext) : $(AresLibDir)ares__close_sockets.c ${MultiCompileDepends}
+
+    $(o)ares_getnameinfo$(oext) : $(AresLibDir)ares_getnameinfo.c ${MultiCompileDepends}
+
+    $(o)ares_search$(oext) : $(AresLibDir)ares_search.c ${MultiCompileDepends}
+
+    $(o)inet_net_pton$(oext) : $(AresLibDir)inet_net_pton.c ${MultiCompileDepends}
+
+    $(o)ares__addrinfo_localhost$(oext) : $(AresLibDir)ares__addrinfo_localhost.c ${MultiCompileDepends}
+
+    $(o)ares_strdup$(oext) : $(AresLibDir)ares_strdup.c ${MultiCompileDepends}
+
+    $(o)ares_getenv$(oext) : $(AresLibDir)ares_getenv.c ${MultiCompileDepends}
+
+    $(o)ares__readaddrinfo$(oext) : $(AresLibDir)ares__readaddrinfo.c ${MultiCompileDepends}
+
+    $(o)ares_query$(oext) : $(AresLibDir)ares_query.c ${MultiCompileDepends}
+
+    $(o)ares__sortaddrinfo$(oext) : $(AresLibDir)ares__sortaddrinfo.c ${MultiCompileDepends}
+
+    $(o)ares__parse_into_addrinfo$(oext) : $(AresLibDir)ares__parse_into_addrinfo.c ${MultiCompileDepends}
+
+    $(o)ares__timeval$(oext) : $(AresLibDir)ares__timeval.c ${MultiCompileDepends}
+
+    $(o)ares__read_line$(oext) : $(AresLibDir)ares__read_line.c ${MultiCompileDepends}
+
+    $(o)ares_strsplit$(oext) : $(AresLibDir)ares_strsplit.c ${MultiCompileDepends}
+
+    $(o)ares_nowarn$(oext) : $(AresLibDir)ares_nowarn.c ${MultiCompileDepends}
+
+    $(o)ares_data$(oext) : $(AresLibDir)ares_data.c ${MultiCompileDepends}
+
+    $(o)ares_expand_name$(oext) : $(AresLibDir)ares_expand_name.c ${MultiCompileDepends}
+
+    $(o)ares_free_string$(oext) : $(AresLibDir)ares_free_string.c ${MultiCompileDepends}
+
+    $(o)ares_inet_ntop$(oext) : $(AresLibDir)ares_inet_ntop.c ${MultiCompileDepends}
+
+    $(o)ares_gethostbyaddr$(oext) : $(AresLibDir)ares_gethostbyaddr.c ${MultiCompileDepends}
+
+    $(o)ares_create_query$(oext) : $(AresLibDir)ares_create_query.c ${MultiCompileDepends}
+
+    $(o)ares_send$(oext) : $(AresLibDir)ares_send.c ${MultiCompileDepends}
+
+    $(o)ares_expand_name$(oext) : $(AresLibDir)ares_expand_name.c ${MultiCompileDepends}
+
+    $(o)ares_free_hostent$(oext) : $(AresLibDir)ares_free_hostent.c ${MultiCompileDepends}
+
+    $(o)ares__get_hostent$(oext) : $(AresLibDir)ares__get_hostent.c ${MultiCompileDepends}
+
+    $(o)ares_parse_ptr_reply$(oext) : $(AresLibDir)ares_parse_ptr_reply.c ${MultiCompileDepends}
+
+    $(o)ares_version$(oext) : $(AresLibDir)ares_version.c ${MultiCompileDepends}\
+
+%endif
+
+
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+#---------------------------------------------------------------------------------------+
+#   Create the library
+#---------------------------------------------------------------------------------------+
+DLM_NAME                    = BeCurl
+DLM_OBJECT_FILES            = $(objs)
+DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext) \
+                              $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
+
+%if $(TARGET_PLATFORM) == "Windows"
+    LINKER_LIBRARIES	    + ws2_32.lib
+    LINKER_LIBRARIES	    + wldap32.lib
+    LINKER_LIBRARIES	    + advapi32.lib
+    LINKER_LIBRARIES	    + crypt32.lib
+%elif $(TARGET_PLATFORM) == "WinRT"
+    LINKER_LIBRARIES	    + crypt32.lib
+%endif
+
+%include $(sharedMki)linkLibrary.mki

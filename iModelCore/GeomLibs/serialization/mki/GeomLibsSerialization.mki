@@ -1,0 +1,18 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+BUILD_WITH_C17=1
+
+appName         = BentleyGeomSerialization
+CCompPDBName    = $(appName)
+
+nameToDefine=__GEOMLIBS_SERIALIZATION_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Set to export (vs. import) symbols.
+nameToDefine = BGFB_INTERNAL
+%include cdefapnd.mki
+
+

@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+
+FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
+FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
+FormatParsingSetTest.CompositeFormats_IGNORED

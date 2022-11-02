@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.00" description="This is only a test.  Never use me." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECCustomAttributeClass typeName="ClassMap" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
+        <ECProperty propertyName="MapStrategy" typeName="string" description="Defines how the ECClass is mapped to table(s). Values: OwnTable (default), TablePerHierarchy, ExistingTable, NotMapped"/>
+        <ECProperty propertyName="TableName" typeName="string" description="If MapStrategy is 'ExistingTable' provide the table name here. Must not be set in all other cases."/>
+        <ECProperty propertyName="ECInstanceIdColumn" typeName="string" description="Optionally specify the name of custom 'primary key' column which must be of type Int64."/>
+    </ECCustomAttributeClass>
+</ECSchema>

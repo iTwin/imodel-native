@@ -19,7 +19,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jpegcomp.h"
-#include "jconfigint.h"
+#include "jconfigint.h.in"
 
 
 /* Private state */

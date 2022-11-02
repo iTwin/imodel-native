@@ -1,0 +1,473 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+DISABLE_COMPILER_ANALYZE_CHECK_UNINITIALIZED_MEMORY=1
+BUILD_WITH_C17=1
+%include  mdl.mki
+
+#-----------------------------------------------------------
+# Root iModelPlatform directory
+#-----------------------------------------------------------
+SrciModelPlatform                  = $(SrcRoot)imodel02/iModelCore/iModelPlatform/
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+iModelPlatformPublicAPISrc         = $(SrciModelPlatform)PublicAPI/
+iModelPlatformAPISrc               = $(iModelPlatformPublicAPISrc)DgnPlatform/
+iModelPlatformToolsPublicAPISrc    = $(iModelPlatformAPISrc)Tools/
+
+#-----------------------------------------------------------
+# Source directories
+#-----------------------------------------------------------
+DgnCoreDir                      = $(SrciModelPlatform)DgnCore/
+DgnHandlersDir                  = $(SrciModelPlatform)DgnHandlers/
+PrivateApiSrc                   = $(SrciModelPlatform)PrivateApi/
+DgnGeoCoordDir                  = $(SrciModelPlatform)DgnGeoCoord/
+
+iModelPlatformInternalDir       = $(PrivateApiSrc)DgnPlatformInternal/
+lineStyleDir                    = $(DgnCoreDir)linestyle/
+dimensionDir                    = $(DgnHandlersDir)Dimension/
+
+AnnotationsSrc                  = $(DgnCoreDir)Annotations/
+AnnotationsPrivateApi           = $(iModelPlatformInternalDir)DgnCore/Annotations/
+AnnotationsApi                  = $(iModelPlatformAPISrc)Annotations/
+
+BaseGeoCoordAPISrc              = $(BuildContext)PublicAPI/GeoCoord/
+
+#-----------------------------------------------------------
+# BuildContext
+#-----------------------------------------------------------
+BuildContext                    = $(OutBuildContexts)iModelPlatform/
+
+# Define these to handle multi-platform.
+BentleyGeomLib                  = $(libprefix)iTwinGeom$(libext)
+ECNativeObjectsLib              = $(libprefix)iTwinECObjects$(libext)
+UnitsLib                        = $(libprefix)iTwinUnits$(libext)
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(baseDir)iModelPlatform.mki
+%include $(CompileOptionsMki)
+
+DLM_OBJECT_DEST                 = $(iModelPlatformObj)
+
+contextDepends                  = $(iModelPlatformAPISrc)ViewContext.h $(iModelPlatformAPISrc)Render.h
+
+HandlerDepends                  = $(iModelPlatformAPISrc)ElementHandler.h $(contextDepends)
+
+toolsHeaders                    = $(iModelPlatformToolsPublicAPISrc)KeyTree.h
+
+LsLocalDepends                  = $(iModelPlatformAPISrc)LsLocal.h $(iModelPlatformAPISrc)LineStyle.h $(contextDepends)
+
+PropertyDepends                 = $(DgnCoreDir)ElementECInstanceAdapter.h
+
+#----------------------------------------------------------------------
+#       Location for objects
+#----------------------------------------------------------------------
+CoreObjs                        =% $(OutiModelPlatformBuild)DgnCore/
+HandlerObjs                     =% $(OutiModelPlatformBuild)DgnHandlers/
+o                               =% $(iModelPlatformObj)
+
+always:
+    !~@mkdir $(OutiModelPlatformBuild)
+     ~@mkdir $(o)
+     ~@mkdir $(CoreObjs)
+     ~@mkdir $(HandlerObjs)
+     ~@mkdir $(HandlerObjs)GeneratedSource/
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+%if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "WinRT"
+
+    # It is important to compile this outside of the scope of the PCH on LLVM because of the trick it plays. Should also be fine on GCC.
+    $(CoreObjs)LinuxGlobals$(oext) : $(DgnCoreDir)LinuxGlobals.cpp
+
+    coreObjects + $(CoreObjs)LinuxGlobals$(oext)
+
+%endif
+
+# Need to change o around because that's what multicompile uses
+o = $(CoreObjs)
+
+#----------------------------------------------------------------------
+#   Make sure that DgnPlatformInternal.pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(baseDir)DgnPlatformInternal.cpp
+PchOutputDir        = $(iModelPlatformObj)
+PchExtraOptions     = -Zm170
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends =$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp ${MultiCompileDepends} $(PropertyDepends) $(toolsHeaders)
+
+$(CoreObjs)DgnElementProperties$(oext) :            $(DgnCoreDir)DgnElementProperties.cpp $(PropertyDepends) ${MultiCompileDepends} $(toolsHeaders)
+
+$(CoreObjs)DgnModel$(oext) :                        $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
+
+$(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
+
+$(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
+
+$(coreObjs)RevisionManager$(oext) :                 $(DgnCoreDir)RevisionManager.cpp $(iModelPlatformAPISrc)RevisionManager.h ${MultiCompileDepends}
+
+$(CoreObjs)ElementDependency$(oext) :               $(DgnCoreDir)ElementDependency.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
+
+$(coreObjs)ChangedElementsManager$(oext) :          $(DgnCoreDir)ChangedElementsManager.cpp $(iModelPlatformAPISrc)ChangedElementsManager.h $(iModelPlatformAPISrc)VersionCompareChangeSummary.h ${MultiCompileDepends}
+
+$(CoreObjs)ExternalSource$(oext) :                  $(DgnCoreDir)ExternalSource.cpp $(iModelPlatformAPISrc)ElementHandler.h $(iModelPlatformAPISrc)DgnElement.h ${MultiCompileDepends}
+
+$(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
+
+$(CoreObjs)LsLocation$(oext) :                      $(lineStyleDir)LsLocation.cpp $(LsLocalDepends) ${MultiCompileDepends}
+
+$(CoreObjs)LsSymbology$(oext) :                     $(lineStyleDir)LsSymbology.cpp $(LsLocalDepends)  ${MultiCompileDepends}
+
+$(CoreObjs)LsCache$(oext) :                         $(lineStyleDir)LsCache.cpp $(LsLocalDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnLineStyles$(oext) :                   $(lineStyleDir)DgnLineStyles.cpp $(LsLocalDepends) $(txnManagerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)LineStyleApi$(oext) :                    $(lineStyleDir)LineStyleApi.cpp $(LsLocalDepends)  ${MultiCompileDepends}
+
+$(CoreObjs)LsDb$(oext) :                            $(lineStyleDir)LsDb.cpp $(LsLocalDepends) $(txnManagerDepends)  ${MultiCompileDepends}
+
+$(CoreObjs)StrokeSymbol$(oext) :                    $(lineStyleDir)StrokeSymbol.cpp $(LsLocalDepends) $(HandlerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)LsPointComponent$(oext) :                $(lineStyleDir)LsPointComponent.cpp $(LsLocalDepends) $(HandlerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)StrokePattern$(oext) :                   $(lineStyleDir)StrokePattern.cpp $(LsLocalDepends) ${MultiCompileDepends}
+
+$(CoreObjs)RasterLineStyle$(oext) :                 $(lineStyleDir)RasterLineStyle.cpp $(LsLocalDepends) ${MultiCompileDepends}
+
+$(CoreObjs)RangeIndex$(oext) :                      $(DgnCoreDir)RangeIndex.cpp $(iModelPlatformAPISrc)RangeIndex.h ${MultiCompileDepends}
+
+$(CoreObjs)VecMathDGNTolerances$(oext) :            $(DgnCoreDir)VecMathDGNTolerances.cpp $(iModelPlatformAPISrc)VecMath.h ${MultiCompileDepends}
+
+$(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(iModelPlatformAPISrc)ColorUtil.h $(iModelPlatformAPISrc)ColorBook.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnElements$(oext) :                     $(DgnCoreDir)DgnElements.cpp $(iModelPlatformAPISrc)DgnDb.h ${MultiCompileDepends}
+
+$(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(iModelPlatformAPISrc)Render.h ${MultiCompileDepends}
+
+$(CoreObjs)RenderBRep$(oext) :                      $(DgnCoreDir)RenderBRep.cpp $(iModelPlatformAPISrc)RenderBRep.h ${MultiCompileDepends}
+
+$(CoreObjs)WebMercator$(oext) :                     $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) ${MultiCompileDepends}
+
+$(CoreObjs)TextString$(oext) :                      $(DgnCoreDir)TextString.cpp $(contextDepends) $(iModelPlatformAPISrc)TextString.h $(iModelPlatformAPISrc)DbFont.h $(HandlerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)TextStyleInterop$(oext) :                $(DgnCoreDir)TextStyleInterop.cpp $(iModelPlatformAPISrc)TextString.h $(iModelPlatformAPISrc)Annotations/AnnotationTextStyle.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnPropertyJson$(oext) :                 $(DgnCoreDir)DgnPropertyJson.cpp ${MultiCompileDepends}
+
+$(CoreObjs)ElementGeometry$(oext) :                 $(DgnCoreDir)ElementGeometry.cpp $(iModelPlatformAPISrc)LineStyle.h ${MultiCompileDepends}
+
+$(CoreObjs)ElementGeometryCache$(oext) :            $(DgnCoreDir)ElementGeometryCache.cpp $(iModelPlatformAPISrc)ElementGeometryCache.h ${MultiCompileDepends}
+
+$(CoreObjs)ElementGraphics$(oext) :                 $(DgnCoreDir)ElementGraphics.cpp $(iModelPlatformAPISrc)ElementGraphics.h ${MultiCompileDepends}
+
+$(CoreObjs)FenceContext$(oext) :                    $(DgnCoreDir)FenceContext.cpp $(iModelPlatformAPISrc)FenceContext.h ${MultiCompileDepends}
+
+$(CoreObjs)MeasureGeom$(oext) :                     $(DgnCoreDir)MeasureGeom.cpp $(iModelPlatformAPISrc)MeasureGeom.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnCore$(oext) :                         $(DgnCoreDir)DgnCore.cpp $(DgnCoreDir)DgnCoreDLLInlines.h $(iModelPlatformAPISrc)PlatformLib.h  ${MultiCompileDepends}
+
+$(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(iModelPlatformAPISrc)DgnModel.h ${MultiCompileDepends}
+
+$(CoreObjs)SnapContext$(oext) :                     $(DgnCoreDir)SnapContext.cpp $(HandlerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)SimplifyGraphic$(oext) :                 $(DgnCoreDir)SimplifyGraphic.cpp $(contextDepends) $(iModelPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
+
+$(CoreObjs)DrawAreaPattern$(oext) :                 $(DgnCoreDir)DrawAreaPattern.cpp $(contextDepends) $(HandlerDepends) $(iModelPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
+
+$(CoreObjs)ClipUtil$(oext) :                        $(DgnCoreDir)ClipUtil.cpp $(iModelPlatformAPISrc)ClipUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)ClipPrimitive$(oext) :                   $(DgnCoreDir)ClipPrimitive.cpp $(iModelPlatformAPISrc)ClipPrimitive.h ${MultiCompileDepends}
+
+$(CoreObjs)ClipVector$(oext) :                      $(DgnCoreDir)ClipVector.cpp $(iModelPlatformAPISrc)ClipPrimitive.h $(iModelPlatformAPISrc)ClipVector.h ${MultiCompileDepends}
+
+$(CoreObjs)TransformClipStack$(oext) :              $(DgnCoreDir)TransformClipStack.cpp $(iModelPlatformAPISrc)TransformClipStack.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnCorePolyfaceClip$(oext) :             $(DgnCoreDir)DgnCorePolyfaceClip.cpp $(iModelPlatformAPISrc)ClipUtil.h ${MultiCompileDepends}
+
+$(CoreObjs)GradientSettings$(oext) :                $(DgnCoreDir)GradientSettings.cpp ${MultiCompileDepends}
+
+$(CoreObjs)UnitManager$(oext) :                     $(DgnCoreDir)UnitManager.cpp $(iModelPlatformAPISrc)UnitDefinition.h ${MultiCompileDepends}
+
+$(CoreObjs)ACSManager$(oext) :                      $(DgnCoreDir)ACSManager.cpp $(iModelPlatformAPISrc)IAuxCoordSys.h ${MultiCompileDepends}
+
+$(CoreObjs)FontManager$(oext) :                     $(DgnCoreDir)FontManager.cpp $(iModelPlatformAPISrc)FontManager.h $(contextDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DbFont$(oext) :                          $(DgnCoreDir)DbFont.cpp $(iModelPlatformAPISrc)DbFont.h $(contextDepends) ${MultiCompileDepends}
+
+$(CoreObjs)RscFont$(oext) :                         $(DgnCoreDir)RscFont.cpp $(iModelPlatformAPISrc)DbFont.h ${MultiCompileDepends}
+
+$(CoreObjs)ShxFont$(oext) :                         $(DgnCoreDir)ShxFont.cpp $(iModelPlatformAPISrc)DbFont.h ${MultiCompileDepends}
+
+$(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
+
+$(CoreObjs)GeomPart$(oext) :                        $(DgnCoreDir)GeomPart.cpp $(iModelPlatformAPISrc)GeomPart.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnDb$(oext) :                           $(DgnCoreDir)DgnDb.cpp $(iModelPlatformAPISrc)DgnDb.h $(iModelPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnDbSchema$(oext) :                     $(DgnCoreDir)DgnDbSchema.cpp $(iModelPlatformAPISrc)DgnDb.h $(iModelPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnSqlFuncs$(oext) :                     $(DgnCoreDir)DgnSqlFuncs.cpp ${MultiCompileDepends}
+
+$(CoreObjs)DgnUnits$(oext) :                        $(DgnCoreDir)DgnUnits.cpp $(iModelPlatformAPISrc)DgnDb.h $(iModelPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnCategory$(oext) :                     $(DgnCoreDir)DgnCategory.cpp $(iModelPlatformAPISrc)DgnDb.h $(iModelPlatformAPISrc)DgnCategory.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnMaterial$(oext) :                     $(DgnCoreDir)DgnMaterial.cpp $(iModelPlatformAPISrc)DgnDbTables.h $(iModelPlatformAPISrc)DgnMaterial.h ${MultiCompileDepends}
+
+$(CoreObjs)Lighting$(oext) :                        $(DgnCoreDir)Lighting.cpp $(iModelPlatformAPISrc)Lighting.h ${MultiCompileDepends}
+
+$(CoreObjs)SolarUtility$(oext) :                    $(DgnCoreDir)SolarUtility.cpp $(iModelPlatformAPISrc)SolarUtility.h ${MultiCompileDepends}
+
+$(CoreObjs)ViewDefinition$(oext) :                  $(DgnCoreDir)ViewDefinition.cpp $(iModelPlatformAPISrc)DgnDb.h $(iModelPlatformAPISrc)ViewDefinition.h ${MultiCompileDepends}
+
+$(CoreObjs)Sheet$(oext) :                           $(DgnCoreDir)Sheet.cpp $(iModelPlatformAPISrc)Sheet.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(iModelPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(CoreObjs)DefinitionElementUsageInfo$(oext) :      $(DgnCoreDir)DefinitionElementUsageInfo.cpp $(iModelPlatformAPISrc)DgnElement.h ${MultiCompileDepends}
+
+$(CoreObjs)CodeSpec$(oext) :                        $(DgnCoreDir)CodeSpec.cpp $(iModelPlatformAPISrc)CodeSpec.h $(iModelPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)SearchableText$(oext) :                  $(DgnCoreDir)SearchableText.cpp $(iModelPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $(iModelPlatformAPISrc)DgnDomain.h ${MultiCompileDepends}
+
+$(CoreObjs)BisCoreDomain$(oext) :                   $(DgnCoreDir)BisCoreDomain.cpp ${MultiCompileDepends}
+
+$(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.cpp $(iModelPlatformAPISrc)GenericDomain.h ${MultiCompileDepends}
+
+$(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomain.cpp $(iModelPlatformAPISrc)FunctionalDomain.h ${MultiCompileDepends}
+
+$(CoreObjs)PhysicalMaterialDomain$(oext) :          $(DgnCoreDir)PhysicalMaterialDomain.cpp $(iModelPlatformAPISrc)PhysicalMaterialDomain.h ${MultiCompileDepends}
+
+$(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(contextDepends) ${MultiCompileDepends}
+
+$(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(iModelPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
+
+$(CoreObjs)VolumeElement$(oext) :                   $(DgnCoreDir)VolumeElement.cpp $(iModelPlatformAPISrc)VolumeElement.h ${MultiCompileDepends}
+
+$(CoreObjs)ECSqlClassParams$(oext) :                $(DgnCoreDir)ECSqlClassParams.cpp  $(iModelPlatformAPISrc)ECSqlClassParams.h ${MultiCompileDepends}
+
+$(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
+
+$(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(iModelPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
+
+$(CoreObjs)ModelSpatialClassifier$(oext) :          $(DgnCoreDir)ModelSpatialClassifier.cpp $(iModelPlatformAPISrc)ModelSpatialClassifier.h  ${MultiCompileDepends}
+
+$(CoreObjs)EntityIdsChangeGroup$(oext) :            $(DgnCoreDir)EntityIdsChangeGroup.cpp $(iModelPlatformAPISrc)EntityIdsChangeGroup.h ${MultiCompileDepends}
+
+
+#----------------------------------------------------------------------
+#   DgnGeoCoord
+#----------------------------------------------------------------------
+
+$(o)DgnGeoCoord$(oext) :                            $(DgnGeoCoordDir)DgnGeoCoord.cpp $(iModelPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
+
+$(o)GeoCoordServices$(oext) :                       $(DgnGeoCoordDir)GeoCoordServices.cpp $(iModelPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
+
+#----------------------------------------------------------------------
+#   DgnEC
+#----------------------------------------------------------------------
+DgnECDepends = \
+    $(iModelPlatformAPISrc)DgnChangeSummary.h \
+    $(iModelPlatformAPISrc)DgnECSymbolProvider.h \
+    $(iModelPlatformAPISrc)VersionCompareChangeSummary.h \
+
+
+$(CoreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)VersionCompareChangeSummary$(oext) : $(DgnHandlersDir)VersionCompareChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+#----------------------------------------------------------------------
+#   Annotations
+#----------------------------------------------------------------------
+AnnotationsHeaders = \
+    $(AnnotationsApi)AnnotationFrame.h \
+    $(AnnotationsApi)AnnotationFrameDraw.h \
+    $(AnnotationsApi)AnnotationFrameLayout.h \
+    $(AnnotationsApi)AnnotationFrameStyle.h \
+    $(AnnotationsApi)AnnotationLeader.h \
+    $(AnnotationsApi)AnnotationLeaderDraw.h \
+    $(AnnotationsApi)AnnotationLeaderStyle.h \
+    $(AnnotationsApi)AnnotationPropertyBag.h \
+    $(AnnotationsApi)Annotations.h \
+    $(AnnotationsApi)AnnotationTextBlock.h \
+    $(AnnotationsApi)AnnotationTextBlockDraw.h \
+    $(AnnotationsApi)AnnotationTextBlockLayout.h \
+    $(AnnotationsApi)AnnotationTextStyle.h \
+    $(AnnotationsApi)TextAnnotation.h \
+    $(AnnotationsApi)TextAnnotationDraw.h \
+    $(AnnotationsApi)TextAnnotationPersistence.h \
+    $(AnnotationsApi)TextAnnotationSeed.h \
+    $(AnnotationsPrivateApi)AnnotationFramePersistence.h \
+    $(AnnotationsPrivateApi)AnnotationFrameStylePersistence.h \
+    $(AnnotationsPrivateApi)Annotations.fb.h \
+    $(AnnotationsPrivateApi)AnnotationTextBlockPersistence.h \
+    $(AnnotationsPrivateApi)AnnotationTextStylePersistence.h \
+    $(AnnotationsPrivateApi)TextAnnotationSeedPersistence.h
+
+$(CoreObjs)AnnotationFrame$(oext) :                 $(AnnotationsSrc)AnnotationFrame.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationFrameDraw$(oext) :             $(AnnotationsSrc)AnnotationFrameDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationFrameLayout$(oext) :           $(AnnotationsSrc)AnnotationFrameLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationFrameStyle$(oext) :            $(AnnotationsSrc)AnnotationFrameStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationLeader$(oext) :                $(AnnotationsSrc)AnnotationLeader.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationLeaderDraw$(oext) :            $(AnnotationsSrc)AnnotationLeaderDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationLeaderLayout$(oext) :          $(AnnotationsSrc)AnnotationLeaderLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationLeaderStyle$(oext) :           $(AnnotationsSrc)AnnotationLeaderStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationParagraph$(oext) :             $(AnnotationsSrc)AnnotationParagraph.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationPropertyBag$(oext) :           $(AnnotationsSrc)AnnotationPropertyBag.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationRuns$(oext) :                  $(AnnotationsSrc)AnnotationRuns.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationTextBlock$(oext) :             $(AnnotationsSrc)AnnotationTextBlock.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationTextBlockDraw$(oext) :         $(AnnotationsSrc)AnnotationTextBlockDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationTextBlockLayout$(oext) :       $(AnnotationsSrc)AnnotationTextBlockLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)AnnotationTextStyle$(oext) :             $(AnnotationsSrc)AnnotationTextStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)TextAnnotation$(oext) :                  $(AnnotationsSrc)TextAnnotation.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)TextAnnotationDraw$(oext) :              $(AnnotationsSrc)TextAnnotationDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+$(CoreObjs)TextAnnotationElement$(oext) :           $(AnnotationsSrc)TextAnnotationElement.cpp $(AnnotationsHeaders) $(AnnotationsApi)TextAnnotationElement.h ${MultiCompileDepends}
+
+$(CoreObjs)TextAnnotationSeed$(oext) :              $(AnnotationsSrc)TextAnnotationSeed.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+coreObjects =% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
+# Generate word break data structures
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(HandlerObjs)GeneratedSource/GeneratedHeaders
+
+$(HandlerObjs)GeneratedSource/GeneratedHeaders/WordBreakData.h : $(DgnHandlersDir)WordBreakProperty.txt $(DgnHandlersDir)WordBreakDataGenerator.py
+    |[== Building "$@", ($=) ==]
+    $(BBPYTHONCMD) $(DgnHandlersDir)WordBreakDataGenerator.py -i$< -o$@
+
+dirToSearch = $(HandlerObjs)GeneratedSource/
+%include cincapnd.mki
+
+# -----------------------------------------------------------------------------------------------
+#   Non-port section
+# -----------------------------------------------------------------------------------------------
+FileTypeControl     =
+CCPchOpts           =
+CPchOpts            =
+MultiCompileDepends = $(_MakeFileSpec)
+o                   = $(CoreObjs)
+
+%include MultiCppCompileRule.mki
+
+$(CoreObjs)TrueTypeFont$(oext) :                 $(DgnCoreDir)TrueTypeFont.cpp $(iModelPlatformAPISrc)DbFont.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+dgnCore_nonPortableObjects  =% $(MultiCompileObjectList)
+coreObjects                 + $(dgnCore_nonPortableObjects)
+
+# -----------------------------------------------------------------------------------------------
+#   cppObjects = Combine dgncore and dgnhandler obj lists
+# -----------------------------------------------------------------------------------------------
+cppObjects                  = $(coreObjects)
+
+# -----------------------------------------------------------------------------------------------
+#   Portable inline handling (make sure that there is a non-inlined implementation when required)
+# -----------------------------------------------------------------------------------------------
+
+$(HandlerObjs)DgnPlatformDLLInlines$(oext) :        $(baseDir)DgnPlatformDLLInlines.cpp $(baseDir)DgnCore/DgnCoreDLLInlines.h ${MultiCompileDepends}
+
+cppObjects                  +% $(HandlerObjs)DgnPlatformDLLInlines$(oext)
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+o                       = $(iModelPlatformObj)
+
+DLM_DEST                = $(o)
+DLM_OBJECT_FILES        = $(cppObjects)
+DLM_OBJECT_PCH          = $(iModelPlatformObj)DgnPlatformInternal$(oext)
+DLM_EXPORT_OBJS         = $(cppObjects)
+DLM_EXPORT_DEST         = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+DLM_NO_BENTLEY_LIB      = 1
+LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinSQLite$(libext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)BePng$(stlibext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinJpeg$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
+                            $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
+                            $(ContextSubpartsLibs)$(UnitsLib) \
+                            $(ContextSubpartsLibs)$(BentleyGeomLib) \
+                            $(ContextSubpartsLibs)iTwinBentley$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinGeoCoord$(libext)\
+                            $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext) \
+                            $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
+
+%ifndef CREATE_STATIC_LIBRARIES
+    %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
+
+        #For CoCreateInstance, RegOpenKey, SHGetPathFromIDListA - used (in Windows build) for TrueType font support and by IntegrationManager.obj
+        LINKER_LIBRARIES + $(oleLibs) $(guiLibs) kernel32.lib
+        LINKER_LIBRARIES + wininet.lib
+
+        # Add this to use the VTune API. It is a static library that finds the DLL's if they are on the system.
+        # LINKER_LIBRARIES       + "C:\Program Files (x86)\Intel\VTune Amplifier XE\lib64\libittnotify.lib"
+    %endif
+%endif
+
+%include $(sharedMki)linkLibrary.mki
+
+#----------------------------------------------------------------------
+# Fonts that are required to be available to iModelPlatform.
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/FallbackFonts.itwin-workspace : $(baseDir)Workspaces/FallbackFonts.itwin-workspace
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/RscFonts.itwin-workspace : $(baseDir)Workspaces/RscFonts.itwin-workspace
+    $(LinkFirstDepToFirstTarget)

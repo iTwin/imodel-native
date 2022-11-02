@@ -1,0 +1,10 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+always:
+    ~linkdir "$(BuildContext)VendorAPI/rapidjson=$(_MakeFilePath)vendor/include/rapidjson"
+    ~linkfile "$(BuildContext)Delivery/rapidjson-license.txt=$(_MakeFilePath)vendor/license.txt"

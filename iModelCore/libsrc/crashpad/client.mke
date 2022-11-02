@@ -1,0 +1,56 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+%include mdl.mki
+
+AppName = CrashpadClient
+CCompPDBName = $(AppName)
+VendorDir = $(_MakeFilePath)vendor/
+o = $(PartBuildDir)
+ApiStagingDir = $(o)ApiStaging/
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+    
+    %return
+%endif
+
+always:
+    !~@mkdir $(o)
+    ~linkfile "$(BuildContext)Delivery/crashpad-license.txt=$(VendorDir)LICENSE"
+    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)client" "$(ApiStagingDir)client"
+    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)util" "$(ApiStagingDir)util"
+    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)third_party/mini_chromium/mini_chromium/base" "$(ApiStagingDir)base"
+    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)third_party/mini_chromium/mini_chromium/build" "$(ApiStagingDir)build"
+    ~linkdir "$(BuildContext)VendorAPI/crashpad=${ApiStagingDir}"
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+
+# The combination of files and options varies so much that I do each platform from scratch.
+
+%if $(TARGET_PLATFORM) == "Linux"
+    %include $(_MakeFilePath)client_linux.mki
+%elif $(TARGET_PLATFORM) == "Windows"
+    %include $(_MakeFilePath)client_windows.mki
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# N.B. Crashpad only builds as a static library (they have no export macros setup).
+
+LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+LIB_DEST = $(o)
+LIB_LST_NAME = $(o)$(AppName).lst
+LIB_NAME = $(AppName)
+LIB_OBJECT_DEST = $(o)
+LIB_OBJS = $(objs)
+LIB_TMP_DIR = $(o)
+
+%include creatlib.mki

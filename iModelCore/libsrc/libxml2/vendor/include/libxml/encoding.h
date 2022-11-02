@@ -27,7 +27,6 @@
 #ifdef LIBXML_ICONV_ENABLED
 #include <iconv.h>
 #endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

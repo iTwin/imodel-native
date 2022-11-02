@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="GeoCoordWorkspaceData">
+        <SubPackage PkgType="UPack" Name="csmap_workspaces" PartName="PrebuiltWorkspaces_imodel" PartFile="csmap_workspaces" />
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="csmap" />
+            <VendorNotices>Delivery/csmap-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="CsmapCompiler" BMakeFile="DictionarySources/compiler.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="csmapStatic"/>
+    </Part>
+
+    <Part Name="csmapStatic" BentleyBuildMakeFile="csmap.mke" BentleyBuildMakeOptions="+dCREATE_STATIC_LIBRARIES">
+        <SubPart PartName="PublicAPI"/>
+        <!-- This MKE file can also produce a shared library with MFC support; you will need to create another part if you want that. -->
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)iTwinCsmapStatic$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)iTwinCsmapStatic$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+</BuildContext>

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="PointCloud" alias="pointcloud" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
+
+    <ECEntityClass typeName="PointCloudModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>bis:SpatialModel</BaseClass>
+    </ECEntityClass>
+
+</ECSchema>

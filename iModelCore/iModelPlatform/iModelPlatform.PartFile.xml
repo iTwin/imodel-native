@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <!-- Also re-deliver some ECSchemas -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="iModelPlatform.prewire.mke">
+        <SubPart PartName="StandardSchemasBim" PartFile="schemas\ECStandards\ECStandards"/>
+        <SubPart PartName="Core" PartFile="schemas\BisSchemas\BisSchemas"/>
+        <SubPart PartName="PublicAPI" PartFile="iModelCore/BRepCore/BRepCore" />
+        <Bindings>
+            <PublicAPI Domain="DgnPlatform" />
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+                ECSchemas/Dgn/*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelPlatformDLL" BentleyBuildMakeFile="iModelPlatform.mke">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="ECDbLibrary"         PartFile="iModelCore/ECDb/ECDb" />
+        <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="ECObjects"     PartFile="iModelCore/ecobjects/ECObjects" />
+        <SubPart PartName="Freetype2Library" PartFile="iModelCore/libsrc/freetype2/freetype2"/>
+        <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart LibType="Static" PartName="pnglib" PartFile="iModelCore/libsrc/png/png"/>
+        <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
+        <SubPart PartName="GeoCoord"            PartFile="iModelCore/GeoCoord/GeoCoord" />
+        <SubPart PartName="BRepCore"            PartFile="iModelCore/BRepCore/BRepCore" />
+        <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap" />
+        <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore/libsrc/compress/Zlib"/>
+        <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwinPlatform$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinPlatform$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="Assets">Delivery/FallbackFonts.itwin-workspace</Files>
+            <Files ProductDirectoryName="Assets">Delivery/RscFonts.itwin-workspace</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BentleyDocConfig" BentleyBuildMakeFile="docs/prewire.mke">
+        <Bindings>
+            <Directory SourceName="Delivery/BentleyDocConfig" SubPartDirectory="BentleyDocConfig"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DimStyleSchemaPrewire" BentleyBuildMakeFile="DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke" >
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+                GeneratedSchemas/DimensionStyleSchema.01.00.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Allow dependent tests to #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h> -->
+    <Part Name="iModelPlatformUnitTestHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <SubPart PartName="iModelPlatformDLL"      PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <Bindings>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnPlatformTestDomain.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/PerfTestDomain.h</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RawDgnClientSdkUnitTestData" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/DeliverDgnClientSdkUnitTestData.mke" BentleyBuildMakeOptions="-dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/iModelUnitTestData/">
+        <RequiredRepository>iModelUnitTestData</RequiredRepository>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
+        </Bindings>
+    </Part>
+
+    <!-- ********************************************************************************************** -->
+    <!-- All iModelPlatform-related Unit tests -->
+    <!-- These tests are linked into various test products. -->
+    <!-- ********************************************************************************************** -->
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <RequiredRepository>iModelUnitTestData</RequiredRepository>
+        <SubPart PartName="iModelPlatformDLL"/>
+        <SubPart PartName="GeoCoordWorkspaceData" PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <SubPart PartName="iModelPlatformUnitTestHelpers"/>
+        <Bindings>
+            <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PerformanceTestData"> Delivery/UnitTests/PerformanceTestData/*.json</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PresentationRules">
+                Delivery/UnitTests/PresentationRules/Items.PresentationRuleSet.json
+                Delivery/UnitTests/PresentationRules/BisCore.PresentationRuleSet.json
+            </Files>
+            <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="CompatibilityTestFiles" SourceName="Delivery/UnitTests/CompatibilityTestFiles" />
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDbTestUtils" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/DgnDbTestUtils" SourceName="Delivery/UnitTests/Objects/DgnDbTestUtils"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+        <SubPart PartName="DgnDbTestUtils" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestFixtureForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/TestFixture" SourceName="Delivery/UnitTests/Objects/TestFixture"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
+
+    <!-- **********************************************************************************************
+         IModel Evolution Tests
+         ********************************************************************************************** -->
+
+    <!-- Entry point part -->
+    <Part Name="RunIModelEvolutionTests" PrgOutputDir="IModelEvolutionTests">
+        <SubPart PartName="IModelEvolutionRunAllTestRunners"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestRunnerNuget"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget"/>
+    </Part>
+
+    <!-- Runs all compatibility tests:
+         Preparation:
+         * Downloads all existing test runners and test files
+
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+         2) Runs all downloaded test runners against
+            * all downloaded test files
+            * files created by the current test runner
+    -->
+    <Part Name="IModelEvolutionRunAllTestRunners" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="IModelEvolutionPrepareAllTestRunners"/>
+    </Part>
+
+    <!-- Runs the current compatibility test runner (from current software):
+         Preparation:
+         * Downloads all existing test files
+
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+    -->
+    <Part Name="IModelEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=IModelEvolutionGTest -dGTEST_NAME=IModelEvolutionTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/IModelEvolutionTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="IModelEvolutionPrepareCurrentTestRunner"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPrepareAllTestRunners" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/PreparePulledTestRunners.mke">
+        <SubPart PartName="IModelEvolutionRunCurrentTestRunner"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPrepareCurrentTestRunner" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/PrepareCurrentTestRunner.mke">
+        <SubPart PartName="IModelEvolutionPullNugets"/>
+        <SubProduct ProductName="IModelEvolutionGTest"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPullNugets" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.mke"/>
+
+    <Product Name="IModelEvolutionGTest">
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="BuildIModelEvolutionGTest"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+    </Product>
+
+    <Part Name="BuildIModelEvolutionGTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=IModelEvolutionTests -dTEST_COLLECTION_PRODUCT=IModelEvolutionTests " OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="IModelEvolutionTests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/IModelEvolutionTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/IModelEvolutionTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="IModelEvolutionTests">
+        <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="BuildIModelEvolutionTestsStatic" />
+        <SubPart PartName="BuildIModelEvolutionTestsDynamic" />
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="BuildIModelEvolutionTestsDynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="BuildIModelEvolutionTests"/>
+    </Part>
+
+    <Part Name="BuildIModelEvolutionTestsStatic" DeferType="BuildUnitTests" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="BuildIModelEvolutionTests" LibType="Static" />
+    </Part>
+
+    <Part Name="BuildIModelEvolutionTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
+        <SubPart PartName="PrewireIModelEvolutionTests" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="DgnPlatform/Compatibility" SourceName="Delivery/UnitTests/Objects/Compatibility"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PrewireIModelEvolutionTests" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/prewire.mke">
+        <SubPart PartName="StandardSchemasBim" PartFile="schemas\ECStandards\ECStandards" />
+        <SubPart PartName="Core" PartFile="schemas\BisSchemas\BisSchemas"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/IModelEvolutionTests.*.ecschema.xml
+            </Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="IModelEvolutionTests" SubPartDirectory="IModelEvolutionTests">Delivery/Gtest/IModelEvolutionTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Create nuget that contains the current test runner">
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="BuildIModelEvolutionGTest"/>
+    </NuGetProduct>
+
+    <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Create the test files nuget">
+        <Directories DirectoryListName="IModelEvolutionTestFilesForNugetPackage"/>
+        <SubPart PartName="PrepareIModelEvolutionTestFilesNugetPackaging"/>
+    </NuGetProduct>
+
+    <Part Name="PrepareIModelEvolutionTestFilesNugetPackaging" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareTestFilesNugetPackaging.mke">
+        <!-- Must run after all tests are complete -->
+        <SubPart PartName="IModelEvolutionRunAllTestRunners" />
+        <Bindings>
+            <Directory ProductDirectoryName="TestFiles" SourceName="IModelEvolutionTestFilesForNugetPackage" />
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="IModelEvolutionTestFilesForNugetPackage" >
+        <ProductDirectory Name="TestFiles" Path="TestFiles"/>
+    </ProductDirectoryList>
+
+    <Product Name="CompatibilityTestFiles" SaveProduct="true">
+        <SubPart PartName="SaveCompatibilityTestFiles"/>
+        <Directories DirectoryListName="CompatibilityTestFiles"/>
+    </Product>
+
+    <ProductDirectoryList ListName="CompatibilityTestFiles" >
+        <ProductDirectory Name="CompatibilityTestFiles" Path=""/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
+        <ProductDirectory Name="Assets" LibType="Static" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="SaveCompatibilityTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests/DgnProject/SaveCompatibilityTestFiles.mke">
+        <!-- Must run after the tests are complete -->
+        <SubPart PartName="RunGtest" />
+        <Bindings>
+            <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/CompatibilityTestSeed.bim
+            </Files>
+            <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/InstancesCompatibilitySeed.bim
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Define a test collection part-->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <Product Name="iModelPlatform-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <!-- iModelPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
+        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
+      <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+  <!-- ********************** -->
+  <!-- **** Performance **** -->
+  <!-- ********************** -->
+  <Product Name="iModelPlatform-Performance-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Performance"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <!-- iModelPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
+        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
+      <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelPlatformPerformanceTests -dTEST_COLLECTION_PRODUCT=iModelPlatform-Performance-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="iModelPlatform-Performance-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelPlatformPerformanceTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelPlatformPerformanceTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelPlatform-Gtest-Performance" SaveProduct="true">
+        <SubPart PartName="Gtest-Performance"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest-Performance" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelPlatform-Gtest-Performance -dGTEST_NAME=iModelPlatformPerformanceTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="iModelPlatform-Gtest-Performance" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/iModelPlatformPerformanceTest.log</Files>
+        </Bindings>
+    </Part>
+
+  <!-- ********************** -->
+  <!-- **** Gtest **** -->
+  <!-- ********************** -->
+  <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelPlatformTest -dTEST_COLLECTION_PRODUCT=iModelPlatform-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="iModelPlatform-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelPlatformTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelPlatformTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelPlatform-Gtest" SaveProduct="true">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelPlatform-Gtest -dGTEST_NAME=iModelPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="iModelPlatform-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/iModelPlatformTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=iModelPlatform-Tests -dTEST_SHORT_NAME=DgnPlatTst -dTEST_DELIVERY_SUBDIR=ANJUP -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="iModelPlatform-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelPlatform-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=iModelPlatform-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="iModelPlatform-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/iModelPlatform-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelPlatform -dTEST_COLLECTION_PRODUCT=iModelPlatform-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="iModelPlatform-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/iModelPlatform/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelPlatform-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=iModelPlatform-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="iModelPlatform-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/iModelPlatform-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=iModelPlatform -dTEST_COLLECTION_PRODUCT=iModelPlatform-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="M02"
+        >
+        <SubProduct ProductName="iModelPlatform-Tests"/>
+        <SubPart PartName="UwpTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/iModelPlatformUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelPlatform-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=iModelPlatform-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubPart PartName="UwpTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubProduct ProductName="iModelPlatform-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/iModelPlatform-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="NoView-Gtest-RunAggregator-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+
+    <Part Name="NoView-Gtest-RunAggregator-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+
+    <Part Name="NoView-Gtest-RunAggregator-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+
+    <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs">
+        <SubPart PartFile="iModelCore/GeomLibs/geomlibs"         PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/ECDb/ECDb"             PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/ecobjects/ECObjects"        PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/Units/Units"            PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/iModelPlatform/iModelPlatform"      PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/BeSQLite/BeSQLite"         PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/Bentley/Bentley"          PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/BRepCore/BRepCore"       PartName="RunGtest" />
+        <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
+        <!-- Test that are too time-consuming to run every time:
+        <SubPart PartFile="iModelCore/GeoCoord/GeoCoord"         PartName="RunGtest"/>
+      -->
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // iModelConsole                                                           // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Product Name="iModelConsole">
+        <SubPart PartName="iModelConsoleExe-Windows"/>
+        <SubPart PartName="iModelConsoleExe-Linux"/>
+        <SubPart PartName="iModelConsoleExe-MacOS"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <Directories DirectoryListName="iModelConsoleDirList" />
+    </Product>
+
+    <Part Name="iModelConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="iModelConsoleExe" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" LibType="Static"/>
+    </Part>
+
+    <Part Name="iModelConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" LibType="Static"/>
+    </Part>
+
+    <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
+        <SubPart PartName="iModelPlatformDLL"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">
+                Delivery/iModelConsole$(exeext)
+                Delivery/logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="iModelConsoleDirList" >
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="ApplicationRoot"                Path="" LibType="Static" />
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="Static" />
+       <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
+       <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices" LibType="Static"/>
+    </ProductDirectoryList>
+
+</BuildContext>

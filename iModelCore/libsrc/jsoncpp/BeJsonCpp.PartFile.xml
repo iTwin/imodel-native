@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="BeJsonCpp">
+        <SubPart PartName="BeJsonCppStaticLib" />
+        <SubPart PartName="BeJsonCppStaticLibLinux" />
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
+        <Bindings>
+            <PublicAPI Domain="BeJsonCpp" />
+            <PublicAPI Domain="json" />
+        </Bindings>
+    </Part>
+
+    <Part Name="BeJsonCppStaticLib" BentleyBuildMakeFile="BeJsonCpp.mke" ExcludePlatforms="Linux*">
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
+        <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwinJsonCpp$(stlibext)</Libs>
+            <!-- N.B. This library is forced to build statically, and chooses to embed symbols directly in the LIB file (vs. a PDB). -->
+            <VendorNotices>Delivery/jsoncpp-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="BeJsonCppStaticLibLinux" BentleyBuildMakeFile="BeJsonCpp.mke" OnlyPlatforms="Linux*">
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" LibType="Static"/>
+        <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwinJsonCpp$(stlibext)</Libs>
+            <!-- N.B. This library is forced to build statically, and chooses to embed symbols directly in the LIB file (vs. a PDB). -->
+            <VendorNotices>Delivery/jsoncpp-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- ******************************** Unit Tests ************************************** -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/Prewire.mke">
+        <!---->
+        <SubPart PartName="BeJsonCpp"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeJsonCpp" SubPartDirectory="UnitTests/BeJsonCpp">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeJsonCpp/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <Product Name="BeJsonCpp-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeJsonCppTest -dTEST_COLLECTION_PRODUCT=BeJsonCpp-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+        <SubProduct ProductName="BeJsonCpp-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BeJsonCppTest/Assemblies/*</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="BeJsonCpp-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BeJsonCpp-Gtest -dGTEST_NAME=BeJsonCppTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="BeJsonCpp-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeJsonCppTest.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

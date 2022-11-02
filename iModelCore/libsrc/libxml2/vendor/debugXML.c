@@ -3420,5 +3420,4 @@ xmlShell(xmlDocPtr doc, char *filename, xmlShellReadlineFunc input,
 }
 
 #endif /* LIBXML_XPATH_ENABLED */
-
 #endif /* LIBXML_DEBUG_ENABLED */

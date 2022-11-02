@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="OldUnits" version="01.00" displayLabel="Schema containing all old kind of quantity constructs" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:ec="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+	<ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+
+    <ECCustomAttributes>
+        <UnitSpecifications xmlns="Unit_Attributes.01.00">
+            <UnitSpecificationList>
+                <UnitSpecification>
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <UnitName>METRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                
+                <UnitSpecification>
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits>
+                        <string>METRE_SQUARED</string>
+                        <string>FOOT_SQUARED</string>
+                        <string>MILLIMETRE_SQUARED</string>
+                        <string>INCH_SQUARED</string>
+                    </AllowableUnits>
+                </UnitSpecification>
+                
+                <UnitSpecification>
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>BANANA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </UnitSpecificationList>
+        </UnitSpecifications>
+    </ECCustomAttributes>
+    
+   <ECClass typeName="TestClass" displayLabel="TestClass" isDomainClass="True">
+      <ECProperty propertyName="Name" typeName="string" displayLabel="Name" />
+      <ECProperty propertyName="Length" typeName="double" displayLabel="Length">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <DimensionName>L</DimensionName>
+                    <UnitName>FOOT</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DirtyPressureDrop" typeName="double" description="(From IFC) IfcPressureMeasure .OPTIONAL.">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <KindOfQuantityName>PRESSURE</KindOfQuantityName>
+                    <DimensionName>M_PER_L_T2</DimensionName>
+                    <UnitName>PASCAL</UnitName>
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="FPSurfaceArea" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>FOOT_SQUARED</UnitName>
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="OnlyUnit" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName></DimensionName>
+                    <KindOfQuantityName></KindOfQuantityName>
+                    <UnitName>FOOT</UnitName>
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="UnitFromBaseKoq" typeName="Bentley.Geometry.Common.IGeometry">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="KoqOnly" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="OnlyDimension" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName></KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="CustomKoq" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>Banana</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+   </ECClass>
+
+</ECSchema>

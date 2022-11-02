@@ -1,0 +1,61 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+VCRuntimeCheckOption = -RTCsu
+BUILD_WITH_C17=1
+
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+SQLiteDir = $(baseDir)SQLite/
+SubpartLibs = $(BuildContext)SubParts/Libs/
+DEBUG_INFO_IN_OBJ=
+o = $(PartBuildDir)
+
+appName = iTwinDaemon
+CCompPDBName = $(appName)
+
+always:
+    !~@mkdir $(o)
+
+CCompFpOpts=precise
+cDefs + -DCURL_STATICLIB=1
+
+# Third-party section of this library.
+%include $(sharedmki)PushThirdPartyIgnores.mki
+
+MultiCompileDepends =$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+bcvheaders = $(SQLiteDir)bcvutil.h $(SQLiteDir)bcvmodule.h $(SQLiteDir)bcv_int.h
+
+$(o)simplexml$(oext): $(SQLiteDir)simplexml.c ${MultiCompileDepends} ${bcvheaders}
+
+$(o)sqlite3$(oext): $(SQLiteDir)sqlite3.c ${MultiCompileDepends} ${bcvheaders}
+
+$(o)blockcachevfsd$(oext): $(SQLiteDir)blockcachevfsd.c ${MultiCompileDepends} ${bcvheaders}
+
+$(o)bcvutil$(oext): $(SQLiteDir)bcvutil.c ${MultiCompileDepends} ${bcvheaders}
+
+$(o)blockcachevfs$(oext): $(SQLiteDir)blockcachevfs.c ${MultiCompileDepends} ${bcvheaders}
+
+$(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheaders} ${bcvheaders}
+
+%include MultiCppCompileGo.mki
+
+EXE_DEST            = $(o)
+EXE_NAME            = $(appName)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:mainCRTStartup
+
+%if $(TARGET_PLATFORM)=="Windows"
+        LINKER_LIBRARIES + wsock32.lib ws2_32.lib Advapi32.lib Wldap32.lib Crypt32.lib
+        BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
+%endif
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeCurl$(stlibext)
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeOpenSSL$(stlibext)
+LINKER_LIBRARIES + $(CLibs)
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+
+%include $(SharedMki)linktool.mki

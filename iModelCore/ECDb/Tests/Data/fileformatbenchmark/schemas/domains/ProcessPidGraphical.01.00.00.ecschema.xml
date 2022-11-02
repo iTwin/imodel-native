@@ -1,0 +1,536 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="ProcessPidGraphical" alias="ppidg" version="01.00.00" description="Process PID graphical schema" displayLabel="Process PID Graphical" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="PlantCustomAttributes" version="01.00.00" alias="PlantCA"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECCustomAttributes>
+        <HiddenSchema xmlns="CoreCustomAttributes.01.00" />
+    </ECCustomAttributes>
+    <ECStructClass typeName="ComponentReferencePoint" description="Component reference point">
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>BMF_COMPONENT_REFERENCE_POINT</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="DISPLAY_LABEL" typeName="string" description="Display" displayLabel="Display Label"/>
+        <ECProperty propertyName="NAME_KEY" typeName="string" description="Unique name Key" displayLabel="Name Key"/>
+        <ECProperty propertyName="Location" typeName="point2d" description="Location">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>LOCATION</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECStructClass>
+    <ECStructClass typeName="ComponentConnectPoint" description="Component connect point">
+        <BaseClass>ComponentReferencePoint</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>BMF_COMPONENT_CONNECT_POINT</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Direction" typeName="point2d" description="Direction">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>DIRECTION</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Orientation" typeName="point2d" description="Orientation of the connect point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>ORIENTATION</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="EndConditionName" typeName="string" description="name of end condition at this connect point" displayLabel="End Condition Name"/>
+    </ECStructClass>
+    <ECEntityClass typeName="PidGraphic" description="Pid graphic" displayLabel="Pid Graphic">
+        <BaseClass>bis:DrawingGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>BMF_COMPONENT</OriginName>
+            </MappingOriginCustomAttribute>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECStructArrayProperty propertyName="ConnectPoints" typeName="ComponentConnectPoint" description="Collection of connect points" displayLabel="Connect Points" minOccurs="0" maxOccurs="unbounded">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>CONNECT_POINTS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECStructArrayProperty>
+        <ECProperty propertyName="TypeName" typeName="string" description="Class name corresponding to OpenPlant v8i round tripping" displayLabel="Type Name"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Bubble" description="Schematics Bubble">
+        <BaseClass>PidGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>BUBBLE</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElongatedHexPanelDoubleTrimValue" typeName="double" displayLabel="Elongated Hex Panel Double Trim Value"/>
+        <ECProperty propertyName="BubbleLocation" typeName="int" description="Enumerated value for bubble location type" displayLabel="Bubble Location">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>BUBBLE_LOCATION</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BubbleRadius" typeName="double" description="Bubble radius" displayLabel="Bubble Radius">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>BUBBLE_RADIUS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ElongatedWidth" typeName="double" description="Elongated width" displayLabel="Elongated Width">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>ELONGATED_WIDTH</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="InstrumentLineLeaderLineClassName" typeName="string" description="Name of instrument line used to draw leader line" displayLabel="Instrument Line Leader Line Class Name">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>INSTRUMENT_LEADER_LINE_CLASS_NAME</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LeaderLineDrawn" typeName="boolean" description="Flag indicating whether leader line should be drawn" displayLabel="Leader Line Drawn">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>LEADER_DRAWN</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LeaderEndPoint" typeName="point3d" description="Leader line end point" displayLabel="Leader End Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>LEADER_POINT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LeaderStartPoint" typeName="point3d" description="Leader line start point" displayLabel="Leader Start Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>LEADER_START</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DrawLeaderLine" typeName="boolean" description="Flag to draw leader line" displayLabel="Draw Leader Line">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>DRAW_LEADER_LINE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="Cloud" description="Cloud for component(s)">
+        <BaseClass>PidGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>BMF_CLOUD</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="NUMBER_ARCS_SMALLEST_SIDE" typeName="int" description="number of arcs on the smallest side" displayLabel="Number of Arcs on Smallest Side"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CloudCoversPidGraphics" description="Cloud covers PID Graphics" displayLabel="Cloud Covers PID Graphics" modifier="None" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECProperty propertyName="OpenPlantTypeName" typeName="string" description="Temporary property used to hold OpenPlant class name used for round tripping."/>
+        <Source multiplicity="(0..*)" roleLabel="Covers a BMF Component" polymorphic="true">
+            <Class class="Cloud"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Is covered by a Cloud" polymorphic="true">
+            <Class class="PidGraphic"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ScaleMirrorGraphic" description="Geometry part graphics which can be scaled and or mirrored" displayLabel="Scale Mirror Graphic">
+        <BaseClass>PidGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>SCHEMATICS_BASE_COMPONENT</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ScaleFactor" typeName="double" description="Scale factor for geometry parts" displayLabel="Scale Factor"/>
+        <ECProperty propertyName="GeometryPartName" typeName="string" description="Geometry part name" displayLabel="Geometry Part Name">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>CELLNAME</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="IsMirroredLocalX" typeName="boolean" description="Is mirrored about local X" displayLabel="Is Mirrored Local X"/>
+        <ECProperty propertyName="IsMirroredLocalY" typeName="boolean" description="Is mirrored about local Y" displayLabel="Is Mirrored Local Y"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Jumper" description="Jumps for line intersections and breaks">
+        <BaseClass>ScaleMirrorGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>JUMPER</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="EndPoint" typeName="point3d" description="End of jumper" displayLabel="End Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>END_POINT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="StartPoint" typeName="point3d" description="Start of jumper" displayLabel="Start Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>START_POINT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PidGenericGraphicType" description="Pid generic graphic type" displayLabel="Pid Generic Graphic Type" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECProperty propertyName="FunctionalComponentClasses" typeName="string" description="Functional component classes which can use this type" displayLabel="Functional Component Classes"/>
+        <ECProperty propertyName="GeometryPartName" typeName="string" description="Geometry part name" displayLabel="Geometry Part Name"/>
+        <ECProperty propertyName="IsMirroredLocalX" typeName="boolean" description="Is mirrored about local X override.  if set, value overrides instance" displayLabel="Is Mirrored Local X"/>
+        <ECProperty propertyName="IsMirroredLocalY" typeName="boolean" description="Is mirrored about local Y override.  if set, value overrides instance" displayLabel="Is Mirrored Local Y"/>
+        <ECProperty propertyName="ScaleFactor" typeName="double" description="Scale factor for geometry parts override.  if set, value overrides instance" displayLabel="Scale Factor"/>
+        <ECProperty propertyName="Rotation" typeName="double" description="Rotation override.  if set, value overrides instance"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PidGraphicsConnectsToPidGraphics" description="PID Graphics connects to PID graphics" displayLabel="PID Graphics Connects To PID Graphics" modifier="None" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECProperty propertyName="SOURCE_CONNECT_POINT_NAME" typeName="string" description="Name of source component connect point" displayLabel="Source Connect Point Name"/>
+        <ECProperty propertyName="TARGET_CONNECT_POINT_NAME" typeName="string" description="Name of target component connect point" displayLabel="Target Connect Point Name"/>
+        <ECProperty propertyName="OpenPlantTypeName" typeName="string" description="Temporary property used to hold OpenPlant class name used for round tripping."/>
+        <Source multiplicity="(1..*)" roleLabel="Is connected to BMF Component" polymorphic="true">
+            <Class class="PidGraphic"/>
+        </Source>
+        <Target multiplicity="(1..*)" roleLabel="Is connected to BMF Component" polymorphic="true">
+            <Class class="PidGraphic"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PidScriptBasedGraphicType" description="Pid script based graphic type" displayLabel="Pid Script Based Graphic Type">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECProperty propertyName="FunctionalComponentClasses" typeName="string" description="Functional component classes which can use this type" displayLabel="Functional Component Classes"/>
+        <ECProperty propertyName="ScriptName" typeName="string" description="Name of script to run" displayLabel="Script Name"/>
+    </ECEntityClass>
+    <ECStructClass typeName="RunDataStructure" description="Logical grouping of data structures required by runs" displayLabel="Run Data Structure">
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>RUN_DATA_STRUCTURES</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+    </ECStructClass>
+    <ECStructClass typeName="RunBreak" description="Data used to break a run" displayLabel="Run Break">
+        <BaseClass>RunDataStructure</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>RUN_BREAK</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BreakingId" typeName="string" description="ID of component causing this break" displayLabel="Breaking Id">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>BREAKING_ID</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="StartPoint" typeName="point2d" description="Start point" displayLabel="Start Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>START_POINT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="EndPoint" typeName="point2d" description="End point" displayLabel="End Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>END_POINT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECStructClass>
+    <ECStructClass typeName="RunSegment" description="Run segment" displayLabel="Run Segment">
+        <BaseClass>RunDataStructure</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>RUN_SEGMENT</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECStructArrayProperty propertyName="Breaks" typeName="RunBreak" description="Breaks" minOccurs="0" maxOccurs="unbounded">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>BREAKS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECStructArrayProperty>
+        <ECProperty propertyName="Index" typeName="int" description="Zero based index into array of these">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>INDEX</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECStructClass>
+    <ECEntityClass typeName="Run" description="Run">
+        <BaseClass>PidGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>RUN</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FLOW" typeName="int" description="Flow" displayLabel="Flow"/>
+        <ECProperty propertyName="FLOW_ARROW_LOCATION" typeName="int" description="Enumerator location of automatic flow arrow within a section of the run" displayLabel="Flow Arrow Location"/>
+        <ECProperty propertyName="SHOW_FLOW_ARROWS" typeName="boolean" description="Automatically show flow arrows on run" displayLabel="Show Flow Arrows"/>
+        <ECArrayProperty propertyName="Vertices" typeName="point2d" description="Vertices" minOccurs="0" maxOccurs="unbounded">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>VERTICES</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECArrayProperty>
+        <ECStructArrayProperty propertyName="Segments" typeName="RunSegment" description="Segments" minOccurs="0" maxOccurs="unbounded">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>SEGMENTS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECStructArrayProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="Valve" description="Valve">
+        <BaseClass>ScaleMirrorGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>BASE_VALVE</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ActuatorOrigin" typeName="point2d" description="Actuator origin" displayLabel="Actuator Origin">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>ACTUATOR_ORIGIN</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ActuatorAngle" typeName="double" description="Actuator angle in degrees" displayLabel="Actuator Angle">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>ACTUATOR_ANGLE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ActuatorClassName" typeName="string" description="Actuator class name" displayLabel="Actuator Class Name">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>ACTUATOR_CLASS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FailModeClassName" typeName="string" description="Fail mode class name" displayLabel="Fail Mode Class Name">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>FAIL_MODE_CLASS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="Vessel" description="Parametric vessel">
+        <BaseClass>PidGraphic</BaseClass>
+        <ECCustomAttributes>
+            <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                <OriginName>EQUIP_PARAMETRIC</OriginName>
+            </MappingOriginCustomAttribute>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IsVertical" typeName="boolean" description="Vertical vessel indicator" displayLabel="Is Vertical">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>IS_VERTICAL</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ConeBottomWidthDivideValue" typeName="double" description="Cone bottom width divide" displayLabel="Cone Bottom Width Divide Value">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>CONE_BOTTOM_WIDTH_DIVIDE_VALUE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ConeBottomHeadDepthDivide" typeName="double" description="Cone bottom head depth divide" displayLabel="Cone Bottom Head Depth Divide">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>CONE_BOTTOM_HEAD_DEPTH_DIVIDE_VALUE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ConeRoofHeadDivideValue" typeName="double" description="Cone roof head divide" displayLabel="Cone Roof Head Divide Value">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>CONE_ROOF_HEAD_DIVIDE_VALUE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DrawVesselBottomRightLine" typeName="boolean" description="Flag to draw vessel's bottom right line" displayLabel="Draw Vessel Bottom Right Line">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>DRAW_VESSEL_BOTTOM_RIGHT_LINE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DrawVesselTopLeftLine" typeName="boolean" description="Flag to draw vessel's top left line" displayLabel="Draw Vessel Top Left Line">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>DRAW_VESSEL_TOP_LEFT_LINE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="EllipseHeadBottomRightDivideValue" typeName="double" description="Ellipse head bottom right divide" displayLabel="Ellipse Head Bottom Right Divide Value">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>ELLIPSE_HEAD_BOTTOM_RIGHT_DIVIDE_VALUE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="EllipseHeadTopLeftDivideValue" typeName="double" description="Ellipse head top left divide" displayLabel="Ellipse Head Top Left Divide Value">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>ELLIPSE_HEAD_TOP_LEFT_DIVIDE_VALUE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FlangeExtendDistance" typeName="double" description="Flange extend distance" displayLabel="Flange Extend Distance">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>FLANGE_EXTEND_DISTANCE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FlangeGapDistance" typeName="double" description="Flange gap distance" displayLabel="Flange Gap Distance">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>FLANGE_GAP_DISTANCE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FloatingRoofSideGap" typeName="double" description="Floating roof side gap" displayLabel="Floating Roof Side Gap">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>FLOATING_ROOF_SIDE_GAP</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FlootingRoofDepth" typeName="double" description="Flooting roof depth" displayLabel="Flooting Roof Depth">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>FLOATING_ROOF_DEPTH</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="PlateScaleFactor" typeName="double" description="Flooting roof depth" displayLabel="Plate Scale Factor">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>PLATE_SCALE_FACTOR</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumberPackedSections" typeName="int" description="Number of packed sections" displayLabel="Number of Packed Sections">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>PACKED_SECTIONS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LowerRightPoint" typeName="point2d" description="Lower right point of vessel" displayLabel="Lower Right Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>LOWER_RIGHT_POINT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumberPlates" typeName="int" description="Number of plates" displayLabel="Number of Plates">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>NUMBER_OF_PLATES</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumberTrayedSections" typeName="int" description="Number of trayed sections" displayLabel="Number of Trayed Sections">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>TRAYED_SECTIONS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SlopeDivideValueFactor" typeName="double" description="Slope divide value factor" displayLabel="Slope Divide Value Factor">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>SLOPE_DIVIDE_VALUE</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TopLeftVesselHead" typeName="int" description="Enumerated value for top left vessel head" displayLabel="Top Left Vessel Head">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>VESSEL_TOP_LEFT_HEAD</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="UpperLeftPoint" typeName="point2d" description="Upper left point of vessel" displayLabel="Upper Left Point">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>UPPER_LEFT_POINT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="VesselBaseDepthMultiplyFactor" typeName="double" description="Vessel base depth multiply factor" displayLabel="Vessel Base Depth Multiply Factor">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>VESSEL_BASE_DEPTH_MULTIPLY_FACTOR</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="VesselBaseExtendDistanceMultiplyFactor" typeName="double" description="Vessel base extend distance multiply factor" displayLabel="Vessel Base Extend Distance Multiply Factor">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>VESSEL_EXTEND_DISTANCE_MULTIPLY_FACTOR</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="VesselBottomRightHead" typeName="int" description="Vessel bottom right head" displayLabel="Vessel Bottom Right Head">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>VESSEL_BOTTOM_RIGHT_HEAD</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="VesselInternals" typeName="int" description="Enumerated value for vessel internals" displayLabel="Vessel Internals">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>VESSEL_INTERNALS</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WaterSealBottomHeadDepth" typeName="double" description="Water seal bottom head depth" displayLabel="Water Seal Bottom Head Depth">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>WATER_SEAL_BOTTOM_HEAD_DEPTH</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WaterSealBottomHeadSideGap" typeName="double" description="Water seal bottom head side gap" displayLabel="Water Seal Bottom Head Side Gap">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>WATER_SEAL_BOTTOM_HEAD_SIDE_GAP</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WaterSealBottomHeadSideGapHeight" typeName="double" description="Water seal bottom head side gap height" displayLabel="Water Seal Bottom Head Side Gap Height">
+            <ECCustomAttributes>
+                <MappingOriginCustomAttribute xmlns="PlantCustomAttributes.01.00">
+                    <OriginName>WATER_SEAL_BOTTOM_HEAD_SIDE_GAP_HEIGHT</OriginName>
+                </MappingOriginCustomAttribute>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+</ECSchema>

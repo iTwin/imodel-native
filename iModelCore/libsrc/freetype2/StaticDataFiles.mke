@@ -1,0 +1,9 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+#--------------------------------------------------------------------------------------------------
+$(BuildContext)Delivery/freetype2-license.txt : $(_MakeFilePath)vendor/docs/FTL.TXT
+    $(LinkFirstDepToFirstTarget)

@@ -1,0 +1,241 @@
+//---------------------------------------------------------------------------------------------
+//  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//  See LICENSE.md in the repository root for full copyright notice.
+//---------------------------------------------------------------------------------------------
+
+namespace BentleyM0200.Dgn.FB;
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum GradientMode : byte {None, Linear, Curved, Cylindrical, Spherical, Hemispherical}
+enum BoundaryType : byte {None, Open, Closed}
+enum FillDisplay : byte {None, ByView, Always, Blanking}
+enum GeometryClass : byte {Primary, Construction, Dimension, Pattern}
+enum BRepType : byte {Solid, Sheet, Wire}
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct DPoint3d {x:double; y:double; z:double;}
+struct DPoint2d {x:double; y:double;}
+struct DVec3d {x:double; y:double; z:double;}
+struct RotMatrix {x00:double; x01:double; x02:double; x10:double; x11:double; x12:double; x20:double; x21:double; x22:double;}
+struct Transform {x00:double; x01:double; x02:double; tx:double; x10:double; x11:double; x12:double; ty:double; x20:double; x21:double; x22:double; tz:double;}
+struct Trans2x3 {x00:double; x01:double; tx:double; y00:double; y01: double; ty: double;}
+struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; materialId:long; transparency:double; uv:DPoint2d;}
+struct FaceSymbologyIndex {faceIndex:uint; symbIndex:uint;}
+struct DRange1d {low:double; high:double; }
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table PointPrimitive
+    {
+    coords:[DPoint3d];
+    boundary:BoundaryType; // point string, line string, or shape
+
+    } // PointPrimitive
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table PointPrimitive2d
+    {
+    coords:[DPoint2d];
+    boundary:BoundaryType; // point string, line string, or shape
+
+    } // PointPrimitive2d
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table ArcPrimitive
+    {
+    center:DPoint3d;
+    vector0:DVec3d;
+    vector90:DVec3d;
+    start:double;
+    sweep:double; // 0.0 means full sweep
+    boundary:BoundaryType; // 360 degree arc or ellipse
+
+    } // ArcPrimitive
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table BRepData
+    {
+    entityTransform:Transform;
+    brepType:BRepType;
+    entityData:[ubyte];
+    symbology:[FaceSymbology];
+    symbologyIndex:[FaceSymbologyIndex];
+
+    } // BRepData
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table OCBRepData
+    {
+    brepType:BRepType;
+    entityData:[ubyte];
+
+    } // OCBRepData
+
+//=======================================================================================
+// This struct existed long ago and was removed without any known public users.
+// (The old "redline model" stored background images using this struct).
+// Out of paranoia, we maintain the ability to read (and ignore) the old version.
+// Old version stored an Image.
+// New version adds the textureId field pointing to a persistent texture element that supplies the image.
+// @bsistruct
+//=======================================================================================
+table Image
+    {
+    drawBorder:ubyte;
+    useFillTint:ubyte; // unused
+    tileCorner0:DPoint3d;
+    tileCorner1:DPoint3d;
+    tileCorner2:DPoint3d;
+    tileCorner3:DPoint3d;
+    width:uint; // unused
+    height:uint; // unused
+    format:uint; // unused
+    byteData:[ubyte]; // unused
+    textureId:long; // not present in old version of this struct.
+    } // Image
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table GeometryPart
+    {
+    geomPartId:long; // only reason to use flatbuffers is to make it easier if we need to add more info down the road...
+    origin:DPoint3d;
+    yaw:double;
+    pitch:double;
+    roll:double;
+    scale:double = 1.0;
+
+    } // GeometryPart
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table BasicSymbology
+    {
+    subCategoryId:long;
+    color:uint;
+    weight:uint;
+    lineStyleId:long;           // LineStyleParams are in a separate table. They are provided only when necessary.
+    transparency:double;        // contributes to net transparency, not an override.
+    displayPriority:int;        // contributes to net display priority, not an override. (2d only)
+    geomClass:GeometryClass;
+    useColor:ubyte;             // color overrides sub-category appearance
+    useWeight:ubyte;            // weight overrides sub-category appearance
+    useStyle:ubyte;             // style overrides sub-category appearance
+
+    } // BasicSymbology
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table LineStyleModifiers
+    {
+    modifiers:uint;             // see STYLEMOD_... 
+    scale:double;               // Applied to all length values
+    dashScale:double;           // Applied to adjustable dash strokes
+    gapScale:double;            // Applied to adjustable gap strokes
+    startWidth:double;          // Taper start width
+    endWidth:double;            // Taper end width
+    distPhase:double;           // Phase shift by distance
+    fractPhase:double;          // Phase shift by fraction
+    normal:DPoint3d;
+    yaw:double;
+    pitch:double;
+    roll:double;
+    }
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table Material
+    {
+    useMaterial:ubyte; // material overrides sub-category appearance
+    materialId:long;
+    origin:DPoint3d;
+    size:DPoint3d;
+    yaw:double;
+    pitch:double;
+    roll:double;
+    trans2x3:Trans2x3;
+    } // Material
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table ThematicSettings
+    {
+    stepCount:uint;
+    margin:double;
+    marginColor:uint;
+    mode:uint;
+    colorScheme:uint;
+    range:DRange1d;
+    }
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table AreaFill
+    {
+    fill:FillDisplay;
+    color:uint;
+    useColor:ubyte; // color overrides sub-category appearance
+    backgroundFill:ubyte; // 0 - none, 1 - solid, 2 - outline.
+    transparency:double;
+    mode:GradientMode;
+    flags:ushort;
+    angle:double;
+    tint:double;
+    shift:double;
+    colors:[uint];
+    values:[double];
+    thematicSettings:ThematicSettings;
+    } // AreaFill
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table DwgHatchDefLine
+    {
+    angle:double;
+    through:DPoint2d;
+    offset:DPoint2d;
+    dashes:[double];
+    } // DwgHatchDefLine
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table AreaPattern
+    {
+    origin:DPoint3d;
+    rotation:RotMatrix;
+    space1:double;
+    space2:double;
+    angle1:double;
+    angle2:double;
+    scale:double;
+    color:uint;
+    weight:uint;
+    useColor:ubyte;             // color overrides element color
+    useWeight:ubyte;            // weight overrides element weight
+    invisibleBoundary:ubyte;    // pattern boundary should not display
+    snappable:ubyte;            // pattern graphics are snappable
+    symbolId:long;
+    defLine:[DwgHatchDefLine];
+
+    } // AreaPattern

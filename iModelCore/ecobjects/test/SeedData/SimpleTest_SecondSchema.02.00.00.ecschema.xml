@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="SimpleTest_SecondSchema" alias="test" version="2.0.0" description="Simple Test Schema EC3.1 Version" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="BaseClass" modifier="None">
+        <ECProperty propertyName="BaseClassMember" typeName="int" />
+    </ECEntityClass>
+
+    <ECStructClass typeName="Struct1" >
+        <ECProperty propertyName="Struct1BoolMember" typeName="boolean" />
+        <ECProperty propertyName="Struct1IntMember" typeName="int" />
+    </ECStructClass>
+
+    <ECStructClass typeName="Struct2" >
+        <ECProperty propertyName="Struct2StringMember" typeName="string" />
+        <ECProperty propertyName="Struct2DoubleMember" typeName="double" />
+        <ECStructArrayProperty propertyName="NestedArray" typeName="Struct1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECStructClass>
+
+    <ECEntityClass typeName="TestClass">
+        <BaseClass>BaseClass</BaseClass>
+        <ECNavigationProperty propertyName="Parent" relationshipName="BaseRefersToTest" direction="backward"/>
+        <ECProperty propertyName="IntegerMember" typeName="int"/>
+        <ECProperty propertyName="BooleanMember" typeName="boolean" />
+        <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel"/>
+        <ECStructProperty propertyName="EmbeddedStruct" typeName="Struct1"/>
+        <ECStructProperty propertyName="SecondEmbeddedStruct" typeName="Struct2" />
+        <ECArrayProperty propertyName="IntArray" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="StructArray" typeName="Struct2" minOccurs="0" maxOccurs="unbounded" isStruct="True"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="BaseRefersToTest" strength="referencing" modifier="Sealed">
+        <ECProperty propertyName="MyIntegerMember" typeName="int" />
+        <ECProperty propertyName="MyLongMember" typeName="long" />
+        <ECArrayProperty propertyName="MyIntArray" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="foo">
+            <Class class="BaseClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="foo">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

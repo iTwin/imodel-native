@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir       = $(_MakeFilePath)
+CppInclude    = $(baseDir)VendorAPI/
+
+always:
+    ~linkdir "$(BuildContext)VendorAPI=${CppInclude}"

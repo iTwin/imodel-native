@@ -1,13 +1,23 @@
-#define JPEG_LIB_VERSION  @JPEG_LIB_VERSION@
-#define LIBJPEG_TURBO_VERSION  @VERSION@
-#define LIBJPEG_TURBO_VERSION_NUMBER  @LIBJPEG_TURBO_VERSION_NUMBER@
+/* jconfig.vc --- jconfig.h for Microsoft Visual C++ on Windows 95 or NT. */
+/* see jconfig.txt for explanations */
 
-#cmakedefine C_ARITH_CODING_SUPPORTED
-#cmakedefine D_ARITH_CODING_SUPPORTED
-#cmakedefine MEM_SRCDST_SUPPORTED
-#cmakedefine WITH_SIMD
+#define JPEG_LIB_VERSION 80
+#define LIBJPEG_TURBO_VERSION 2.1.3
+#define LIBJPEG_TURBO_VERSION_NUMBER 2.001.003
+#define C_ARITH_CODING_SUPPORTED
+#define D_ARITH_CODING_SUPPORTED
+#define MEM_SRCDST_SUPPORTED
 
-#define BITS_IN_JSAMPLE  @BITS_IN_JSAMPLE@      /* use 8 or 12 */
+/*
+ * Define BITS_IN_JSAMPLE as either
+ *   8   for 8-bit sample values (the usual setting)
+ *   12  for 12-bit sample values
+ * Only 8 and 12 are legal data precisions for lossy JPEG according to the
+ * JPEG standard, and the IJG code does not support anything else!
+ * We do not support run-time selection of data precision, sorry.
+ */
+
+#define BITS_IN_JSAMPLE  8      /* use 8 or 12 */
 
 #undef RIGHT_SHIFT_IS_UNSIGNED
 
@@ -23,3 +33,25 @@ typedef short INT16;
 typedef signed int INT32;
 #endif
 #define XMD_H                   /* prevent jmorecfg.h from redefining it */
+
+/* getenv is not available on WINRT. Anyway, we do not want it in all config we rely on jpeg_mem_init returned value*/
+#define NO_GETENV
+
+/* Use SSE, MMX, NEON when available. */
+#if defined(_WIN32)
+    #define WITH_SIMD
+#elif defined (__APPLE__)
+    /* TODO need nasm */
+    #undef WITH_SIMD
+#elif defined(ANDROID) 
+    /* Disable SIMD for now since we required Android-ndk-r9-windows-x86_64 to get this fix :
+       Fixed GCC 4.7 64-bit Windows assembler crash. (Error: out of memory allocating 4294967280 bytes).
+    */
+    #undef WITH_SIMD
+#endif
+
+#ifdef JPEG_INTERNALS
+
+#undef RIGHT_SHIFT_IS_UNSIGNED
+
+#endif /* JPEG_INTERNALS */

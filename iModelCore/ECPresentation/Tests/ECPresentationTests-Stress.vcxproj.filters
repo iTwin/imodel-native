@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{3d51da53-119b-499f-82d7-8e73d198ca8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared test helpers">
+      <UniqueIdentifier>{a66fa65f-ae5f-4358-8638-d0b284439734}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Stress\TaskManagerStressTests.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Stress\PresentationManagerStressTests.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\TestsHelper.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\IssueReporter.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TestHelpers\ECPresentationTest.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\IssueReporter.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestConnectionCache.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestECInstanceChangeEventsSource.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\TestsHelper.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestUserSettings.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Stress\StressTests.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

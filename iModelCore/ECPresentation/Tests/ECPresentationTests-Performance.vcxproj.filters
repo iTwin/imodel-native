@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Analysis">
+      <UniqueIdentifier>{e5104f3b-17b8-4dc3-b9f3-0c51b07d8448}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Regression">
+      <UniqueIdentifier>{3a2078a4-205f-4572-a91e-ce6d509e4d48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Performance test helpers">
+      <UniqueIdentifier>{ca67a31a-87d4-48bf-9065-76744f51ae1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared test helpers">
+      <UniqueIdentifier>{6b7225ea-d746-495d-910b-6df00caec171}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Performance\Analysis\ContentPerformanceAnalysis.cpp">
+      <Filter>Analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Analysis\HierarchyPerformanceAnalysis.cpp">
+      <Filter>Analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Analysis\MultiThreadAnalysis.cpp">
+      <Filter>Analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Analysis\PerformanceAnalysisTests.cpp">
+      <Filter>Analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Analysis\MultiProcessPerformanceAnalysis.cpp">
+      <Filter>Analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Regression\HierarchyPerformanceTests.cpp">
+      <Filter>Regression</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Regression\ContentPerformanceTests.cpp">
+      <Filter>Regression</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\IssueReporter.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp">
+      <Filter>Shared test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceTests.cpp">
+      <Filter>Performance test helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Analysis\Reporters.cpp">
+      <Filter>Performance test helpers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Performance\Analysis\HierarchyPerformanceAnalysis.h">
+      <Filter>Analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\Analysis\PerformanceAnalysisTests.h">
+      <Filter>Analysis</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestUserSettings.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestECInstanceChangeEventsSource.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\TestConnectionCache.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\ECPresentationTest.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\IssueReporter.h">
+      <Filter>Shared test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceTests.h">
+      <Filter>Performance test helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\Analysis\Reporters.h">
+      <Filter>Performance test helpers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

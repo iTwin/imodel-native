@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bentleybuild/PartFile.xsd">
+
+  <Part Name="iModelJsNodeAddon.Dev" PrgOutputDir="iModelJsNodeAddon">
+    <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore"/>
+    <SubPart PartName="iModelJsNodeAddonPRG"/>
+  </Part>
+
+  <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon">
+    <SubPart PartName="iModelJsMakePackages"/>
+    <SubPart PartName="RunUnitTests"/>
+    <SubPart PartName="RunUnitTestsMacOSARM64"/>
+  </Part>
+
+  <Part Name="iModelJsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke">
+    <NpmDependency>${SrcRoot}imodel-native/iModelJsNodeAddon/api_package/ts/</NpmDependency>
+    <Bindings>
+      <Files>
+        Delivery/lib/imodeljs-native.js
+        Delivery/lib/imodeljs-native.js.map
+        Delivery/lib/imodeljs-native.d.ts
+        Delivery/lib/imodeljs-native.d.ts.map
+        Delivery/lib/NativeLibrary.js
+        Delivery/lib/NativeLibrary.js.map
+        Delivery/lib/NativeLibrary.d.ts
+        Delivery/lib/NativeLibrary.d.ts.map
+        Delivery/lib/NativeCloudSqlite.js
+        Delivery/lib/NativeCloudSqlite.js.map
+        Delivery/lib/NativeCloudSqlite.d.ts
+        Delivery/lib/NativeCloudSqlite.d.ts.map
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64,MacOSARM64">
+    <SubProduct ProductName="iModelJsNodeAddon"/>
+    <SubPart PartName="iModelJsApiDeclarations"/>
+  </Part>
+
+  <Part Name="iModelJsNodeAddonOpen" PrgOutputDir="iModelJsNodeAddon">
+    <SubPart PartName="iModelJsMakePackagesOpen"/>
+  </Part>
+
+  <Part Name="iModelJsMakePackagesOpen" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64,MacOSARM64">
+    <SubProduct ProductName="iModelJsNodeAddonOpen"/>
+    <SubPart PartName="iModelJsApiDeclarations"/>
+  </Part>
+
+  <Product Name="iModelJsNodeAddonOpen">
+    <SubProduct ProductName="iModelJsNativeOpenDynamicProd" />
+    <SubProduct ProductName="iModelJsNativeOpenStaticProd" />
+  </Product>
+
+  <Product Name="iModelJsNativeOpenDynamicProd">
+    <SubPart PartName="iModelJsNative-Dynamic" LibType="Dynamic" />
+    <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+    <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
+  </Product>
+
+  <Product Name="iModelJsNativeOpenStaticProd">
+    <SubPart PartName="iModelJsNative-Static" LibType="Static" />
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+    <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
+  </Product>
+
+  <!-- This part is required as separate one to run the tests with Address Sanitizer -->
+  <Part Name="RunTestsWithAddressSanitizer" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke"></Part>
+
+  <Product Name="iModelJsNodeAddon">
+    <SubProduct ProductName="iModelJsNative-Windows" />
+    <SubProduct ProductName="iModelJsNative-Linux" />
+    <SubProduct ProductName="iModelJsNative-Darwin" />
+  </Product>
+
+  <Product Name="iModelJsNative-Windows">
+    <SubPart PartName="iModelJsNative-Dynamic" LibType="Dynamic" />
+    <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+  </Product>
+
+  <Product Name="iModelJsNative-Linux">
+    <SubPart PartName="iModelJsNative-Static" LibType="Static" />
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+  </Product>
+
+  <Product Name="iModelJsNative-Darwin">
+    <SubPart PartName="iModelJsNative-Static" LibType="Static" />
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+  </Product>
+
+  <ProductDirectoryList ListName="iModelJsNodeAddonDeliveryList">
+    <ProductDirectory Name="AddonRoot" Path="" />
+    <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="StaticAssemblies" LibType="Static" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="CrashpadHandler" RelativeTo="AddonRoot" LibType="Static"/>
+  </ProductDirectoryList>
+
+  <Part Name="iModelJsNative-Mobile" OnlyPlatforms="iOSX64,iOSARM64,AndroidARM64,AndroidX64" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dBUILD_FOR_IMODELJS_MOBILE=1" >
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
+    <SubPart PartName="iModelJsNativeLibCommon"/>
+    <Bindings>
+        <Directory SourceName="Delivery/imodeljs-addon-objs" SubPartDirectory="imodeljs-addon-objs" />
+        <Files SubPartDirectory="imodeljs-addon-build-tools">
+            Delivery/IModelJsNative_input_libs.mki
+        </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsNative-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke">
+    <SubPackage PkgType="UPack" Name="breakpad_54fa71efbe50" />
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
+    <SubPart PartName="iModelJsNativeLibCommon"/>
+    <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
+    <SubPart PartName="ITwinDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
+    <Bindings>
+      <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
+      <VendorNotices IfNotPresent="Continue">
+        Delivery/breakpad_notice.txt,
+        Delivery/libdisasm_notice.txt
+      </VendorNotices>
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsNative-Static" OnlyPlatforms="Linux*,MacOS*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke">
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
+    <SubPart PartName="iModelJsNativeLibCommon"/>
+    <SubPart PartName="ITwinDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
+    <SubPart PartName="CrashpadShim"/>
+    <Bindings>
+        <Files ProductDirectoryName="StaticAssemblies">Delivery/imodeljs.node</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsNativeLibCommon">
+    <SubPart PartName="iModelPlatformDLL" PartFile="iModelCore/iModelPlatform/iModelPlatform"/>
+    <SubPart PartName="VisualizationDll" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal"/>
+    <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
+    <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation"/>
+    <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects"    />
+    <SubPart PartName="PSBRepGeometry" PartFile="iModelCore/PSBRepGeometry/PSBRepGeometry" Repository="imodel-native-internal"/>
+
+  </Part>
+
+  <Part Name="CrashpadShim" OnlyPlatforms="Linux*">
+    <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
+  </Part>
+
+  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke" ExcludePlatforms="MacOSARM64">
+    <SubPart PartName="iModelJsMakePackages"/>
+  </Part>
+
+  <Part Name="RunUnitTestsMacOSARM64" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke" OnlyPlatforms="MacOSARM64">
+    <RequiredRepository>nodejs16</RequiredRepository>
+    <SubPart PartName="iModelJsMakePackages"/>
+  </Part>
+
+</BuildContext>

@@ -1,0 +1,6 @@
+{
+  "queries": [
+      {"Elements": "SELECT * from bis.Element"},
+      {"Models": "SELECT * from bis.Models"}
+  ]
+}

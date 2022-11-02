@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\Helpers\ECDbTestProject.cpp" />
+    <ClCompile Include="NonPublished\Helpers\TestHelpers.cpp" />
+    <ClCompile Include="NonPublished\Helpers\TestNavNode.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\ContentIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_DistinctValuesTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_LocatingClasses.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_PropertyCategorizationTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_RelatedPropertiesTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_UpdateTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesCompareTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesWithRulesetVariablesTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\PagingTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\PresentationManagerIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\TaskDiagnosticsTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\ConnectionManagerTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentCacheTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentDescriptorBuilderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentDescriptorTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentFieldEditorParamsTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_ContentInstancesOfSpecificClasses.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_ContentRelatedInstances.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_NestedContentField.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_SelectedNodeInstances.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryResultsReaderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Content\DefaultPropertyFormatterTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\CustomizationHelperTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\ECExpressions\ECExpressionContextsProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\ECExpressions\ECExpressionsOptimizerTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\ECExpressions\ECExpressionsToECSqlConverterTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\ECExpressions\OptimizedExpressionsEvaluationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\ECSchemaHelperTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\CheckboxRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\CustomNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\MultiSpecificationNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_AllInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_AllRelatedInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_GroupingRule.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_InstancesOfSpecificClasses.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_RelatedInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_SearchNode.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_SortingRule.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryResultsReaderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesCacheHelpersTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesCacheTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesCacheWrapperTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesDataSourceTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodeTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\QueryBasedNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Hierarchies\QueryBasedSpecificationNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\LabelDefinitionTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\PresentationManagerImplCancelationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\PresentationManagerImplTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\PresentationManagerMultithreadingTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\PresentationManagerTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\PresentationRulesetTesterTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Queries\CustomFunctionTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Queries\NavigationQueryTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Queries\QueryExecutorHelperTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Queries\QueryExecutorTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\QueryBuilderTest.cpp" />
+    <ClCompile Include="NonPublished\Unit\RelatedClassPathTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\RuleSetLocaterTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\RulesetVariablesTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\RulesPreprocessorTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\AllInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\AllRelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\CheckBoxPresRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ChildNodeRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ClassNamesParserTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ContentInstancesOfSpecificClassesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ContentModifierTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ContentRelatedInstancesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ContentRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ContentSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\CustomNodeSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\CustomRendererSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\DefaultPropertyCategoryOverrideTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ExtendedDataRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\GroupingRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\ImageIdOverrideTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\InstanceLabelOverrideTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\InstanceNodesOfSpecificClassesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\LabelOverrideTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\LocalizationResourceKeyDefinitionTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\MultiSchemaClassTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\NodeArtifactsRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\PresentationRuleSetTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\PresentationRulesHashingTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\PropertyCategorySpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\PropertyEditorRulesTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\PropertySpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\RelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\RelatedInstanceSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\RelatedPropertiesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\RelationshipPathSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\RequiredSchemaSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\SearchResultInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\SelectedNodeInstancesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\SortingRuleTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\StyleOverrideTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\UserSettingsGroupTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Serialization\DefaultECPresentationSerializerTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\TasksSchedulerTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\UserSettingsTests.cpp" />
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
+    <ClCompile Include="TestHelpers\IssueReporter.cpp" />
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NonPublished\Helpers\ECDbTestProject.h" />
+    <ClInclude Include="NonPublished\Helpers\RulesDrivenECPresentationManagerImplBase.h" />
+    <ClInclude Include="NonPublished\Helpers\StubRulesDrivenECPresentationManagerImpl.h" />
+    <ClInclude Include="NonPublished\Helpers\TestHelpers.h" />
+    <ClInclude Include="NonPublished\Helpers\TestNavNode.h" />
+    <ClInclude Include="NonPublished\Helpers\TestNodesCache.h" />
+    <ClInclude Include="NonPublished\Helpers\TestNodesProvider.h" />
+    <ClInclude Include="NonPublished\Helpers\TestRulesDrivenECPresentationManagerImpl.h" />
+    <ClInclude Include="NonPublished\Integration\Content\ContentIntegrationTests.h" />
+    <ClInclude Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.h" />
+    <ClInclude Include="NonPublished\Integration\PresentationManagerIntegrationTests.h" />
+    <ClInclude Include="NonPublished\Unit\Content\ContentDescriptorBuilderTests.h" />
+    <ClInclude Include="NonPublished\Unit\Content\ContentProviderTests.h" />
+    <ClInclude Include="NonPublished\Unit\Content\ContentQueryBuilderTests.h" />
+    <ClInclude Include="NonPublished\Unit\ECSchemaHelperTests.h" />
+    <ClInclude Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests.h" />
+    <ClInclude Include="NonPublished\Unit\Hierarchies\NavNodesCacheTests.h" />
+    <ClInclude Include="NonPublished\Unit\Hierarchies\NodesProviderTests.h" />
+    <ClInclude Include="NonPublished\Unit\Queries\QueryExecutorHelperTests.h" />
+    <ClInclude Include="NonPublished\Unit\Queries\QueryExecutorTests.h" />
+    <ClInclude Include="NonPublished\Unit\QueryBuilderTest.h" />
+    <ClInclude Include="NonPublished\Unit\Rules\PresentationRulesTests.h" />
+    <ClInclude Include="TestHelpers\ECPresentationTest.h" />
+    <ClInclude Include="TestHelpers\IssueReporter.h" />
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
+    <ClInclude Include="TestHelpers\TestConnectionCache.h" />
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h" />
+    <ClInclude Include="TestHelpers\TestUserSettings.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{32B7C8B2-D05F-4F49-A4DD-BCEFA608DAEF}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
+    <NMakeBuildCommandLine>bb re ECPresentation:Gtest -s</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb clean ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Tests;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)imodel02\node-addon-api\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
+    <NMakeBuildCommandLine>bb re ECPresentation:Gtest -s</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb clean ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)imodel02\node-addon-api\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

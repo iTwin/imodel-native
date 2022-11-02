@@ -1,0 +1,20 @@
+//---------------------------------------------------------------------------------------------
+//  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//  See LICENSE.md in the repository root for full copyright notice.
+//---------------------------------------------------------------------------------------------
+
+namespace BentleyM0200.Dgn.FB;
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table DgnRscFont
+{
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    header:[ubyte];
+    fractionMap:[ubyte];
+    glyphData:[ubyte];
+    glyphDataOffsets:[ubyte];
+    glyphHeaders:[ubyte];
+}

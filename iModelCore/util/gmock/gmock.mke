@@ -1,0 +1,43 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+BUILD_WITH_C17=1
+
+# We have had issues in firebug where the PDB produced here sometimes does not match the LIB.
+# Instead of sinking more time into determining why the PDB is bad, link symbol information directly into the LIB as, effectively, a workaround.
+# This must be defined /before/ including mdl.mki.
+DEBUG_INFO_IN_OBJ = 1
+
+IS_THIRD_PARTY_LIBRARY = 1
+%include mdl.mki
+
+appName     = gmock
+o           = $(OutputRootDir)build/gmock/build/
+always: 
+    ~mkdir $(o)
+
+GMockDirectory          = $(_MakeFilePath)
+GMockPublicApiDirectory = $(GMockDirectory)include/
+
+#--------------------------------------------------------------------------------------
+# Create the Context directory and vars needed to create sym-links
+#--------------------------------------------------------------------------------------
+# Tell dlmlink.mki where to point symbolic links
+ContextDeliveryDir  = $(BuildContext)Delivery/
+# CCompPDBName = $(appName)
+LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+always:
+    ~mkdir $(DLM_LIB_CONTEXT_LOCATION)
+
+cIncs + -I$(GMockDirectory)
+
+$(o)gmock-all$(oext)    : $(GMockDirectory)src/gmock-all.cc $(GMockPublicApiDirectory)gmock/gmock.h
+
+LIB_DEST                = $(o)
+LIB_NAME                = $(appName)
+LIB_OBJS                = $(o)gmock-all$(oext)
+LIB_TMP_DIR             = $(o)
+LIB_CREATE_CONTEXT_LINK = 1
+
+%include creatlib.mki

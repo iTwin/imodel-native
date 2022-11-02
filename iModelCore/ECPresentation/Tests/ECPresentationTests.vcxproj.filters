@@ -1,0 +1,448 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Helpers">
+      <UniqueIdentifier>{a039f0e5-6361-4a21-8955-7fb253c7c329}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Integration">
+      <UniqueIdentifier>{f31ae3d9-f1eb-4574-a4d8-60210c2a597d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Unit">
+      <UniqueIdentifier>{46f5939e-9497-4759-8ef0-1739cbfa60c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Unit\Content">
+      <UniqueIdentifier>{e19f3911-c37a-4ec1-9117-ff4b06be3e44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Unit\ECExpressions">
+      <UniqueIdentifier>{9d9bb803-441d-43d6-bf81-2f91050a55ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Unit\Hierarchies">
+      <UniqueIdentifier>{2e81515d-7eb8-415b-ac18-102fba141493}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Unit\Queries">
+      <UniqueIdentifier>{f6395b4c-07c1-4b30-9b9f-1ec4c8200cb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Unit\Rules">
+      <UniqueIdentifier>{f950488e-f409-4d0b-a01d-73638061bf4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Unit\Serialization">
+      <UniqueIdentifier>{f89baf2a-cef7-4c0b-9c87-2ff01303cf46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Integration\Content">
+      <UniqueIdentifier>{70f46245-1cde-4f4c-9565-34b15f52c879}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Integration\Hierarchies">
+      <UniqueIdentifier>{58b5456d-c066-457d-b435-93b778aeca87}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\Helpers\ECDbTestProject.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Helpers\TestHelpers.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Helpers\TestNavNode.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\PresentationManagerIntegrationTests.cpp">
+      <Filter>Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\TaskDiagnosticsTests.cpp">
+      <Filter>Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesCompareTests.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesWithRulesetVariablesTests.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\PagingTests.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_DistinctValuesTests.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_LocatingClasses.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_PropertyCategorizationTests.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_RelatedPropertiesTests.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_UpdateTests.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\ContentIntegrationTests.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\ConnectionManagerTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\CustomizationHelperTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\ECSchemaHelperTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\LabelDefinitionTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\PresentationManagerImplCancelationTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\PresentationManagerImplTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\PresentationManagerMultithreadingTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\PresentationManagerTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\PresentationRulesetTesterTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\RelatedClassPathTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\RuleSetLocaterTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\RulesetVariablesTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\RulesPreprocessorTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\TasksSchedulerTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\UserSettingsTests.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Serialization\DefaultECPresentationSerializerTests.cpp">
+      <Filter>Unit\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\AllInstanceNodesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\AllRelatedInstanceNodesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\CheckBoxPresRuleTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ChildNodeRuleTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ClassNamesParserTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ContentInstancesOfSpecificClassesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ContentModifierTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ContentRelatedInstancesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ContentRuleTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ContentSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\CustomNodeSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\CustomRendererSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\DefaultPropertyCategoryOverrideTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ExtendedDataRuleTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\GroupingRuleTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\ImageIdOverrideTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\InstanceLabelOverrideTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\InstanceNodesOfSpecificClassesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\LabelOverrideTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\LocalizationResourceKeyDefinitionTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\MultiSchemaClassTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\NodeArtifactsRuleTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\PresentationRuleSetTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\PresentationRulesHashingTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\PropertyCategorySpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\PropertyEditorRulesTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\PropertySpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\RelatedInstanceNodesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\RelatedInstanceSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\RelatedPropertiesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\RelationshipPathSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\RequiredSchemaSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\SearchResultInstanceNodesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\SelectedNodeInstancesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\SortingRuleTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\StyleOverrideTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\UserSettingsGroupTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Queries\CustomFunctionTests.cpp">
+      <Filter>Unit\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Queries\NavigationQueryTests.cpp">
+      <Filter>Unit\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Queries\QueryExecutorHelperTests.cpp">
+      <Filter>Unit\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Queries\QueryExecutorTests.cpp">
+      <Filter>Unit\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\CheckboxRuleTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\CustomNodesProviderTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\MultiSpecificationNodesProviderTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_AllInstanceNodes.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_AllRelatedInstanceNodes.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_GroupingRule.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_InstancesOfSpecificClasses.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_RelatedInstanceNodes.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_SearchNode.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests_SortingRule.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavigationQueryResultsReaderTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesCacheHelpersTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesCacheTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesCacheWrapperTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodesDataSourceTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NavNodeTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\NodesProviderTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\QueryBasedNodesProviderTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Hierarchies\QueryBasedSpecificationNodesProviderTests.cpp">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\ECExpressions\ECExpressionContextsProviderTests.cpp">
+      <Filter>Unit\ECExpressions</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\ECExpressions\ECExpressionsOptimizerTests.cpp">
+      <Filter>Unit\ECExpressions</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\ECExpressions\ECExpressionsToECSqlConverterTests.cpp">
+      <Filter>Unit\ECExpressions</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\ECExpressions\OptimizedExpressionsEvaluationTests.cpp">
+      <Filter>Unit\ECExpressions</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentCacheTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentDescriptorBuilderTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentDescriptorTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentFieldEditorParamsTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentProviderTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_ContentInstancesOfSpecificClasses.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_ContentRelatedInstances.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_NestedContentField.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryBuilderTests_SelectedNodeInstances.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\ContentQueryResultsReaderTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Content\DefaultPropertyFormatterTests.cpp">
+      <Filter>Unit\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
+    <ClCompile Include="TestHelpers\IssueReporter.cpp" />
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
+    <ClCompile Include="NonPublished\Unit\QueryBuilderTest.cpp">
+      <Filter>Unit</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NonPublished\Helpers\ECDbTestProject.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Helpers\RulesDrivenECPresentationManagerImplBase.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Helpers\StubRulesDrivenECPresentationManagerImpl.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Helpers\TestHelpers.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Helpers\TestNavNode.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Helpers\TestNodesCache.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Helpers\TestNodesProvider.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Helpers\TestRulesDrivenECPresentationManagerImpl.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Integration\PresentationManagerIntegrationTests.h">
+      <Filter>Integration</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.h">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Integration\Content\ContentIntegrationTests.h">
+      <Filter>Integration\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\ECSchemaHelperTests.h">
+      <Filter>Unit</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Rules\PresentationRulesTests.h">
+      <Filter>Unit\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Queries\QueryExecutorHelperTests.h">
+      <Filter>Unit\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Queries\QueryExecutorTests.h">
+      <Filter>Unit\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Hierarchies\NavigationQueryBuilderTests.h">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Hierarchies\NavNodesCacheTests.h">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Hierarchies\NodesProviderTests.h">
+      <Filter>Unit\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Content\ContentDescriptorBuilderTests.h">
+      <Filter>Unit\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Content\ContentProviderTests.h">
+      <Filter>Unit\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\Unit\Content\ContentQueryBuilderTests.h">
+      <Filter>Unit\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHelpers\ECPresentationTest.h" />
+    <ClInclude Include="TestHelpers\IssueReporter.h" />
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
+    <ClInclude Include="TestHelpers\TestConnectionCache.h" />
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h" />
+    <ClInclude Include="TestHelpers\TestUserSettings.h" />
+    <ClInclude Include="NonPublished\Unit\QueryBuilderTest.h">
+      <Filter>Unit</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

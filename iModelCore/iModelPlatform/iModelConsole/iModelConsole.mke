@@ -1,0 +1,78 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%if !defined (BuildContext)
+   %error This makefile must be launched from BentleyBuild
+%endif
+
+BUILD_WITH_C17=1
+%include mdl.mki
+
+SrcDir              = $(_MakeFilePath)
+SubpartLibs         = $(BuildContext)SubParts/Libs/
+o                   = $(PartBuildDir)
+ContextDeliveryDir  = $(BuildContext)Delivery/
+appName             = iModelConsole
+
+always:
+    ~mkdir $(o)
+
+AllHeaders = \
+        $(SrcDir)iModelConsole.h \
+        $(SrcDir)Command.h
+
+
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)iModelConsole$(oext) : $(SrcDir)iModelConsole.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+$(o)Command$(oext) : $(SrcDir)Command.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+$(o)MergeCommands$(oext) : $(SrcDir)MergeCommands.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+$(o)ECSqlCommand$(oext) : $(SrcDir)ECSqlCommand.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+$(o)main$(oext) : $(SrcDir)main.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+cppObjects=%$(MultiCompileObjectList) 
+
+EXE_NO_SIGN = 1
+EXE_DEST    = $(o)
+EXE_NAME    = $(appName)
+EXE_OBJS    = $(MultiCompileObjectList)
+EXE_LOPT1   = -entry:wmainCRTStartup
+
+%ifdef __unix
+
+%include $(SharedMki)rollUpSubPartsLibsThin.mki
+
+EXE_OBJS + $(THIN_ARCHIVE_PATH)
+
+%else
+
+LINKER_LIBRARIES = $(SubpartLibs)$(libprefix)iTwinBentley$(libext)\
+                   $(SubpartLibs)$(libprefix)iTwinSQLite$(libext)\
+                   $(SubpartLibs)$(libprefix)iTwinSQLiteEC$(libext)\
+                   $(SubpartLibs)$(libprefix)BeLibxml2$(libext)\
+                   $(SubpartLibs)$(libprefix)iTwinGeom$(libext)\
+                   $(SubpartLibs)$(libprefix)iTwinPlatform$(libext)\
+                   $(SubpartLibs)$(libprefix)iTwinECObjects$(libext)\
+                   $(SubpartLibs)$(libprefix)iTwinJsonCpp$(stlibext)\
+                   $(SubpartLibs)$(libprefix)iTwinUnits$(libext)
+
+%endif
+
+%if $(TARGET_PLATFORM) == "MacOS"
+    LINKER_LIBRARIES + -framework CFNetwork
+%endif
+
+%include $(SharedMki)linktool.mki
+
+$(BuildContext)Delivery/logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+

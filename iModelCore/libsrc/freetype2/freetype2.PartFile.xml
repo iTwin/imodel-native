@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+
+    <!--
+        To support LKGs and products that mix static vs. dynamic, data files must always be treated as static.
+        This prevents attempting to symlink the static data file over the dynamic. While the files are actually the same, BB doesn't know this, and will fail.
+     -->
+    <Part Name="Notices" BentleyBuildMakeFile="StaticDataFiles.mke">
+        <Bindings>
+            <VendorNotices>Delivery/freetype2-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="Freetype2Library" BentleyBuildMakeFile="freetype2.mke" ApiNumber="B02">
+        <SubPart  LibType="Static" PartName="Zlib" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <SubPart PartName="Notices"/>
+        <Bindings>
+            <VendorAPI Domain="freetype2"/>
+            <Libs>Delivery/$(libprefix)freetype2$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)freetype2$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="Freetype2LibraryDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
+        <SubPart PartName="Freetype2Library" LibType="Dynamic"/>
+    </Part>
+    
+    <Part Name="Freetype2LibraryStatic">
+        <SubPart PartName="Freetype2Library" LibType="Static"/>
+    </Part>
+
+    <NuGetProduct Name="FreeType2Nuget" LicenseFile="Freetype2NugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="Freetype2LibraryDynamic"/>
+        <SubPart PartName="Freetype2LibraryStatic"/>
+    </NuGetProduct>
+
+</BuildContext>

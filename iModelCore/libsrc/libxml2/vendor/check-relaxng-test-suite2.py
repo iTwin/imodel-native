@@ -54,7 +54,6 @@ def resolver(URL, ID, ctxt):
 #    res = libxml2.parseFile(RES)
 #except:
 #    log.write("Could not parse %s" % (RES))
-
 #
 # handle a valid instance
 #
@@ -358,7 +357,6 @@ def handle_testSuite(node, level = 0):
         handle_testCase(test)
     for test in node.xpathEval('testSuite'):
         handle_testSuite(test, level + 1)
-
 
     if level >= 1 and sections != []:
         msg = ""

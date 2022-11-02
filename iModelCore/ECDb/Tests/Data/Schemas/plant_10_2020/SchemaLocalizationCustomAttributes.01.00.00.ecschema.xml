@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="SchemaLocalizationCustomAttributes" alias="LocCA" version="01.00.00" description="Custom attributes used for schema localization" displayLabel="Schema Localization Custom Attributes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+  <!--Struct used for key value pair specification-->
+  <ECStructClass typeName="LocalizationData" description="Contains a localized value and a key that identifies it.  The key may be a GUID or the original value.  If the value is a GUID 'IsGUID' is true." displayLabel="Localization Data">
+    <ECProperty propertyName="Key" typeName="string"/>
+    <ECProperty propertyName="Value" typeName="string"/>
+  </ECStructClass>
+  <!--This custom attribute is used by localization supplemental schemas.-->
+  <ECCustomAttributeClass typeName="LocalizationSpecification" description="Specifies the locale and an array of resources consisting of key-value pairs that contain localization data." displayLabel="Localization Specification" appliesTo="Schema">
+    <ECProperty propertyName="Locale" typeName="string"/>
+    <ECStructArrayProperty propertyName="Resource" typeName="LocalizationData" minOccurs="0" maxOccurs="unbounded"/>
+  </ECCustomAttributeClass>
+</ECSchema>

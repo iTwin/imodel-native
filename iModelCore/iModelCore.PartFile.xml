@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../bentleybuild/PartFile.xsd"
+    >
+
+    <!-- ======================================================================================================================================== -->
+    <!-- == PUBLIC ============================================================================================================================== -->
+    <!-- ======================================================================================================================================== -->
+
+    <Part Name="iModelCorePRG" PrgOutputDir="iModelCore">
+        <SubPart PartName="__iModelCorePRG-Dynamic"/>
+        <SubPart PartName="__iModelCorePRG-Static"/>
+    </Part>
+
+    <Part Name="iModelCoreOpen" PrgOutputDir="iModelCore">
+        <SubPart PartName="__iModelCoreOpen-Dynamic"/>
+        <SubPart PartName="__iModelCoreOpen-Static"/>
+    </Part>
+
+    <!--
+        iModelCore needs to include at least the platform SubParts required for the
+        iModelJsNodeAddon. See iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
+     -->
+    <Part Name="iModelCore">
+        <SubPart PartName="iModelPlatformDLL" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects" />
+    </Part>
+
+    <Part Name="RunUnitTests" DeferType="RunUnitTests">
+        <SubPart PartName="RunUnitGTest" PartFile="iModelCore/iModelCoreTesting" />
+        <SubPart PartName="RunUnitJUnit" PartFile="iModelCore/iModelCoreTesting" />
+        <SubPart PartName="RunUnitXCTest" PartFile="iModelCore/iModelCoreTesting" />
+        <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/iModelCoreTesting" />
+    </Part>
+
+    <NuGetProduct Name="iModelCoreNuget" Description="iModel Core SDK" OnlyPlatforms="x64,macos*,ios*,android*">
+        <Directories DirectoryListName="iModelCoreNugetDirs"/>
+        <SubPart PartName="iModelCore"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+    </NuGetProduct>
+
+    <UPackProduct Name="iModelCoreUPack" Description="iModel Core SDK" OnlyPlatforms="linux*,x64">
+        <Directories DirectoryListName="iModelCoreNugetDirs"/>
+        <SubPart PartName="iModelCore"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+    </UPackProduct>
+
+    <ProductDirectoryList ListName="iModelCoreNugetDirs">
+        <ProductDirectory Name="Root" Path="native"/>
+
+        <ProductDirectory Name="Assemblies"                                 RelativeTo="Root" Path="bin"/>
+        <ProductDirectory Name="Assemblies"             LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="Assets"                                     RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets"                 LibType="Static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Libs"                                       RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="Libs"                   LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="PublicApi"                                  RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="PublicApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"                                  RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorNotices"                              RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"          LibType="Static"    RelativeTo="Root" Path="notices"/>
+
+    </ProductDirectoryList>
+
+    <NuGetProduct Name="iModelCoreTestingNuget" Description="iModel Core Testing SDK" OnlyPlatforms="x64,linux*,macos*">
+        <Directories DirectoryListName="iModelCoreTestingNugetDirs"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="UnitTestSchemas" PartFile="iModelCore/iModelPlatform/iModelPlatform"/>
+    </NuGetProduct>
+
+    <UPackProduct Name="iModelCoreTestingUPack" Description="iModel Core Testing SDK" OnlyPlatforms="linux*,x64">
+        <Directories DirectoryListName="iModelCoreTestingNugetDirs"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="UnitTestSchemas" PartFile="iModelCore/iModelPlatform/iModelPlatform"/>
+    </UPackProduct>
+
+    <ProductDirectoryList ListName="iModelCoreTestingNugetDirs">
+        <ProductDirectory Name="Root" Path="native"/>
+
+        <ProductDirectory Name="Assemblies"                         RelativeTo="Root" Path="bin"/>
+        <ProductDirectory Name="Assemblies"     LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="Assets"                             RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets"         LibType="Static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Libs"                               RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="Libs"           LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="PublicApi"                          RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="PublicApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="UnitTestAssets"                     RelativeTo="Root" Path="data"/>
+        <ProductDirectory Name="UnitTestAssets" LibType="Static"    RelativeTo="Root" Path="data"/>
+        <ProductDirectory Name="UnitTestLibs"                       RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="UnitTestLibs"   LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="VendorApi"                          RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorNotices"                      RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"  LibType="Static"    RelativeTo="Root" Path="notices"/>
+    </ProductDirectoryList>
+
+    <Part Name="__iModelCoreOpen-Dynamic" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="iModelCore" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="__iModelCoreOpen-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
+        <SubPart PartName="iModelCore" LibType="Static"/>
+    </Part>
+
+    <Part Name="__iModelCorePRG-Dynamic" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="__iModelCoreOpen-Dynamic"/>
+        <SubPart PartName="RunUnitTests" LibType="Dynamic"/>
+        <SubPart PartName="GTestSubParts" LibType="Dynamic"/>
+        <SubNuGetProduct NuGetProductName="iModelCoreNuget"/>
+        <SubUPackProduct UPackProductName="iModelCoreUPack"/>
+    </Part>
+
+    <Part Name="__iModelCorePRG-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
+        <SubPart PartName="__iModelCoreOpen-Static"/>
+        <SubPart PartName="RunUnitTests" LibType="Static"/>
+        <SubPart PartName="GTestSubParts" LibType="Static"/>
+        <SubNuGetProduct NuGetProductName="iModelCoreNuget" LibType="Static"/>
+        <SubUPackProduct UPackProductName="iModelCoreUPack" LibType="Static"/>
+    </Part>
+
+    <Part Name="GTestSubParts">
+        <SubPart PartName="GTestSubParts_Gtest"/>
+        <SubPart PartName="GTestSubParts_JUnit"/>
+        <SubPart PartName="GTestSubParts_XCTest"/>
+        <SubPart PartName="GTestSubParts_CppTest"/>
+
+        <SubPart PartName="IModelNativeConsole"/>
+    </Part>
+
+    <Part Name="GTestSubParts_Gtest" OnlyPlatforms="x64,macos*,linux*">
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" />
+        <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" />
+        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" />
+    </Part>
+
+    <Part Name="GTestSubParts_JUnit" OnlyPlatforms="android*">
+        <SubPart PartName="AndroidJUnitTest-Tools" PartFile="iModelCore/BeGTest/BeGTest" />
+    </Part>
+
+    <Part Name="GTestSubParts_XCTest" OnlyPlatforms="ios*">
+        <SubPart PartName="iOSXCTest-Tools" PartFile="iModelCore/BeGTest/BeGTest" />
+    </Part>
+
+    <Part Name="GTestSubParts_CppTest" OnlyPlatforms="winrt*">
+        <SubPart PartName="UwpTest-Tools" PartFile="iModelCore/BeGTest/BeGTest" />
+    </Part>
+
+    <Part Name="IModelNativeConsole" OnlyPlatforms="x64">
+        <SubProduct ProductName="iModelConsole" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+    </Part>
+
+</BuildContext>

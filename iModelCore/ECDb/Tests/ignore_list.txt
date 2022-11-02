@@ -1,0 +1,19 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run with build.
+
+#----------------------------------------------------------------------------------------
+#   Tests that need to be looked at
+#----------------------------------------------------------------------------------------
+# currently ignore due to patch system schema. @affan
+# ECDbSystem schema extended types do not match the extended types returned.  This is a known issue, to fix we must update the ECDbSystem schema to have the correct extended types
+ECDbMetaSchemaECSqlTestFixture.VerifyQueries
+
+# The test query fails in an unexpected way and only for one row.
+# ECDbSystem:ClassECSqlSystemProperties.ECInstanceId returns null for ExtendedTypeName. The rest of the system properties return Id.
+# @hen the same query is executed outside the context of this test all rows return Id for the ExtendedTypeName
+FileFormatCompatibilityTests.ProfileUpgrade
+
+ConcurrentQueryFixture.RestartToken
+ConcurrentQueryFixture.QuotaCheck

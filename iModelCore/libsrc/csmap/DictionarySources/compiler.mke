@@ -1,0 +1,139 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+#----------------------------------------------------------------
+#
+# Make file for CS_MAP library
+#
+#----------------------------------------------------------------------
+#
+# USED VARIABLES
+#
+# MFC       - Generate an MFC executable
+#
+# CSMAP_DIR - (OPTIONAL but recommended) Must contain the full path the the root CSMAP directory
+#
+# CSMAP_EXELIB - (OPTIONAL and valid only if MFC defined) If defined, indicates that the library used 
+#                for linking with an MFC executable must be generated.
+#                If not defined then a library for linking with a DLL is generated
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+#   Define standard macros.
+#----------------------------------------------------------------------
+# Determine the subdirectory of objects to put csmap objects
+PolicyFile      = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+baseDir 	= $(_MakeFilePath)
+
+
+
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+  appName       = cs_comp
+
+PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+o = $(OutputRootDir)build/csmap/
+
+
+#----------------------------------------------------------------------
+#   CSMap subdirectories
+#----------------------------------------------------------------------
+csSrcDir = $(baseDir)source/
+csMapInc = $(baseDir)../include/
+
+dirToSearch = $(csMapInc)
+%include cincapnd.mki
+
+uiLibName = $(GCDlmLib)$(uiAppName)
+
+%ifdef MFC
+   csmapLibDir = $(CstNmstnDlmLib)
+%else
+   csmapLibDir = $(o)
+%endif
+
+destAppName = $(csmapLibDir)$(appName)
+
+#----------------------------------------------------------------------
+#   Create output directories.
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    ~@mkdir $(csmapLibDir)
+
+
+nameToDefine = TOTAL_SPECIAL
+%include cdefapnd.mki
+
+nameToDefine = GEOCOORD_ENHANCEMENT
+%include cdefapnd.mki
+
+nameToDefine = BENTLEY_TOOLSUBS_MEMALLOC
+%include cdefapnd.mki
+
+#let the compiler create a pch file to speed up the compile
+# CCompOpts + -Fp$(o)cs_map.pch -YX$(lInc)cs_map.h
+
+CCompOpts + -D__CPP__
+
+#---------------------------------------------
+# Compile the source files for the Library
+#---------------------------------------------
+
+    csmapCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+
+
+%include MultiCppCompileGo.mki
+LIB_OBJS =% $(MultiCompileObjectList)
+
+
+
+#----------------------------------------------------------------------
+
+$(o)$(tstdir)                                   : $(o)$(tstdir)
+
+$(csmapLibDir)$(tstdir)                         : $(csmapLibDir)$(tstdir)
+
+
+#---------------------------------------------
+# Specify source, objects and resources
+#---------------------------------------------
+
+  objects = \
+    $(o)CS_COMP$(oext)                
+
+
+
+  sources = \
+    $(baseDir)CS_COMP.c				
+
+
+#---------------------------------------------
+# Compile the source files for the program
+#---------------------------------------------
+CCompPDBName   = $(appName)
+                                                  $(o)CS_COMP$(oext):                $(baseDir)CS_COMP.c
+
+ libraries = \
+    $(outBuildContexts)csmap\Delivery\iTwinCsmapStatic.lib 
+
+#--------------------------------------------------------------
+# Make the executable 
+#--------------------------------------------------------------
+LINK32=link.exe
+#LINK32_FLAGS=-nologo -incremental:yes -machine:I386  
+
+    $(destAppName).exe: $(objects) $(libraries)
+        $(msg)
+        > $(o)link.cmd
+        $(LINK32_FLAGS)
+        -out:$(destAppName).exe
+        $(objects) $(libraries)
+        <
+        $(LINK32) @$(o)link.cmd

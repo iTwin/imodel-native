@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_Standard_Classes" nameSpacePrefix="bsm" version="1.1" description="Bentley Standard Classes" displayLabel="Bentley Standard Classes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+  <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+  <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.11" prefix="bsca" />
+  <!-- A special class to be added, during deserialization of schemas, as a constraint class to all 
+    such relationship classes that have no constrainedClasses defined in their source or target -->
+    <ECClass typeName="AnyClass" 
+             description="A special class to be added, during deserialization of schemas, as a constraint class to all such relationship classes that have no constrainedClasses defined in their source or target" 
+	     displayLabel="Any Class" 
+	     isDomainClass="False" >
+    </ECClass>
+    	     
+    <ECClass typeName="ECSchemaInfo" 
+             description="A class to store information about an ECSchema" 
+	     isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" description="Schema Name" />
+        <ECProperty propertyName="VersionMajor" typeName="int" description="Schema Major Version" />
+        <ECProperty propertyName="VersionMinor" typeName="int" description="Schema Minor Version" />
+    </ECClass>
+    <!-- This metaclass is used to query instances count. -->
+    <ECClass typeName="InstanceCount" 
+             description="Metaclass used to query the instance count of EC classes" 
+	     displayLabel="Instance count" 
+	     isDomainClass="True">
+        <ECProperty propertyName="ECSchemaName" typeName="string" description="Schema that contains the class." />
+        <ECProperty propertyName="ECClassName" typeName="string" description="Class for which the instance count was realized." />
+        <ECProperty propertyName="Count" typeName="int" description="Number of instances in the class." />
+    </ECClass>
+  <ECClass typeName="AdHocContainer" isStruct="True" isDomainClass="False">
+    <ECCustomAttributes>
+      <AdhocPropertyContainerDefinition xmlns="Bentley_Standard_CustomAttributes.01.11">
+        <NameProperty>Name</NameProperty>
+        <DisplayLabelProperty>DisplayLabel</DisplayLabelProperty>
+        <ValueProperty>Value</ValueProperty>
+        <TypeProperty>Type</TypeProperty>
+        <UnitProperty>Unit</UnitProperty>
+        <ExtendTypeProperty>ExtendType</ExtendTypeProperty>
+        <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>
+        <IsHiddenProperty>IsHidden</IsHiddenProperty>
+      </AdhocPropertyContainerDefinition>
+    </ECCustomAttributes>
+    <ECProperty propertyName="Name" typeName="string" />
+    <ECProperty propertyName="DisplayLabel" typeName="string" />
+    <ECProperty propertyName="Value" typeName="string" />
+    <ECProperty propertyName="Type" typeName="int">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <ValueMap>
+            <ValueMap>
+              <Value>0</Value>
+              <DisplayString>String</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>1</Value>
+              <DisplayString>Integer</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>2</Value>
+              <DisplayString>Long Integer</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>3</Value>
+              <DisplayString>Double</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>4</Value>
+              <DisplayString>Date Time</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>5</Value>
+              <DisplayString>Boolean</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>6</Value>
+              <DisplayString>Binary</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>7</Value>
+              <DisplayString>DPoint 2D</DisplayString>
+            </ValueMap>
+            <ValueMap>
+              <Value>8</Value>
+              <DisplayString>DPoint 3D</DisplayString>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Unit" typeName="string" />
+    <ECProperty propertyName="ExtendedType" typeName="string" />
+    <ECProperty propertyName="IsReadOnly" typeName="boolean" />
+    <ECProperty propertyName="IsHidden" typeName="boolean" />
+  </ECClass>
+</ECSchema>

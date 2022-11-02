@@ -1,0 +1,17 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: V3ConversionSchemas.prewire.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(InternalSystemPolicy)
+
+%include    mdl.mki
+
+ecstandardsDir = $(MakeFilePath)
+conversionDir = $(BuildContext)ECSchemas/V3Conversion
+
+always:
+    !~@mkdir $(conversionDir)
+    ~linkmultifiles "$(conversionDir)=$(ecstandardsDir)EC3ConversionSchemas/*.xml"

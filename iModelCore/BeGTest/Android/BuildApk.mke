@@ -1,0 +1,76 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+#
+# Builds an APK that rolls up a Android JUnit test project
+#
+# Inputs:
+%ifndef TEST_COLLECTION_PRODUCT
+    %error Define TEST_COLLECTION_PRODUCT as the name of the test collection product
+%endif
+%include mdl.mki
+
+%if $(TARGET_PLATFORM)!="Android"
+    %error This makefile should be used only when TARGET_PLATFORM is Android
+%endif
+
+baseDir             = $(_MakeFilePath)
+outputDir           = $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/$(TEST_SHORT_NAME)/
+mainDir             = $(outputDir)prj/src/main/
+libsDir             = $(outputDir)prj/libs/
+androidTestDir      = $(outputDir)prj/src/androidTest/
+testApk             = $(outputDir)prj/app/build/outputs/apk/debug/Test-debug.apk
+testRunner          = $(outputDir)prj/app/build/outputs/apk/androidTest/debug/Test-debug-androidTest.apk
+
+adbCmd              = ${ANDROID_SDK_ROOT}/platform-tools/adb
+
+always:
+    !~@mkdir $(outputDir)Scripts
+
+# --------------------------------------------------------
+# Prepare for building with gradle
+# --------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+#   Build library
+#--------------------------------------------------------------------------------------
+DGNCLIENT_APP_ProjectRoot = ${outputDir}/prj/
+GRADLE_TASKS = build assembleAndroidTest
+
+%message BuildContext = $(BuildContext)
+%include $(BuildContext)SubParts\AndroidTools\gradleBuild.mki
+
+
+$(outputDir)Scripts/installApk$(scriptExt) : $(testApk) $(_makefilespec)
+    $(msg)
+    >$@
+        $(adbCmd) -d install -r $(testApk)
+        $(adbCmd) -d install -r $(testRunner)
+        <
+    %if defined (__unix)
+    chmod +x $@
+    %endif
+    ~time
+
+$(outputDir)Scripts/runOneTest$(scriptExt) : $(baseDir)runOneTest$(scriptExt)
+    $(LinkFirstDepToFirstTarget)
+
+$(outputDir)Scripts/runTests$(scriptExt): $(_makefilespec)
+    $(msg)
+    >$@
+        $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner
+        <
+    ~time
+    %if defined (__unix)
+        chmod +x $@
+    %endif
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+%message To install tests, execute the following command:  
+%message     $(outputDir)Scripts/installApk$(scriptExt)
+%message To run tests:
+%message     $(outputDir)Scripts/runTests$(scriptExt)
+%message To run a single unit test:
+%message     $(outputDir)Scripts/runOneTest$(scriptExt)
+%endif

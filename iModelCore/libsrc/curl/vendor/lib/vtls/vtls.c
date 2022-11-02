@@ -127,6 +127,15 @@ static bool blobcmp(struct curl_blob *first, struct curl_blob *second)
   return !memcmp(first->data, second->data, first->len); /* same data */
 }
 
+static bool safecmp(char *a, char *b)
+{
+  if(a && b)
+    return !strcmp(a, b);
+  else if(!a && !b)
+    return TRUE; /* match */
+  return FALSE; /* no match */
+}
+
 
 bool
 Curl_ssl_config_matches(struct ssl_primary_config *data,

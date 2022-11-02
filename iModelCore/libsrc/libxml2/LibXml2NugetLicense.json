@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "LibXml2Nuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "LibXml2Nuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "Daniel Veillard, Bjorn Reese, William Brack, Igor Zlatkovic, Aleksey Sanin",
+        "copyright": "Daniel Veillard",
+        "description": "Libxml2 is the XML C parser and toolkit developed for the Gnome project (but usable outside of the Gnome platform).",
+        "homepage": "http://xmlsoft.org",
+        "licenseUrl": "https://opensource.org/licenses/mit-license.html",
+        "name": "Libxml2",
+        "SPDX-ID": "MIT",
+        "version": "2.9.12"
+        }
+    ]
+}

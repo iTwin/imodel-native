@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="BaseSchemaA" alias="bs" version="01.00.00" displayLabel="Base Schema A" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECStructClass typeName="Address" modifier="None">
+        <ECProperty propertyName="Line1" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Line2" typeName="string" readOnly="false"/>
+        <ECArrayProperty propertyName="StringArray" typeName="string" readOnly="false" minOccurs="10" maxOccurs="10"/>
+    </ECStructClass>
+    <ECEntityClass typeName="AddressDomain" modifier="None">
+        <ECProperty propertyName="Line1" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Line2" typeName="string" readOnly="false"/>
+        <ECArrayProperty propertyName="StringArray" typeName="string" readOnly="false" minOccurs="10" maxOccurs="10"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="BaseAClass1" modifier="None"/>
+    <ECEntityClass typeName="BaseAClass2" modifier="None"/>
+    <ECCustomAttributeClass typeName="BaseSchemaACustomAttribute" modifier="None" appliesTo="Any">
+        <ECProperty propertyName="StringValue" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="IntValue" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="DoubleValue" typeName="double" readOnly="false"/>
+        <ECArrayProperty propertyName="StringArray" typeName="string" readOnly="false" minOccurs="100" maxOccurs="100"/>
+        <ECStructProperty propertyName="AddressProperty" typeName="Address" readOnly="false"/>
+        <ECStructArrayProperty propertyName="AddressArray" typeName="Address" readOnly="false" minOccurs="10" maxOccurs="10"/>
+    </ECCustomAttributeClass>
+    <ECEntityClass typeName="Foo" modifier="None">
+        <ECProperty propertyName="stringProperty" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="intProperty" typeName="int" readOnly="false"/>
+        <ECStructProperty propertyName="Address" typeName="Address" readOnly="false"/>
+    </ECEntityClass>
+</ECSchema>

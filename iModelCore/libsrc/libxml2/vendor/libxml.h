@@ -22,6 +22,19 @@
 #endif
 #endif
 
+
+#if defined (NO_BENTLEY_CHANGES)
+#if defined(macintosh)
+#include "config-mac.h"
+#elif defined(_WIN32_WCE)
+/*
+ * Windows CE compatibility definitions and functions
+ * This is needed to compile libxml2 for Windows CE.
+ * At least I tested it with WinCE 5.0 for Emulator and WinCE 4.2/SH4 target
+ */
+#include <win32config.h>
+#include <libxml/xmlversion.h>
+#else
 /*
  * Currently supported platforms use either autoconf or
  * copy to config.h own "preset" configuration file.
@@ -29,6 +42,16 @@
  */
 #include "config.h"
 #include <libxml/xmlversion.h>
+#endif
+#else
+    /* BENTLEY CHANGES */
+    #if defined (_MSC_VER)
+        #include "include/win32config.h"
+    #else
+        #include "../BeLibxml-unix-config.h"
+    #endif
+    #include <libxml/xmlversion.h>
+#endif
 #include <libxml/xmlstring.h>
 
 #ifndef SYSCONFDIR

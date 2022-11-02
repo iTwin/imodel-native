@@ -1,0 +1,105 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+%if defined(BUILD_USING_VS2012)
+    VS_Version=_VS2012
+    VC_Version=_VC11
+    OVERRIDE_DEFAULT_TOOLSET=VS2012
+%endif
+%include mdl.mki
+
+appName         = BePng$(VC_Version)
+CCompPDBName    = $(appName)
+pnglibSrcDir    = $(_MakeFilePath)vendor/
+
+o               = $(OutBuildDir)$(appName)/
+
+# Get link errors for png_init_filter_functions_neon on iOS, which as far as I can tell, is not defined anywhere in libpng source.
+# The old source we were using had no mention of neon, so until proven otherwise, I'm going to disable it.
+# I don't think it will be any worse than what we had.
+nameToDefine = PNG_ARM_NEON_OPT=0
+%include cdefapnd.mki
+
+# Vendor API
+always:
+    ~linkfile "$(BuildContext)VendorAPI/png/png.h=$(pnglibSrcDir)png.h"
+    ~linkfile "$(BuildContext)VendorAPI/png/pngconf.h=$(pnglibSrcDir)pngconf.h"
+    ~linkfile "$(BuildContext)VendorAPI/png/pnginfo.h=$(pnglibSrcDir)pnginfo.h"
+    ~linkfile "$(BuildContext)VendorAPI/png/pnglibconf.h=$(pnglibSrcDir)pnglibconf.h"
+    ~linkfile "$(BuildContext)VendorAPI/png/pngstruct.h=$(pnglibSrcDir)pngstruct.h"
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)png$(oext) : $(pnglibSrcDir)png.c ${MultiCompileDepends}
+
+$(o)pngerror$(oext) : $(pnglibSrcDir)pngerror.c ${MultiCompileDepends}
+
+$(o)pngget$(oext) : $(pnglibSrcDir)pngget.c ${MultiCompileDepends}
+
+$(o)pngmem$(oext) : $(pnglibSrcDir)pngmem.c ${MultiCompileDepends}
+
+$(o)pngpread$(oext) : $(pnglibSrcDir)pngpread.c ${MultiCompileDepends}
+
+$(o)pngread$(oext) : $(pnglibSrcDir)pngread.c ${MultiCompileDepends}
+
+$(o)pngrio$(oext) : $(pnglibSrcDir)pngrio.c ${MultiCompileDepends}
+
+$(o)pngrtran$(oext) : $(pnglibSrcDir)pngrtran.c ${MultiCompileDepends}
+
+$(o)pngrutil$(oext) : $(pnglibSrcDir)pngrutil.c ${MultiCompileDepends}
+
+$(o)pngset$(oext) : $(pnglibSrcDir)pngset.c ${MultiCompileDepends}
+
+$(o)pngtrans$(oext) : $(pnglibSrcDir)pngtrans.c ${MultiCompileDepends}
+
+$(o)pngwio$(oext) : $(pnglibSrcDir)pngwio.c ${MultiCompileDepends}
+
+$(o)pngwrite$(oext) : $(pnglibSrcDir)pngwrite.c ${MultiCompileDepends}
+
+$(o)pngwtran$(oext) : $(pnglibSrcDir)pngwtran.c ${MultiCompileDepends}
+
+$(o)pngwutil$(oext) : $(pnglibSrcDir)pngwutil.c ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+CREATE_STATIC_LIBRARIES     = 1
+
+%include $(sharedMki)linkLibrary.mki
+
+$(BuildContext)Delivery/png-license.txt : $(pnglibSrcDir)LICENSE
+    $(LinkFirstDepToFirstTarget)

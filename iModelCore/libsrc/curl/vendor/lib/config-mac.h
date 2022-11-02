@@ -77,7 +77,7 @@
 #define CURL_DISABLE_LDAP       1
 
 #define HAVE_RAND_STATUS        1
-#define HAVE_RAND_EGD           1
+//#define HAVE_RAND_EGD           1
 
 #define HAVE_IOCTL              1
 #define HAVE_IOCTL_FIONBIO      1
@@ -113,5 +113,31 @@
 
 #define HAVE_EXTRA_STRICMP_H 1
 #define HAVE_EXTRA_STRDUP_H  1
+
+/* Define if you have inet_ntop. */
+#define HAVE_INET_NTOP 1
+
+/* Define to enable c-ares support */
+#define USE_ARES 1
+
+/* Define to 1 if have struct sockaddr_in6. CARES */
+#define HAVE_STRUCT_SOCKADDR_IN6 1
+
+/* Define to 1 if have struct addrinfo. CARES */
+#define HAVE_STRUCT_ADDRINFO 1
+
+/* Define to 1 if have writev. CARES */
+#define HAVE_WRITEV 1
+
+/* Define if you have the <limits.h> header file. CARES */
+#define HAVE_LIMITS_H 1
+
+/* Define if you have strcasecmp. CARES */
+#define HAVE_STRCASECMP 1
+
+/* Define if you have strncasecmp. CARES */
+#define HAVE_STRNCASECMP 1
+
+
 
 #endif /* HEADER_CURL_CONFIG_MAC_H */

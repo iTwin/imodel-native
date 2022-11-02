@@ -1,0 +1,54 @@
+MULTI-INDEX OR
+INDEX 1
+SEARCH s USING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
+INDEX 2
+SEARCH s USING INDEX sqlite_autoindex_ec_Schema_2 (Alias=?)
+SEARCH c USING COVERING INDEX ix_ec_Class_SchemaId_Name (SchemaId=? AND Name=?)
+SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+CORRELATED SCALAR SUBQUERY 1
+SEARCH c USING COVERING INDEX ix_ec_Class_SchemaId_Name (SchemaId=?)
+CORRELATED SCALAR SUBQUERY 2
+SEARCH e USING COVERING INDEX ix_ec_Enumeration_SchemaId (SchemaId=?)
+CORRELATED SCALAR SUBQUERY 3
+SEARCH koq USING COVERING INDEX ix_ec_KindOfQuantity_SchemaId (SchemaId=?)
+CORRELATED SCALAR SUBQUERY 4
+SEARCH cat USING COVERING INDEX ix_ec_PropertyCategory_SchemaId (SchemaId=?)
+CORRELATED SCALAR SUBQUERY 5
+SEARCH us USING COVERING INDEX ix_ec_UnitSystem_SchemaId (SchemaId=?)
+CORRELATED SCALAR SUBQUERY 6
+SEARCH ph USING COVERING INDEX ix_ec_Phenomenon_SchemaId (SchemaId=?)
+CORRELATED SCALAR SUBQUERY 7
+SEARCH u USING COVERING INDEX ix_ec_Unit_SchemaId (SchemaId=?)
+CORRELATED SCALAR SUBQUERY 8
+SEARCH f USING COVERING INDEX ix_ec_Format_SchemaId (SchemaId=?)
+SEARCH main.ec_SchemaReference USING COVERING INDEX uix_ec_SchemaReference_SchemaId_ReferencedSchemaId (SchemaId=?)
+SEARCH main.ec_Class USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH main.ec_CustomAttribute USING INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal (ContainerId=? AND ContainerType=?)
+SEARCH s USING INDEX uix_ec_ClassHasBaseClasses_ClassId_Ordinal (ClassId=?)
+SEARCH main.ec_Property USING INDEX uix_ec_Property_ClassId_Ordinal (ClassId=?)
+SEARCH ec_Schema USING COVERING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
+SEARCH main.ec_RelationshipConstraint USING INDEX uix_ec_RelationshipConstraint_RelationshipClassId_RelationshipEnd (RelationshipClassId=? AND RelationshipEnd=?)
+SEARCH main.ec_RelationshipConstraintClass USING COVERING INDEX uix_ec_RelationshipConstraintClass_ConstraintId_ClassId (ConstraintId=?)
+SEARCH s USING COVERING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
+SEARCH c USING COVERING INDEX ix_ec_Class_SchemaId_Name (SchemaId=? AND Name=?)
+SEARCH main.ec_Enumeration USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH main.ec_ClassMap USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH ec_Table USING INDEX sqlite_autoindex_ec_Table_1 (Name=?)
+SEARCH main.ec_Column USING INDEX uix_ec_Column_TableId_Ordinal (TableId=?)
+SEARCH P USING COVERING INDEX uix_ec_PropertyMap_ClassId_PropertyPathId_ColumnId (ClassId=?)
+SEARCH C USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH T USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH A USING INTEGER PRIMARY KEY (rowid=?)
+USE TEMP B-TREE FOR ORDER BY
+SEARCH main.ec_ClassHasBaseClasses USING INDEX ix_ec_ClassHasBaseClasses_BaseClassId (BaseClassId=?)
+SEARCH s USING COVERING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
+SEARCH ca USING COVERING INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_ClassId (ContainerId=?)
+SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH cm USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH ch USING INDEX ix_ec_cache_ClassHierarchy_BaseClassId (BaseClassId=?)
+SEARCH ct USING INDEX ix_ec_cache_ClassHasTables_ClassId_TableId (ClassId=?)
+SEARCH t USING INTEGER PRIMARY KEY (rowid=?)
+SEARCH main.ec_cache_ClassHasTables USING INDEX ix_ec_cache_ClassHasTables_TableId (TableId=?)
+SEARCH main.ec_cache_ClassHasTables USING INDEX ix_ec_cache_ClassHasTables_ClassId_TableId (ClassId=?)
+USE TEMP B-TREE FOR ORDER BY
+SCAN main.bis_Element

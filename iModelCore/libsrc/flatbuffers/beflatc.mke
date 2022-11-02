@@ -1,0 +1,57 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+# bb -r Libsrc-flatbuffers -f flatbuffers -p beflatc build
+
+%include mdl.mki
+
+AppName = beflatc
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(BuildDir):
+        !~@mkdir $@
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(BuildDir)flatc$(oext) : $(SourceDir)flatc.cpp ${MultiCompileDepends}
+
+$(BuildDir)idl_gen_cpp$(oext) : $(SourceDir)idl_gen_cpp.cpp ${MultiCompileDepends}
+
+$(BuildDir)idl_gen_fbs$(oext) : $(SourceDir)idl_gen_fbs.cpp ${MultiCompileDepends}
+
+$(BuildDir)idl_gen_general$(oext) : $(SourceDir)idl_gen_general.cpp ${MultiCompileDepends}
+
+$(BuildDir)idl_gen_go$(oext) : $(SourceDir)idl_gen_go.cpp ${MultiCompileDepends}
+
+$(BuildDir)idl_gen_text$(oext) : $(SourceDir)idl_gen_text.cpp ${MultiCompileDepends}
+
+$(BuildDir)idl_parser$(oext) : $(SourceDir)idl_parser.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+EXE_CONTEXT_LOCATION = $(BuildContext)Delivery/
+EXE_DEST = $(BuildDir)
+EXE_NAME = $(AppName)
+EXE_NO_SIGN = 1
+EXE_OBJS = $(objs)
+
+%include $(SharedMki)linktool.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        |**************************************************
+        |You may now run: $(EXE_DEST)$(EXE_NAME)$(exeext)
+        |Consider updating the pre-built version: copy $(EXE_DEST)$(EXE_NAME)$(exeext) $(_MakeFilePath)bin
+        |**************************************************
+        |
+%endif

@@ -1,0 +1,20 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+$(BuildContext)PublicAPI/Bentley : $(_MakeFilePath)PublicAPI/Bentley
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicMki/BentleyApi.mki : $(_MakeFilePath)PublicMki/BentleyApi.mki
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/bentley-notice.txt : $(_MakeFilePath)bentley-notice.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/btree-notice.txt : $(_MakeFilePath)btree-notice.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/btree-license.txt : $(_MakeFilePath)btree-license.txt
+    $(LinkFirstDepToFirstTarget)

@@ -1,0 +1,72 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+BUILD_WITH_C17=1
+ENABLE_VARIABLE_HIDING_WARNINGS=1
+%include mdl.mki
+
+#--------------------------------------------------------------------------------------
+# Directories & Files
+#--------------------------------------------------------------------------------------
+RootDirectory               = $(_MakeFilePath)
+SourceDirectory             = $(RootDirectory)Source/
+PublicApiDirectory          = $(RootDirectory)PublicAPI/ECPresentation/
+BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
+OutputDirectory             = $(PartBuildDir)
+CompileOptionsMki           = $(SourceDirectory)CompileOptions.mki
+ECPresentationMakefiles     = $(_MakeFileSpec)
+
+o = $(OutputDirectory)
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+# Compile Options & Dependencies
+#--------------------------------------------------------------------------------------
+%include $(CompileOptionsMki)
+%include $(SourceDirectory)Dependencies.mki
+
+#----------------------------------------------------------------------
+# Precompiled Header
+#----------------------------------------------------------------------
+PchCompiland        = $(SourceDirectory)ECPresentationPch.cpp
+PchOutputDir        = $(o)Pch/
+PchExtraOptions     = -Zm160
+PchArgumentsDepends = $(ECPresentationDependencies)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts =% $(UsePrecompiledHeaderOptions)
+CPchOpts  =% $(UsePrecompiledHeaderOptions)
+MultiCompileIntermediatePdbFile =% $(PchOutputDir)$(CCompPDBName).pdb
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+%include $(SourceDirectory)ECPresentation.mki
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = iTwinECPresentation
+DLM_OBJECT_FILES            = $(ECPresentationObjs)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)Pch/ECPresentationPch$(oext)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinBentley$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinXml$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinGeom$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinSQLite$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinECObjects$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinUnits$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinSQLiteEC$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)iTwinFolly$(stlibext)
+
+%include $(sharedMki)linkLibrary.mki

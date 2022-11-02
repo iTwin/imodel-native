@@ -1,0 +1,63 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+%include mdl.mki
+
+AppName = CrashpadHandler
+CCompPDBName = $(AppName)
+VendorDir = $(_MakeFilePath)vendor/
+o = $(PartBuildDir)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+
+    %return
+%endif
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+
+# The combination of files and options varies so much that I do each platform from scratch.
+
+%if $(TARGET_PLATFORM) == "Linux"
+    %include $(_MakeFilePath)handler_linux.mki
+%elif $(TARGET_PLATFORM) == "Windows"
+    %include $(_MakeFilePath)handler_windows.mki
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+EXE_CONTEXT_LOCATION = $(BuildContext)Delivery/
+EXE_DEST = $(o)
+EXE_NAME = $(AppName)
+EXE_OBJS = $(objs)
+EXE_UNICODE = 1
+
+# N.B. Link order matters for non-Windows targets. CrashpadClient should be listed first, followed by other dependencies.
+
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)CrashpadClient$(stlibext)
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+
+%if $(TARGET_PLATFORM) == "Linux"
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeOpenSSL$(stlibext)
+%elif $(TARGET_PLATFORM) == "Windows"
+    LINKER_LIBRARIES + advapi32.lib
+    LINKER_LIBRARIES + powrprof.lib
+    LINKER_LIBRARIES + user32.lib
+    LINKER_LIBRARIES + version.lib
+    LINKER_LIBRARIES + winhttp.lib
+
+    # So that we don't unecessarily show a console window when launched from a "GUI" bridge like OBD.
+    EXE_WIN_APP = 1
+%endif
+
+%include $(SharedMki)linktool.mki

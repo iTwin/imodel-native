@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{00F0E6D5-D935-4AC4-8554-07B8053AFAA5}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Stress build</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest-Stress\ECPresentationTest-Stress.exe</NMakeOutput>
+    <NMakeCleanCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Stress rebuild ECPresentation:Test* ECPresentation:UnitTests-Stress ECPresentation:Gtest-Stress -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Stress rebuild ECPresentation:Test* ECPresentation:UnitTests-Stress ECPresentation:Gtest-Stress</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)imodel02\node-addon-api\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance build</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest-Performance\ECPresentationTest-Performance.exe</NMakeOutput>
+    <NMakeCleanCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)imodel02\node-addon-api\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="Performance\TestsHelper.cpp" />
+    <ClCompile Include="Stress\PresentationManagerStressTests.cpp" />
+    <ClCompile Include="Stress\TaskManagerStressTests.cpp" />
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
+    <ClCompile Include="TestHelpers\IssueReporter.cpp" />
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Performance\TestsHelper.h" />
+    <ClInclude Include="Stress\StressTests.h" />
+    <ClInclude Include="TestHelpers\ECPresentationTest.h" />
+    <ClInclude Include="TestHelpers\IssueReporter.h" />
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
+    <ClInclude Include="TestHelpers\TestConnectionCache.h" />
+    <ClInclude Include="TestHelpers\TestECInstanceChangeEventsSource.h" />
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h" />
+    <ClInclude Include="TestHelpers\TestUserSettings.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

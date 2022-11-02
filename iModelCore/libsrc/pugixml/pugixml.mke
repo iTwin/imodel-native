@@ -1,0 +1,44 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+
+%include mdl.mki
+
+cDefs +% -D__PUGIXML_BUILD__
+
+baseDir = $(_MakeFilePath)
+srcDir = $(baseDir)src/
+o = $(PartBuildDir)
+
+appName = iTwinPugixml
+CCompPDBName = $(appName)
+
+#Ignore unknown pragmas (i.e. pragma mark)
+LLVMCommonCompOpts  + -Wno-unknown-pragmas
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+PugiXmlHeaders =                $(srcDir)pugixml.hpp \
+                                $(srcDir)pugiconfig.hpp
+
+$(o)pugixml$(oext) : $(srcDir)pugixml.cpp $(PugiXmlHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+cppObjects=%$(MultiCompileObjectList)
+
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_FILES    = $(cppObjects)
+DLM_EXPORT_DEST     = $(o)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+DLM_OBJECT_DEST     = $(o)
+
+# We support shared or static linking.
+%include $(sharedMki)linkLibrary.mki

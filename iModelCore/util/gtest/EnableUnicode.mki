@@ -1,0 +1,19 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+# CL options
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+ consoleAppUnicode   = 1
+ guiAppUnicode       = 1
+
+#-----------------------------------------------------------------------
+# Compiler options
+#-----------------------------------------------------------------------
+

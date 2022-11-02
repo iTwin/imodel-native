@@ -1,0 +1,87 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+
+%if $(TARGET_PLATFORM)!="Android"
+    %error This makefile should be used only when TARGET_PLATFORM is Android
+%endif
+
+%ifndef ANDROIDJUNIT_PRODUCT
+    %error Define ANDROIDJUNIT_PRODUCT as the name of the Product in the output directory that contains the specified test suite.
+%endif
+
+%ifndef ANDROIDJUNIT_LOGFILE_NAME
+    ANDROIDJUNIT_LOGFILE_NAME=$(ANDROIDJUNIT_PRODUCT).log
+%endif
+
+ANDROIDJUNITPROJ=$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/$(ANDROIDJUNIT_PRODUCT)/project/
+
+%ifndef ANDROIDJUNIT_OUTPUT_DIR
+    ANDROIDJUNIT_OUTPUT_DIR=$(OutputRootDir)build/RunANJU/$(ANDROIDJUNIT_PRODUCT)/
+%endif
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+always:
+    $(rmdirRecursiveCmd) ${ANDROIDJUNIT_OUTPUT_DIR}
+    %return
+%endif
+
+logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/test.log
+
+always:
+    !~@mkdir ${ANDROIDJUNIT_OUTPUT_DIR}
+
+%if !defined (BENTLEY_RUN_ANDROIDJUNITTEST)
+    %message To run Android JUnit tests, define BENTLEY_RUN_ANDROIDJUNITTEST
+    always:
+        >$(logFile)
+        Android JUnit tests were not run
+        <
+        ~linkfile "$(BuildContext)Delivery/ANJU/Logs/$(ANDROIDJUNIT_LOGFILE_NAME)=$(logFile)"
+    
+    %return
+%endif
+
+# Check to see if a device is attached
+adbCmd = ${ANDROID_SDK_ROOT}/platform-tools/adb
+always:
+    $(adbCmd) devices > NUL
+    $(adbCmd) devices > ${ANDROIDJUNIT_OUTPUT_DIR}/devices
+
+%if $[@readfile ${ANDROIDJUNIT_OUTPUT_DIR}/devices]=="List of devices attached  "
+    %error No Android device attached. Cannot run unit tests.
+%endif
+
+%if defined (winNT) 
+    %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
+        RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT \/MIN
+    %else
+        RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT
+    %endif
+
+    $(logFile) : $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt)
+        >${ANDROIDJUNIT_OUTPUT_DIR}run$(scriptExt)
+        call $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
+        $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | python $(SrcRoot)bsicommon/build/Tee.py $(logFile)
+        exit
+        <
+        -$(RunPrefix) ${ANDROIDJUNIT_OUTPUT_DIR}run$(scriptExt)
+
+%else
+    $(logFile) : $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt)
+        $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
+        -$(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | tee -q $(logFile)
+
+%endif
+
+%message See $(logFile)
+
+always:
+    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] 1
+
+always:
+    ~linkfile "$(BuildContext)Delivery/ANJU/Logs/$(ANDROIDJUNIT_LOGFILE_NAME)=$(logFile)"

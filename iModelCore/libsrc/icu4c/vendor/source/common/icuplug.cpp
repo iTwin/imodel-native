@@ -725,7 +725,13 @@ uplug_init(UErrorCode *status) {
   (void)status; /* unused */
 #elif !UCONFIG_NO_FILE_IO
   CharString plugin_dir;
+
+// BENTLEY_CHANGES
+#if defined (BENTLEY_WINRT)
+  const char *env = nullptr;
+#else
   const char *env = getenv("ICU_PLUGINS");
+#endif
 
   if(U_FAILURE(*status)) return;
   if(env != NULL) {

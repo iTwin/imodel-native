@@ -1,0 +1,13 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)imodel02/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+
+always:
+    python $(SrcRoot)/imodel02/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $(TESTRUNNERS_SANDBOXDIR)

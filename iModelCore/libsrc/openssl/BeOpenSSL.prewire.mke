@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+vendorSrc = $(_MakeFilePath)vendor/
+
+#----------------------------------------------------------------------------------------
+#   License file
+#----------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/openssl-license.txt=$(vendorSrc)LICENSE"
+    ~linkmultifiles "$(BuildContext)VendorAPI/openssl=$(vendorSrc)include/openssl/*.h"
+    -$(deleteCmd) $(BuildContext)VendorAPI/openssl/*__DECC_*

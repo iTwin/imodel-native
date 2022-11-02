@@ -298,7 +298,7 @@ if ret != 0:
     sys.exit(1)
 
 #
-# Another test provided by Stéphane Bidoul and checked with C#
+# Another test provided by Stï¿½phane Bidoul and checked with C#
 #
 def tst_reader(s):
     f = str_io(s)

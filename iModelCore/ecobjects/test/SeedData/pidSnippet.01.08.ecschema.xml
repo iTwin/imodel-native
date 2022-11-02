@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="pidSnippet" nameSpacePrefix="pidSnippet" version="1.8" description="PID Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.09" prefix="bsca" />
+    <ECClass typeName="BASE_REDUCER" description="Base Reducer" displayLabel="Base Reducer" isDomainClass="True">
+        <ECProperty propertyName="DISPLAY_TEXT" typeName="string" description="Used for annotating reducers according to the orientation of the reducer within a Pipeline" displayLabel="Display Text">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.09">
+                    <ECExpression>this.LEFT_TEXT &amp; " X " &amp; this.RIGHT_TEXT</ECExpression>
+                    <FailureValue>Invalid Expression</FailureValue>
+                    <ParserRegularExpression>^(?&lt;LEFT_TEXT&gt;(([\d]*[\s]?[a-z\d\/]+["]?)|X|TBA|\?))[\s]*X[\s]*(?&lt;RIGHT_TEXT&gt;(([\d]*[\s]?[a-z\d\/]+["]?)|X|TBA|\?|[\w]*))</ParserRegularExpression>
+                    <IsDefaultValueOnly>False</IsDefaultValueOnly>
+                    <RequiredSymbolSets />
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LEFT_TEXT" typeName="string" description="Text to be displayed on left hand side" displayLabel="Left Text" />
+        <ECProperty propertyName="RIGHT_TEXT" typeName="string" description="Text to be displayed on right hand side" displayLabel="Right Text" />
+    </ECClass>
+</ECSchema>

@@ -5877,5 +5877,4 @@ main(int argc, char **argv)
 }
 #endif
 #endif /* NOT_USED_YET */
-
 #endif /* LIBXML_READER_ENABLED */

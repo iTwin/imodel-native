@@ -1,0 +1,13 @@
+{
+  "id": "Items",
+  "rules": [
+    {
+      "ruleType": "Content",
+      "specifications": [
+        {
+          "specType": "SelectedNodeInstances"
+        }
+      ]
+    }
+  ]
+}

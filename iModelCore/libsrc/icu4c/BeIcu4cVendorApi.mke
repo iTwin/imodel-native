@@ -1,0 +1,17 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+%include BeIcu4cCommon.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    VendorApiContextDir = $(BuildContext)VendorAPI/icu4c/
+    always:
+        ~linkmultifiles  "$(VendorApiContextDir)unicode=$(SourceDir)common/unicode/*.h"
+        ~linkmultifiles  "$(VendorApiContextDir)unicode=$(SourceDir)i18n/unicode/*.h"
+        ~linkmultifiles  "$(VendorApiContextDir)unicode=$(SourceDir)io/unicode/*.h"
+        ~linkmultifiles  "$(VendorApiContextDir)layout=$(SourceDir)layoutex/layout/*.h"
+%endif

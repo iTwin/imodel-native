@@ -1,0 +1,20 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+   
+$(BuildContext)Delivery/Gtest/IModelEvolutionTests/ignore_list.txt : $(_MakeFilePath)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------
+# Deploy test ECSchemas
+#----------------------------------------------------------------------
+$(BuildContext)ECSchemas/Domain/IModelEvolutionTests.1.0.0.ecschema.xml : $(_MakeFilePath)ECSchemas/IModelEvolutionTests.1.0.0.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Domain/IModelEvolutionTests.1.0.1.ecschema.xml : $(_MakeFilePath)ECSchemas/IModelEvolutionTests.1.0.1.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Domain/IModelEvolutionTests.1.0.2.ecschema.xml : $(_MakeFilePath)ECSchemas/IModelEvolutionTests.1.0.2.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

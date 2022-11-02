@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ECDbMap" nameSpacePrefix="ecdbmap" version="1.0" description="Custom attributes that customize the ECSchema to database mapping." displayLabel="EC DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+
+    <ECClass typeName="SchemaMap" description="Specifies a prefix for generated tables. If not specified, namespacePrefix of the ECSchema is used" isCustomAttributeClass="True" isDomainClass="False">
+        <ECProperty propertyName="TablePrefix" typeName="string" description="The prefix should be 2-4 letters followed by an underbar, e.g. plnt_." />
+    </ECClass>
+
+    <ECClass typeName="ClassMap" isCustomAttributeClass="True" isDomainClass="False">
+        <ECStructProperty propertyName="MapStrategy" typeName="MapStrategy" description="Defines how the ECClass is mapped to table(s)." />
+        <ECProperty propertyName="TableName" typeName="string" description="Optionally provide user define table name for this class"/>
+        <ECProperty propertyName="ECInstanceIdColumn" typeName="string" description="Optionally specify custom 'primary key' column which must be of type Int64." />
+        <ECArrayProperty propertyName="Indexes" typeName="DbIndex" description="Optional list of indexes on properties of this class. It can be use to improve query performance or to add unique constraint." minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+
+    <ECClass typeName="DisableECInstanceIdAutogeneration" isCustomAttributeClass="True" isDomainClass="False" description="If present on an ECClass indicates that no ECInstanceIds should be created when creating instances of that ECClass. In that case the caller must provide the ECInstanceId.">
+        <ECProperty propertyName="AppliesToSubclasses" typeName="boolean" description="If true (default), this custom attribute also applies to subclasses of the ECClass carrying the custom attribute. If false, the custom attribute does not affect subclasses."/>
+    </ECClass>
+    
+    <ECClass typeName="PropertyMap" isCustomAttributeClass="True" isDomainClass="False">
+        <ECProperty propertyName="ColumnName" typeName="string" description="If not specified, the ECProperty name is used. It must follow EC Identifier specification." />
+        <ECProperty propertyName="IsNullable" typeName="boolean" description="If false, values must not be unset for this property." />
+        <ECProperty propertyName="IsUnique" typeName="boolean" description="Only allow unique values for this property." />
+        <ECProperty propertyName="Collation" typeName="string" description="Specifies how string comparisons should work for this property. Possible values: Binary (default): bit to bit matching. NoCase: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before comparing. Note that it only folds ASCII characters. RTrim: The same as binary, except that trailing space characters are ignored." />
+    </ECClass>
+
+    <ECClass typeName="LinkTableRelationshipMap" isCustomAttributeClass="True" isDomainClass="False">
+        <ECProperty propertyName="SourceECInstanceIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>
+        <ECProperty propertyName="SourceECClassIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>
+        <ECProperty propertyName="TargetECInstanceIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>
+        <ECProperty propertyName="TargetECClassIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>
+        <ECProperty propertyName="AllowDuplicateRelationships" typeName="boolean" description="Default: false. If set to true duplicate relationships are allowed." />
+    </ECClass>
+
+    <ECClass typeName="ForeignKeyRelationshipMap" isCustomAttributeClass="True" isDomainClass="False">
+        <ECProperty propertyName="OnDeleteAction" typeName="string" description="Possible values: NoAction (default), Cascade (which deletes child rows when parent row is deleted)." />
+        <ECProperty propertyName="OnUpdateAction" typeName="string" description="Possible values: NoAction (default), Cascade (which updates child foreign key when parent primary key is updated)." />
+        <ECProperty propertyName="CreateIndex" typeName="boolean" description="Default: true. Indicates whether an index should be created on the foreign key columns or not." />
+        <ECProperty propertyName="ForeignKeyColumn" typeName="string" description="Optional. Only set this, if the foreign key is not deduced from the respective Key properties on the constraint. If not set, and the foreign key cannot be deduced a column with default name will be generated."/>
+    </ECClass>
+   
+    <ECClass typeName="MapStrategy" description="Defines how the ECClass is mapped to table(s)" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Strategy" typeName="string" description="Defines how the ECClass is mapped to table(s). Values: OwnTable (default), SharedTable, ExistingTable, NotMapped" />
+        <ECProperty propertyName="Options" typeName="string" description="Comma-separated list of additional options for Strategy. Actual values are implementation specific."/>
+        <ECProperty propertyName="AppliesToSubclasses" typeName="boolean" description="if true, the MapStrategy also applies to subclasses of the class holding
+        the ClassMap custom attribute. If false (default), the MapStrategy only applies to the holding class." />
+    </ECClass>
+    
+    <ECClass typeName="DbIndex" description="Specify database index for a ECClass based on list of properties of that class." isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Name" typeName="string" description="Optional name of the index. Must follow EC identifier rules. It need to be globally unique in database." />
+        <ECProperty propertyName="IsUnique" typeName="boolean" description="Default: false. If true, all values in the indexed properties must be unique."/>
+        <ECArrayProperty propertyName="Properties" typeName="string" description="List of properties that make up the index. Only primitive type properties are supported." minOccurs="1" maxOccurs="unbounded" />
+        <ECProperty propertyName="Where" typeName="string" description="Where constraint for index" />
+    </ECClass>
+</ECSchema>

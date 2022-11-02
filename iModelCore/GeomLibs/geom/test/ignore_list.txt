@@ -1,0 +1,143 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+# *** Broken in 06; need to be re-visited ***
+#----------------------------------------------------------------------------------------
+# General.GFormat exercises sprintf and compares to tabulated values.
+# April 19, 2016: This works fine on developer x86, x64.  don't know about other compilers.
+General.GFormat 
+
+MGeometry.ConvexHullManyPoints # fails on iOS - 0 test is seeing very tiny negative number for i=893; notified team
+# This fails randomonly on non-windows builds 06/20
+CurveCurve.TransverseIntersection
+
+#CurvePrimitive.SizeSampler # Fails after merge - notified Earlir
+
+# These are really slow ... other MultiMeshVisibility cases cover critical issues.
+Polyface.MultiMeshVisibilityCS4
+Polyface.MultiMeshVisibilityF
+Polyface.MultiMeshVisibilityE
+# EDL mobile devices have fuzzy determinant where windows gets true 0.
+#DPlane3d.IntersectByDistance
+
+    # TFS#819718
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018
+    # 2018-02-15 11:57:14.583636+0500 BeTestiOS[3440:6191977] TestRunner: DPlane3d.IntersectByDistance
+    # Feb 15 11:57:14  Be[3440] <Info>: TestRunner: DPlane3d.IntersectByDistance
+    # ( Line offset outside)
+    # 2018-02-15 11:57:14.583754+0500 BeTestiOS[3440:6191977] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181confirm intesrection failure with repeated plane
+    # Feb 15 11:57:14  Be[3440] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181confirm intesrection failure with repeated plane
+    # 2018-02-15 11:57:14.583914+0500 BeTestiOS[3440:6191977] TestRunner: DPlane3d.IntersectByDistance FAILED
+    # Feb 15 11:57:14  Be[3440] <Emergency>: TestRunner: DPlane3d.IntersectByDistance FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:2741: error: -[GeomLibsstructsTest_DPlane3d testIntersectByDistance] : ((0 == BETEST_TEST_RUNNER_FUNC(DPlane3d,IntersectByDistance) ()) is true) failed
+# tolerance on length comparison
+#CurvePrimitive.Tracking
+
+    # TFS#819720
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018
+    # 2018-02-15 11:57:04.744270+0500 BeTestiOS[3440:6191977] TestRunner: CurvePrimitive.Tracking
+    # Feb 15 11:57:04  Be[3440] <Info>: TestRunner: CurvePrimitive.Tracking
+    # ( Line offset outside)
+    # 2018-02-15 11:57:04.744696+0500 BeTestiOS[3440:6191977] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181strokeLength < length
+    # Feb 15 11:57:04  Be[3440] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181strokeLength < length
+    # 2018-02-15 11:57:04.747400+0500 BeTestiOS[3440:6191977] TestRunner: CurvePrimitive.Tracking FAILED
+    # Feb 15 11:57:04  Be[3440] <Emergency>: TestRunner: CurvePrimitive.Tracking FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:850: error: -[GeomLibsCurvePrimitiveTest_CurvePrimitive testTracking] : ((0 == BETEST_TEST_RUNNER_FUNC(CurvePrimitive,Tracking) ()) is true) failed
+
+Polyface.ClipSphere
+
+    # TFS#819721
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018
+    # 2018-02-15 11:57:08.957387+0500 BeTestiOS[3440:6191977] TestRunner: Polyface.ClipSphere
+    # Feb 15 11:57:08  Be[3440] <Info>: TestRunner: Polyface.ClipSphere
+    # ( Line offset outside)
+    # 2018-02-15 11:57:08.959095+0500 BeTestiOS[3440:6191977] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181Computed normals close to face planes
+    # Feb 15 11:57:08  Be[3440] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181Computed normals close to face planes
+    # 2018-02-15 11:57:08.959351+0500 BeTestiOS[3440:6191977] TestRunner: Polyface.ClipSphere FAILED
+    # Feb 15 11:57:08  Be[3440] <Emergency>: TestRunner: Polyface.ClipSphere FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:1453: error: -[GeomLibsPolyfaceTest_Polyface testClipSphere] : ((0 == BETEST_TEST_RUNNER_FUNC(Polyface,ClipSphere) ()) is true) failed
+
+Geometry.ConvexHullManyPoints
+
+    # TFS#819723
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018
+    # 2018-02-15 11:57:15.109713+0500 BeTestiOS[3440:6191977] TestRunner: Geometry.ConvexHullManyPoints
+    # Feb 15 11:57:15  Be[3440] <Info>: TestRunner: Geometry.ConvexHullManyPoints
+    # 2018-02-15 11:57:15.110307+0500 BeTestiOS[3440:6191977] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181point inside hull
+    # Feb 15 11:57:15  Be[3440] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181point inside hull
+    # 2018-02-15 11:57:15.110569+0500 BeTestiOS[3440:6191977] TestRunner: Geometry.ConvexHullManyPoints FAILED
+    # Feb 15 11:57:15  Be[3440] <Emergency>: TestRunner: Geometry.ConvexHullManyPoints FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:2292: error: -[GeomLibsstructsTest_Geometry testConvexHullManyPoints] : ((0 == BETEST_TEST_RUNNER_FUNC(Geometry,ConvexHullManyPoints) ()) is true) failed
+
+# EDL This was due to incomplete name list in CurveTopologyId.cpp. To correct, (1) add the missing names and (2) do the bounds check on s_typeStrings.size () instead of Type::Max.
+#CurveTopologyId.Hello
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/20/2018
+    # Debug String BRep Isoline (1, 2, 3)
+    # Debug String B-Rep Shared Edge (1, 2, 1, 2)
+    # Debug String B-Rep Sheet Edge (1, 2)
+    # Debug String B-Rep Silhouette Edge (1, 2)
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [21] _C_specific_handler (0x7ffb529cbff0)
+    # [20] _chkstk (0x7ffb5e709ec0)
+    # [19] RtlLookupFunctionEntry (0x7ffb5e694710)
+    # [18] KiUserExceptionDispatcher (0x7ffb5e709030)
+    # [17] BentleyB0200::CurveTopologyId::GetDebugString (0x7ffb35dee610)
+    # [16] testTopologyId (0x7ff73844d580)
+    # [15] CurveTopologyId_Hello_Test::TestBody (0x7ff73844cfa0)
+    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7385a8720)
+    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff7385a85b0)
+    # [12] testing::Test::Run (0x7ff7385b81f0)
+    # [11] testing::TestInfo::Run (0x7ff7385b8500)
+    # [10] testing::TestCase::Run (0x7ff7385b8310)
+    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff7385b87c0)
+    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7385a87c0)
+    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7385a86a0)
+    # [6] testing::UnitTest::Run (0x7ff7385b86a0)
+    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff7383b9dc0)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff7383bb670)
+    # [3] std::_Pad::_Call_func (0x7ff7383baeb0)
+    # [2] rand (0x7ffb5ad60210)
+    # [1] BaseThreadInitThunk (0x7ffb5e232770)
+    # [0] RtlUserThreadStart (0x7ffb5e6b0c10)
+
+CurvePrimitive.ExerciseVirtuals
+
+    # VSTS#41533
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iosarm64, Device: testdevice, Date: 11/02/2018
+    # 2018-11-01 03:35:10.837438+0500 BeTestiOS[4362:1808366] TestRunner: CurvePrimitive.ExerciseVirtuals
+    # Nov  1 03:35:10  Be[4362] <Info>: TestRunner: CurvePrimitive.ExerciseVirtuals
+    # 2018-11-01 03:35:10.837633+0500 BeTestiOS[4362:1808366] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:182(fail 3.8674388273982658 <= 3.8674388273982654)
+    # Nov  1 03:35:10  Be[4362] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:182(fail 3.8674388273982658 <= 3.8674388273982654)
+    # 2018-11-01 03:35:10.841372+0500 BeTestiOS[4362:1808366] TestRunner: CurvePrimitive.ExerciseVirtuals FAILED
+    # Nov  1 03:35:10  Be[4362] <Emergency>: TestRunner: CurvePrimitive.ExerciseVirtuals FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/geomlibs/XCodeProject/BeTestiOSTests/UnitTests.mm:383: error: -[GeomLibsCurvePrimitiveTest_CurvePrimitive testExerciseVirtuals] : ((0 == BETEST_TEST_RUNNER_FUNC(CurvePrimitive,ExerciseVirtuals) ()) is true) failed
+
+
+DRange3d.IndependentIntersection
+    # bim0200, NDEBUG, x64
+    # [ RUN      ] DRange3d.IndependentIntersection
+    # 
+    #      (a -9)
+    #      (b -8.9999999999999982)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # 
+    #      (a 6)
+    #      (b 6.0000000000000009)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # 
+    #      (a -6)
+    #      (b -5.9999999999999991)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # 
+    #      (a 9)
+    #      (b 9.0000000000000018)F:\Bim0200\src\GeomLibs\geom\test\src\checkers.cpp(180): error: Value of: false
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DRange3d.IndependentIntersection (5 ms)

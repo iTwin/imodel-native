@@ -1,0 +1,26 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BuildContext)
+%error
+%endif
+
+DeliveryDir         = $(BuildContext)Delivery/
+VendorApiContextDir = $(BuildContext)VendorAPI/pugixml/src/
+SrcDir           = $(_MakeFilePath)src/
+
+$(DeliveryDir)pugixml-license.md : $(_MakeFilePath)LICENSE.md
+    $(LinkFirstDepToFirstTarget)
+
+$(VendorApiContextDir)pugixml.hpp : $(SrcDir)pugixml.hpp
+    $(LinkFirstDepToFirstTarget)
+
+$(VendorApiContextDir)pugiconfig.hpp : $(SrcDir)pugiconfig.hpp
+    $(LinkFirstDepToFirstTarget)
+
+$(VendorApiContextDir)BePugiXmlHelper.h : $(SrcDir)BePugiXmlHelper.h
+    $(LinkFirstDepToFirstTarget)

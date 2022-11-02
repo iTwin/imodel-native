@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="DSCacheSchema" alias="DSC" version="01.00.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
+    <ECStructClass typeName="CacheInfoStruct" modifier="None">
+        <ECProperty propertyName="CacheTag" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="CacheDate" typeName="dateTime" readOnly="false">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECStructClass>
+    <ECStructClass typeName="ChangeInfoStruct" modifier="None">
+        <ECProperty propertyName="ChangeStatus" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="SyncStatus" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="Date" typeName="dateTime" readOnly="false">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECStructClass>
+    <ECEntityClass typeName="CachedFileInfo" modifier="None">
+        <ECProperty propertyName="IsPersistant" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="LocalPath" typeName="string" readOnly="false"/>
+        <ECStructProperty propertyName="CacheInfo" typeName="CacheInfoStruct" readOnly="false"/>
+        <ECStructProperty propertyName="ChangeInfo" typeName="ChangeInfoStruct" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CachedInstanceInfo" modifier="None">
+        <ECStructProperty propertyName="ChildrenInfo" typeName="CacheInfoStruct" readOnly="false"/>
+        <ECStructProperty propertyName="InstanceInfo" typeName="CacheInfoStruct" readOnly="false"/>
+        <ECProperty propertyName="InstanceState" typeName="int" readOnly="false"/>
+        <ECStructProperty propertyName="ChangeInfo" typeName="ChangeInfoStruct" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FileCacheInfo" modifier="None">
+        <ECProperty propertyName="LastCachedFileIndex" typeName="long" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="NavigationBase" modifier="None">
+        <ECProperty propertyName="DataSourceCache_RemoteId" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Root" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Persistance" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Settings" modifier="None">
+        <ECProperty propertyName="CacheFormatVersion" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="DataSourceSchemaName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="DataSourceSchemaETag" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+</ECSchema>

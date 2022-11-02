@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="StartupCompany" alias="stco" version="02.00.00" description="My Startup Company" displayLabel="My Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECCustomAttributes>
+        <SchemaMap xmlns="ECDbMap.02.00.00">
+            <TablePrefix>sc</TablePrefix>
+        </SchemaMap>
+    </ECCustomAttributes>
+    <ECEntityClass typeName="AAA">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="i" typeName="int"/>
+        <ECProperty propertyName="l" typeName="long"/>
+        <ECProperty propertyName="d" typeName="double"/>
+        <ECProperty propertyName="s" typeName="string"/>
+        <ECProperty propertyName="t" typeName="dateTime"/>
+        <ECProperty propertyName="bi" typeName="binary"/>
+        <ECProperty propertyName="bo" typeName="boolean"/>
+    </ECEntityClass>
+    <ECStructClass typeName="AnglesStruct">
+        <ECProperty propertyName="Alpha" typeName="double"/>
+        <ECProperty propertyName="Beta" typeName="double"/>
+        <ECProperty propertyName="Theta" typeName="double"/>
+    </ECStructClass>
+    <ECEntityClass typeName="AAFoo">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FooTag" typeName="string"/>
+        <ECProperty propertyName="intAAFoo" typeName="int"/>
+        <ECProperty propertyName="longAAFoo" typeName="long"/>
+        <ECProperty propertyName="stringAAFoo" typeName="string"/>
+        <ECProperty propertyName="doubleAAFoo" typeName="double"/>
+        <ECProperty propertyName="datetimeAAFoo" typeName="dateTime"/>
+        <ECProperty propertyName="binaryAAFoo" typeName="binary"/>
+        <ECProperty propertyName="booleanAAFoo" typeName="boolean"/>
+        <ECProperty propertyName="point2dAAFoo" typeName="point2d"/>
+        <ECProperty propertyName="point3dAAFoo" typeName="point3d"/>
+        <ECStructProperty propertyName="anglesAAFoo" typeName="AnglesStruct"/>
+        <ECProperty propertyName="commonGeometryAAFoo" typeName="Bentley.Geometry.Common.IGeometry"/>
+        <ECProperty propertyName="colorAAFoo" typeName="string"/>
+        <ECArrayProperty propertyName="arrayOfIntsAAFoo" typeName="int" minOccurs="1" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="arrayOfpoint2dAAFoo" typeName="point2d" minOccurs="1" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="arrayOfpoint3dAAFoo" typeName="point3d" minOccurs="1" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="arrayOfAnglesStructsAAFoo" typeName="AnglesStruct" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ABFoo">
+        <ECProperty propertyName="stringABFoo" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>NotMapped</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="stringFoo" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ArrayTestclass">
+        <ECArrayProperty propertyName="p0_unbounded" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="p1_unbounded" typeName="int" minOccurs="1" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="p0_1" typeName="int" minOccurs="0" maxOccurs="1"/>
+        <ECArrayProperty propertyName="p1_1" typeName="int" minOccurs="1" maxOccurs="1"/>
+        <ECArrayProperty propertyName="p1_10000" typeName="int" minOccurs="1" maxOccurs="10000"/>
+        <ECArrayProperty propertyName="p100_10000" typeName="int" minOccurs="100" maxOccurs="10000"/>
+        <ECArrayProperty propertyName="p123_12345" typeName="int" minOccurs="123" maxOccurs="12345"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Asset">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID"/>
+        <ECProperty propertyName="AssetOwner" typeName="string"/>
+        <ECProperty propertyName="BarCode" typeName="string" displayLabel="Bar Code"/>
+        <ECProperty propertyName="AssetUserID" typeName="string"/>
+        <ECProperty propertyName="Cost" typeName="double"/>
+        <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle"/>
+        <ECProperty propertyName="AssetRecordKey" typeName="string" displayLabel="Record Key"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Bar">
+        <ECProperty propertyName="stringBar" typeName="string"/>
+    </ECEntityClass>
+    <ECStructClass typeName="Location">
+        <ECProperty propertyName="Coordinate" typeName="point3d" description="relative the origin of the Kansas State Plane"/>
+        <ECProperty propertyName="Street" typeName="string"/>
+        <ECProperty propertyName="City" typeName="string"/>
+        <ECProperty propertyName="State" typeName="string"/>
+        <ECProperty propertyName="Country" typeName="string"/>
+        <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code"/>
+    </ECStructClass>
+    <ECEntityClass typeName="Building" displayLabel="Office Building">
+        <ECProperty propertyName="Number" typeName="string" displayLabel="Building Number"/>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Building Name"/>
+        <ECProperty propertyName="NumberOfFloors" typeName="int" displayLabel="Number of floors"/>
+        <ECStructProperty propertyName="Location" typeName="Location"/>
+        <ECProperty propertyName="BuildingCode" typeName="string"/>
+        <ECProperty propertyName="RecordKey" typeName="string" displayLabel="Record Key"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="BuildingFloor" displayLabel="Building Floor">
+        <ECProperty propertyName="FloorNumber" typeName="int" displayLabel="Floor Number"/>
+        <ECProperty propertyName="BuildingCode" typeName="string" displayLabel="Building Code"/>
+        <ECProperty propertyName="NumberOfOffices" typeName="int" displayLabel="Number Of Offices"/>
+        <ECProperty propertyName="Area" typeName="double"/>
+        <ECProperty propertyName="FloorCode" typeName="string" displayLabel="Floor Code"/>
+        <ECProperty propertyName="RecordKey" typeName="int" displayLabel="Record Key"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Furniture">
+        <BaseClass>Asset</BaseClass>
+        <ECProperty propertyName="Condition" typeName="Furniture_Condition"/>
+        <ECProperty propertyName="Material" typeName="Furniture_Material" displayLabel="Furniture Made Of"/>
+        <ECProperty propertyName="Weight" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Chair" displayLabel="Office Chair">
+        <BaseClass>Furniture</BaseClass>
+        <ECProperty propertyName="ChairFootPrint" typeName="Bentley.Geometry.Common.IGeometry"/>
+        <ECProperty propertyName="Type" typeName="string"/>
+        <ECProperty propertyName="Color" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassWithPrimitiveArrayProperties">
+        <ECArrayProperty propertyName="intArrayProp" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="longArrayProp" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="doubleArrayProp" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="stringArrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="dateTimeArrayProp" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="binaryArrayProp" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="booleanArrayProp" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="point2dArrayProp" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="point3dArrayProp" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassWithPrimitiveProperties" modifier="Sealed">
+        <ECCustomAttributes>
+            <DbIndexList xmlns="ECDbMap.02.00.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>IDX_ON_intProp_doubleProp_stringProp</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>intProp</string>
+                            <string>doubleProp</string>
+                            <string>stringProp</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <Name>IDX_ON_date_time_and_binary</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>dateTimeProp</string>
+                            <string>binaryProp</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <Name>IDX_ON_point2d</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>point2dProp</string>
+                            <string>point3dProp</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>
+        <ECProperty propertyName="intProp" typeName="int"/>
+        <ECProperty propertyName="longProp" typeName="long"/>
+        <ECProperty propertyName="doubleProp" typeName="double"/>
+        <ECProperty propertyName="stringProp" typeName="string"/>
+        <ECProperty propertyName="dateTimeProp" typeName="dateTime"/>
+        <ECProperty propertyName="binaryProp" typeName="binary"/>
+        <ECProperty propertyName="booleanProp" typeName="boolean"/>
+        <ECProperty propertyName="point2dProp" typeName="point2d"/>
+        <ECProperty propertyName="point3dProp" typeName="point3d"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Company">
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="NumberOfEmployees" typeName="int" displayLabel="Number Of Employees"/>
+        <ECArrayProperty propertyName="Products" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructProperty propertyName="HeadQuarters" typeName="Location"/>
+        <ECStructArrayProperty propertyName="OfficeLocations" typeName="Location" description="Office Locations" displayLabel="Office Locations" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="ContactAddress" typeName="string" displayLabel="Address"/>
+        <ECProperty propertyName="RecordKey" typeName="Company_RecordKey" displayLabel="Record Key"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Project" description="Project">
+        <ECProperty propertyName="CompletionDate" typeName="dateTime" displayLabel="Completion Date"/>
+        <ECProperty propertyName="EstimatedCost" typeName="double" displayLabel="Estimated Cost"/>
+        <ECProperty propertyName="ProjectName" typeName="string" displayLabel="Project Name"/>
+        <ECProperty propertyName="ProjectDescription" typeName="string" displayLabel="Project Description"/>
+        <ECProperty propertyName="ProjectState" typeName="Project_ProjectState" displayLabel="Project State"/>
+        <ECProperty propertyName="StartDate" typeName="dateTime"/>
+        <ECArrayProperty propertyName="TeamMemberList" typeName="int" displayLabel="Team Member IDs" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="InProgress" typeName="boolean" displayLabel="In Progress"/>
+        <ECProperty propertyName="TeamSize" typeName="int" displayLabel="Team Size"/>
+        <ECProperty propertyName="Logo" typeName="string"/>
+        <ECProperty propertyName="Manager" typeName="int" displayLabel="Project Manager"/>
+        <ECProperty propertyName="ProjectRecordKey" typeName="int" displayLabel="Record Key"/>
+        <ECNavigationProperty propertyName="Company" relationshipName="CompanyProject" direction="Backward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CompanyProject" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="CompanyProject" polymorphic="true">
+            <Class class="Company"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="CompanyProject (Reversed)" polymorphic="true">
+            <Class class="Project"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Hardware">
+        <BaseClass>Asset</BaseClass>
+        <ECProperty propertyName="HasTrackingDevice" typeName="boolean" displayLabel="Has Tracking Device"/>
+        <ECProperty propertyName="HasWarranty" typeName="boolean" displayLabel="Has Warranty"/>
+        <ECProperty propertyName="IsCompanyProperty" typeName="boolean" displayLabel="Is Company Property"/>
+        <ECProperty propertyName="Make" typeName="string"/>
+        <ECProperty propertyName="Model" typeName="string"/>
+        <ECProperty propertyName="WarrantyExpiryDate" typeName="dateTime" displayLabel="Warranty Expiry Date"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Computer">
+        <BaseClass>Hardware</BaseClass>
+        <ECProperty propertyName="Vendor" typeName="string"/>
+        <ECProperty propertyName="Weight" typeName="double"/>
+        <ECProperty propertyName="Type" typeName="Computer_Type"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Cubicle" displayLabel="Office Room/Cubicle">
+        <ECNavigationProperty propertyName="Floor" relationshipName="FloorCubicle" direction="Backward"/>
+        <ECProperty propertyName="Bay" typeName="string"/>
+        <ECProperty propertyName="IsOccupied" typeName="boolean"/>
+        <ECProperty propertyName="BuildingFloor" typeName="int"/>
+        <ECArrayProperty propertyName="OccupiedBy" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+        <ECProperty propertyName="Breadth" typeName="double"/>
+        <ECProperty propertyName="NumberOfOccupants" typeName="int"/>
+        <ECProperty propertyName="BuildingCode" typeName="string"/>
+        <ECProperty propertyName="OfficeCode" typeName="string"/>
+        <ECProperty propertyName="Area" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Desk">
+        <BaseClass>Furniture</BaseClass>
+        <ECProperty propertyName="DeskFootPrint" typeName="string"/>
+        <ECProperty propertyName="NumberOfCabinets" typeName="int" displayLabel="Number Of Cabinets"/>
+        <ECProperty propertyName="Size" typeName="string"/>
+        <ECProperty propertyName="Type" typeName="string"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+        <ECProperty propertyName="Breadth" typeName="double"/>
+    </ECEntityClass>
+    <ECStructClass typeName="EmployeeCertification" displayLabel="Employee Certification">
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Certification Name"/>
+        <ECProperty propertyName="StartDate" typeName="dateTime" displayLabel="Starts On"/>
+        <ECProperty propertyName="ExpiryDate" typeName="dateTime" displayLabel="Expires On"/>
+        <ECProperty propertyName="Technology" typeName="string"/>
+        <ECProperty propertyName="Level" typeName="EmployeeCertification_Level"/>
+    </ECStructClass>
+    <ECEntityClass typeName="Employee">
+        <ECProperty propertyName="EmployeeID" typeName="int" displayLabel="Employee ID"/>
+        <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name"/>
+        <ECProperty propertyName="JobTitle" typeName="string" displayLabel="Job Title"/>
+        <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name"/>
+        <ECProperty propertyName="ManagerID" typeName="int" displayLabel="Manager ID"/>
+        <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle"/>
+        <ECProperty propertyName="SSN" typeName="int" readOnly="true"/>
+        <ECProperty propertyName="Project" typeName="string" displayLabel="Department/Project"/>
+        <ECArrayProperty propertyName="WorkPhone" typeName="string" displayLabel="Work Phone (s)" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="MobilePhone" typeName="string" displayLabel="Mobile Phone (s)" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="FullName" typeName="string" displayLabel="Full Name"/>
+        <ECStructArrayProperty propertyName="Certifications" typeName="EmployeeCertification" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructProperty propertyName="Location" typeName="Location" displayLabel="Office Location"/>
+        <ECProperty propertyName="EmployeeType" typeName="Employee_EmployeeType" displayLabel="Employee Type"/>
+        <ECStructProperty propertyName="Address" typeName="Location"/>
+        <ECProperty propertyName="EmployeeRecordKey" typeName="dateTime" displayLabel="Record Key"/>
+        <ECNavigationProperty propertyName="Company" relationshipName="EmployeeCompany" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="EmployeeCompany" modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(1..*)" roleLabel="Employee working for the Company" polymorphic="true">
+            <Class class="Employee"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Employee of Company" polymorphic="true">
+            <Class class="Company"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="EmployeeHardware" modifier="Sealed" strength="referencing">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
+                <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>Hardware__trg_0N_id</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..*)" roleLabel="Employee using hardware" polymorphic="true">
+            <Class class="Employee"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Hardware assigned to employee" polymorphic="true">
+            <Class class="Hardware"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="EmployeeOffice" modifier="Sealed" strength="referencing">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
+                <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>Cubicle__trg_0N_id</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..*)" roleLabel="EmployeeOffice" polymorphic="true">
+            <Class class="Employee"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="EmployeeOffice (Reversed)" polymorphic="true">
+            <Class class="Cubicle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Phone">
+        <BaseClass>Asset</BaseClass>
+        <ECNavigationProperty propertyName="Employee" relationshipName="EmployeePhone" direction="Backward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="Number" typeName="string"/>
+        <ECProperty propertyName="Owner" typeName="string"/>
+        <ECProperty propertyName="User" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="EmployeePhone" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Phone used by employee" polymorphic="true">
+            <Class class="Employee"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Employee that uses the phone" polymorphic="true">
+            <Class class="Phone"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="EmployeeProject" modifier="Sealed" strength="referencing">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
+                <SourceECInstanceIdColumn>Employee__src_1N_id</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>Project__trg_1N_id</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source multiplicity="(1..*)" roleLabel="Employee working on Project" polymorphic="true">
+            <Class class="Employee"/>
+        </Source>
+        <Target multiplicity="(1..*)" roleLabel="Employee that works on the project" polymorphic="true">
+            <Class class="Project"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FloorCubicle" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="FloorCubicle" polymorphic="true">
+            <Class class="BuildingFloor"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="FloorCubicle (Reversed)" polymorphic="true">
+            <Class class="Cubicle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Foo">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="intFoo" typeName="int"/>
+        <ECProperty propertyName="longFoo" typeName="long"/>
+        <ECProperty propertyName="stringFoo" typeName="string"/>
+        <ECProperty propertyName="doubleFoo" typeName="double"/>
+        <ECProperty propertyName="datetimeFoo" typeName="dateTime"/>
+        <ECProperty propertyName="binaryFoo" typeName="binary"/>
+        <ECProperty propertyName="booleanFoo" typeName="boolean"/>
+        <ECProperty propertyName="point2dFoo" typeName="point2d"/>
+        <ECProperty propertyName="point3dFoo" typeName="point3d"/>
+        <ECStructProperty propertyName="anglesFoo" typeName="AnglesStruct"/>
+        <ECProperty propertyName="commonGeometryFoo" typeName="Bentley.Geometry.Common.IGeometry"/>
+        <ECArrayProperty propertyName="arrayOfIntsFoo" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="arrayOfAnglesStructsFoo" typeName="AnglesStruct" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Monitor">
+        <BaseClass>Hardware</BaseClass>
+        <ECProperty propertyName="Size" typeName="int"/>
+        <ECProperty propertyName="Type" typeName="Monitor_Type"/>
+        <ECProperty propertyName="Vendor" typeName="string"/>
+        <ECProperty propertyName="Weight" typeName="double"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RelationWithLinkTableMapping" modifier="Sealed" strength="referencing">
+        <ECProperty propertyName="Created" typeName="dateTime"/>
+        <Source multiplicity="(0..*)" roleLabel="RelationWithLinkTableMapping" polymorphic="true">
+            <Class class="Employee"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="RelationWithLinkTableMapping (Reversed)" polymorphic="true">
+            <Class class="Hardware"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECStructClass typeName="StructWithPrimitiveArrayProperties">
+        <ECArrayProperty propertyName="intArrayProp" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="longArrayProp" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="doubleArrayProp" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="stringArrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="dateTimeArrayProp" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="binaryArrayProp" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="booleanArrayProp" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="point2dArrayProp" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="point3dArrayProp" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="StructWithPrimitiveProperties">
+        <ECProperty propertyName="intProp" typeName="int"/>
+        <ECProperty propertyName="longProp" typeName="long"/>
+        <ECProperty propertyName="doubleProp" typeName="double"/>
+        <ECProperty propertyName="stringProp" typeName="string"/>
+        <ECProperty propertyName="dateTimeProp" typeName="dateTime"/>
+        <ECProperty propertyName="binaryProp" typeName="binary"/>
+        <ECProperty propertyName="booleanProp" typeName="boolean"/>
+        <ECProperty propertyName="point2dProp" typeName="point2d"/>
+        <ECProperty propertyName="point3dProp" typeName="point3d"/>
+    </ECStructClass>
+    <ECEnumeration typeName="Furniture_Condition" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="New"/>
+        <ECEnumerator value="1" displayLabel="Broken"/>
+        <ECEnumerator value="2" displayLabel="Good"/>
+        <ECEnumerator value="3" displayLabel="Fair"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Furniture_Material" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Wood"/>
+        <ECEnumerator value="1" displayLabel="Metal"/>
+        <ECEnumerator value="2" displayLabel="Metal/Plastic"/>
+        <ECEnumerator value="3" displayLabel="Metal/Wood"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Company_RecordKey" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="CODE1"/>
+        <ECEnumerator value="1" displayLabel="CODE2"/>
+        <ECEnumerator value="2" displayLabel="CODE3"/>
+        <ECEnumerator value="3" displayLabel="CODE4"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Computer_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="WorkStation"/>
+        <ECEnumerator value="1" displayLabel="Laptop"/>
+        <ECEnumerator value="2" displayLabel="Server"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Employee_EmployeeType" backingTypeName="int" isStrict="false">
+        <ECEnumerator value="0" displayLabel="Full Time / Salaried"/>
+        <ECEnumerator value="1" displayLabel="Part Time"/>
+        <ECEnumerator value="2" displayLabel="Intern"/>
+        <ECEnumerator value="3" displayLabel="Full Time / Hourly"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="EmployeeCertification_Level" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Beginner"/>
+        <ECEnumerator value="1" displayLabel="Intermediate"/>
+        <ECEnumerator value="2" displayLabel="Advanced"/>
+        <ECEnumerator value="3" displayLabel="Expert"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Monitor_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="CRT"/>
+        <ECEnumerator value="1" displayLabel="LCD"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Project_ProjectState" backingTypeName="int" isStrict="false">
+        <ECEnumerator value="0" displayLabel="Start"/>
+        <ECEnumerator value="1" displayLabel="Release"/>
+        <ECEnumerator value="2" displayLabel="Certification"/>
+        <ECEnumerator value="3" displayLabel="Support"/>
+        <ECEnumerator value="4" displayLabel="Development"/>
+        <ECEnumerator value="5" displayLabel="Design"/>
+        <ECEnumerator value="6" displayLabel="Suspended"/>
+    </ECEnumeration>
+</ECSchema>

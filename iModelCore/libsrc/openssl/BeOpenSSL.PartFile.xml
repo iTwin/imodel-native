@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+              >
+
+    <Part Name="BeOpenSSL">
+        <SubPart PartName="Library" />
+    </Part>
+
+    <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
+    <Part Name="__PublicAPI" BentleyBuildMakeFile="BeOpenSSL.prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="openssl" />
+            <VendorNotices>Delivery/openssl-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
+    <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke" ApiNumber="B02">
+        <Bindings>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)BeOpenSSL$(stlibdebugext)</Libs>
+            <Libs>Delivery/$(libprefix)BeOpenSSL$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeOpenSSL$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="Library">
+        <SubPart PartName="__PublicAPI" LibType="Static"/>
+        <SubPart PartName="__Library"/>
+    </Part>
+
+    <Part Name="LibraryDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
+        <SubPart PartName="Library" LibType="Dynamic"/>
+    </Part>
+    
+    <Part Name="LibraryStatic">
+        <SubPart PartName="Library" LibType="Static"/>
+    </Part>
+
+    <NuGetProduct Name="OpenSslNuget" LicenseFile="OpenSslNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="LibraryDynamic"/>
+        <SubPart PartName="LibraryStatic"/>
+    </NuGetProduct>
+
+</BuildContext>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+              >
+
+    <Part Name="BeCurl">
+        <SubPart PartName="Library" />
+    </Part>
+
+    <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="BeCurl.prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="curl" />
+            <VendorNotices>Delivery/curl-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
+    <Part Name="Library" BentleyBuildMakeFile="BeCurl.mke" ApiNumber="B02">
+        <SubPart PartName="PublicAPI" />
+        <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BeCurl$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeCurl$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BeCurlDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
+        <SubPart PartName="BeCurl" LibType="Dynamic"/>
+    </Part>
+    
+    <Part Name="BeCurlStatic">
+        <SubPart PartName="BeCurl" LibType="Static"/>
+    </Part>
+
+    <NuGetProduct Name="CurlNuget" LicenseFile="CurlNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="BeCurlDynamic"/>
+        <SubPart PartName="BeCurlStatic"/>
+    </NuGetProduct>
+
+</BuildContext>

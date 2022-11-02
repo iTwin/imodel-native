@@ -1,0 +1,77 @@
+//---------------------------------------------------------------------------------------------
+//  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//  See LICENSE.md in the repository root for full copyright notice.
+//---------------------------------------------------------------------------------------------
+
+namespace BentleyM0200.Dgn.FB;
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct TextStringTransform
+{
+    form3d00:double;
+    form3d01:double;
+    form3d02:double;
+    form3d03:double;
+    form3d10:double;
+    form3d11:double;
+    form3d12:double;
+    form3d13:double;
+    form3d20:double;
+    form3d21:double;
+    form3d22:double;
+    form3d23:double;
+}
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct TextStringRange
+{
+    lowx:double;
+    lowy:double;
+    highx:double;
+    highy:double;
+}
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct TextStringGlyphOrigin
+{
+    x:double;
+    y:double;
+}
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table TextStringStyle
+{
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    fontId:uint;
+    isBold:bool;
+    isItalic:bool;
+    isUnderlined:bool;
+    height:double;
+    widthFactor:double;
+}
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+table TextString
+{
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    text:string;
+    style:TextStringStyle;
+    transform:TextStringTransform;
+    
+    // These are optional cached layout properties
+    range:TextStringRange;
+    glyphIds:[uint]; // 32-bit for future-proofing
+    glyphOrigins:[TextStringGlyphOrigin];
+}

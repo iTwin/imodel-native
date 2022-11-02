@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+   <Part Name="folly" BentleyBuildMakeFile="folly.mke">
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
+        <Bindings>
+            <VendorNotices>Delivery/folly-notice.txt</VendorNotices>
+            <VendorAPI Domain="folly"/>
+            <Libs>Delivery/$(libprefix)iTwinFolly$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iTwinFolly$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- ============ Unit Tests ============ -->
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="folly"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeFacebook" SubPartDirectory="UnitTests/BeFacebook">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeFacebook/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <Product Name="BeFacebook-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeFacebookTests -dTEST_COLLECTION_PRODUCT=BeFacebook-Tests" OnlyPlatforms="x86,x64">
+        <SubProduct ProductName="BeFacebook-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BeFacebookTests/Assemblies/*</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="BeFacebook-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BeFacebook-Gtest -dGTEST_NAME=BeFacebookTests" OnlyPlatforms="x86,x64">
+        <SubProduct ProductName="BeFacebook-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeFacebookTests.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

@@ -1,0 +1,509 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+# Lots of problems in a third-party library that we aren't going to fix. 
+IS_THIRD_PARTY_LIBRARY = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+BENTLEY_LINUXGCC_COMPILE_NoDefaultWarnings = 1
+BUILD_NO_STACK_CHECK=1
+
+# Static code analysis
+SKIP_COMPILER_ANALYZE=1
+
+%include mdl.mki
+
+appName = BeLibJpegTurbo
+CCompPDBName = $(AppName)
+turboJpegSrcDir = $(_MakeFilePath)vendor/
+o = $(OutBuildDir)$(appName)/
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------
+# Include Dir
+#----------------------------------------------------------
+dirToSearch = $(turboJpegSrcDir)
+%include cincapnd.mki
+    
+#----------------------------------------------------------
+#       Evaluate target architecture.
+#----------------------------------------------------------  
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x86" || $(TARGET_PROCESSOR_ARCHITECTURE)=="WinRTx86"
+
+    libJpegturbo_SIMD="x86"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="x64" || $(TARGET_PROCESSOR_ARCHITECTURE)=="WinRTx64"
+
+    libJpegturbo_SIMD="x64"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64")
+
+    # Disable for Android for now since we required Android-ndk-r9-windows-x86_64 to get this fix :
+    #   Fixed GCC 4.7 64-bit Windows assembler crash. (Error: out of memory allocating 4294967280 bytes).
+    #$(TARGET_PROCESSOR_ARCHITECTURE)=="AndroidARM"
+    #$(TARGET_PROCESSOR_ARCHITECTURE)=="AndroidARM7A"
+    #$(TARGET_PROCESSOR_ARCHITECTURE)=="WinRTARM"
+    #$(TARGET_PROCESSOR_ARCHITECTURE)=="iOSARM"
+    libJpegturbo_SIMD="Arm"
+
+%else 
+
+    libJpegturbo_SIMD="None"
+        
+    # Need nasm.exe for these platform.
+    #$(TARGET_PROCESSOR_ARCHITECTURE)=="AndroidX86"
+    #$(TARGET_PROCESSOR_ARCHITECTURE)=="LinuxX86"
+    #$(TARGET_PROCESSOR_ARCHITECTURE)=="iOSX86"
+    
+%endif
+    
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)jcapimin$(oext)                 : $(turboJpegSrcDir)jcapimin.c          ${MultiCompileDepends}
+
+$(o)jcapistd$(oext)                 : $(turboJpegSrcDir)jcapistd.c          ${MultiCompileDepends}
+
+$(o)jccoefct$(oext)                 : $(turboJpegSrcDir)jccoefct.c          ${MultiCompileDepends}
+
+$(o)jccolor$(oext)                  : $(turboJpegSrcDir)jccolor.c           ${MultiCompileDepends}
+
+$(o)jcdctmgr$(oext)                 : $(turboJpegSrcDir)jcdctmgr.c          ${MultiCompileDepends}
+
+$(o)jchuff$(oext)                   : $(turboJpegSrcDir)jchuff.c            ${MultiCompileDepends}
+
+$(o)jcicc$(oext)                    : $(turboJpegSrcDir)jcicc.c             ${MultiCompileDepends}
+
+$(o)jcinit$(oext)                   : $(turboJpegSrcDir)jcinit.c            ${MultiCompileDepends}
+
+$(o)jcmainct$(oext)                 : $(turboJpegSrcDir)jcmainct.c          ${MultiCompileDepends}
+
+$(o)jcmarker$(oext)                 : $(turboJpegSrcDir)jcmarker.c          ${MultiCompileDepends}
+
+$(o)jcmaster$(oext)                 : $(turboJpegSrcDir)jcmaster.c          ${MultiCompileDepends}
+
+$(o)jcomapi$(oext)                  : $(turboJpegSrcDir)jcomapi.c           ${MultiCompileDepends}
+
+$(o)jcparam$(oext)                  : $(turboJpegSrcDir)jcparam.c           ${MultiCompileDepends}
+
+$(o)jcphuff$(oext)                  : $(turboJpegSrcDir)jcphuff.c           ${MultiCompileDepends}
+
+$(o)jcprepct$(oext)                 : $(turboJpegSrcDir)jcprepct.c          ${MultiCompileDepends}
+
+$(o)jcsample$(oext)                 : $(turboJpegSrcDir)jcsample.c          ${MultiCompileDepends}
+
+$(o)jctrans$(oext)                  : $(turboJpegSrcDir)jctrans.c           ${MultiCompileDepends}
+
+$(o)jdapimin$(oext)                 : $(turboJpegSrcDir)jdapimin.c          ${MultiCompileDepends}
+
+$(o)jdapistd$(oext)                 : $(turboJpegSrcDir)jdapistd.c          ${MultiCompileDepends}
+
+$(o)jdatadst$(oext)                 : $(turboJpegSrcDir)jdatadst.c          ${MultiCompileDepends}
+
+$(o)jdatasrc$(oext)                 : $(turboJpegSrcDir)jdatasrc.c          ${MultiCompileDepends}
+
+$(o)jdcoefct$(oext)                 : $(turboJpegSrcDir)jdcoefct.c          ${MultiCompileDepends}
+
+$(o)jdcolor$(oext)                  : $(turboJpegSrcDir)jdcolor.c           ${MultiCompileDepends}
+
+$(o)jddctmgr$(oext)                 : $(turboJpegSrcDir)jddctmgr.c          ${MultiCompileDepends}
+
+$(o)jdhuff$(oext)                   : $(turboJpegSrcDir)jdhuff.c            ${MultiCompileDepends}
+
+$(o)jdicc$(oext)                    : $(turboJpegSrcDir)jdicc.c             ${MultiCompileDepends}
+
+$(o)jdinput$(oext)                  : $(turboJpegSrcDir)jdinput.c           ${MultiCompileDepends}
+
+$(o)jdmainct$(oext)                 : $(turboJpegSrcDir)jdmainct.c          ${MultiCompileDepends}
+
+$(o)jdmarker$(oext)                 : $(turboJpegSrcDir)jdmarker.c          ${MultiCompileDepends}
+
+$(o)jdmaster$(oext)                 : $(turboJpegSrcDir)jdmaster.c          ${MultiCompileDepends}
+
+$(o)jdmerge$(oext)                  : $(turboJpegSrcDir)jdmerge.c           ${MultiCompileDepends}
+
+$(o)jdphuff$(oext)                  : $(turboJpegSrcDir)jdphuff.c           ${MultiCompileDepends}
+
+$(o)jdpostct$(oext)                 : $(turboJpegSrcDir)jdpostct.c          ${MultiCompileDepends}
+
+$(o)jdsample$(oext)                 : $(turboJpegSrcDir)jdsample.c          ${MultiCompileDepends}
+
+$(o)jdtrans$(oext)                  : $(turboJpegSrcDir)jdtrans.c           ${MultiCompileDepends}
+
+$(o)jerror$(oext)                   : $(turboJpegSrcDir)jerror.c            ${MultiCompileDepends}
+
+$(o)jfdctflt$(oext)                 : $(turboJpegSrcDir)jfdctflt.c          ${MultiCompileDepends}
+
+$(o)jfdctfst$(oext)                 : $(turboJpegSrcDir)jfdctfst.c          ${MultiCompileDepends}
+
+$(o)jfdctint$(oext)                 : $(turboJpegSrcDir)jfdctint.c          ${MultiCompileDepends}
+
+$(o)jidctflt$(oext)                 : $(turboJpegSrcDir)jidctflt.c          ${MultiCompileDepends}
+
+$(o)jidctfst$(oext)                 : $(turboJpegSrcDir)jidctfst.c          ${MultiCompileDepends}
+
+$(o)jidctint$(oext)                 : $(turboJpegSrcDir)jidctint.c          ${MultiCompileDepends}
+
+$(o)jidctred$(oext)                 : $(turboJpegSrcDir)jidctred.c          ${MultiCompileDepends}
+
+$(o)jquant1$(oext)                  : $(turboJpegSrcDir)jquant1.c           ${MultiCompileDepends}
+
+$(o)jquant2$(oext)                  : $(turboJpegSrcDir)jquant2.c           ${MultiCompileDepends}
+
+$(o)jutils$(oext)                   : $(turboJpegSrcDir)jutils.c            ${MultiCompileDepends}
+
+$(o)jmemmgr$(oext)                  : $(turboJpegSrcDir)jmemmgr.c           ${MultiCompileDepends}
+
+$(o)jmemnobs$(oext)                 : $(turboJpegSrcDir)jmemnobs.c          ${MultiCompileDepends}
+
+$(o)jaricom$(oext)                  : $(turboJpegSrcDir)jaricom.c           ${MultiCompileDepends}
+
+$(o)jcarith$(oext)                  : $(turboJpegSrcDir)jcarith.c           ${MultiCompileDepends}
+
+$(o)jdarith$(oext)                  : $(turboJpegSrcDir)jdarith.c           ${MultiCompileDepends}
+
+$(o)turbojpeg$(oext)                : $(turboJpegSrcDir)turbojpeg.c         ${MultiCompileDepends}
+
+$(o)transupp$(oext)                 : $(turboJpegSrcDir)transupp.c          ${MultiCompileDepends}
+
+$(o)jdatadst$(oext)                 : $(turboJpegSrcDir)jdatadst-tj.c       ${MultiCompileDepends}
+
+$(o)jdatasrc$(oext)                 : $(turboJpegSrcDir)jdatasrc-tj.c       ${MultiCompileDepends}
+
+$(o)rdbmp$(oext)                    : $(turboJpegSrcDir)rdbmp.c             ${MultiCompileDepends}
+
+$(o)rdppm$(oext)                    : $(turboJpegSrcDir)rdppm.c             ${MultiCompileDepends}
+
+$(o)wrbmp$(oext)                    : $(turboJpegSrcDir)wrbmp.c             ${MultiCompileDepends}
+
+$(o)wrppm$(oext)                    : $(turboJpegSrcDir)wrppm.c             ${MultiCompileDepends}
+
+
+%if $(libJpegturbo_SIMD) == "x86"
+
+    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/i386/jsimd.c ${MultiCompileDepends}
+
+%elif $(libJpegturbo_SIMD)=="x64"
+    
+    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/x86_64/jsimd.c ${MultiCompileDepends}      
+
+%elif $(libJpegturbo_SIMD)=="Arm"
+
+    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/jsimd.c ${MultiCompileDepends}
+
+    $(o)jsimd_neon$(oext) : $(turboJpegSrcDir)simd/jsimd_neon.S ${MultiCompileDepends}
+
+%elif $(libJpegturbo_SIMD)=="None"
+
+    $(o)jsimd_none$(oext) : $(turboJpegSrcDir)jsimd_none.c ${MultiCompileDepends}
+
+%endif
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Build SIMD Assembly files
+#----------------------------------------------------------------------
+%if (("x86" == $(libJpegturbo_SIMD)) || ("x64" == $(libJpegturbo_SIMD)))
+
+    # ***** IMPORTANT *******
+    # The .asm files should be assembled with NASM (Netwide Assembler),
+    # can *not* be assembled with Microsoft's MASM or any compatible assembler (including Borland's Turbo Assembler).
+    # NASM is available from http://www.nasm.us/ or http://nasm.sourceforge.net/
+
+    # the block below could be move to sharedmki\nasm.mki if we need to reuse it.
+    # ----------------------------------------------------------------------
+    nasmBaseDir = $(SrcRoot)bsitools/nasm_2.10/
+
+    %if (("x86" == $(TARGET_PROCESSOR_ARCHITECTURE)) || ("WinRTx86" == $(TARGET_PROCESSOR_ARCHITECTURE)))
+        nasmCmd = $(nasmBaseDir)winX86/nasm.exe
+        nasmOpts=-fwin32 -DWIN32
+        nasmIncs + -I$(turboJpegSrcDir)simd/i386/
+    %elif (("x64" == $(TARGET_PROCESSOR_ARCHITECTURE)) || ("WinRTx64" == $(TARGET_PROCESSOR_ARCHITECTURE)))
+        nasmCmd=$(nasmBaseDir)winX86/nasm.exe
+        nasmOpts=-fwin64 -DWIN64 -D__x86_64__
+        nasmIncs + -I$(turboJpegSrcDir)simd/x86_64/
+    %else
+        %error NASM: Platform not supported. Get it at www.nasm.us.
+    %endif
+
+    %ifnofile $(nasmCmd)
+        %error Cannot find nasmCmd; expecting it at $(nasmCmd) \
+               Did you forget to add <RequiredRepository>Bsitools-Nasm_x.xx</RequiredRepository> to your part dependency?
+    %endif
+
+    .asm.obj:
+        $(msg)
+        $(nasmCmd) $(nasmOpts) $(nasmIncs) $%$*.asm -o$@
+        ~time
+    # ----------------------------------------------------------------------
+
+    nasmIncs + -I$(turboJpegSrcDir)simd/nasm/ -I$(turboJpegSrcDir)win/
+
+    %if ("x64" == $(libJpegturbo_SIMD))
+   
+        asmObjectList =\
+            $(o)jsimdcpu$(oext)         \
+            $(o)jfdctflt-sse$(oext)     \
+            $(o)jccolor-sse2$(oext)     \
+            $(o)jcgray-sse2$(oext)      \
+            $(o)jchuff-sse2$(oext)      \
+            $(o)jcphuff-sse2$(oext)     \
+            $(o)jcsample-sse2$(oext)    \
+            $(o)jdcolor-sse2$(oext)     \
+            $(o)jdmerge-sse2$(oext)     \
+            $(o)jdsample-sse2$(oext)    \
+            $(o)jfdctfst-sse2$(oext)    \
+            $(o)jfdctint-sse2$(oext)    \
+            $(o)jidctflt-sse2$(oext)    \
+            $(o)jidctfst-sse2$(oext)    \
+            $(o)jidctint-sse2$(oext)    \
+            $(o)jidctred-sse2$(oext)    \
+            $(o)jquantf-sse2$(oext)     \
+            $(o)jquanti-sse2$(oext)     \
+            $(o)jccolor-avx2$(oext)     \
+            $(o)jcgray-avx2$(oext)      \
+            $(o)jcsample-avx2$(oext)    \
+            $(o)jdcolor-avx2$(oext)     \
+            $(o)jdmerge-avx2$(oext)     \
+            $(o)jdsample-avx2$(oext)    \
+            $(o)jfdctint-avx2$(oext)    \
+            $(o)jidctint-avx2$(oext)    \
+            $(o)jquanti-avx2$(oext)
+        
+        $(o)jsimdcpu$(oext)                 : $(turboJpegSrcDir)simd/x86_64/jsimdcpu.asm
+
+        $(o)jfdctflt-sse$(oext)             : $(turboJpegSrcDir)simd/x86_64/jfdctflt-sse.asm
+        
+        $(o)jccolor-sse2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jccolor-sse2.asm
+        
+        $(o)jcgray-sse2$(oext)              : $(turboJpegSrcDir)simd/x86_64/jcgray-sse2.asm
+        
+        $(o)jchuff-sse2$(oext)              : $(turboJpegSrcDir)simd/x86_64/jchuff-sse2.asm
+        
+        $(o)jcphuff-sse2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jcphuff-sse2.asm
+        
+        $(o)jcsample-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jcsample-sse2.asm
+        
+        $(o)jdcolor-sse2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jdcolor-sse2.asm
+        
+        $(o)jdmerge-sse2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jdmerge-sse2.asm
+        
+        $(o)jdsample-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jdsample-sse2.asm
+        
+        $(o)jfdctfst-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jfdctfst-sse2.asm
+        
+        $(o)jfdctint-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jfdctint-sse2.asm
+        
+        $(o)jidctflt-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jidctflt-sse2.asm
+        
+        $(o)jidctfst-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jidctfst-sse2.asm
+        
+        $(o)jidctint-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jidctint-sse2.asm
+        
+        $(o)jidctred-sse2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jidctred-sse2.asm
+        
+        $(o)jquantf-sse2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jquantf-sse2.asm
+        
+        $(o)jquanti-sse2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jquanti-sse2.asm
+    
+        $(o)jccolor-avx2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jccolor-avx2.asm
+        
+        $(o)jcgray-avx2$(oext)              : $(turboJpegSrcDir)simd/x86_64/jcgray-avx2.asm
+        
+        $(o)jcsample-avx2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jcsample-avx2.asm
+        
+        $(o)jdcolor-avx2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jdcolor-avx2.asm
+        
+        $(o)jdmerge-avx2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jdmerge-avx2.asm
+        
+        $(o)jdsample-avx2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jdsample-avx2.asm
+        
+        $(o)jfdctint-avx2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jfdctint-avx2.asm
+        
+        $(o)jidctint-avx2$(oext)            : $(turboJpegSrcDir)simd/x86_64/jidctint-avx2.asm
+        
+        $(o)jquanti-avx2$(oext)             : $(turboJpegSrcDir)simd/x86_64/jquanti-avx2.asm
+    
+    %elif ("x86" == $(libJpegturbo_SIMD))
+   
+        asmObjectList =\
+            $(o)jsimdcpu$(oext)         \
+            $(o)jfdctflt-3dn$(oext)     \
+            $(o)jidctflt-3dn$(oext)     \
+            $(o)jquant-3dn$(oext)       \
+            $(o)jccolor-mmx$(oext)      \
+            $(o)jcgray-mmx$(oext)       \
+            $(o)jcsample-mmx$(oext)     \
+            $(o)jdcolor-mmx$(oext)      \
+            $(o)jdmerge-mmx$(oext)      \
+            $(o)jdsample-mmx$(oext)     \
+            $(o)jfdctfst-mmx$(oext)     \
+            $(o)jfdctint-mmx$(oext)     \
+            $(o)jidctfst-mmx$(oext)     \
+            $(o)jidctint-mmx$(oext)     \
+            $(o)jidctred-mmx$(oext)     \
+            $(o)jquant-mmx$(oext)       \
+            $(o)jfdctflt-sse$(oext)     \
+            $(o)jidctflt-sse$(oext)     \
+            $(o)jquant-sse$(oext)       \
+            $(o)jccolor-sse2$(oext)     \
+            $(o)jcgray-sse2$(oext)      \
+            $(o)jchuff-sse2$(oext)      \
+            $(o)jcphuff-sse2$(oext)     \
+            $(o)jcsample-sse2$(oext)    \
+            $(o)jdcolor-sse2$(oext)     \
+            $(o)jdmerge-sse2$(oext)     \
+            $(o)jdsample-sse2$(oext)    \
+            $(o)jfdctfst-sse2$(oext)    \
+            $(o)jfdctint-sse2$(oext)    \
+            $(o)jidctflt-sse2$(oext)    \
+            $(o)jidctfst-sse2$(oext)    \
+            $(o)jidctint-sse2$(oext)    \
+            $(o)jidctred-sse2$(oext)    \
+            $(o)jquantf-sse2$(oext)     \
+            $(o)jquanti-sse2$(oext)     \
+            $(o)jccolor-avx2$(oext)     \
+            $(o)jcgray-avx2$(oext)      \
+            $(o)jcsample-avx2$(oext)    \
+            $(o)jdcolor-avx2$(oext)     \
+            $(o)jdmerge-avx2$(oext)     \
+            $(o)jdsample-avx2$(oext)    \
+            $(o)jfdctint-avx2$(oext)    \
+            $(o)jidctint-avx2$(oext)    \
+            $(o)jquanti-avx2$(oext)
+        
+        $(o)jsimdcpu$(oext)                 : $(turboJpegSrcDir)simd/i386/jsimdcpu.asm
+        
+        $(o)jfdctflt-3dn$(oext)             : $(turboJpegSrcDir)simd/i386/jfdctflt-3dn.asm
+        
+        $(o)jidctflt-3dn$(oext)             : $(turboJpegSrcDir)simd/i386/jidctflt-3dn.asm
+        
+        $(o)jquant-3dn$(oext)               : $(turboJpegSrcDir)simd/i386/jquant-3dn.asm
+        
+        $(o)jccolor-mmx$(oext)              : $(turboJpegSrcDir)simd/i386/jccolor-mmx.asm
+        
+        $(o)jcgray-mmx$(oext)               : $(turboJpegSrcDir)simd/i386/jcgray-mmx.asm
+        
+        $(o)jcsample-mmx$(oext)             : $(turboJpegSrcDir)simd/i386/jcsample-mmx.asm
+        
+        $(o)jdcolor-mmx$(oext)              : $(turboJpegSrcDir)simd/i386/jdcolor-mmx.asm
+        
+        $(o)jdmerge-mmx$(oext)              : $(turboJpegSrcDir)simd/i386/jdmerge-mmx.asm
+        
+        $(o)jdsample-mmx$(oext)             : $(turboJpegSrcDir)simd/i386/jdsample-mmx.asm
+        
+        $(o)jfdctfst-mmx$(oext)             : $(turboJpegSrcDir)simd/i386/jfdctfst-mmx.asm
+        
+        $(o)jfdctint-mmx$(oext)             : $(turboJpegSrcDir)simd/i386/jfdctint-mmx.asm
+        
+        $(o)jidctfst-mmx$(oext)             : $(turboJpegSrcDir)simd/i386/jidctfst-mmx.asm
+        
+        $(o)jidctint-mmx$(oext)             : $(turboJpegSrcDir)simd/i386/jidctint-mmx.asm
+        
+        $(o)jidctred-mmx$(oext)             : $(turboJpegSrcDir)simd/i386/jidctred-mmx.asm
+        
+        $(o)jquant-mmx$(oext)               : $(turboJpegSrcDir)simd/i386/jquant-mmx.asm
+        
+        $(o)jfdctflt-sse$(oext)             : $(turboJpegSrcDir)simd/i386/jfdctflt-sse.asm
+        
+        $(o)jidctflt-sse$(oext)             : $(turboJpegSrcDir)simd/i386/jidctflt-sse.asm
+        
+        $(o)jquant-sse$(oext)               : $(turboJpegSrcDir)simd/i386/jquant-sse.asm
+        
+        $(o)jccolor-sse2$(oext)             : $(turboJpegSrcDir)simd/i386/jccolor-sse2.asm
+        
+        $(o)jcgray-sse2$(oext)              : $(turboJpegSrcDir)simd/i386/jcgray-sse2.asm
+        
+        $(o)jchuff-sse2$(oext)              : $(turboJpegSrcDir)simd/i386/jchuff-sse2.asm
+        
+        $(o)jcphuff-sse2$(oext)             : $(turboJpegSrcDir)simd/i386/jcphuff-sse2.asm
+        
+        $(o)jcsample-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jcsample-sse2.asm
+        
+        $(o)jdcolor-sse2$(oext)             : $(turboJpegSrcDir)simd/i386/jdcolor-sse2.asm
+        
+        $(o)jdmerge-sse2$(oext)             : $(turboJpegSrcDir)simd/i386/jdmerge-sse2.asm
+        
+        $(o)jdsample-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jdsample-sse2.asm
+        
+        $(o)jfdctfst-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jfdctfst-sse2.asm
+        
+        $(o)jfdctint-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jfdctint-sse2.asm
+        
+        $(o)jidctflt-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jidctflt-sse2.asm
+        
+        $(o)jidctfst-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jidctfst-sse2.asm
+        
+        $(o)jidctint-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jidctint-sse2.asm
+        
+        $(o)jidctred-sse2$(oext)            : $(turboJpegSrcDir)simd/i386/jidctred-sse2.asm
+        
+        $(o)jquantf-sse2$(oext)             : $(turboJpegSrcDir)simd/i386/jquantf-sse2.asm
+        
+        $(o)jquanti-sse2$(oext)             : $(turboJpegSrcDir)simd/i386/jquanti-sse2.asm
+        
+        $(o)jccolor-avx2$(oext)             : $(turboJpegSrcDir)simd/i386/jccolor-avx2.asm
+        
+        $(o)jcgray-avx2$(oext)              : $(turboJpegSrcDir)simd/i386/jcgray-avx2.asm
+        
+        $(o)jcsample-avx2$(oext)            : $(turboJpegSrcDir)simd/i386/jcsample-avx2.asm
+        
+        $(o)jdcolor-avx2$(oext)             : $(turboJpegSrcDir)simd/i386/jdcolor-avx2.asm
+        
+        $(o)jdmerge-avx2$(oext)             : $(turboJpegSrcDir)simd/i386/jdmerge-avx2.asm
+        
+        $(o)jdsample-avx2$(oext)            : $(turboJpegSrcDir)simd/i386/jdsample-avx2.asm
+        
+        $(o)jfdctint-avx2$(oext)            : $(turboJpegSrcDir)simd/i386/jfdctint-avx2.asm
+        
+        $(o)jidctint-avx2$(oext)            : $(turboJpegSrcDir)simd/i386/jidctint-avx2.asm
+        
+        $(o)jquanti-avx2$(oext)             : $(turboJpegSrcDir)simd/i386/jquanti-avx2.asm
+
+    %endif
+
+%endif
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+LIB_NAME = $(appName)
+LIB_DEST = $(o)
+LIB_OBJS = $(MultiCompileObjectList) $(asmObjectList)
+LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+
+%include creatlib.mki
+
+CreateBuildContext:
+    ~mkdir $(BuildContext)VendorAPI/libjpeg-turbo
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/turbojpeg.h=$(turboJpegSrcDir)turbojpeg.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jpeglib.h=$(turboJpegSrcDir)jpeglib.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jconfig.h=$(turboJpegSrcDir)jconfig.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jmorecfg.h=$(turboJpegSrcDir)jmorecfg.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jerror.h=$(turboJpegSrcDir)jerror.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/win/jconfig.h.in=$(turboJpegSrcDir)win/jconfig.h.in"
+
+$(BuildContext)Delivery/jpeg-turbo-license.txt : $(turboJpegSrcDir)LICENSE.md
+    $(LinkFirstDepToFirstTarget)
+
+# If Windows platform, need to add nasm notice.
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x86" || $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
+    $(BuildContext)Delivery/nasm-license.txt : $(nasmBaseDir)nasm-notice.txt
+        $(LinkFirstDepToFirstTarget)
+%endif

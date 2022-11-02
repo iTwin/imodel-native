@@ -1,0 +1,25 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: StandardSchemas.delivery.mki $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# Specify the exact name of each schema that is delivered.  This allows makefiles to use this information instead of hardcoding in a version number
+
+EditorCustomAttributesSchemaName = EditorCustomAttributes.01.03.ecschema.xml
+StandardCustomAttributesSchemaName = Bentley_Standard_CustomAttributes.01.13.ecschema.xml
+StandardClassesSchemaName = Bentley_Standard_Classes.01.01.ecschema.xml
+ECSchemaMapSchemaName = Bentley_ECSchemaMap.01.00.ecschema.xml
+CommonClassesSchemaName = Bentley_Common_Classes.01.01.ecschema.xml
+Dimension_SchemaName = Dimension_Schema.01.00.ecschema.xml
+iip_mdbSchemaName = iip_mdb_customAttributes.01.00.ecschema.xml
+KindOfQuantitySchemaName = KindOfQuantity_Schema.01.01.ecschema.xml
+rdlCustomAttributesSchemaName = rdl_customAttributes.01.00.ecschema.xml
+SIUnitSystemDefaultsSchemaName = SIUnitSystemDefaults.01.00.ecschema.xml
+Unit_AttributesSchemaName = Unit_Attributes.01.00.ecschema.xml
+Units_SchemaName = Units_Schema.01.00.ecschema.xml
+USCustomaryUnitSystemDefaultsSchemaName = USCustomaryUnitSystemDefaults.01.00.ecschema.xml
+ECSchemaUpgradeSchemaName = ECv3ConversionAttributes.01.01.ecschema.xml
+ECDbMapSchemaName = ECDbMap.01.00.ecschema.xml

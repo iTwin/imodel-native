@@ -1,0 +1,92 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include    mdl.mki
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+
+vuPublicApi = $(GeomPublicAPISrc)Vu/
+
+#-------------------------------------------------
+# Make Directories
+#-------------------------------------------------
+always:
+    ~mkdir $(vuObj)
+
+%include $(SrcRoot)bsicommon/sharedmki/DefinePublicApiIncludes.mki
+
+dirToSearch = $(vu_include)
+%include cincapnd.mki
+
+nameToDefine=BSIVUDLLIMPEX_INTERNAL
+%include cdefapnd.mki
+
+#-----------------------------------------------------------------------
+# Bmake options:
+#  -dfdf to regenerate .fdf files from newer sources
+#  -ddls to regenerate bsivu.dls from sources (always)
+#-----------------------------------------------------------------------
+%include $(vuBuildInc)vuSpecials.mki
+
+#-----------------------------------------------------------------------
+# Common dependency lists
+#-----------------------------------------------------------------------
+vuObjects = $(vuObj)vuinit$(oExt)
+
+OUT_DIR = $(vuObj)
+OUT_EXT = $(oExt)
+OTHER_DEPENDENCIES = $(vuPublicApi)VuApi.h
+
+FileTypeControl = $(FileTypeControlCPP)
+#################################################%include $(vuBuildInc)vuSources.mki
+
+FileTypeControl =
+
+
+OBJ_DIR = $(vuObj)
+#########################################################%include $(vuBuildInc)vuObjects.mki
+
+$(vuObj)vuinit$(oExt)   : $(_MakeFilePath)vuinit.c
+
+#-----------------------------------------------------------------------
+# Set up to indicate that we are rights-compliant.
+#-----------------------------------------------------------------------
+rightsCompliantAppsFile     = $(_MakeFilePath)rightscompliant.txt
+nonRightsCompliantAppsFile  = $(_MakeFilePath)nonrightscompliant.txt
+rightsNeutralFile           = $(_MakeFilePath)rightsNeutralLibraries.txt
+
+#-----------------------------------------------------------------------
+# link
+#-----------------------------------------------------------------------
+DLM_NAME            = bsivu
+DLM_LIBDEF_SRC      = $(_MakeFilePath)
+DLM_OBJECT_DEST     = $(vuObj)
+DLM_DEST            = $(vu_bin)
+DLM_DLO_DEST        = $(vu_lib)
+DLM_EXPORT_DEST     = $(vu_lib)
+DLM_EXP_DEST        = $(vuObj)
+DLM_OBJECT_FILES    = $(vuObjects)
+
+DLM_EXPORT_OBJS     = $(DLM_OBJECT_FILES)
+
+DLM_LIBRARY_FILES   = $(baseGeom_lib)bsibasegeom.lib
+DLM_NOENTRY         = 1
+dlmspecCmd          + -i$(_MakeFilePath)
+DLM_DLS_DEPENDENCIES    = $(_MakeFilePath)bsivu.dli
+DLM_SYMB_DEST           = $(vu_symbols)
+
+%include    dlmlink.mki
+
+
+%if defined (PRG) || defined (BUILD_DOC)
+
+# build all geomlibs documentation (always start from scratch, since html help sometimes gets confused)
+%message Documentation build turned off for Beijing until someone can work on it.
+#    always:
+#        bmake +a $(GEOMLIBS_ROOT)vu/doc/build/bsivudoc/bsivudoc.mke
+    always:
+        > $(OutGeomLibs)delivery/vu/doc/bsivudoc.chm
+        Documentation build turned off for Beijing until someone can work on it.
+        <
+
+%endif

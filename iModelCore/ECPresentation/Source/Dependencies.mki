@@ -1,0 +1,89 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+ECPresentationPublicHeaders     = $(PublicApiDirectory)ECPresentation.h                                   \
+                                  $(PublicApiDirectory)ECPresentationTypes.h                              \
+                                  $(PublicApiDirectory)ExtendedData.h                                     \
+                                  $(PublicApiDirectory)NavNodeKey.h                                       \
+                                  $(PublicApiDirectory)NavNode.h                                          \
+								  $(PublicApiDirectory)Content.h                                          \
+                                  $(PublicApiDirectory)DataSource.h                                       \
+                                  $(PublicApiDirectory)IECPresentationSerializer.h                        \
+                                  $(PublicApiDirectory)DefaultECPresentationSerializer.h                  \
+                                  $(PublicApiDirectory)Connection.h                                       \
+                                  $(PublicApiDirectory)Update.h                                           \
+                                  $(PublicApiDirectory)ContentFieldEditors.h                              \
+                                  $(PublicApiDirectory)KeySet.h                                           \
+                                  $(PublicApiDirectory)LabelDefinition.h                                  \
+                                  $(PublicApiDirectory)Iterators.h                                        \
+                                  $(PublicApiDirectory)Diagnostics.h                                      \
+                                  $(PublicApiDirectory)ECPresentationManager.h                            \
+                                  $(PublicApiDirectory)ECPresentationManagerRequestParams.h               \
+                                  $(PublicApiDirectory)ECPresentationErrors.h                             \
+                                  $(PublicApiDirectory)IRulesPreprocessor.h                               \
+                                  $(PublicApiDirectory)RuleSetLocater.h                                   \
+                                  $(PublicApiDirectory)UserSettings.h                                     \
+                                  $(PublicApiDirectory)RulesetVariables.h                                 \
+                                  $(PublicApiDirectory)ECInstanceChangeEvents.h                           \
+                                  $(PublicApiDirectory)IUiStateProvider.h
+
+ECPresentationInternalHeaders   = $(SourceDirectory)Content/ContentCache.h                                \
+                                  $(SourceDirectory)Content/ContentClassesLocater.h                       \
+                                  $(SourceDirectory)Content/ContentHelpers.h                              \
+                                  $(SourceDirectory)Content/ContentItemBuilder.h                          \
+                                  $(SourceDirectory)Content/ContentProviders.h                            \
+                                  $(SourceDirectory)Content/ContentSpecificationsHandler.h                \
+                                  $(SourceDirectory)Content/ContentQuery.h                                \
+                                  $(SourceDirectory)Content/ContentQueryBuilder.h                         \
+                                  $(SourceDirectory)Content/ContentQueryContracts.h                       \
+                                  $(SourceDirectory)Content/ContentQueryResultsReader.h                   \
+                                  $(SourceDirectory)Content/PropertyInfoStore.h                           \
+                                  $(SourceDirectory)Hierarchies/DataSourceInfo.h                          \
+                                  $(SourceDirectory)Hierarchies/HierarchiesComparer.h                     \
+                                  $(SourceDirectory)Hierarchies/NavigationQuery.h                         \
+                                  $(SourceDirectory)Hierarchies/NavigationQueryBuilder.h                  \
+                                  $(SourceDirectory)Hierarchies/NavigationQueryContracts.h                \
+                                  $(SourceDirectory)Hierarchies/NavigationQueryResultsReader.h            \
+                                  $(SourceDirectory)Hierarchies/NavNodeProviders.h                        \
+                                  $(SourceDirectory)Hierarchies/NavNodesCache.h                           \
+                                  $(SourceDirectory)Hierarchies/NavNodesCacheHelpers.h                    \
+                                  $(SourceDirectory)Hierarchies/NavNodesCacheWrapper.h                    \
+                                  $(SourceDirectory)Hierarchies/NavNodesDataSource.h                      \
+                                  $(SourceDirectory)Hierarchies/NavNodesHelper.h                          \
+                                  $(SourceDirectory)Hierarchies/NodePathsHelper.h                         \
+                                  $(SourceDirectory)Shared/ECExpressions/ECExpressionContextsProvider.h   \
+                                  $(SourceDirectory)Shared/ECExpressions/ECExpressionOptimizer.h          \
+                                  $(SourceDirectory)Shared/Queries/CustomFunctions.h                      \
+                                  $(SourceDirectory)Shared/Queries/PresentationQuery.h                    \
+                                  $(SourceDirectory)Shared/Queries/QueryBuilder.h                         \
+                                  $(SourceDirectory)Shared/Queries/QueryBuilderHelpers.h                  \
+                                  $(SourceDirectory)Shared/Queries/QueryBuilding.h                        \
+                                  $(SourceDirectory)Shared/Queries/QueryContracts.h                       \
+                                  $(SourceDirectory)Shared/Queries/QueryExecutor.h                        \
+                                  $(SourceDirectory)Shared/CustomizationHelper.h                          \
+                                  $(SourceDirectory)Shared/NodeLabelCalculator.h                          \
+                                  $(SourceDirectory)Shared/ECSchemaHelper.h                               \
+                                  $(SourceDirectory)Shared/ExtendedData.h                                 \
+                                  $(SourceDirectory)Shared/ImageHelper.h                                  \
+                                  $(SourceDirectory)Shared/NavNodeLocater.h                               \
+                                  $(SourceDirectory)Shared/RulesDrivenProviderContext.h                   \
+                                  $(SourceDirectory)Shared/RulesPreprocessor.h                            \
+                                  $(SourceDirectory)Shared/UsedClassesListener.h                          \
+                                  $(SourceDirectory)Shared/ValueHelpers.h                                 \
+                                  $(SourceDirectory)PresentationManagerImpl.h                             \
+                                  $(SourceDirectory)RulesEngineTypes.h                                    \
+                                  $(SourceDirectory)TaskScheduler.h                                       \
+                                  $(SourceDirectory)UpdateHandler.h
+
+ECPresentationHeaders           = $(ECPresentationPublicHeaders) $(ECPresentationInternalHeaders)
+
+ECPresentationMkis              = $(SourceDirectory)CompileOptions.mki          \
+                                  $(SourceDirectory)Dependencies.mki            \
+                                  $(SourceDirectory)ECPresentation.mki
+
+ECPresentationDependencies      = $(ECPresentationHeaders) $(ECPresentationMkis)
+
+ECPresentationMakefiles         + $(ECPresentationMkis)
+
+%include $(SourceDirectory)Rules/Dependencies.mki

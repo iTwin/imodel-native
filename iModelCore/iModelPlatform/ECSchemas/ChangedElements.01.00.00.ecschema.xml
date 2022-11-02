@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="ChangedElements" alias="chems" version="01.00.05" displayLabel="Changed Elements" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/> 
+
+    <ECEntityClass typeName="Changeset" displayLabel="Changeset" modifier="Sealed">
+        <ECProperty propertyName="ExtendedProperties" typeName="string" extendedTypeName="Json" />
+        <ECProperty propertyName="ChangesetId" typeName="string" />
+        <ECProperty propertyName="ParentId" typeName="string" />
+        <ECProperty propertyName="PushDate" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty> 
+    </ECEntityClass>
+
+    <ECEnumeration typeName="OpCode" backingTypeName="int" isStrict="true">
+        <ECEnumerator name="Insert" value="1" displayLabel="Insert"/>
+        <ECEnumerator name="Update" value="2" displayLabel="Update"/>
+        <ECEnumerator name="Delete" value="4" displayLabel="Delete"/>
+    </ECEnumeration>
+
+    <ECStructClass typeName="InstanceKey" displayLabel="InstanceKey" modifier="Sealed">
+        <ECProperty propertyName="Id" typeName="long" extendedTypeName="Id"/>
+        <ECProperty propertyName="ClassId" typeName="long" extendedTypeName="Id"/>
+    </ECStructClass>
+
+    <ECEntityClass typeName="InstanceChange" displayLabel="Instance Change"  modifier="Sealed" description="Represents an instance change in a change summary">
+        <ECNavigationProperty propertyName="Changeset" relationshipName="ChangesetContainsElementChanges" direction="backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty> 
+        <ECStructProperty propertyName="ChangedInstance" typeName="InstanceKey" description="Key of the change instance"/>
+        <ECProperty propertyName="OpCode" typeName="OpCode"/>
+        <ECProperty propertyName="ModelId" typeName="long" extendedTypeName="Id" />
+        <ECStructProperty propertyName="Parent" typeName="InstanceKey" description="Key of the parent of the instance" />
+        <ECProperty propertyName="BBoxLow" typeName="point3d" displayLabel="Bounding Box Low" description="The 'low' point of the element-aligned bounding box of this bis:Element." />
+        <ECProperty propertyName="BBoxHigh" typeName="point3d" displayLabel="Bounding Box High" description="The 'high' point of the element-aligned bounding box of this bis:Element." />
+        <ECProperty propertyName="ChangesType" typeName="int" />
+        <ECArrayProperty propertyName="Properties" typeName="string" minOccurs="0" maxOccurs="unbounded" description="An array of names of properties that changed in this element"/>
+        <ECArrayProperty propertyName="PropertyOldChecksums" typeName="int" minOccurs="0" maxOccurs="unbounded" description="Checksums for old property values" />
+        <ECArrayProperty propertyName="PropertyNewChecksums" typeName="int" minOccurs="0" maxOccurs="unbounded" description="Checksums for new property values" />
+    </ECEntityClass>
+    
+    <ECRelationshipClass typeName="ChangesetContainsElementChanges" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="Changeset"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
+            <Class class="InstanceChange"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="ModelChange" displayLabel="Model Change"  modifier="Sealed" description="Represents a model change in a change summary">
+        <ECNavigationProperty propertyName="Changeset" relationshipName="ChangesetContainsModelChanges" direction="backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty> 
+        <ECProperty propertyName="ModelId" typeName="long" extendedTypeName="Id" />
+        <ECProperty propertyName="BBoxLow" typeName="point3d" displayLabel="Bounding Box Low" description="The 'low' point of the element-aligned bounding box of the elements that changed in the model." />
+        <ECProperty propertyName="BBoxHigh" typeName="point3d" displayLabel="Bounding Box High" description="The 'high' point of the element-aligned bounding box of the elements that changed in the model." />
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ChangesetContainsModelChanges" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="Changeset"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
+            <Class class="ModelChange"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

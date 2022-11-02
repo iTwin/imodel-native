@@ -1,0 +1,22 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+%include $(SharedMki)stdversion.mki
+
+OutDgnPlatformBuild             = $(OutBuildDir)DgnPlatform/
+
+#--------------------------------------------------------------------------------------------------
+#  Update the readme file with the proper version number
+#--------------------------------------------------------------------------------------------------
+readmeDir      = ${OutDgnPlatformBuild}/
+VERSION_STRING = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+
+$(readmeDir)readme.htm : $(baseDir)readme.htm
+    >$@
+        $[@subst "REL_V.MAJ_V.MIN_V.SUBMIN_V", $(VERSION_STRING), $[@readfile $(baseDir)readme.htm]]
+    >
+
+always:
+   ~linkfile "$(BuildContext)Delivery/readme.htm=$(readmeDir)readme.htm"

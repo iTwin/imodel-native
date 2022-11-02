@@ -1,0 +1,82 @@
+#---------------------------------------------------------------------------------------------^M
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.^M
+#  See LICENSE.md in the repository root for full copyright notice.^M
+#---------------------------------------------------------------------------------------------^M
+name: ecpresentation-native-library-stress-tests-$(Date:yyyyMMdd)
+
+trigger: none
+
+pr: none
+
+schedules:
+- cron: "0 4 * * *"
+  displayName: Nightly run
+  branches:
+    include:
+    - OpenSourceFork
+  always: true
+
+jobs:
+  - job:
+    displayName: Pull, Build & Run on Windows
+
+    pool:
+      name: iModelTechCI
+      demands:
+      - Agent.OS -equals Windows_NT
+
+    variables:
+      PY_EXE: python
+      BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
+      BB_OUT_ROOT: $(Build.BinariesDirectory)
+      BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
+
+    steps:
+    - template: ../../../../build/templates/prebuild.yml
+
+    - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
+      displayName: Pull
+      env:
+        AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+    - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) build --tmrbuild --noprompt
+      displayName: Build
+      env:
+        SIGNING_TOKEN_VALUE: $(SIGNING_TOKEN_VALUE)
+
+    - script: '$(BB_OUT_ROOT)/Winx64/Product/ECPresentation-GTest-Stress/ECPresentationTest-Stress.exe --timeout=-1 --gtest_repeat=1000 --gtest_filter=TaskManagerStressTests*'
+      displayName: Run
+      workingDirectory: $(BB_OUT_ROOT)/Winx64/Product/ECPresentation-GTest-Stress
+      timeoutInMinutes: 60
+
+  - job:
+    displayName: Pull, Build & Run on Linux
+
+    pool:
+      name: iModelTechCI
+      demands:
+      - Agent.OS -equals Linux
+
+    variables:
+      PY_EXE: python3
+      BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
+      BB_OUT_ROOT: $(Build.BinariesDirectory)
+      BB_ARGS: -a LinuxX64 -s iModelJsNodeAddon.Dev -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
+
+    steps:
+    - template: ../../../../build/templates/prebuild.yml
+
+    - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
+      displayName: Pull
+      env:
+        AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+    - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) build --tmrbuild --noprompt
+      displayName: Build
+      env:
+        SIGNING_TOKEN_VALUE: $(SIGNING_TOKEN_VALUE)
+
+    - script: '$(BB_OUT_ROOT)/LinuxX64/Product/ECPresentation-GTest-Stress/ECPresentationTest-Stress --timeout=-1 --gtest_repeat=1000 --gtest_filter=TaskManagerStressTests*'
+      displayName: Run
+      workingDirectory: $(BB_OUT_ROOT)/LinuxX64/Product/ECPresentation-GTest-Stress
+      timeoutInMinutes: 60

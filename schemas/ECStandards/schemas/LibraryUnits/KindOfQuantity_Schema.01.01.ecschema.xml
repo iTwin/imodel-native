@@ -1,0 +1,2918 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="KindOfQuantity_Schema" nameSpacePrefix="koqschema" version="1.1" description="Units Framework KindOfQuantity descriptions schema" displayLabel="KindOfQuantity Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+    <ECCustomAttributes>
+        <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <Hidden>True</Hidden>
+        </DisplayOptions>
+    </ECCustomAttributes>
+    <ECClass typeName="ABSORBED_DOSE" description="For any ionising radiation, the mean energy imparted to an element of irradiated matter divided by the mass of this element" displayLabel="ABSORBED DOSE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ABSORBED DOSE</DisplayName>
+                <Description>"For any ionising radiation, the mean energy imparted to an element of irradiated matter divided by the mass of this element"</Description>
+                <Dimension>L2_PER_T2</Dimension>
+                <DimensionalDescription>m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ABSORBED_DOSE_RATE" description="D = dD/dt" displayLabel="ABSORBED DOSE RATE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ABSORBED DOSE RATE</DisplayName>
+                <Description>D = dD/dt</Description>
+                <Dimension>L2_PER_T3</Dimension>
+                <DimensionalDescription>m^2*s^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACOUSTIC_IMPEDANCE" description="At a surface, the complex representation of sound pressure divided by the complex representation of volume flow rate" displayLabel="ACOUSTIC IMPEDANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ACOUSTIC IMPEDANCE</DisplayName>
+                <Description>"At a surface, the complex representation of sound pressure divided by the complex representation of volume flow rate"</Description>
+                <Dimension>M_PER_L4_T</Dimension>
+                <DimensionalDescription>kg*m^-4*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AIR_CHANGE_RATE" description="The frequency at which air within a room is being changed" displayLabel="Air Change Rate" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Air Change Rate</DisplayName>
+                <Description>The frequency at which air within a room is being changed</Description>
+                <Dimension>ONE_PER_T</Dimension>
+                <DimensionalDescription>s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FLOW</DisplayName>
+                <Description />
+                <Dimension>L3_PER_T</Dimension>
+                <DimensionalDescription>m^3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_PER_CAPITA" isDomainClass="False">
+        <BaseClass>FLOW</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FLOW_PER_CAPITA</DisplayName>
+                <Description />
+                <Dimension>L3_PER_T</Dimension>
+                <DimensionalDescription>m^3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AIR_FLOW_PER_CAPITA" displayLabel="Air Flow per Capita" isDomainClass="False">
+        <BaseClass>FLOW_PER_CAPITA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Air flow per Capita</DisplayName>
+                <Description>Volume of air over time per person</Description>
+                <Dimension>L3_PER_T</Dimension>
+                <DimensionalDescription>m^3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_PER_AREA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FLOW_PER_AREA</DisplayName>
+                <Description>l/(s*m^2)</Description>
+                <Dimension>L_PER_T</Dimension>
+                <DimensionalDescription>m*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_RATE" description="flow per area" displayLabel="Flow Rate" isDomainClass="False">
+        <BaseClass>FLOW_PER_AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Flow Rate</DisplayName>
+                <Description>flow per area (l/(s*m^2))</Description>
+                <DimensionalDescription>m*s^-1</DimensionalDescription>
+                <Dimension>L_PER_T</Dimension>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AIR_FLOW_RATE" description="flow per area of air" displayLabel="Air Flow Rate" isDomainClass="False">
+        <BaseClass>FLOW_RATE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Air Flow Rate</DisplayName>
+                <Description>Air flow per area (l/s*m^2)</Description>
+                <DimensionalDescription>m*s^-1</DimensionalDescription>
+                <Dimension>L_PER_T</Dimension>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AMOUNT_OF_SUBSTANCE" displayLabel="AMOUNT OF SUBSTANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AMOUNT OF SUBSTANCE</DisplayName>
+                <Description />
+                <Dimension>MOL</Dimension>
+                <DimensionalDescription>mol</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGLE_PER_TIME" description="An angular velocity that is the angular movement per a unit of time." displayLabel="ANGLE PER TIME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ANGLE PER TIME</DisplayName>
+                <Description>An angular velocity that is the angular movement per a unit of time.</Description>
+                <Dimension>PA_PER_T</Dimension>
+                <DimensionalDescription>s^-1*rad</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGULAR_ACCELERATION" description="Rate of change of angle with time" displayLabel="ANGULAR ACCELERATION" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ANGULAR ACCELERATION</DisplayName>
+                <Description>Rate of change of angle with time</Description>
+                <Dimension>PA_PER_T2</Dimension>
+                <DimensionalDescription>s^-2*rad</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGULAR_CROSS_SECTION" description="Cross-section for ejecting or scattering a particle into an element of solid angel, divided by this element.  sigma = integral (sigma,omega domega)" displayLabel="ANGULAR CROSS-SECTION" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ANGULAR CROSS-SECTION</DisplayName>
+                <Description>"Cross-section for ejecting or scattering a particle into an element of solid angel, divided by this element.  sigma = integral (sigma,omega domega)"</Description>
+                <Dimension>L2_PER_SA</Dimension>
+                <DimensionalDescription>m^2*sr^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGULAR_FREQUENCY" description="omega = 2.pi.f  where f is the frequency" displayLabel="ANGULAR FREQUENCY" isDomainClass="False">
+        <BaseClass>ANGLE_PER_TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ANGULAR FREQUENCY</DisplayName>
+                <Description>omega = 2.pi.f  where f is the frequency</Description>
+                <Dimension>PA_PER_T</Dimension>
+                <DimensionalDescription>s^-1*rad</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOMENT_OF_MOMENTUM" description="The moment of momentum of a particle about a point is equal to the vector from this point to the particle and the momentum of the particle L = r x p" displayLabel="MOMENT OF MOMENTUM" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOMENT OF MOMENTUM</DisplayName>
+                <Description>The moment of momentum of a particle about a point is equal to the vector from this point to the particle and the momentum of the particle L = r x p</Description>
+                <Dimension>M_L2_PER_T</Dimension>
+                <DimensionalDescription>kg*m^2*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGULAR_IMPULSE" description="H = integral(M.dt)" displayLabel="ANGULAR IMPULSE" isDomainClass="False">
+        <BaseClass>MOMENT_OF_MOMENTUM</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ANGULAR IMPULSE</DisplayName>
+                <Description>H = integral(M.dt)</Description>
+                <Dimension>M_L2_PER_T</Dimension>
+                <DimensionalDescription>kg*m^2*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ANGULAR_REPETENCY" description="k = 2.pi/lambda  where lambda is the wavelength" displayLabel="ANGULAR REPETENCY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ANGULAR REPETENCY</DisplayName>
+                <Description>k = 2.pi/lambda  where lambda is the wavelength</Description>
+                <Dimension>PA_PER_L</Dimension>
+                <DimensionalDescription>m^-1*rad</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POWER" description="Rate of energy transfer" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>POWER</DisplayName>
+                <Description>Rate of energy transfer</Description>
+                <Dimension>M_L2_PER_T3</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="APPARENT_POWER" description="S = U.I" displayLabel="APPARENT POWER" isDomainClass="False">
+        <BaseClass>POWER</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>APPARENT POWER</DisplayName>
+                <Description>S = U.I</Description>
+                <Dimension>M_L2_PER_T3</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA" description="A = double integral (dx.dy)  where x and y are cartesian coordinates" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA</DisplayName>
+                <Description>A = double integral (dx.dy)  where x and y are cartesian coordinates</Description>
+                <Dimension>L2</Dimension>
+                <DimensionalDescription>m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>STRESS</DisplayName>
+                <Description />
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_FORCE" isDomainClass="False">
+        <BaseClass>STRESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA FORCE</DisplayName>
+                <Description />
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2 </DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_LARGE" displayLabel="AREA LARGE" isDomainClass="False">
+        <BaseClass>AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA LARGE</DisplayName>
+                <Description />
+                <Dimension>L2</Dimension>
+                <DimensionalDescription>m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_MEDIUM" displayLabel="AREA MEDIUM" isDomainClass="False">
+        <BaseClass>AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA MEDIUM</DisplayName>
+                <Description />
+                <Dimension>L2</Dimension>
+                <DimensionalDescription>m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_MOMENT" displayLabel="AREA MOMENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA MOMENT</DisplayName>
+                <Description>Moment of force per unit area</Description>
+                <Dimension>M_PER_T2</Dimension>
+                <DimensionalDescription>kg*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SECOND_MOMENT_OF_AREA" description="The second axial moment of area of a plane area (section) about an axis in its plane is the sum (integral) of the products of its elements of area and the squares of their distance from the axis. (I =Integral(r*r)dA, where r is  the distance normal from the axis to the area element dA.)" displayLabel="SECOND MOMENT OF AREA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SECOND MOMENT OF AREA</DisplayName>
+                <Description>"The second axial moment of area of a plane area (section) about an axis in its plane is the sum (integral) of the products of its elements of area and the squares of their distance from the axis. (I =Integral(r*r)dA, where r is  the distance normal from the axis to the area element dA.)"</Description>
+                <Dimension>L4</Dimension>
+                <DimensionalDescription>m^4</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_MOMENT_OF_INERTIA" displayLabel="AREA MOMENT OF INERTIA" isDomainClass="False">
+        <BaseClass>SECOND_MOMENT_OF_AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA MOMENT OF INERTIA</DisplayName>
+                <Description />
+                <Dimension>L4</Dimension>
+                <DimensionalDescription>m^4</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIMENSIONLESS" description="A ratio that is a proportion between two rateable values." isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DIMENSIONLESS</DisplayName>
+                <Description>A ratio that is a proportion between two rateable values.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RATIO" description="A measure that is the relation between two similar magnitudes in respect to the number of times the first contains the second, integrally or fractionally." isDomainClass="False">
+        <BaseClass>DIMENSIONLESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RATIO</DisplayName>
+                <Description>"A measure that is the relation between two similar magnitudes in respect to the number of times the first contains the second, integrally or fractionally."</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_PER_AREA" description="A ratio of an area concept to another area concept." displayLabel="AREA PER AREA" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA PER AREA</DisplayName>
+                <Description>A ratio of an area concept to another area concept.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_SMALL" displayLabel="AREA SMALL" isDomainClass="False">
+        <BaseClass>AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA SMALL</DisplayName>
+                <Description />
+                <Dimension>L2</Dimension>
+                <DimensionalDescription>m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_SPRING_CONSTANT" displayLabel="AREA SPRING CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREA SPRING CONSTANT</DisplayName>
+                <Description />
+                <Dimension>M_PER_L2_T2</Dimension>
+                <DimensionalDescription>kg*m^-2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREIC_CHARGE" description="Charge divided by surface area" displayLabel="AREIC CHARGE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>AREIC CHARGE</DisplayName>
+                <Description>Charge divided by surface area</Description>
+                <Dimension>T_EC_PER_L2</Dimension>
+                <DimensionalDescription>m^-2*s*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASS</DisplayName>
+                <Description />
+                <Dimension>M</Dimension>
+                <DimensionalDescription>kg</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ATOMIC_WEIGHT" description="Mass per atom of an element to 1/12 of the mass of an atom of the nuclide 12 C" displayLabel="ATOMIC WEIGHT" isDomainClass="False">
+        <BaseClass>MASS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ATOMIC WEIGHT</DisplayName>
+                <Description>Mass per atom of an element to 1/12 of the mass of an atom of the nuclide 12 C</Description>
+                <Dimension>M</Dimension>
+                <DimensionalDescription>kg</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOMENT_OF_FORCE" description="The moment of force about a point is equal to the vector product of any radius vector from this point to a point on the line of action of the force, and the force M = r x F" displayLabel="MOMENT OF FORCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOMENT OF FORCE</DisplayName>
+                <Description>"The moment of force about a point is equal to the vector product of any radius vector from this point to a point on the line of action of the force, and the force M = r x F"</Description>
+                <Dimension>M_L2_PER_T2</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BENDING_MOMENT" displayLabel="BENDING MOMENT" isDomainClass="False">
+        <BaseClass>MOMENT_OF_FORCE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>BENDING MOMENT</DisplayName>
+                <Description />
+                <Dimension>M_L2_PER_T2</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUCKLING_RESISTANCE" description="Resistance against buckling." displayLabel="BUCKLING RESISTANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>BUCKLING RESISTANCE</DisplayName>
+                <Description>Resistance against buckling.</Description>
+                <Dimension>L6</Dimension>
+                <DimensionalDescription>m^6</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CALORIFIC_VALUE_MASS_BASIS" description="The quantity of thermal energy in a standard mass of the material." displayLabel="CALORIFIC VALUE MASS BASIS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CALORIFIC VALUE MASS BASIS</DisplayName>
+                <Description>The quantity of thermal energy in a standard mass of the material.</Description>
+                <Dimension>L2_PER_T2</Dimension>
+                <DimensionalDescription>m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CAPACITANCE" description="Charge divided by potential difference" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CAPACITANCE</DisplayName>
+                <Description>Charge divided by potential difference</Description>
+                <Dimension>T4_EC2_PER_M_L2</Dimension>
+                <DimensionalDescription>kg^-1*m^-2*s^4*A^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CARBON_DIOXIDE_EMISSION" description="The mass of carbon dioxide emitted for a given amount of power" displayLabel="Carbon Dioxide Emission" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Carbon Dioxide Emission</DisplayName>
+                <Description>The mass of carbon dioxide emitted for a given amount of power</Description>
+                <Dimension>T2_PER_L2</Dimension>
+                <DimensionalDescription>m^-2*s^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CHARACTERISTIC_IMPEDANCE_OF_A_MEDIUM" description="At a point in a medium and for a plane progressive wave, the complex representation of sound pressure divided by the complex representation of particle velocity" displayLabel="CHARACTERISTIC IMPEDANCE OF A MEDIUM" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CHARACTERISTIC IMPEDANCE OF A MEDIUM</DisplayName>
+                <Description>"At a point in a medium and for a plane progressive wave, the complex representation of sound pressure divided by the complex representation of particle velocity"</Description>
+                <Dimension>M_PER_L2_T</Dimension>
+                <DimensionalDescription>kg*m^-2*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONCENTRATION_MASS_PER_VOLUME" displayLabel="CONCENTRATION MASS PER VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CONCENTRATION MASS PER VOLUME</DisplayName>
+                <Description />
+                <Dimension>M_PER_L3</Dimension>
+                <DimensionalDescription>kg*m^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CHLORIDE_CONTENT" description="The average amount of Chloride reported in a number of samples." displayLabel="CHLORIDE CONTENT" isDomainClass="False">
+        <BaseClass>CONCENTRATION_MASS_PER_VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CHLORIDE CONTENT</DisplayName>
+                <Description>The average amount of Chloride reported in a number of samples.</Description>
+                <Dimension>M_PER_L3</Dimension>
+                <DimensionalDescription>kg*m^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COEFFICIENT" isDomainClass="False">
+        <BaseClass>DIMENSIONLESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>COEFFICIENT</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COEFFICIENT_OF_HEAT_TRANSFER" description="Areic heat flow rate divided by temperature difference" displayLabel="COEFFICIENT OF HEAT TRANSFER" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>COEFFICIENT OF HEAT TRANSFER</DisplayName>
+                <Description>Areic heat flow rate divided by temperature difference</Description>
+                <Dimension>M_PER_T3_K</Dimension>
+                <DimensionalDescription>kg*s^-3*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RECIPROCAL_TEMPERATURE" displayLabel="RECIPROCAL TEMPERATURE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RECIPROCAL TEMPERATURE</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_K</Dimension>
+                <DimensionalDescription>K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COEFFICIENT_OF_THERMAL_EXPANSION" displayLabel="COEFFICIENT OF THERMAL EXPANSION" isDomainClass="False">
+        <BaseClass>RECIPROCAL_TEMPERATURE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>COEFFICIENT OF THERMAL EXPANSION</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_K</Dimension>
+                <DimensionalDescription>K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COEFFICIENT_SMALL" displayLabel="COEFFICIENT SMALL" isDomainClass="False">
+        <BaseClass>COEFFICIENT</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>COEFFICIENT SMALL</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMPRESSIBILITY" description="kappa = -(1/V).dV/dP" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>COMPRESSIBILITY</DisplayName>
+                <Description>kappa = -(1/V).dV/dP</Description>
+                <Dimension>L_T2_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*m*s^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONCENTRATION" description="A ratio (often given in percent) of one type of substance in relation to a different type of substance in the same mixture." isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CONCENTRATION</DisplayName>
+                <Description>A ratio (often given in percent) of one type of substance in relation to a different type of substance in the same mixture.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONCENTRATION_MOLE_PER_VOLUME" description="A concentration given as moles per volume" displayLabel="CONCENTRATION MOLE PER VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CONCENTRATION MOLE PER VOLUME</DisplayName>
+                <Description>A concentration given as moles per volume</Description>
+                <Dimension>MOL_PER_L3</Dimension>
+                <DimensionalDescription>m^-3*mol</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONDUCTANCE" description="A ratio that is the ratio of the current in the conductor to the potential difference between its ends. Reciprocal of resistance." isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CONDUCTANCE</DisplayName>
+                <Description>A ratio that is the ratio of the current in the conductor to the potential difference between its ends. Reciprocal of resistance.</Description>
+                <Dimension>T3_EC2_PER_M_L2</Dimension>
+                <DimensionalDescription>kg^-1*m^-2*s^3*A^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONDUCTIVITY" description="gamma = 1/rho" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CONDUCTIVITY</DisplayName>
+                <Description>gamma = 1/rho</Description>
+                <Dimension>T3_EC2_PER_M_L3</Dimension>
+                <DimensionalDescription>kg^-1*m^-3*s^3*A^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COUPLING_RATING" description="A ratio which is the ratio between the power (KW) and the rotational frequency (100rpm)" displayLabel="COUPLING RATING" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>COUPLING RATING</DisplayName>
+                <Description>A ratio which is the ratio between the power (KW) and the rotational frequency (100rpm)</Description>
+                <Dimension>M_L2_PER_T4</Dimension>
+                <DimensionalDescription>kg*m^2*s^-4</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CULVERT_COEFFICIENT" displayLabel="CULVERT COEFFICIENT" isDomainClass="False">
+        <BaseClass>COEFFICIENT</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CULVERT COEFFICIENT</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURRENCY" isDomainClass="False">
+        <BaseClass>DIMENSIONLESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CURRENCY</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURRENCY_PER_AREA" displayLabel="CURRENCY PER AREA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CURRENCY PER AREA</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_L2</Dimension>
+                <DimensionalDescription>m^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURRENCY_PER_ENERGY" displayLabel="CURRENCY PER ENERGY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CURRENCY PER ENERGY</DisplayName>
+                <Description />
+                <Dimension>T2_PER_M_L2</Dimension>
+                <DimensionalDescription>kg^-1*m^-2*s^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RECIPROCAL_LENGTH" description="The reciprocal value of length." displayLabel="RECIPROCAL LENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RECIPROCAL LENGTH</DisplayName>
+                <Description>The reciprocal value of length.</Description>
+                <Dimension>ONE_PER_L</Dimension>
+                <DimensionalDescription>m^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURRENCY_PER_LENGTH" displayLabel="CURRENCY PER LENGTH" isDomainClass="False">
+        <BaseClass>RECIPROCAL_LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CURRENCY PER LENGTH</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_L</Dimension>
+                <DimensionalDescription>m^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURRENCY_PER_POWER" displayLabel="CURRENCY PER POWER" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CURRENCY PER POWER</DisplayName>
+                <Description />
+                <Dimension>T3_PER_M_L2</Dimension>
+                <DimensionalDescription>kg^-1*m^-2*s^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURRENCY_PER_VOLUME" displayLabel="CURRENCY PER VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>CURRENCY PER VOLUME</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_L3</Dimension>
+                <DimensionalDescription>m^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURRENCY_RATE" description="Cost per Time" displayLabel="Currency Rate" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Currency Rate</DisplayName>
+                <Description>Cost per Time</Description>
+                <Dimension>ONE_PER_T</Dimension>
+                <DimensionalDescription>s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUME" description="V  = triple integral (dx.dy.dz)  where x, y and z are Cartesian coordinates" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUME</DisplayName>
+                <Description>"V  = triple integral (dx.dy.dz)  where x, y and z are Cartesian coordinates"</Description>
+                <Dimension>L3</Dimension>
+                <DimensionalDescription>m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DAILY_FLARED_GAS_VOLUME___MSCF" description="A daily flared gas volume that is measured in thousand standard cubic feet." displayLabel="DAILY FLARED GAS VOLUME - MSCF" isDomainClass="False">
+        <BaseClass>VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DAILY FLARED GAS VOLUME - MSCF</DisplayName>
+                <Description>A daily flared gas volume that is measured in thousand standard cubic feet.</Description>
+                <Dimension>L3</Dimension>
+                <DimensionalDescription>m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DAMPING_COEFFICIENT" description="If the quantity is a function of time given by F(t) = A.e^- (delta.t).cos[omega.(t - t0)] then delta is the damping coefficient" displayLabel="DAMPING COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DAMPING COEFFICIENT</DisplayName>
+                <Description>If the quantity is a function of time given by F(t) = A.e^- (delta.t).cos[omega.(t - t0)] then delta is the damping coefficient</Description>
+                <Dimension>M_PER_T</Dimension>
+                <DimensionalDescription>kg*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DENSITY" description="Mass divided by volume." isDomainClass="False">
+        <BaseClass>CONCENTRATION_MASS_PER_VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DENSITY</DisplayName>
+                <Description>Mass divided by volume.</Description>
+                <Dimension>M_PER_L3</Dimension>
+                <DimensionalDescription>kg*m^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DENSITY_GAS" description="Mass per unit volume of a gas." displayLabel="DENSITY GAS" isDomainClass="False">
+        <BaseClass>CONCENTRATION_MASS_PER_VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DENSITY GAS</DisplayName>
+                <Description>Mass per unit volume of a gas.</Description>
+                <Dimension>M_PER_L3</Dimension>
+                <DimensionalDescription>kg*m^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DENSITY_OF_STATES" description="rho(E) = N,E(E) = dN(E)/dE  where n(E) is the total number of one-electron states with energy less than E, divided by volume" displayLabel="DENSITY OF STATES" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DENSITY OF STATES</DisplayName>
+                <Description>"rho(E) = N,E(E) = dN(E)/dE  where n(E) is the total number of one-electron states with energy less than E, divided by volume"</Description>
+                <Dimension>T2_PER_M_L5</Dimension>
+                <DimensionalDescription>kg^-1*m^-5*s^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LENGTH</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DEPTH" isDomainClass="False">
+        <BaseClass>LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DEPTH</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DEPTH_LARGE" displayLabel="DEPTH LARGE" isDomainClass="False">
+        <BaseClass>DEPTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DEPTH LARGE</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DEPTH_SMALL" displayLabel="DEPTH SMALL" isDomainClass="False">
+        <BaseClass>DEPTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DEPTH SMALL</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAMETER" isDomainClass="False">
+        <BaseClass>LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DIAMETER</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAMETER_LARGE" displayLabel="DIAMETER LARGE" isDomainClass="False">
+        <BaseClass>DIAMETER</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DIAMETER LARGE</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAMETER_LENGTH" description="The diameter of a pipe multiplied by its length.  Used to estimate the infiltration rate proportional to the product of its diameter and length. " displayLabel="DIAMETER LENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DIAMETER LENGTH</DisplayName>
+                <Description>The diameter of a pipe multiplied by its length.  Used to estimate the infiltration rate proportional to the product of its diameter and length. </Description>
+                <Dimension>L2</Dimension>
+                <DimensionalDescription>m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAMETER_SMALL" displayLabel="DIAMETER SMALL" isDomainClass="False">
+        <BaseClass>DIAMETER</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DIAMETER SMALL</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIAMETER_VERY_SMALL" displayLabel="DIAMETER VERY SMALL" isDomainClass="False">
+        <BaseClass>DIAMETER</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DIAMETER VERY SMALL</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DIFFUSIVITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DIFFUSIVITY</DisplayName>
+                <Description />
+                <Dimension>L2_PER_T</Dimension>
+                <DimensionalDescription>m^2*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DISCHARGE_PER_PRESSURE_DROP" displayLabel="DISCHARGE PER PRESSURE DROP" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DISCHARGE PER PRESSURE DROP</DisplayName>
+                <Description />
+                <Dimension>SQRT_L7_PER_SQRT_M</Dimension>
+                <DimensionalDescription>kg^-0.5*m^3.5</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DISPLACEMENT" isDomainClass="False">
+        <BaseClass>VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DISPLACEMENT</DisplayName>
+                <Description />
+                <Dimension>L3</Dimension>
+                <DimensionalDescription>m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DOSE_EQUIVALENT" description="Product of D, Q and N, at the point of interest in tissue, where D is the absorbed dose, Q is the quality factor and N is the product of any other modifying factors  H = D.Q.N" displayLabel="DOSE EQUIVALENT" isDomainClass="False">
+        <BaseClass>ABSORBED_DOSE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>DOSE EQUIVALENT</DisplayName>
+                <Description>"Product of D, Q and N, at the point of interest in tissue, where D is the absorbed dose, Q is the quality factor and N is the product of any other modifying factors  H = D.Q.N"</Description>
+                <Dimension>L2_PER_T2</Dimension>
+                <DimensionalDescription>m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_CHARGE" description="Integral of electric charge over time" displayLabel="ELECTRIC CHARGE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRIC CHARGE</DisplayName>
+                <Description>Integral of electric charge over time</Description>
+                <Dimension>T_EC</Dimension>
+                <DimensionalDescription>s*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_CURRENT" description="A measure for the flow rate of electrical energy. Electric current is one of the base quantities on which the SI system is based." displayLabel="ELECTRIC CURRENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRIC CURRENT</DisplayName>
+                <Description>A measure for the flow rate of electrical energy. Electric current is one of the base quantities on which the SI system is based.</Description>
+                <Dimension>EC</Dimension>
+                <DimensionalDescription>A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_CURRENT_DENSITY" description="Vector quantity, the integral of which over a given surface is equal to the electric current flowing through that surface" displayLabel="ELECTRIC CURRENT DENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRIC CURRENT DENSITY</DisplayName>
+                <Description>"Vector quantity, the integral of which over a given surface is equal to the electric current flowing through that surface"</Description>
+                <Dimension>EC_PER_L2</Dimension>
+                <DimensionalDescription>m^-2*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_DIPOLE_MOMENT" description="Vector quantity, the vector product at which with the electric field strength of a homogenous field is equal to the torque pxE = T" displayLabel="ELECTRIC DIPOLE MOMENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRIC DIPOLE MOMENT</DisplayName>
+                <Description>"Vector quantity, the vector product at which with the electric field strength of a homogenous field is equal to the torque pxE = T"</Description>
+                <Dimension>L_T_EC</Dimension>
+                <DimensionalDescription>m*s*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_FIELD_STRENGTH" description="Force, exerted by electric field on an electric point charge, divided by the electronic charge" displayLabel="ELECTRIC FIELD STRENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRIC FIELD STRENGTH</DisplayName>
+                <Description>"Force, exerted by electric field on an electric point charge, divided by the electronic charge"</Description>
+                <Dimension>M_L_PER_T3_EC</Dimension>
+                <DimensionalDescription>kg*m*s^-3*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_POLARIZABILITY_OF_MOLECULE" description="Induced electric dipole moment divided by electric field strength" displayLabel="ELECTRIC POLARIZABILITY OF MOLECULE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRIC POLARIZABILITY OF MOLECULE</DisplayName>
+                <Description>Induced electric dipole moment divided by electric field strength</Description>
+                <Dimension>T4_EC2_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*s^4*A^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRIC_POTENTIAL" description="For electrostatic fields, a scalar quantity, the gradient of which, with reversed sign, is equal to the electric field strength E = - grad V" displayLabel="ELECTRIC POTENTIAL" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRIC POTENTIAL</DisplayName>
+                <Description>"For electrostatic fields, a scalar quantity, the gradient of which, with reversed sign, is equal to the electric field strength E = - grad V"</Description>
+                <Dimension>M_L2_PER_T3_EC</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRICAL_RESISTANCE" description="In electrical and acoustical fields, the real part of the impedance characterised by the dissipation of energy as opposed to its storage. Electrical resistance may vary with temperature, polarity, field illumination, purity of materials etc. Reciprocal of conductance." displayLabel="ELECTRICAL RESISTANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRICAL RESISTANCE</DisplayName>
+                <Description>"In electrical and acoustical fields, the real part of the impedance characterised by the dissipation of energy as opposed to its storage. Electrical resistance may vary with temperature, polarity, field illumination, purity of materials etc. Reciprocal of conductance."</Description>
+                <Dimension>M_L2_PER_T3_EC2</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*A^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTRICAL_RESISTANCE_PER_LENGTH" displayLabel="ELECTRICAL RESISTANCE PER LENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTRICAL RESISTANCE PER LENGTH</DisplayName>
+                <Description />
+                <Dimension>M_L_PER_T3_EC2</Dimension>
+                <DimensionalDescription>kg*m*s^-3*A^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELECTROMOTIVE_FORCE" description="Energy supplied by a source divided by the electrical charge transported through the source" displayLabel="ELECTROMOTIVE FORCE" isDomainClass="False">
+        <BaseClass>ELECTRIC_POTENTIAL</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELECTROMOTIVE FORCE</DisplayName>
+                <Description>Energy supplied by a source divided by the electrical charge transported through the source</Description>
+                <Dimension>M_L2_PER_T3_EC</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELEVATION" isDomainClass="False">
+        <BaseClass>LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ELEVATION</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ENERGY" description="Capacity to do work." isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ENERGY</DisplayName>
+                <Description>Capacity to do work.</Description>
+                <Dimension>M_L2_PER_T2</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ENERGY_FLUENCE" description="At a given point in space, the sum of the energies, exclusive of the rest energy, of all the particles incident on a small sphere, divided by the cross-sectional area of that sphere" displayLabel="ENERGY FLUENCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ENERGY FLUENCE</DisplayName>
+                <Description>"At a given point in space, the sum of the energies, exclusive of the rest energy, of all the particles incident on a small sphere, divided by the cross-sectional area of that sphere"</Description>
+                <Dimension>M_PER_T2</Dimension>
+                <DimensionalDescription>kg*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POWER_PER_AREA" description="A property expressing power per unit area." displayLabel="POWER PER AREA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>POWER PER AREA</DisplayName>
+                <Description>A property expressing power per unit area.</Description>
+                <Dimension>M_PER_T3</Dimension>
+                <DimensionalDescription>kg*s^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ENERGY_FLUENCE_RATE" description="psi = dPSI/dt" displayLabel="ENERGY FLUENCE RATE" isDomainClass="False">
+        <BaseClass>POWER_PER_AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ENERGY FLUENCE RATE</DisplayName>
+                <Description>psi = dPSI/dt</Description>
+                <Dimension>M_PER_T3</Dimension>
+                <DimensionalDescription>kg*s^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ENERGY_PER_UNIT_VOLUME" displayLabel="ENERGY PER UNIT VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ENERGY PER UNIT VOLUME</DisplayName>
+                <Description />
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ENTHALPY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ENTHALPY</DisplayName>
+                <Description />
+                <Dimension>M_L2_PER_T2</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ENTROPY" description="When a small quantity of heat dQ is received by a system the thermodynamic temperature of which is T, the entropy of the system is increased by ddQ/dT, provided that no irreversible change takes place in the system" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ENTROPY</DisplayName>
+                <Description>"When a small quantity of heat dQ is received by a system the thermodynamic temperature of which is T, the entropy of the system is increased by ddQ/dT, provided that no irreversible change takes place in the system"</Description>
+                <Dimension>M_L2_PER_T2_K</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EQUIVALENT_PER_MASS" description="A concept of property that is an equivalent divided by mass." displayLabel="EQUIVALENT PER MASS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>EQUIVALENT PER MASS</DisplayName>
+                <Description>A concept of property that is an equivalent divided by mass.</Description>
+                <Dimension>ONE_PER_M</Dimension>
+                <DimensionalDescription>kg^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EXPOSURE" description="For X-gamma radiation, the total electric charge of the ions of the same sign produced when all the electrons (negative and positive) liberated by photons in an element of air are stopped in air, divided by the mass of that element" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>EXPOSURE</DisplayName>
+                <Description>"For X-gamma radiation, the total electric charge of the ions of the same sign produced when all the electrons (negative and positive) liberated by photons in an element of air are stopped in air, divided by the mass of that element"</Description>
+                <Dimension>T_EC_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*s*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EXPOSURE_RATE" description="Xr = dX/dt" displayLabel="EXPOSURE RATE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>EXPOSURE RATE</DisplayName>
+                <Description>Xr = dX/dt</Description>
+                <Dimension>EC_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FARADAY_CONSTANT" description="F = NA.e" displayLabel="FARADAY CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FARADAY CONSTANT</DisplayName>
+                <Description>F = NA.e</Description>
+                <Dimension>T_EC_PER_MOL</Dimension>
+                <DimensionalDescription>s*A*mol^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FIRST_RADIATION_CONSTANT" description="The constant c1 and c2 in the expression for the spectral concentration of the radiant exitance of a full radiator (black body) at the thermodynamic temperature T    M = c1.f(lambda,T) = c1.lambda^5/(e^(c2/(lambda.T))-1)" displayLabel="FIRST RADIATION CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FIRST RADIATION CONSTANT</DisplayName>
+                <Description>"The constant c1 and c2 in the expression for the spectral concentration of the radiant exitance of a full radiator (black body) at the thermodynamic temperature T    M = c1.f(lambda,T) = c1.lambda^5/(e^(c2/(lambda.T))-1)"</Description>
+                <Dimension>M_L4_PER_T3</Dimension>
+                <DimensionalDescription>kg*m^4*s^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_DEPTH" displayLabel="FLOW DEPTH" isDomainClass="False">
+        <BaseClass>DEPTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FLOW DEPTH</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOW_TOLERANCE" displayLabel="FLOW TOLERANCE" isDomainClass="False">
+        <BaseClass>FLOW</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FLOW TOLERANCE</DisplayName>
+                <Description />
+                <Dimension>L3_PER_T</Dimension>
+                <DimensionalDescription>m^3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FORCE" description="The resultant force acting on a body is equal to the derivative with respect to time of the momentum of the body" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FORCE</DisplayName>
+                <Description>The resultant force acting on a body is equal to the derivative with respect to time of the momentum of the body</Description>
+                <Dimension>M_L_PER_T2</Dimension>
+                <DimensionalDescription>kg*m*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FORCE_PER_VOLUME" description="Force acting on a thing by unit volume." displayLabel="FORCE PER VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FORCE PER VOLUME</DisplayName>
+                <Description>Force acting on a thing by unit volume.</Description>
+                <Dimension>M_PER_L2_T2</Dimension>
+                <DimensionalDescription>kg*m^-2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FRACTION" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FRACTION</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RECIPROCAL_TIME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RECIPROCAL_TIME</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_T</Dimension>
+                <DimensionalDescription>s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FREQUENCY" description="f = 1/T  where T is a period    Number of cycles divided by time (ISO 31-5:1992(E))" isDomainClass="False">
+        <BaseClass>RECIPROCAL_TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>FREQUENCY</DisplayName>
+                <Description>f = 1/T  where T is a period    Number of cycles divided by time (ISO 31-5:1992(E))</Description>
+                <Dimension>ONE_PER_T</Dimension>
+                <DimensionalDescription>s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GYROMAGNETIC_COEFFICIENT" description="gamma = mu.2.pi/(J.h)  where J is the angular momentum quantum number" displayLabel="GYROMAGNETIC COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>GYROMAGNETIC COEFFICIENT</DisplayName>
+                <Description>gamma = mu.2.pi/(J.h)  where J is the angular momentum quantum number</Description>
+                <Dimension>T_EC_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*s*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HALL_COEFFICIENT" description="In an isotropic conductor, the relation between electric field strength E and the current density J is   E = rho.J + R(BxJ)  where rho is the resistivity and B is the magnetic flux density" displayLabel="HALL COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>HALL COEFFICIENT</DisplayName>
+                <Description>"In an isotropic conductor, the relation between electric field strength E and the current density J is   E = rho.J + R(BxJ)  where rho is the resistivity and B is the magnetic flux density"</Description>
+                <Dimension>L3_PER_T_EC</Dimension>
+                <DimensionalDescription>m^3*s^-1*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HAZEN_WILLIAMS_ROUGHNESS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Hazen-Williams</DisplayName>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HEADLOSS" isDomainClass="False">
+        <BaseClass>DEPTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>HEADLOSS</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HEAT_TRANSFER" description="The transition of thermal energy from an area of higher concentration to one of lower concentration" displayLabel="Heat Transfer" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Heat Transfer</DisplayName>
+                <Description>The transition of thermal energy from an area of higher concentration to one of lower concentration</Description>
+                <Dimension>M_L2_PER_T3_K</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HEAT_TRANSFER_COEFFICIENT_AT_CLEAN_CONDITIONS" description="A heat transfer coefficient at clean conditions." displayLabel="HEAT TRANSFER COEFFICIENT AT CLEAN CONDITIONS" isDomainClass="False">
+        <BaseClass>COEFFICIENT_OF_HEAT_TRANSFER</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>HEAT TRANSFER COEFFICIENT AT CLEAN CONDITIONS</DisplayName>
+                <Description>A heat transfer coefficient at clean conditions.</Description>
+                <Dimension>M_PER_T3_K</Dimension>
+                <DimensionalDescription>kg*s^-3*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HEIGHT" displayLabel="Height" isDomainClass="False">
+        <BaseClass>LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Height</DisplayName>
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HYDRAULIC_CONDUCTIVITY" displayLabel="HYDRAULIC CONDUCTIVITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>HYDRAULIC CONDUCTIVITY</DisplayName>
+                <Description />
+                <Dimension>L_PER_T</Dimension>
+                <DimensionalDescription>m*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ILLUMINANCE" description="At a point on a surface, the luminous flux incident on an element of the surface, divided by the area of that element" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ILLUMINANCE</DisplayName>
+                <Description>"At a point on a surface, the luminous flux incident on an element of the surface, divided by the area of that element"</Description>
+                <Dimension>LF_PER_L2</Dimension>
+                <DimensionalDescription>m^-2*cd*sr</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOMENTUM" description="Product of mass and velocity." isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOMENTUM</DisplayName>
+                <Description>Product of mass and velocity.</Description>
+                <Dimension>M_L_PER_T</Dimension>
+                <DimensionalDescription>kg*m*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IMPULSE" description="I=integral F.dt" isDomainClass="False">
+        <BaseClass>MOMENTUM</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>IMPULSE</DisplayName>
+                <Description>I=integral F.dt</Description>
+                <Dimension>M_L_PER_T</Dimension>
+                <DimensionalDescription>kg*m*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INTRINSIC_NUMBER_DENSITY" description="n.p = ni^2  where n is the neutron number density and p the hole number density" displayLabel="INTRINSIC NUMBER DENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>INTRINSIC NUMBER DENSITY</DisplayName>
+                <Description>n.p = ni^2  where n is the neutron number density and p the hole number density</Description>
+                <Dimension>ONE_PER_L3</Dimension>
+                <DimensionalDescription>m^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IONIC_STRENGTH" description="The ionic strength of a solution is defined as  I = (1/2) .sum(zi2.mi)  where the summation is carried out over all ions with molarities mi" displayLabel="IONIC STRENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>IONIC STRENGTH</DisplayName>
+                <Description>The ionic strength of a solution is defined as  I = (1/2) .sum(zi2.mi)  where the summation is carried out over all ions with molarities mi</Description>
+                <Dimension>MOL_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*mol</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KINEMATIC_VISCOSITY" displayLabel="KINEMATIC VISCOSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>KINEMATIC VISCOSITY</DisplayName>
+                <Description />
+                <Dimension>L2_PER_T</Dimension>
+                <DimensionalDescription>m^2*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KUTTERS_ROUGHNESS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Kutters</DisplayName>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LAND_AREA" displayLabel="LAND AREA" isDomainClass="False">
+        <BaseClass>AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LAND AREA</DisplayName>
+                <Description />
+                <Dimension>L2</Dimension>
+                <DimensionalDescription>m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LENGTH_LONG" displayLabel="LENGTH LONG" isDomainClass="False">
+        <BaseClass>LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LENGTH LONG</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LENGTH_PER_LENGTH" description="A ratio of a length concept to another length concept." displayLabel="LENGTH PER LENGTH" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LENGTH PER LENGTH</DisplayName>
+                <Description>A ratio of a length concept to another length concept.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LENGTH_PER_MASS" description="Length of an constant crossection shaped object per unit of mass; as profile, string etc." displayLabel="LENGTH PER MASS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LENGTH PER MASS</DisplayName>
+                <Description>"Length of an constant crossection shaped object per unit of mass; as profile, string etc."</Description>
+                <Dimension>L_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LENGTH_SHORT" displayLabel="LENGTH SHORT" isDomainClass="False">
+        <BaseClass>LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LENGTH SHORT</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LEVEL_OF_A_POWER_QUANTITY" description="Lp = ln (P/Po) where P and Po represent two powers, Po being a reference power" displayLabel="LEVEL OF A POWER QUANTITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LEVEL OF A POWER QUANTITY</DisplayName>
+                <Description>"Lp = ln (P/Po) where P and Po represent two powers, Po being a reference power"</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LIGHT_EXPOSURE" description="H = integral (E dt) where E is the illuminance" displayLabel="LIGHT EXPOSURE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LIGHT EXPOSURE</DisplayName>
+                <Description>H = integral (E dt) where E is the illuminance</Description>
+                <Dimension>T_LF_PER_L2</Dimension>
+                <DimensionalDescription>m^-2*s*cd*sr</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LIGHTING_HEAT_GAIN" description="The heat gained caused by room lighting" displayLabel="Lighting Heat Gain" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Lighting Heat Gain</DisplayName>
+                <Dimension>M_PER_T3</Dimension>
+                <DimensionalDescription>kg*s^-3</DimensionalDescription>
+                <Description>The heat gained caused by room lighting</Description>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_ACCELERATION" description="An acceleration which is the rate of change of velocity with respect to time, given in units of length per time squared." displayLabel="LINEAR ACCELERATION" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR ACCELERATION</DisplayName>
+                <Description>"An acceleration which is the rate of change of velocity with respect to time, given in units of length per time squared."</Description>
+                <Dimension>L_PER_T2</Dimension>
+                <DimensionalDescription>m*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_ELECTRIC_CURRENT_DENSITY" description="Electric current in a conducting sheet divided by the width of the sheet" displayLabel="LINEAR ELECTRIC CURRENT DENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR ELECTRIC CURRENT DENSITY</DisplayName>
+                <Description>Electric current in a conducting sheet divided by the width of the sheet</Description>
+                <Dimension>EC_PER_L</Dimension>
+                <DimensionalDescription>m^-1*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_ENERGY_TRANSFER" description="For an ionising charged particle, the energy imparted locally to matter in traversing a small distance through the matter, divided by that distance" displayLabel="LINEAR ENERGY TRANSFER" isDomainClass="False">
+        <BaseClass>FORCE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR ENERGY TRANSFER</DisplayName>
+                <Description>"For an ionising charged particle, the energy imparted locally to matter in traversing a small distance through the matter, divided by that distance"</Description>
+                <Dimension>M_L_PER_T2</Dimension>
+                <DimensionalDescription>kg*m*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_FORCE" displayLabel="LINEAR FORCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR FORCE</DisplayName>
+                <Description />
+                <Dimension>M_PER_T2</Dimension>
+                <DimensionalDescription>kg*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_MOMENT" displayLabel="LINEAR MOMENT" isDomainClass="False">
+        <BaseClass>FORCE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR MOMENT</DisplayName>
+                <Description />
+                <Dimension>M_L_PER_T2</Dimension>
+                <DimensionalDescription>kg*m*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_PER_ANGULAR" displayLabel="LINEAR PER ANGULAR" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR PER ANGULAR</DisplayName>
+                <Description />
+                <Dimension>L_PER_PA</Dimension>
+                <DimensionalDescription>m*rad^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_ROTATIONAL_SPRING_CONSTANT" displayLabel="LINEAR ROTATIONAL SPRING CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR ROTATIONAL SPRING CONSTANT</DisplayName>
+                <Description />
+                <Dimension>M_L_PER_T2_PA</Dimension>
+                <DimensionalDescription>kg*m*s^-2*rad^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEAR_SPRING_CONSTANT" displayLabel="LINEAR SPRING CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEAR SPRING CONSTANT</DisplayName>
+                <Description />
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINEIC_MASS" description="Mass divided by length." displayLabel="LINEIC MASS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LINEIC MASS</DisplayName>
+                <Description>Mass divided by length.</Description>
+                <Dimension>M_PER_L</Dimension>
+                <DimensionalDescription>kg*m^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LOGARITHMIC_MEASURE" displayLabel="LOGARITHMIC MEASURE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LOGARITHMIC MEASURE</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LORENZ_COEFFICIENT" description="L = lambda/(sigma.T) where lambda is the thermal conductivity, sigma the electrical conductivity and T is the thermodynamic temperature" displayLabel="LORENZ COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LORENZ COEFFICIENT</DisplayName>
+                <Description>"L = lambda/(sigma.T) where lambda is the thermal conductivity, sigma the electrical conductivity and T is the thermodynamic temperature"</Description>
+                <Dimension>M2_L4_PER_T6_EC2_K2</Dimension>
+                <DimensionalDescription>kg^2*m^4*s^-6*A^-2*K^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TIME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TIME</DisplayName>
+                <Description />
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LOWER_LIMIT_OF_OUTDOOR_STORAGE" description="A period of time which is the lower limit of outdoor storage." displayLabel="LOWER LIMIT OF OUTDOOR STORAGE" isDomainClass="False">
+        <BaseClass>TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LOWER LIMIT OF OUTDOOR STORAGE</DisplayName>
+                <Description>A period of time which is the lower limit of outdoor storage.</Description>
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LUMINANCE" description="At a point on a surface and in a given direction, the luminous intensity of an element of the surface, divided by the area of the orthogonal projection of this element on a plane perpendicular to the given direction" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LUMINANCE</DisplayName>
+                <Description>"At a point on a surface and in a given direction, the luminous intensity of an element of the surface, divided by the area of the orthogonal projection of this element on a plane perpendicular to the given direction"</Description>
+                <Dimension>LI_PER_L2</Dimension>
+                <DimensionalDescription>m^-2*cd</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LUMINOUS_EFFICACY" description="K = PHIv/PHIe" displayLabel="LUMINOUS EFFICACY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LUMINOUS EFFICACY</DisplayName>
+                <Description>K = PHIv/PHIe</Description>
+                <Dimension>T3_LF_PER_M_L2</Dimension>
+                <DimensionalDescription>kg^-1*m^-2*s^3*cd*sr</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LUMINOUS_FLUX" description="The luminous flux d PHI of a source of luminous intensity I in an element of solid angle dOMEGA is given by   d(PHI) = I.d(OMEGA)" displayLabel="LUMINOUS FLUX" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LUMINOUS FLUX</DisplayName>
+                <Description>The luminous flux d PHI of a source of luminous intensity I in an element of solid angle dOMEGA is given by   d(PHI) = I.d(OMEGA)</Description>
+                <Dimension>LF</Dimension>
+                <DimensionalDescription>cd*sr</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LUMINOUS_INTENSITY" displayLabel="LUMINOUS INTENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>LUMINOUS INTENSITY</DisplayName>
+                <Description />
+                <Dimension>LI</Dimension>
+                <DimensionalDescription>cd</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MAGNETIC_FIELD_STRENGTH" description="Vector quantity, the rotation (curl) of which is equal to the sum of the electric current density and the time derivative of the electric flux density" displayLabel="MAGNETIC FIELD STRENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MAGNETIC FIELD STRENGTH</DisplayName>
+                <Description>"Vector quantity, the rotation (curl) of which is equal to the sum of the electric current density and the time derivative of the electric flux density"</Description>
+                <Dimension>EC_PER_L</Dimension>
+                <DimensionalDescription>m^-1*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MAGNETIC_FLUX" description="Across a surface element, the scalar product of the magnetic flux density and the surface element" displayLabel="MAGNETIC FLUX" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MAGNETIC FLUX</DisplayName>
+                <Description>"Across a surface element, the scalar product of the magnetic flux density and the surface element"</Description>
+                <Dimension>M_L2_PER_T2_EC</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MAGNETIC_INDUCTION" description="Vector quantity such that the force exerted on an element of electric current is equal to the vector product of this element and the magnetic flux density" displayLabel="MAGNETIC INDUCTION" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MAGNETIC INDUCTION</DisplayName>
+                <Description>Vector quantity such that the force exerted on an element of electric current is equal to the vector product of this element and the magnetic flux density</Description>
+                <Dimension>M_PER_T2_EC</Dimension>
+                <DimensionalDescription>kg*s^-2*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MAGNETIC_MOMENT" description="Vector quantity, the vector product of which with the magnetic flux density of a homogenous field is equal to the torque mxB = T" displayLabel="MAGNETIC MOMENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MAGNETIC MOMENT</DisplayName>
+                <Description>"Vector quantity, the vector product of which with the magnetic flux density of a homogenous field is equal to the torque mxB = T"</Description>
+                <Dimension>EC_L2</Dimension>
+                <DimensionalDescription>m^2*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MAGNETIC_VECTOR_POTENTIAL" description="Vector quantity, the rotation (curl) of which is equal to the magnetic flux density.  B = rot A" displayLabel="MAGNETIC VECTOR POTENTIAL" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MAGNETIC VECTOR POTENTIAL</DisplayName>
+                <Description>"Vector quantity, the rotation (curl) of which is equal to the magnetic flux density.  B = rot A"</Description>
+                <Dimension>M_L_PER_T2_EC</Dimension>
+                <DimensionalDescription>kg*m*s^-2*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MANNINGS_ROUGHNESS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mannings</DisplayName>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASS_ATTENUATION_COEFFICIENT" description="The linear attenuation coefficient divided by the volumetric mass of the substance mu, m = mu/rho" displayLabel="MASS ATTENUATION COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASS ATTENUATION COEFFICIENT</DisplayName>
+                <Description>"The linear attenuation coefficient divided by the volumetric mass of the substance mu, m = mu/rho"</Description>
+                <Dimension>L2_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASS_RATE" displayLabel="MASS RATE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASS RATE</DisplayName>
+                <Description />
+                <Dimension>M_PER_T</Dimension>
+                <DimensionalDescription>kg*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASS_FLOW_RATE" description="Mass of matter which crosses a given surface divided by time." displayLabel="MASS FLOW RATE" isDomainClass="False">
+        <BaseClass>MASS_RATE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASS FLOW RATE</DisplayName>
+                <Description>Mass of matter which crosses a given surface divided by time.</Description>
+                <Dimension>M_PER_T</Dimension>
+                <DimensionalDescription>kg*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASS_MOMENT_OF_INERTIA" description="Moment of inertia of a body about an axis is the sum (integral) of the product of its elements of mass and the square of their distances from the axis.  I = Integral (r*r*)dm; where r is the distance from the mass element 'm' to the axis." displayLabel="MASS MOMENT OF INERTIA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASS MOMENT OF INERTIA</DisplayName>
+                <Description>Moment of inertia of a body about an axis is the sum (integral) of the product of its elements of mass and the square of their distances from the axis.  I = Integral (r*r*)dm; where r is the distance from the mass element 'm' to the axis.</Description>
+                <Dimension>M_L2</Dimension>
+                <DimensionalDescription>kg*m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASS_PER_AREA" displayLabel="MASS PER AREA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASS PER AREA</DisplayName>
+                <Description />
+                <Dimension>M_PER_L2</Dimension>
+                <DimensionalDescription>kg*m^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASSIC_ACTIVITY" description="Activity divided by the total mass of the sample" displayLabel="MASSIC ACTIVITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASSIC ACTIVITY</DisplayName>
+                <Description>Activity divided by the total mass of the sample</Description>
+                <Dimension>ONE_PER_T_M</Dimension>
+                <DimensionalDescription>kg^-1*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MASSIC_OPTICAL_ROTATORY_POWER" description="alpha m = alpha.A/m  where m is the mass of the optically active component in the path of the linearly polarized light beam of cross-sectional area A" displayLabel="MASSIC OPTICAL ROTATORY POWER" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MASSIC OPTICAL ROTATORY POWER</DisplayName>
+                <Description>alpha m = alpha.A/m  where m is the mass of the optically active component in the path of the linearly polarized light beam of cross-sectional area A</Description>
+                <Dimension>L2_PA_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*m^2*rad</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MECHANICAL_IMPEDANCE" description="at a surface (or at a point), the complex representation of total force divided by the complex  representation of average particle velocity at that surface (or of particle velocity at that point) in the direction of the force" displayLabel="MECHANICAL IMPEDANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MECHANICAL IMPEDANCE</DisplayName>
+                <Description>"at a surface (or at a point), the complex representation of total force divided by the complex  representation of average particle velocity at that surface (or of particle velocity at that point) in the direction of the force"</Description>
+                <Dimension>M_PER_T</Dimension>
+                <DimensionalDescription>kg*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOBILITY" description="Average drift velocity imparted to a charged particle in a medium by an electric field, divided by the field strength" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOBILITY</DisplayName>
+                <Description>"Average drift velocity imparted to a charged particle in a medium by an electric field, divided by the field strength"</Description>
+                <Dimension>T2_EC_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*s^2*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOLAR_ATTENUATION_COEFFICIENT" description="mu,c = mu/rho  where c is the amount-of-substance concentration" displayLabel="MOLAR ATTENUATION COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOLAR ATTENUATION COEFFICIENT</DisplayName>
+                <Description>"mu,c = mu/rho  where c is the amount-of-substance concentration"</Description>
+                <Dimension>L2_PER_MOL</Dimension>
+                <DimensionalDescription>m^2*mol^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOLAR_CONDUCTIVITY" description="Conductivity divided by the amount-of-substance concentration" displayLabel="MOLAR CONDUCTIVITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOLAR CONDUCTIVITY</DisplayName>
+                <Description>Conductivity divided by the amount-of-substance concentration</Description>
+                <Dimension>T3_EC2_PER_M_MOL</Dimension>
+                <DimensionalDescription>kg^-1*s^3*A^2*mol^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOLAR_ENTROPY" description="Entropy divided by amount of substance" displayLabel="MOLAR ENTROPY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOLAR ENTROPY</DisplayName>
+                <Description>Entropy divided by amount of substance</Description>
+                <Dimension>M_L2_PER_T2_K_MOL</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2*K^-1*mol^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOLAR_MASS" description="Mass divided by amount of substance M = m/n" displayLabel="MOLAR MASS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOLAR MASS</DisplayName>
+                <Description>Mass divided by amount of substance M = m/n</Description>
+                <Dimension>M_PER_MOL</Dimension>
+                <DimensionalDescription>kg*mol^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOLAR_OPTICAL_ROTATORY_POWER" description="alpha = alpha.A/n where n is the amount of substance of the optically active component in the path of a linearly polarized light beam of a cross-sectional area A" displayLabel="MOLAR OPTICAL ROTATORY POWER" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOLAR OPTICAL ROTATORY POWER</DisplayName>
+                <Description>alpha = alpha.A/n where n is the amount of substance of the optically active component in the path of a linearly polarized light beam of a cross-sectional area A</Description>
+                <Dimension>L2_PA_PER_MOL</Dimension>
+                <DimensionalDescription>m^2*mol^-1*rad</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOLAR_THERMODYNAMIC_ENERGY" description="Thermodynamic energy divided by amount of substance" displayLabel="MOLAR THERMODYNAMIC ENERGY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOLAR THERMODYNAMIC ENERGY</DisplayName>
+                <Description>Thermodynamic energy divided by amount of substance</Description>
+                <Dimension>M_L2_PER_T2_MOL</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2*mol^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOLAR_VOLUME" description="Volume divided by amount of substance Vm = V/n" displayLabel="MOLAR VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>MOLAR VOLUME</DisplayName>
+                <Description>Volume divided by amount of substance Vm = V/n</Description>
+                <Dimension>L3_PER_MOL</Dimension>
+                <DimensionalDescription>m^3*mol^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NEUTRON_SOURCE_DENSITY" description="Rate of production of neutrons in a volume element, divided by that element" displayLabel="NEUTRON SOURCE DENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>NEUTRON SOURCE DENSITY</DisplayName>
+                <Description>"Rate of production of neutrons in a volume element, divided by that element"</Description>
+                <Dimension>ONE_PER_L3_T</Dimension>
+                <DimensionalDescription>m^-3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NONE" isDomainClass="False">
+        <BaseClass>DIMENSIONLESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>NONE</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NORMAL_MASS_FLOW_RATE" description="A mass flow rate that is the expected flow." displayLabel="NORMAL MASS FLOW RATE" isDomainClass="False">
+        <BaseClass>MASS_RATE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>NORMAL MASS FLOW RATE</DisplayName>
+                <Description>A mass flow rate that is the expected flow.</Description>
+                <Dimension>M_PER_T</Dimension>
+                <DimensionalDescription>kg*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OXYGEN_CONTENT_IN_TREATED_PRODUCED_WATER___PPB" description="(PPB=??? Evnt: Skal OXYGEN-CONTENT IN TREATED PRODUCED WATER opprettes f rst??) A measure describing the content of oxygen in produced water that has been processed in the water cleaning system on the installation." displayLabel="OXYGEN-CONTENT IN TREATED PRODUCED WATER - PPB" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>OXYGEN-CONTENT IN TREATED PRODUCED WATER - PPB</DisplayName>
+                <Description>(PPB=??? Evnt: Skal OXYGEN-CONTENT IN TREATED PRODUCED WATER opprettes f rst??) A measure describing the content of oxygen in produced water that has been processed in the water cleaning system on the installation.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PARTICLE_FLUENCE" description="At a given point in space, the number of particles incident on a small sphere, divided by the cross-section area of that sphere" displayLabel="PARTICLE FLUENCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PARTICLE FLUENCE</DisplayName>
+                <Description>"At a given point in space, the number of particles incident on a small sphere, divided by the cross-section area of that sphere"</Description>
+                <Dimension>ONE_PER_L2</Dimension>
+                <DimensionalDescription>m^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PARTICLE_FLUENCE_RATE" description="phi = dPHI/dt" displayLabel="PARTICLE FLUENCE RATE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PARTICLE FLUENCE RATE</DisplayName>
+                <Description>phi = dPHI/dt</Description>
+                <Dimension>ONE_PER_L2_T</Dimension>
+                <DimensionalDescription>m^-2*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PERCENT" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PERCENT</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PERIOD" description="Time of one cycle" isDomainClass="False">
+        <BaseClass>TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PERIOD</DisplayName>
+                <Description>Time of one cycle</Description>
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PERMEABILITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PERMEABILITY</DisplayName>
+                <Description />
+                <Dimension>M_L_PER_T2_EC2</Dimension>
+                <DimensionalDescription>kg*m*s^-2*A^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PERMEANCE" description="LAMBDA = 1/Rm where Rm is the reluctance" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PERMEANCE</DisplayName>
+                <Description>LAMBDA = 1/Rm where Rm is the reluctance</Description>
+                <Dimension>M_L2_PER_T2_EC2</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2*A^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PERMITTIVITY" description="D = epsilon.E  where D is the electric flux density and E is the electric field strength" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PERMITTIVITY</DisplayName>
+                <Description>D = epsilon.E  where D is the electric flux density and E is the electric field strength</Description>
+                <Dimension>T4_EC2_PER_M_L3</Dimension>
+                <DimensionalDescription>kg^-1*m^-3*s^4*A^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PHOTON_INTENSITY" description="In a given direction from a source, the photon flux leaving the source, in an element of solid angle containing the given direction, divided by that element of solid angle" displayLabel="PHOTON INTENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PHOTON INTENSITY</DisplayName>
+                <Description>"In a given direction from a source, the photon flux leaving the source, in an element of solid angle containing the given direction, divided by that element of solid angle"</Description>
+                <Dimension>ONE_PER_T_SA</Dimension>
+                <DimensionalDescription>s^-1*sr^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PHOTON_IRRADIANCE" description="At a point on a surface, the photon flux incident on an element of the surface, divided by the area of that element" displayLabel="PHOTON IRRADIANCE" isDomainClass="False">
+        <BaseClass>PARTICLE_FLUENCE_RATE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PHOTON IRRADIANCE</DisplayName>
+                <Description>"At a point on a surface, the photon flux incident on an element of the surface, divided by the area of that element"</Description>
+                <Dimension>ONE_PER_L2_T</Dimension>
+                <DimensionalDescription>m^-2*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PHOTON_LUMINANCE" description="At a point on a surface and in a given direction, the photon intensity of an element of the surface, divided by the area of the orthogonal projection of this element on a plane perpendicular to the given direction" displayLabel="PHOTON LUMINANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PHOTON LUMINANCE</DisplayName>
+                <Description>"At a point on a surface and in a given direction, the photon intensity of an element of the surface, divided by the area of the orthogonal projection of this element on a plane perpendicular to the given direction"</Description>
+                <Dimension>ONE_PER_L2_T_SA</Dimension>
+                <DimensionalDescription>m^-2*s^-1*sr^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SLOPE" isDomainClass="False">
+        <BaseClass>DIMENSIONLESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SLOPE</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE_SLOPE" displayLabel="PIPE SLOPE" isDomainClass="False">
+        <BaseClass>SLOPE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PIPE SLOPE</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLANE_ANGLE" description="An angle between two half-lines terminating at the same point is defined as the ratio of length of the included arc of the circle (with its centre at that point) to the radius of that circle" displayLabel="PLANE ANGLE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PLANE ANGLE</DisplayName>
+                <Description>An angle between two half-lines terminating at the same point is defined as the ratio of length of the included arc of the circle (with its centre at that point) to the radius of that circle</Description>
+                <Dimension>PA</Dimension>
+                <DimensionalDescription>m*m^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POLYTROPIC_HEAD" description="A head that is used to calculate the horsepower." displayLabel="POLYTROPIC HEAD" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>POLYTROPIC HEAD</DisplayName>
+                <Description>A head that is used to calculate the horsepower.</Description>
+                <Dimension>L2_PER_T2</Dimension>
+                <DimensionalDescription>m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POPULATION" isDomainClass="False">
+        <BaseClass>DIMENSIONLESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>POPULATION</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POPULATION_PER_AREA" displayLabel="POPULATION PER AREA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>POPULATION PER AREA</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_L2</Dimension>
+                <DimensionalDescription>m^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PRESSURE" description="Force perpendicular to the area divided by area. p = dF/dA where dF is the  perpendicular component of the force acting on the area element dA. The pressure is positive when the force is acting into the area." isDomainClass="False">
+        <BaseClass>STRESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PRESSURE</DisplayName>
+                <Description>Force perpendicular to the area divided by area. p = dF/dA where dF is the  perpendicular component of the force acting on the area element dA. The pressure is positive when the force is acting into the area.</Description>
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PRESSURE_COEFFICIENT" description="beta = dp/dT  where p is the pressure and T is the temperature" displayLabel="PRESSURE COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PRESSURE COEFFICIENT</DisplayName>
+                <Description>beta = dp/dT  where p is the pressure and T is the temperature</Description>
+                <Dimension>M_PER_L_T2_K</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PRESSURE_HEAD" displayLabel="PRESSURE HEAD" isDomainClass="False">
+        <BaseClass>DEPTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PRESSURE HEAD</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PROFILE_SURFACE_AREA_PER_UNIT_OF_LENGTH" description="An area that is an outside area of a profile pr. unit of length." displayLabel="PROFILE SURFACE AREA PER UNIT OF LENGTH" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PROFILE SURFACE AREA PER UNIT OF LENGTH</DisplayName>
+                <Description>An area that is an outside area of a profile pr. unit of length.</Description>
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PROFILE_SURFACE_AREA_PER_UNIT_OF_MASS" description="An area which is an outside area of a profile pr. unit of  mass" displayLabel="PROFILE SURFACE AREA PER UNIT OF MASS" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>PROFILE SURFACE AREA PER UNIT OF MASS</DisplayName>
+                <Description>An area which is an outside area of a profile pr. unit of  mass</Description>
+                <Dimension>L2_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*m^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="QUANTITY_OF_LIGHT" description="Time integral of luminous flux" displayLabel="QUANTITY OF LIGHT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>QUANTITY OF LIGHT</DisplayName>
+                <Description>Time integral of luminous flux</Description>
+                <Dimension>T_LF</Dimension>
+                <DimensionalDescription>s*cd*sr</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RADIANCE" description="At a point on a surface and in a given direction, the radiant intensity of an element of the surface, divided by the area of the orthogonal projection of this element on a plane perpendicular to the given direction" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RADIANCE</DisplayName>
+                <Description>"At a point on a surface and in a given direction, the radiant intensity of an element of the surface, divided by the area of the orthogonal projection of this element on a plane perpendicular to the given direction"</Description>
+                <Dimension>M_PER_T3_SA</Dimension>
+                <DimensionalDescription>kg*s^-3*sr^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RADIANT_ENERGY_DENSITY" description="Radiant energy in an element of volume; divided by that volume" displayLabel="RADIANT ENERGY DENSITY" isDomainClass="False">
+        <BaseClass>ENERGY_PER_UNIT_VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RADIANT ENERGY DENSITY</DisplayName>
+                <Description>Radiant energy in an element of volume; divided by that volume</Description>
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RADIANT_INTENSITY" description="in a given direction from a source, the radiant energy flux leaving the source, or an element of the source, in an element of the solid angle containing the given direction, divided by that element of solid angle" displayLabel="RADIANT INTENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RADIANT INTENSITY</DisplayName>
+                <Description>"in a given direction from a source, the radiant energy flux leaving the source, or an element of the source, in an element of the solid angle containing the given direction, divided by that element of solid angle"</Description>
+                <Dimension>M_L2_PER_T3_SA</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*sr^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RADIATION_ACTIVITY" description="Average number of spontaneous nuclear transitions from a particular energy state occurring in an amount of a radionuclide in a small time interval, divided by that interval" displayLabel="RADIATION ACTIVITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RADIATION ACTIVITY</DisplayName>
+                <Description>"Average number of spontaneous nuclear transitions from a particular energy state occurring in an amount of a radionuclide in a small time interval, divided by that interval"</Description>
+                <Dimension>ONE_PER_T</Dimension>
+                <DimensionalDescription>s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="REACTIVE_POWER" displayLabel="reactive power" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>reactive power</DisplayName>
+                <Description />
+                <Dimension>M_L2_PER_T3</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RECIPROCAL_AREA" displayLabel="RECIPROCAL AREA" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RECIPROCAL AREA</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_L2</Dimension>
+                <DimensionalDescription>m^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RECIPROCAL_VOLUME" displayLabel="RECIPROCAL VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RECIPROCAL VOLUME</DisplayName>
+                <Description />
+                <Dimension>ONE_PER_L3</Dimension>
+                <DimensionalDescription>m^-3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RELATIVE_FLOW_CHANGE" displayLabel="RELATIVE FLOW CHANGE" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RELATIVE FLOW CHANGE</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RELUCTANCE" description="Magnetic potential difference by magnetic flux" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RELUCTANCE</DisplayName>
+                <Description>Magnetic potential difference by magnetic flux</Description>
+                <Dimension>T2_EC2_PER_M_L2</Dimension>
+                <DimensionalDescription>kg^-1*m^-2*s^2*A^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RESISTIVITY" description="E = rho.J  Electrical resistance of a material multiplied by the ratio of cross sectional area to current path length." isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RESISTIVITY</DisplayName>
+                <Description>E = rho.J  Electrical resistance of a material multiplied by the ratio of cross sectional area to current path length.</Description>
+                <Dimension>M_L3_PER_T3_EC2</Dimension>
+                <DimensionalDescription>kg*m^3*s^-3*A^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RICHARDSON_CONSTANT" description="The thermionic emission current density J for a metal is   J = A.T^2.exp(-PHI/(k.T))  where T is the thermodynamic temperature, k is the Boltzmann constant and PHI is the work function" displayLabel="RICHARDSON CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>RICHARDSON CONSTANT</DisplayName>
+                <Description>"The thermionic emission current density J for a metal is   J = A.T^2.exp(-PHI/(k.T))  where T is the thermodynamic temperature, k is the Boltzmann constant and PHI is the work function"</Description>
+                <Dimension>EC_PER_L2_K2</Dimension>
+                <DimensionalDescription>m^-2*A*K^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROTATIONAL_SPEED" description="The number of 360 degree revolutions of a shaft per unit time" displayLabel="ROTATIONAL SPEED" isDomainClass="False">
+        <BaseClass>ANGLE_PER_TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROTATIONAL SPEED</DisplayName>
+                <Description>The number of 360 degree revolutions of a shaft per unit time</Description>
+                <Dimension>PA_PER_T</Dimension>
+                <DimensionalDescription>s^-1*rad</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROTATIONAL_SPRING_CONSTANT" displayLabel="ROTATIONAL SPRING CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROTATIONAL SPRING CONSTANT</DisplayName>
+                <Description />
+                <Dimension>M_L2_PER_T2_PA</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2*rad^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROUGHNESS" isDomainClass="False">
+        <BaseClass>DEPTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROUGHNESS</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROUGHNESS_ABSOLUTE" displayLabel="ROUGHNESS ABSOLUTE" isDomainClass="False">
+        <BaseClass>ROUGHNESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROUGHNESS ABSOLUTE</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROUGHNESS_DARCYWEISBACH" displayLabel="ROUGHNESS DARCYWEISBACH" isDomainClass="False">
+        <BaseClass>ROUGHNESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROUGHNESS DARCYWEISBACH</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROUGHNESS_HAZENWILLIAMS" displayLabel="ROUGHNESS HAZENWILLIAMS" isDomainClass="False">
+        <BaseClass>ROUGHNESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROUGHNESS HAZENWILLIAMS</DisplayName>
+                <Description>Deprecated - Use  'HAZEN_WILLIAMS_ROUGHNESS'</Description>
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROUGHNESS_KUTTERS" displayLabel="ROUGHNESS KUTTERS" isDomainClass="False">
+        <BaseClass>ROUGHNESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROUGHNESS KUTTERS</DisplayName>
+                <Description>Deprecated - Use KUTTERS_ROUGHNESS</Description>
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROUGHNESS_MANNINGS" displayLabel="ROUGHNESS MANNINGS" isDomainClass="False">
+        <BaseClass>ROUGHNESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>ROUGHNESS MANNINGS</DisplayName>
+                <Description>Deprecated - Use MANNINGS_ROUGHNESS</Description>
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SCALE" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SCALE</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SECOND_RADIATION_CONSTANT" description="The constant c1 and c2 in the expression for the spectral concentration of the radiant exitance of a full radiator (black body) at the thermodynamic temperature T    M = c1.f(lambda,T) = c1.lambda^5/(e^(c2/(lambda.T))-1)" displayLabel="SECOND RADIATION CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SECOND RADIATION CONSTANT</DisplayName>
+                <Description>"The constant c1 and c2 in the expression for the spectral concentration of the radiant exitance of a full radiator (black body) at the thermodynamic temperature T    M = c1.f(lambda,T) = c1.lambda^5/(e^(c2/(lambda.T))-1)"</Description>
+                <Dimension>L_K</Dimension>
+                <DimensionalDescription>m*K</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SIDE_SLOPE" displayLabel="SIDE SLOPE" isDomainClass="False">
+        <BaseClass>SLOPE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SIDE SLOPE</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SLOWING_DOWN_DENSITY" description="Number density of neutrons slowing down past a given energy value in a small time interval, divided by that interval" displayLabel="SLOWING-DOWN DENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SLOWING-DOWN DENSITY</DisplayName>
+                <Description>"Number density of neutrons slowing down past a given energy value in a small time interval, divided by that interval"</Description>
+                <Dimension>ONE_PER_L3_T</Dimension>
+                <DimensionalDescription>m^-3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SOLID_ANGLE" description="A solid angle of a cone is defined as the ratio of the area cut out on a spherical surface (with its centre at the apex of that cone) to the square of the radius of the sphere" displayLabel="SOLID ANGLE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SOLID ANGLE</DisplayName>
+                <Description>A solid angle of a cone is defined as the ratio of the area cut out on a spherical surface (with its centre at the apex of that cone) to the square of the radius of the sphere</Description>
+                <Dimension>SA</Dimension>
+                <DimensionalDescription>m^2*m^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SOUND_PRESSURE_LEVEL" displayLabel="SOUND PRESSURE LEVEL" isDomainClass="False">
+        <BaseClass>LOGARITHMIC_MEASURE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SOUND PRESSURE LEVEL</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SOUND_PRESSURE_LEVEL_ALLOWED" description="A sound pressure level that is the allowed sound pressure level." displayLabel="SOUND PRESSURE LEVEL ALLOWED" isDomainClass="False">
+        <BaseClass>SOUND_PRESSURE_LEVEL</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SOUND PRESSURE LEVEL ALLOWED</DisplayName>
+                <Description>A sound pressure level that is the allowed sound pressure level.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SOUND_PRESSURE_LEVEL_AT_NOMINAL_LOAD" description="A sound pressure level that is the sound pressure level generated when operating at nominal load." displayLabel="SOUND PRESSURE LEVEL AT NOMINAL LOAD" isDomainClass="False">
+        <BaseClass>SOUND_PRESSURE_LEVEL</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SOUND PRESSURE LEVEL AT NOMINAL LOAD</DisplayName>
+                <Description>A sound pressure level that is the sound pressure level generated when operating at nominal load.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECIFIC_ENERGY" description="Energy divided by mass" displayLabel="SPECIFIC ENERGY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECIFIC ENERGY</DisplayName>
+                <Description>Energy divided by mass</Description>
+                <Dimension>L2_PER_T2</Dimension>
+                <DimensionalDescription>m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECIFIC_ENTROPY" description="Entropy divided by mass" displayLabel="SPECIFIC ENTROPY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECIFIC ENTROPY</DisplayName>
+                <Description>Entropy divided by mass</Description>
+                <Dimension>L2_PER_T2_K</Dimension>
+                <DimensionalDescription>m^2*s^-2*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECIFIC_GRAVITY" displayLabel="SPECIFIC GRAVITY" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECIFIC GRAVITY</DisplayName>
+                <Description />
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECIFIC_HEAT_CAPACITY" description="Heat capacity divided by mass" displayLabel="SPECIFIC HEAT CAPACITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECIFIC HEAT CAPACITY</DisplayName>
+                <Description>Heat capacity divided by mass</Description>
+                <Dimension>L2_PER_T2_K</Dimension>
+                <DimensionalDescription>m^2*s^-2*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECIFIC_VOLUME" description="Volume divided by mass.  v=1/rho" displayLabel="SPECIFIC VOLUME" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECIFIC VOLUME</DisplayName>
+                <Description>Volume divided by mass.  v=1/rho</Description>
+                <Dimension>L3_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECIFIC_WEIGHT" displayLabel="SPECIFIC WEIGHT" isDomainClass="False">
+        <BaseClass>FORCE_PER_VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECIFIC WEIGHT</DisplayName>
+                <Description />
+                <Dimension>M_PER_L2_T2</Dimension>
+                <DimensionalDescription>kg*m^-2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECTRAL_ANGULAR_CROSS_SECTION" description="Cross-section for ejection or scattering a particle into an element of solid angle with energy in an element of energy, divided by the product of these two elements  sigma = double integral (sigma, OMEGA, E.dOMEGA.dE)" displayLabel="SPECTRAL ANGULAR CROSS-SECTION" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECTRAL ANGULAR CROSS-SECTION</DisplayName>
+                <Description>"Cross-section for ejection or scattering a particle into an element of solid angle with energy in an element of energy, divided by the product of these two elements  sigma = double integral (sigma, OMEGA, E.dOMEGA.dE)"</Description>
+                <Dimension>T2_PER_M_SA</Dimension>
+                <DimensionalDescription>kg^-1*s^2*sr^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECTRAL_CONCENTRATION_OF_RADIANT_ENERGY_DENSITY" description="Radiant energy density in an infinitesimal wavelength interval, divided by the range of that interval" displayLabel="SPECTRAL CONCENTRATION OF RADIANT ENERGY DENSITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECTRAL CONCENTRATION OF RADIANT ENERGY DENSITY</DisplayName>
+                <Description>"Radiant energy density in an infinitesimal wavelength interval, divided by the range of that interval"</Description>
+                <Dimension>M_PER_L2_T2</Dimension>
+                <DimensionalDescription>kg*m^-2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECTRAL_CONCENTRATION_OF_VIBRATIONAL_MODES" description="Number of vibrational modes in an infinitesimal interval of angular frequency, divided by the size of that interval and by volume" displayLabel="SPECTRAL CONCENTRATION OF VIBRATIONAL MODES" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECTRAL CONCENTRATION OF VIBRATIONAL MODES</DisplayName>
+                <Description>"Number of vibrational modes in an infinitesimal interval of angular frequency, divided by the size of that interval and by volume"</Description>
+                <Dimension>T_PER_L3_PA</Dimension>
+                <DimensionalDescription>m^-3*s*rad^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPECTRAL_CROSS_SECTION" description="Cross-section for a process in which the energy of the ejected or scattered particle is in an element of energy, divided by this element.  sigma = integral ( sigmaE.dE)" displayLabel="SPECTRAL CROSS-SECTION" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPECTRAL CROSS-SECTION</DisplayName>
+                <Description>"Cross-section for a process in which the energy of the ejected or scattered particle is in an element of energy, divided by this element.  sigma = integral ( sigmaE.dE)"</Description>
+                <Dimension>T2_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*s^2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPRING_CONSTANT" displayLabel="SPRING CONSTANT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SPRING CONSTANT</DisplayName>
+                <Description />
+                <Dimension>M_PER_T2</Dimension>
+                <DimensionalDescription>kg*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRAIN" description="length per length" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>STRAIN</DisplayName>
+                <Description>length per length</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SURFACE_DENSITY" description="Mass divided by area" displayLabel="SURFACE DENSITY" isDomainClass="False">
+        <BaseClass>MASS_PER_AREA</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SURFACE DENSITY</DisplayName>
+                <Description>Mass divided by area</Description>
+                <Dimension>M_PER_L2</Dimension>
+                <DimensionalDescription>kg*m^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SURFACE_TENSION" description="Force perpendicular to a line element in a surface divided by the length of the line element" displayLabel="SURFACE TENSION" isDomainClass="False">
+        <BaseClass>LINEAR_FORCE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>SURFACE TENSION</DisplayName>
+                <Description>Force perpendicular to a line element in a surface divided by the length of the line element</Description>
+                <Dimension>M_PER_T2</Dimension>
+                <DimensionalDescription>kg*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TANK_VOLUME" displayLabel="TANK VOLUME" isDomainClass="False">
+        <BaseClass>VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TANK VOLUME</DisplayName>
+                <Description />
+                <Dimension>L3</Dimension>
+                <DimensionalDescription>m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TEMPERATURE" description="The degree or intensity of heat or cold as measured on a thermometric scale, and a measure of whether two systems are relatively hot or cold with respect to one another. Two systems brought into contact will, after sufficient time, be in thermal equilibrium and will have the same temperature." isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TEMPERATURE</DisplayName>
+                <Description>The degree or intensity of heat or cold as measured on a thermometric scale, and a measure of whether two systems are relatively hot or cold with respect to one another. Two systems brought into contact will, after sufficient time, be in thermal equilibrium and will have the same temperature.</Description>
+                <Dimension>K</Dimension>
+                <DimensionalDescription>K</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TEMPERATURE_CHANGE" description="The change in the degree or intensity of heat or cold as measured on a thermometric scale." displayLabel="TEMPERATURE CHANGE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TEMPERATURE CHANGE</DisplayName>
+                <Description>The change in the degree or intensity of heat or cold as measured on a thermometric scale.</Description>
+                <Dimension>K</Dimension>
+                <DimensionalDescription>K</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TEMPERATURE_GRADIENT" description="temperature change per length" displayLabel="TEMPERATURE GRADIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TEMPERATURE GRADIENT</DisplayName>
+                <Description>temperature change per length</Description>
+                <Dimension>K_PER_L</Dimension>
+                <DimensionalDescription>m^-1*K</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THERMAL_ADMITTANCE" description="Equal to the Coefficient of Heat Transfer" displayLabel="Thermal Admittance" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Thermal Admittance</DisplayName>
+                <Description>Equal to the Coefficient of heat transfer</Description>
+                <Dimension>M_PER_T3_K</Dimension>
+                <DimensionalDescription>kg*s^-3*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THERMAL_CONDUCTANCE" description="G = 1/R  where R is the thermal resistance" displayLabel="THERMAL CONDUCTANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>THERMAL CONDUCTANCE</DisplayName>
+                <Description>G = 1/R  where R is the thermal resistance</Description>
+                <Dimension>M_L2_PER_T3_K</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THERMAL_CONDUCTIVITY" description="Areic heat flow rate divided by temperature gradient" displayLabel="THERMAL CONDUCTIVITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>THERMAL CONDUCTIVITY</DisplayName>
+                <Description>Areic heat flow rate divided by temperature gradient</Description>
+                <Dimension>M_L_PER_T3_K</Dimension>
+                <DimensionalDescription>kg*m*s^-3*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THERMAL_INSULANCE" description="Temperature difference divided by areic heat flow rate   M = 1/K" displayLabel="THERMAL INSULANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>THERMAL INSULANCE</DisplayName>
+                <Description>Temperature difference divided by areic heat flow rate   M = 1/K</Description>
+                <Dimension>T3_K_PER_M</Dimension>
+                <DimensionalDescription>kg^-1*s^3*K</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THERMAL_RESISTANCE" description="Temperature difference divided by heat flow rate." displayLabel="THERMAL RESISTANCE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>THERMAL RESISTANCE</DisplayName>
+                <Description>Temperature difference divided by heat flow rate.</Description>
+                <Dimension>T3_K_PER_M_L2</Dimension>
+                <DimensionalDescription>kg^-1*m^-2*s^3*K</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THERMAL_TRANSMITTANCE" description="The rate of heat transfer through one square meter of structure divided by the difference in temperature across the structure" displayLabel="Thermal Transmittance" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Thermal Transmittance</DisplayName>
+                <Description>The rate of heat transfer through one square meter of material divided by the difference in temperature across the material</Description>
+                <DimensionalDescription>kg*s^-3*K^-1</DimensionalDescription>
+                <Dimension>M_PER_T3_K</Dimension>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THOMSON_COEFFICIENT" description="Thomson heat power developed divided by the electric current and temperature difference" displayLabel="THOMSON COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>THOMSON COEFFICIENT</DisplayName>
+                <Description>Thomson heat power developed divided by the electric current and temperature difference</Description>
+                <Dimension>M_L2_PER_T3_EC_K</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*A^-1*K^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TIME_EXTENDED" displayLabel="TIME EXTENDED" isDomainClass="False">
+        <BaseClass>TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TIME EXTENDED</DisplayName>
+                <Description />
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TIME_FLOW" displayLabel="TIME FLOW" isDomainClass="False">
+        <BaseClass>TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TIME FLOW</DisplayName>
+                <Description />
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TIME_LONG" displayLabel="TIME LONG" isDomainClass="False">
+        <BaseClass>TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TIME LONG</DisplayName>
+                <Description />
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TIME_SHORT" displayLabel="TIME SHORT" isDomainClass="False">
+        <BaseClass>TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TIME SHORT</DisplayName>
+                <Description />
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TIME_VERY_SHORT" displayLabel="TIME VERY SHORT" isDomainClass="False">
+        <BaseClass>TIME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TIME VERY SHORT</DisplayName>
+                <Description />
+                <Dimension>T</Dimension>
+                <DimensionalDescription>s</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TORQUE" isDomainClass="False">
+        <BaseClass>MOMENT_OF_FORCE</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TORQUE</DisplayName>
+                <Description />
+                <Dimension>M_L2_PER_T2</Dimension>
+                <DimensionalDescription>kg*m^2*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TOTAL_ATOMIC_STOPPING_POWER" description="Sa = S/n  where n is the number density of the atoms in the substance" displayLabel="TOTAL ATOMIC STOPPING POWER" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TOTAL ATOMIC STOPPING POWER</DisplayName>
+                <Description>Sa = S/n  where n is the number density of the atoms in the substance</Description>
+                <Dimension>M_L4_PER_T2</Dimension>
+                <DimensionalDescription>kg*m^4*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TOTAL_MASS_STOPPING_POWER" description="Total linear stopping power divided by the volumetric mass of the substance  Sm = S/rho" displayLabel="TOTAL MASS STOPPING POWER" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>TOTAL MASS STOPPING POWER</DisplayName>
+                <Description>Total linear stopping power divided by the volumetric mass of the substance  Sm = S/rho</Description>
+                <Dimension>L4_PER_T2</Dimension>
+                <DimensionalDescription>m^4*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VAPOR_RESISTANCE" displayLabel="Vapor Resistance" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Vapor Resistance</DisplayName>
+                <Description>The vapor pressure difference per unit times rate of water vapor steady-state flow through a unit area, normal to specific parallel surfaces.  Often measured in GNs/kg.</Description>
+                <Dimension>L_PER_T</Dimension>
+                <DimensionalDescription>m*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VAPOR_RESISTIVITY" displayLabel="Vapor Resistivity" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Vapor Resistivity</DisplayName>
+                <Dimension>ONE_PER_T</Dimension>
+                <DimensionalDescription>s^-1</DimensionalDescription>
+                <Description>Resistance per unit thickness to water vapor.  Often measured in GNs/(kg*m).</Description>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VELOCITY" description="v = ds/dt where s is the displacement and t is the time" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VELOCITY</DisplayName>
+                <Description>v = ds/dt where s is the displacement and t is the time</Description>
+                <Dimension>L_PER_T</Dimension>
+                <DimensionalDescription>m*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VISCOSITY" description="Dynamic Viscosity. tau xz= eta (delta(vx)/delta(z)) where tau xz is the shear stress (shear force pr. unit area) in a fluid moving with a velocity gradient dvx/dz perpendicular to the plane of shear." isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VISCOSITY</DisplayName>
+                <Description>Dynamic Viscosity. tau xz= eta (delta(vx)/delta(z)) where tau xz is the shear stress (shear force pr. unit area) in a fluid moving with a velocity gradient dvx/dz perpendicular to the plane of shear.</Description>
+                <Dimension>M_PER_L_T</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLTAGE" isDomainClass="False">
+        <BaseClass>ELECTRIC_POTENTIAL</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLTAGE</DisplayName>
+                <Description />
+                <Dimension>M_L2_PER_T3_EC</Dimension>
+                <DimensionalDescription>kg*m^2*s^-3*A^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUME_FLOW_RATE" description="A flow rate which is the volume of matter that crosses a given surface divided by time.    (instantaneous rate of volume flow due to a sound wave, ISO 31-7:1992(E))" displayLabel="VOLUME FLOW RATE" isDomainClass="False">
+        <BaseClass>FLOW</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUME FLOW RATE</DisplayName>
+                <Description>"A flow rate which is the volume of matter that crosses a given surface divided by time.    (instantaneous rate of volume flow due to a sound wave, ISO 31-7:1992(E))"</Description>
+                <Dimension>L3_PER_T</Dimension>
+                <DimensionalDescription>m^3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUME_LARGE" displayLabel="VOLUME LARGE" isDomainClass="False">
+        <BaseClass>VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUME LARGE</DisplayName>
+                <Description />
+                <Dimension>L3</Dimension>
+                <DimensionalDescription>m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUME_PER_VOLUME" description="A ratio of a volume concept to another volume concept." displayLabel="VOLUME PER VOLUME" isDomainClass="False">
+        <BaseClass>RATIO</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUME PER VOLUME</DisplayName>
+                <Description>A ratio of a volume concept to another volume concept.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUME_PERCENTAGE" description="A percentage of the volume occupied by a component to the total volume of the system." displayLabel="VOLUME PERCENTAGE" isDomainClass="False">
+        <BaseClass>PERCENT</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUME PERCENTAGE</DisplayName>
+                <Description>A percentage of the volume occupied by a component to the total volume of the system.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUME_SMALL" displayLabel="VOLUME SMALL" isDomainClass="False">
+        <BaseClass>VOLUME</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUME SMALL</DisplayName>
+                <Description />
+                <Dimension>L3</Dimension>
+                <DimensionalDescription>m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUMIC_ACTIVITY" description="Activity divided by the total volume of the sample" displayLabel="VOLUMIC ACTIVITY" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUMIC ACTIVITY</DisplayName>
+                <Description>Activity divided by the total volume of the sample</Description>
+                <Dimension>ONE_PER_L3_T</Dimension>
+                <DimensionalDescription>m^-3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUMIC_CHARGE" description="Charge divided by volume" displayLabel="VOLUMIC CHARGE" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>VOLUMIC CHARGE</DisplayName>
+                <Description>Charge divided by volume</Description>
+                <Dimension>T_EC_PER_L3</Dimension>
+                <DimensionalDescription>m^-3*s*A</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WATER_VOLUME_FLOW_RATE" description="A water volume flow rate measured in standard cubic metre per day." displayLabel="WATER VOLUME FLOW RATE" isDomainClass="False">
+        <BaseClass>FLOW</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>WATER VOLUME FLOW RATE</DisplayName>
+                <Description>A water volume flow rate measured in standard cubic metre per day.</Description>
+                <Dimension>L3_PER_T</Dimension>
+                <DimensionalDescription>m^3*s^-1</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WEIGHT_PERCENTAGE" description="A percentage where the calculation is based on a ratio between weights." displayLabel="WEIGHT PERCENTAGE" isDomainClass="False">
+        <BaseClass>PERCENT</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>WEIGHT PERCENTAGE</DisplayName>
+                <Description>A percentage where the calculation is based on a ratio between weights.</Description>
+                <Dimension>ONE</Dimension>
+                <DimensionalDescription>one</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WEIR_COEFFICIENT" displayLabel="WEIR COEFFICIENT" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>WEIR COEFFICIENT</DisplayName>
+                <Description />
+                <Dimension>L3</Dimension>
+                <DimensionalDescription>m^3</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WIDTH" isDomainClass="False">
+        <BaseClass>LENGTH</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>WIDTH</DisplayName>
+                <Description />
+                <Dimension>L</Dimension>
+                <DimensionalDescription>m</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WOBBE_INDEX" description="The Wobbe Index is a number indicating the interchangeability of fuel gases. The value is obtained by dividing the heating value of a gas by the square root of its specific gravity." displayLabel="WOBBE INDEX" isDomainClass="False">
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>WOBBE INDEX</DisplayName>
+                <Description>The Wobbe Index is a number indicating the interchangeability of fuel gases. The value is obtained by dividing the heating value of a gas by the square root of its specific gravity.</Description>
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="YIELD_STRENGTH" displayLabel="YIELD STRENGTH" isDomainClass="False">
+        <BaseClass>STRESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>YIELD STRENGTH</DisplayName>
+                <Description />
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="YOUNGS_MODULUS" displayLabel="YOUNGS MODULUS" isDomainClass="False">
+        <BaseClass>STRESS</BaseClass>
+        <ECCustomAttributes>
+            <KindOfQuantity_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>YOUNGS MODULUS</DisplayName>
+                <Description />
+                <Dimension>M_PER_L_T2</Dimension>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+            </KindOfQuantity_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>

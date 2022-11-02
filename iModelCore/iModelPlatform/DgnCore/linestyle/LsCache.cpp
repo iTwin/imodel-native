@@ -1,0 +1,1113 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
+#include    <DgnPlatformInternal.h>
+#include    <DgnPlatform/LsLocal.h>
+
+static LsComponent*  loadComponent (LsComponentReader* reader);
+
+#define LSLOG(sev,...) {NativeLogging::CategoryLogger("LsCache").messagev(sev, __VA_ARGS__); }
+
+USING_NAMESPACE_BENTLEY_SQLITE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool const LsLocation::operator < (LsLocation const &r ) const
+    {
+    if (GetComponentType() != r.GetComponentType())
+        return  GetComponentType() < r.GetComponentType() ? true : false;
+
+    if (GetComponentId().GetValue() != r.GetComponentId().GetValue())
+        return  GetComponentId().GetValue() < r.GetComponentId().GetValue() ? true : false;
+
+    BeAssert (GetFileKey() == r.GetFileKey());
+    return  false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//--------------+------------------------------------------------------------------------
+LsComponentReader::~LsComponentReader ()
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void LsComponentReader::GetJsonValue(JsonValueR componentDef)
+    {
+    if (!Json::Reader::Parse(m_jsonSource, componentDef))
+        return;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static LsComponent* cacheLoadComponent(LsLocationCR location)
+    {
+    LsComponentReader reader(&location, *location.GetDgnDb());
+    return loadComponent(&reader);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void LsComponent::UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue)
+    {
+    //  The larger the value the worse it is (NotAllowed > ChangeRequired).  We want to record the worst value.
+    if (newValue > current)
+        current = newValue;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void LsComponent::ExtractDescription(JsonValueCR result)
+    {
+    m_descr = LsJsonHelpers::GetString(result, "descr", "");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void LsComponent::SaveToJson(Json::Value& result) const
+    {
+    result.clear();
+    Utf8String descr = GetDescription();
+    if (descr.SizeInBytes() > 0)
+        result["descr"] = descr.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//--------------+------------------------------------------------------------------------
+void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec)
+    {
+    SqlPrintfString sql("SELECT  max(Id) from " BEDB_TABLE_Property " where Namespace='%s' and Name='%s'", spec.GetNamespace(), spec.GetName());
+    Statement stmt;
+    stmt.Prepare(project, sql.GetUtf8CP());
+    DbResult result = stmt.Step();
+    if (BE_SQLITE_DONE != result && BE_SQLITE_ROW != result)
+        {
+        id = 1;
+        return;
+        }
+
+    // NOTE -- unclear what will happen to the magic values.  For now, avoid any collision with them.
+    id = std::max(stmt.GetValueInt(0) + 1, MAX_LINECODE+1);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDefIn, uint8_t const*imageData, uint32_t dataSize)
+    {
+    //  First put out the raster image
+    BeSQLite::PropertySpec spec = LineStyleProperty::RasterImage();
+
+    uint32_t rasterImageNumber;
+    GetNextComponentNumber (rasterImageNumber, project, spec);
+
+    if (project.SaveProperty (spec, imageData, dataSize, rasterImageNumber, 0) != BE_SQLITE_OK)
+        return LINESTYLE_STATUS_SQLITE_Error;
+
+    spec = LineStyleProperty::RasterComponent();
+    Json::Value jsonValue(jsonDefIn);
+    jsonValue["imageId"] = rasterImageNumber;
+
+    uint32_t componentNumber;
+    GetNextComponentNumber (componentNumber, project, spec);
+    Utf8String data = Json::FastWriter::ToString(jsonValue);
+
+    if (project.SavePropertyString (spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
+        return LINESTYLE_STATUS_SQLITE_Error;
+
+    componentId = LsComponentId(LsComponentType::RasterImage, componentNumber);
+
+    return LINESTYLE_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue)
+    {
+    BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
+
+    switch (componentType)
+        {
+        case LsComponentType::Compound:
+            break;
+        case LsComponentType::LineCode:
+            spec = LineStyleProperty::LineCode();
+            break;
+        case LsComponentType::LinePoint:
+            spec = LineStyleProperty::LinePoint();
+            break;
+        case LsComponentType::PointSymbol:
+            spec = LineStyleProperty::PointSym();
+            break;
+        case LsComponentType::RasterImage:
+            BeAssert(false && "use AddRasterComponentAsJson to add RasterImage");
+            componentId = LsComponentId();
+            return LINESTYLE_STATUS_ConvertingComponent;
+        default:
+            BeAssert(false && "invalid component type");
+            componentId = LsComponentId();
+            return LINESTYLE_STATUS_ConvertingComponent;
+        }
+    uint32_t componentNumber;
+    GetNextComponentNumber (componentNumber, project, spec);
+
+    Utf8String data = Json::FastWriter::ToString(jsonValue);
+
+    if (project.SavePropertyString(spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
+        {
+        LOG.errorv("LsComponent::AddComponentAsJsonProperty - failed to save property string '%s' for component number %" PRIu32, data.c_str(), componentNumber);
+        return LINESTYLE_STATUS_SQLITE_Error;
+        }
+
+    componentId = LsComponentId(componentType, componentNumber);
+    LSLOG(LOG_TRACE, "LsComponent::AddComponentAsJsonProperty - Component number: %" PRIu32 " Component Type: %d  Property String: %s", componentNumber, (int) componentType, data.c_str());
+    return LINESTYLE_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//--------------+------------------------------------------------------------------------
+LsComponent::LsComponent (DgnDbR project, LsComponentId componentId) : m_isDirty (false)
+    {
+    m_location.SetLocation (project, componentId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsComponent::LsComponent (LsLocation const* location) : m_isDirty (false)
+    {
+    m_location.SetFrom (location);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void            LsComponent::CopyDescription (Utf8CP buffer)
+    {
+    m_descr.AssignOrClear(buffer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus       LsStrokePatternComponent::PostCreate ()
+    {
+    // Set up affectedByWidth bit
+    m_options.affectedByWidth = 0;
+
+    LsStrokeCP   stroke = GetConstStrokePtr(0);
+    for (size_t iStroke=0; iStroke<GetStrokeCount(); iStroke++, stroke++)
+        {
+        if (stroke->IsDash() && stroke->GetWidthMode () != LsStroke::LCWIDTH_None)
+            {
+            m_options.affectedByWidth = 1;
+            break;
+            }
+        }
+    return  SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponentP* newLC, Json::Value const & jsonDef, LsLocationCP location)
+    {
+    LsStrokePatternComponentP retval = new LsStrokePatternComponent(location);
+    retval->ExtractDescription(jsonDef);
+
+    JsonValueCR strokes = jsonDef["strokes"];
+    uint32_t nStrokes = strokes.size();
+
+    if (nStrokes == 0)
+        {
+        // create a default solid stroke
+        retval->AppendStroke (fc_hugeVal, true);
+        }
+    else
+        {
+        retval->m_nStrokes = nStrokes;
+        if (retval->m_nStrokes > 32)
+            retval->m_nStrokes = 32;
+
+        for (uint32_t i = 0; i < retval->m_nStrokes; i++)
+            {
+            LsStroke&   pStroke = retval->m_strokes[i];
+            JsonValueCR jsonStroke = strokes[i];
+            double length = LsJsonHelpers::GetDouble(jsonStroke, "length", 0);
+            double width = LsJsonHelpers::GetDouble(jsonStroke, "orgWidth", 0);
+            double endWidth = LsJsonHelpers::GetDouble(jsonStroke, "endWidth", width);
+            uint32_t strokeMode = LsJsonHelpers::GetUInt32(jsonStroke, "strokeMode", 0);
+            uint32_t widthMode = LsJsonHelpers::GetUInt32(jsonStroke, "widthMode", 0);
+            uint32_t capMode = LsJsonHelpers::GetUInt32(jsonStroke, "capMode", 0);
+
+            pStroke.Init (length, width, endWidth, (LsStroke::WidthMode)widthMode, (LsCapMode)capMode);
+            pStroke.SetIsDash (strokeMode & LCSTROKE_DASH);
+            pStroke.SetIsRigid (TO_BOOL (strokeMode & LCSTROKE_RAY));
+            pStroke.SetIsStretchable (TO_BOOL(strokeMode & LCSTROKE_SCALE));
+            pStroke.SetIsDashFirst (pStroke.IsDash() ^ TO_BOOL(strokeMode & LCSTROKE_SINVERT));
+            pStroke.SetIsDashLast  (pStroke.IsDash() ^ TO_BOOL(strokeMode & LCSTROKE_EINVERT));
+            }
+
+        uint32_t options = LsJsonHelpers::GetUInt32(jsonDef, "options", 0);
+        uint32_t maxIterate = LsJsonHelpers::GetUInt32(jsonDef, "maxIter", 0);
+        double phase = LsJsonHelpers::GetDouble(jsonDef, "phase", 0);
+        retval->SetIterationLimit ((options & LCOPT_ITERATION) ? maxIterate : 0);
+        retval->SetIterationMode ((options & LCOPT_ITERATION) ? true : false);
+        retval->SetSegmentMode ((options & LCOPT_SEGMENT) ? true : false);
+
+        if (!retval->IsRigid())
+            {
+            if (0 == (options & (LCOPT_AUTOPHASE | LCOPT_CENTERSTRETCH)) && 0.0 != phase)
+                {
+                retval->SetDistancePhase (phase);
+                }
+            else if (options & LCOPT_AUTOPHASE)
+                {
+                retval->SetFractionalPhase (phase);
+                }
+            else if (options & LCOPT_CENTERSTRETCH)
+                {
+                retval->SetCenterPhaseMode();
+                }
+            }
+        }
+
+    retval->CalcPatternLength();
+    retval->PostCreate ();
+
+    *newLC = retval;
+    return LINESTYLE_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void LsStrokePatternComponent::SaveToJson(Json::Value& result) const
+    {
+    LsComponent::SaveToJson(result);
+    double phase = 0.0;
+    uint32_t options = 0;
+    uint32_t  maxIterate = 0;
+
+    // Set phase, maxIterate, and options
+    if (HasIterationLimit ())
+        {
+        maxIterate = GetIterationLimit ();
+        options |= LCOPT_ITERATION;
+        }
+
+    if (IsSingleSegment())
+        options |= LCOPT_SEGMENT;
+
+    switch (GetPhaseMode ())
+        {
+        case PHASEMODE_Fixed:
+            phase = GetDistancePhase ();
+            break;
+        case PHASEMODE_Fraction:
+            phase = GetFractionalPhase ();
+            options |= LCOPT_AUTOPHASE;
+            break;
+        case PHASEMODE_Center:
+            phase = 0;
+            options |= LCOPT_CENTERSTRETCH;
+            break;
+        }
+
+    if (phase != 0)
+        result["phase"] = phase;
+
+    if (options != 0)
+        result["options"] = options;
+
+    if (maxIterate != 0)
+        result["maxIter"] = maxIterate;
+
+    Json::Value strokes(Json::arrayValue);
+    for (uint32_t index = 0; index<m_nStrokes; ++index)
+        {
+        LsStroke const& stroke = m_strokes[index];
+        Json::Value  entry(Json::objectValue);
+        entry["length"] = stroke.m_length;
+        if (stroke.m_orgWidth != 0)
+            entry["orgWidth"] = stroke.m_orgWidth;
+        if (stroke.m_endWidth != stroke.m_orgWidth)
+            entry["endWidth"] = stroke.m_endWidth;
+        if (stroke.m_strokeMode != 0)
+            entry["strokeMode"] = stroke.m_strokeMode;
+        if (stroke.m_widthMode != 0)
+            entry["widthMode"] = stroke.m_widthMode;
+        if (stroke.m_capMode != 0)
+            entry["capMode"] = stroke.m_capMode;
+
+        uint8_t strokeMode = 0;
+        if (stroke.IsDash ())
+            strokeMode  |= LCSTROKE_DASH;
+        if (stroke.IsDashFirst () != stroke.IsDash())
+            strokeMode  |= LCSTROKE_SINVERT;
+        if (stroke.IsDashLast () != stroke.IsDash())
+            strokeMode  |= LCSTROKE_EINVERT;
+        if (stroke.IsRigid ())
+            strokeMode  |= LCSTROKE_RAY;
+        if (stroke.IsStretchable ())
+            strokeMode  |= LCSTROKE_SCALE;
+
+        if (strokeMode != 0)
+            entry["strokeMode"] = strokeMode;
+
+        strokes[index] = entry;
+        }
+
+    result["strokes"] = strokes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsStrokePatternComponentP LsStrokePatternComponent::LoadStrokePatternComponent
+(
+LsComponentReader*    reader
+)
+    {
+    Json::Value      jsonValue;
+    reader->GetJsonValue(jsonValue);
+
+    LsStrokePatternComponentP compPtr;
+
+    LsStrokePatternComponent::CreateFromJson(&compPtr, jsonValue, reader->GetSource());
+
+    return  compPtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void LsCompoundComponent::_StartTextureGeneration() const
+    {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
+    for (LsOffsetComponent const & comp : m_components)
+        comp.m_subComponent->_StartTextureGeneration();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsCompoundComponent::_IsOkayForTextureGeneration() const
+    {
+    if (m_okayForTextureGeneration != LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired;
+
+    for (LsOffsetComponent const & comp : m_components)
+        {
+        if (comp.m_subComponent->_IsOkayForTextureGeneration() > m_okayForTextureGeneration)
+            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, comp.m_subComponent->_IsOkayForTextureGeneration());
+        }
+
+    return m_okayForTextureGeneration;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ LsComponentPtr LsCompoundComponent::_GetForTextureGeneration() const
+    {
+    _IsOkayForTextureGeneration();
+    BeAssert(LsOkayForTextureGeneration::NotAllowed != m_okayForTextureGeneration); //  The caller should have checked this.
+    if (LsOkayForTextureGeneration::NoChangeRequired == m_okayForTextureGeneration)
+        return const_cast<LsCompoundComponentP>(this);
+
+    LsCompoundComponentP retval = new LsCompoundComponent(*this);
+    for (LsOffsetComponent& comp : retval->m_components)
+        comp.m_subComponent = comp.m_subComponent->_GetForTextureGeneration();
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired;
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsCompoundComponent::LsCompoundComponent(LsCompoundComponentCR source) : LsComponent(&source), m_postProcessed(false)
+    {
+    m_size = source.m_size;
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
+    for (LsOffsetComponent const& child: source.m_components)
+        m_components.push_back(child);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsCompoundComponent::LsCompoundComponent (LsLocation const *pLocation) :
+            LsComponent (pLocation), m_postProcessed (false)
+    {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
+    m_postProcessed = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void            LsCompoundComponent::_PostProcessLoad ()
+    {
+    if (m_postProcessed)
+        return;
+
+    m_postProcessed = true;
+
+    for (T_ComponentsCollectionIter start = m_components.begin (); start < m_components.end (); start++)
+        start->m_subComponent->_PostProcessLoad ();
+
+    CalculateSize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void            LsCompoundComponent::_ClearPostProcess ()
+    {
+    m_postProcessed = false;
+
+    for (T_ComponentsCollectionIter start = m_components.begin (); start < m_components.end (); start++)
+        start->m_subComponent->_ClearPostProcess ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsCompoundComponent::~LsCompoundComponent ()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void    offsetLinePoints
+(
+DPoint3d*           outPts,
+DPoint3d  const*    inPts,
+LineJoint const*    joints,
+int                 nPts,
+double              offset
+)
+    {
+    if (0.0 == offset)
+        {
+        memcpy (outPts, inPts, nPts * sizeof (DPoint3d));
+        }
+    else
+        {
+        DPoint3dCP  src = inPts;
+        DPoint3dCP  end = src + nPts;
+
+        for (;src < end; src++, outPts++, joints++)
+            outPts->SumOf (*src,joints->m_dir, offset * joints->m_scale);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       LsCompoundComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
+    {
+    DVec3d    normal;
+    RotMatrix matrix;
+
+    modifiers.GetPlaneAsMatrixRows(matrix);
+    matrix.GetRow (normal, 2);
+
+    ScopedArray<LineJoint, 50> scopedJoints(nPoints);
+    LineJoint*  joints = scopedJoints.GetData();
+    LineJoint::FromVertices (joints, inPoints, nPoints, &normal, NULL, NULL);
+
+    ScopedArray<DPoint3d, 50> scopedOffsetPts(nPoints);
+    DPoint3d*   offsetPts = scopedOffsetPts.GetData();
+    double      scale = modifiers.GetScale();
+
+    for (T_ComponentsCollectionConstIter curr = m_components.begin (); curr < m_components.end (); curr++)
+        {
+        offsetLinePoints (offsetPts, inPoints, joints, nPoints, scale * curr->m_offset);
+        if (SUCCESS != curr->m_subComponent->_DoStroke (context, offsetPts, nPoints, modifiers))
+            return  ERROR;
+        }
+
+    return  SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void            LsCompoundComponent::CalculateSize()
+    {
+    BeAssert (m_postProcessed);
+    m_size.x  = 0.0;
+    m_size.y  = 0.0;
+
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        // The length is the distance for a complete pattern, so it's the length of the
+        // longest component.  However, if continuous or LTYPE_Internal components are used,
+        // the length of those don't count.
+        //
+        // Judging from the previous comment, this should have been testing for Internal.  It absolutely should be testing for
+        // internal when computing the size that is required for generating a texture. If we find cases where it should not be
+        // testing for internal, then we need to track 2 separate sizes.
+        if (!GetComponentCP(compNum)->_IsContinuous() && GetComponentCP(compNum)->GetComponentType() != LsComponentType::Internal)
+            {
+            if (GetComponentCP(compNum)->_GetLength() > m_size.x)
+                m_size.x = GetComponentCP(compNum)->_GetLength();
+            }
+
+        double offset    = fabs (GetOffset (compNum));
+        //  NEEDSWORK_LINESTYLE_UNITS
+        double compWidth = GetComponentCP(compNum)->_GetMaxWidth();
+        double thisWidth = (offset + (compWidth/2.0)) * 2.0;
+
+        if (thisWidth > m_size.y)
+            m_size.y = thisWidth;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool        LsCompoundComponent::_HasRasterImageComponent () const
+    {
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        if (GetComponentCP (compNum)->_HasRasterImageComponent())
+            return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsRasterImageComponentP      LsCompoundComponent::_GetRasterImageComponent ()
+    {
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        LsComponentCP comp = GetComponentCP (compNum);
+        if (comp->GetComponentType () == LsComponentType::RasterImage)
+            return (LsRasterImageComponentP)const_cast<LsComponentP>(comp);
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LineStyleStatus LsCompoundComponent::AppendComponent
+(
+LsComponentR    childComponent,
+double          offset
+)
+    {
+    LsOffsetComponent   lsOffset (offset, &childComponent);
+
+    m_components.push_back (lsOffset);
+
+    return LINESTYLE_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsCompoundComponentP  LsCompoundComponent::LoadCompoundComponent(LsComponentReader* reader)
+    {
+    Json::Value jsonValue;
+    reader->GetJsonValue(jsonValue);
+
+    LsCompoundComponentP compPtr;
+    LsCompoundComponent::CreateFromJson(&compPtr, jsonValue, reader->GetSource());
+
+    return compPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
+            LsStrokePatternComponent (pLocation)
+    {
+    uint32_t id = pLocation->GetComponentId().GetValue();
+    m_hardwareLineCode = ((id <= MAX_LINECODE) ? id : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
+    {
+    uint32_t hwStyle = GetHardwareStyle();
+
+    // NOTE: Hardware line codes aren't supported when generating textures...
+    //       Do we need to worry about a hwStyle of 0 after a non-zero hwStyle? Hopefully we don't have to do this all the time just in case we need to clear a previous non-zero hwStyle?!?
+    //       Worth noting that we will lose the hwStyle if we implement "drop linestyle" as we may not have or know a lstyle id...
+    if (!context.GetCreatingTexture() && hwStyle >= MIN_LINECODE || hwStyle <= MAX_LINECODE)
+        {
+        Render::GeometryParamsCR baseParams = context.GetGeometryParams();
+
+        if (baseParams.GetCategoryId().IsValid()) // NOTE: LineStyleRangeCollector doesn't care about base symbology...
+            {
+            ViewContextR            viewContext = context.GetViewContext();
+            Render::GraphicParams   tmpGraphicParams;
+            Render::GeometryParams  tmpGeomParams(baseParams);
+
+            viewContext.CookGeometryParams(tmpGeomParams, tmpGraphicParams);
+
+            switch (hwStyle)
+                {
+                case 1:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code1);
+                    break;
+                case 2:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code2);
+                    break;
+                case 3:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code3);
+                    break;
+                case 4:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code4);
+                    break;
+                case 5:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code5);
+                    break;
+                case 6:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code6);
+                    break;
+                case 7:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code7);
+                    break;
+                }
+
+            context.GetGraphicR().ActivateGraphicParams(tmpGraphicParams, &tmpGeomParams);
+            }
+        }
+
+    return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsInternalComponentPtr LsInternalComponent::CreateInternalComponent(LsLocation& location)
+    {
+    LsInternalComponent*  comp = new LsInternalComponent (&location);
+    comp->m_isDirty = true;
+
+    comp->AppendStroke (fc_hugeVal, true);
+    comp->CalcPatternLength();
+    comp->PostCreate ();
+
+    return comp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//--------------+------------------------------------------------------------------------
+StatusInt LsDefinition::UpdateStyleTable () const
+    {
+    DgnDbP project = GetLocation()->GetDgnDb();
+    project->LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsStrokePatternComponentP  LsInternalComponent::LoadInternalComponent(LsComponentReader*reader)
+    {
+    const LsLocation* location = reader->GetSource();
+
+    LsInternalComponent*  comp = new LsInternalComponent (location);
+
+    comp->AppendStroke (fc_hugeVal, true);
+    comp->CalcPatternLength();
+    comp->PostCreate ();
+
+    //  The original code set its type back to match the original type so it would
+    //  be found in the search but I don't understand when they differ.
+    //  BeAssert (reader->GetRscType() == LsResourceType::Internal);
+
+    return  comp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsRasterImageComponent* LsRasterImageComponent::LoadRasterImage  (LsComponentReader* reader)
+    {
+    Json::Value      jsonValue;
+    reader->GetJsonValue(jsonValue);
+
+    LsRasterImageComponentP newComp;
+    LsRasterImageComponent::CreateFromJson(&newComp, jsonValue, reader->GetSource());
+
+    return newComp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            LsCompoundComponent::_HasLineCodes () const
+    {
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        if (GetComponentCP (compNum)->_HasLineCodes ())
+            return  true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            LsStrokePatternComponent::_HasWidth () const
+    {
+    LsStrokeCP   stroke = GetConstStrokePtr (0);
+
+    for (size_t i=0; i<GetStrokeCount(); i++, stroke++)
+        {
+        /* No strokes with widths */
+        if (stroke->HasWidth())
+            return true;
+        }
+
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            LsStrokePatternComponent::_HasUniformFullWidth (double *pWidth) const
+    {
+    LsStrokeCP   stroke = GetConstStrokePtr (0);
+    bool        widthFound = false;
+    double      width = 0.0;
+
+    if (pWidth)
+        *pWidth = 0.0;
+
+    for (size_t i=0; i<GetStrokeCount(); i++, stroke++)
+        {
+        if (!stroke->IsDash())
+            continue;
+
+        // If it has width, it must be uniform and full.
+        if (stroke->HasWidth())
+            {
+            if (!stroke->_HasUniformFullWidth())   // Dash is not uniform
+                return false;
+
+            if (widthFound && stroke->GetStartWidth() != width) // Dash not the same as other dashes
+                return  false;
+
+            widthFound = true;
+            width = stroke->GetStartWidth();
+            }
+        }
+
+    if (pWidth)
+        *pWidth = width;
+
+    return  (0.0 == width ? false : true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            LsCompoundComponent::_HasWidth () const
+    {
+    return  m_size.y > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            LsCompoundComponent::_HasUniformFullWidth (double *pWidth) const
+    {
+    *pWidth = 0.0;
+    double  maxWidth = 0.0;
+    double  curWidth = 0.0;
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        if (!GetComponentCP (compNum)->_HasUniformFullWidth (&curWidth))
+            return  false;
+        if (curWidth > maxWidth)
+            maxWidth = curWidth;
+        }
+    *pWidth = maxWidth;
+    return true;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* Check line style for continuous.  Criteria include:
+* - Line codes only
+*   - no components, or
+*   - 1 huge dash & all dashes & no widths
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void            LsDefinition::CheckForContinuous
+(
+LsStrokePatternComponentCP    strokeComp
+)
+    {
+    if ((NULL == strokeComp) || IsContinuous())
+        return;
+
+    if (strokeComp->_IsContinuous())
+        m_attributes |= LSATTR_CONTINUOUS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void LsDefinition::PostProcessComponentLoad ()
+    {
+    if (m_componentLoadPostProcessed)
+        return;
+
+    m_componentLoadPostProcessed.store(true);
+
+    m_lsComp->_PostProcessLoad ();
+
+    /* Look for continuous lines; mark them as such in the LineStyle */
+    CheckForContinuous (dynamic_cast<LsStrokePatternComponentCP> (m_lsComp.get ()));
+
+    if (IsContinuous() && !m_lsComp->_HasWidth ())
+        m_attributes |= LSATTR_NOWIDTH;
+
+    m_maxWidth = m_lsComp->_GetMaxWidth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void LsDefinition::ClearPostProcess()
+    {
+    m_componentLoadPostProcessed.store(false);
+
+    if (NULL != m_lsComp.get ())
+        m_lsComp->_ClearPostProcess ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LineStyleStatus LsDefinition::SetComponent(LsComponentP lsComp)
+    {
+    if (NULL != lsComp && NULL != m_lsComp.get ())
+        {
+        if (lsComp->GetLocation ()->GetFileKey () != GetLocation ()->GetFileKey ())
+            return LINESTYLE_STATUS_NotSameFile;
+        }
+
+    MarkDirty ();
+    m_lsComp = lsComp;
+
+    return LINESTYLE_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsComponentCP LsDefinition::GetComponentCP() const
+    {
+    return GetComponentP ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+  Get a temporary pointer to a component in the cache.
+  If the component is not loaded, it and any necessary
+  sub-components will be loaded.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LsComponentP    LsDefinition::GetComponentP() const
+    {
+    if (m_componentLookupFailed)
+        return NULL;
+
+    LsDefinitionP   nonConstThis = const_cast <LsDefinitionP> (this);
+
+    // see if we have it cached. If so, use it.
+    if (NULL != m_lsComp.get ())
+        {
+        nonConstThis->PostProcessComponentLoad ();
+        return  m_lsComp.get ();
+        }
+
+    nonConstThis->m_componentLoadPostProcessed.store(false);
+    LsLocation  location = nonConstThis->m_location;
+
+    LsComponentP    component = DgnLineStyles::GetLsComponent (location);
+    if (nullptr == component)
+        {
+        nonConstThis->m_componentLookupFailed = true;
+        return NULL;
+        }
+
+    nonConstThis->SetComponent (component);
+    nonConstThis->PostProcessComponentLoad ();
+
+    return  component;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LsCompoundComponent::_ContainsComponent (LsComponentP other) const
+    {
+    if (LsComponent::_ContainsComponent(other))
+        return  true;
+
+    for (size_t i=0; i<GetNumComponents(); i++)
+        {
+        if (GetComponentCP (i)->_ContainsComponent (other))
+            return  true;
+        }
+
+    return  false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//--------------+------------------------------------------------------------------------
+BentleyStatus       LsComponentReader::_LoadDefinition ()
+    {
+    if (m_jsonSource.size() > 0)
+        return SUCCESS;
+
+    BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
+
+    switch (m_source->GetComponentType())
+        {
+        case LsComponentType::Compound:
+            break;
+        case LsComponentType::LineCode:
+            spec = LineStyleProperty::LineCode();
+            break;
+        case LsComponentType::LinePoint:
+            spec = LineStyleProperty::LinePoint();
+            break;
+        case LsComponentType::PointSymbol:
+            spec = LineStyleProperty::PointSym();
+            break;
+        case LsComponentType::RasterImage:
+            spec = LineStyleProperty::RasterComponent();
+            break;
+        case LsComponentType::Internal:
+            return ERROR;
+
+        default:
+            BeAssert(false && "invalid component type");
+        }
+
+    GetDgnDb().QueryProperty(m_jsonSource, spec, GetSource()->GetComponentId().GetValue());
+    return  (m_jsonSource.size() == 0) ? ERROR : SUCCESS;
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static LsComponent*  loadComponent (LsComponentReader* reader)
+    {
+    if (SUCCESS != reader->_LoadDefinition())
+        {
+        if (LsComponentType::Internal == (LsComponentType)reader->GetComponentType())
+            return LsInternalComponent::LoadInternalComponent (reader);
+
+        return NULL;
+        }
+
+    switch ((LsComponentType)reader->GetComponentType())
+        {
+        case LsComponentType::Compound:
+            return LsCompoundComponent::LoadCompoundComponent (reader);
+
+        case LsComponentType::LineCode:
+            return LsStrokePatternComponent::LoadStrokePatternComponent (reader);
+            break;
+
+        case LsComponentType::LinePoint:
+            return LsPointComponent::LoadLinePoint (reader);
+
+        case LsComponentType::PointSymbol:
+            return LsSymbolComponent::LoadPointSym (reader);
+            break;
+
+        case LsComponentType::RasterImage:
+            return LsRasterImageComponent::LoadRasterImage (reader);
+        }
+
+    return  NULL;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsCacheP LsLocation::GetCacheP () const
+    {
+    if (GetDgnDb() == nullptr)
+        return nullptr;
+    else
+        return &GetDgnDb()->LineStyles().GetCache();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
+    {
+    return location.GetDgnDb()->LineStyles().GetComponent(location);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsComponent* DgnLineStyles::GetComponent(LsLocationCR location)
+    {
+    BeMutexHolder lock(m_mutex);
+
+    auto iter = m_loadedComponents.find(location);
+    if (iter != m_loadedComponents.end())
+        return iter->second.get();
+
+    LsComponentPtr comp = cacheLoadComponent (location);
+    if (comp.IsNull())
+        return nullptr;
+
+    m_loadedComponents[location] = comp;
+    return comp.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+LsComponentPtr DgnLineStyles::GetLsComponent(LsComponentId componentId)
+    {
+    if (!componentId.IsValid())
+        return nullptr;
+
+    LsLocation   location;
+    location.SetLocation(m_dgndb, componentId);
+    return GetLsComponent(location);
+    }

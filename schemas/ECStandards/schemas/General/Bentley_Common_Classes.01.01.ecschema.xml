@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_Common_Classes" nameSpacePrefix="bcc" version="1.1" description="Bentley Common Classes" displayLabel="Bentley Common Classes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.08" prefix="bsca" />
+
+    <ECCustomAttributes>
+        <ItemsSchemaIdentifier xmlns="Bentley_Standard_CustomAttributes.01.08">
+            <IsItemsSchema>False</IsItemsSchema>
+        </ItemsSchemaIdentifier>
+        <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <Hidden>True</Hidden>
+        </DisplayOptions>
+    </ECCustomAttributes>
+
+    <!-- The standard comment class. -->
+    <ECClass typeName="Comment" description="Standard Comment Class" isDomainClass="True">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Comment</Name>
+                <DisplayLabel>Comment</DisplayLabel>
+                <Description>Comment Properties</Description>
+                <Priority>200000</Priority>
+                <Expand>True</Expand>
+            </Category>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Comment" typeName="string" description="The comment text." />
+        <ECProperty propertyName="Reviewer" typeName="string" description="Name of reviewer." />
+        <ECProperty propertyName="Date" typeName="dateTime" description="Date comment was created." />
+        <ECProperty propertyName="Source" typeName="string" description="The comment source (eg. application name)." />
+        <ECProperty propertyName="Reference" typeName="string" description="Specifies what the comment references." />
+    </ECClass>
+    <ECClass typeName="RgbColor" description="Standard RGB Element Color Class" displayLabel="RGB Color" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Red" typeName="int" description="Red, 0-255." />
+        <ECProperty propertyName="Blue" typeName="int" description="Blue, 0-255." />
+        <ECProperty propertyName="Green" typeName="int" description="Green, 0-255." />
+    </ECClass>
+    <ECClass typeName="DgnElementColor" description="Standard Dgn Element Color Class" displayLabel="Element Color" isStruct="True" isDomainClass="True">
+        <BaseClass>RgbColor</BaseClass>
+        <ECCustomAttributes>
+            <CustomStructSerializer xmlns="Bentley_Standard_CustomAttributes.01.08">
+                <SerializerName>ColorType</SerializerName>
+            </CustomStructSerializer>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Source" typeName="int" description="Color source: Element=0, ByLevel=1, ByCell=2." />
+        <ECProperty propertyName="Type" typeName="int" description="Color type: Indexed=1, RGB=2, ColorBook=3, GradientFill=4." />
+        <ECProperty propertyName="Index" typeName="int" description="Color Index 0-255." />
+        <ECProperty propertyName="ColorBook" typeName="string" description="ColorBook name." displayLabel="Color Book" />
+        <ECProperty propertyName="ColorName" typeName="string" description="ColorBook color name." displayLabel="Color Name" />
+    </ECClass>
+    <ECClass typeName="GradientKeyColor" description="Standard Gradient Key Color Class" displayLabel="Gradient KeyColor" isStruct="True" isDomainClass="True">
+        <BaseClass>RgbColor</BaseClass>
+        <ECProperty propertyName="Location" typeName="double" description="Start of color 0.0 to 1.0" />
+    </ECClass>
+    <ECClass typeName="GradientInfo" description="Gradient color info" displayLabel="Gradient Info" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="GradientAngle" typeName="double" description="Gradient Angle" />
+        <ECProperty propertyName="GradientTint" typeName="double" description="Gradient Tint." displayLabel="Tint" />
+        <ECProperty propertyName="GradientShift" typeName="double" description="Gradient Shift" displayLabel="Shift" />
+        <ECProperty propertyName="GradientOptions" typeName="int" description="Gradient Options: Invert=1, Outline=2, AlwaysFilled=4." displayLabel="Gradient Options" />
+        <ECProperty propertyName="GradientMode" typeName="int" description="Gradient Mode: None = 0, Linear = 1, Curved = 2, Cylindrical = 3, Spherical = 4, Hemispherical = 5." displayLabel="Gradient Mode" />
+        <ECProperty propertyName="FillOptions" typeName="int" description="Fill Options: None = 0, AlwaysFilled = 1, ParityRule = 2" displayLabel="Fill Options" />
+        <ECArrayProperty propertyName="GradientKeyColors" typeName="GradientKeyColor" minOccurs="0" maxOccurs="8" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="DgnElementFillColor" description="Standard Dgn Element Fill Color Class" displayLabel="Element Fill Color" isStruct="True" isDomainClass="True">
+        <BaseClass>DgnElementColor</BaseClass>
+        <BaseClass>GradientInfo</BaseClass>
+        <ECCustomAttributes>
+            <CustomStructSerializer xmlns="Bentley_Standard_CustomAttributes.01.04">
+                <SerializerName>FillColorType</SerializerName>
+            </CustomStructSerializer>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>

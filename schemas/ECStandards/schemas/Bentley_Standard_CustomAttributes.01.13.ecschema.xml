@@ -1,0 +1,588 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_Standard_CustomAttributes" nameSpacePrefix="bsca" version="1.13" description="Bentley Standard Custom Attributes" displayLabel="Bentley Standard Custom Attributes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca" />
+    <!--Struct used for specifying whether duplicate values in localization key value pairs can be replaced by GUIDs-->
+    <ECClass typeName="AllowDuplicateLocalizedValues" description="Keeps the localizable values from this element from being combined with those from another element if duplication occurs.  If combined a GUID is used as the key for the localizable value." displayLabel="Allow duplicate localized values" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Label" typeName="boolean" description="If true the elements Display Label will always be treated as a unique value." />
+        <ECProperty propertyName="Description" typeName="boolean" description="If true the elements description will always be treated as a unique value." />
+    </ECClass>
+    <ECClass typeName="PropertyReferenceProperties" description="For Internal Use Only.  Applied to a custom attribute class defiition to indicate which string properties refer to a property in the class where this attribute is applied." displayLabel="Property reference properties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="PropertiesThatReferenceAProperty" typeName="string" description="A list of properties whose values are references to a property in the class where this attribute is applied." displayLabel="Properties that reference a property" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="BusinessKeySpecification" description="Business Key Specification" displayLabel="Business Key Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>PropertyName</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="PropertyName" typeName="string" description="Name of Property to use for displaying ECBusinessKey.StringValue" displayLabel="Property Name" />
+    </ECClass>
+    <ECClass typeName="CalculatedECPropertySpecification" description="See Bentley.ECObjects.Standards.CalculatedECPropertySpecification. ECCustomAttributeClass for specifying an ECExpression to be used for calculating the value of a given ECProperty." displayLabel="Calculated ECProperty Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ECExpression" typeName="string" description="The ECExpression used to calculate an ECProperty's value. " />
+        <ECProperty propertyName="FailureValue" typeName="string" description="The string representation of the value to use when the value cannot be calculated due to missing dependents or any other reason." displayLabel="Failure value" />
+        <ECProperty propertyName="ParserRegularExpression" typeName="string" description="Will be used when converting from the property value back into its constituent properties. This may be null, and is mostly applicable when the expression has been used to concatenate multiple other property values. " displayLabel="Parser regular expression" />
+        <ECProperty propertyName="IsDefaultValueOnly" typeName="boolean" description="Indicates that the value will only be calculated once on the initial get." displayLabel="Is calculated as default value only" />
+        <ECProperty propertyName="UseLastValidValueOnFailure" typeName="boolean" description="Indicates that if the CalculatedECProperty fails to calculate, then use the last valid value." displayLabel="Use the last valid value on failure" />
+        <ECProperty propertyName="DoNotUseECMAScript" typeName="boolean" description="Indicates whether ECMAScript should be used when evaluating the parser regular expression.  Default value for this property is false, meaning that ECMAScript will be used.  Set this to true when using Unicode." displayLabel="Do Not Use ECMAScript" />
+        <ECArrayProperty propertyName="RequiredSymbolSets" typeName="string" description="ECExpressions SymbolSets required for evaluation of the ECExpression" displayLabel="Required ECExpression SymbolSets" minOccurs="0" maxOccurs="unbounded" />
+        <ECProperty propertyName="SuppressTypeConversions" typeName="boolean" description="By default when evaluating ECExpressions, IECPropertyValueFormatter::ConvertTo/FromExpressionType() is invoked to convert the stored value to the type it should have in ECExpressions, or vice-versa. For example, distances stored in UORs are converted from UORs to master units, and radians are converted to degrees. If SuppressTypeConversions is set to true, these conversions will not be performed" />
+        <ECProperty propertyName="EnforceUnits" typeName="boolean" description="By default when evaluating ECExpressions, linear units are converted to dimensioned meters and units are otherwise ignored. Set this property to true to enforce unit checking and unit conversions in arithmetic, comparison, and assignment operations. Setting this option implicitly also sets SuppressTypeConversions." />
+    </ECClass>
+    <!--Helper class used to map old display label to new display label-->
+    <ECClass typeName="TabDisplaySpecification" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="DisplayLabel" typeName="string" />
+        <ECProperty propertyName="NewDisplayLabel" typeName="string" />
+        <ECProperty propertyName="Show" typeName="boolean" />
+    </ECClass>
+    <!--This custom attribute is used by class editor. It is added at the schema level to set different customizations of content pane.-->
+    <ECClass typeName="CEContentPaneCustomization" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="TabSpecifications" typeName="TabDisplaySpecification" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <!-- Allows the display of related item's properties with the current parent. -->
+    <ECClass typeName="ChangeManagement" description="Defines change management features for this ECClass" displayLabel="ChangeManagement properties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Supported" typeName="boolean" description="If true then change management is supported for this ECClass" />
+    </ECClass>
+    <ECClass typeName="ClassReferenceProperties" description="For Internal Use Only.  Applied to a custom attribute class definition to indicate which string properties refer to a class in the schema where the custom attribute class is applied." displayLabel="Class reference properties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="PropertiesThatReferenceAClass" typeName="string" description="A list of properties whose values are references to a class.  All classes must be in the current schema." displayLabel="Properties that reference a class" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <!-- Image custom attribute that can be applied on schemas, classes and properties to define image monikers
+         The Image_Default property would be used to define the default image moniker, you can add Image_<<statename>> ecproperties to define
+         other monikers for different states of image e.g. Image_Expanded -->
+    <ECClass typeName="CustomImageSpecification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Moniker_Default" typeName="string" />
+        <ECProperty propertyName="Moniker_Expanded" typeName="string" />
+        <ECProperty propertyName="Moniker_Collapsed" typeName="string" />
+    </ECClass>
+    <ECClass typeName="CustomStructSerializer" description="Identifies a struct that should have a custom XML string generated" displayLabel="Custom Struct Serializer" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="SerializerName" typeName="string" description="SerializerName Name" displayLabel="Serializer Name" />
+    </ECClass>
+    <!-- These custom attributes are used by class editor, "add from dictionary" features to put a back reference of the template class from dictionary on the business class/property added from dictionary.-->
+    <ECClass typeName="DefinitionMetaData" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="DefinitionBackReference" typeName="string" />
+    </ECClass>
+    <!--This custom attribute is used to specify how relationships should be persisted-->
+    <ECClass typeName="DgnECRelationshipOptions" description="Specifies how relationships should be persisted." isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="PointerPersistence" typeName="int" description="Defines on which end relationship should be persisted.">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.02">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>BothEnds</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>SourceEnd</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>TargetEnd</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+      <ECProperty propertyName="BidirectionallyTraversable" typeName="boolean" description="Defines whether single ended relationships should be traversable in both directions (default is false). Bidirectional traversal is not supported by 8.11.7 or initial release of DgnActiveXControl." />
+      <ECProperty propertyName="SameFileDifferentModelBackPointer" typeName="boolean" description="Defines whether we persist a pointer on the other end in case of a single ended relationship when bothe ends are in the same file but in different model (default is false). This is required in case we want to be able to traverse in the reverse direction even when the source model is not loaded. Having the backpointer allows loading the source model." />
+      <ECProperty propertyName="UseNewLocalKeyPersistence" typeName="boolean" description="Defines whether LocalKey is persisted as a ECXA:n string or as a [ProviderId,XAttributeId] integers pair." />
+    </ECClass>
+    <ECClass typeName="DGNPersistedGeometry" description="See Bentley.ECObjects.Standards.DGNPersistedGeometry. ECCustomAttributeClass for specifying that an IGeometry ECProperty is to be translated to DGN geometry when the instance is written to a DGN file with the default persistence strategy of the DgnECPlugin" displayLabel="Specificiation of DGN persisted geometry" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>NameOfGeometryProperty</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="NameOfGeometryProperty" typeName="string" description="The name of the IGeometry ECProperty of this ECClass that is to be translated to DGN geometry when the instance is written to a DGN file with the default persistence strategy of the DgnECPlugin" displayLabel="Name of Geometry ECProperty" />
+    </ECClass>
+    <!--This custom attribute is used by class editor. It is used as a schema level custom attribute to mark particular schema as dictionary.-->
+    <ECClass typeName="DictionaryCustomAttributes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="IsClassDictionary" typeName="boolean" />
+        <ECProperty propertyName="IsPropertyDictionary" typeName="boolean" />
+        <ECProperty propertyName="IsUnitsDictionary" typeName="boolean" />
+        <ECProperty propertyName="IsDimensionDictionary" typeName="boolean" />
+        <ECProperty propertyName="IsKindOfQuantityDictionary" typeName="boolean" />
+    </ECClass>
+    <!-- Display Options attribute is used to mark object as hidden -->
+    <ECClass typeName="DisplayOptions" displayLabel="Display Options" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Hidden" typeName="boolean" />
+        <ECProperty propertyName="HideInstances" typeName="boolean" />
+        <ECProperty propertyName="HideRelated" typeName="boolean" />
+    </ECClass>
+    <!-- Identifies whether schema marked by this CustomAttribute is Items schema. -->
+    <ECClass typeName="ItemsSchemaIdentifier" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="IsItemsSchema" typeName="boolean" />
+        <ECProperty propertyName="StoresExtrinsicItems" typeName="boolean" />
+    </ECClass>
+    <!-- Class's custom attribute that identify class properties that represent standard file attributes.
+         If you modify it, you must adjust the code of FilePropertiesHelper.cs -->
+    <ECClass typeName="FileDependentProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>FileName</string>
+                    <string>FileSize</string>
+                    <string>DateCreated</string>
+                    <string>DateModified</string>
+                    <string>IsReadOnly</string>
+                    <string>IsHidden</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FileName" typeName="string" />
+        <ECProperty propertyName="FileSize" typeName="string" />
+        <ECProperty propertyName="DateCreated" typeName="string" />
+        <ECProperty propertyName="DateModified" typeName="string" />
+        <ECProperty propertyName="IsReadOnly" typeName="string" />
+        <ECProperty propertyName="IsHidden" typeName="string" />
+    </ECClass>
+    <!-- Class's custom attribute that identify class properties that represent standard folder attributes.
+         If you modify it, you must adjust the code of FolderPropertiesHelper.cs -->
+    <ECClass typeName="FolderDependentProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>FolderName</string>
+                    <string>DateCreated</string>
+                    <string>DateModified</string>
+                    <string>IsHidden</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FolderName" typeName="string" />
+        <ECProperty propertyName="DateCreated" typeName="string" />
+        <ECProperty propertyName="DateModified" typeName="string" />
+        <ECProperty propertyName="IsHidden" typeName="string" />
+    </ECClass>
+    <ECClass typeName="GlobalIdSpecification" description="Global ID Specification" displayLabel="Global Id Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>PropertyName</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="PropertyName" typeName="string" description="Name of Property to use for displaying GlobalId.StringValue" displayLabel="Property Name" />
+    </ECClass>
+    <!-- Class's custom attribute that identify class properties that represent standard Activity attributes.
+         If you modify it, you must adjust the code of ActivityPropertiesHelper.cs -->
+    <ECClass typeName="IdentificationOfActivityProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>Name</string>
+                    <string>Description</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+    </ECClass>
+    <!-- This schema's custom attribute is used to define the standard classes of a schema. If you modify it, you 
+         must adjust the code of RepositoryStandardClassesHelper class. -->
+    <ECClass typeName="IdentificationOfStandardClasses" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ClassReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAClass>
+                    <string>ProjectBaseClass</string>
+                    <string>FolderBaseClass</string>
+                    <string>DocumentBaseClass</string>
+                    <string>FolderParentRelationshipClass</string>
+                    <string>ProjectParentRelationshipClass</string>
+                    <string>DocumentParentRelationshipClass</string>
+                    <string>UserBaseClass</string>
+                    <string>UserGroupBaseClass</string>
+                    <string>ActivityBaseClass</string>
+                    <string>UserParentRelationshipClass</string>
+                    <string>UserGroupParentRelationshipClass</string>
+                    <string>ActivityApproverRelationshipClass</string>
+                </PropertiesThatReferenceAClass>
+            </ClassReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ProjectBaseClass" typeName="string" />
+        <ECProperty propertyName="FolderBaseClass" typeName="string" />
+        <ECProperty propertyName="DocumentBaseClass" typeName="string" />
+        <ECProperty propertyName="FolderParentRelationshipClass" typeName="string" />
+        <ECProperty propertyName="ProjectParentRelationshipClass" typeName="string" />
+        <ECProperty propertyName="DocumentParentRelationshipClass" typeName="string" />
+        <ECProperty propertyName="UserBaseClass" typeName="string" />
+        <ECProperty propertyName="UserGroupBaseClass" typeName="string" />
+        <ECProperty propertyName="ActivityBaseClass" typeName="string" />
+        <ECProperty propertyName="UserParentRelationshipClass" typeName="string" />
+        <ECProperty propertyName="UserGroupParentRelationshipClass" typeName="string" />
+        <ECProperty propertyName="ActivityApproverRelationshipClass" typeName="string" />
+    </ECClass>
+    <!-- Class's custom attribute that identify class properties that represent standard UserGroup attributes.
+         If you modify it, you must adjust the code of UserGroupPropertiesHelper.cs -->
+    <ECClass typeName="IdentificationOfUserGroupProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>Name</string>
+                    <string>Description</string>
+                    <string>IsSecurityGroup</string>
+                    <string>SecurityContext</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="IsSecurityGroup" typeName="string" />
+        <ECProperty propertyName="SecurityContext" typeName="string" />
+    </ECClass>
+    <!-- Class's custom attribute that identify class properties that represent standard User attributes.
+         If you modify it, you must adjust the code of UserPropertiesHelper.cs -->
+    <ECClass typeName="IdentificationOfUserProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>Name</string>
+                    <string>Description</string>
+                    <string>SecurityContext</string>
+                    <string>LoginIdentifier</string>
+                    <string>PrimaryEmail</string>
+                    <string>SecondaryEmail</string>
+                    <string>HomePhone</string>
+                    <string>WorkPhone</string>
+                    <string>MobilePhone</string>
+                    <string>TextMessagingNumber</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="SecurityContext" typeName="string" />
+        <ECProperty propertyName="LoginIdentifier" typeName="string" />
+        <ECProperty propertyName="PrimaryEmail" typeName="string" />
+        <ECProperty propertyName="SecondaryEmail" typeName="string" />
+        <ECProperty propertyName="HomePhone" typeName="string" />
+        <ECProperty propertyName="WorkPhone" typeName="string" />
+        <ECProperty propertyName="MobilePhone" typeName="string" />
+        <ECProperty propertyName="TextMessagingNumber" typeName="string" />
+    </ECClass>
+    <ECClass typeName="InstanceLabelSpecification" description="Specifies which ECProperty to use for the InstanceLabel for tree nodes and other GUI" displayLabel="InstanceLabel Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>PropertyName</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="PropertyName" typeName="string" description="Name of ECProperty to use for the InstanceLabel for tree nodes and other GUI" displayLabel="Property Name" />
+    </ECClass>
+    <ECClass typeName="ClassLabelIsInstanceLabel" description="Specifies that the display label of the ECClass is always used as the InstanceLabel for instances of that class. This is used to override the default behavior
+        when no InstanceLabelSpecification exists, which is to use the value of any property called Name or NAME as the instance label.
+        If both an ClassLabelIsInstanceLabel and InstanceLabelSpecification custom attribute exist on the same ECClass, the InstanceLabelSpecification is used."
+        displayLabel="Class Label Is Instance Label" isDomainClass="False" isCustomAttributeClass="True">
+    </ECClass>
+
+    <!-- ConfigurableECPlugin can sort navigation nodes and contents instances according to these sorting parameters. -->
+    <ECClass typeName="InstanceSortingOptions" displayLabel="Options of class item sorting" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="SortingType" typeName="int">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.02">
+                    <ValueMap>
+                        <ValueMap>
+                            <DisplayString>Do not apply sorting.</DisplayString>
+                            <Value>0</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Natural alpha-numeric sorting by the instance label.</DisplayString>
+                            <Value>1</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Natural alpha-numeric sorting by a specified property</DisplayString>
+                            <Value>2</Value>
+                        </ValueMap>
+                    </ValueMap>
+                    <MustBeFromList>True</MustBeFromList>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SortingDirection" typeName="int">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.02">
+                    <MustBeFromList>True</MustBeFromList>
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>Ascending sorting.</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>Descending sorting.</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SortingProperty" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ISO15926MetaData" description="ISO 15926 metadata back reference" displayLabel="ISO 15926 Definition Metadata" isDomainClass="False" isCustomAttributeClass="True">
+        <BaseClass>DefinitionMetaData</BaseClass>
+        <ECProperty propertyName="EntityType" typeName="string" description="ISO 15926 Part2 Entity Type (e.g. http://dm.rdlfacade.org/data#ClassOfInanimatePhysicalObject)" displayLabel="Entity Type" />
+        <ECProperty propertyName="IdPCA" typeName="string" description="POSC Caesar Association Identifier" displayLabel="Identifier" />
+        <ECProperty propertyName="Designation" typeName="string" description="POSC Caesar Association Alternate Designation" />
+        <ECProperty propertyName="CreationDate" typeName="dateTime" description="POSC Caesar Association Creation Date" displayLabel="Creation Date" />
+        <ECProperty propertyName="SubmitterOrg" typeName="string" description="POSC Caesar Association Submitting Organization" displayLabel="Organization" />
+        <ECProperty propertyName="Creator" typeName="string" description="POSC Caesar Association Creator" />
+        <ECProperty propertyName="Status" typeName="string" description="POSC Caesar Association Registration Status" />
+        <ECProperty propertyName="Note" typeName="string" description="POSC Caesar Association Note" />
+        <ECProperty propertyName="Example" typeName="string" description="POSC Caesar Association Note Example" />
+    </ECClass>
+    <!-- ItemsBrowserTreePresentation can be used to set some specific ItemsBrowser tree hierarchy options. For example specify what nodes should be at the top. -->
+    <ECClass typeName="ItemsBrowserTreePresentation" displayLabel="ItemsBrowser tree presentation" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ShowAtTopLevel" typeName="boolean" />
+    </ECClass>
+     <!--Struct used for key value pair specification-->
+    <ECClass typeName="LocalizationData" description="Contains a localized value and a key that identifies it.  The key may be a GUID or the original value.  If the value is a GUID 'IsGUID' is true." displayLabel="Localization Data" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Key" typeName="string" />
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="IsGUID" typeName="boolean" />
+    </ECClass>
+    <!--This custom attribute is used by localization supplemental schemas.-->
+    <ECClass typeName="LocalizationSpecification" description="Specifies the locale and an array of resources consisting of key-value pairs that contain localization data." displayLabel="Localization Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Locale" typeName="string" />
+        <ECArrayProperty propertyName="Resource" typeName="LocalizationData" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="PreviousName" description="For Schema Evolution.  Holds a previous name for an element, the last released version when this name was used and if the current element should be saved on rename." displayLabel="Previous name" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="OldName" typeName="string" displayLabel="Old Name" description="The previous name of the renamed element" />
+        <ECProperty propertyName="SchemaFullNameKey" typeName="string" description="The value of the SchemaChangeTrackingState.SchemaFullNameAtEditingStart property at the time the 'OldName' was recorded" displayLabel="Schema full name key" />
+        <ECProperty propertyName="Date" typeName="dateTime" description="The date and time the the 'OldName' was recorded" />
+        <ECProperty propertyName="IsNewInThisVersion" typeName="boolean" description="If true this element was added in this version so no new tracking information needs to be saved." displayLabel="Is new in this version" />
+    </ECClass>
+    <ECClass typeName="PreviousNameArray" description="For Schema Evolution.  Holds previous name entries for the current element." displayLabel="Previous Name Array" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="PreviousNames" typeName="PreviousName" displayLabel="Previous Names" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+        <ECProperty propertyName="PreviousNameAlreadySaved" typeName="boolean" description="If true a PreviousName entry has already been saved for this version of the schema.  If false a PreviousName should be saved on rename." displayLabel="Previous name already saved" />
+    </ECClass>
+    <ECClass typeName="PrimarySchemaMetaData" description="Defined at the top level of a schema to indicate that this schema may have supplemental schemas" displayLabel="Primary Schema MetaData" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ContainsUnits" typeName="boolean" description="True if this primary schema contains units data" displayLabel="Contains Units" />
+    </ECClass>
+    <!--This custom attribute is used by class editor. It is added on to TemplateProperty classes in property dictionary to store property template metadata like datatype.-->
+    <ECClass typeName="PropertyTemplateMetadata" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="DataType" typeName="string" />
+    </ECClass>
+    <ECClass typeName="PropertyTransformationExpression" description="When applied to a property it allows type changes requiring a transformation to pass through Schema Evolution and transformations using an ECExpression for any property transform." displayLabel="Property Transformation Expression" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ParserRegularExpression" typeName="string" description="When set this is used to parse the source data into named groups, each named group can be accessed by the Transformation ECExpression." displayLabel="Parser Regular Expression" />
+        <ECProperty propertyName="TransformationECExpression" typeName="string" description="When set this ECExpression will be used for the transformation rather than trying to use a builtin transformation." displayLabel="Transformation ECExpression" />
+        <ECArrayProperty propertyName="RequiredSymbolSets" typeName="string" description="ECExpressions SymbolSets required for evaluation of the ECExpression" displayLabel="Required ECExpression SymbolSets" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <!-- RelationshipClass's attribute that identifies that relationship is of reference type-->
+    <ECClass typeName="ReferenceTypeRelationship" description="Custom attribute showing that the relationship is of reference type. This means that the relationship is just reference, but not an object. IDs for such relationship are not meaningful." displayLabel="Reference Type Relationship" isDomainClass="False" isCustomAttributeClass="True" />
+    <!-- A specification of related items to display with the parent. -->
+    <ECClass typeName="RelatedItemsDisplaySpecification" description="A specification of related items to display with the parent" displayLabel="Related items display specification" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="ParentClass" typeName="string" description="Parent class the related items should be visible on" />
+        <ECProperty propertyName="RelationshipPath" typeName="string" description="Relationship path to the related items" />
+        <ECArrayProperty propertyName="DerivedClasses" typeName="string" description="List of derived classes for polymorphic relationship" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <!-- Allows the display of related item's properties with the current parent. -->
+    <ECClass typeName="RelatedItemsDisplaySpecifications" description="Allows the display of related item's properties with the current parent" displayLabel="Related items display" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="Specifications" typeName="RelatedItemsDisplaySpecification" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="RelatesToExtendedPropertyObject" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="SchemaFinalizationInfo" displayLabel="Schema finalization information" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="FinalizationDate" typeName="dateTime" displayLabel="Finalization date and time" />
+        <ECProperty propertyName="SchemaFullNameKey" typeName="string" description="Schema full name used as a key for all edits in this version" displayLabel="Schema full name key" />
+    </ECClass>
+    <ECClass typeName="SchemaChangeTrackingState" description="Holds some important change tracking information about a schema." displayLabel="Schema Change Tracking State" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="IsFinalizedForRelease" typeName="boolean" description="If true the schema has been prepared for release.  To edit the schema again before release the finalization needs to be backed out.  Nothing needs to be done to edit for a new release." displayLabel="Is finalized for release" />
+        <ECProperty propertyName="SchemaFullNameAtEditingStart" typeName="string" description="The schema full name when editing for a new version is started" />
+        <ECProperty propertyName="TrackingEnabled" typeName="boolean" description="If true change tracking attributes will be added, if false they will not." displayLabel="Tracking enabled" />
+        <ECArrayProperty propertyName="FinalizationHistory" typeName="SchemaFinalizationInfo" description="An array containing the history of finalizations." displayLabel="Finalization history" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="SupplementalSchemaMetaData" description="Custom Attribute Class that is applied to a supplemental schema" displayLabel="Supplemental Schema MetaData" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="PrimarySchemaName" typeName="string" description="The name of the schema that this schema supplements" displayLabel="Primary Schema Name" />
+        <ECProperty propertyName="PrimarySchemaMajorVersion" typeName="int" description="The major version number of the primary schema" displayLabel="Primary Schema Major Version" />
+        <ECProperty propertyName="PrimarySchemaMinorVersion" typeName="int" description="The minor version number of the primary schema" displayLabel="Primary Schema Minor Version" />
+        <ECProperty propertyName="Precedence" typeName="int" description="Integer precedence of this supplemental schema. Lower Precedence than primary (Universal:0-99, Industrial:100-199).  Higher Precedence than primary (Speciality:200-299, Company:300-399, Department:400-499, Project:500-599)." />
+        <ECProperty propertyName="Purpose" typeName="string" description="A string representing the function of this supplemental schema." />
+        <ECProperty propertyName="IsUserSpecific" typeName="boolean" description="If true this schema is specific to a user." displayLabel="Is User Specific" />
+    </ECClass>
+    <!-- Indicates if a relationship class supports ordered relationships. When a class has this custom attribute, it supports ordered relationships. 
+       This custom attribute is meaningful only for relationship classes. -->
+    <ECClass typeName="SupportsOrderedRelationships" description="Custom attribute that indicates if a relationship class supports ordered relationships." displayLabel="Supports Ordered Relationships" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="OrderIdSourceProperty" typeName="string" />
+        <ECProperty propertyName="OrderIdTargetProperty" typeName="string" />
+    </ECClass>
+    <!-- Indicates if a relationship class supports ordered relationships. When a class has this custom attribute, it supports ordered relationships. 
+       This custom attribute is meaningful only for relationship classes. -->
+    <ECClass typeName="OrderedRelationshipsConstraint" description="Custom attribute that indicates if a relationship constraint supports ordered relationships." displayLabel="Supports Ordered Relationships" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="OrderIdProperty"    typeName="string" />
+        <ECProperty propertyName="OrderIdStorageMode" typeName="int" />
+    </ECClass>
+    <!-- Indicates if a relationship class source or target supports associated string. When a constraint has this custom attribute, it supports associated string. 
+       An associated string is a string that is attached to the relationship source or target. It is usually used to define a name, but can also be used to encode more complex information.
+       This custom attribute is meaningful only for relationship classes. -->
+    <ECClass typeName="AssociatedStringConstraint" description="Custom attribute that indicates if a relationship source or target supports associated string." displayLabel="Supports Associated String" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="AssociatedStringProperty" typeName="string" />
+    </ECClass>
+    <!-- Relationship Class's attribute that identifies relationship spports properties -->
+    <ECClass typeName="SupportsRelationshipProperties" description="Custom attribute that indicates if a relationship class supports storing properties." displayLabel="Supports Relationship Properties" isDomainClass="False" isCustomAttributeClass="True"/>
+    <!-- Class's attribute that identifies Synchronization ID property -->
+    <ECClass typeName="SyncIDSpecification" description="Custom attribute that points on property that should be used as synchronization ID" displayLabel="SyncID Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <PropertiesThatReferenceAProperty>
+                    <string>Property</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Property" typeName="string" description="Name of property" />
+    </ECClass>
+    <!--This custom attribute is used by class editor. It is added at the schema level to set the fore and back colors of all the nodes in schema.-->
+    <ECClass typeName="TreeColorCustomAttributes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="NodeBackColor" typeName="string" description="Back color of the node" displayLabel="Node Back Color" />
+        <ECProperty propertyName="NodeForeColor" typeName="string" description="Fore Color of the Node" displayLabel="Node Fore Color" />
+    </ECClass>
+    <ECClass typeName="TransformationValueMaps" displayLabel="Transformation Value Map Collection" isDomainClass="False" isCustomAttributeClass="True" >
+        <ECArrayProperty propertyName="ValueMaps" typeName="TransformationValueMap" displayLabel="Value Maps" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="TransformationValueMap" displayLabel="Value Map" isDomainClass="False" isCustomAttributeClass="True" isStruct="True">
+        <ECProperty propertyName="Name" typeName="string" description="The unique name of the current Map." />
+        <ECArrayProperty propertyName="Entries" typeName="ValueMapEntry" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="ValueMapEntry" displayLabel="Value Map Entry" isDomainClass="False" isCustomAttributeClass="False" isStruct="True">
+        <ECProperty propertyName="Key" typeName="string" />
+        <ECProperty propertyName="Value" typeName="string" />
+    </ECClass>
+    <!-- Indicates to the EC comparison system that this property may differ between two instances without affecting "effective" equivalence of the instances. -->
+    <ECClass typeName="StrictComparisonOnly" isDomainClass="False" isCustomAttributeClass="True" />
+
+    <!-- Additional meta data for an ECProperty of type DateTime -->
+    <ECClass typeName="DateTimeInfo" isDomainClass="False" isCustomAttributeClass="True" description="Optional additional meta data for ECProperties of type DateTime.">
+        <ECProperty propertyName="DateTimeKind" typeName="string" description="Either Utc, Local or Unspecified. Default: Unspecified. When specifying a DateTimeKind, it is usually not necessary to specify a DateTimeComponent because a DateTimeKind implies the DateTimeComponent 'DateTime'."/>
+        <ECProperty propertyName="DateTimeComponent" typeName="string" description="Either DateTime or Date. Default: DateTime. Specifying 'Date' usually implies that a DateTimeKind is irrelevant, because dates (without time) don't need any timezone information."/>
+    </ECClass>
+
+    <!-- ****** DEPRECATED: Use ECDbMap ECSchema instead ****** -->
+    <ECClass typeName="ECDbSchemaHint" description="DEPRECATED: Use ECDbMap ECSchema instead" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="TablePrefix"                  typeName="string" description="The prefix should be 2-4 letters followed by an underbar, e.g. plnt_." />
+	    <ECProperty propertyName="DefaultPropertyStrategy"      typeName="string" description="Optional and can have one possible value DoNotMap." />
+	    <ECProperty propertyName="DefaultClassMapStrategy"      typeName="string" description="Optional and can have two possible values. 1. DoNotMap 2. TableForThisClass" />		
+    </ECClass>
+
+    <ECClass typeName="ECDbPropertyHint" description="DEPRECATED: Use ECDbMap ECSchema instead" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ColumnName"  typeName="string" description="If not specified, the ECProperty name is used. It must follow EC Identifier specification." />
+        <ECProperty propertyName="MapStrategy" typeName="string" description="Applicable to arrays and struct type properties. Value can be 'StoreInSeparateTable' or 'Blob'. By default primitive arrays are stored as blob and struct and struct arrays are stored in separate table." />
+        <ECProperty propertyName="IsNullable"  typeName="boolean" description="Might not be honorable when multiple ECClasses are stored in a single table" />
+        <ECProperty propertyName="IsUnique"    typeName="boolean" description="Only allow unique values for this column." />
+        <ECProperty propertyName="Collate"     typeName="string" description="Specify how string compare should work for this property. Options 1) BINARY(default): bit to bit matching. 2). NOCASE: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF. 3) RTRIM: The same as binary, except that trailing space characters are ignored." />
+	    <ECProperty propertyName="Precision"    typeName="string" description="Only applied to ECDouble type properties. Possible value are 0-16 " />
+    	
+    </ECClass>
+
+
+    <ECClass typeName="ECDbIndex" description="DEPRECATED: Use ECDbMap ECSchema instead" isStruct="True" isDomainClass="False">
+        <ECProperty      propertyName="Name"       typeName="string"  description="Optional name of the index. Follow EC identifier rules. It need to be globally unique in database. Two index with same name will cause error." />
+        <ECProperty      propertyName="IsUnique"   typeName="boolean" description="Optional unique constraint. Default value is false. All keys in index must be unique" />
+        <ECArrayProperty propertyName="Properties" typeName="string"  description="List of properties that will be part of index. Only primitive type properties can be added to this array." minOccurs="1" maxOccurs="unbounded" />
+        <ECProperty      propertyName="Where"      typeName="string"  description="Where constraint of Index" />
+
+    </ECClass>
+
+    <ECClass typeName="ECDbForeignKeyConstraint" description="Specify database forign key constraint." isStruct="True" isDomainClass="False">
+        <ECProperty      propertyName="EnforceReferentialIntegrityCheck"       typeName="boolean"  description="This enable referential integerity. Default is 'false'." />
+        <ECProperty      propertyName="OnDeleteAction"    typeName="string"  description="Optional and only used if 'EnforceReferentialIntegrityCheck=True'. Possiable values are 'NoAction' (default) and 'Cascade' which delete child rows when parent row is deleted." />
+        <ECProperty      propertyName="OnUpdateAction"   typeName="string" description="Optional and only used if 'EnforceReferentialIntegrityCheck=True'. Possiable values are 'NoAction' (default) and 'Cascade' which update child forign key when parent primary key is updated." />
+        <ECProperty      propertyName="MatchType"   typeName="string" description="Optional default value is 'Full'. This is reserved for future use." />
+    
+    </ECClass>
+
+    <ECClass typeName ="ECDbRelationshipConstraintHint" description="Optional hint to tell how to map relationship constraint" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ECClassIdColumn"       typeName="string"  description="User provided target ECClassId column name." />
+        <ECProperty propertyName="ECIdColumn"            typeName="string"  description="User provided target ECInstanceId column name." />
+        <ECProperty propertyName="GenerateDefaultIndex"   typeName="boolean" description="Optional and default value is true. This create default index on relationship. User can disable it if needed." />
+        <ECStructProperty propertyName="ForeignKeyConstraint" typeName ="ECDbForeignKeyConstraint" description="Describe if and how to apply foreign key constraint. It is only applicable to 'Embedding' or 'Referencing' type relationships. The relationship mush have only one table at each end for this to work." />
+    </ECClass>
+
+
+    <ECClass typeName="ECDbClassHint" description="DEPRECATED: Use ECDbMap ECSchema instead" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty      propertyName="MapStrategy"          typeName="string"    description="Optional hints regarding how the ECClass is mapped to table(s). Possible values are DoNotMap, DoNotMapHierarchy, TablePerHierarchy, TableForThisClass, TablePerClass, RelationshipSourceTable and RelationshipTargetTable" />
+        <ECProperty      propertyName="ECIdColumn"           typeName="string"    description="Optionally specify custom 'primary key' column which must be a Int64." />
+        <ECProperty      propertyName="TableName"            typeName="string"    description="Optionally provide user define table name for this class"/>
+        <ECProperty      propertyName="MapToExistingTable"   typeName="boolean"      description="Optionally provide if table already exist or will be created automatically. Default value is 'False'"/>
+        <ECProperty      propertyName="ReplaceEmptyTableWithEmptyView" typeName="boolean" description="Optionally provide if table can be replaced by a readonly null view if table is empty. This can happen if target dgndb is only used as readonly after publishing"/>
+        <ECArrayProperty propertyName="Indexes"              typeName="ECDbIndex" description="Optional list of indexes on properties of this class. It can be use to improve query performance or to add unique constraint." minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+        <ECProperty      propertyName="NamedGroupIsAssembly" typeName="boolean"   description="If instance of class with this custom attribute is found on a Named Group, then convert the Named Group to an assembly."/>
+        <ECProperty      propertyName="MapStrategyOption"          typeName="string"    description="" />
+    </ECClass>
+
+    <ECClass typeName="ECDbRelationshipClassHint" description="Optional hint to provide indexing information to optimize relationship querying." isDomainClass="False" isCustomAttributeClass="True">
+        <!-- BaseClass>ECDbClassHint</BaseClass -->
+        <ECProperty propertyName="PreferredDirection"          typeName="string"  description="Specify preferred direction for N:N and 1:1 relationships as a hint to optimize queries in that direction. Possible values: SourceToTarget: Querying target rows for a source row should be optimized. TargetToSource: Querying source rows for a target row should be optimized. Bidirectional: no preferred query direction." />
+        <ECProperty propertyName="AllowDuplicateRelationships" typeName="boolean" description="By default relationship need to be unique. The property can be set to override it and allow dupplicate values" />
+        <ECProperty propertyName="SourceECIdColumn"            typeName="string"  description="User provided source ECInstanceId column name (deprecated use ECDbRelationshipConstraintHint.ECIdColumn)" />
+        <ECProperty propertyName="SourceECClassIdColumn"       typeName="string"  description="User provided source ECClassId column name (deprecated use ECDbRelationshipConstraintHint.ECClassIdColumn)" />
+        <ECProperty propertyName="TargetECClassIdColumn"       typeName="string"  description="User provided target ECClassId column name (deprecated use ECDbRelationshipConstraintHint.ECClassIdColumn)" />
+        <ECProperty propertyName="TargetECIdColumn"            typeName="string"  description="User provided target ECInstanceId column name (deprecated use ECDbRelationshipConstraintHint.ECIdColumn)" />
+    </ECClass>
+
+    <ECClass typeName="DynamicSchema" description="ECSchema level attribute that mark schema as dynamic. A Dynamic schema is generated by applications." isDomainClass="False" isCustomAttributeClass="True"/>
+    <ECClass typeName="SystemSchema" description="ECSchema level attribute that mark schema as system schema. A system schema is internal to application or product for managing and storing its internal data." isDomainClass="False" isCustomAttributeClass="True"/>
+    <ECClass typeName="PersistStringsAsUtf8" description="Applied to any ECClass to indicate that if instances of the class are persisted in ECD format, all strings in the ECD buffer should be persisted as Utf-8" isDomainClass="False" isCustomAttributeClass="True" />
+
+    <ECClass typeName="SchemaNameAndPurpose" description="Helper class for the SupplementalProvenance custom attribute.  Used to define a supplemental schema and its purpose" isDomainClass="True" isStruct="True">
+        <ECProperty propertyName="SchemaName" typeName="string" description="Name of the supplemental schema" />
+        <ECProperty propertyName="Purpose" typeName="string" description="Purpose of the supplemental schema" />
+    </ECClass>
+
+    <ECClass typeName="SupplementalProvenance" description="Provenance defining what supplemental schemas were used to create a compiled, supplemented schema" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="SupplementalSchemaNamesAndPurposes" typeName="SchemaNameAndPurpose" description="List of all supplemental schemas that were used to supplement this schema" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+
+    <!-- This custom attribute is used to specify search options for a class. It is used in search controls. -->
+    <ECClass typeName="SearchOptions" description="ECClass level attribute used to specify search options for a class." displayLabel="Search Options" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ShowWhenDerivedClassIsShown" typeName="boolean" />
+        <ECProperty propertyName="SearchPolymorphically" typeName="boolean" />
+        <ECProperty propertyName="Hidden" typeName="boolean" />
+    </ECClass>
+
+    <!-- This custom attribute will apply to an EC structure definition, and will identify the properties in 
+         the structure to be used to store the data of an ad hoc property value.
+         Only the Name and Value property names are required. -->
+    <ECClass typeName="AdhocPropertyContainerDefinition" isDomainClass="False" isCustomAttributeClass="True">
+        <!-- The name of the string ECProperty which holds the name of each ad-hoc property -->
+        <ECProperty propertyName="NameProperty" typeName="string" />
+        <!-- The name of the string ECProperty which holds the display label of each ad-hoc property -->
+        <ECProperty propertyName="DisplayLabelProperty" typeName="string" />
+        <!-- The name of the string ECProperty which holds the value of each ad-hoc property -->
+        <ECProperty propertyName="ValueProperty" typeName="string" />
+        <!-- The name of the integer ECProperty which holds the primitive type of each ad-hoc property -->
+        <ECProperty propertyName="TypeProperty" typeName="string" />
+        <!-- The name of the string ECProperty which holds the name of the ECUnit associated with each ad-hoc property -->
+        <ECProperty propertyName="UnitProperty" typeName="string" />
+        <!-- The name of the string ECProperty which holds the extended type name of each ad-hoc property -->
+        <ECProperty propertyName="ExtendTypeProperty" typeName="string" />
+        <!-- The name of the boolean ECProperty which holds the read-only state of each ad-hoc property -->
+        <ECProperty propertyName="IsReadOnlyProperty" typeName="string" />
+        <!-- The name of the boolean ECProperty which holds a flag indicating whether each ad-hoc property is hidden from the UI -->
+        <ECProperty propertyName="IsHiddenProperty" typeName="string" />
+    </ECClass>
+    
+    <!-- DEPRECATED: This custom attribute is deprecated and is not used. It is being retained solely to avoid breaking ECSchemas which use it -->
+    <ECClass typeName="AdhocPropertySpecification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="AdhocPropertyContainer" typeName="string" />
+    </ECClass>
+	<!-- Added this class for timestamp -->
+    <ECClass typeName="ClassHasCurrentTimeStampProperty" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="PropertyName" typeName="string" />
+    </ECClass>
+    <ECClass typeName="IsSymmetricalRelationship" isDomainClass="False" isCustomAttributeClass="True" description="Indicates that the direction of the ECRelationship is meaningless. For example, a relationship that relates two ECInstances of class 'A' by virtue of residing on the same element" />
+    <!-- Applied to an ECClass to identify an ECProperty which holds property metadata overrides.
+         This custom attribute is consumed by an IECPresentationFilter which can show a property as read-only or hide it completely on a per-ECInstance basis. -->
+    <ECClass typeName="PresentationFilterMetadata" isDomainClass="False" isCustomAttributeClass="True">
+        <!-- Identifies a string property within the ECClass which holds a string containing presentation filter overrides.
+             The string value must be of the following format:
+                "X:AccessString1:X:AccessString2:...:"
+                Where:
+                    X is a single digit corresponding to the PresentationFilterReturnValue enum:
+                        0 => NoEffect
+                        1 => ShowReadOnly
+                        2 => DontShow
+                    :AccessString: is the access string of the property to which the preceding presentation filter value is to be applied -->
+        <ECProperty propertyName="PropertyName" typeName="string" />
+    </ECClass>
+</ECSchema>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="PerfTestDomain" alias="dptest" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <!--Class Hierarchy used by PerformanceElementsCRUDTests -->
+    <ECEntityClass typeName="PerfElement">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BaseStr" typeName="string"/>
+        <ECProperty propertyName="BaseLong" typeName="long"/>
+        <ECProperty propertyName="BaseDouble" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementSub1">
+        <BaseClass>PerfElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub1Str" typeName="string"/>
+        <ECProperty propertyName="Sub1Long" typeName="long"/>
+        <ECProperty propertyName="Sub1Double" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementSub2">
+        <BaseClass>PerfElementSub1</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub2Str" typeName="string"/>
+        <ECProperty propertyName="Sub2Long" typeName="long"/>
+        <ECProperty propertyName="Sub2Double" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementSub3">
+        <BaseClass>PerfElementSub2</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub3Str" typeName="string"/>
+        <ECProperty propertyName="Sub3Long" typeName="long"/>
+        <ECProperty propertyName="Sub3Double" typeName="double"/>
+    </ECEntityClass>
+    <!-- The following classes must be defined exactly the same as the corresponding classes with no "CH" in their names .. same number of properties with the same
+         names and types .., except each property in these classes has the CustomHandledProperty CA. -->
+    <ECEntityClass typeName="PerfElementCHBase">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BaseStr" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="BaseLong" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="BaseDouble" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub1">
+        <BaseClass>PerfElementCHBase</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub1Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub1Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub1Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub2">
+        <BaseClass>PerfElementCHSub1</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub2Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub2Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub2Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub3">
+        <BaseClass>PerfElementCHSub2</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub3Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub3Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub3Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+</ECSchema>

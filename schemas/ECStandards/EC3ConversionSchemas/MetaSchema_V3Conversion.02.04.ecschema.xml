@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="MetaSchema" nameSpacePrefix="ms" version="02.04" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="CustomAttributeContainerDef" description="CustomAttributeContainer" displayLabel="CustomAttributeContainer" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PropertyCustomAttribute">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECClassDef" description="ECClass" displayLabel="ECClass">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECPropertyDef" description="ECProperty" displayLabel="ECProperty">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ConstraintClassDef">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CustomAttributeContainerHasCustomAttribute" isDomainClass="False">
+        <ECCustomAttributes>
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CustomAttributeContainerHasLocalCustomAttribute" isDomainClass="False">
+        <ECCustomAttributes>
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CustomAttributeDef" description="CustomAttribute" displayLabel="CustomAttribute">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECRelationshipClassDef" description="RelationshipClass" displayLabel="ECRelationshipClass">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECRelationshipConstraintDef" description="RelationshipConstraint" displayLabel="RelationshipConstraint">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECRelationshipSourceDef" description="ECRelationshipSource" displayLabel="ECRelationshipSource">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECRelationshipTargetDef" description="ECRelationshipTarget" displayLabel="ECRelationshipTarget">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSchemaDef" description="ECSchema" displayLabel="ECSchema">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSupplementalClassDef" description="Supplemental ECClass" displayLabel="Supplemental ECClass">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSupplementalPropertyDef" description="Supplemental ECProperty" displayLabel="Supplemental ECProperty">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSupplementalRelationshipClassDef" description="Supplemental RelationshipClass" displayLabel="Supplemental ECRelationshipClass">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSupplementalRelationshipConstraintDef" description="Supplemental RelationshipConstraint" displayLabel="Supplemental RelationshipConstraint">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSupplementalRelationshipSourceDef" description="Supplemental ECRelationshipSource" displayLabel="Supplemental ECRelationshipSource">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSupplementalRelationshipTargetDef" description="Supplemental ECRelationshipTarget" displayLabel="Supplemental ECRelationshipTarget">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ECSupplementalSchemaDef" description="Supplemental ECSchema" displayLabel="Supplemental ECSchema">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SupplementalCustomAttributeDef" description="Supplemental CustomAttribute" displayLabel="Supplemental CustomAttribute">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support multiple base classes -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SupplementedSchemaHasSupplementalSchema" isDomainClass="False">
+        <ECCustomAttributes>
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ClassHasBaseClassHierarchy" isDomainClass="False">
+        <ECCustomAttributes>
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>

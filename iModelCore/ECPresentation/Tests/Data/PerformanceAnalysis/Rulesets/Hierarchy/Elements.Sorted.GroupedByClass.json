@@ -1,0 +1,24 @@
+{
+  "id": "Elements.Sorted.GroupedByClass",
+  "rules": [
+    {
+      "ruleType": "RootNodes",
+      "specifications": [
+        {
+          "specType": "InstanceNodesOfSpecificClasses",
+          "classes": [
+            {
+              "schemaName": "BisCore",
+              "classNames": [
+                "Element"
+              ]
+            }
+          ],
+          "arePolymorphic": true,
+          "groupByClass": true,
+          "groupByLabel": false
+        }
+      ]
+    }
+  ]
+}

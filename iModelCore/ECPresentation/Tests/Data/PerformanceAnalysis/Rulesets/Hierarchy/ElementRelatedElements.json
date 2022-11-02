@@ -1,0 +1,63 @@
+{
+  "id": "ElementRelatedElements",
+  "rules": [
+    {
+      "ruleType": "RootNodes",
+      "specifications": [
+        {
+          "specType": "InstanceNodesOfSpecificClasses",
+          "classes": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "InformationContentElement"
+            ]
+          },
+          "arePolymorphic": true,
+          "groupByClass": false,
+          "groupByLabel": false
+        }
+      ]
+    },
+    {
+      "ruleType": "ChildNodes",
+      "condition": "ParentNode.IsInstanceNode ANDALSO ParentNode.IsOfClass(\"Element\", \"BisCore\")",
+      "specifications": [
+        {
+          "specType": "RelatedInstanceNodes",
+          "relationshipPaths": [
+            {
+              "relationship": {
+                "schemaName": "BisCore",
+                "className": "ElementRefersToElements"
+              },
+              "direction": "Backward"
+            },
+            {
+              "relationship": {
+                "schemaName": "BisCore",
+                "className": "ElementRefersToElements"
+              },
+              "direction": "Forward"
+            },
+            {
+              "relationship": {
+                "schemaName": "BisCore",
+                "className": "ElementOwnsChildElements"
+              },
+              "direction": "Backward"
+            },
+            {
+              "relationship": {
+                "schemaName": "BisCore",
+                "className": "ElementOwnsChildElements"
+              },
+              "direction": "Forward"
+            }
+          ],
+          "groupByClass": false,
+          "groupByLabel": false
+        }
+      ]
+    }
+  ]
+}

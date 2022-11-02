@@ -1,0 +1,21 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BuildContext)
+%error
+%endif
+
+DeliveryDir         = $(BuildContext)Delivery/
+VendorApiContextDir = $(BuildContext)VendorAPI/flatbuffers/
+SourceDir           = $(_MakeFilePath)source/src/
+SourceIncludeDir    = $(_MakeFilePath)source/include/
+
+$(DeliveryDir)flatbuffers-license.txt : $(_MakeFilePath)source/LICENSE.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(VendorApiContextDir) : $(SourceIncludeDir)flatbuffers
+    $(LinkFirstDepToFirstTargetAsDirectory)

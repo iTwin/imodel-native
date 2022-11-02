@@ -1,0 +1,39 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+#   Define standard macros.
+#----------------------------------------------------------------------
+%include mdl.mki
+
+%if defined (Minimal)
+    GeoCoordData = $(BuildContext)Delivery/GeoCoordDataMinimal/
+%else
+    GeoCoordData = $(BuildContext)Delivery/GeoCoordData/
+%endif
+
+#----------------------------------------------------------------------
+#   We link the CSMap data subdirectories to our output directory
+#----------------------------------------------------------------------
+csDictionarySourcesDir    	= $(baseDir)DictionarySources/
+
+#----------------------------------------------------------------------
+#   Create output directories.
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    ~@mkdir $(GeoCoordData)
+
+#---------------------------------------------------------------------
+#   This is the remainder of the datum conversion data and the coordinate system dictionary.
+#---------------------------------------------------------------------
+%if !defined (Minimal)
+
+always:
+    ~linkfile "$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
+    ~linkfile "$(GeoCoordData)seed.dty=$(csDictionarySourcesDir)seed.dty"
+    ~linkfile "$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
+
+%endif

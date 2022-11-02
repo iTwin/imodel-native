@@ -1,0 +1,444 @@
+//===============================================================================
+// section 1 --- simple hand crafted types
+
+enum LoopTypeEnum : byte
+{
+Parity = 1,
+InteriorToLeft = 2
+}
+
+struct DPoint3d
+{
+x:double;
+y:double;
+z:double;
+}
+
+struct DRay3d
+{
+x:double;
+y:double;
+z:double;
+ux: double;
+uy: double;
+uz: double;
+}
+
+
+struct DPoint2d
+{
+x:double;
+y:double;
+}
+
+struct DVector3d
+{
+x:double;
+y:double;
+z:double;
+}
+
+struct Angle
+{
+degrees:double;
+}
+
+struct DEllipse3d
+{
+centerX:double;
+centerY:double;
+centerZ:double;
+vector0X:double;
+vector0Y:double;
+vector0Z:double;
+vector90X:double;
+vector90Y:double;
+vector90Z:double;
+
+startRadians:double;
+sweepRadians:double;
+}
+
+struct DSegment3d
+{
+point0X:double;
+point0Y:double;
+point0Z:double;
+point1X:double;
+point1Y:double;
+point1Z:double;
+}
+
+
+struct DTransform3d // DTRansform3d is the MANAGED 3x4.   In native it is called Transform.
+{
+axx:double;
+axy:double;
+axz:double;
+axw:double;
+
+ayx:double;
+ayy:double;
+ayz:double;
+ayw:double;
+
+azx:double;
+azy:double;
+azz:double;
+azw:double;
+}
+
+struct DgnBoxDetail
+    {
+    baseOriginX: double;
+    baseOriginY: double;
+    baseOriginZ: double;    
+
+    topOriginX: double;
+    topOriginY: double;
+    topOriginZ: double;    
+
+    vectorXX:    double;
+    vectorXY:    double;
+    vectorXZ:    double;
+    
+    vectorYX:    double;
+    vectorYY:    double;
+    vectorYZ:    double;
+
+    baseX:      double;
+    baseY:      double;
+    topX:       double;
+    topY:       double;
+    capped:     bool;
+    }
+    
+struct DgnSphereDetail
+    {
+    localToWorld:           DTransform3d;
+    startLatitudeRadians:   double;
+    latitudeSweepRadians:   double;
+    capped:                 bool;
+    }
+          
+struct DgnConeDetail
+    {
+    centerAX: double;
+    centerAY: double;
+    centerAZ: double;    
+
+    centerBX: double;
+    centerBY: double;
+    centerBZ: double;    
+
+    vector0X:    double;
+    vector0Y:    double;
+    vector0Z:    double;
+    
+    vector90X:    double;
+    vector90Y:    double;
+    vector90Z:    double;    
+
+    radiusA: double;
+    radiusB: double;
+    capped:  bool;
+    }
+        
+struct DgnTorusPipeDetail
+    {
+    centerX: double;
+    centerY: double;
+    centerZ: double;    
+
+    vectorXX:    double;
+    vectorXY:    double;
+    vectorXZ:    double;
+    
+    vectorYX:    double;
+    vectorYY:    double;
+    vectorYZ:    double;      
+    
+    majorRadius: double;
+    minorRadius: double;
+    sweepRadians: double;
+    capped:  bool;
+    }
+
+
+
+
+
+//===============================================================================
+// section 2 -- interface types -- each IXXX is an enumeration of all its possible subtypes.
+//   This is a guess at how to handle subclassing.  Surely there's a better way?
+//   (Only one should ever be present in an instance -- can we specify that?)
+
+
+table LineSegment
+    {
+    segment:DSegment3d;
+    }
+
+table LineString
+    {
+    points:[double]; // xyz flattened.
+    }
+
+table PointString
+    {
+    points:[double]; // xyz flattened.
+    }
+
+table EllipticArc
+    {
+    arc:DEllipse3d;
+    }
+
+table BsplineCurve
+    {
+    order:int;
+    closed:bool;
+    poles:[double]; // xyz flattened
+    weights:[double];
+    knots:[double];
+    }
+
+table InterpolationCurve
+    {
+    order:int;
+    closed:bool;
+    isChordLenKnots:int;
+    isColinearTangents:int;
+    isChordLenTangents:int;
+    isNaturalTangents:int;
+    startTangent:DPoint3d;
+    endTangent:DVector3d;
+    fitPoints:[double]; // xyz flattened
+    knots:[double];
+    }
+
+table AkimaCurve
+    {
+    points:[double]; // xyz flattened
+    }
+
+table CatenaryCurve
+    {
+    a: double;  // catenary constant in {y=a*cosh(x/a)}
+    origin:DPoint3d;
+    vectorU:DVector3d;
+    vectorV:DVector3d;
+    x0:double;
+    x1:double;
+    }
+
+table PartialCurve
+    {
+    fraction0: double; 
+    fraction1: double;
+    target:VariantGeometry;  // well, of course it can only be a single curve primitive.
+    }
+
+table CurvePrimitiveId
+    {
+    type: short;
+    geomIndex: short;
+    partIndex: short;
+    bytes:[ubyte];
+    }
+
+
+table CurveVector
+    {
+    type:int;
+    curves:[VariantGeometry];
+    }
+
+table VectorOfVariantGeometry
+    {
+    members:[VariantGeometry];
+    }
+
+
+
+table BsplineSurface
+    {
+    poles:[double]; // xyz flattened
+    weights:[double];
+    knotsU:[double];
+    knotsV:[double];
+    numPolesU:int;
+    numPolesV:int;
+    orderU:int;
+    orderV:int;
+    numRulesU:int;
+    numRulesV:int;
+    holeOrigin:int;
+    boundaries:CurveVector;
+    closedU:bool;
+    closedV:bool;
+    }
+
+
+table DgnBox        {detail:DgnBoxDetail;}
+table DgnSphere     {detail:DgnSphereDetail;}
+table DgnCone       {detail:DgnConeDetail;}
+table DgnTorusPipe  {detail:DgnTorusPipeDetail;}        
+        
+
+table DgnExtrusion
+    {
+    baseCurve:          CurveVector;
+    extrusionVector:    DVector3d;
+    capped:             bool;
+    }
+        
+table DgnRotationalSweep
+    {
+    baseCurve:          CurveVector;
+    axis:               DRay3d;
+    sweepRadians:       double;
+    numVRules:          int;
+    capped:             bool;
+    }
+        
+table DgnRuledSweep
+    {
+    curves:     [CurveVector];
+    capped:     bool;
+    }
+    
+    
+table PolyfaceAuxChannelData
+    {
+	input       	:   double;
+	values      	:  [double];
+	}
+table PolyfaceAuxChannel
+    {
+    dataType        :   int;
+	name            :   string;
+	inputName       :   string;
+	data            :  [PolyfaceAuxChannelData];
+	}
+
+table PolyfaceAuxData
+    {
+	indices         : [int];
+	channels        : [PolyfaceAuxChannel];
+	}
+// EDL April 26 2021
+// Used as optional entry in the Polyface table.
+table TaggedNumericData
+    {
+    tagA: int;
+    tagB: int;
+    intData: [int];
+    doubleData: [double];
+    }
+table Polyface
+    {
+    point       : [double];     // xyz blocked
+    param       : [double];     // xy blocked
+    normal      : [double];     // xyz blocked
+    doubleColor : [double];
+    intColor    : [int];
+    pointIndex  : [int];
+    paramIndex  : [int];
+    normalIndex : [int];
+    colorIndex  : [int];
+    colorTable  : [int];
+    numPerFace  : int;
+    numPerRow   : int;
+    meshStyle   : int;
+    twoSided    : bool;
+    faceIndex   : [int];
+    faceData    : [double];
+	auxData     : PolyfaceAuxData; 
+    expectedClosure     : int;      // 0=unknown, 1=sheet, 2=solid
+    taggedNumericData  : TaggedNumericData;
+    }    
+
+struct TransitionSpiralDetail
+    {    
+    // local coodinates and interval within spiral.
+    transform:DTransform3d;
+    fractionA:double;
+    fractionB:double;
+    
+    // 2d spiral description
+    bearing0Radians:double;
+    bearing1Radians:double;
+    curvature0:double;
+    curvature1:double;
+    
+    spiralType:int;
+    constructionHint:int;
+    }    
+// data for "direct" spirals.
+// Semantics will vary with spiral type.
+// EDL April 26 2021
+//  * this struct is defined in the flatbuffer schema but has no reader or writer code
+//  * it is referenced as an optional field in transition spiral.
+//  * direct spiral types complete round trip tests without use of this.
+//  * it appears that the native flat buffer compilation (allcg_generated.h) was never committed
+//     with it.
+//  * BUT the typescript side was.
+//  * SOOO ... it is an unused struct that seems unnecessary.
+//  * But can it be removed after appearing (as new, optional) in typescript compilation?
+//  * I'll assume not and leave it as a never-used structure.
+// 
+struct DirectSpiralDetail
+    {
+    nominalLength: double;      // expected to be the important length in the spiral definition.
+                                //  (for instance, some types measure length along projection to tangent line)
+    trueLength: double;         // expected to be the computed true length of the live spiral object.
+    doubleTag0: double;         // type specific.
+    doubleTag1: double;
+    intTag0: double;            // type specific.
+    intTag1: double;
+    }
+table TransitionSpiral
+    {
+    detail:TransitionSpiralDetail;
+    extraData:[double];    
+    // In a true transition spiral, the combined bearing and curvature values at start and
+    //  end completely determine length.
+    // But in the murky world of direct spirals, that equational coupling is not present,
+    //  and the length must be given directly.
+    // To allow flexibility, add (11/20) an optional second detail structure.
+    directDetail: DirectSpiralDetail;
+    }
+
+union VariantGeometryUnion
+    {
+    LineSegment = 1,
+    EllipticArc = 2,
+    BsplineCurve = 3,
+    LineString = 4,
+    CurveVector = 5,
+    DgnCone = 6,
+    DgnSphere = 7,
+    DgnTorusPipe = 8,
+    DgnBox = 9,
+    DgnExtrusion = 10,
+    DgnRotationalSweep = 11,
+    DgnRuledSweep = 12,
+    Polyface = 13,
+    BsplineSurface = 14,
+    VectorOfVariantGeometry = 15,
+    InterpolationCurve = 16,
+    TransitionSpiral = 17,
+    PointString = 18,
+    AkimaCurve = 19,
+    CatenaryCurve = 20,
+    PartialCurve = 21
+    }    
+    
+    
+table VariantGeometry
+    {
+    geometry:VariantGeometryUnion;
+    tag:CurvePrimitiveId;
+    }
+    

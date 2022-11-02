@@ -1,0 +1,1380 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Dimension_Schema" nameSpacePrefix="dschema" version="1.0" description="Units Framework Dimension descriptions schema" displayLabel="Dimension Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+    <ECCustomAttributes>
+        <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <Hidden>True</Hidden>
+        </DisplayOptions>
+    </ECCustomAttributes>
+    <ECClass typeName="EC" displayLabel="Electric current" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric current</DisplayName>
+                <DimensionalDescription>A</DimensionalDescription>
+                <DimensionalDerivation>A</DimensionalDerivation>
+                <DimensionName>EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EC_L2" displayLabel="Electric current area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric current area</DisplayName>
+                <DimensionalDescription>m^2*A</DimensionalDescription>
+                <DimensionalDerivation>T/J=A*m^2</DimensionalDerivation>
+                <DimensionName>EC_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EC_PER_L" displayLabel="Electric current per length" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric current per length</DisplayName>
+                <DimensionalDescription>m^-1*A</DimensionalDescription>
+                <DimensionalDerivation>A/m</DimensionalDerivation>
+                <DimensionName>EC_PER_L</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EC_PER_L2" displayLabel="Electric current per area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric current per area</DisplayName>
+                <DimensionalDescription>m^-2*A</DimensionalDescription>
+                <DimensionalDerivation>A/m^2</DimensionalDerivation>
+                <DimensionName>EC_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EC_PER_L2_K2" displayLabel="Electric current per area temperature squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric current per area temperature squared</DisplayName>
+                <DimensionalDescription>m^-2*A*K^-2</DimensionalDescription>
+                <DimensionalDerivation>A/(m^2*K^2)</DimensionalDerivation>
+                <DimensionName>EC_PER_L2_K2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EC_PER_M" displayLabel="Electric current per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric current per mass</DisplayName>
+                <DimensionalDescription>kg^-1*A</DimensionalDescription>
+                <DimensionalDerivation>A/kg</DimensionalDerivation>
+                <DimensionName>EC_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="K" displayLabel="Temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Temperature</DisplayName>
+                <DimensionalDescription>K</DimensionalDescription>
+                <DimensionalDerivation>K</DimensionalDerivation>
+                <DimensionName>K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="K_PER_L" displayLabel="Temperature per length" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Temperature per length</DisplayName>
+                <DimensionalDescription>m^-1*K</DimensionalDescription>
+                <DimensionalDerivation>K/m</DimensionalDerivation>
+                <DimensionName>K_PER_L</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L" displayLabel="Length" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length</DisplayName>
+                <DimensionalDescription>m</DimensionalDescription>
+                <DimensionalDerivation>m</DimensionalDerivation>
+                <DimensionName>L</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_K" displayLabel="Length temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length temperature</DisplayName>
+                <DimensionalDescription>m*K</DimensionalDescription>
+                <DimensionalDerivation>m*K</DimensionalDerivation>
+                <DimensionName>L_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_PER_M" displayLabel="Length per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length per mass</DisplayName>
+                <DimensionalDescription>kg^-1*m</DimensionalDescription>
+                <DimensionalDerivation>m/kg</DimensionalDerivation>
+                <DimensionName>L_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_PER_PA" displayLabel="Length per plane angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length per plane angle</DisplayName>
+                <DimensionalDescription>m*rad^-1</DimensionalDescription>
+                <DimensionalDerivation>m/rad</DimensionalDerivation>
+                <DimensionName>L_PER_PA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_PER_T" displayLabel="Length per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length per time</DisplayName>
+                <DimensionalDescription>m*s^-1</DimensionalDescription>
+                <DimensionalDerivation>m/s</DimensionalDerivation>
+                <DimensionName>L_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_PER_T_K" displayLabel="Length per time temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length per time temperature</DisplayName>
+                <DimensionalDescription>m*s^-1*K^-1</DimensionalDescription>
+                <DimensionalDerivation>in/(hr*F)</DimensionalDerivation>
+                <DimensionName>L_PER_T_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_PER_T2" displayLabel="Length per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length per time squared</DisplayName>
+                <DimensionalDescription>m*s^-2</DimensionalDescription>
+                <DimensionalDerivation>m/s^2</DimensionalDerivation>
+                <DimensionName>L_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_T_EC" displayLabel="Length time electric charge" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length time electric charge</DisplayName>
+                <DimensionalDescription>m*s*A</DimensionalDescription>
+                <DimensionalDerivation>C*m</DimensionalDerivation>
+                <DimensionName>L_T_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L_T2_PER_M" displayLabel="Length time squared per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length time squared per mass</DisplayName>
+                <DimensionalDescription>kg^-1*m*s^2</DimensionalDescription>
+                <DimensionalDerivation>1/Pa=m^2/N</DimensionalDerivation>
+                <DimensionName>L_T2_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2" displayLabel="Area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Area</DisplayName>
+                <DimensionalDescription>m^2</DimensionalDescription>
+                <DimensionalDerivation>m^2</DimensionalDerivation>
+                <DimensionName>L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PA_PER_M" displayLabel="Angular area per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Angular area per mass</DisplayName>
+                <DimensionalDescription>kg^-1*m^2*rad</DimensionalDescription>
+                <DimensionalDerivation>(rad*m^2)/kg</DimensionalDerivation>
+                <DimensionName>L2_PA_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PA_PER_MOL" displayLabel="Angular area per mole" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Angular area per mole</DisplayName>
+                <DimensionalDescription>m^2*mol^-1*rad</DimensionalDescription>
+                <DimensionalDerivation>(rad*m^2)/mol</DimensionalDerivation>
+                <DimensionName>L2_PA_PER_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PER_M" displayLabel="Area per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Area per mass</DisplayName>
+                <DimensionalDescription>kg^-1*m^2</DimensionalDescription>
+                <DimensionalDerivation>m^2/kg</DimensionalDerivation>
+                <DimensionName>L2_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PER_MOL" displayLabel="Area per mole" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Area per mole</DisplayName>
+                <DimensionalDescription>m^2*mol^-1</DimensionalDescription>
+                <DimensionalDerivation>m^2/mol</DimensionalDerivation>
+                <DimensionName>L2_PER_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PER_SA" displayLabel="Angular area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Angular area</DisplayName>
+                <DimensionalDescription>m^2*sr^-1</DimensionalDescription>
+                <DimensionalDerivation>m^2/sr</DimensionalDerivation>
+                <DimensionName>L2_PER_SA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PER_T" displayLabel="Area per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Area per time</DisplayName>
+                <DimensionalDescription>m^2*s^-1</DimensionalDescription>
+                <DimensionalDerivation>m^2/s</DimensionalDerivation>
+                <DimensionName>L2_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PER_T2" displayLabel="Area per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Area per time squared</DisplayName>
+                <DimensionalDescription>m^2*s^-2</DimensionalDescription>
+                <DimensionalDerivation>J/kg=m^2/s^2</DimensionalDerivation>
+                <DimensionName>L2_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PER_T2_K" displayLabel="Area per time squared temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Area per time squared temperature</DisplayName>
+                <DimensionalDescription>m^2*s^-2*K^-1</DimensionalDescription>
+                <DimensionalDerivation>J/(kg*K)=m^2/(s^2*K)</DimensionalDerivation>
+                <DimensionName>L2_PER_T2_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L2_PER_T3" displayLabel="Area per time cubed" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Area per time cubed</DisplayName>
+                <DimensionalDescription>m^2*s^-3</DimensionalDescription>
+                <DimensionalDerivation>m^2/s^3</DimensionalDerivation>
+                <DimensionName>L2_PER_T3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L3" displayLabel="Volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Volume</DisplayName>
+                <DimensionalDescription>m^3</DimensionalDescription>
+                <DimensionalDerivation>m^3</DimensionalDerivation>
+                <DimensionName>L3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L3_PER_M" displayLabel="Volume per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Volume per mass</DisplayName>
+                <DimensionalDescription>kg^-1*m^3</DimensionalDescription>
+                <DimensionalDerivation>m^3/kg</DimensionalDerivation>
+                <DimensionName>L3_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L3_PER_MOL" displayLabel="Molar volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Molar volume</DisplayName>
+                <DimensionalDescription>m^3*mol^-1</DimensionalDescription>
+                <DimensionalDerivation>m^3/mol</DimensionalDerivation>
+                <DimensionName>L3_PER_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L3_PER_T" displayLabel="Volume per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Volume per time</DisplayName>
+                <DimensionalDescription>m^3*s^-1</DimensionalDescription>
+                <DimensionalDerivation>m^3/s</DimensionalDerivation>
+                <DimensionName>L3_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L3_PER_T_EC" displayLabel="Volume per electric charge" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Volume per electric charge</DisplayName>
+                <DimensionalDescription>m^3*s^-1*A^-1</DimensionalDescription>
+                <DimensionalDerivation>m^3/C</DimensionalDerivation>
+                <DimensionName>L3_PER_T_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L4" displayLabel="Quartic length" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Quartic length</DisplayName>
+                <DimensionalDescription>m^4</DimensionalDescription>
+                <DimensionalDerivation>m^4</DimensionalDerivation>
+                <DimensionName>L4</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L4_PER_T2" displayLabel="Quartic length per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Quartic length per time squared</DisplayName>
+                <DimensionalDescription>m^4*s^-2</DimensionalDescription>
+                <DimensionalDerivation>m^4/s^2</DimensionalDerivation>
+                <DimensionName>L4_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="L6" displayLabel="Length to the sixth power" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Length to the sixth power</DisplayName>
+                <DimensionalDescription>m^6</DimensionalDescription>
+                <DimensionalDerivation>m^6</DimensionalDerivation>
+                <DimensionName>L6</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LF" displayLabel="Luminous flux" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Luminous flux</DisplayName>
+                <DimensionalDescription>cd*sr</DimensionalDescription>
+                <DimensionalDerivation>lm=cd*sr</DimensionalDerivation>
+                <DimensionName>LF</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LF_PER_L2" displayLabel="Luminous flux per area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Luminous flux per area</DisplayName>
+                <DimensionalDescription>m^-2*cd*sr</DimensionalDescription>
+                <DimensionalDerivation>lm/m^2</DimensionalDerivation>
+                <DimensionName>LF_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LI" displayLabel="Luminous intensity" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Luminous intensity</DisplayName>
+                <DimensionalDescription>cd</DimensionalDescription>
+                <DimensionalDerivation>cd</DimensionalDerivation>
+                <DimensionName>LI</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LI_PER_L2" displayLabel="Luminous intensity per area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Luminous intensity per area</DisplayName>
+                <DimensionalDescription>m^-2*cd</DimensionalDescription>
+                <DimensionalDerivation>cd/m^2</DimensionalDerivation>
+                <DimensionName>LI_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M" displayLabel="Mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass</DisplayName>
+                <DimensionalDescription>kg</DimensionalDescription>
+                <DimensionalDerivation>kg</DimensionalDerivation>
+                <DimensionName>M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T" displayLabel="Mass length per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time</DisplayName>
+                <DimensionalDescription>kg*m*s^-1</DimensionalDescription>
+                <DimensionalDerivation>N*s=(kg*m)/s</DimensionalDerivation>
+                <DimensionName>M_L_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T2" displayLabel="Mass length per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time squared</DisplayName>
+                <DimensionalDescription>kg*m*s^-2</DimensionalDescription>
+                <DimensionalDerivation>N</DimensionalDerivation>
+                <DimensionName>M_L_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T2_EC" displayLabel="Mass length per time squared electric current" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time squared electric current</DisplayName>
+                <DimensionalDescription>kg*m*s^-2*A^-1</DimensionalDescription>
+                <DimensionalDerivation>Wb/m</DimensionalDerivation>
+                <DimensionName>M_L_PER_T2_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T2_EC2" displayLabel="Mass length per time squared electric current squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time squared electric current squared</DisplayName>
+                <DimensionalDescription>kg*m*s^-2*A^-2</DimensionalDescription>
+                <DimensionalDerivation>H/m</DimensionalDerivation>
+                <DimensionName>M_L_PER_T2_EC2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T2_PA" displayLabel="Mass length per time squared plane angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time squared plane angle</DisplayName>
+                <DimensionalDescription>kg*m*s^-2*rad^-1</DimensionalDescription>
+                <DimensionalDerivation>N*m/m</DimensionalDerivation>
+                <DimensionName>M_L_PER_T2_PA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T3" displayLabel="Mass length per time cubed" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time cubed</DisplayName>
+                <DimensionalDescription>kg*m*s^-3</DimensionalDescription>
+                <DimensionalDerivation>W/m=J/(s*m)=N/s=(kg*m)/s^3</DimensionalDerivation>
+                <DimensionName>M_L_PER_T3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T3_EC" displayLabel="Mass length per time cubed electric current" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time cubed electric current</DisplayName>
+                <DimensionalDescription>kg*m*s^-3*A^-1</DimensionalDescription>
+                <DimensionalDerivation>V/m</DimensionalDerivation>
+                <DimensionName>M_L_PER_T3_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T3_EC2" displayLabel="Mass length per time cubed electric current squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time cubed electric current squared</DisplayName>
+                <DimensionalDescription>kg*m*s^-3*A^-2</DimensionalDescription>
+                <DimensionalDerivation>?/m</DimensionalDerivation>
+                <DimensionName>M_L_PER_T3_EC2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L_PER_T3_K" displayLabel="Mass length per time cubed temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass length per time cubed temperature</DisplayName>
+                <DimensionalDescription>kg*m*s^-3*K^-1</DimensionalDescription>
+                <DimensionalDerivation>k=W/(m*K)</DimensionalDerivation>
+                <DimensionName>M_L_PER_T3_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2" displayLabel="Mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area</DisplayName>
+                <DimensionalDescription>kg*m^2</DimensionalDescription>
+                <DimensionalDerivation>kg*m^2</DimensionalDerivation>
+                <DimensionName>M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T" displayLabel="Mass area per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-1</DimensionalDescription>
+                <DimensionalDerivation>N*m*s</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T2" displayLabel="Mass area per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time squared</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-2</DimensionalDescription>
+                <DimensionalDerivation>J=N*m</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T2_EC" displayLabel="Mass area per time squared electric current" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time squared electric current</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-2*A^-1</DimensionalDescription>
+                <DimensionalDerivation>Wb=V*s</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T2_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T2_EC2" displayLabel="Mass area per time squared electric current squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time squared electric current squared</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-2*A^-2</DimensionalDescription>
+                <DimensionalDerivation>H=Wb/A</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T2_EC2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T2_K" displayLabel="Mass area per time squared temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time squared temperature</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-2*K^-1</DimensionalDescription>
+                <DimensionalDerivation>J/K</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T2_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T2_K_MOL" displayLabel="Mass area per time squared temperature mole" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time squared temperature mole</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-2*K^-1*mol^-1</DimensionalDescription>
+                <DimensionalDerivation>J/(mol*K)</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T2_K_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T2_MOL" displayLabel="Mass area per time squared mole" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time squared mole</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-2*mol^-1</DimensionalDescription>
+                <DimensionalDerivation>J/mol=(N*m)/mol</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T2_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T2_PA" displayLabel="Mass area per time squared plane angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time squared plane angle</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-2*rad^-1</DimensionalDescription>
+                <DimensionalDerivation>N*m/rad</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T2_PA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T3" displayLabel="Mass area per time cubed" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time cubed</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-3</DimensionalDescription>
+                <DimensionalDerivation>W=J/s</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T3_EC" displayLabel="Mass area per time cubed electric current" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time cubed electric current</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-3*A^-1</DimensionalDescription>
+                <DimensionalDerivation>V=W/A</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T3_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T3_EC_K" displayLabel="Mass area per time cubed electric current temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time cubed electric current temperature</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-3*A^-1*K^-1</DimensionalDescription>
+                <DimensionalDerivation>V/K</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T3_EC_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T3_EC2" displayLabel="Mass area per time cubed electric current squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time cubed electric current squared</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-3*A^-2</DimensionalDescription>
+                <DimensionalDerivation>?=V/A</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T3_EC2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T3_K" displayLabel="Mass area per time cubed temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time cubed temperature</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-3*K^-1</DimensionalDescription>
+                <DimensionalDerivation>W/K</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T3_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T3_SA" displayLabel="Mass area per time cubed solid angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per time cubed solid angle</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-3*sr^-1</DimensionalDescription>
+                <DimensionalDerivation>W/sr</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T3_SA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L2_PER_T4" displayLabel="Mass area per quartic time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass area per quartic time</DisplayName>
+                <DimensionalDescription>kg*m^2*s^-4</DimensionalDescription>
+                <DimensionalDerivation>W/s</DimensionalDerivation>
+                <DimensionName>M_L2_PER_T4</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L3_PER_T2" displayLabel="Mass volume per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass volume per time squared</DisplayName>
+                <DimensionalDescription>kg*m^3*s^-2</DimensionalDescription>
+                <DimensionalDerivation>N*m^2=(kg*m^3)/s^2</DimensionalDerivation>
+                <DimensionName>M_L3_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L3_PER_T3_EC2" displayLabel="Mass volume per time cubed electric current squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass volume per time cubed electric current squared</DisplayName>
+                <DimensionalDescription>kg*m^3*s^-3*A^-2</DimensionalDescription>
+                <DimensionalDerivation>?*m</DimensionalDerivation>
+                <DimensionName>M_L3_PER_T3_EC2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L4_PER_T2" displayLabel="Mass quartic length per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass quartic length per time squared</DisplayName>
+                <DimensionalDescription>kg*m^4*s^-2</DimensionalDescription>
+                <DimensionalDerivation>J*m^2</DimensionalDerivation>
+                <DimensionName>M_L4_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_L4_PER_T3" displayLabel="Mass quartic length per time cubed" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass quartic length per time cubed</DisplayName>
+                <DimensionalDescription>kg*m^4*s^-3</DimensionalDescription>
+                <DimensionalDerivation>W*m^2=(kg*m^4)/s^3</DimensionalDerivation>
+                <DimensionName>M_L4_PER_T3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L" displayLabel="Lenic mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Lenic mass</DisplayName>
+                <DimensionalDescription>kg*m^-1</DimensionalDescription>
+                <DimensionalDerivation>kg/m</DimensionalDerivation>
+                <DimensionName>M_PER_L</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L_T" displayLabel="Mass per length time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per length time</DisplayName>
+                <DimensionalDescription>kg*m^-1*s^-1</DimensionalDescription>
+                <DimensionalDerivation>Pa*s=(N*s)/m^2</DimensionalDerivation>
+                <DimensionName>M_PER_L_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L_T2" displayLabel="Mass per length time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per length time squared</DisplayName>
+                <DimensionalDescription>kg*m^-1*s^-2</DimensionalDescription>
+                <DimensionalDerivation>Pa=J/m^3=N/m^2</DimensionalDerivation>
+                <DimensionName>M_PER_L_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L_T2_K" displayLabel="Mass per length time squared temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per length time squared temperature</DisplayName>
+                <DimensionalDescription>kg*m^-1*s^-2*K^-1</DimensionalDescription>
+                <DimensionalDerivation>Pa/K=N/(m^2*K)</DimensionalDerivation>
+                <DimensionName>M_PER_L_T2_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L_T3" displayLabel="Mass per length time cubed" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per length time cubed</DisplayName>
+                <DimensionalDerivation>W/m^3=J/(s*m^3)=N/(s*m^2)=kg/(m*s^3)</DimensionalDerivation>
+                <DimensionalDescription>kg*m^-1*s^-3</DimensionalDescription>
+                <DimensionName>M_PER_L_T3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L2" displayLabel="Mass per area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per area</DisplayName>
+                <DimensionalDescription>kg*m^-2</DimensionalDescription>
+                <DimensionalDerivation>kg/m^2</DimensionalDerivation>
+                <DimensionName>M_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L2_T" displayLabel="Mass per area time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per area time</DisplayName>
+                <DimensionalDescription>kg*m^-2*s^-1</DimensionalDescription>
+                <DimensionalDerivation>Z=(N*s)/m^3</DimensionalDerivation>
+                <DimensionName>M_PER_L2_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L2_T2" displayLabel="Mass per area time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per area time squared</DisplayName>
+                <DimensionalDescription>kg*m^-2*s^-2</DimensionalDescription>
+                <DimensionalDerivation>N/m^3</DimensionalDerivation>
+                <DimensionName>M_PER_L2_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L3" displayLabel="Mass per volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per volume</DisplayName>
+                <DimensionalDescription>kg*m^-3</DimensionalDescription>
+                <DimensionalDerivation>kg/m^3</DimensionalDerivation>
+                <DimensionName>M_PER_L3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_L4_T" displayLabel="Mass per quartic length time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per quartic length time</DisplayName>
+                <DimensionalDescription>kg*m^-4*s^-1</DimensionalDescription>
+                <DimensionalDerivation>(Pa*s)/m^3</DimensionalDerivation>
+                <DimensionName>M_PER_L4_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_MOL" displayLabel="Molar mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Molar mass</DisplayName>
+                <DimensionalDescription>kg*mol^-1</DimensionalDescription>
+                <DimensionalDerivation>kg/mol</DimensionalDerivation>
+                <DimensionName>M_PER_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_T" displayLabel="Mass per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per time</DisplayName>
+                <DimensionalDescription>kg*s^-1</DimensionalDescription>
+                <DimensionalDerivation>kg/s</DimensionalDerivation>
+                <DimensionName>M_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_T2" displayLabel="Mass per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per time squared</DisplayName>
+                <DimensionalDescription>kg*s^-2</DimensionalDescription>
+                <DimensionalDerivation>N/m=dyne/m=J/m^2</DimensionalDerivation>
+                <DimensionName>M_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_T2_EC" displayLabel="Mass per time squared electric current" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per time squared electric current</DisplayName>
+                <DimensionalDescription>kg*s^-2*A^-1</DimensionalDescription>
+                <DimensionalDerivation>T=Wb/m^2</DimensionalDerivation>
+                <DimensionName>M_PER_T2_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_T3" displayLabel="Mass per time cubed" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per time cubed</DisplayName>
+                <DimensionalDescription>kg*s^-3</DimensionalDescription>
+                <DimensionalDerivation>W/m^2</DimensionalDerivation>
+                <DimensionName>M_PER_T3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_T3_K" displayLabel="Mass per time cubed temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per time cubed temperature</DisplayName>
+                <DimensionalDescription>kg*s^-3*K^-1</DimensionalDescription>
+                <DimensionalDerivation>W/(m^2*K)</DimensionalDerivation>
+                <DimensionName>M_PER_T3_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M_PER_T3_SA" displayLabel="Mass per time cubed solid angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass per time cubed solid angle</DisplayName>
+                <DimensionalDescription>kg*s^-3*sr^-1</DimensionalDescription>
+                <DimensionalDerivation>W/(sr*m^2)</DimensionalDerivation>
+                <DimensionName>M_PER_T3_SA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="M2_L4_PER_T6_EC2_K2" displayLabel="Mass squared quartic length per time to the sixth electric current squared temperature squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mass squared quartic length per time to the sixth electric current squared temperature squared</DisplayName>
+                <DimensionalDescription>kg^2*m^4*s^-6*A^-2*K^-2</DimensionalDescription>
+                <DimensionalDerivation>V^2/K^2</DimensionalDerivation>
+                <DimensionName>M2_L4_PER_T6_EC2_K2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOL" displayLabel="Amount of substance" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Amount of substance</DisplayName>
+                <DimensionalDescription>mol</DimensionalDescription>
+                <DimensionalDerivation>mol</DimensionalDerivation>
+                <DimensionName>MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOL_PER_L3" displayLabel="Mole per volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mole per volume</DisplayName>
+                <DimensionalDescription>m^-3*mol</DimensionalDescription>
+                <DimensionalDerivation>mol/m^3</DimensionalDerivation>
+                <DimensionName>MOL_PER_L3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOL_PER_M" displayLabel="Mole per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mole per mass</DisplayName>
+                <DimensionalDescription>kg^-1*mol</DimensionalDescription>
+                <DimensionalDerivation>mol/kg</DimensionalDerivation>
+                <DimensionName>MOL_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOL_PER_T" displayLabel="Mole per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Mole per time</DisplayName>
+                <DimensionalDescription>s^-1*mol</DimensionalDescription>
+                <DimensionalDerivation>s^-1*mol</DimensionalDerivation>
+                <DimensionName>MOL_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE" displayLabel="Dimensionless" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Dimensionless</DisplayName>
+                <DimensionalDescription>one</DimensionalDescription>
+                <DimensionalDerivation>one</DimensionalDerivation>
+                <DimensionName>ONE</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_K" displayLabel="Reciprocal temperature" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal temperature</DisplayName>
+                <DimensionalDescription>K^-1</DimensionalDescription>
+                <DimensionalDerivation>1/K</DimensionalDerivation>
+                <DimensionName>ONE_PER_K</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_L" displayLabel="Reciprocal length" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal length</DisplayName>
+                <DimensionalDescription>m^-1</DimensionalDescription>
+                <DimensionalDerivation>1/m</DimensionalDerivation>
+                <DimensionName>ONE_PER_L</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_L2" displayLabel="Reciprocal area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal area</DisplayName>
+                <DimensionalDescription>m^-2</DimensionalDescription>
+                <DimensionalDerivation>1/m^2</DimensionalDerivation>
+                <DimensionName>ONE_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_L2_T" displayLabel="Reciprocal area time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal area time</DisplayName>
+                <DimensionalDescription>m^-2*s^-1</DimensionalDescription>
+                <DimensionalDerivation>1/(m^2*s)</DimensionalDerivation>
+                <DimensionName>ONE_PER_L2_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_L2_T_SA" displayLabel="Reciprocal angular area time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal angular area time</DisplayName>
+                <DimensionalDescription>m^-2*s^-1*sr^-1</DimensionalDescription>
+                <DimensionalDerivation>1/(s*sr*m^2)</DimensionalDerivation>
+                <DimensionName>ONE_PER_L2_T_SA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_L3" displayLabel="Reciprocal volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal volume</DisplayName>
+                <DimensionalDescription>m^-3</DimensionalDescription>
+                <DimensionalDerivation>1/m^3</DimensionalDerivation>
+                <DimensionName>ONE_PER_L3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_L3_T" displayLabel="Reciprocal volume time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal volume time</DisplayName>
+                <DimensionalDescription>m^-3*s^-1</DimensionalDescription>
+                <DimensionalDerivation>Bq/m^3=1/(m^3*s)</DimensionalDerivation>
+                <DimensionName>ONE_PER_L3_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_M" displayLabel="Reciprocal mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal mass</DisplayName>
+                <DimensionalDescription>kg^-1</DimensionalDescription>
+                <DimensionalDerivation>1/kg</DimensionalDerivation>
+                <DimensionName>ONE_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_T" displayLabel="Reciprocal time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal time</DisplayName>
+                <DimensionalDescription>s^-1</DimensionalDescription>
+                <DimensionalDerivation>1/s</DimensionalDerivation>
+                <DimensionName>ONE_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_T_M" displayLabel="Reciprocal time mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal time mass</DisplayName>
+                <DimensionalDescription>kg^-1*s^-1</DimensionalDescription>
+                <DimensionalDerivation>Bq/kg=1/(s*kg)</DimensionalDerivation>
+                <DimensionName>ONE_PER_T_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ONE_PER_T_SA" displayLabel="Reciprocal time solid angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Reciprocal time solid angle</DisplayName>
+                <DimensionalDescription>s^-1*sr^-1</DimensionalDescription>
+                <DimensionalDerivation>1/(s*sr)</DimensionalDerivation>
+                <DimensionName>ONE_PER_T_SA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PA" displayLabel="Plane angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Plane angle</DisplayName>
+                <DimensionalDescription>m*m^-1</DimensionalDescription>
+                <DimensionalDerivation>m/m</DimensionalDerivation>
+                <DimensionName>PA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PA_PER_L" displayLabel="Plane angle per length" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Plane angle per length</DisplayName>
+                <DimensionalDescription>m^-1*rad</DimensionalDescription>
+                <DimensionalDerivation>rad/m</DimensionalDerivation>
+                <DimensionName>PA_PER_L</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PA_PER_T" displayLabel="Plane angle per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Plane angle per time</DisplayName>
+                <DimensionalDescription>s^-1*rad</DimensionalDescription>
+                <DimensionalDerivation>rad/s</DimensionalDerivation>
+                <DimensionName>PA_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PA_PER_T2" displayLabel="Plane angle per time squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Plane angle per time squared</DisplayName>
+                <DimensionalDescription>s^-2*rad</DimensionalDescription>
+                <DimensionalDerivation>rad/s^2</DimensionalDerivation>
+                <DimensionName>PA_PER_T2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="QBRT_L_PER_T" displayLabel="Cube root length per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Cube root length per time</DisplayName>
+                <DimensionalDescription>m^(1/3)/s</DimensionalDescription>
+                <DimensionalDerivation>m^(1/3)/s</DimensionalDerivation>
+                <DimensionName>QBRT_L_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SA" displayLabel="Solid angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Solid angle</DisplayName>
+                <DimensionalDescription>m^2*m^-2</DimensionalDescription>
+                <DimensionalDerivation>m^2/m^2</DimensionalDerivation>
+                <DimensionName>SA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SQRT_L_PER_T" displayLabel="Square root length per time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Square root length per time</DisplayName>
+                <DimensionalDescription>m^0.5/s</DimensionalDescription>
+                <DimensionalDerivation>m^0.5/s</DimensionalDerivation>
+                <DimensionName>SQRT_L_PER_T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SQRT_L7_PER_SQRT_M" displayLabel="Square root length to the seventh power per square root mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Square root length to the seventh power per square root mass</DisplayName>
+                <DimensionalDescription>kg^-0.5*m^3.5</DimensionalDescription>
+                <DimensionalDerivation>(m^3/s)/sqrt(Pa)=m^3.5/kg^0.5</DimensionalDerivation>
+                <DimensionName>SQRT_L7_PER_SQRT_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T" displayLabel="Time" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time</DisplayName>
+                <DimensionalDescription>s</DimensionalDescription>
+                <DimensionalDerivation>s</DimensionalDerivation>
+                <DimensionName>T</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_EC" displayLabel="Electric charge" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric charge</DisplayName>
+                <DimensionalDescription>s*A</DimensionalDescription>
+                <DimensionalDerivation>s*A</DimensionalDerivation>
+                <DimensionName>T_EC</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_EC_PER_L2" displayLabel="Electric charge per length squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric charge per length squared</DisplayName>
+                <DimensionalDescription>m^-2*s*A</DimensionalDescription>
+                <DimensionalDerivation>(A*s)/m^2</DimensionalDerivation>
+                <DimensionName>T_EC_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_EC_PER_L3" displayLabel="Electric charge per volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric charge per volume</DisplayName>
+                <DimensionalDescription>m^-3*s*A</DimensionalDescription>
+                <DimensionalDerivation>C/m^3</DimensionalDerivation>
+                <DimensionName>T_EC_PER_L3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_EC_PER_M" displayLabel="Time electric current per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time electric current per mass</DisplayName>
+                <DimensionalDescription>kg^-1*s*A</DimensionalDescription>
+                <DimensionalDerivation>C/kg</DimensionalDerivation>
+                <DimensionName>T_EC_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_EC_PER_MOL" displayLabel="Electric charge per mole" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Electric charge per mole</DisplayName>
+                <DimensionalDescription>s*A*mol^-1</DimensionalDescription>
+                <DimensionalDerivation>C/mol</DimensionalDerivation>
+                <DimensionName>T_EC_PER_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_LF" displayLabel="Quantity of light" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Quantity of light</DisplayName>
+                <DimensionalDescription>s*cd*sr</DimensionalDescription>
+                <DimensionalDerivation>lm*s=cd*s*sr</DimensionalDerivation>
+                <DimensionName>T_LF</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_LF_PER_L2" displayLabel="Quantity of light per area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Quantity of light per area</DisplayName>
+                <DimensionalDescription>m^-2*s*cd*sr</DimensionalDescription>
+                <DimensionalDerivation>lx*s=(cd*s)/m^2</DimensionalDerivation>
+                <DimensionName>T_LF_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T_PER_L3_PA" displayLabel="Time per angular volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time per angular volume</DisplayName>
+                <DimensionalDescription>m^-3*s*rad^-1</DimensionalDescription>
+                <DimensionalDerivation>s/(rad*m^3)</DimensionalDerivation>
+                <DimensionName>T_PER_L3_PA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T2_EC_PER_M" displayLabel="Time squared electric current per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time squared electric current per mass</DisplayName>
+                <DimensionalDescription>kg^-1*s^2*A</DimensionalDescription>
+                <DimensionalDerivation>(s^2*A)/kg</DimensionalDerivation>
+                <DimensionName>T2_EC_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T2_EC2_PER_M_L2" displayLabel="Time squared electric current squared per mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time squared electric current squared per mass area</DisplayName>
+                <DimensionalDescription>kg^-1*m^-2*s^2*A^2</DimensionalDescription>
+                <DimensionalDerivation>1/H=A/Wb</DimensionalDerivation>
+                <DimensionName>T2_EC2_PER_M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T2_PER_L2" displayLabel="Time squared per length squared" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time squared per length squared</DisplayName>
+                <DimensionalDescription>m^-2*s^2</DimensionalDescription>
+                <DimensionalDerivation>kg/(W*s) = kg/(((kg*m^2)/s^3))*s) = s^2/m^2</DimensionalDerivation>
+                <DimensionName>T2_PER_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T2_PER_M" displayLabel="Time squared per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time squared per mass</DisplayName>
+                <DimensionalDescription>kg^-1*s^2</DimensionalDescription>
+                <DimensionalDerivation>m^2/J=s^2/kg</DimensionalDerivation>
+                <DimensionName>T2_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T2_PER_M_L2" displayLabel="Time squared per mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time squared per mass area</DisplayName>
+                <DimensionalDescription>kg^-1*m^-2*s^2</DimensionalDescription>
+                <DimensionalDerivation>1/J=s^2/(kg*m^2)</DimensionalDerivation>
+                <DimensionName>T2_PER_M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T2_PER_M_L5" displayLabel="Time squared per mass length to the fifth" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time squared per mass length to the fifth</DisplayName>
+                <DimensionalDescription>kg^-1*m^-5*s^2</DimensionalDescription>
+                <DimensionalDerivation>1/(J*m^3)</DimensionalDerivation>
+                <DimensionName>T2_PER_M_L5</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T2_PER_M_SA" displayLabel="Time squared per mass solid angle" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time squared per mass solid angle</DisplayName>
+                <DimensionalDescription>kg^-1*s^2*sr^-1</DimensionalDescription>
+                <DimensionalDerivation>m^2/(sr*J)=s^2/(kg*sr)</DimensionalDerivation>
+                <DimensionName>T2_PER_M_SA</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T3_EC2_PER_M_L2" displayLabel="Time cubed electric current squared per mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time cubed electric current squared per mass area</DisplayName>
+                <DimensionalDescription>kg^-1*m^-2*s^3*A^2</DimensionalDescription>
+                <DimensionalDerivation>S=1/?</DimensionalDerivation>
+                <DimensionName>T3_EC2_PER_M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T3_EC2_PER_M_L3" displayLabel="Time cubed electric current squared per mass volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time cubed electric current squared per mass volume</DisplayName>
+                <DimensionalDescription>kg^-1*m^-3*s^3*A^2</DimensionalDescription>
+                <DimensionalDerivation>S/m=1/(?*m)</DimensionalDerivation>
+                <DimensionName>T3_EC2_PER_M_L3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T3_EC2_PER_M_MOL" displayLabel="Time cubed electric current squared per mass mole" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time cubed electric current squared per mass mole</DisplayName>
+                <DimensionalDescription>kg^-1*s^3*A^2*mol^-1</DimensionalDescription>
+                <DimensionalDerivation>(S*m^2)/mol</DimensionalDerivation>
+                <DimensionName>T3_EC2_PER_M_MOL</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T3_K_PER_M" displayLabel="Time cubed temperature per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time cubed temperature per mass</DisplayName>
+                <DimensionalDescription>kg^-1*s^3*K</DimensionalDescription>
+                <DimensionalDerivation>(m^2*K)/W</DimensionalDerivation>
+                <DimensionName>T3_K_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T3_K_PER_M_L2" displayLabel="Time cubed temperature per mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time cubed temperature per mass area</DisplayName>
+                <DimensionalDescription>kg^-1*m^-2*s^3*K</DimensionalDescription>
+                <DimensionalDerivation>K/W</DimensionalDerivation>
+                <DimensionName>T3_K_PER_M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T3_LF_PER_M_L2" displayLabel="Time cubed luminous flux per mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time cubed luminous flux per mass area</DisplayName>
+                <DimensionalDescription>kg^-1*m^-2*s^3*cd*sr</DimensionalDescription>
+                <DimensionalDerivation>lm/W</DimensionalDerivation>
+                <DimensionName>T3_LF_PER_M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T3_PER_M_L2" displayLabel="Time cubed per mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Time cubed per mass area</DisplayName>
+                <DimensionalDescription>kg^-1*m^-2*s^3</DimensionalDescription>
+                <DimensionalDerivation>1/W=s^3/(kg*m^2)</DimensionalDerivation>
+                <DimensionName>T3_PER_M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T4_EC2_PER_M" displayLabel="Quartic time electric current squared per mass" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Quartic time electric current squared per mass</DisplayName>
+                <DimensionalDescription>kg^-1*s^4*A^2</DimensionalDescription>
+                <DimensionalDerivation>(C*m^2)/V</DimensionalDerivation>
+                <DimensionName>T4_EC2_PER_M</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T4_EC2_PER_M_L2" displayLabel="Quartic time electric current squared per mass area" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Quartic time electric current squared per mass area</DisplayName>
+                <DimensionalDescription>kg^-1*m^-2*s^4*A^2</DimensionalDescription>
+                <DimensionalDerivation>F=C/V</DimensionalDerivation>
+                <DimensionName>T4_EC2_PER_M_L2</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="T4_EC2_PER_M_L3" displayLabel="Quartic time electric current squared per mass volume" isDomainClass="False">
+        <ECCustomAttributes>
+            <Dimension_Attributes xmlns="Unit_Attributes.01.00">
+                <DisplayName>Quartic time electric current squared per mass volume</DisplayName>
+                <DimensionalDescription>kg^-1*m^-3*s^4*A^2</DimensionalDescription>
+                <DimensionalDerivation>F/m</DimensionalDerivation>
+                <DimensionName>T4_EC2_PER_M_L3</DimensionName>
+            </Dimension_Attributes>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>

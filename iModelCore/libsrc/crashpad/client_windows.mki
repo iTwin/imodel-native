@@ -1,0 +1,264 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+dirToSearch = $(VendorDir)
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)third_party/mini_chromium/mini_chromium/
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/zlib/
+%include cincapnd.mki
+
+nameToDefine = _FILE_OFFSET_BITS=64
+%include cdefapnd.mki
+
+dirToSearch = $(VendorDir)third_party/mini_chromium/mini_chromium/
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)compat/non_mac/
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)compat/win/
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)compat/non_elf/
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/zlib/
+%include cincapnd.mki
+
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
+
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = WIN32_LEAN_AND_MEAN
+%include cdefapnd.mki
+
+nameToDefine = _CRT_SECURE_NO_WARNINGS
+%include cdefapnd.mki
+
+nameToDefine = _HAS_EXCEPTIONS=0
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+nameToDefine = CRASHPAD_ZLIB_SOURCE_EXTERNAL
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+# -- base -----------------------------------------------------------------------------------------
+
+$(o)alias$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/debug/alias.cc ${MultiCompileDepends}
+
+$(o)file_path$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/files/file_path.cc ${MultiCompileDepends}
+
+$(o)scoped_file$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/files/scoped_file.cc ${MultiCompileDepends}
+
+$(o)logging$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/logging.cc ${MultiCompileDepends}
+
+$(o)memory$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/memory.cc ${MultiCompileDepends}
+
+$(o)rand_util$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/rand_util.cc ${MultiCompileDepends}
+
+$(o)string16$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string16.cc ${MultiCompileDepends}
+
+$(o)string_number_conversions$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string_number_conversions.cc ${MultiCompileDepends}
+
+$(o)stringprintf$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/stringprintf.cc ${MultiCompileDepends}
+
+$(o)utf_string_conversion_utils$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/utf_string_conversion_utils.cc ${MultiCompileDepends}
+
+$(o)utf_string_conversions$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/utf_string_conversions.cc ${MultiCompileDepends}
+
+$(o)lock$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/synchronization/lock.cc ${MultiCompileDepends}
+
+$(o)icu_utf$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/third_party/icu/icu_utf.cc ${MultiCompileDepends}
+
+$(o)thread_local_storage$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/threading/thread_local_storage.cc ${MultiCompileDepends}
+
+$(o)process_metrics_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/process_metrics_win.cc ${MultiCompileDepends}
+
+$(o)string_util_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string_util_win.cc ${MultiCompileDepends}
+
+$(o)lock_impl_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/synchronization/lock_impl_win.cc ${MultiCompileDepends}
+
+$(o)thread_local_storage_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/threading/thread_local_storage_win.cc ${MultiCompileDepends}
+
+# -- getopt ---------------------------------------------------------------------------------------
+
+$(o)getopt$(oext) : $(VendorDir)third_party/getopt/getopt.cc ${MultiCompileDepends}
+
+# -- compat ---------------------------------------------------------------------------------------
+
+$(o)strings$(oext) : $(VendorDir)compat/win/strings.cc ${MultiCompileDepends}
+
+# Conflicts with util/misc/time.cc (our multi-compile logic prevents us from uniquely building them).
+# But also doesn't seem to be needed in practice...
+# $(o)time$(oext) : $(VendorDir)compat/win/time.cc ${MultiCompileDepends}
+
+# -- util -----------------------------------------------------------------------------------------
+
+$(o)delimited_file_reader$(oext) : $(VendorDir)util/file/delimited_file_reader.cc ${MultiCompileDepends}
+
+$(o)file_io$(oext) : $(VendorDir)util/file/file_io.cc ${MultiCompileDepends}
+
+$(o)file_reader$(oext) : $(VendorDir)util/file/file_reader.cc ${MultiCompileDepends}
+
+$(o)file_seeker$(oext) : $(VendorDir)util/file/file_seeker.cc ${MultiCompileDepends}
+
+$(o)file_writer$(oext) : $(VendorDir)util/file/file_writer.cc ${MultiCompileDepends}
+
+$(o)scoped_remove_file$(oext) : $(VendorDir)util/file/scoped_remove_file.cc ${MultiCompileDepends}
+
+$(o)string_file$(oext) : $(VendorDir)util/file/string_file.cc ${MultiCompileDepends}
+
+$(o)initialization_state_dcheck$(oext) : $(VendorDir)util/misc/initialization_state_dcheck.cc ${MultiCompileDepends}
+
+$(o)lexing$(oext) : $(VendorDir)util/misc/lexing.cc ${MultiCompileDepends}
+
+$(o)metrics$(oext) : $(VendorDir)util/misc/metrics.cc ${MultiCompileDepends}
+
+$(o)pdb_structures$(oext) : $(VendorDir)util/misc/pdb_structures.cc ${MultiCompileDepends}
+
+$(o)random_string$(oext) : $(VendorDir)util/misc/random_string.cc ${MultiCompileDepends}
+
+$(o)range_set$(oext) : $(VendorDir)util/misc/range_set.cc ${MultiCompileDepends}
+
+$(o)reinterpret_bytes$(oext) : $(VendorDir)util/misc/reinterpret_bytes.cc ${MultiCompileDepends}
+
+$(o)scoped_forbid_return$(oext) : $(VendorDir)util/misc/scoped_forbid_return.cc ${MultiCompileDepends}
+
+$(o)time$(oext) : $(VendorDir)util/misc/time.cc ${MultiCompileDepends}
+
+$(o)uuid$(oext) : $(VendorDir)util/misc/uuid.cc ${MultiCompileDepends}
+
+$(o)zlib$(oext) : $(VendorDir)util/misc/zlib.cc ${MultiCompileDepends}
+
+$(o)http_body$(oext) : $(VendorDir)util/net/http_body.cc ${MultiCompileDepends}
+
+$(o)http_body_gzip$(oext) : $(VendorDir)util/net/http_body_gzip.cc ${MultiCompileDepends}
+
+$(o)http_multipart_builder$(oext) : $(VendorDir)util/net/http_multipart_builder.cc ${MultiCompileDepends}
+
+$(o)http_transport$(oext) : $(VendorDir)util/net/http_transport.cc ${MultiCompileDepends}
+
+$(o)url$(oext) : $(VendorDir)util/net/url.cc ${MultiCompileDepends}
+
+$(o)checked_address_range$(oext) : $(VendorDir)util/numeric/checked_address_range.cc ${MultiCompileDepends}
+
+$(o)process_memory$(oext) : $(VendorDir)util/process/process_memory.cc ${MultiCompileDepends}
+
+$(o)process_memory_range$(oext) : $(VendorDir)util/process/process_memory_range.cc ${MultiCompileDepends}
+
+$(o)aligned_allocator$(oext) : $(VendorDir)util/stdlib/aligned_allocator.cc ${MultiCompileDepends}
+
+$(o)string_number_conversion$(oext) : $(VendorDir)util/stdlib/string_number_conversion.cc ${MultiCompileDepends}
+
+$(o)strlcpy$(oext) : $(VendorDir)util/stdlib/strlcpy.cc ${MultiCompileDepends}
+
+$(o)strnlen$(oext) : $(VendorDir)util/stdlib/strnlen.cc ${MultiCompileDepends}
+
+$(o)split_string$(oext) : $(VendorDir)util/string/split_string.cc ${MultiCompileDepends}
+
+$(o)thread$(oext) : $(VendorDir)util/thread/thread.cc ${MultiCompileDepends}
+
+$(o)thread_log_messages$(oext) : $(VendorDir)util/thread/thread_log_messages.cc ${MultiCompileDepends}
+
+$(o)worker_thread$(oext) : $(VendorDir)util/thread/worker_thread.cc ${MultiCompileDepends}
+
+$(o)directory_reader_win$(oext) : $(VendorDir)util/file/directory_reader_win.cc ${MultiCompileDepends}
+
+$(o)file_io_win$(oext) : $(VendorDir)util/file/file_io_win.cc ${MultiCompileDepends}
+
+$(o)filesystem_win$(oext) : $(VendorDir)util/file/filesystem_win.cc ${MultiCompileDepends}
+
+$(o)clock_win$(oext) : $(VendorDir)util/misc/clock_win.cc ${MultiCompileDepends}
+
+$(o)paths_win$(oext) : $(VendorDir)util/misc/paths_win.cc ${MultiCompileDepends}
+
+$(o)time_win$(oext) : $(VendorDir)util/misc/time_win.cc ${MultiCompileDepends}
+
+$(o)http_transport_win$(oext) : $(VendorDir)util/net/http_transport_win.cc ${MultiCompileDepends}
+
+$(o)process_memory_win$(oext) : $(VendorDir)util/process/process_memory_win.cc ${MultiCompileDepends}
+
+$(o)semaphore_win$(oext) : $(VendorDir)util/synchronization/semaphore_win.cc ${MultiCompileDepends}
+
+$(o)thread_win$(oext) : $(VendorDir)util/thread/thread_win.cc ${MultiCompileDepends}
+
+$(o)command_line$(oext) : $(VendorDir)util/win/command_line.cc ${MultiCompileDepends}
+
+$(o)critical_section_with_debug_info$(oext) : $(VendorDir)util/win/critical_section_with_debug_info.cc ${MultiCompileDepends}
+
+$(o)exception_handler_server$(oext) : $(VendorDir)util/win/exception_handler_server.cc ${MultiCompileDepends}
+
+$(o)get_function$(oext) : $(VendorDir)util/win/get_function.cc ${MultiCompileDepends}
+
+$(o)get_module_information$(oext) : $(VendorDir)util/win/get_module_information.cc ${MultiCompileDepends}
+
+$(o)handle$(oext) : $(VendorDir)util/win/handle.cc ${MultiCompileDepends}
+
+$(o)initial_client_data$(oext) : $(VendorDir)util/win/initial_client_data.cc ${MultiCompileDepends}
+
+$(o)module_version$(oext) : $(VendorDir)util/win/module_version.cc ${MultiCompileDepends}
+
+$(o)nt_internals$(oext) : $(VendorDir)util/win/nt_internals.cc ${MultiCompileDepends}
+
+$(o)ntstatus_logging$(oext) : $(VendorDir)util/win/ntstatus_logging.cc ${MultiCompileDepends}
+
+$(o)process_info$(oext) : $(VendorDir)util/win/process_info.cc ${MultiCompileDepends}
+
+$(o)registration_protocol_win$(oext) : $(VendorDir)util/win/registration_protocol_win.cc ${MultiCompileDepends}
+
+$(o)scoped_handle$(oext) : $(VendorDir)util/win/scoped_handle.cc ${MultiCompileDepends}
+
+$(o)scoped_local_alloc$(oext) : $(VendorDir)util/win/scoped_local_alloc.cc ${MultiCompileDepends}
+
+$(o)scoped_process_suspend$(oext) : $(VendorDir)util/win/scoped_process_suspend.cc ${MultiCompileDepends}
+
+$(o)scoped_set_event$(oext) : $(VendorDir)util/win/scoped_set_event.cc ${MultiCompileDepends}
+
+$(o)session_end_watcher$(oext) : $(VendorDir)util/win/session_end_watcher.cc ${MultiCompileDepends}
+
+# -- client ---------------------------------------------------------------------------------------
+
+$(o)annotation$(oext) : $(VendorDir)client/annotation.cc ${MultiCompileDepends}
+
+$(o)annotation_list$(oext) : $(VendorDir)client/annotation_list.cc ${MultiCompileDepends}
+
+$(o)crash_report_database$(oext) : $(VendorDir)client/crash_report_database.cc ${MultiCompileDepends}
+
+$(o)crashpad_info$(oext) : $(VendorDir)client/crashpad_info.cc ${MultiCompileDepends}
+
+$(o)prune_crash_reports$(oext) : $(VendorDir)client/prune_crash_reports.cc ${MultiCompileDepends}
+
+$(o)settings$(oext) : $(VendorDir)client/settings.cc ${MultiCompileDepends}
+
+$(o)crash_report_database_win$(oext) : $(VendorDir)client/crash_report_database_win.cc ${MultiCompileDepends}
+
+$(o)crashpad_client_win$(oext) : $(VendorDir)client/crashpad_client_win.cc ${MultiCompileDepends}
+
+#==================================================================================================
+%include MultiCppCompileGo.mki
+
+objs +% $(MultiCompileObjectList)
+
+# -- ASM ------------------------------------------------------------------------------------------
+.asm.obj:
+    |[== Building $@, ($=) ==]
+    $(BENTLEY_WIN32_TOOLCHAIN_MLCmd) -c -Fo$@ $<
+    ~set objs $(objs) $@
+
+# client
+$(o)capture_context_win$(oext) : $(VendorDir)util/misc/capture_context_win.asm ${MultiCompileDepends}
+
+$(o)safe_terminate_process$(oext) : $(VendorDir)util/win/safe_terminate_process.asm ${MultiCompileDepends}

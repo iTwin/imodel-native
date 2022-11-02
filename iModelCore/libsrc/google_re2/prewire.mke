@@ -1,0 +1,16 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+base_dir = $(_MakeFilePath)
+
+#--------------------------------------------------------------------------------------
+# The Google RE API 
+#--------------------------------------------------------------------------------------
+ always:
+    ~linkfile "$(BuildContext)PublicAPI/re2/filtered_re2.h=$(base_dir)re2/filtered_re2.h"
+    ~linkfile "$(BuildContext)PublicAPI/re2/re2.h=$(base_dir)re2/re2.h"
+    ~linkfile "$(BuildContext)PublicAPI/re2/set.h=$(base_dir)re2/set.h"
+    ~linkfile "$(BuildContext)PublicAPI/re2/stringpiece.h=$(base_dir)re2/stringpiece.h"

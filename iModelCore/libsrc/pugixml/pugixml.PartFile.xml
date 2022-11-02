@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+    
+    <Part Name="Prewire" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="pugixml"/>
+            <VendorNotices>Delivery/pugixml-license.md</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="PugiXml" BentleyBuildMakeFile="pugixml.mke">
+        <SubPart PartName="Prewire" />
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)iTwinPugixml$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)iTwinPugixml$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+</BuildContext>

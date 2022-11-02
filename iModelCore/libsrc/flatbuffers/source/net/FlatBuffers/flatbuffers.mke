@@ -1,0 +1,58 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+buildDir        = $(OutBuildDir)FlatBuffers/
+
+ASSEMBLY_NAME   = FlatBuffers
+programName     = $(ASSEMBLY_NAME)
+baseDir         = $(_MakeFilePath)
+o               = $(buildDir)$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DeliveryDir = $(BuildContext)Delivery/
+
+$(DeliveryDir)flatbuffers-license.txt : $(SrcRoot)libsrc/flatbuffers/source/LICENSE.txt
+    $(LinkFirstDepToFirstTarget)
+
+# -------------------------------------------------------------------------
+# Configure Code Analysis (FxCop) policy
+# -------------------------------------------------------------------------
+PerformCodeAnalysis = false
+
+ASSEMBLY_TITLE              = FlatBuffers
+ASSEMBLY_DLL                = 1
+ASSEMBLY_DESCRIPTION        = .NET version of Google's flatbuffer
+ASSEMBLY_VERSION            = 1.0.0.0
+ASSEMBLY_FILE_VERSION       = 1.0.0.0
+ASSEMBLY_CONTEXT_LOCATION   = $(ContextDeliveryDir)
+ASSEMBLY_PRODUCT_NAME       = FlatBuffers
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+ASSEMBLY_KEYFILE            =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE        =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+
+ASSEMBLY_SOURCE_LIST = \
+    $(baseDir)ByteBuffer.cs\
+    $(baseDir)FlatBufferBuilder.cs \
+    $(baseDir)FlatBufferConstants.cs \
+    $(baseDir)Struct.cs \
+    $(baseDir)Table.cs
+
+%ifndef (SuppressCodeAnalysis)
+    SuppressCodeAnalysis    = 1
+    CodeAnalysisWasNotSet   = 1
+%endif
+
+%include mkcsharp.mki
+
+%ifdef (CodeAnalysisWasNotSet)
+    SuppressCodeAnalysis=
+%endif

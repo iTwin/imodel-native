@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="KindOfQuantityInReferencedSchema" nameSpacePrefix="koq" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="KindOfQuantityInReferencedSchema_Base" version="01.00.00" prefix="koqb"/>
+    <ECEntityClass typeName="Entity">
+        <ECProperty propertyName="KindOfQuantityProperty" typeName="double" kindOfQuantity="koqb:MyKindOfQuantity" />
+    </ECEntityClass>
+</ECSchema>

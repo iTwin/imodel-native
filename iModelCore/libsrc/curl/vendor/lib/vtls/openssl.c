@@ -2942,7 +2942,12 @@ static CURLcode ossl_connect_step1(struct Curl_easy *data,
   if((SSL_CONN_CONFIG(verifypeer) || SSL_CONN_CONFIG(verifyhost)) &&
      (SSL_SET_OPTION(native_ca_store))) {
     X509_STORE *store = SSL_CTX_get_cert_store(backend->ctx);
-    HCERTSTORE hStore = CertOpenSystemStore(0, TEXT("ROOT"));
+
+    // === BENTLEY_CHANGES ===
+    // Originally the method called here was CertOpenSystemStore, but for whatever reason
+    // the linker can't find it when building WinRTx64 architecture. Calling CertOpenSystemStoreW instead.
+    HCERTSTORE hStore = CertOpenSystemStoreW(0, TEXT("ROOT"));
+    // === BENTLEY_CHANGES ===
 
     if(hStore) {
       PCCERT_CONTEXT pContext = NULL;

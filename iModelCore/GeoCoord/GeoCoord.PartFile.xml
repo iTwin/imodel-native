@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="GeoCoordHeaderFiles" BentleyBuildMakeFile="GeoCoord.Prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+        </Bindings>
+    </Part>
+
+    <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke">
+        <SubPart PartName="csmapStatic"             PartFile="iModelCore/libsrc/csmap/csmap" />
+        <SubPart PartName="BeJsonCpp"               PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeXml"                   PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="GeoCoordHeaderFiles" />
+        <SubPart PartName="BeSQLite"        PartFile="iModelCore/BeSQLite/BeSQLite" />
+        <SubPart PartName="GeomDlls"                PartFile="iModelCore/GeomLibs/geomlibs" />
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+            <Libs>Delivery/$(libprefix)iTwinGeoCoord$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinGeoCoord$(shlibext)
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="GeoCoord-Dev">
+        <SubPart PartName= "GeoCoord-Tested" />
+    </Part>
+    <!-- ******************************** Unit Tests ************************************** -->
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="GeoCoord" />
+        <SubPart PartName="GeoCoordWorkspaceData"            PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="GeoCoord/NonPublished" SubPartDirectory="UnitTests/GeoCoord">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+         <SubPart PartName="UnitTests-NonPublished"/>
+        <!-- Not yet SubPart PartName="UnitTests-Published"/-->
+    </Part>
+
+    <Product Name="GeoCoord-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Directories DirectoryListName="GeoCoordGTestsDir"/>
+    </Product>
+
+    <!-- Define a gtest program to run the tests -->
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordTests -dTEST_COLLECTION_PRODUCT=GeoCoord-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="GeoCoord-Tests"/>
+         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeoCoordTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeoCoordTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="GeoCoord-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Directories DirectoryListName="GeoCoordGTestsDir"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeoCoord-GTest -dGTEST_NAME=GeoCoordTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,Linux*">
+        <SubProduct ProductName="GeoCoord-GTest"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeoCoordTests.log</Files>
+        </Bindings>
+    </Part>
+
+
+    <Part Name="GeoCoord-Tested">
+        <SubPart PartName="RunGtest" />
+    </Part>
+
+    <ProductDirectoryList ListName="GeoCoordGTestsDir" >
+        <ProductDirectory Name="CSMap"                Deliver="false" />
+    </ProductDirectoryList>
+</BuildContext>

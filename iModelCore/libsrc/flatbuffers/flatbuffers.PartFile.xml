@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+    
+    <Part Name="Headers" BentleyBuildMakeFile="PreWire.mke">
+        <Bindings>
+            <VendorAPI Domain="flatbuffers"/>
+            <VendorNotices>Delivery/flatbuffers-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!--
+        This is the compiler for .FBS (flatbuffers schema) files.
+        Applications do /not/ need this to use already-generated flatbuffer code. This is used to generate the code that can read/write the format.
+    -->
+    <Part Name="beflatc" BentleyBuildMakeFile="beflatc.mke"/>
+
+</BuildContext>

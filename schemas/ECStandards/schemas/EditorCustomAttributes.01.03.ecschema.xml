@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="EditorCustomAttributes" nameSpacePrefix="beca" version="1.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="AlwaysExpand" description="Indicates if a property should always be expanded on ECPropertyPane" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ArrayMembers" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="ArrayBehaviorAttributes" description="Specifies how UI should handle the display of array properties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="OneElementAsArray" typeName="boolean" />
+        <ECProperty propertyName="ShowEmpty" typeName="boolean" />
+        <ECProperty propertyName="SupportsAddAndRemove" typeName="boolean" description="If true, the property pane will allow the user to add and remove elements from the array" />
+    </ECClass>
+    <ECClass typeName="ArrayMemberNameFromValue" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="Localizable" description="Mark a string type property of a custom attribute as localizable" displayLabel="Localizable property" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="BooleanDisplay" description="Specifies custom strings for True and False" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="TrueString" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.02" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FalseString" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.02" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Category" description="Specifies category information to be used by ECPropertyPane" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Standard" typeName="int" />
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="DisplayLabel" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.02" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Description" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.02" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Priority" typeName="int" />
+        <ECProperty propertyName="Expand" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="StringLength" description="Specifies minimum and maxmimum lengths for a string property" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Min" typeName="long" />
+        <ECProperty propertyName="Max" typeName="long" />
+    </ECClass>
+    <ECClass typeName="ClassPriority" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Priority" typeName="int" />
+    </ECClass>
+    <!-- Applied to an ECProperty to indicate that it is expensive to calculate it and it should not be loaded by default. -->
+    <ECClass typeName="DontLoadProperty" description="Indicates that this property is expensive to calculate and it should not be loaded by default" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="DontShowNullProperties" description="Indicates if null properties should be displayed on ECPropertyPane" isDomainClass="False" isCustomAttributeClass="True" />
+    <!-- Applied to an ECProperty to indicate it should not be displayed in the UI if its value is null -->
+    <ECClass typeName="DontShowNullProperty" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="DWGFormat" description="Specifies the AutoCAD format string to use when creating a new value from this property" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="FormatString" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DWGProperty" description="Specifies the AutoCAD property name" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ExtendType" description="Specifies the extended type for a property" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Standard" typeName="int" />
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECClass typeName="FilePickerAttributes" description="Specifies file dialog settings" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Title" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.02" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FilterList" typeName="string" />
+        <ECProperty propertyName="FilterIndex" typeName="int" />
+        <ECProperty propertyName="InitialDirectory" typeName="string" />
+        <ECProperty propertyName="MultiSelect" typeName="boolean" />
+        <ECProperty propertyName="UseSaveFile" typeName="boolean" />
+        <ECProperty propertyName="CreatePrompt" typeName="boolean" />
+        <ECProperty propertyName="OverwritePrompt" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="Format" description="Specifies the format string to be used by UI to format values of an ECProperty" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="FormatString" typeName="string" />
+    </ECClass>
+    <ECClass typeName="HideMembers" description="Indicates if members of a property should be shown on ECPropertyPane" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="ArrayMembers" typeName="boolean" />
+        <ECProperty propertyName="If2D" typeName="boolean" />
+        <ECProperty propertyName="If3D" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="HideProperty" description="Indicates if this property should be hidden from the user" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="If2D" typeName="boolean" />
+        <ECProperty propertyName="If3D" typeName="boolean" />
+        <!-- Hide property if ECExpression evaluates to true. Expression is evaluated against the IECInstance associated with this property -->
+        <ECProperty propertyName="If" typeName="string" />
+    </ECClass>
+    <ECClass typeName="IgnoreZ" description="Indicates if the Z value of a DPoint3D property should not be displayed in the property pane" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="ItemTypeSelectorOptIn" isDomainClass="True" isCustomAttributeClass="True">
+        <ECProperty propertyName="Hidden" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="MemberExtendedType" description="Specifies the extended type for member properties of an array type property" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Standard" typeName="int" />
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECClass typeName="MembersIndependent" description="Indicates if the members of a struct or array property should appear in ECPropertyPane as if they are in the parent structure" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="PropertyPriority" description="Higher values appear first in GUI. Leave large gaps (e.g. 1000). See ECPropertyPane.PropertySortPriority" isDomainClass="True" isCustomAttributeClass="True">
+        <ECProperty propertyName="Priority" typeName="int" />
+    </ECClass>
+    <ECClass typeName="RequiresRefresh" description="Indicates if a change in the property value requires a refresh of ECPropertyPane.  If this is set on a property and the property value changes, the PropertyPane refreshes" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="RequiresReload" description="Indicates if a change in the property value requires a reload of ECPropertyPane.  If the property value changes, descriptors are regenerated and the ECPropertyPane is reloaded with the instances" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="SchemaPriority" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Priority" typeName="int" />
+    </ECClass>
+    <ECClass typeName="ValueMap" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="DisplayString" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.02" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Value" typeName="int" />
+    </ECClass>
+    <ECClass typeName="StandardValues" description="Sets the display strings for standard integer values for an IECProperty" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="MustBeFromList" typeName="boolean" />
+        <ECArrayProperty propertyName="ValueMap" typeName="ValueMap" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <!-- Applied to a schema to indicate that values with extended types like Distance or Area, which are presented in working units, are stored in UORs.
+         If not present, stored values are assumed to be stored in meters, or in the units specified by any UnitSpecification on the ECProperty -->
+    <ECClass typeName="StoresUnitsAsUors" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="StrikethroughSpecification" description="Used by the ECGrid to determine whether IECInstances should have a red strike through (typically indicated a deleted state)." isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="StrikethroughECProperty" typeName="string" />
+    </ECClass>
+    <ECClass typeName="UseBooleanInExpressions" description="Indicates that values of boolean properties should not be converted to strings when evaluating ECExpressions." isDomainClass="False" isCustomAttributeClass="True" />
+</ECSchema>
+

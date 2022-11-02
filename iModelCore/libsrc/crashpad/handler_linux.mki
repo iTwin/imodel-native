@@ -1,0 +1,197 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+dirToSearch = $(VendorDir)
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)third_party/mini_chromium/mini_chromium/
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/zlib/
+%include cincapnd.mki
+
+nameToDefine = _FILE_OFFSET_BITS=64
+%include cdefapnd.mki
+
+dirToSearch = $(VendorDir)compat/non_mac/
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)compat/linux/
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)compat/non_win/
+%include cincapnd.mki
+
+nameToDefine = CRASHPAD_LSS_SOURCE_EMBEDDED
+%include cdefapnd.mki
+
+nameToDefine = CRASHPAD_ZLIB_SOURCE_EXTERNAL
+%include cdefapnd.mki
+
+nameToDefine = CRASHPAD_USE_BORINGSSL
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+# -- libsnapshot ----------------------------------------------------------------------------------
+
+$(o)annotation_snapshot$(oext) : $(VendorDir)snapshot/annotation_snapshot.cc ${MultiCompileDepends}
+
+$(o)capture_memory$(oext) : $(VendorDir)snapshot/capture_memory.cc ${MultiCompileDepends}
+
+$(o)cpu_context$(oext) : $(VendorDir)snapshot/cpu_context.cc ${MultiCompileDepends}
+
+$(o)crashpad_info_client_options$(oext) : $(VendorDir)snapshot/crashpad_info_client_options.cc ${MultiCompileDepends}
+
+$(o)crashpad_info_reader$(oext) : $(VendorDir)snapshot/crashpad_types/crashpad_info_reader.cc ${MultiCompileDepends}
+
+$(o)image_annotation_reader$(oext) : $(VendorDir)snapshot/crashpad_types/image_annotation_reader.cc ${MultiCompileDepends}
+
+$(o)elf_dynamic_array_reader$(oext) : $(VendorDir)snapshot/elf/elf_dynamic_array_reader.cc ${MultiCompileDepends}
+
+$(o)elf_image_reader$(oext) : $(VendorDir)snapshot/elf/elf_image_reader.cc ${MultiCompileDepends}
+
+$(o)elf_symbol_table_reader$(oext) : $(VendorDir)snapshot/elf/elf_symbol_table_reader.cc ${MultiCompileDepends}
+
+$(o)module_snapshot_elf$(oext) : $(VendorDir)snapshot/elf/module_snapshot_elf.cc ${MultiCompileDepends}
+
+$(o)handle_snapshot$(oext) : $(VendorDir)snapshot/handle_snapshot.cc ${MultiCompileDepends}
+
+$(o)cpu_context_linux$(oext) : $(VendorDir)snapshot/linux/cpu_context_linux.cc ${MultiCompileDepends}
+
+$(o)debug_rendezvous$(oext) : $(VendorDir)snapshot/linux/debug_rendezvous.cc ${MultiCompileDepends}
+
+$(o)exception_snapshot_linux$(oext) : $(VendorDir)snapshot/linux/exception_snapshot_linux.cc ${MultiCompileDepends}
+
+$(o)process_reader_linux$(oext) : $(VendorDir)snapshot/linux/process_reader_linux.cc ${MultiCompileDepends}
+
+$(o)process_snapshot_linux$(oext) : $(VendorDir)snapshot/linux/process_snapshot_linux.cc ${MultiCompileDepends}
+
+$(o)system_snapshot_linux$(oext) : $(VendorDir)snapshot/linux/system_snapshot_linux.cc ${MultiCompileDepends}
+
+$(o)thread_snapshot_linux$(oext) : $(VendorDir)snapshot/linux/thread_snapshot_linux.cc ${MultiCompileDepends}
+
+$(o)memory_snapshot$(oext) : $(VendorDir)snapshot/memory_snapshot.cc ${MultiCompileDepends}
+
+$(o)exception_snapshot_minidump$(oext) : $(VendorDir)snapshot/minidump/exception_snapshot_minidump.cc ${MultiCompileDepends}
+
+$(o)memory_snapshot_minidump$(oext) : $(VendorDir)snapshot/minidump/memory_snapshot_minidump.cc ${MultiCompileDepends}
+
+$(o)minidump_annotation_reader$(oext) : $(VendorDir)snapshot/minidump/minidump_annotation_reader.cc ${MultiCompileDepends}
+
+$(o)minidump_context_converter$(oext) : $(VendorDir)snapshot/minidump/minidump_context_converter.cc ${MultiCompileDepends}
+
+$(o)minidump_simple_string_dictionary_reader$(oext) : $(VendorDir)snapshot/minidump/minidump_simple_string_dictionary_reader.cc ${MultiCompileDepends}
+
+$(o)minidump_string_list_reader$(oext) : $(VendorDir)snapshot/minidump/minidump_string_list_reader.cc ${MultiCompileDepends}
+
+$(o)minidump_string_reader$(oext) : $(VendorDir)snapshot/minidump/minidump_string_reader.cc ${MultiCompileDepends}
+
+$(o)module_snapshot_minidump$(oext) : $(VendorDir)snapshot/minidump/module_snapshot_minidump.cc ${MultiCompileDepends}
+
+$(o)process_snapshot_minidump$(oext) : $(VendorDir)snapshot/minidump/process_snapshot_minidump.cc ${MultiCompileDepends}
+
+$(o)system_snapshot_minidump$(oext) : $(VendorDir)snapshot/minidump/system_snapshot_minidump.cc ${MultiCompileDepends}
+
+$(o)thread_snapshot_minidump$(oext) : $(VendorDir)snapshot/minidump/thread_snapshot_minidump.cc ${MultiCompileDepends}
+
+$(o)timezone$(oext) : $(VendorDir)snapshot/posix/timezone.cc ${MultiCompileDepends}
+
+$(o)memory_snapshot_sanitized$(oext) : $(VendorDir)snapshot/sanitized/memory_snapshot_sanitized.cc ${MultiCompileDepends}
+
+$(o)module_snapshot_sanitized$(oext) : $(VendorDir)snapshot/sanitized/module_snapshot_sanitized.cc ${MultiCompileDepends}
+
+$(o)process_snapshot_sanitized$(oext) : $(VendorDir)snapshot/sanitized/process_snapshot_sanitized.cc ${MultiCompileDepends}
+
+$(o)sanitization_information$(oext) : $(VendorDir)snapshot/sanitized/sanitization_information.cc ${MultiCompileDepends}
+
+$(o)thread_snapshot_sanitized$(oext) : $(VendorDir)snapshot/sanitized/thread_snapshot_sanitized.cc ${MultiCompileDepends}
+
+$(o)unloaded_module_snapshot$(oext) : $(VendorDir)snapshot/unloaded_module_snapshot.cc ${MultiCompileDepends}
+
+$(o)cpuid_reader$(oext) : $(VendorDir)snapshot/x86/cpuid_reader.cc ${MultiCompileDepends}
+
+# -- libminidump ----------------------------------------------------------------------------------
+
+$(o)minidump_annotation_writer$(oext) : $(VendorDir)minidump/minidump_annotation_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_byte_array_writer$(oext) : $(VendorDir)minidump/minidump_byte_array_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_context_writer$(oext) : $(VendorDir)minidump/minidump_context_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_crashpad_info_writer$(oext) : $(VendorDir)minidump/minidump_crashpad_info_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_exception_writer$(oext) : $(VendorDir)minidump/minidump_exception_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_extensions$(oext) : $(VendorDir)minidump/minidump_extensions.cc ${MultiCompileDepends}
+
+$(o)minidump_file_writer$(oext) : $(VendorDir)minidump/minidump_file_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_handle_writer$(oext) : $(VendorDir)minidump/minidump_handle_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_memory_info_writer$(oext) : $(VendorDir)minidump/minidump_memory_info_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_memory_writer$(oext) : $(VendorDir)minidump/minidump_memory_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_misc_info_writer$(oext) : $(VendorDir)minidump/minidump_misc_info_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_module_crashpad_info_writer$(oext) : $(VendorDir)minidump/minidump_module_crashpad_info_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_module_writer$(oext) : $(VendorDir)minidump/minidump_module_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_rva_list_writer$(oext) : $(VendorDir)minidump/minidump_rva_list_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_simple_string_dictionary_writer$(oext) : $(VendorDir)minidump/minidump_simple_string_dictionary_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_stream_writer$(oext) : $(VendorDir)minidump/minidump_stream_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_string_writer$(oext) : $(VendorDir)minidump/minidump_string_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_system_info_writer$(oext) : $(VendorDir)minidump/minidump_system_info_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_thread_id_map$(oext) : $(VendorDir)minidump/minidump_thread_id_map.cc ${MultiCompileDepends}
+
+$(o)minidump_thread_writer$(oext) : $(VendorDir)minidump/minidump_thread_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_unloaded_module_writer$(oext) : $(VendorDir)minidump/minidump_unloaded_module_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_user_extension_stream_data_source$(oext) : $(VendorDir)minidump/minidump_user_extension_stream_data_source.cc ${MultiCompileDepends}
+
+$(o)minidump_user_stream_writer$(oext) : $(VendorDir)minidump/minidump_user_stream_writer.cc ${MultiCompileDepends}
+
+$(o)minidump_writable$(oext) : $(VendorDir)minidump/minidump_writable.cc ${MultiCompileDepends}
+
+$(o)minidump_writer_util$(oext) : $(VendorDir)minidump/minidump_writer_util.cc ${MultiCompileDepends}
+
+# -- misc -----------------------------------------------------------------------------------------
+
+$(o)tool_support$(oext) : $(VendorDir)tools/tool_support.cc ${MultiCompileDepends}
+
+# -- libhandler -----------------------------------------------------------------------------------
+
+$(o)crash_report_upload_thread$(oext) : $(VendorDir)handler/crash_report_upload_thread.cc ${MultiCompileDepends}
+
+$(o)handler_main$(oext) : $(VendorDir)handler/handler_main.cc ${MultiCompileDepends}
+
+$(o)crash_report_exception_handler$(oext) : $(VendorDir)handler/linux/crash_report_exception_handler.cc ${MultiCompileDepends}
+
+$(o)exception_handler_server$(oext) : $(VendorDir)handler/linux/exception_handler_server.cc ${MultiCompileDepends}
+
+$(o)minidump_to_upload_parameters$(oext) : $(VendorDir)handler/minidump_to_upload_parameters.cc ${MultiCompileDepends}
+
+$(o)prune_crash_reports_thread$(oext) : $(VendorDir)handler/prune_crash_reports_thread.cc ${MultiCompileDepends}
+
+$(o)user_stream_data_source$(oext) : $(VendorDir)handler/user_stream_data_source.cc ${MultiCompileDepends}
+
+# -- handler --------------------------------------------------------------------------------------
+
+$(o)main$(oext) : $(VendorDir)handler/main.cc ${MultiCompileDepends}
+
+#==================================================================================================
+%include MultiCppCompileGo.mki
+
+objs +% $(MultiCompileObjectList)

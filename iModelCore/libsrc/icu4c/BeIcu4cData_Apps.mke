@@ -1,0 +1,159 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+IS_THIRD_PARTY_LIBRARY = 1
+%include mdl.mki
+
+ICU4C_SKIP_EXPORT_DEFINES = 1
+%include BeIcu4cCommon.mki
+
+BuildDir    = $(BuildToolsBuildDir)
+AppName     = BeIcu4cDataToolsApps
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(BuildDir):
+        !~@mkdir $@
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(BuildDir)derb$(oext) : $(SourceDir)tools/genrb/derb.cpp ${MultiCompileDepends}
+
+$(BuildDir)errmsg$(oext) : $(SourceDir)tools/genrb/errmsg.c ${MultiCompileDepends}
+
+$(BuildDir)filterrb$(oext) : $(SourceDir)tools/genrb/filterrb.cpp ${MultiCompileDepends}
+
+$(BuildDir)genrb$(oext) : $(SourceDir)tools/genrb/genrb.cpp ${MultiCompileDepends}
+
+$(BuildDir)parse$(oext) : $(SourceDir)tools/genrb/parse.cpp ${MultiCompileDepends}
+
+$(BuildDir)prscmnts$(oext) : $(SourceDir)tools/genrb/prscmnts.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbutil$(oext) : $(SourceDir)tools/genrb/rbutil.c ${MultiCompileDepends}
+
+$(BuildDir)read$(oext) : $(SourceDir)tools/genrb/read.c ${MultiCompileDepends}
+
+$(BuildDir)reslist$(oext) : $(SourceDir)tools/genrb/reslist.cpp ${MultiCompileDepends}
+
+$(BuildDir)rle$(oext) : $(SourceDir)tools/genrb/rle.c ${MultiCompileDepends}
+
+$(BuildDir)ustr$(oext) : $(SourceDir)tools/genrb/ustr.c ${MultiCompileDepends}
+
+$(BuildDir)wrtjava$(oext) : $(SourceDir)tools/genrb/wrtjava.cpp ${MultiCompileDepends}
+
+$(BuildDir)wrtxml$(oext) : $(SourceDir)tools/genrb/wrtxml.cpp ${MultiCompileDepends}
+
+$(BuildDir)genbrk$(oext) : $(SourceDir)tools/genbrk/genbrk.cpp ${MultiCompileDepends}
+
+$(BuildDir)genccode$(oext) : $(SourceDir)tools/genccode/genccode.c ${MultiCompileDepends}
+
+$(BuildDir)gencfu$(oext) : $(SourceDir)tools/gencfu/gencfu.cpp ${MultiCompileDepends}
+
+$(BuildDir)gencmn$(oext) : $(SourceDir)tools/gencmn/gencmn.c ${MultiCompileDepends}
+
+$(BuildDir)gencnval$(oext) : $(SourceDir)tools/gencnval/gencnval.c ${MultiCompileDepends}
+
+$(BuildDir)gendict$(oext) : $(SourceDir)tools/gendict/gendict.cpp ${MultiCompileDepends}
+
+$(BuildDir)extradata$(oext) : $(SourceDir)tools/gennorm2/extradata.cpp ${MultiCompileDepends}
+
+$(BuildDir)gennorm2$(oext) : $(SourceDir)tools/gennorm2/gennorm2.cpp ${MultiCompileDepends}
+
+$(BuildDir)n2builder$(oext) : $(SourceDir)tools/gennorm2/n2builder.cpp ${MultiCompileDepends}
+
+$(BuildDir)norms$(oext) : $(SourceDir)tools/gennorm2/norms.cpp ${MultiCompileDepends}
+
+$(BuildDir)gensprep$(oext) : $(SourceDir)tools/gensprep/gensprep.c ${MultiCompileDepends}
+
+$(BuildDir)store$(oext) : $(SourceDir)tools/gensprep/store.c ${MultiCompileDepends}
+
+$(BuildDir)icuinfo$(oext) : $(SourceDir)tools/icuinfo/icuinfo.cpp ${MultiCompileDepends}
+
+$(BuildDir)testplug$(oext) : $(SourceDir)tools/icuinfo/testplug.c ${MultiCompileDepends}
+
+$(BuildDir)icupkg$(oext) : $(SourceDir)tools/icupkg/icupkg.cpp ${MultiCompileDepends}
+
+$(BuildDir)gencnvex$(oext) : $(SourceDir)tools/makeconv/gencnvex.c ${MultiCompileDepends}
+
+$(BuildDir)genmbcs$(oext) : $(SourceDir)tools/makeconv/genmbcs.cpp ${MultiCompileDepends}
+
+$(BuildDir)makeconv$(oext) : $(SourceDir)tools/makeconv/makeconv.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvstat$(oext) : $(SourceDir)tools/makeconv/ucnvstat.c ${MultiCompileDepends}
+
+$(BuildDir)pkgdata$(oext) : $(SourceDir)tools/pkgdata/pkgdata.cpp ${MultiCompileDepends}
+
+$(BuildDir)pkgtypes$(oext) : $(SourceDir)tools/pkgdata/pkgtypes.c ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+EXE_CONTEXT_LOCATION = $(BuildContext)Delivery/
+EXE_DEST = $(BuildDir)
+EXE_NO_SIGN = 1
+
+%if $(TARGET_PLATFORM) == "Windows"
+    LINKER_LIBRARIES + $(libprefix)advapi32$(libext)
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+EXE_NAME = derb
+EXE_OBJS = $(BuildDir)derb$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = genbrk
+EXE_OBJS = $(BuildDir)genbrk$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = genccode
+EXE_OBJS = $(BuildDir)genccode$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = gencfu
+EXE_OBJS = $(BuildDir)gencfu$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = gencmn
+EXE_OBJS = $(BuildDir)gencmn$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = gencnval
+EXE_OBJS = $(BuildDir)gencnval$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = gendict
+EXE_OBJS = $(BuildDir)gendict$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = gennorm2
+EXE_OBJS = $(BuildDir)extradata$(oext) $(BuildDir)gennorm2$(oext) $(BuildDir)n2builder$(oext) $(BuildDir)norms$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = genrb
+EXE_OBJS = $(BuildDir)errmsg$(oext) $(BuildDir)filterrb$(oext) $(BuildDir)genrb$(oext) $(BuildDir)parse$(oext) $(BuildDir)read$(oext) $(BuildDir)reslist$(oext) $(BuildDir)ustr$(oext) $(BuildDir)rbutil$(oext) $(BuildDir)wrtjava$(oext) $(BuildDir)rle$(oext) $(BuildDir)wrtxml$(oext) $(BuildDir)prscmnts$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = gensprep
+EXE_OBJS = $(BuildDir)gensprep$(oext) $(BuildDir)store$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = icuinfo
+EXE_OBJS = $(BuildDir)icuinfo$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = icupkg
+EXE_OBJS = $(BuildDir)icupkg$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = makeconv
+EXE_OBJS = $(BuildDir)makeconv$(oext) $(BuildDir)ucnvstat$(oext) $(BuildDir)genmbcs$(oext) $(BuildDir)gencnvex$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki
+
+EXE_NAME = pkgdata
+EXE_OBJS = $(BuildDir)pkgdata$(oext) $(BuildDir)pkgtypes$(oext) $(BuildToolsLibPath)
+%include $(SharedMki)linktool.mki

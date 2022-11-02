@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="USCustomaryUnitSystemDefaults" nameSpacePrefix="us_default" version="1.0" description="Default US storage units for each dimension" displayLabel="USCustomaryUnitSystem" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.08" prefix="besc" />
+    <ECCustomAttributes>
+        <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <Hidden>True</Hidden>
+        </DisplayOptions>
+        <IsUnitSystemSchema xmlns="Unit_Attributes.01.00" />
+        <UnitSpecifications xmlns="Unit_Attributes.01.00">
+            <UnitSpecificationList>
+                <UnitSpecification>
+                    <DimensionName>L2</DimensionName>
+                    <UnitName>FOOT_SQUARED</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <DimensionName>L</DimensionName>
+                    <UnitName>FOOT</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <DimensionName>M</DimensionName>
+                    <UnitName>POUND</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <DimensionName>K</DimensionName>
+                    <UnitName>DEGREE_FAHRENHEIT</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <DimensionName>T</DimensionName>
+                    <UnitName>SECOND</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <DimensionName>L3</DimensionName>
+                    <UnitName>FOOT_CUBED</UnitName>
+                </UnitSpecification>
+            </UnitSpecificationList>
+        </UnitSpecifications>
+    </ECCustomAttributes>
+    <ECClass typeName="UseUSCustomaryUnitSystemDefaults" isDomainClass="False" isCustomAttributeClass="True" />
+</ECSchema>

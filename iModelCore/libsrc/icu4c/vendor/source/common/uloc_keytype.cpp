@@ -172,7 +172,9 @@ initFromResourceBundle(UErrorCode& sts) {
         LocalUResourceBundlePointer typeMapResByKey(ures_getByKey(typeMapRes.getAlias(), legacyKeyId, NULL, &tmpSts));
         if (U_FAILURE(tmpSts)) {
             // type map for each key must exist
-            UPRV_UNREACHABLE;
+            // BENTLEY_CHANGE - we create a custom subset of data, so revert to prior snippet which merely asserted.
+            // UPRV_UNREACHABLE;
+            U_ASSERT(FALSE);
         } else {
             LocalUResourceBundlePointer typeMapEntry;
 

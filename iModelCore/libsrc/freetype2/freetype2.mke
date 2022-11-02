@@ -1,0 +1,148 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefully these get fixed in a future version.
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Freetyoe2 has some debug code that doesn't compile; prevent our MKI files downstream from defining DEBUG.
+%if ($[@findstring GCC, $(BUILD_TOOLSET)] != " ") || ($[@findstring LINUX_CLANG, $(BUILD_TOOLSET)] != " ")
+    # Export/make visible all functions in this library.
+    GCC_DEFAULT_VISIBILITY = default
+%endif
+
+#%if $(TARGET_PLATFORM) == "MacOS"
+    DONT_DEFINE_DEBUG = 1
+#%endif
+
+%include mdl.mki
+
+AppName         = freetype2
+CCompPDBName    = $(appName)
+o               = $(OutBuildDir)$(appName)/
+
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        !~@mkdir $@
+%endif
+
+nameToDefine = FT2_BUILD_LIBRARY
+%include cdefapnd.mki
+
+nameToDefine = DLL_EXPORT
+%include cdefapnd.mki
+
+# Don't use zlib source delivered with freetype2
+nameToDefine = FT_CONFIG_OPTION_SYSTEM_ZLIB
+%include cdefapnd.mki
+
+# Ensure zlib.h can be included from ftgzip.c using angle brackets
+dirToSearch = $(BuildContext)VendorAPI/zlib/
+%include cincapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Do this so we don't have to modify the library's source.
+dirToSearch = $(_MakeFilePath)vendor/include/
+%include cincapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+$(BuildContext)VendorAPI/freetype2 : $(_MakeFilePath)vendor/include
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+# This list of compilands must correlate to the modules selected in include/config/ftmodule.h.
+
+$(o)autofit$(oext) : $(BaseDir)vendor/src/autofit/autofit.c ${CommonDependencies}
+
+$(o)bdf$(oext) : $(BaseDir)vendor/src/bdf/bdf.c ${CommonDependencies}
+
+$(o)cff$(oext) : $(BaseDir)vendor/src/cff/cff.c ${CommonDependencies}
+
+$(o)ftbase$(oext) : $(BaseDir)vendor/src/base/ftbase.c ${CommonDependencies}
+
+$(o)ftbitmap$(oext) : $(BaseDir)vendor/src/base/ftbitmap.c ${CommonDependencies}
+
+$(o)ftcache$(oext) : $(BaseDir)vendor/src/cache/ftcache.c ${CommonDependencies}
+
+$(o)ftcid$(oext) : $(BaseDir)vendor/src/base/ftcid.c ${CommonDependencies}
+
+$(o)ftglyph$(oext) : $(BaseDir)vendor/src/base/ftglyph.c ${CommonDependencies}
+
+$(o)ftgzip$(oext) : $(BaseDir)vendor/src/gzip/ftgzip.c ${CommonDependencies}
+
+$(o)ftinit$(oext) : $(BaseDir)vendor/src/base/ftinit.c ${CommonDependencies}
+
+$(o)ftlzw$(oext) : $(BaseDir)vendor/src/lzw/ftlzw.c ${CommonDependencies}
+
+$(o)ftmm$(oext) : $(BaseDir)vendor/src/base/ftmm.c ${CommonDependencies}
+
+$(o)ftstroke$(oext) : $(BaseDir)vendor/src/base/ftstroke.c ${CommonDependencies}
+
+$(o)ftsynth$(oext) : $(BaseDir)vendor/src/base/ftsynth.c ${CommonDependencies}
+
+$(o)ftsystem$(oext) : $(BaseDir)vendor/src/base/ftsystem.c ${CommonDependencies}
+
+$(o)fttype1$(oext) : $(BaseDir)vendor/src/base/fttype1.c ${CommonDependencies}
+
+$(o)pcf$(oext) : $(BaseDir)vendor/src/pcf/pcf.c ${CommonDependencies}
+
+$(o)pfr$(oext) : $(BaseDir)vendor/src/pfr/pfr.c ${CommonDependencies}
+
+$(o)psaux$(oext) : $(BaseDir)vendor/src/psaux/psaux.c ${CommonDependencies}
+
+$(o)pshinter$(oext) : $(BaseDir)vendor/src/pshinter/pshinter.c ${CommonDependencies}
+
+$(o)psnames$(oext) : $(BaseDir)vendor/src/psnames/psnames.c ${CommonDependencies}
+
+$(o)raster$(oext) : $(BaseDir)vendor/src/raster/raster.c ${CommonDependencies}
+
+$(o)sfnt$(oext) : $(BaseDir)vendor/src/sfnt/sfnt.c ${CommonDependencies}
+
+$(o)smooth$(oext) : $(BaseDir)vendor/src/smooth/smooth.c ${CommonDependencies}
+
+$(o)truetype$(oext) : $(BaseDir)vendor/src/truetype/truetype.c ${CommonDependencies}
+
+$(o)type1$(oext) : $(BaseDir)vendor/src/type1/type1.c ${CommonDependencies}
+
+$(o)type1cid$(oext) : $(BaseDir)vendor/src/cid/type1cid.c ${CommonDependencies}
+
+$(o)type42$(oext) : $(BaseDir)vendor/src/type42/type42.c ${CommonDependencies}
+
+$(o)winfnt$(oext) : $(BaseDir)vendor/src/winfonts/winfnt.c ${CommonDependencies}
+
+$(o)ftsdfrend$(oext) : $(BaseDir)vendor/src/sdf/ftsdfrend.c ${CommonDependencies}
+
+$(o)ftbsdf$(oext) : $(BaseDir)vendor/src/sdf/ftbsdf.c ${CommonDependencies}
+
+$(o)ftsdf$(oext) : $(BaseDir)vendor/src/sdf/ftsdf.c ${CommonDependencies}
+
+$(o)ftdebug$(oext) : $(BaseDir)vendor/src/base/ftdebug.c ${CommonDependencies}
+
+$(o)ftsdfcommon$(oext) : $(BaseDir)vendor/src/sdf/ftsdfcommon.c ${CommonDependencies}
+
+#................................................
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_NAME = $(appName)
+DLM_NO_BENTLEY_LIB = 1
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES = $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext)
+
+%include $(sharedMki)linkLibrary.mki

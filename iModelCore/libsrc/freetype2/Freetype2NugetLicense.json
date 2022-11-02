@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "Freetype2Nuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "Freetype2Nuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "David Turner, Robert Wilhelm, Werner Lemberg, Alexei Podtelezhnikov (Алексей Подтележников), Suzuki Toshiya (鈴木俊哉), Oran Agra, Graham Asher, David Bevan, Bradley Grainger, Infinality, Tom Kacvinsky, Pavel Kaňkovský, Antoine Leca, Just van Rossum, Wu Chia-I (吳佳一)",
+        "copyright": "David Turner, Robert Wilhelm, and Werner Lemberg",
+        "description": "A freely available software library to render fonts.",
+        "homepage": "https://www.freetype.org",
+        "licenseUrl": "http://git.savannah.gnu.org/cgit/freetype/freetype2.git/tree/docs/FTL.TXT",
+        "name": "Freetype2",
+        "SPDX-ID": "FTL",
+        "version": "2.12.1"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+#define DECLARATION_BEGIN   @interface __FIXTURE__ : SenTest_BaseClass {}
+DECLARATION_BEGIN
+
+#define DECLARATION_END     @end
+DECLARATION_END
+
+#define IMPLEMENTATION_BEGIN @implementation __FIXTURE__
+IMPLEMENTATION_BEGIN
+
+// XCTest callbacks that are invoked before/after each test (i.e., these are the test fixture "instance methods")
+#define SETUP_METHOD    - (void)setUp { [super setUp]; }
+SETUP_METHOD
+
+#define TEARDOWN_METHOD - (void)tearDown { [super tearDown];  }
+TEARDOWN_METHOD
+
+#define BE_TEST_RUNNER_JNI_WRAPPER(JTS,JTC)
+#define BE_TEST_SETUP_JNI_WRAPPER(JTC)
+#define BE_TEST_TEARDOWN_JNI_WRAPPER(JTC)
+
+// XCTest callbacks that are invoked before/after each group of tests (i.e., these are the test fixture "class methods")
+#undef  BE_TEST_SETUP
+#define BE_TEST_SETUP(TC)       + (void)setUp { [__FIXTURE__ begtest_initialize]; BeTest::SetUpTestCase(#TC); }   
+#undef  BE_TEST_TEARDOWN
+#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { BeTest::TearDownTestCase(#TC); [__FIXTURE__ begtest_uninitialize];}
+
+// XCTest callback that runs an individual test
+#undef  BE_TEST_RUNNER
+#define BE_TEST_RUNNER(TC,TN)   extern "C" int BETEST_TEST_RUNNER_FUNC(TC,TN) (); \
+                                - (void) test##TN { \
+                                    ((BeTestHost&) BeTest::GetHost ()).m_currentTestCase = self; \
+                                    XCTAssertTrue (0 == BETEST_TEST_RUNNER_FUNC(TC,TN) (), @""); \
+                                    }
+// Note: The makefile will set include path to point to the UnitTests.list.h that should be used
+#include <UnitTests.list.h>
+
+#define IMPLEMENTATION_END @end
+IMPLEMENTATION_END

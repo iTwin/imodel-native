@@ -1,0 +1,920 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+$(BuildDir)appendable$(oext) : $(SourceDir)common/appendable.cpp ${MultiCompileDepends}
+
+$(BuildDir)bmpset$(oext) : $(SourceDir)common/bmpset.cpp ${MultiCompileDepends}
+
+$(BuildDir)brkeng$(oext) : $(SourceDir)common/brkeng.cpp ${MultiCompileDepends}
+
+$(BuildDir)brkiter$(oext) : $(SourceDir)common/brkiter.cpp ${MultiCompileDepends}
+
+$(BuildDir)bytesinkutil$(oext) : $(SourceDir)common/bytesinkutil.cpp ${MultiCompileDepends}
+
+$(BuildDir)bytestream$(oext) : $(SourceDir)common/bytestream.cpp ${MultiCompileDepends}
+
+$(BuildDir)bytestrie$(oext) : $(SourceDir)common/bytestrie.cpp ${MultiCompileDepends}
+
+$(BuildDir)bytestriebuilder$(oext) : $(SourceDir)common/bytestriebuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)bytestrieiterator$(oext) : $(SourceDir)common/bytestrieiterator.cpp ${MultiCompileDepends}
+
+$(BuildDir)caniter$(oext) : $(SourceDir)common/caniter.cpp ${MultiCompileDepends}
+
+$(BuildDir)characterproperties$(oext) : $(SourceDir)common/characterproperties.cpp ${MultiCompileDepends}
+
+$(BuildDir)chariter$(oext) : $(SourceDir)common/chariter.cpp ${MultiCompileDepends}
+
+$(BuildDir)charstr$(oext) : $(SourceDir)common/charstr.cpp ${MultiCompileDepends}
+
+$(BuildDir)cmemory$(oext) : $(SourceDir)common/cmemory.cpp ${MultiCompileDepends}
+
+$(BuildDir)cstr$(oext) : $(SourceDir)common/cstr.cpp ${MultiCompileDepends}
+
+$(BuildDir)cstring$(oext) : $(SourceDir)common/cstring.cpp ${MultiCompileDepends}
+
+$(BuildDir)cwchar$(oext) : $(SourceDir)common/cwchar.cpp ${MultiCompileDepends}
+
+$(BuildDir)dictbe$(oext) : $(SourceDir)common/dictbe.cpp ${MultiCompileDepends}
+
+$(BuildDir)dictionarydata$(oext) : $(SourceDir)common/dictionarydata.cpp ${MultiCompileDepends}
+
+$(BuildDir)dtintrv$(oext) : $(SourceDir)common/dtintrv.cpp ${MultiCompileDepends}
+
+$(BuildDir)edits$(oext) : $(SourceDir)common/edits.cpp ${MultiCompileDepends}
+
+$(BuildDir)errorcode$(oext) : $(SourceDir)common/errorcode.cpp ${MultiCompileDepends}
+
+$(BuildDir)filteredbrk$(oext) : $(SourceDir)common/filteredbrk.cpp ${MultiCompileDepends}
+
+$(BuildDir)filterednormalizer2$(oext) : $(SourceDir)common/filterednormalizer2.cpp ${MultiCompileDepends}
+
+$(BuildDir)icudataver$(oext) : $(SourceDir)common/icudataver.cpp ${MultiCompileDepends}
+
+$(BuildDir)icuplug$(oext) : $(SourceDir)common/icuplug.cpp ${MultiCompileDepends}
+
+$(BuildDir)loadednormalizer2impl$(oext) : $(SourceDir)common/loadednormalizer2impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)localebuilder$(oext) : $(SourceDir)common/localebuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)locavailable$(oext) : $(SourceDir)common/locavailable.cpp ${MultiCompileDepends}
+
+$(BuildDir)locbased$(oext) : $(SourceDir)common/locbased.cpp ${MultiCompileDepends}
+
+$(BuildDir)locdispnames$(oext) : $(SourceDir)common/locdispnames.cpp ${MultiCompileDepends}
+
+$(BuildDir)locdspnm$(oext) : $(SourceDir)common/locdspnm.cpp ${MultiCompileDepends}
+
+$(BuildDir)locid$(oext) : $(SourceDir)common/locid.cpp ${MultiCompileDepends}
+
+$(BuildDir)loclikely$(oext) : $(SourceDir)common/loclikely.cpp ${MultiCompileDepends}
+
+$(BuildDir)locmap$(oext) : $(SourceDir)common/locmap.cpp ${MultiCompileDepends}
+
+$(BuildDir)locresdata$(oext) : $(SourceDir)common/locresdata.cpp ${MultiCompileDepends}
+
+$(BuildDir)locutil$(oext) : $(SourceDir)common/locutil.cpp ${MultiCompileDepends}
+
+$(BuildDir)messagepattern$(oext) : $(SourceDir)common/messagepattern.cpp ${MultiCompileDepends}
+
+$(BuildDir)normalizer2$(oext) : $(SourceDir)common/normalizer2.cpp ${MultiCompileDepends}
+
+$(BuildDir)normalizer2impl$(oext) : $(SourceDir)common/normalizer2impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)normlzr$(oext) : $(SourceDir)common/normlzr.cpp ${MultiCompileDepends}
+
+$(BuildDir)parsepos$(oext) : $(SourceDir)common/parsepos.cpp ${MultiCompileDepends}
+
+$(BuildDir)patternprops$(oext) : $(SourceDir)common/patternprops.cpp ${MultiCompileDepends}
+
+$(BuildDir)pluralmap$(oext) : $(SourceDir)common/pluralmap.cpp ${MultiCompileDepends}
+
+$(BuildDir)propname$(oext) : $(SourceDir)common/propname.cpp ${MultiCompileDepends}
+
+$(BuildDir)propsvec$(oext) : $(SourceDir)common/propsvec.cpp ${MultiCompileDepends}
+
+$(BuildDir)punycode$(oext) : $(SourceDir)common/punycode.cpp ${MultiCompileDepends}
+
+$(BuildDir)putil$(oext) : $(SourceDir)common/putil.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbi$(oext) : $(SourceDir)common/rbbi.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbi_cache$(oext) : $(SourceDir)common/rbbi_cache.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbidata$(oext) : $(SourceDir)common/rbbidata.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbinode$(oext) : $(SourceDir)common/rbbinode.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbirb$(oext) : $(SourceDir)common/rbbirb.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbiscan$(oext) : $(SourceDir)common/rbbiscan.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbisetb$(oext) : $(SourceDir)common/rbbisetb.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbistbl$(oext) : $(SourceDir)common/rbbistbl.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbbitblb$(oext) : $(SourceDir)common/rbbitblb.cpp ${MultiCompileDepends}
+
+$(BuildDir)resbund$(oext) : $(SourceDir)common/resbund.cpp ${MultiCompileDepends}
+
+$(BuildDir)resbund_cnv$(oext) : $(SourceDir)common/resbund_cnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)resource$(oext) : $(SourceDir)common/resource.cpp ${MultiCompileDepends}
+
+$(BuildDir)ruleiter$(oext) : $(SourceDir)common/ruleiter.cpp ${MultiCompileDepends}
+
+$(BuildDir)schriter$(oext) : $(SourceDir)common/schriter.cpp ${MultiCompileDepends}
+
+$(BuildDir)serv$(oext) : $(SourceDir)common/serv.cpp ${MultiCompileDepends}
+
+$(BuildDir)servlk$(oext) : $(SourceDir)common/servlk.cpp ${MultiCompileDepends}
+
+$(BuildDir)servlkf$(oext) : $(SourceDir)common/servlkf.cpp ${MultiCompileDepends}
+
+$(BuildDir)servls$(oext) : $(SourceDir)common/servls.cpp ${MultiCompileDepends}
+
+$(BuildDir)servnotf$(oext) : $(SourceDir)common/servnotf.cpp ${MultiCompileDepends}
+
+$(BuildDir)servrbf$(oext) : $(SourceDir)common/servrbf.cpp ${MultiCompileDepends}
+
+$(BuildDir)servslkf$(oext) : $(SourceDir)common/servslkf.cpp ${MultiCompileDepends}
+
+$(BuildDir)sharedobject$(oext) : $(SourceDir)common/sharedobject.cpp ${MultiCompileDepends}
+
+$(BuildDir)simpleformatter$(oext) : $(SourceDir)common/simpleformatter.cpp ${MultiCompileDepends}
+
+$(BuildDir)static_unicode_sets$(oext) : $(SourceDir)common/static_unicode_sets.cpp ${MultiCompileDepends}
+
+$(BuildDir)stringpiece$(oext) : $(SourceDir)common/stringpiece.cpp ${MultiCompileDepends}
+
+$(BuildDir)stringtriebuilder$(oext) : $(SourceDir)common/stringtriebuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)uarrsort$(oext) : $(SourceDir)common/uarrsort.cpp ${MultiCompileDepends}
+
+$(BuildDir)ubidi$(oext) : $(SourceDir)common/ubidi.cpp ${MultiCompileDepends}
+
+$(BuildDir)ubidi_props$(oext) : $(SourceDir)common/ubidi_props.cpp ${MultiCompileDepends}
+
+$(BuildDir)ubidiln$(oext) : $(SourceDir)common/ubidiln.cpp ${MultiCompileDepends}
+
+$(BuildDir)ubiditransform$(oext) : $(SourceDir)common/ubiditransform.cpp ${MultiCompileDepends}
+
+$(BuildDir)ubidiwrt$(oext) : $(SourceDir)common/ubidiwrt.cpp ${MultiCompileDepends}
+
+$(BuildDir)ubrk$(oext) : $(SourceDir)common/ubrk.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucase$(oext) : $(SourceDir)common/ucase.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucasemap$(oext) : $(SourceDir)common/ucasemap.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucasemap_titlecase_brkiter$(oext) : $(SourceDir)common/ucasemap_titlecase_brkiter.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucat$(oext) : $(SourceDir)common/ucat.cpp ${MultiCompileDepends}
+
+$(BuildDir)uchar$(oext) : $(SourceDir)common/uchar.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucharstrie$(oext) : $(SourceDir)common/ucharstrie.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucharstriebuilder$(oext) : $(SourceDir)common/ucharstriebuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucharstrieiterator$(oext) : $(SourceDir)common/ucharstrieiterator.cpp ${MultiCompileDepends}
+
+$(BuildDir)uchriter$(oext) : $(SourceDir)common/uchriter.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucln_cmn$(oext) : $(SourceDir)common/ucln_cmn.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucmndata$(oext) : $(SourceDir)common/ucmndata.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv$(oext) : $(SourceDir)common/ucnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv2022$(oext) : $(SourceDir)common/ucnv2022.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_bld$(oext) : $(SourceDir)common/ucnv_bld.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_cb$(oext) : $(SourceDir)common/ucnv_cb.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_cnv$(oext) : $(SourceDir)common/ucnv_cnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_ct$(oext) : $(SourceDir)common/ucnv_ct.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_err$(oext) : $(SourceDir)common/ucnv_err.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_ext$(oext) : $(SourceDir)common/ucnv_ext.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_io$(oext) : $(SourceDir)common/ucnv_io.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_lmb$(oext) : $(SourceDir)common/ucnv_lmb.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_set$(oext) : $(SourceDir)common/ucnv_set.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_u16$(oext) : $(SourceDir)common/ucnv_u16.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_u32$(oext) : $(SourceDir)common/ucnv_u32.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_u7$(oext) : $(SourceDir)common/ucnv_u7.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnv_u8$(oext) : $(SourceDir)common/ucnv_u8.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvbocu$(oext) : $(SourceDir)common/ucnvbocu.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvdisp$(oext) : $(SourceDir)common/ucnvdisp.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvhz$(oext) : $(SourceDir)common/ucnvhz.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvisci$(oext) : $(SourceDir)common/ucnvisci.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvlat1$(oext) : $(SourceDir)common/ucnvlat1.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvmbcs$(oext) : $(SourceDir)common/ucnvmbcs.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvscsu$(oext) : $(SourceDir)common/ucnvscsu.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucnvsel$(oext) : $(SourceDir)common/ucnvsel.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucol_swp$(oext) : $(SourceDir)common/ucol_swp.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucptrie$(oext) : $(SourceDir)common/ucptrie.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucurr$(oext) : $(SourceDir)common/ucurr.cpp ${MultiCompileDepends}
+
+$(BuildDir)udata$(oext) : $(SourceDir)common/udata.cpp ${MultiCompileDepends}
+
+$(BuildDir)udatamem$(oext) : $(SourceDir)common/udatamem.cpp ${MultiCompileDepends}
+
+$(BuildDir)udataswp$(oext) : $(SourceDir)common/udataswp.cpp ${MultiCompileDepends}
+
+$(BuildDir)uenum$(oext) : $(SourceDir)common/uenum.cpp ${MultiCompileDepends}
+
+$(BuildDir)uhash$(oext) : $(SourceDir)common/uhash.cpp ${MultiCompileDepends}
+
+$(BuildDir)uhash_us$(oext) : $(SourceDir)common/uhash_us.cpp ${MultiCompileDepends}
+
+$(BuildDir)uidna$(oext) : $(SourceDir)common/uidna.cpp ${MultiCompileDepends}
+
+$(BuildDir)uinit$(oext) : $(SourceDir)common/uinit.cpp ${MultiCompileDepends}
+
+$(BuildDir)uinvchar$(oext) : $(SourceDir)common/uinvchar.cpp ${MultiCompileDepends}
+
+$(BuildDir)uiter$(oext) : $(SourceDir)common/uiter.cpp ${MultiCompileDepends}
+
+$(BuildDir)ulist$(oext) : $(SourceDir)common/ulist.cpp ${MultiCompileDepends}
+
+$(BuildDir)uloc$(oext) : $(SourceDir)common/uloc.cpp ${MultiCompileDepends}
+
+$(BuildDir)uloc_keytype$(oext) : $(SourceDir)common/uloc_keytype.cpp ${MultiCompileDepends}
+
+$(BuildDir)uloc_tag$(oext) : $(SourceDir)common/uloc_tag.cpp ${MultiCompileDepends}
+
+$(BuildDir)umapfile$(oext) : $(SourceDir)common/umapfile.cpp ${MultiCompileDepends}
+
+$(BuildDir)umath$(oext) : $(SourceDir)common/umath.cpp ${MultiCompileDepends}
+
+$(BuildDir)umutablecptrie$(oext) : $(SourceDir)common/umutablecptrie.cpp ${MultiCompileDepends}
+
+$(BuildDir)umutex$(oext) : $(SourceDir)common/umutex.cpp ${MultiCompileDepends}
+
+$(BuildDir)unames$(oext) : $(SourceDir)common/unames.cpp ${MultiCompileDepends}
+
+$(BuildDir)unifiedcache$(oext) : $(SourceDir)common/unifiedcache.cpp ${MultiCompileDepends}
+
+$(BuildDir)unifilt$(oext) : $(SourceDir)common/unifilt.cpp ${MultiCompileDepends}
+
+$(BuildDir)unifunct$(oext) : $(SourceDir)common/unifunct.cpp ${MultiCompileDepends}
+
+$(BuildDir)uniset$(oext) : $(SourceDir)common/uniset.cpp ${MultiCompileDepends}
+
+$(BuildDir)uniset_closure$(oext) : $(SourceDir)common/uniset_closure.cpp ${MultiCompileDepends}
+
+$(BuildDir)uniset_props$(oext) : $(SourceDir)common/uniset_props.cpp ${MultiCompileDepends}
+
+$(BuildDir)unisetspan$(oext) : $(SourceDir)common/unisetspan.cpp ${MultiCompileDepends}
+
+$(BuildDir)unistr$(oext) : $(SourceDir)common/unistr.cpp ${MultiCompileDepends}
+
+$(BuildDir)unistr_case$(oext) : $(SourceDir)common/unistr_case.cpp ${MultiCompileDepends}
+
+$(BuildDir)unistr_case_locale$(oext) : $(SourceDir)common/unistr_case_locale.cpp ${MultiCompileDepends}
+
+$(BuildDir)unistr_cnv$(oext) : $(SourceDir)common/unistr_cnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)unistr_props$(oext) : $(SourceDir)common/unistr_props.cpp ${MultiCompileDepends}
+
+$(BuildDir)unistr_titlecase_brkiter$(oext) : $(SourceDir)common/unistr_titlecase_brkiter.cpp ${MultiCompileDepends}
+
+$(BuildDir)unorm$(oext) : $(SourceDir)common/unorm.cpp ${MultiCompileDepends}
+
+$(BuildDir)unormcmp$(oext) : $(SourceDir)common/unormcmp.cpp ${MultiCompileDepends}
+
+$(BuildDir)uobject$(oext) : $(SourceDir)common/uobject.cpp ${MultiCompileDepends}
+
+$(BuildDir)uprops$(oext) : $(SourceDir)common/uprops.cpp ${MultiCompileDepends}
+
+$(BuildDir)ures_cnv$(oext) : $(SourceDir)common/ures_cnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)uresbund$(oext) : $(SourceDir)common/uresbund.cpp ${MultiCompileDepends}
+
+$(BuildDir)uresdata$(oext) : $(SourceDir)common/uresdata.cpp ${MultiCompileDepends}
+
+$(BuildDir)usc_impl$(oext) : $(SourceDir)common/usc_impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)uscript$(oext) : $(SourceDir)common/uscript.cpp ${MultiCompileDepends}
+
+$(BuildDir)uscript_props$(oext) : $(SourceDir)common/uscript_props.cpp ${MultiCompileDepends}
+
+$(BuildDir)uset$(oext) : $(SourceDir)common/uset.cpp ${MultiCompileDepends}
+
+$(BuildDir)uset_props$(oext) : $(SourceDir)common/uset_props.cpp ${MultiCompileDepends}
+
+$(BuildDir)usetiter$(oext) : $(SourceDir)common/usetiter.cpp ${MultiCompileDepends}
+
+$(BuildDir)ushape$(oext) : $(SourceDir)common/ushape.cpp ${MultiCompileDepends}
+
+$(BuildDir)usprep$(oext) : $(SourceDir)common/usprep.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustack$(oext) : $(SourceDir)common/ustack.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustr_cnv$(oext) : $(SourceDir)common/ustr_cnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustr_titlecase_brkiter$(oext) : $(SourceDir)common/ustr_titlecase_brkiter.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustr_wcs$(oext) : $(SourceDir)common/ustr_wcs.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustrcase$(oext) : $(SourceDir)common/ustrcase.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustrcase_locale$(oext) : $(SourceDir)common/ustrcase_locale.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustrenum$(oext) : $(SourceDir)common/ustrenum.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustrfmt$(oext) : $(SourceDir)common/ustrfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustring$(oext) : $(SourceDir)common/ustring.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustrtrns$(oext) : $(SourceDir)common/ustrtrns.cpp ${MultiCompileDepends}
+
+$(BuildDir)utext$(oext) : $(SourceDir)common/utext.cpp ${MultiCompileDepends}
+
+$(BuildDir)utf_impl$(oext) : $(SourceDir)common/utf_impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)util$(oext) : $(SourceDir)common/util.cpp ${MultiCompileDepends}
+
+$(BuildDir)util_props$(oext) : $(SourceDir)common/util_props.cpp ${MultiCompileDepends}
+
+$(BuildDir)utrace$(oext) : $(SourceDir)common/utrace.cpp ${MultiCompileDepends}
+
+$(BuildDir)utrie$(oext) : $(SourceDir)common/utrie.cpp ${MultiCompileDepends}
+
+$(BuildDir)utrie2$(oext) : $(SourceDir)common/utrie2.cpp ${MultiCompileDepends}
+
+$(BuildDir)utrie2_builder$(oext) : $(SourceDir)common/utrie2_builder.cpp ${MultiCompileDepends}
+
+$(BuildDir)utrie_swap$(oext) : $(SourceDir)common/utrie_swap.cpp ${MultiCompileDepends}
+
+$(BuildDir)uts46$(oext) : $(SourceDir)common/uts46.cpp ${MultiCompileDepends}
+
+$(BuildDir)utypes$(oext) : $(SourceDir)common/utypes.cpp ${MultiCompileDepends}
+
+$(BuildDir)uvector$(oext) : $(SourceDir)common/uvector.cpp ${MultiCompileDepends}
+
+$(BuildDir)uvectr32$(oext) : $(SourceDir)common/uvectr32.cpp ${MultiCompileDepends}
+
+$(BuildDir)uvectr64$(oext) : $(SourceDir)common/uvectr64.cpp ${MultiCompileDepends}
+
+$(BuildDir)wintz$(oext) : $(SourceDir)common/wintz.cpp ${MultiCompileDepends}
+
+$(BuildDir)alphaindex$(oext) : $(SourceDir)i18n/alphaindex.cpp ${MultiCompileDepends}
+
+$(BuildDir)anytrans$(oext) : $(SourceDir)i18n/anytrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)astro$(oext) : $(SourceDir)i18n/astro.cpp ${MultiCompileDepends}
+
+$(BuildDir)basictz$(oext) : $(SourceDir)i18n/basictz.cpp ${MultiCompileDepends}
+
+$(BuildDir)bocsu$(oext) : $(SourceDir)i18n/bocsu.cpp ${MultiCompileDepends}
+
+$(BuildDir)brktrans$(oext) : $(SourceDir)i18n/brktrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)buddhcal$(oext) : $(SourceDir)i18n/buddhcal.cpp ${MultiCompileDepends}
+
+$(BuildDir)calendar$(oext) : $(SourceDir)i18n/calendar.cpp ${MultiCompileDepends}
+
+$(BuildDir)casetrn$(oext) : $(SourceDir)i18n/casetrn.cpp ${MultiCompileDepends}
+
+$(BuildDir)cecal$(oext) : $(SourceDir)i18n/cecal.cpp ${MultiCompileDepends}
+
+$(BuildDir)chnsecal$(oext) : $(SourceDir)i18n/chnsecal.cpp ${MultiCompileDepends}
+
+$(BuildDir)choicfmt$(oext) : $(SourceDir)i18n/choicfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)coleitr$(oext) : $(SourceDir)i18n/coleitr.cpp ${MultiCompileDepends}
+
+$(BuildDir)coll$(oext) : $(SourceDir)i18n/coll.cpp ${MultiCompileDepends}
+
+$(BuildDir)collation$(oext) : $(SourceDir)i18n/collation.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationbuilder$(oext) : $(SourceDir)i18n/collationbuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationcompare$(oext) : $(SourceDir)i18n/collationcompare.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationdata$(oext) : $(SourceDir)i18n/collationdata.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationdatabuilder$(oext) : $(SourceDir)i18n/collationdatabuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationdatareader$(oext) : $(SourceDir)i18n/collationdatareader.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationdatawriter$(oext) : $(SourceDir)i18n/collationdatawriter.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationfastlatin$(oext) : $(SourceDir)i18n/collationfastlatin.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationfastlatinbuilder$(oext) : $(SourceDir)i18n/collationfastlatinbuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationfcd$(oext) : $(SourceDir)i18n/collationfcd.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationiterator$(oext) : $(SourceDir)i18n/collationiterator.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationkeys$(oext) : $(SourceDir)i18n/collationkeys.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationroot$(oext) : $(SourceDir)i18n/collationroot.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationrootelements$(oext) : $(SourceDir)i18n/collationrootelements.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationruleparser$(oext) : $(SourceDir)i18n/collationruleparser.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationsets$(oext) : $(SourceDir)i18n/collationsets.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationsettings$(oext) : $(SourceDir)i18n/collationsettings.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationtailoring$(oext) : $(SourceDir)i18n/collationtailoring.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationweights$(oext) : $(SourceDir)i18n/collationweights.cpp ${MultiCompileDepends}
+
+$(BuildDir)compactdecimalformat$(oext) : $(SourceDir)i18n/compactdecimalformat.cpp ${MultiCompileDepends}
+
+$(BuildDir)coptccal$(oext) : $(SourceDir)i18n/coptccal.cpp ${MultiCompileDepends}
+
+$(BuildDir)cpdtrans$(oext) : $(SourceDir)i18n/cpdtrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)csdetect$(oext) : $(SourceDir)i18n/csdetect.cpp ${MultiCompileDepends}
+
+$(BuildDir)csmatch$(oext) : $(SourceDir)i18n/csmatch.cpp ${MultiCompileDepends}
+
+$(BuildDir)csr2022$(oext) : $(SourceDir)i18n/csr2022.cpp ${MultiCompileDepends}
+
+$(BuildDir)csrecog$(oext) : $(SourceDir)i18n/csrecog.cpp ${MultiCompileDepends}
+
+$(BuildDir)csrmbcs$(oext) : $(SourceDir)i18n/csrmbcs.cpp ${MultiCompileDepends}
+
+$(BuildDir)csrsbcs$(oext) : $(SourceDir)i18n/csrsbcs.cpp ${MultiCompileDepends}
+
+$(BuildDir)csrucode$(oext) : $(SourceDir)i18n/csrucode.cpp ${MultiCompileDepends}
+
+$(BuildDir)csrutf8$(oext) : $(SourceDir)i18n/csrutf8.cpp ${MultiCompileDepends}
+
+$(BuildDir)curramt$(oext) : $(SourceDir)i18n/curramt.cpp ${MultiCompileDepends}
+
+$(BuildDir)currfmt$(oext) : $(SourceDir)i18n/currfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)currpinf$(oext) : $(SourceDir)i18n/currpinf.cpp ${MultiCompileDepends}
+
+$(BuildDir)currunit$(oext) : $(SourceDir)i18n/currunit.cpp ${MultiCompileDepends}
+
+$(BuildDir)dangical$(oext) : $(SourceDir)i18n/dangical.cpp ${MultiCompileDepends}
+
+$(BuildDir)datefmt$(oext) : $(SourceDir)i18n/datefmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)dayperiodrules$(oext) : $(SourceDir)i18n/dayperiodrules.cpp ${MultiCompileDepends}
+
+$(BuildDir)dcfmtsym$(oext) : $(SourceDir)i18n/dcfmtsym.cpp ${MultiCompileDepends}
+
+$(BuildDir)decContext$(oext) : $(SourceDir)i18n/decContext.cpp ${MultiCompileDepends}
+
+$(BuildDir)decimfmt$(oext) : $(SourceDir)i18n/decimfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)decNumber$(oext) : $(SourceDir)i18n/decNumber.cpp ${MultiCompileDepends}
+
+$(BuildDir)double-conversion-bignum-dtoa$(oext) : $(SourceDir)i18n/double-conversion-bignum-dtoa.cpp ${MultiCompileDepends}
+
+$(BuildDir)double-conversion-bignum$(oext) : $(SourceDir)i18n/double-conversion-bignum.cpp ${MultiCompileDepends}
+
+$(BuildDir)double-conversion-cached-powers$(oext) : $(SourceDir)i18n/double-conversion-cached-powers.cpp ${MultiCompileDepends}
+
+$(BuildDir)double-conversion-diy-fp$(oext) : $(SourceDir)i18n/double-conversion-diy-fp.cpp ${MultiCompileDepends}
+
+$(BuildDir)double-conversion-fast-dtoa$(oext) : $(SourceDir)i18n/double-conversion-fast-dtoa.cpp ${MultiCompileDepends}
+
+$(BuildDir)double-conversion-strtod$(oext) : $(SourceDir)i18n/double-conversion-strtod.cpp ${MultiCompileDepends}
+
+$(BuildDir)double-conversion$(oext) : $(SourceDir)i18n/double-conversion.cpp ${MultiCompileDepends}
+
+$(BuildDir)dtfmtsym$(oext) : $(SourceDir)i18n/dtfmtsym.cpp ${MultiCompileDepends}
+
+$(BuildDir)dtitvfmt$(oext) : $(SourceDir)i18n/dtitvfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)dtitvinf$(oext) : $(SourceDir)i18n/dtitvinf.cpp ${MultiCompileDepends}
+
+$(BuildDir)dtptngen$(oext) : $(SourceDir)i18n/dtptngen.cpp ${MultiCompileDepends}
+
+$(BuildDir)dtrule$(oext) : $(SourceDir)i18n/dtrule.cpp ${MultiCompileDepends}
+
+$(BuildDir)erarules$(oext) : $(SourceDir)i18n/erarules.cpp ${MultiCompileDepends}
+
+$(BuildDir)esctrn$(oext) : $(SourceDir)i18n/esctrn.cpp ${MultiCompileDepends}
+
+$(BuildDir)ethpccal$(oext) : $(SourceDir)i18n/ethpccal.cpp ${MultiCompileDepends}
+
+$(BuildDir)fmtable$(oext) : $(SourceDir)i18n/fmtable.cpp ${MultiCompileDepends}
+
+$(BuildDir)fmtable_cnv$(oext) : $(SourceDir)i18n/fmtable_cnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)format$(oext) : $(SourceDir)i18n/format.cpp ${MultiCompileDepends}
+
+$(BuildDir)formattedval_iterimpl$(oext) : $(SourceDir)i18n/formattedval_iterimpl.cpp ${MultiCompileDepends}
+
+$(BuildDir)formattedval_sbimpl$(oext) : $(SourceDir)i18n/formattedval_sbimpl.cpp ${MultiCompileDepends}
+
+$(BuildDir)formattedvalue$(oext) : $(SourceDir)i18n/formattedvalue.cpp ${MultiCompileDepends}
+
+$(BuildDir)fphdlimp$(oext) : $(SourceDir)i18n/fphdlimp.cpp ${MultiCompileDepends}
+
+$(BuildDir)fpositer$(oext) : $(SourceDir)i18n/fpositer.cpp ${MultiCompileDepends}
+
+$(BuildDir)funcrepl$(oext) : $(SourceDir)i18n/funcrepl.cpp ${MultiCompileDepends}
+
+$(BuildDir)gender$(oext) : $(SourceDir)i18n/gender.cpp ${MultiCompileDepends}
+
+$(BuildDir)gregocal$(oext) : $(SourceDir)i18n/gregocal.cpp ${MultiCompileDepends}
+
+$(BuildDir)gregoimp$(oext) : $(SourceDir)i18n/gregoimp.cpp ${MultiCompileDepends}
+
+$(BuildDir)hebrwcal$(oext) : $(SourceDir)i18n/hebrwcal.cpp ${MultiCompileDepends}
+
+$(BuildDir)indiancal$(oext) : $(SourceDir)i18n/indiancal.cpp ${MultiCompileDepends}
+
+$(BuildDir)inputext$(oext) : $(SourceDir)i18n/inputext.cpp ${MultiCompileDepends}
+
+$(BuildDir)islamcal$(oext) : $(SourceDir)i18n/islamcal.cpp ${MultiCompileDepends}
+
+$(BuildDir)japancal$(oext) : $(SourceDir)i18n/japancal.cpp ${MultiCompileDepends}
+
+$(BuildDir)listformatter$(oext) : $(SourceDir)i18n/listformatter.cpp ${MultiCompileDepends}
+
+$(BuildDir)measfmt$(oext) : $(SourceDir)i18n/measfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)measunit$(oext) : $(SourceDir)i18n/measunit.cpp ${MultiCompileDepends}
+
+$(BuildDir)measure$(oext) : $(SourceDir)i18n/measure.cpp ${MultiCompileDepends}
+
+$(BuildDir)msgfmt$(oext) : $(SourceDir)i18n/msgfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)name2uni$(oext) : $(SourceDir)i18n/name2uni.cpp ${MultiCompileDepends}
+
+$(BuildDir)nfrs$(oext) : $(SourceDir)i18n/nfrs.cpp ${MultiCompileDepends}
+
+$(BuildDir)nfrule$(oext) : $(SourceDir)i18n/nfrule.cpp ${MultiCompileDepends}
+
+$(BuildDir)nfsubs$(oext) : $(SourceDir)i18n/nfsubs.cpp ${MultiCompileDepends}
+
+$(BuildDir)nortrans$(oext) : $(SourceDir)i18n/nortrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)nounit$(oext) : $(SourceDir)i18n/nounit.cpp ${MultiCompileDepends}
+
+$(BuildDir)nultrans$(oext) : $(SourceDir)i18n/nultrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_affixutils$(oext) : $(SourceDir)i18n/number_affixutils.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_asformat$(oext) : $(SourceDir)i18n/number_asformat.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_capi$(oext) : $(SourceDir)i18n/number_capi.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_compact$(oext) : $(SourceDir)i18n/number_compact.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_currencysymbols$(oext) : $(SourceDir)i18n/number_currencysymbols.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_decimalquantity$(oext) : $(SourceDir)i18n/number_decimalquantity.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_decimfmtprops$(oext) : $(SourceDir)i18n/number_decimfmtprops.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_fluent$(oext) : $(SourceDir)i18n/number_fluent.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_formatimpl$(oext) : $(SourceDir)i18n/number_formatimpl.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_grouping$(oext) : $(SourceDir)i18n/number_grouping.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_integerwidth$(oext) : $(SourceDir)i18n/number_integerwidth.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_longnames$(oext) : $(SourceDir)i18n/number_longnames.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_mapper$(oext) : $(SourceDir)i18n/number_mapper.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_modifiers$(oext) : $(SourceDir)i18n/number_modifiers.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_multiplier$(oext) : $(SourceDir)i18n/number_multiplier.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_notation$(oext) : $(SourceDir)i18n/number_notation.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_output$(oext) : $(SourceDir)i18n/number_output.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_padding$(oext) : $(SourceDir)i18n/number_padding.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_patternmodifier$(oext) : $(SourceDir)i18n/number_patternmodifier.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_patternstring$(oext) : $(SourceDir)i18n/number_patternstring.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_rounding$(oext) : $(SourceDir)i18n/number_rounding.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_scientific$(oext) : $(SourceDir)i18n/number_scientific.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_skeletons$(oext) : $(SourceDir)i18n/number_skeletons.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_stringbuilder$(oext) : $(SourceDir)i18n/number_stringbuilder.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_utils$(oext) : $(SourceDir)i18n/number_utils.cpp ${MultiCompileDepends}
+
+$(BuildDir)numfmt$(oext) : $(SourceDir)i18n/numfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_affixes$(oext) : $(SourceDir)i18n/numparse_affixes.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_compositions$(oext) : $(SourceDir)i18n/numparse_compositions.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_currency$(oext) : $(SourceDir)i18n/numparse_currency.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_decimal$(oext) : $(SourceDir)i18n/numparse_decimal.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_impl$(oext) : $(SourceDir)i18n/numparse_impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_parsednumber$(oext) : $(SourceDir)i18n/numparse_parsednumber.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_scientific$(oext) : $(SourceDir)i18n/numparse_scientific.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_stringsegment$(oext) : $(SourceDir)i18n/numparse_stringsegment.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_symbols$(oext) : $(SourceDir)i18n/numparse_symbols.cpp ${MultiCompileDepends}
+
+$(BuildDir)numparse_validators$(oext) : $(SourceDir)i18n/numparse_validators.cpp ${MultiCompileDepends}
+
+$(BuildDir)numrange_fluent$(oext) : $(SourceDir)i18n/numrange_fluent.cpp ${MultiCompileDepends}
+
+$(BuildDir)numrange_impl$(oext) : $(SourceDir)i18n/numrange_impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)numsys$(oext) : $(SourceDir)i18n/numsys.cpp ${MultiCompileDepends}
+
+$(BuildDir)olsontz$(oext) : $(SourceDir)i18n/olsontz.cpp ${MultiCompileDepends}
+
+$(BuildDir)persncal$(oext) : $(SourceDir)i18n/persncal.cpp ${MultiCompileDepends}
+
+$(BuildDir)plurfmt$(oext) : $(SourceDir)i18n/plurfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)plurrule$(oext) : $(SourceDir)i18n/plurrule.cpp ${MultiCompileDepends}
+
+$(BuildDir)quant$(oext) : $(SourceDir)i18n/quant.cpp ${MultiCompileDepends}
+
+$(BuildDir)quantityformatter$(oext) : $(SourceDir)i18n/quantityformatter.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbnf$(oext) : $(SourceDir)i18n/rbnf.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbt$(oext) : $(SourceDir)i18n/rbt.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbt_data$(oext) : $(SourceDir)i18n/rbt_data.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbt_pars$(oext) : $(SourceDir)i18n/rbt_pars.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbt_rule$(oext) : $(SourceDir)i18n/rbt_rule.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbt_set$(oext) : $(SourceDir)i18n/rbt_set.cpp ${MultiCompileDepends}
+
+$(BuildDir)rbtz$(oext) : $(SourceDir)i18n/rbtz.cpp ${MultiCompileDepends}
+
+$(BuildDir)regexcmp$(oext) : $(SourceDir)i18n/regexcmp.cpp ${MultiCompileDepends}
+
+$(BuildDir)regeximp$(oext) : $(SourceDir)i18n/regeximp.cpp ${MultiCompileDepends}
+
+$(BuildDir)regexst$(oext) : $(SourceDir)i18n/regexst.cpp ${MultiCompileDepends}
+
+$(BuildDir)regextxt$(oext) : $(SourceDir)i18n/regextxt.cpp ${MultiCompileDepends}
+
+$(BuildDir)region$(oext) : $(SourceDir)i18n/region.cpp ${MultiCompileDepends}
+
+$(BuildDir)reldatefmt$(oext) : $(SourceDir)i18n/reldatefmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)reldtfmt$(oext) : $(SourceDir)i18n/reldtfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)rematch$(oext) : $(SourceDir)i18n/rematch.cpp ${MultiCompileDepends}
+
+$(BuildDir)remtrans$(oext) : $(SourceDir)i18n/remtrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)repattrn$(oext) : $(SourceDir)i18n/repattrn.cpp ${MultiCompileDepends}
+
+$(BuildDir)rulebasedcollator$(oext) : $(SourceDir)i18n/rulebasedcollator.cpp ${MultiCompileDepends}
+
+$(BuildDir)scientificnumberformatter$(oext) : $(SourceDir)i18n/scientificnumberformatter.cpp ${MultiCompileDepends}
+
+$(BuildDir)scriptset$(oext) : $(SourceDir)i18n/scriptset.cpp ${MultiCompileDepends}
+
+$(BuildDir)search$(oext) : $(SourceDir)i18n/search.cpp ${MultiCompileDepends}
+
+$(BuildDir)selfmt$(oext) : $(SourceDir)i18n/selfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)sharedbreakiterator$(oext) : $(SourceDir)i18n/sharedbreakiterator.cpp ${MultiCompileDepends}
+
+$(BuildDir)simpletz$(oext) : $(SourceDir)i18n/simpletz.cpp ${MultiCompileDepends}
+
+$(BuildDir)smpdtfmt$(oext) : $(SourceDir)i18n/smpdtfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)smpdtfst$(oext) : $(SourceDir)i18n/smpdtfst.cpp ${MultiCompileDepends}
+
+$(BuildDir)sortkey$(oext) : $(SourceDir)i18n/sortkey.cpp ${MultiCompileDepends}
+
+$(BuildDir)standardplural$(oext) : $(SourceDir)i18n/standardplural.cpp ${MultiCompileDepends}
+
+$(BuildDir)strmatch$(oext) : $(SourceDir)i18n/strmatch.cpp ${MultiCompileDepends}
+
+$(BuildDir)strrepl$(oext) : $(SourceDir)i18n/strrepl.cpp ${MultiCompileDepends}
+
+$(BuildDir)stsearch$(oext) : $(SourceDir)i18n/stsearch.cpp ${MultiCompileDepends}
+
+$(BuildDir)taiwncal$(oext) : $(SourceDir)i18n/taiwncal.cpp ${MultiCompileDepends}
+
+$(BuildDir)timezone$(oext) : $(SourceDir)i18n/timezone.cpp ${MultiCompileDepends}
+
+$(BuildDir)titletrn$(oext) : $(SourceDir)i18n/titletrn.cpp ${MultiCompileDepends}
+
+$(BuildDir)tmunit$(oext) : $(SourceDir)i18n/tmunit.cpp ${MultiCompileDepends}
+
+$(BuildDir)tmutamt$(oext) : $(SourceDir)i18n/tmutamt.cpp ${MultiCompileDepends}
+
+$(BuildDir)tmutfmt$(oext) : $(SourceDir)i18n/tmutfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)tolowtrn$(oext) : $(SourceDir)i18n/tolowtrn.cpp ${MultiCompileDepends}
+
+$(BuildDir)toupptrn$(oext) : $(SourceDir)i18n/toupptrn.cpp ${MultiCompileDepends}
+
+$(BuildDir)translit$(oext) : $(SourceDir)i18n/translit.cpp ${MultiCompileDepends}
+
+$(BuildDir)transreg$(oext) : $(SourceDir)i18n/transreg.cpp ${MultiCompileDepends}
+
+$(BuildDir)tridpars$(oext) : $(SourceDir)i18n/tridpars.cpp ${MultiCompileDepends}
+
+$(BuildDir)tzfmt$(oext) : $(SourceDir)i18n/tzfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)tzgnames$(oext) : $(SourceDir)i18n/tzgnames.cpp ${MultiCompileDepends}
+
+$(BuildDir)tznames$(oext) : $(SourceDir)i18n/tznames.cpp ${MultiCompileDepends}
+
+$(BuildDir)tznames_impl$(oext) : $(SourceDir)i18n/tznames_impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)tzrule$(oext) : $(SourceDir)i18n/tzrule.cpp ${MultiCompileDepends}
+
+$(BuildDir)tztrans$(oext) : $(SourceDir)i18n/tztrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucal$(oext) : $(SourceDir)i18n/ucal.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucln_in$(oext) : $(SourceDir)i18n/ucln_in.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucol$(oext) : $(SourceDir)i18n/ucol.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucol_res$(oext) : $(SourceDir)i18n/ucol_res.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucol_sit$(oext) : $(SourceDir)i18n/ucol_sit.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucoleitr$(oext) : $(SourceDir)i18n/ucoleitr.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucsdet$(oext) : $(SourceDir)i18n/ucsdet.cpp ${MultiCompileDepends}
+
+$(BuildDir)udat$(oext) : $(SourceDir)i18n/udat.cpp ${MultiCompileDepends}
+
+$(BuildDir)udateintervalformat$(oext) : $(SourceDir)i18n/udateintervalformat.cpp ${MultiCompileDepends}
+
+$(BuildDir)udatpg$(oext) : $(SourceDir)i18n/udatpg.cpp ${MultiCompileDepends}
+
+$(BuildDir)ufieldpositer$(oext) : $(SourceDir)i18n/ufieldpositer.cpp ${MultiCompileDepends}
+
+$(BuildDir)uitercollationiterator$(oext) : $(SourceDir)i18n/uitercollationiterator.cpp ${MultiCompileDepends}
+
+$(BuildDir)ulistformatter$(oext) : $(SourceDir)i18n/ulistformatter.cpp ${MultiCompileDepends}
+
+$(BuildDir)ulocdata$(oext) : $(SourceDir)i18n/ulocdata.cpp ${MultiCompileDepends}
+
+$(BuildDir)umsg$(oext) : $(SourceDir)i18n/umsg.cpp ${MultiCompileDepends}
+
+$(BuildDir)unesctrn$(oext) : $(SourceDir)i18n/unesctrn.cpp ${MultiCompileDepends}
+
+$(BuildDir)uni2name$(oext) : $(SourceDir)i18n/uni2name.cpp ${MultiCompileDepends}
+
+$(BuildDir)unum$(oext) : $(SourceDir)i18n/unum.cpp ${MultiCompileDepends}
+
+$(BuildDir)unumsys$(oext) : $(SourceDir)i18n/unumsys.cpp ${MultiCompileDepends}
+
+$(BuildDir)upluralrules$(oext) : $(SourceDir)i18n/upluralrules.cpp ${MultiCompileDepends}
+
+$(BuildDir)uregex$(oext) : $(SourceDir)i18n/uregex.cpp ${MultiCompileDepends}
+
+$(BuildDir)uregexc$(oext) : $(SourceDir)i18n/uregexc.cpp ${MultiCompileDepends}
+
+$(BuildDir)uregion$(oext) : $(SourceDir)i18n/uregion.cpp ${MultiCompileDepends}
+
+$(BuildDir)usearch$(oext) : $(SourceDir)i18n/usearch.cpp ${MultiCompileDepends}
+
+$(BuildDir)uspoof$(oext) : $(SourceDir)i18n/uspoof.cpp ${MultiCompileDepends}
+
+$(BuildDir)uspoof_build$(oext) : $(SourceDir)i18n/uspoof_build.cpp ${MultiCompileDepends}
+
+$(BuildDir)uspoof_conf$(oext) : $(SourceDir)i18n/uspoof_conf.cpp ${MultiCompileDepends}
+
+$(BuildDir)uspoof_impl$(oext) : $(SourceDir)i18n/uspoof_impl.cpp ${MultiCompileDepends}
+
+$(BuildDir)utf16collationiterator$(oext) : $(SourceDir)i18n/utf16collationiterator.cpp ${MultiCompileDepends}
+
+$(BuildDir)utf8collationiterator$(oext) : $(SourceDir)i18n/utf8collationiterator.cpp ${MultiCompileDepends}
+
+$(BuildDir)utmscale$(oext) : $(SourceDir)i18n/utmscale.cpp ${MultiCompileDepends}
+
+$(BuildDir)utrans$(oext) : $(SourceDir)i18n/utrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)vtzone$(oext) : $(SourceDir)i18n/vtzone.cpp ${MultiCompileDepends}
+
+$(BuildDir)vzone$(oext) : $(SourceDir)i18n/vzone.cpp ${MultiCompileDepends}
+
+$(BuildDir)windtfmt$(oext) : $(SourceDir)i18n/windtfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)winnmfmt$(oext) : $(SourceDir)i18n/winnmfmt.cpp ${MultiCompileDepends}
+
+$(BuildDir)wintzimpl$(oext) : $(SourceDir)i18n/wintzimpl.cpp ${MultiCompileDepends}
+
+$(BuildDir)zonemeta$(oext) : $(SourceDir)i18n/zonemeta.cpp ${MultiCompileDepends}
+
+$(BuildDir)zrule$(oext) : $(SourceDir)i18n/zrule.cpp ${MultiCompileDepends}
+
+$(BuildDir)ztrans$(oext) : $(SourceDir)i18n/ztrans.cpp ${MultiCompileDepends}
+
+$(BuildDir)locbund$(oext) : $(SourceDir)io/locbund.cpp ${MultiCompileDepends}
+
+$(BuildDir)sprintf$(oext) : $(SourceDir)io/sprintf.cpp ${MultiCompileDepends}
+
+$(BuildDir)sscanf$(oext) : $(SourceDir)io/sscanf.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucln_io$(oext) : $(SourceDir)io/ucln_io.cpp ${MultiCompileDepends}
+
+$(BuildDir)ufile$(oext) : $(SourceDir)io/ufile.cpp ${MultiCompileDepends}
+
+$(BuildDir)ufmt_cmn$(oext) : $(SourceDir)io/ufmt_cmn.cpp ${MultiCompileDepends}
+
+$(BuildDir)uprintf$(oext) : $(SourceDir)io/uprintf.cpp ${MultiCompileDepends}
+
+$(BuildDir)uprntf_p$(oext) : $(SourceDir)io/uprntf_p.cpp ${MultiCompileDepends}
+
+$(BuildDir)uscanf$(oext) : $(SourceDir)io/uscanf.cpp ${MultiCompileDepends}
+
+$(BuildDir)uscanf_p$(oext) : $(SourceDir)io/uscanf_p.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustdio$(oext) : $(SourceDir)io/ustdio.cpp ${MultiCompileDepends}
+
+$(BuildDir)ustream$(oext) : $(SourceDir)io/ustream.cpp ${MultiCompileDepends}
+
+$(BuildDir)collationinfo$(oext) : $(SourceDir)tools/toolutil/collationinfo.cpp ${MultiCompileDepends}
+
+$(BuildDir)dbgutil$(oext) : $(SourceDir)tools/toolutil/dbgutil.cpp ${MultiCompileDepends}
+
+$(BuildDir)denseranges$(oext) : $(SourceDir)tools/toolutil/denseranges.cpp ${MultiCompileDepends}
+
+$(BuildDir)filestrm$(oext) : $(SourceDir)tools/toolutil/filestrm.cpp ${MultiCompileDepends}
+
+$(BuildDir)filetools$(oext) : $(SourceDir)tools/toolutil/filetools.cpp ${MultiCompileDepends}
+
+$(BuildDir)flagparser$(oext) : $(SourceDir)tools/toolutil/flagparser.cpp ${MultiCompileDepends}
+
+$(BuildDir)package$(oext) : $(SourceDir)tools/toolutil/package.cpp ${MultiCompileDepends}
+
+$(BuildDir)pkg_genc$(oext) : $(SourceDir)tools/toolutil/pkg_genc.cpp ${MultiCompileDepends}
+
+$(BuildDir)pkg_gencmn$(oext) : $(SourceDir)tools/toolutil/pkg_gencmn.cpp ${MultiCompileDepends}
+
+$(BuildDir)pkg_icu$(oext) : $(SourceDir)tools/toolutil/pkg_icu.cpp ${MultiCompileDepends}
+
+$(BuildDir)pkgitems$(oext) : $(SourceDir)tools/toolutil/pkgitems.cpp ${MultiCompileDepends}
+
+$(BuildDir)ppucd$(oext) : $(SourceDir)tools/toolutil/ppucd.cpp ${MultiCompileDepends}
+
+$(BuildDir)swapimpl$(oext) : $(SourceDir)tools/toolutil/swapimpl.cpp ${MultiCompileDepends}
+
+$(BuildDir)toolutil$(oext) : $(SourceDir)tools/toolutil/toolutil.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucbuf$(oext) : $(SourceDir)tools/toolutil/ucbuf.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucln_tu$(oext) : $(SourceDir)tools/toolutil/ucln_tu.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucm$(oext) : $(SourceDir)tools/toolutil/ucm.cpp ${MultiCompileDepends}
+
+$(BuildDir)ucmstate$(oext) : $(SourceDir)tools/toolutil/ucmstate.cpp ${MultiCompileDepends}
+
+$(BuildDir)udbgutil$(oext) : $(SourceDir)tools/toolutil/udbgutil.cpp ${MultiCompileDepends}
+
+$(BuildDir)unewdata$(oext) : $(SourceDir)tools/toolutil/unewdata.cpp ${MultiCompileDepends}
+
+$(BuildDir)uoptions$(oext) : $(SourceDir)tools/toolutil/uoptions.cpp ${MultiCompileDepends}
+
+$(BuildDir)uparse$(oext) : $(SourceDir)tools/toolutil/uparse.cpp ${MultiCompileDepends}
+
+$(BuildDir)writesrc$(oext) : $(SourceDir)tools/toolutil/writesrc.cpp ${MultiCompileDepends}
+
+$(BuildDir)xmlparser$(oext) : $(SourceDir)tools/toolutil/xmlparser.cpp ${MultiCompileDepends}

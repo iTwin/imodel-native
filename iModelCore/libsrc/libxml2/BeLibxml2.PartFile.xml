@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+              >
+
+    <Part Name="libxml2" BentleyBuildMakeFile="BeLibxml2.mke" ApiNumber="B02">
+        <SubPart PartName="BeIcu4cLibrary" PartFile="iModelCore\libsrc\icu4c\BeIcu4cLibrary"/>
+        <Bindings>
+            <VendorAPI Domain="libxml"/>
+            <Libs>Delivery/$(libprefix)BeLibxml2$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeLibxml2$(ApiNumber)$(shlibext)</Assemblies>
+            <VendorNotices>Delivery/libxml2-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="libxml2Dynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
+        <SubPart PartName="libxml2" LibType="Dynamic"/>
+    </Part>
+    
+    <Part Name="libxml2Static">
+        <SubPart PartName="libxml2" LibType="Static"/>
+    </Part>
+
+    <NuGetProduct Name="LibXml2Nuget" LicenseFile="LibXml2NugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="libxml2Dynamic"/>
+        <SubPart PartName="libxml2Static"/>
+    </NuGetProduct>
+
+</BuildContext>

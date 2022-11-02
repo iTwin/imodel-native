@@ -1,0 +1,23 @@
+{
+  "name": "@bentley/imodeljs-native",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "version": "${PACKAGE_VERSION}",
+  "main": "imodeljs-native.js",
+  "typings": "imodeljs-native",
+  "keywords": [
+    "Bentley",
+    "iModel"
+  ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/imodeljs/imodeljs"
+  },
+  "description": "iModel.js native module",
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  },
+   "scripts": {
+    "postinstall": "node ./installNativePlatform.js"
+   }
+}

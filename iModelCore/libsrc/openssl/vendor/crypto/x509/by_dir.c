@@ -247,7 +247,11 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
 
     ctx = (BY_DIR *)xl->method_data;
 
+#if defined(__ANDROID__)
+    h = X509_NAME_hash_old(name);
+#else
     h = X509_NAME_hash(name);
+#endif
     for (i = 0; i < sk_BY_DIR_ENTRY_num(ctx->dirs); i++) {
         BY_DIR_ENTRY *ent;
         int idx;

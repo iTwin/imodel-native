@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "RapidJsonNuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "RapidJsonNuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "",
+        "copyright": "THL A29 Limited, a Tencent company, and Milo Yip.",
+        "description": "A JSON parser and generator for C++.",
+        "homepage": "http://rapidjson.org/index.html",
+        "licenseUrl": "https://github.com/Tencent/rapidjson/blob/master/license.txt",
+        "name": "RapidJSON",
+        "SPDX-ID": "BSD-3-Clause",
+        "version": "1.1.0"
+        }
+    ]
+}

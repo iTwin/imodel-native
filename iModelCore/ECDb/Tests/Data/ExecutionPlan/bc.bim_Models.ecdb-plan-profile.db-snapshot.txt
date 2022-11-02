@@ -1,0 +1,6 @@
+MULTI-INDEX OR
+INDEX 1
+SEARCH s USING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
+INDEX 2
+SEARCH s USING INDEX sqlite_autoindex_ec_Schema_2 (Alias=?)
+SEARCH c USING COVERING INDEX ix_ec_Class_SchemaId_Name (SchemaId=? AND Name=?)

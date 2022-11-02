@@ -1,0 +1,26 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+npmCmd = $(BBPYTHONCMD) $(SrcRoot)thirdparty/nodejs_14_16_0/bentley/npm.py
+npmArg =
+
+# On MacOSARM64, we must use an arm64 version of node which nodejs_14_16_0 does not support, so use a newer one.
+# NOTE: running npm.sh directly and forcing the arm64 version rather than npm.py as that might result in the wrong arch if python isn't an arm64 build.
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64"
+    # Only run tests if we're compiling with an Apple processor
+    %if " " == $[@findstring Apple, $[@readstdout "sysctl -n machdep.cpu.brand_string"]]
+        %warn *** Skipping tests as we're not running on an Apple Silicon processor ***
+        %return
+    %else
+        npmCmd = $(SrcRoot)thirdparty/nodejs_16_15_0/bentley/npm.sh
+        npmArg = --forceArm64
+    %endif
+%endif
+
+always:
+    ~chdir $(baseDir)
+    $(npmCmd) $(npmArg) run test

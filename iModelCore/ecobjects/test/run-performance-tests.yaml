@@ -1,0 +1,229 @@
+name: ecobjects-native-performance-$(Date:yyyyMMdd)
+
+trigger: none
+
+pr: none
+
+schedules:
+- cron: "0 0 * * 0"
+  displayName: Sunday midnight build
+  branches:
+    include:
+    - master
+  always: true
+
+stages:
+
+  - stage: build
+    displayName: Build
+
+    variables:
+      - name: bbSrcRoot
+        value: '$(Agent.BuildDirectory)/bbsrc'
+
+    jobs:
+      - job:
+        displayName: Pull and build for Windows
+
+        pool:
+          name: iModelTechCI
+          demands:
+          - Agent.OS -equals Windows_NT
+          - Cmd
+
+        steps:
+        - checkout: self
+
+        - task: PythonScript@0
+          displayName: Environment
+          inputs:
+            scriptSource: inline
+            script: |
+              import os
+              # TFS pushes its variables into the environment CAPITALIZED. Don't pretend you can get it correct here.
+              def set_vsts_env(key, value): print(key + ' = ' + str(value) + '\n##vso[task.setvariable variable={0}]{1}'.format(key, value))
+
+              bbSrcRoot = os.environ['BBSRCROOT'].replace('\\', os.path.sep)
+              set_vsts_env('BBSRCROOT', bbSrcRoot) # Update for later use by things like the BentleyBootstrap command
+
+              set_vsts_env('PYTHONUNBUFFERED', '1')
+              set_vsts_env('BSISRC', bbSrcRoot + os.path.sep)
+              set_vsts_env('BSIOUT', os.environ['BUILD_BINARIESDIRECTORY'] + os.path.sep)
+              set_vsts_env('BUILDSTRATEGY', 'iModelCore')
+
+              # If running concurrent jobs, like on an agent, make a unique mspdbsrv.exe per job to alleviate linker PDB issues if another gets killed.
+              set_vsts_env('_MSPDBSRV_ENDPOINT_ ', os.environ['BUILD_BUILDID'])
+
+              if 'SUBNET_PRG' in os.environ:
+                set_vsts_env('PRG_RSIGN_ARGS', '-r currentUser -s my -sha1 ' + os.environ['PRG_LATEST_CERT_HASH'])
+                set_vsts_env('PRG_RSIGN_RC1_ARGS', '-r currentUser -s my -cn "Bentley Systems Inc RC1"')
+                set_vsts_env('PRG_SIGNCODE_ARGS', 'sign /v /sha1 ' + os.environ['PRG_LATEST_CERT_HASH'])
+            arguments: '$(bbSrcRoot) x64'
+
+        - task: bentleysystemsinternal.bentley-build-tasks.bentleybootstrap.bentleybootstrap@0
+          displayName: BentleyBootstrap
+          inputs:
+            streamname: 'imodel02'
+            srcroot: '$(bbSrcRoot)'
+
+        - task: bentleysystemsinternal.iModel-Utilities-tasks.createsymlink.createsymlink@0
+          displayName: 'Link imodel02'
+          inputs:
+            linkPath: $(bbSrcRoot)/imodel02
+            linkTarget: $(Agent.BuildDirectory)/s
+
+        - task: PythonScript@0
+          displayName: 'Shared Shell'
+          inputs:
+            scriptPath: '$(bbSrcRoot)/imodel02/build/capture_env.py'
+            arguments: '$(bbSrcRoot)/bsicommon/shell/SharedShellEnv.bat'
+
+        - task: PythonScript@0
+          displayName: 'Validate Environment'
+          inputs:
+            scriptPath: '$(bbSrcRoot)/imodel02/build/validate_env.py'
+
+        - task: PythonScript@0
+          displayName: 'Purge stale source'
+          inputs:
+            scriptPath: '$(bbSrcRoot)/imodel02/build/prune_srcroot.py'
+
+        - task: PythonScript@0
+          displayName: Pull
+          inputs:
+            scriptPath: '$(bbSrcRoot)/BentleyBuild/BentleyBuild.py'
+            arguments: '-v 4 -a x64 -r imodel02 -f iModelCore/ECObjects/ECObjects -p ECObjects-PerformanceGtest pull'
+          env:
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+        - task: PythonScript@0
+          displayName: Build
+          inputs:
+            scriptPath: '$(bbSrcRoot)/BentleyBuild/BentleyBuild.py'
+            arguments: '-v 4 -a x64 -r imodel02 -f iModelCore/ECObjects/ECObjects -p ECObjects-PerformanceGtest build --tmrbuild --noprompt'
+
+        - publish: $(Build.BinariesDirectory)/Winx64/Product/ECObjects-PerformanceGtest
+          artifact: 'PerfTestsECObjects'
+
+  - stage: run
+    displayName: Run
+    dependsOn: build
+    condition: succeeded()
+
+    jobs:
+      - job:
+        displayName: Run Performance Test on Windows
+        timeoutInMinutes: 180
+
+        pool:
+          name: iModelTech Performance Tests
+          demands:
+          - Agent.OS -equals Windows_NT
+          - Cmd
+
+        variables:
+          - group: Performance Testing Database User
+
+        steps:
+          - download: current
+            displayName: Download test runner
+            artifact: PerfTestsECObjects
+
+          - script: '$(Pipeline.Workspace)\PerfTestsECObjects\ECObjectsPerformanceTests.exe --timeout=-1 --gtest_filter=PerformanceTests*'
+            displayName: Run
+            workingDirectory: $(Pipeline.Workspace)\PerfTestsECObjects
+            timeoutInMinutes: 180
+
+          - publish: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults
+            artifact: 'ECObjectsPerformanceReports'
+            continueOnError: true
+
+          - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
+            displayName: 'Upload report data to DB: Time'
+            inputs:
+              AppId: imodel02
+              CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
+              BuildId: $(Build.BuildId)
+              DbName: imodeljsperfdata.database.windows.net
+              DbUser: $(DB_USER)
+              DbPassword: $(DB_PW)
+            timeoutInMinutes: 1
+            continueOnError: true
+
+      - job:
+        displayName: Run Memory Performance Test on Windows
+        timeoutInMinutes: 180
+
+        pool:
+          name: iModelTech Performance Tests
+          demands:
+          - Agent.OS -equals Windows_NT
+          - Cmd
+
+        variables:
+          - group: Performance Testing Database User
+
+        steps:
+          - download: current
+            displayName: Download test runner
+            artifact: PerfTestsECObjects
+
+          - script: '$(Pipeline.Workspace)\PerfTestsECObjects\ECObjectsPerformanceTests.exe --timeout=-1 --gtest_filter=ECSchemaMemoryTests*'
+            displayName: Run
+            workingDirectory: $(Pipeline.Workspace)\PerfTestsECObjects
+            timeoutInMinutes: 180
+
+          - publish: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults
+            artifact: 'ECObjectsMemoryPerformanceReports'
+            continueOnError: true
+
+          - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
+            displayName: 'Upload report data to DB: Memory'
+            inputs:
+              AppId: imodel02
+              CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
+              BuildId: $(Build.BuildId)
+              DbName: imodeljsperfdata.database.windows.net
+              DbUser: $(DB_USER)
+              DbPassword: $(DB_PW)
+            timeoutInMinutes: 1
+            continueOnError: true
+
+      - job:
+        displayName: Run Peak Memory Performance Test on Windows
+        timeoutInMinutes: 180
+
+        pool:
+          name: iModelTech Performance Tests
+          demands:
+          - Agent.OS -equals Windows_NT
+          - Cmd
+
+        variables:
+          - group: Performance Testing Database User
+
+        steps:
+          - download: current
+            displayName: Download test runner
+            artifact: PerfTestsECObjects
+
+          - script: '$(Pipeline.Workspace)\PerfTestsECObjects\ECObjectsPerformanceTests.exe --timeout=-1 --gtest_filter=PeakMemoryTests*'
+            displayName: Run
+            workingDirectory: $(Pipeline.Workspace)\PerfTestsECObjects
+            timeoutInMinutes: 180
+
+          - publish: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults
+            artifact: 'ECObjectsPeakMemoryReports'
+            continueOnError: true
+
+          - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
+            displayName: 'Upload report data to DB: PeakMemory'
+            inputs:
+              AppId: imodel02
+              CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
+              BuildId: $(Build.BuildId)
+              DbName: imodeljsperfdata.database.windows.net
+              DbUser: $(DB_USER)
+              DbPassword: $(DB_PW)
+            timeoutInMinutes: 1
+            continueOnError: true

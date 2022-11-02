@@ -1,0 +1,3 @@
+##Ignoring this test running from NuGet package files of different streams (e.g bim0200) as now ExtendedType is not persisted and added on the fly 
+ECDbCompatibilityTestFixture.ECSqlColumnInfoForAliases
+IModelCompatibilityTestFixture.ECSqlColumnInfoForAliases

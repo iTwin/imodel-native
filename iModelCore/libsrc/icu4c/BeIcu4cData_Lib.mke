@@ -1,0 +1,48 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+IS_THIRD_PARTY_LIBRARY = 1
+%include mdl.mki
+
+%include BeIcu4cCommon.mki
+
+AppName = $(BuildToolsLibName)
+BuildDir = $(BuildToolsBuildDir)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(BuildDir):
+        !~@mkdir $@
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(BuildDir)stubdata$(oext) : $(SourceDir)stubdata/stubdata.cpp ${MultiCompileDepends}
+
+%include $(_MakeFilePath)BeIcu4cLibrary.Compilands.mki
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(BuildDir)
+DLM_EXPORT_DEST = $(BuildDir)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_NAME = $(appName)
+DLM_NO_BENTLEY_LIB = 1
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(BuildDir)
+DLM_OBJECT_FILES = $(objs)
+
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
+    LINKER_LIBRARIES + -lc++
+%endif
+
+%include $(sharedMki)linkLibrary.mki

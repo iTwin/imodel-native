@@ -1,0 +1,70 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: StandardSchemas.prewire.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(InternalSystemPolicy)
+
+%include    mdl.mki
+
+ecstandardsDir =% $(_MakeFilePath)
+schemasDir = $(ecstandardsDir)schemas/
+
+# Read in the list of schema names.  This always contains the latest version info for each delivered schema
+%include StandardSchemas.delivery.mki
+$(BuildContext)StandardSchemas.delivery.mki : $(ecstandardsDir)StandardSchemas.delivery.mki
+    $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------
+#  Instead of embedding the standard schemas, now just deliver them.
+#  We have to list them out individually because in the source tree we
+#  have past versions, but we only want to deliver the latest version
+#----------------------------------------------------------------------
+$(BuildContext)ECSchemas/Standard/$(EditorCustomAttributesSchemaName): $(schemasDir)$(EditorCustomAttributesSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/$(StandardCustomAttributesSchemaName): $(schemasDir)$(StandardCustomAttributesSchemaName)
+    $(LinkFirstDepToFirstTarget)
+        
+$(BuildContext)ECSchemas/Standard/$(StandardClassesSchemaName): $(schemasDir)$(StandardClassesSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/$(ECSchemaMapSchemaName): $(schemasDir)$(ECSchemaMapSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/General/$(CommonClassesSchemaName): $(schemasDir)General/$(CommonClassesSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(Dimension_SchemaName): $(schemasDir)LibraryUnits/$(Dimension_SchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(iip_mdbSchemaName): $(schemasDir)LibraryUnits/$(iip_mdbSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(KindOfQuantitySchemaName): $(schemasDir)LibraryUnits/$(KindOfQuantitySchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(rdlCustomAttributesSchemaName): $(schemasDir)LibraryUnits/$(rdlCustomAttributesSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(SIUnitSystemDefaultsSchemaName): $(schemasDir)LibraryUnits/$(SIUnitSystemDefaultsSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(Unit_AttributesSchemaName): $(schemasDir)LibraryUnits/$(Unit_AttributesSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(Units_SchemaName): $(schemasDir)LibraryUnits/$(Units_SchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/LibraryUnits/$(USCustomaryUnitSystemDefaultsSchemaName): $(schemasDir)LibraryUnits/$(USCustomaryUnitSystemDefaultsSchemaName)
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)ECSchemas/Standard/$(ECDbMapSchemaName): $(schemasDir)$(ECDbMapSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Standard/$(ECSchemaUpgradeSchemaName): $(schemasDir)$(ECSchemaUpgradeSchemaName)
+    $(LinkFirstDepToFirstTarget)
+
+

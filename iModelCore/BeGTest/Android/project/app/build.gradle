@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+android {
+
+    compileSdkVersion 28
+    
+    defaultConfig {
+        applicationId "com.bentley.test"
+        testApplicationId "com.bentley.unittest"
+        testInstrumentationRunner "com.bentley.unittest.BeInstrumentationTestRunner"
+        project.archivesBaseName = "Test"
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDir file('libs/')
+        }
+    }
+
+    lintOptions {
+        // Disable error for hardcoded debug mode in AndroidManifest
+        disable 'HardcodedDebugMode'
+
+        // I think you get these from including the old android-test package
+        disable 'DuplicatePlatformClasses'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+    }
+ 
+    dexOptions {
+        javaMaxHeapSize "4g"
+    } 
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.12'
+    implementation 'junit:junit:4.12'
+
+    implementation 'com.google.android:android-test:4.1.1.4'
+}

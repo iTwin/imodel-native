@@ -1,0 +1,9 @@
+# This might be a real problem or a false alarm. I don't see anything wrong with it, but we do get a bunch of reports related to it.
+{
+   ConditionalJump: BeFileListIterator::GetNextFileName
+   Memcheck:Cond
+   fun:__wmemchr_avx2
+   fun:_ZNKSt7__cxx1112basic_stringIwSt11char_traitsIwESaIwEE4findEwm
+   fun:_ZN12BentleyM020018BeFileListIterator15GetNextFileNameERNS_10BeFileNameE
+   ...
+}

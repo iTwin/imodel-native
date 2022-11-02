@@ -1,0 +1,411 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="ConstructionPlanning" alias="bcp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
+    <ECSchemaReference name="Planning" version="01.00" alias="planning" />
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+
+    <ECEntityClass typeName="Discipline" modifier="Sealed">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="DisciplineOwnsSubDisciplines" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Discipline"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+            <Class class="SubDiscipline"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="SubDiscipline" modifier="Sealed">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="WorkPackageType" typeName="int">
+            <!-- Values correspond to WorkPackageType C++ enum class -->
+            <!-- IsNullable = False -->
+            <ECCustomAttributes>
+                <AutoHandledProperty>
+                    <!-- 3 translates to "ReadOnly = Select|Insert" -->
+                    <StatementTypes>3</StatementTypes>
+                </AutoHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Classification" modifier="Sealed">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Discipline" relationshipName="ClassificationSpecifiesDiscipline" direction="Forward">
+            <ECCustomAttributes>
+                <AutoHandledProperty>
+                    <!-- 3 translates to "ReadOnly = Select|Insert" -->
+                    <StatementTypes>3</StatementTypes>
+                </AutoHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="IsTemporary" typeName="boolean">
+            <!-- True if this Classification represents temporary construction (formwork, scaffolding, etc.) -->
+            <!-- IsNullable = False -->
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ClassificationOwnsActivityTypes" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Classification"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+            <Class class="ActivityType"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassificationSpecifiesDiscipline" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(1..N)" roleLabel="specifies" polymorphic="False">
+            <Class class="Classification"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="False">
+            <Class class="Discipline"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="ClassificationGroup">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ActivityType">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="SubDiscipline" relationshipName="ActivityTypeIsOfSubDiscipline" direction="Forward">
+            <ECCustomAttributes>
+                <AutoHandledProperty>
+                    <!-- 3 translates to "ReadOnly = Select|Insert" -->
+                    <StatementTypes>3</StatementTypes>
+                </AutoHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="PreconditionExpression" typeName="string">
+        </ECProperty>
+        <ECProperty propertyName="DurationExpression" typeName="string">
+        </ECProperty>
+        <ECProperty propertyName="DefaultActivityOrder" typeName="int">
+        </ECProperty>
+        <ECProperty propertyName="SpreadFactor" typeName="double">
+            <!-- Percentage that this activity contributes to overall progress. All ActivityTypes associated with a Classification + SubDiscipline must sum to 100% -->
+            <!-- WIP: for validation, value must be between 0.0 and 1.0 inclusive -->
+        </ECProperty>
+        <ECProperty propertyName="ElementAppearanceProfileType" typeName="planning:ElementAppearanceProfile_Type">
+        </ECProperty>
+        <ECProperty propertyName="QuantityUnit" typeName="string" extendedTypeName="UnitName">
+            <!-- Name of the ECUnit (aka "unit of measure") for the WorkPackageActivity.Quantity associated with this ActivityType -->
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ActivityTypeIsOfSubDiscipline" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="False">
+            <Class class="ActivityType"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="False">
+            <Class class="SubDiscipline"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ActivityIsOfType" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="False">
+            <Class class="WorkPackageActivity"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="defines" polymorphic="False">
+            <Class class="ActivityType"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="WorkPackageActivity">
+        <BaseClass>planning:Activity</BaseClass>
+        <!-- ParentId (from bis:Element) will be the planning:WorkBreakown that owns the Activity -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ActivityType" relationshipName="ActivityIsOfType" direction="Forward">
+            <ECCustomAttributes>
+                <AutoHandledProperty>
+                    <!-- 3 translates to "ReadOnly = Select|Insert" -->
+                    <StatementTypes>3</StatementTypes>
+                </AutoHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="ActivityOrder" typeName="int">
+            <!-- IsNullable = False -->
+        </ECProperty>
+        <ECProperty propertyName="DurationSource" typeName="int">
+            <!-- See WorkPackageActivity::DurationSource C++ enum -->
+            <!-- IsNullable = False -->
+        </ECProperty>
+        <ECProperty propertyName="Quantity" typeName="double">
+            <!-- IsNullable = False -->
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ConstructionPhysicalElement" modifier="Abstract">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="WorkArea">
+        <!-- A WorkArea is effectively a "named volume" that describes the geometry/extents of a construction work area. -->
+        <!-- NOTE: bis:ElementOwnsChildElements used for a WorkArea to own child WorkAreas -->
+        <BaseClass>bis:VolumeElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="WorkAreaOwnsWorkAreas" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns child" polymorphic="false">
+            <Class class="WorkArea"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
+            <Class class="WorkArea"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="ConstructionAssembly">
+        <!-- NOTE: bis:ElementOwnsChildElements used for a ConstructionAssembly to own child ConstructionAssemblies and/or child ConstructionParts -->
+        <BaseClass>ConstructionPhysicalElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PrefabAssembly">
+        <!-- A PrefabAssembly is a collection of assemblies that are constructed offsite and then shipped to the site -->
+        <BaseClass>ConstructionAssembly</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECRelationshipClass typeName="PhysicalElementOwnsClassificationAspect" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="True">
+            <Class class="bis:PhysicalElement" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="False">
+            <Class class="ClassificationAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ClassificationAspect" modifier="Sealed">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Classification" relationshipName="ClassificationAspectRefersToClassification" direction="Forward">
+            <!-- IsNullable = False -->
+        </ECNavigationProperty>
+        <ECProperty propertyName="GenerateActivities" typeName="boolean">
+            <!-- If true, generate activities for the ConstructionAssembly -->
+            <!-- IsNullable = False -->
+        </ECProperty>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassificationAspectRefersToClassification" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="True">
+            <Class class="ClassificationAspect"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="False">
+            <Class class="Classification"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="ConstructionPart">
+        <BaseClass>ConstructionPhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Discipline" relationshipName="ConstructionPartIsOfDiscipline" direction="Forward">
+            <ECCustomAttributes>
+                <AutoHandledProperty>
+                    <!-- 3 translates to "ReadOnly = Select|Insert" -->
+                    <StatementTypes>3</StatementTypes>
+                </AutoHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ConstructionPartIsOfDiscipline" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="False">
+            <Class class="ConstructionPart"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="False">
+            <Class class="Discipline"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="TurnoverSystem">
+        <BaseClass>ConstructionAssembly</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ConstructionPlanModel">
+        <BaseClass>planning:PlanningModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="CustomGroupModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>bis:GroupInformationModel</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomGroupFolder">
+        <!-- Uses bis:ElementOwnsChildElements to own child CustomGroupFolders or child CustomGroups -->
+        <BaseClass>bis:GroupInformationElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Priority" typeName="int">
+            <!-- Can be used to prioritize or order this CustomGroup within a CustomGroupFolder. Values do not have to be unique within a particular group. -->
+        </ECProperty>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CustomGroupFolderOwnsFolders" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns child" polymorphic="false">
+            <Class class="CustomGroupFolder"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
+            <Class class="CustomGroupFolder"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CustomGroupFolderOwnsCustomGroups" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
+            <Class class="CustomGroupFolder"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+            <Class class="CustomGroup"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="CustomGroup">
+        <BaseClass>bis:GroupInformationElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Priority" typeName="int">
+            <!-- Can be used to prioritize or order this CustomGroup within a CustomGroupFolder. Values do not have to be unique within a particular group. -->
+        </ECProperty>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CustomGroupOwnsCustomGroups" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns child" polymorphic="false">
+            <Class class="CustomGroup"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
+            <Class class="CustomGroup"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="WorkPackage">
+        <BaseClass>planning:WorkBreakdown</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="SubDiscipline" relationshipName="WorkPackageIsOfSubDiscipline" direction="Forward">
+            <ECCustomAttributes>
+                <AutoHandledProperty>
+                    <!-- 3 translates to "ReadOnly = Select|Insert" -->
+                    <StatementTypes>3</StatementTypes>
+                </AutoHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="ScopeDescription" typeName="string">
+            <!-- Describes the scope of work for this WorkPackage -->
+            <!-- Collation = NoCase -->
+            <!-- IsNullable = True -->
+            <!-- IsUnique = False -->
+        </ECProperty>
+        <ECNavigationProperty propertyName="WorkArea" relationshipName="WorkPackagePertainsToWorkArea" direction="Forward">
+        </ECNavigationProperty>
+        <ECProperty propertyName="ActivityAssignmentHints" typeName="string" extendedTypeName="Json">
+            <!-- JSON string containing assignment hints for new activities -->
+            <!-- Collation = NoCase -->
+            <!-- IsNullable = True -->
+            <!-- IsUnique = False -->
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="ConstructionWorkPackage">
+        <BaseClass>WorkPackage</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="InstallationWorkPackage">
+        <BaseClass>WorkPackage</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestWorkPackage">
+        <BaseClass>WorkPackage</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="EngineeringWorkPackage">
+        <BaseClass>WorkPackage</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ConstructionWorkPackage" relationshipName="EngineeringWorkPackagePertainsToConstructionWorkPackage" direction="Forward">
+        </ECNavigationProperty>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="WorkPackageIsOfSubDiscipline" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="True">
+            <Class class="WorkPackage"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="False">
+            <Class class="SubDiscipline"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="WorkPackagePertainsToWorkArea" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="pertains to" polymorphic="True">
+            <Class class="WorkPackage"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="False">
+            <Class class="WorkArea"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="EngineeringWorkPackagePertainsToConstructionWorkPackage" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="pertains to" polymorphic="False">
+            <Class class="EngineeringWorkPackage"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="False">
+            <Class class="ConstructionWorkPackage"/>
+        </Target>
+    </ECRelationshipClass>
+
+</ECSchema>

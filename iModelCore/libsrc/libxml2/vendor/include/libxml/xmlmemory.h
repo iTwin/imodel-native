@@ -26,9 +26,11 @@
 /* #define DEBUG_MEMORY_FREED */
 /* #define DEBUG_MEMORY_LOCATION */
 
+#ifdef NO_BENTLEY_CHANGES
 #ifdef DEBUG
 #ifndef DEBUG_MEMORY
 #define DEBUG_MEMORY
+#endif
 #endif
 #endif
 

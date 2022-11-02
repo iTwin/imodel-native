@@ -1,0 +1,59 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+BUILD_WITH_C17=1
+
+%include mdl.mki
+
+ContextDeliveryDir      = $(BuildContext)Delivery/
+appName                 = iTwinNapi
+CCompPDBName            = $(appName)
+DLM_NAME                = iTwinNapi
+baseDir                 = $(_MakeFilePath)
+
+o = $(OutputRootDir)build/NapiLib/
+
+cDefsSave =% $[cDefs]
+
+always:
+    !~@mkdir $(o)
+    !~@mkdir $(o)/Node
+
+cDefs + -DEXTERNAL_NAPI=1
+
+NOSTRICT=1
+
+$(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
+
+objs = $(o)napi_stub$(oext)
+
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(objs)
+DLM_EXPORT_OBJS         = $(objs)
+DLM_EXPORT_DEST         = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+DLM_NO_BENTLEY_LIB      = 1
+LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(stlibext)
+
+%include $(sharedMki)linkLibrary.mki
+
+%if ($(TARGET_PLATFORM) == "Windows")
+
+    ContextDeliveryDir = $(BuildContext)Delivery/Node/
+    DLM_NO_IMPLIB = 1
+    DLM_SPECIAL_LINKOPT = -delayload:iTwinNapi.dll
+    LINKER_LIBRARIES = DelayImp.lib $(BuildContext)Delivery/iTwinNapi.lib
+
+    cDefs = $(cDefsSave)
+    cdefs  + -DBUILD_FOR_NODE
+    o = $(OutputRootDir)build/NapiLib/Node/
+
+    $(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
+
+    objs = $(o)napi_stub$(oext)
+    %include $(sharedMki)linkLibrary.mki
+
+%endif

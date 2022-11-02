@@ -1,0 +1,57 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#----------------------------------------------------------s----------------------------*/
+
+PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+
+appName             = WebReadySMFixer
+consoleAppUnicode   = 1  
+
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+o = $(OutputRootDir)build/GeoCoord/WebReadySMFixer/
+
+#SrcGeoCoord         = $(SrcRoot)GeoCoord/
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)WebReadySMFixer$(oext)             : $(baseDir)WebReadySMFixer.cpp                            ${MultiCompileDepends}
+
+
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+
+
+
+EXE_DEST        = $(o)
+EXE_NAME        = WebReadySMFixer
+EXE_OBJS        = $(o)WebReadySMFixer$(oext)
+
+
+EXE_LOPT1 = \/STACK:4194304
+
+LINKER_LIBRARIES    =   $(ContextSubpartsLibs)Bentley.lib $(ContextSubpartsLibs)BentleyAllocator.lib $(ContextSubpartsLibs)BaseGeoCoord.lib  $(ContextSubpartsLibs)BentleyGeom.lib $(ContextSubpartsLibs)BeJsonCpp.lib
+
+%include $(SharedMki)linktool.mki
+

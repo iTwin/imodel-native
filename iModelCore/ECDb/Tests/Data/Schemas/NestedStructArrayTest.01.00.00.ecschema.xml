@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="NestedStructArrayTest" alias="nsat" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECEntityClass typeName="ClassA" modifier="None">
+		<ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECStructClass typeName="S4" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="S3" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S4ARRAY" typeName="S4" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="S2" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S3ARRAY" typeName="S3" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="S1" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S2ARRAY" typeName="S2" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECEntityClass typeName="DerivedA" modifier="None">
+        <BaseClass>ClassA</BaseClass>
+		<ECProperty propertyName="PropDerivedA" typeName="int" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BaseHasDerivedA" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00"/>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
+            <Class class="ClassA"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="held by">
+            <Class class="DerivedA"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ClassP" modifier="None">
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedB" modifier="None">
+        <BaseClass>ClassA</BaseClass>
+		<ECProperty propertyName="PropDerivedB" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DoubleDerivedB" modifier="None">
+        <BaseClass>DerivedB</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedB" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DoubleDerivedA" modifier="None">
+        <BaseClass>DerivedB</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedA" typeName="int" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="DerivedBHasChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00"/>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
+            <Class class="DerivedB"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="held by">
+            <Class class="DoubleDerivedA"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="DoubleDerivedC" modifier="None">
+        <BaseClass>DerivedA</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedC" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+</ECSchema>

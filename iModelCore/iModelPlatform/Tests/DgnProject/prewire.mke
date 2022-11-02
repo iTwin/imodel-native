@@ -1,0 +1,41 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+SrciModelPlatform              = $(_MakeFilePath)../../
+iModelPlatformPublicAPISrc     = $(SrciModelPlatform)PublicAPI/
+iModelPlatformAPISrc           = $(iModelPlatformPublicAPISrc)DgnPlatform/
+baseDir                        = $(_MakeFilePath)
+
+$(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/UnitTests/PerformanceTestData : $(baseDir)PerformanceTestData
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(iModelPlatformAPISrc)UnitTests/ScopedDgnHost.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/DgnDbTestUtils.h : $(iModelPlatformAPISrc)UnitTests/DgnDbTestUtils.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/DgnPlatformTestDomain.h : $(iModelPlatformAPISrc)UnitTests/DgnPlatformTestDomain.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/PerfTestDomain.h : $(iModelPlatformAPISrc)UnitTests/PerfTestDomain.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/PresentationRules : $(baseDir)PresentationRules
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#------------------------------------------------------------------------------------------
+#   Deliver CompatibilityTestFiles for use by unit tests
+#------------------------------------------------------------------------------------------
+$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-60/ : $(SrcRoot)iModelUnitTestData/Compatability/2-0-1-60
+    $(LinkFirstDepToFirstTargetAsDirectory)
+

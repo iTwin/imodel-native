@@ -89,12 +89,12 @@ ctxt = libxml2.createPushParser(handler, chunk, len(chunk), "test.xml")
 chunk = """  <bar1>chars1</bar1>
   <bar2>chars2</bar2>
   <bar3>chars3</bar3>
-  <bar4>chàrs4</bar4>
+  <bar4>chï¿½rs4</bar4>
   <bar5>chars5</bar5>
   <bar6>&lt;s6</bar6>
   <bar7>chars7</bar7>
   <bar8>&#38;8</bar8>
-  <bar9>très 9</bar9>
+  <bar9>trï¿½s 9</bar9>
 """
 i = 0
 while i < 10000:

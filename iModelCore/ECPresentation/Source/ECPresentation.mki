@@ -1,0 +1,147 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+# Content
+
+$(o)Content$(oext):                         $(SourceDirectory)Content/Content.cpp $(ECPresentationDependencies)
+
+$(o)ContentCache$(oext):                    $(SourceDirectory)Content/ContentCache.cpp $(ECPresentationDependencies)
+
+$(o)ContentClassesLocater$(oext):           $(SourceDirectory)Content/ContentClassesLocater.cpp $(ECPresentationDependencies)
+
+$(o)ContentDescriptorBuilder$(oext):        $(SourceDirectory)Content/ContentDescriptorBuilder.cpp $(ECPresentationDependencies)
+
+$(o)ContentFieldEditors$(oext):             $(SourceDirectory)Content/ContentFieldEditors.cpp $(ECPresentationDependencies)
+
+$(o)ContentHelpers$(oext):                  $(SourceDirectory)Content/ContentHelpers.cpp $(ECPresentationDependencies)
+
+$(o)ContentItemBuilder$(oext):              $(SourceDirectory)Content/ContentItemBuilder.cpp $(ECPresentationDependencies)
+
+$(o)ContentProviders$(oext):                $(SourceDirectory)Content/ContentProviders.cpp $(ECPresentationDependencies)
+
+$(o)ContentQuery$(oext):                    $(SourceDirectory)Content/ContentQuery.cpp $(ECPresentationDependencies)
+
+$(o)ContentQueryBuilder$(oext):             $(SourceDirectory)Content/ContentQueryBuilder.cpp $(ECPresentationDependencies)
+
+$(o)ContentQueryContracts$(oext):           $(SourceDirectory)Content/ContentQueryContracts.cpp $(ECPresentationDependencies)
+
+$(o)ContentQueryResultsReader$(oext):       $(SourceDirectory)Content/ContentQueryResultsReader.cpp $(ECPresentationDependencies)
+
+$(o)ContentSpecificationsHandler$(oext):    $(SourceDirectory)Content/ContentSpecificationsHandler.cpp $(ECPresentationDependencies)
+
+$(o)PropertyInfoStore$(oext):               $(SourceDirectory)Content/PropertyInfoStore.cpp $(ECPresentationDependencies)
+
+# Hierarchies
+
+$(o)HierarchiesComparer$(oext):             $(SourceDirectory)Hierarchies/HierarchiesComparer.cpp $(ECPresentationDependencies)
+
+$(o)NavigationQuery$(oext):                 $(SourceDirectory)Hierarchies/NavigationQuery.cpp $(ECPresentationDependencies)
+
+$(o)NavigationQueryBuilder$(oext):          $(SourceDirectory)Hierarchies/NavigationQueryBuilder.cpp $(ECPresentationDependencies)
+
+$(o)NavigationQueryContracts$(oext):        $(SourceDirectory)Hierarchies/NavigationQueryContracts.cpp $(ECPresentationDependencies)
+
+$(o)NavigationQueryResultsReader$(oext):    $(SourceDirectory)Hierarchies/NavigationQueryResultsReader.cpp $(ECPresentationDependencies)
+
+$(o)NavNode$(oext):                         $(SourceDirectory)Hierarchies/NavNode.cpp $(ECPresentationDependencies)
+
+$(o)NavNodeProviders$(oext):                $(SourceDirectory)Hierarchies/NavNodeProviders.cpp $(ECPresentationDependencies)
+
+$(o)NavNodesCache$(oext):                   $(SourceDirectory)Hierarchies/NavNodesCache.cpp $(ECPresentationDependencies)
+
+$(o)NavNodesCacheHelpers$(oext):            $(SourceDirectory)Hierarchies/NavNodesCacheHelpers.cpp $(ECPresentationDependencies)
+
+$(o)NavNodesCacheWrapper$(oext):            $(SourceDirectory)Hierarchies/NavNodesCacheWrapper.cpp $(ECPresentationDependencies)
+
+$(o)NavNodesHelper$(oext):                  $(SourceDirectory)Hierarchies/NavNodesHelper.cpp $(ECPresentationDependencies)
+
+$(o)NodePathsHelper$(oext):                 $(SourceDirectory)Hierarchies/NodePathsHelper.cpp $(ECPresentationDependencies)
+
+$(o)Update$(oext):                          $(SourceDirectory)Hierarchies/Update.cpp $(ECPresentationDependencies)
+
+# Serialization
+
+$(o)IECPresentationSerializer$(oext):       $(SourceDirectory)Serialization/IECPresentationSerializer.cpp $(ECPresentationDependencies)
+
+$(o)DefaultECPresentationSerializer$(oext): $(SourceDirectory)Serialization/DefaultECPresentationSerializer.cpp $(ECPresentationDependencies)
+
+# Shared / Diagnostics
+
+$(o)Diagnostics$(oext):                     $(SourceDirectory)Shared/Diagnostics/Diagnostics.cpp $(ECPresentationDependencies)
+
+$(o)DiagnosticsHelpers$(oext):              $(SourceDirectory)Shared/Diagnostics/DiagnosticsHelpers.cpp $(ECPresentationDependencies)
+
+# Shared / ECExpressions
+
+$(o)ECExpressionContextsProvider$(oext):    $(SourceDirectory)Shared/ECExpressions/ECExpressionContextsProvider.cpp $(ECPresentationDependencies)
+
+$(o)ECExpressionOptimizer$(oext):           $(SourceDirectory)Shared/ECExpressions/ECExpressionOptimizer.cpp $(ECPresentationDependencies)
+
+# Shared / Queries
+
+$(o)CustomFunctions$(oext):                 $(SourceDirectory)Shared/Queries/CustomFunctions.cpp $(ECPresentationDependencies)
+
+$(o)PresentationQuery$(oext):               $(SourceDirectory)Shared/Queries/PresentationQuery.cpp $(ECPresentationDependencies)
+
+$(o)QueryBuilderHelpers$(oext):             $(SourceDirectory)Shared/Queries/QueryBuilderHelpers.cpp $(ECPresentationDependencies)
+
+$(o)QueryContracts$(oext):                  $(SourceDirectory)Shared/Queries/QueryContracts.cpp $(ECPresentationDependencies)
+
+$(o)QueryExecutor$(oext):                   $(SourceDirectory)Shared/Queries/QueryExecutor.cpp $(ECPresentationDependencies)
+
+# Shared
+
+$(o)CustomizationHelper$(oext):             $(SourceDirectory)Shared/CustomizationHelper.cpp $(ECPresentationDependencies)
+
+$(o)NodeLabelCalculator$(oext):             $(SourceDirectory)Shared/NodeLabelCalculator.cpp $(ECPresentationDependencies)
+
+$(o)ECInstanceChangeEvents$(oext):          $(SourceDirectory)Shared/ECInstanceChangeEvents.cpp $(ECPresentationDependencies)
+
+$(o)ECSchemaHelper$(oext):                  $(SourceDirectory)Shared/ECSchemaHelper.cpp $(ECPresentationDependencies)
+
+$(o)ExtendedData$(oext):                    $(SourceDirectory)Shared/ExtendedData.cpp $(ECPresentationDependencies)
+
+$(o)ImageHelper$(oext):                     $(SourceDirectory)Shared/ImageHelper.cpp $(ECPresentationDependencies)
+
+$(o)RelatedClass$(oext):                    $(SourceDirectory)Shared/RelatedClass.cpp $(ECPresentationDependencies)
+
+$(o)RulesDrivenProviderContext$(oext):      $(SourceDirectory)Shared/RulesDrivenProviderContext.cpp $(ECPresentationDependencies)
+
+$(o)RulesetVariables$(oext):                $(SourceDirectory)Shared/RulesetVariables.cpp $(ECPresentationDependencies)
+
+$(o)RulesPreprocessor$(oext):               $(SourceDirectory)Shared/RulesPreprocessor.cpp $(ECPresentationDependencies)
+
+$(o)ValueHelpers$(oext):                    $(SourceDirectory)Shared/ValueHelpers.cpp $(ECPresentationDependencies)
+
+# Root
+
+$(o)Connection$(oext):                      $(SourceDirectory)Connection.cpp $(ECPresentationDependencies)
+
+$(o)ECPresentationManager$(oext):           $(SourceDirectory)ECPresentationManager.cpp $(ECPresentationDependencies)
+
+$(o)KeySet$(oext):                          $(SourceDirectory)KeySet.cpp $(ECPresentationDependencies)
+
+$(o)LabelDefinition$(oext):                 $(SourceDirectory)LabelDefinition.cpp $(ECPresentationDependencies)
+
+$(o)PresentationManagerImpl$(oext):         $(SourceDirectory)PresentationManagerImpl.cpp $(ECPresentationDependencies)
+
+$(o)RuleSetLocater$(oext):                  $(SourceDirectory)RuleSetLocater.cpp $(ECPresentationDependencies)
+
+$(o)TaskScheduler$(oext):                   $(SourceDirectory)TaskScheduler.cpp $(ECPresentationDependencies)
+
+$(o)UpdateHandler$(oext):                   $(SourceDirectory)UpdateHandler.cpp $(ECPresentationDependencies)
+
+$(o)UserSettings$(oext):                    $(SourceDirectory)UserSettings.cpp $(ECPresentationDependencies)
+
+%include MultiCppCompileGo.mki
+
+ECPresentationObjs =
+%ifdef MultiCompileObjectList
+    ECPresentationObjs +% $(MultiCompileObjectList)
+%endif
+
+%include Rules/Rules.mki
+ECPresentationObjs + $(PresentationRulesObjs)

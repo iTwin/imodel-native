@@ -1,0 +1,42 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "CompressNuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "CompressNuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "",
+        "copyright": "Igor Pavlov",
+        "description": "LZMA",
+        "homepage": "http://www.7-zip.org",
+        "licenseUrl": "http://www.7-zip.org/sdk.html",
+        "name": "LZMA",
+        "SPDX-ID": "",
+        "version": ""
+        },
+        {
+        "authors": "",
+        "copyright": "Google Inc.",
+        "description": "Snappy",
+        "homepage": "https://github.com/google/snappy",
+        "licenseUrl": "https://github.com/google/snappy/blob/master/COPYING",
+        "name": "Snappy",
+        "SPDX-ID": "SEE LICENSE IN snappy/snappy-notice.txt",
+        "version": ""
+        },
+        {
+        "authors": "",
+        "copyright": "Jean-loup Gailly and Mark Adler",
+        "description": "Zlib",
+        "homepage": "https://zlib.net",
+        "licenseUrl": "https://zlib.net/zlib_license.html",
+        "name": "Zlib",
+        "SPDX-ID": "Zlib",
+        "version": "1.2.11"
+        }
+    ]
+}

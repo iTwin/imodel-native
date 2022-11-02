@@ -1,0 +1,17 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+seedDataSource=$(baseDir)Data/
+$(BuildContext)Delivery/UnitTests/BeSQLiteTestData : $(seedDataSource)
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Expose seed data as assets needed by BeSQLite unit tests
+BEGTEST_ASSETS     + $(BuildContext)Delivery/UnitTests/BeSQLiteTestData/

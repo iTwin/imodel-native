@@ -1,0 +1,28 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+%include $(_MakeFilePath)../mki/ECObjects.mki
+
+dataDir         = $(OutECObjects)tests/
+seedDataSource  = $(_MakeFilePath)SeedData/
+
+# Wire in seed data
+always:
+    !~@mkdir $(dataDir)
+    !~@mkdir $(dataDir)ECObjectsTest_Data
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData=$(seedDataSource)*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData=$(seedDataSource)*.json"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData=$(seedDataSource)*.csv"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/V3Conversion/=$(ecobjectsSrc)test/SeedData/V3Conversion/*.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/ECJson/=$(ecobjectsSrc)test/SeedData/ECJson/*.json"
+
+%ifdef winNT
+always:    
+    $(unzipCmd) -n $(seedDataSource)performance.zip -d $(dataDir)ECObjectsTest_Data/
+    ~linkmultifiles "$(ContextDeliveryDir)SeedData/=$(dataDir)ECObjectsTest_Data/performance/*.xml"
+%endif
+
+# Expose seed data as assets needed by ECObjects unit tests
+BEGTEST_ASSETS     + $(ContextDeliveryDir)SeedData/

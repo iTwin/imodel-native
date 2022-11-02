@@ -1,0 +1,54 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+DISABLE_COMPILER_ANALYZE_FOR_UNIT_TESTS=1
+BUILD_WITH_C17=1
+
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+# since we aggreate imagepp dll objs, define __IMAGEPP_BUILD__ so we have the same dll import/export tag.
+nameToDefine=__IMAGEPP_BUILD__
+%include cdefapnd.mki
+
+USE_GTEST=1
+
+nameToDefine=USE_GTEST=1
+%include cdefapnd.mki
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)GeoCoord
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+#BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+BEGTEST_OUTPUT=$(OutputRootDir)build/GeoCoord/UnitTests/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+
+BEGTEST_ADDITIONAL_UNITTESTS_LIST_DIR= $(_MakeFilePath)Common
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Compile common test portion
+#%include MultiCppCompileRule.mki
+#
+#$(o)GeoCoordTestCommon.obj   : $(_MakeFilePath)Common/GeoCoordTestCommon.cpp ${MultiCompileDepends}
+#
+#%include MultiCppCompileGo.mki
+
+
+# Deliver test objs
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Symlink GeoCoord objs like it was part of the test. Everything will be link together.
+# always:
+#     ~linkmultifiles "$(BuildContext)Delivery/UnitTests/Objects/$(TestDir)/GeoCoordDllObjs=$(OutputRootDir)build/GeoCoord/GeoCoord/*$(oext)"
+
+# deliver ignorelist.
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+
+    <!--
+        Crashpad only uses openssl on Linux.
+        But also:
+            Crashpad only builds as a static library.
+            I personally like this anyway since it makes the Handler self-contained.
+            However, the rest of the platform, on Windows, uses openssl as a DLL.
+            BB gets confused creating SDK Products when there is a static LIB, and a LIB for a DLL.
+            While this is likely a bug in BB, the easiest way around it is not to include openssl on Windows.
+    -->
+    <Part Name="__OpenSslShim" OnlyPlatforms="linux*">
+        <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+    </Part>        
+
+    <!-- N.B. Crashpad only builds as a static library. -->
+    <Part Name="__CrashpadStaticClient" BentleyBuildMakeFile="client.mke" OnlyPlatforms="linux*,x*" ExcludeLibType="Dynamic">
+        <SubPart PartName="__OpenSslShim"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <Bindings>
+            <VendorAPI Domain="crashpad"/>
+            <Libs>Delivery/$(libprefix)CrashpadClient$(libext)</Libs>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)CrashpadClient$(stlibdebugext)</Libs>
+            <VendorNotices>Delivery/crashpad-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="CrashpadHandler" BentleyBuildMakeFile="handler.mke" OnlyPlatforms="linux*,x*">
+        <SubPart LibType="Static" PartName="__CrashpadStaticClient"/>
+        <Bindings>
+            <Files ProductDirectoryName="CrashpadHandler" Required="false">Delivery/CrashpadHandler$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

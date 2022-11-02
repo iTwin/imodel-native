@@ -1,0 +1,38 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%if defined (__ECObjects_mki__)
+    %return
+%endif
+
+__ECObjects_mki__           = 1
+
+OutECObjects                = $(OutBuildDir)ECObjects/
+buildDir                    = $(OutECObjects)
+
+%if !defined (programName)
+    programName             = $(ASSEMBLY_NAME)
+%endif
+
+o                           = $(PartBuildDir)
+
+always:
+    !~@mkdir $(o)
+
+#-----------------------------------------------------------------------
+#       Source directories
+#-----------------------------------------------------------------------
+ecobjectsSrc            =% $(_CurrentFilePath)../
+
+ecPublicAPISrc          = $(ecobjectsSrc)PublicApi/
+ecobjectsPublicAPISrc   = $(ecPublicAPISrc)ECObjects/
+
+ecPrivateAPISrc         = $(ecobjectsSrc)PrivateApi/
+ecobjectsPrivateAPISrc  = $(ecPrivateAPISrc)ECObjects/
+
+#-----------------------------------------------------------------------
+# Configure Google Test macros
+#-----------------------------------------------------------------------
+#The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
+GUnitTestDir            = $(BuildContext)SubParts/google_gtest/

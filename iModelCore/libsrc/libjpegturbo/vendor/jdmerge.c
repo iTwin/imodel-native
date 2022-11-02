@@ -42,7 +42,7 @@
 #include "jpeglib.h"
 #include "jdmerge.h"
 #include "jsimd.h"
-#include "jconfigint.h"
+#include "jconfigint.h.in"
 
 #ifdef UPSAMPLE_MERGING_SUPPORTED
 

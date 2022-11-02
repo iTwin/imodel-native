@@ -1,0 +1,33 @@
+{
+  "id": "Elements.Sorted.GroupedByProperty",
+  "rules": [
+    {
+      "ruleType": "RootNodes",
+      "specifications": [
+        {
+          "specType": "InstanceNodesOfSpecificClasses",
+          "classes": [
+            {
+              "schemaName": "BisCore",
+              "classNames": [
+                "Element"
+              ]
+            }
+          ],
+          "arePolymorphic": true,
+          "groupByClass": false,
+          "groupByLabel": false
+        }
+      ],
+      "customizationRules": [{
+        "ruleType": "Grouping",
+        "groups": [{
+          "specType": "Property",
+          "createGroupForSingleItem": true,
+          "createGroupForUnspecifiedValues": true,
+          "propertyName": "UserLabel"
+        }]
+      }]
+    }
+  ]
+}

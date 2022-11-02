@@ -1,0 +1,889 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+%include BeIcu4cCommon.mki
+
+AppName = BeIcu4cData
+BuildDir = $(DataBuildDir)
+
+# ICU actually has hundreds of data files totalling over 20MB.
+# We are tailoring the data files to our immediate needs.
+# If you believe you need additional data files for your needs, please discuss with the Graphite / DgnDb team.
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# exeext is defined for our target platform; we need it for pre-built executable calls on the host platform.
+
+%if defined (winNT)
+    BuildToolExeExt = .exe
+%elif defined (__linux)
+    BuildToolExeExt =
+%elif defined (__apple)
+    BuildToolExeExt =
+%else
+    %error Unknown host platform to determine BuildToolExeExt.
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+CommonDependencies = $(_MakeFileSpec)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Subset of code page conversion tables. See ucmcore.mk (core MIME/Unix/Windows encodings).
+
+#..................................................................................................
+CnvBuildDir = $(BuildDir)
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(CnvBuildDir):
+        !~@mkdir $@
+%endif
+
+#..................................................................................................
+.ucm.cnv:
+    |[== Building $@, ($=) ==]
+    ~set TargetDir $[@dir $@]
+    $(BuildToolsBuildDir)makeconv$(BuildToolExeExt) -c -d ${TargetDir} $<
+
+#..................................................................................................
+$(CnvBuildDir)gb18030.cnv : $(SourceDir)data/mappings/gb18030.ucm $(CommonDependencies)
+
+$(CnvBuildDir)gsm-03.38-2009.cnv : $(SourceDir)data/mappings/gsm-03.38-2009.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-1089_P100-1995.cnv : $(SourceDir)data/mappings/ibm-1089_P100-1995.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-1363_P11B-1998.cnv : $(SourceDir)data/mappings/ibm-1363_P11B-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-1373_P100-2002.cnv : $(SourceDir)data/mappings/ibm-1373_P100-2002.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-1383_P110-1999.cnv : $(SourceDir)data/mappings/ibm-1383_P110-1999.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-1386_P100-2001.cnv : $(SourceDir)data/mappings/ibm-1386_P100-2001.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-33722_P12A_P12A-2009_U2.cnv : $(SourceDir)data/mappings/ibm-33722_P12A_P12A-2009_U2.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-4909_P100-1999.cnv : $(SourceDir)data/mappings/ibm-4909_P100-1999.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5012_P100-1999.cnv : $(SourceDir)data/mappings/ibm-5012_P100-1999.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5346_P100-1998.cnv : $(SourceDir)data/mappings/ibm-5346_P100-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5347_P100-1998.cnv : $(SourceDir)data/mappings/ibm-5347_P100-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5348_P100-1997.cnv : $(SourceDir)data/mappings/ibm-5348_P100-1997.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5349_P100-1998.cnv : $(SourceDir)data/mappings/ibm-5349_P100-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5350_P100-1998.cnv : $(SourceDir)data/mappings/ibm-5350_P100-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5352_P100-1998.cnv : $(SourceDir)data/mappings/ibm-5352_P100-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-5354_P100-1998.cnv : $(SourceDir)data/mappings/ibm-5354_P100-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-912_P100-1995.cnv : $(SourceDir)data/mappings/ibm-912_P100-1995.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-913_P100-2000.cnv : $(SourceDir)data/mappings/ibm-913_P100-2000.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-914_P100-1995.cnv : $(SourceDir)data/mappings/ibm-914_P100-1995.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-915_P100-1995.cnv : $(SourceDir)data/mappings/ibm-915_P100-1995.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-920_P100-1995.cnv : $(SourceDir)data/mappings/ibm-920_P100-1995.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-923_P100-1998.cnv : $(SourceDir)data/mappings/ibm-923_P100-1998.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-943_P15A-2003.cnv : $(SourceDir)data/mappings/ibm-943_P15A-2003.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-9447_P100-2002.cnv : $(SourceDir)data/mappings/ibm-9447_P100-2002.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-9449_P100-2002.cnv : $(SourceDir)data/mappings/ibm-9449_P100-2002.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-949_P11A-1999.cnv : $(SourceDir)data/mappings/ibm-949_P11A-1999.ucm $(CommonDependencies)
+
+$(CnvBuildDir)ibm-970_P110_P110-2006_U2.cnv : $(SourceDir)data/mappings/ibm-970_P110_P110-2006_U2.ucm $(CommonDependencies)
+
+$(CnvBuildDir)macos-0_2-10.2.cnv : $(SourceDir)data/mappings/macos-0_2-10.2.ucm $(CommonDependencies)
+
+$(CnvBuildDir)macos-29-10.2.cnv : $(SourceDir)data/mappings/macos-29-10.2.ucm $(CommonDependencies)
+
+$(CnvBuildDir)macos-35-10.2.cnv : $(SourceDir)data/mappings/macos-35-10.2.ucm $(CommonDependencies)
+
+$(CnvBuildDir)macos-6_2-10.4.cnv : $(SourceDir)data/mappings/macos-6_2-10.4.ucm $(CommonDependencies)
+
+$(CnvBuildDir)macos-7_3-10.2.cnv : $(SourceDir)data/mappings/macos-7_3-10.2.ucm $(CommonDependencies)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Aliases for converstion tables... allows us to easily bake an encoding string from a Windows code page number.
+# For example, "cp1252" maps to "ibm-5348_P100-1997" if we embed these aliases.
+
+$(BuildDir)cnvalias.icu : $(SourceDir)data/mappings/convrtrs.txt $(CommonDependencies)
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)gencnval$(BuildToolExeExt) -d $[@dir $@] $<
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Break iterator data. See brkfiles.mk.
+
+#..................................................................................................
+BrkitrBuildDir = $(BuildDir)brkitr/
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(BrkitrBuildDir):
+        !~@mkdir $@
+%endif
+
+#..................................................................................................
+.txt.brk:
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)genbrk$(BuildToolExeExt) -c -i ${BuildDir} -r $< -o $@
+
+.txt.res:
+    |[== Building $@, ($=) ==]
+    ~set TargetDir $[@dir $@]
+    ~set DependencyDir $[@dir $<]
+    $(BuildToolsBuildDir)genrb$(BuildToolExeExt) -k -i ${BuildDir} -s ${DependencyDir} -d ${TargetDir} $[@nondir $<]
+
+#..................................................................................................
+$(BrkitrBuildDir)char.brk : $(SourceDir)data/brkitr/rules/char.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)line.brk : $(SourceDir)data/brkitr/rules/line.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)line_cj.brk : $(SourceDir)data/brkitr/rules/line_cj.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)line_loose.brk : $(SourceDir)data/brkitr/rules/line_loose.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)line_loose_cj.brk : $(SourceDir)data/brkitr/rules/line_loose_cj.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)line_normal.brk : $(SourceDir)data/brkitr/rules/line_normal.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)line_normal_cj.brk : $(SourceDir)data/brkitr/rules/line_normal_cj.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)sent.brk : $(SourceDir)data/brkitr/rules/sent.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)sent_el.brk : $(SourceDir)data/brkitr/rules/sent_el.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)title.brk : $(SourceDir)data/brkitr/rules/title.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)word.brk : $(SourceDir)data/brkitr/rules/word.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)word_POSIX.brk : $(SourceDir)data/brkitr/rules/word_POSIX.txt $(CommonDependencies)
+
+#..................................................................................................
+$(BrkitrBuildDir)cjdict.dict : $(SourceDir)data/brkitr/dictionaries/cjdict.txt $(CommonDependencies)
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)gendict$(BuildToolExeExt) --uchars -c -i ${BrkitrBuildDir} $< $@
+
+$(BrkitrBuildDir)thaidict.dict : $(SourceDir)data/brkitr/dictionaries/thaidict.txt $(CommonDependencies)
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)gendict$(BuildToolExeExt) --bytes --transform offset-0x0e00 -c -i ${BrkitrBuildDir} $< $@
+
+$(BrkitrBuildDir)laodict.dict : $(SourceDir)data/brkitr/dictionaries/laodict.txt $(CommonDependencies)
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)gendict$(BuildToolExeExt) --bytes --transform offset-0x0e80 -c -i ${BrkitrBuildDir} $< $@
+
+$(BrkitrBuildDir)burmesedict.dict : $(SourceDir)data/brkitr/dictionaries/burmesedict.txt $(CommonDependencies)
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)gendict$(BuildToolExeExt) --bytes --transform offset-0x1000 -c -i ${BrkitrBuildDir} $< $@
+
+$(BrkitrBuildDir)khmerdict.dict : $(SourceDir)data/brkitr/dictionaries/khmerdict.txt $(CommonDependencies)
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)gendict$(BuildToolExeExt) --bytes --transform offset-0x1780 -c -i ${BrkitrBuildDir} $< $@
+
+#..................................................................................................
+$(BrkitrBuildDir)de.res : $(SourceDir)data/brkitr/de.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)el.res : $(SourceDir)data/brkitr/el.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)en.res : $(SourceDir)data/brkitr/en.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)en_US.res : $(SourceDir)data/brkitr/en_US.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)en_US_POSIX.res : $(SourceDir)data/brkitr/en_US_POSIX.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)es.res : $(SourceDir)data/brkitr/es.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)fr.res : $(SourceDir)data/brkitr/fr.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)it.res : $(SourceDir)data/brkitr/it.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)ja.res : $(SourceDir)data/brkitr/ja.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)pt.res : $(SourceDir)data/brkitr/pt.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)root.res : $(SourceDir)data/brkitr/root.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)ru.res : $(SourceDir)data/brkitr/ru.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)zh.res : $(SourceDir)data/brkitr/zh.txt $(CommonDependencies)
+
+$(BrkitrBuildDir)zh_Hant.res : $(SourceDir)data/brkitr/zh_Hant.txt $(CommonDependencies)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Collation data. See collfiles.mk.
+
+#..................................................................................................
+CollBuildDir = $(BuildDir)coll/
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(CollBuildDir):
+        !~@mkdir $@
+%endif
+
+#..................................................................................................
+.icu.icu:
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)icupkg$(BuildToolExeExt) -tl $< $@
+
+.nrm.nrm:
+    |[== Building $@, ($=) ==]
+    $(BuildToolsBuildDir)icupkg$(BuildToolExeExt) -tl $< $@
+
+#..................................................................................................
+# These seem like pre-built data files that must exist in the output build directory for genrb to process collation data.
+
+$(BuildDir)unames.icu : $(SourceDir)data/in/unames.icu $(CommonDependencies)
+
+$(CollBuildDir)ucadata.icu : $(SourceDir)data/in/coll/ucadata-unihan.icu $(CommonDependencies)
+
+$(BuildDir)nfc.nrm : $(SourceDir)data/in/nfc.nrm $(CommonDependencies)
+
+$(BuildDir)nfkc.nrm : $(SourceDir)data/in/nfkc.nrm $(CommonDependencies)
+
+$(BuildDir)nfkc_cf.nrm : $(SourceDir)data/in/nfkc_cf.nrm $(CommonDependencies)
+
+$(BuildDir)ulayout.icu : $(SourceDir)data/in/ulayout.icu $(CommonDependencies)
+
+$(BuildDir)uts46.nrm : $(SourceDir)data/in/uts46.nrm $(CommonDependencies)
+
+#..................................................................................................
+# Miscellaneous data we need for HR and SR locale collations.
+
+.txt.res:
+    |[== Building $@, ($=) ==]
+    ~set TargetDir $[@dir $@]
+    ~set DependencyDir $[@dir $<]
+    $(BuildToolsBuildDir)genrb$(BuildToolExeExt) -k -q -i ${BuildDir} -s ${DependencyDir} -d ${TargetDir} $[@nondir $<]
+
+$(BuildDir)keyTypeData.res : $(SourceDir)data/misc/keyTypeData.txt $(CommonDependencies)
+
+#..................................................................................................
+.txt.res:
+    |[== Building $@, ($=) ==]
+    ~set TargetDir $[@dir $@]
+    ~set DependencyDir $[@dir $<]
+    $(BuildToolsBuildDir)genrb$(BuildToolExeExt) -k -i ${BuildDir} -s ${DependencyDir} -d ${TargetDir} $[@nondir $<]
+
+#..................................................................................................
+$(CollBuildDir)af.res : $(SourceDir)data/coll/af.txt $(CommonDependencies)
+
+$(CollBuildDir)am.res : $(SourceDir)data/coll/am.txt $(CommonDependencies)
+
+$(CollBuildDir)ar.res : $(SourceDir)data/coll/ar.txt $(CommonDependencies)
+
+$(CollBuildDir)ars.res : $(SourceDir)data/coll/ars.txt $(CommonDependencies)
+
+$(CollBuildDir)as.res : $(SourceDir)data/coll/as.txt $(CommonDependencies)
+
+$(CollBuildDir)az.res : $(SourceDir)data/coll/az.txt $(CommonDependencies)
+
+$(CollBuildDir)be.res : $(SourceDir)data/coll/be.txt $(CommonDependencies)
+
+$(CollBuildDir)bg.res : $(SourceDir)data/coll/bg.txt $(CommonDependencies)
+
+$(CollBuildDir)bn.res : $(SourceDir)data/coll/bn.txt $(CommonDependencies)
+
+$(CollBuildDir)bo.res : $(SourceDir)data/coll/bo.txt $(CommonDependencies)
+
+$(CollBuildDir)bs.res : $(SourceDir)data/coll/bs.txt $(CommonDependencies)
+
+$(CollBuildDir)bs_Cyrl.res : $(SourceDir)data/coll/bs_Cyrl.txt $(CommonDependencies)
+
+$(CollBuildDir)ca.res : $(SourceDir)data/coll/ca.txt $(CommonDependencies)
+
+$(CollBuildDir)ceb.res : $(SourceDir)data/coll/ceb.txt $(CommonDependencies)
+
+$(CollBuildDir)chr.res : $(SourceDir)data/coll/chr.txt $(CommonDependencies)
+
+$(CollBuildDir)cs.res : $(SourceDir)data/coll/cs.txt $(CommonDependencies)
+
+$(CollBuildDir)cy.res : $(SourceDir)data/coll/cy.txt $(CommonDependencies)
+
+$(CollBuildDir)da.res : $(SourceDir)data/coll/da.txt $(CommonDependencies)
+
+$(CollBuildDir)de.res : $(SourceDir)data/coll/de.txt $(CommonDependencies)
+
+$(CollBuildDir)de_.res : $(SourceDir)data/coll/de_.txt $(CommonDependencies)
+
+$(CollBuildDir)de__PHONEBOOK.res : $(SourceDir)data/coll/de__PHONEBOOK.txt $(CommonDependencies)
+
+$(CollBuildDir)de_AT.res : $(SourceDir)data/coll/de_AT.txt $(CommonDependencies)
+
+$(CollBuildDir)dsb.res : $(SourceDir)data/coll/dsb.txt $(CommonDependencies)
+
+$(CollBuildDir)dz.res : $(SourceDir)data/coll/dz.txt $(CommonDependencies)
+
+$(CollBuildDir)ee.res : $(SourceDir)data/coll/ee.txt $(CommonDependencies)
+
+$(CollBuildDir)el.res : $(SourceDir)data/coll/el.txt $(CommonDependencies)
+
+$(CollBuildDir)en.res : $(SourceDir)data/coll/en.txt $(CommonDependencies)
+
+$(CollBuildDir)en_US.res : $(SourceDir)data/coll/en_US.txt $(CommonDependencies)
+
+$(CollBuildDir)en_US_POSIX.res : $(SourceDir)data/coll/en_US_POSIX.txt $(CommonDependencies)
+
+$(CollBuildDir)eo.res : $(SourceDir)data/coll/eo.txt $(CommonDependencies)
+
+$(CollBuildDir)es.res : $(SourceDir)data/coll/es.txt $(CommonDependencies)
+
+$(CollBuildDir)es_.res : $(SourceDir)data/coll/es_.txt $(CommonDependencies)
+
+$(CollBuildDir)es__TRADITIONAL.res : $(SourceDir)data/coll/es__TRADITIONAL.txt $(CommonDependencies)
+
+$(CollBuildDir)et.res : $(SourceDir)data/coll/et.txt $(CommonDependencies)
+
+$(CollBuildDir)fa.res : $(SourceDir)data/coll/fa.txt $(CommonDependencies)
+
+$(CollBuildDir)fa_AF.res : $(SourceDir)data/coll/fa_AF.txt $(CommonDependencies)
+
+$(CollBuildDir)fi.res : $(SourceDir)data/coll/fi.txt $(CommonDependencies)
+
+$(CollBuildDir)fil.res : $(SourceDir)data/coll/fil.txt $(CommonDependencies)
+
+$(CollBuildDir)fo.res : $(SourceDir)data/coll/fo.txt $(CommonDependencies)
+
+$(CollBuildDir)fr.res : $(SourceDir)data/coll/fr.txt $(CommonDependencies)
+
+$(CollBuildDir)fr_CA.res : $(SourceDir)data/coll/fr_CA.txt $(CommonDependencies)
+
+$(CollBuildDir)ga.res : $(SourceDir)data/coll/ga.txt $(CommonDependencies)
+
+$(CollBuildDir)gl.res : $(SourceDir)data/coll/gl.txt $(CommonDependencies)
+
+$(CollBuildDir)gu.res : $(SourceDir)data/coll/gu.txt $(CommonDependencies)
+
+$(CollBuildDir)ha.res : $(SourceDir)data/coll/ha.txt $(CommonDependencies)
+
+$(CollBuildDir)haw.res : $(SourceDir)data/coll/haw.txt $(CommonDependencies)
+
+$(CollBuildDir)he.res : $(SourceDir)data/coll/he.txt $(CommonDependencies)
+
+$(CollBuildDir)he_IL.res : $(SourceDir)data/coll/he_IL.txt $(CommonDependencies)
+
+$(CollBuildDir)hi.res : $(SourceDir)data/coll/hi.txt $(CommonDependencies)
+
+$(CollBuildDir)hr.res : $(SourceDir)data/coll/hr.txt $(CommonDependencies)
+
+$(CollBuildDir)hsb.res : $(SourceDir)data/coll/hsb.txt $(CommonDependencies)
+
+$(CollBuildDir)hu.res : $(SourceDir)data/coll/hu.txt $(CommonDependencies)
+
+$(CollBuildDir)hy.res : $(SourceDir)data/coll/hy.txt $(CommonDependencies)
+
+$(CollBuildDir)id.res : $(SourceDir)data/coll/id.txt $(CommonDependencies)
+
+$(CollBuildDir)id_ID.res : $(SourceDir)data/coll/id_ID.txt $(CommonDependencies)
+
+$(CollBuildDir)ig.res : $(SourceDir)data/coll/ig.txt $(CommonDependencies)
+
+$(CollBuildDir)in.res : $(SourceDir)data/coll/in.txt $(CommonDependencies)
+
+$(CollBuildDir)in_ID.res : $(SourceDir)data/coll/in_ID.txt $(CommonDependencies)
+
+$(CollBuildDir)is.res : $(SourceDir)data/coll/is.txt $(CommonDependencies)
+
+$(CollBuildDir)it.res : $(SourceDir)data/coll/it.txt $(CommonDependencies)
+
+$(CollBuildDir)iw.res : $(SourceDir)data/coll/iw.txt $(CommonDependencies)
+
+$(CollBuildDir)iw_IL.res : $(SourceDir)data/coll/iw_IL.txt $(CommonDependencies)
+
+$(CollBuildDir)ja.res : $(SourceDir)data/coll/ja.txt $(CommonDependencies)
+
+$(CollBuildDir)ka.res : $(SourceDir)data/coll/ka.txt $(CommonDependencies)
+
+$(CollBuildDir)kk.res : $(SourceDir)data/coll/kk.txt $(CommonDependencies)
+
+$(CollBuildDir)kl.res : $(SourceDir)data/coll/kl.txt $(CommonDependencies)
+
+$(CollBuildDir)km.res : $(SourceDir)data/coll/km.txt $(CommonDependencies)
+
+$(CollBuildDir)kn.res : $(SourceDir)data/coll/kn.txt $(CommonDependencies)
+
+$(CollBuildDir)ko.res : $(SourceDir)data/coll/ko.txt $(CommonDependencies)
+
+$(CollBuildDir)kok.res : $(SourceDir)data/coll/kok.txt $(CommonDependencies)
+
+$(CollBuildDir)ku.res : $(SourceDir)data/coll/ku.txt $(CommonDependencies)
+
+$(CollBuildDir)ky.res : $(SourceDir)data/coll/ky.txt $(CommonDependencies)
+
+$(CollBuildDir)lb.res : $(SourceDir)data/coll/lb.txt $(CommonDependencies)
+
+$(CollBuildDir)lkt.res : $(SourceDir)data/coll/lkt.txt $(CommonDependencies)
+
+$(CollBuildDir)ln.res : $(SourceDir)data/coll/ln.txt $(CommonDependencies)
+
+$(CollBuildDir)lo.res : $(SourceDir)data/coll/lo.txt $(CommonDependencies)
+
+$(CollBuildDir)lt.res : $(SourceDir)data/coll/lt.txt $(CommonDependencies)
+
+$(CollBuildDir)lv.res : $(SourceDir)data/coll/lv.txt $(CommonDependencies)
+
+$(CollBuildDir)mk.res : $(SourceDir)data/coll/mk.txt $(CommonDependencies)
+
+$(CollBuildDir)ml.res : $(SourceDir)data/coll/ml.txt $(CommonDependencies)
+
+$(CollBuildDir)mn.res : $(SourceDir)data/coll/mn.txt $(CommonDependencies)
+
+$(CollBuildDir)mo.res : $(SourceDir)data/coll/mo.txt $(CommonDependencies)
+
+$(CollBuildDir)mr.res : $(SourceDir)data/coll/mr.txt $(CommonDependencies)
+
+$(CollBuildDir)ms.res : $(SourceDir)data/coll/ms.txt $(CommonDependencies)
+
+$(CollBuildDir)mt.res : $(SourceDir)data/coll/mt.txt $(CommonDependencies)
+
+$(CollBuildDir)my.res : $(SourceDir)data/coll/my.txt $(CommonDependencies)
+
+$(CollBuildDir)nb.res : $(SourceDir)data/coll/nb.txt $(CommonDependencies)
+
+$(CollBuildDir)nb_NO.res : $(SourceDir)data/coll/nb_NO.txt $(CommonDependencies)
+
+$(CollBuildDir)ne.res : $(SourceDir)data/coll/ne.txt $(CommonDependencies)
+
+$(CollBuildDir)nl.res : $(SourceDir)data/coll/nl.txt $(CommonDependencies)
+
+$(CollBuildDir)nn.res : $(SourceDir)data/coll/nn.txt $(CommonDependencies)
+
+$(CollBuildDir)no.res : $(SourceDir)data/coll/no.txt $(CommonDependencies)
+
+$(CollBuildDir)no_NO.res : $(SourceDir)data/coll/no_NO.txt $(CommonDependencies)
+
+$(CollBuildDir)om.res : $(SourceDir)data/coll/om.txt $(CommonDependencies)
+
+$(CollBuildDir)or.res : $(SourceDir)data/coll/or.txt $(CommonDependencies)
+
+$(CollBuildDir)pa.res : $(SourceDir)data/coll/pa.txt $(CommonDependencies)
+
+$(CollBuildDir)pa_Guru.res : $(SourceDir)data/coll/pa_Guru.txt $(CommonDependencies)
+
+$(CollBuildDir)pa_Guru_IN.res : $(SourceDir)data/coll/pa_Guru_IN.txt $(CommonDependencies)
+
+$(CollBuildDir)pa_IN.res : $(SourceDir)data/coll/pa_IN.txt $(CommonDependencies)
+
+$(CollBuildDir)pl.res : $(SourceDir)data/coll/pl.txt $(CommonDependencies)
+
+$(CollBuildDir)ps.res : $(SourceDir)data/coll/ps.txt $(CommonDependencies)
+
+$(CollBuildDir)pt.res : $(SourceDir)data/coll/pt.txt $(CommonDependencies)
+
+$(CollBuildDir)ro.res : $(SourceDir)data/coll/ro.txt $(CommonDependencies)
+
+$(CollBuildDir)root.res : $(SourceDir)data/coll/root.txt $(CommonDependencies)
+
+$(CollBuildDir)ru.res : $(SourceDir)data/coll/ru.txt $(CommonDependencies)
+
+$(CollBuildDir)se.res : $(SourceDir)data/coll/se.txt $(CommonDependencies)
+
+$(CollBuildDir)sh.res : $(SourceDir)data/coll/sh.txt $(CommonDependencies)
+
+$(CollBuildDir)sh_BA.res : $(SourceDir)data/coll/sh_BA.txt $(CommonDependencies)
+
+$(CollBuildDir)sh_CS.res : $(SourceDir)data/coll/sh_CS.txt $(CommonDependencies)
+
+$(CollBuildDir)sh_YU.res : $(SourceDir)data/coll/sh_YU.txt $(CommonDependencies)
+
+$(CollBuildDir)si.res : $(SourceDir)data/coll/si.txt $(CommonDependencies)
+
+$(CollBuildDir)sk.res : $(SourceDir)data/coll/sk.txt $(CommonDependencies)
+
+$(CollBuildDir)sl.res : $(SourceDir)data/coll/sl.txt $(CommonDependencies)
+
+$(CollBuildDir)smn.res : $(SourceDir)data/coll/smn.txt $(CommonDependencies)
+
+$(CollBuildDir)sq.res : $(SourceDir)data/coll/sq.txt $(CommonDependencies)
+
+$(CollBuildDir)sr.res : $(SourceDir)data/coll/sr.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_BA.res : $(SourceDir)data/coll/sr_BA.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_Cyrl.res : $(SourceDir)data/coll/sr_Cyrl.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_Cyrl_BA.res : $(SourceDir)data/coll/sr_Cyrl_BA.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_Cyrl_ME.res : $(SourceDir)data/coll/sr_Cyrl_ME.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_Cyrl_RS.res : $(SourceDir)data/coll/sr_Cyrl_RS.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_Latn.res : $(SourceDir)data/coll/sr_Latn.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_Latn_BA.res : $(SourceDir)data/coll/sr_Latn_BA.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_Latn_RS.res : $(SourceDir)data/coll/sr_Latn_RS.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_ME.res : $(SourceDir)data/coll/sr_ME.txt $(CommonDependencies)
+
+$(CollBuildDir)sr_RS.res : $(SourceDir)data/coll/sr_RS.txt $(CommonDependencies)
+
+$(CollBuildDir)sv.res : $(SourceDir)data/coll/sv.txt $(CommonDependencies)
+
+$(CollBuildDir)sw.res : $(SourceDir)data/coll/sw.txt $(CommonDependencies)
+
+$(CollBuildDir)ta.res : $(SourceDir)data/coll/ta.txt $(CommonDependencies)
+
+$(CollBuildDir)te.res : $(SourceDir)data/coll/te.txt $(CommonDependencies)
+
+$(CollBuildDir)th.res : $(SourceDir)data/coll/th.txt $(CommonDependencies)
+
+$(CollBuildDir)tk.res : $(SourceDir)data/coll/tk.txt $(CommonDependencies)
+
+$(CollBuildDir)to.res : $(SourceDir)data/coll/to.txt $(CommonDependencies)
+
+$(CollBuildDir)tr.res : $(SourceDir)data/coll/tr.txt $(CommonDependencies)
+
+$(CollBuildDir)ug.res : $(SourceDir)data/coll/ug.txt $(CommonDependencies)
+
+$(CollBuildDir)uk.res : $(SourceDir)data/coll/uk.txt $(CommonDependencies)
+
+$(CollBuildDir)ur.res : $(SourceDir)data/coll/ur.txt $(CommonDependencies)
+
+$(CollBuildDir)uz.res : $(SourceDir)data/coll/uz.txt $(CommonDependencies)
+
+$(CollBuildDir)vi.res : $(SourceDir)data/coll/vi.txt $(CommonDependencies)
+
+$(CollBuildDir)wae.res : $(SourceDir)data/coll/wae.txt $(CommonDependencies)
+
+$(CollBuildDir)wo.res : $(SourceDir)data/coll/wo.txt $(CommonDependencies)
+
+$(CollBuildDir)xh.res : $(SourceDir)data/coll/xh.txt $(CommonDependencies)
+
+$(CollBuildDir)yi.res : $(SourceDir)data/coll/yi.txt $(CommonDependencies)
+
+$(CollBuildDir)yo.res : $(SourceDir)data/coll/yo.txt $(CommonDependencies)
+
+$(CollBuildDir)yue.res : $(SourceDir)data/coll/yue.txt $(CommonDependencies)
+
+$(CollBuildDir)yue_CN.res : $(SourceDir)data/coll/yue_CN.txt $(CommonDependencies)
+
+$(CollBuildDir)yue_Hans.res : $(SourceDir)data/coll/yue_Hans.txt $(CommonDependencies)
+
+$(CollBuildDir)zh.res : $(SourceDir)data/coll/zh.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_CN.res : $(SourceDir)data/coll/zh_CN.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_Hans.res : $(SourceDir)data/coll/zh_Hans.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_Hans_CN.res : $(SourceDir)data/coll/zh_Hans_CN.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_Hans_SG.res : $(SourceDir)data/coll/zh_Hans_SG.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_Hant.res : $(SourceDir)data/coll/zh_Hant.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_Hant_HK.res : $(SourceDir)data/coll/zh_Hant_HK.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_Hant_MO.res : $(SourceDir)data/coll/zh_Hant_MO.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_Hant_TW.res : $(SourceDir)data/coll/zh_Hant_TW.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_HK.res : $(SourceDir)data/coll/zh_HK.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_MO.res : $(SourceDir)data/coll/zh_MO.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_SG.res : $(SourceDir)data/coll/zh_SG.txt $(CommonDependencies)
+
+$(CollBuildDir)zh_TW.res : $(SourceDir)data/coll/zh_TW.txt $(CommonDependencies)
+
+$(CollBuildDir)zu.res : $(SourceDir)data/coll/zu.txt $(CommonDependencies)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Transliteration data. Requested by RevitBridge team.
+
+#..................................................................................................
+TranslitBuildDir = $(BuildDir)translit/
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(TranslitBuildDir):
+        !~@mkdir $@
+%endif
+
+#..................................................................................................
+$(TranslitBuildDir)root.res : $(SourceDir)data/translit/root.txt $(CommonDependencies)
+
+$(TranslitBuildDir)en.res : $(SourceDir)data/translit/en.txt $(CommonDependencies)
+
+$(TranslitBuildDir)el.res : $(SourceDir)data/translit/el.txt $(CommonDependencies)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Combine into the data library.
+
+GeneratedDataFiles =                                \
+    $(BrkitrBuildDir)burmesedict.dict               \
+    $(BrkitrBuildDir)char.brk                       \
+    $(BrkitrBuildDir)cjdict.dict                    \
+    $(BrkitrBuildDir)de.res                         \
+    $(BrkitrBuildDir)el.res                         \
+    $(BrkitrBuildDir)en.res                         \
+    $(BrkitrBuildDir)en_US.res                      \
+    $(BrkitrBuildDir)en_US_POSIX.res                \
+    $(BrkitrBuildDir)es.res                         \
+    $(BrkitrBuildDir)fr.res                         \
+    $(BrkitrBuildDir)it.res                         \
+    $(BrkitrBuildDir)ja.res                         \
+    $(BrkitrBuildDir)khmerdict.dict                 \
+    $(BrkitrBuildDir)laodict.dict                   \
+    $(BrkitrBuildDir)line.brk                       \
+    $(BrkitrBuildDir)line_cj.brk                       \
+    $(BrkitrBuildDir)line_loose.brk                 \
+    $(BrkitrBuildDir)line_loose_cj.brk              \
+    $(BrkitrBuildDir)line_normal.brk                \
+    $(BrkitrBuildDir)line_normal_cj.brk             \
+    $(BrkitrBuildDir)pt.res                         \
+    $(BrkitrBuildDir)root.res                       \
+    $(BrkitrBuildDir)ru.res                         \
+    $(BrkitrBuildDir)sent.brk                       \
+    $(BrkitrBuildDir)sent_el.brk                    \
+    $(BrkitrBuildDir)thaidict.dict                  \
+    $(BrkitrBuildDir)title.brk                      \
+    $(BrkitrBuildDir)word.brk                       \
+    $(BrkitrBuildDir)word_POSIX.brk                 \
+    $(BrkitrBuildDir)zh.res                         \
+    $(BrkitrBuildDir)zh_Hant.res                    \
+    $(BuildDir)cnvalias.icu                         \
+    $(BuildDir)keyTypeData.res                      \
+    $(BuildDir)nfc.nrm                              \
+    $(BuildDir)nfkc.nrm                             \
+    $(BuildDir)nfkc_cf.nrm                          \
+    $(BuildDir)ulayout.icu                          \
+    $(BuildDir)unames.icu                           \
+    $(BuildDir)uts46.nrm                            \
+    $(CnvBuildDir)gb18030.cnv                       \
+    $(CnvBuildDir)gsm-03.38-2009.cnv                \
+    $(CnvBuildDir)ibm-1089_P100-1995.cnv            \
+    $(CnvBuildDir)ibm-1363_P11B-1998.cnv            \
+    $(CnvBuildDir)ibm-1373_P100-2002.cnv            \
+    $(CnvBuildDir)ibm-1383_P110-1999.cnv            \
+    $(CnvBuildDir)ibm-1386_P100-2001.cnv            \
+    $(CnvBuildDir)ibm-33722_P12A_P12A-2009_U2.cnv   \
+    $(CnvBuildDir)ibm-4909_P100-1999.cnv            \
+    $(CnvBuildDir)ibm-5012_P100-1999.cnv            \
+    $(CnvBuildDir)ibm-5346_P100-1998.cnv            \
+    $(CnvBuildDir)ibm-5347_P100-1998.cnv            \
+    $(CnvBuildDir)ibm-5348_P100-1997.cnv            \
+    $(CnvBuildDir)ibm-5349_P100-1998.cnv            \
+    $(CnvBuildDir)ibm-5350_P100-1998.cnv            \
+    $(CnvBuildDir)ibm-5352_P100-1998.cnv            \
+    $(CnvBuildDir)ibm-5354_P100-1998.cnv            \
+    $(CnvBuildDir)ibm-912_P100-1995.cnv             \
+    $(CnvBuildDir)ibm-913_P100-2000.cnv             \
+    $(CnvBuildDir)ibm-914_P100-1995.cnv             \
+    $(CnvBuildDir)ibm-915_P100-1995.cnv             \
+    $(CnvBuildDir)ibm-920_P100-1995.cnv             \
+    $(CnvBuildDir)ibm-923_P100-1998.cnv             \
+    $(CnvBuildDir)ibm-943_P15A-2003.cnv             \
+    $(CnvBuildDir)ibm-9447_P100-2002.cnv            \
+    $(CnvBuildDir)ibm-9449_P100-2002.cnv            \
+    $(CnvBuildDir)ibm-949_P11A-1999.cnv             \
+    $(CnvBuildDir)ibm-970_P110_P110-2006_U2.cnv     \
+    $(CnvBuildDir)macos-0_2-10.2.cnv                \
+    $(CnvBuildDir)macos-29-10.2.cnv                 \
+    $(CnvBuildDir)macos-35-10.2.cnv                 \
+    $(CnvBuildDir)macos-6_2-10.4.cnv                \
+    $(CnvBuildDir)macos-7_3-10.2.cnv                \
+    $(CollBuildDir)af.res                           \
+    $(CollBuildDir)am.res                           \
+    $(CollBuildDir)ar.res                           \
+    $(CollBuildDir)ars.res                          \
+    $(CollBuildDir)as.res                           \
+    $(CollBuildDir)az.res                           \
+    $(CollBuildDir)be.res                           \
+    $(CollBuildDir)bg.res                           \
+    $(CollBuildDir)bn.res                           \
+    $(CollBuildDir)bo.res                           \
+    $(CollBuildDir)bs.res                           \
+    $(CollBuildDir)bs_Cyrl.res                      \
+    $(CollBuildDir)ca.res                           \
+    $(CollBuildDir)ceb.res                          \
+    $(CollBuildDir)chr.res                          \
+    $(CollBuildDir)cs.res                           \
+    $(CollBuildDir)cy.res                           \
+    $(CollBuildDir)da.res                           \
+    $(CollBuildDir)de.res                           \
+    $(CollBuildDir)de_.res                          \
+    $(CollBuildDir)de__PHONEBOOK.res                \
+    $(CollBuildDir)de_AT.res                        \
+    $(CollBuildDir)dsb.res                          \
+    $(CollBuildDir)dz.res                           \
+    $(CollBuildDir)ee.res                           \
+    $(CollBuildDir)el.res                           \
+    $(CollBuildDir)en.res                           \
+    $(CollBuildDir)en_US.res                        \
+    $(CollBuildDir)en_US_POSIX.res                  \
+    $(CollBuildDir)eo.res                           \
+    $(CollBuildDir)es.res                           \
+    $(CollBuildDir)es_.res                          \
+    $(CollBuildDir)es__TRADITIONAL.res              \
+    $(CollBuildDir)et.res                           \
+    $(CollBuildDir)fa.res                           \
+    $(CollBuildDir)fa_AF.res                        \
+    $(CollBuildDir)fi.res                           \
+    $(CollBuildDir)fil.res                          \
+    $(CollBuildDir)fo.res                           \
+    $(CollBuildDir)fr.res                           \
+    $(CollBuildDir)fr_CA.res                        \
+    $(CollBuildDir)ga.res                           \
+    $(CollBuildDir)gl.res                           \
+    $(CollBuildDir)gu.res                           \
+    $(CollBuildDir)ha.res                           \
+    $(CollBuildDir)haw.res                          \
+    $(CollBuildDir)he.res                           \
+    $(CollBuildDir)he_IL.res                        \
+    $(CollBuildDir)hi.res                           \
+    $(CollBuildDir)hr.res                           \
+    $(CollBuildDir)hsb.res                          \
+    $(CollBuildDir)hu.res                           \
+    $(CollBuildDir)hy.res                           \
+    $(CollBuildDir)id.res                           \
+    $(CollBuildDir)id_ID.res                        \
+    $(CollBuildDir)ig.res                           \
+    $(CollBuildDir)in.res                           \
+    $(CollBuildDir)in_ID.res                        \
+    $(CollBuildDir)is.res                           \
+    $(CollBuildDir)it.res                           \
+    $(CollBuildDir)iw.res                           \
+    $(CollBuildDir)iw_IL.res                        \
+    $(CollBuildDir)ja.res                           \
+    $(CollBuildDir)ka.res                           \
+    $(CollBuildDir)kk.res                           \
+    $(CollBuildDir)kl.res                           \
+    $(CollBuildDir)km.res                           \
+    $(CollBuildDir)kn.res                           \
+    $(CollBuildDir)ko.res                           \
+    $(CollBuildDir)kok.res                          \
+    $(CollBuildDir)ku.res                           \
+    $(CollBuildDir)ky.res                           \
+    $(CollBuildDir)lb.res                           \
+    $(CollBuildDir)lkt.res                          \
+    $(CollBuildDir)ln.res                           \
+    $(CollBuildDir)lo.res                           \
+    $(CollBuildDir)lt.res                           \
+    $(CollBuildDir)lv.res                           \
+    $(CollBuildDir)mk.res                           \
+    $(CollBuildDir)ml.res                           \
+    $(CollBuildDir)mn.res                           \
+    $(CollBuildDir)mo.res                           \
+    $(CollBuildDir)mr.res                           \
+    $(CollBuildDir)ms.res                           \
+    $(CollBuildDir)mt.res                           \
+    $(CollBuildDir)my.res                           \
+    $(CollBuildDir)nb.res                           \
+    $(CollBuildDir)nb_NO.res                        \
+    $(CollBuildDir)ne.res                           \
+    $(CollBuildDir)nl.res                           \
+    $(CollBuildDir)nn.res                           \
+    $(CollBuildDir)no.res                           \
+    $(CollBuildDir)no_NO.res                        \
+    $(CollBuildDir)om.res                           \
+    $(CollBuildDir)or.res                           \
+    $(CollBuildDir)pa.res                           \
+    $(CollBuildDir)pa_Guru.res                      \
+    $(CollBuildDir)pa_Guru_IN.res                   \
+    $(CollBuildDir)pa_IN.res                        \
+    $(CollBuildDir)pl.res                           \
+    $(CollBuildDir)ps.res                           \
+    $(CollBuildDir)pt.res                           \
+    $(CollBuildDir)ro.res                           \
+    $(CollBuildDir)ru.res                           \
+    $(CollBuildDir)se.res                           \
+    $(CollBuildDir)sh.res                           \
+    $(CollBuildDir)sh_BA.res                        \
+    $(CollBuildDir)sh_CS.res                        \
+    $(CollBuildDir)sh_YU.res                        \
+    $(CollBuildDir)si.res                           \
+    $(CollBuildDir)sk.res                           \
+    $(CollBuildDir)sl.res                           \
+    $(CollBuildDir)smn.res                          \
+    $(CollBuildDir)sq.res                           \
+    $(CollBuildDir)sr.res                           \
+    $(CollBuildDir)sr_BA.res                        \
+    $(CollBuildDir)sr_Cyrl.res                      \
+    $(CollBuildDir)sr_Cyrl_BA.res                   \
+    $(CollBuildDir)sr_Cyrl_ME.res                   \
+    $(CollBuildDir)sr_Cyrl_RS.res                   \
+    $(CollBuildDir)sr_Latn.res                      \
+    $(CollBuildDir)sr_Latn_BA.res                   \
+    $(CollBuildDir)sr_Latn_RS.res                   \
+    $(CollBuildDir)sr_ME.res                        \
+    $(CollBuildDir)sr_RS.res                        \
+    $(CollBuildDir)sv.res                           \
+    $(CollBuildDir)sw.res                           \
+    $(CollBuildDir)ta.res                           \
+    $(CollBuildDir)te.res                           \
+    $(CollBuildDir)th.res                           \
+    $(CollBuildDir)tk.res                           \
+    $(CollBuildDir)to.res                           \
+    $(CollBuildDir)tr.res                           \
+    $(CollBuildDir)ucadata.icu                      \
+    $(CollBuildDir)ug.res                           \
+    $(CollBuildDir)uk.res                           \
+    $(CollBuildDir)ur.res                           \
+    $(CollBuildDir)uz.res                           \
+    $(CollBuildDir)vi.res                           \
+    $(CollBuildDir)wae.res                          \
+    $(CollBuildDir)wo.res                           \
+    $(CollBuildDir)xh.res                           \
+    $(CollBuildDir)yi.res                           \
+    $(CollBuildDir)yo.res                           \
+    $(CollBuildDir)yue.res                          \
+    $(CollBuildDir)yue_CN.res                       \
+    $(CollBuildDir)yue_Hans.res                     \
+    $(CollBuildDir)zh.res                           \
+    $(CollBuildDir)zh_CN.res                        \
+    $(CollBuildDir)zh_Hans.res                      \
+    $(CollBuildDir)zh_Hans_CN.res                   \
+    $(CollBuildDir)zh_Hans_SG.res                   \
+    $(CollBuildDir)zh_Hant.res                      \
+    $(CollBuildDir)zh_Hant_HK.res                   \
+    $(CollBuildDir)zh_Hant_MO.res                   \
+    $(CollBuildDir)zh_Hant_TW.res                   \
+    $(CollBuildDir)zh_HK.res                        \
+    $(CollBuildDir)zh_MO.res                        \
+    $(CollBuildDir)zh_SG.res                        \
+    $(CollBuildDir)zh_TW.res                        \
+    $(CollBuildDir)zu.res                           \
+    $(TranslitBuildDir)el.res                       \
+    $(TranslitBuildDir)en.res                       \
+    $(TranslitBuildDir)root.res
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Create a newline-delimitied path list from GeneratedDataFiles.
+
+DataFileListPath = $(BuildDir)icudata.lst
+
+$(DataFileListPath) : $(CommonDependencies) $(GeneratedDataFiles)
+    >$@.spaces
+    $[@strip $(GeneratedDataFiles)]
+    <
+    python $(bsiScripts)RegexReplaceInFile.py "\s+" "\n" $@.spaces $@.newlines
+    %if defined(winNT)
+        python $(bsiScripts)RegexReplaceInFile.py "$[@subst /, //, $(BuildDir)]//" "" $@.newlines $@
+    %else
+        python $(bsiScripts)RegexReplaceInFile.py "$(BuildDir)" "" $@.newlines $@
+    %endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Combine into the data file
+# Note that gencmn requires the list of files paths to be relative paths, and the CWD to be set to the root of said relative paths.
+
+$(DataBuildFilePath) : $(DataFileListPath) $(CommonDependencies)
+    >$(DataBuildDir)RunGencmn.bat
+    PUSHD $(DataBuildDir)
+    $(BuildToolsBuildDir)gencmn$(BuildToolExeExt) --destdir $(DataBuildDir) --name $(DataFileBaseName) 0xffffffff $(DataFileListPath)
+    POPD
+    <
+    $(DataBuildDir)RunGencmn.bat
+    |
+    |****************************************************************************************************
+    |Data file generated: $(DataBuildFilePath)
+    |****************************************************************************************************
+    |

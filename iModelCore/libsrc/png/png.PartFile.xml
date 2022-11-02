@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+
+    <Part Name="pnglib" BentleyBuildMakeFile="png.mke">
+        <SubPart LibType="Static" PartName="Zlib" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <Bindings>
+            <VendorAPI Domain="png"/>
+            <Libs>Delivery/$(stlibprefix)BePng$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)BePng$(stlibdebugext)</Libs>
+            <VendorNotices>Delivery/png-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <NuGetProduct Name="PngNuget" LicenseFile="PngNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="pnglib" LibType="Static"/>
+    </NuGetProduct>
+
+    <Part Name="png_VS2012" BentleyBuildMakeFile="png.mke" BentleyBuildMakeOptions="+dBUILD_USING_VS2012">
+        <SubPart PartName="VendorAPI"/>
+        <SubPart PartName="Zlib" PartFile="iModelCore\libsrc\compress\Zlib"/>
+        <Bindings>
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(libprefix)BePng_VC11$(stlibext)</Libs>
+            <VendorNotices>Delivery/png-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+</BuildContext>

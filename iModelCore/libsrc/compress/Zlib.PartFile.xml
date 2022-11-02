@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="_prewire_VendorAPI" BentleyBuildMakeFile="prewire.mke">
+    </Part>
+
+    <Part Name="Zlib" BentleyBuildMakeFile="zlib/Zlib.mke">
+        <SubPart PartName="_prewire_VendorAPI" />
+        <Bindings>
+            <VendorAPI Domain="zlib" />
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
+                Delivery/$(stlibprefix)BeZlib$(stlibext)
+                Delivery/$(stlibprefix)BeZlib$(stlibdebugext)
+            </Libs>
+            <VendorNotices>
+                Delivery/minizip-license.txt
+                Delivery/zlib-license.txt
+            </VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="lzma" BentleyBuildMakeFile="lzma/lzma.mke">
+        <SubPart PartName="_prewire_VendorAPI" />
+        <Bindings>
+            <VendorAPI Domain="liblzma" />
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
+                Delivery/$(stlibprefix)lzma$(stlibext)
+                Delivery/$(stlibprefix)lzma$(stlibdebugext)
+            </Libs>
+        </Bindings>
+    </Part>
+    <Part Name="lzma18" BentleyBuildMakeFile="lzma18/lzma.mke">
+        <SubPart PartName="_prewire_VendorAPI" />
+        <Bindings>
+            <VendorAPI Domain="liblzma18" />
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
+                Delivery/$(stlibprefix)lzma18$(stlibext)
+                Delivery/$(stlibprefix)lzma18$(stlibdebugext)
+            </Libs>
+        </Bindings>
+    </Part>
+    <Part Name="lzma19" BentleyBuildMakeFile="lzma19/lzma.mke">
+        <SubPart PartName="_prewire_VendorAPI" />
+        <Bindings>
+            <VendorAPI Domain="liblzma19" />
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
+                Delivery/$(stlibprefix)lzma19$(stlibext)
+                Delivery/$(stlibprefix)lzma19$(stlibdebugext)
+            </Libs>
+        </Bindings>
+    </Part>	
+    <Part Name="snappy" BentleyBuildMakeFile="snappy/snappy.mke">
+        <SubPart PartName="_prewire_VendorAPI" />
+        <Bindings>
+            <VendorAPI Domain="snappy" />
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
+                Delivery/$(stlibprefix)snappy$(stlibext)
+                Delivery/$(stlibprefix)snappy$(stlibdebugext)
+            </Libs>
+            <VendorNotices>
+                Delivery/snappy-license.txt
+            </VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="Compress">
+        <SubPart PartName="lzma" LibType="Static"/>
+        <SubPart PartName="snappy" LibType="Static"/>
+        <SubPart PartName="Zlib" LibType="Static"/>
+    </Part>
+
+    <NuGetProduct Name="CompressNuget" LicenseFile="CompressNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="Compress" LibType="Static"/>
+        <SubPart PartName="lzma19" LibType="Static"/>
+    </NuGetProduct>
+
+
+</BuildContext>

@@ -1,0 +1,106 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: zlib/Zlib.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+GCC_DEFAULT_VISIBILITY              = default
+HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
+IS_THIRD_PARTY_LIBRARY = 1
+BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefully these get fixed in a future version.
+
+%include mdl.mki
+
+# VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
+%if !defined(IS_VERACODE_BUILD)
+    VCRuntimeCheckOption = -RTCsu
+%endif
+
+# zip is built without crypt/uncrypt support
+nameToDefine=NOCRYPT
+%include cdefapnd.mki
+
+nameToDefine=NOUNCRYPT
+%include cdefapnd.mki
+
+# To avoid changing 3rd party source.
+dirToSearch = $(BuildContext)VendorAPI/zlib/
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/zlib/zip/
+%include cincapnd.mki
+
+appName             = BeZlib
+CCompPDBName        = $(appName)
+zlibDir             = $(_MakeFilePath)
+minizipDir          = $(zlibDir)contrib/minizip/
+
+o                   = $(OutputRootDir)build/$(appName)/
+
+warnLevel           = -W3
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)adler32$(oext)      : $(zlibDir)adler32.c ${MultiCompileDepends}
+
+$(o)compress$(oext)     : $(zlibDir)compress.c ${MultiCompileDepends}
+
+$(o)deflate$(oext)      : $(zlibDir)deflate.c ${MultiCompileDepends}
+
+$(o)inflate$(oext)      : $(zlibDir)inflate.c ${MultiCompileDepends}
+
+$(o)crc32$(oext)        : $(zlibDir)crc32.c ${MultiCompileDepends}
+
+$(o)inffast$(oext)      : $(zlibDir)inffast.c ${MultiCompileDepends}
+
+$(o)inftrees$(oext)     : $(zlibDir)inftrees.c ${MultiCompileDepends}
+
+$(o)trees$(oext)        : $(zlibDir)trees.c ${MultiCompileDepends}
+
+$(o)uncompr$(oext)      : $(zlibDir)uncompr.c ${MultiCompileDepends}
+
+$(o)zutil$(oext)        : $(zlibDir)zutil.c ${MultiCompileDepends}
+
+#----- zip support is built directly into our copy of zlib -----
+
+$(o)zip$(oext)          : $(minizipDir)zip.c ${MultiCompileDepends}
+
+$(o)unzip$(oext)        : $(minizipDir)unzip.c ${MultiCompileDepends}
+
+$(o)ioapi$(oext)        : $(minizipDir)ioapi.c ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Objs
+#--------------------------------------------------------------------------------------
+ZlibObjs = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(ZlibObjs)
+DLM_EXPORT_OBJS             = $(ZlibObjs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+CREATE_STATIC_LIBRARIES     = 1
+
+%include $(sharedMki)linkLibrary.mki
+
+$(BuildContext)Delivery/minizip-license.txt : $(minizipDir)MiniZip64_info.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/zlib-license.txt : $(zlibDir)zlib-notice.txt
+    $(LinkFirstDepToFirstTarget)

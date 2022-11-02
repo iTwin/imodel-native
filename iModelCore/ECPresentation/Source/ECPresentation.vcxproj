@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{f8035fa9-4d5f-4b5e-8b4d-198f6f1a6c28}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ECPresentation-Library ECPresentation-PublicAPI -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source;$(SrcRoot)imodel02\iModelCore\ecobjects\PublicApi;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI;$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI;$(SrcRoot)imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI;$(SrcRoot)imodel02\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(IncludePath)</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ECPresentation-Library ECPresentation-PublicAPI -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source;$(SrcRoot)imodel02\iModelCore\ecobjects\PublicApi;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI;$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI;$(SrcRoot)imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI;$(SrcRoot)imodel02\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(IncludePath)</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Connection.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Content.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\ContentFieldEditors.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\DataSource.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\DefaultECPresentationSerializer.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Diagnostics.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECInstanceChangeEvents.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentation.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentationErrors.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentationManager.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentationTypes.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\ExtendedData.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\IECPresentationSerializer.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\IRulesPreprocessor.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Iterators.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\IUiStateProvider.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\KeySet.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\LabelDefinition.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\NavNode.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\NavNodeKey.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\RuleSetLocater.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\RulesetVariables.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllInstanceNodesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllRelatedInstanceNodesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CalculatedPropertySpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CheckBoxRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ChildNodeRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ChildNodeSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CommonTools.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentInstancesOfSpecificClassesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentModifier.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentRelatedInstancesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CustomizationRules.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CustomNodeSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CustomRendererSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\DefaultPropertyCategoryOverride.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ExtendedDataRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\GroupingRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ImageIdOverride.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\InstanceLabelOverride.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\InstanceNodesOfSpecificClassesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\LabelOverride.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\LocalizationResourceKeyDefinition.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\MultiSchemaClass.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\NodeArtifactsRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRules.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRuleSet.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRulesTypes.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PropertyCategorySpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PropertyEditorSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PropertySpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelatedInstanceNodesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelatedInstanceSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelatedPropertiesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelationshipPathSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RequiredSchemaSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SearchResultInstanceNodesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SelectedNodeInstancesSpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SortingRule.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SpecificationVisitor.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\StyleOverride.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\UserSettingsGroup.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Update.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\UserSettings.h" />
+    <ClInclude Include="Content\ContentCache.h" />
+    <ClInclude Include="Content\ContentClassesLocater.h" />
+    <ClInclude Include="Content\ContentHelpers.h" />
+    <ClInclude Include="Content\ContentItemBuilder.h" />
+    <ClInclude Include="Content\ContentProviders.h" />
+    <ClInclude Include="Content\ContentQuery.h" />
+    <ClInclude Include="Content\ContentQueryBuilder.h" />
+    <ClInclude Include="Content\ContentQueryContracts.h" />
+    <ClInclude Include="Content\ContentQueryResultsReader.h" />
+    <ClInclude Include="Content\ContentSpecificationsHandler.h" />
+    <ClInclude Include="Content\PropertyInfoStore.h" />
+    <ClInclude Include="ECPresentationPch.h" />
+    <ClInclude Include="Hierarchies\DataSourceInfo.h" />
+    <ClInclude Include="Hierarchies\HierarchiesComparer.h" />
+    <ClInclude Include="Hierarchies\NavigationQuery.h" />
+    <ClInclude Include="Hierarchies\NavigationQueryBuilder.h" />
+    <ClInclude Include="Hierarchies\NavigationQueryContracts.h" />
+    <ClInclude Include="Hierarchies\NavigationQueryResultsReader.h" />
+    <ClInclude Include="Hierarchies\NavNodeProviders.h" />
+    <ClInclude Include="Hierarchies\NavNodesCache.h" />
+    <ClInclude Include="Hierarchies\NavNodesCacheHelpers.h" />
+    <ClInclude Include="Hierarchies\NavNodesCacheWrapper.h" />
+    <ClInclude Include="Hierarchies\NavNodesDataSource.h" />
+    <ClInclude Include="Hierarchies\NavNodesHelper.h" />
+    <ClInclude Include="Hierarchies\NodePathsHelper.h" />
+    <ClInclude Include="PresentationManagerImpl.h" />
+    <ClInclude Include="RulesEngineTypes.h" />
+    <ClInclude Include="Rules\CommonToolsInternal.h" />
+    <ClInclude Include="Rules\PresentationRuleCommonConstants.h" />
+    <ClInclude Include="Rules\PresentationRuleJsonConstants.h" />
+    <ClInclude Include="Rules\PresentationRuleXmlConstants.h" />
+    <ClInclude Include="Shared\NodeLabelCalculator.h" />
+    <ClInclude Include="Shared\CustomizationHelper.h" />
+    <ClInclude Include="Shared\ECExpressions\ECExpressionContextsProvider.h" />
+    <ClInclude Include="Shared\ECExpressions\ECExpressionOptimizer.h" />
+    <ClInclude Include="Shared\ECSchemaHelper.h" />
+    <ClInclude Include="Shared\ExtendedData.h" />
+    <ClInclude Include="Shared\ImageHelper.h" />
+    <ClInclude Include="Shared\NavNodeLocater.h" />
+    <ClInclude Include="Shared\Queries\CustomFunctions.h" />
+    <ClInclude Include="Shared\Queries\PresentationQuery.h" />
+    <ClInclude Include="Shared\Queries\QueryBuilder.h" />
+    <ClInclude Include="Shared\Queries\QueryBuilderHelpers.h" />
+    <ClInclude Include="Shared\Queries\QueryBuilding.h" />
+    <ClInclude Include="Shared\Queries\QueryContracts.h" />
+    <ClInclude Include="Shared\Queries\QueryExecutor.h" />
+    <ClInclude Include="Shared\RulesDrivenProviderContext.h" />
+    <ClInclude Include="Shared\RulesPreprocessor.h" />
+    <ClInclude Include="Shared\UsedClassesListener.h" />
+    <ClInclude Include="Shared\ValueHelpers.h" />
+    <ClInclude Include="TaskScheduler.h" />
+    <ClInclude Include="UpdateHandler.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Connection.cpp" />
+    <ClCompile Include="Content\Content.cpp" />
+    <ClCompile Include="Content\ContentCache.cpp" />
+    <ClCompile Include="Content\ContentClassesLocater.cpp" />
+    <ClCompile Include="Content\ContentDescriptorBuilder.cpp" />
+    <ClCompile Include="Content\ContentFieldEditors.cpp" />
+    <ClCompile Include="Content\ContentHelpers.cpp" />
+    <ClCompile Include="Content\ContentItemBuilder.cpp" />
+    <ClCompile Include="Content\ContentProviders.cpp" />
+    <ClCompile Include="Content\ContentQuery.cpp" />
+    <ClCompile Include="Content\ContentQueryBuilder.cpp" />
+    <ClCompile Include="Content\ContentQueryContracts.cpp" />
+    <ClCompile Include="Content\ContentQueryResultsReader.cpp" />
+    <ClCompile Include="Content\ContentSpecificationsHandler.cpp" />
+    <ClCompile Include="Content\PropertyInfoStore.cpp" />
+    <ClCompile Include="ECPresentationManager.cpp" />
+    <ClCompile Include="ECPresentationPch.cpp" />
+    <ClCompile Include="Hierarchies\HierarchiesComparer.cpp" />
+    <ClCompile Include="Hierarchies\NavigationQuery.cpp" />
+    <ClCompile Include="Hierarchies\NavigationQueryBuilder.cpp" />
+    <ClCompile Include="Hierarchies\NavigationQueryContracts.cpp" />
+    <ClCompile Include="Hierarchies\NavigationQueryResultsReader.cpp" />
+    <ClCompile Include="Hierarchies\NavNode.cpp" />
+    <ClCompile Include="Hierarchies\NavNodeProviders.cpp" />
+    <ClCompile Include="Hierarchies\NavNodesCache.cpp" />
+    <ClCompile Include="Hierarchies\NavNodesCacheHelpers.cpp" />
+    <ClCompile Include="Hierarchies\NavNodesCacheWrapper.cpp" />
+    <ClCompile Include="Hierarchies\NavNodesHelper.cpp" />
+    <ClCompile Include="Hierarchies\NodePathsHelper.cpp" />
+    <ClCompile Include="Hierarchies\Update.cpp" />
+    <ClCompile Include="KeySet.cpp" />
+    <ClCompile Include="LabelDefinition.cpp" />
+    <ClCompile Include="PresentationManagerImpl.cpp" />
+    <ClCompile Include="RuleSetLocater.cpp" />
+    <ClCompile Include="Rules\AllInstanceNodesSpecification.cpp" />
+    <ClCompile Include="Rules\AllRelatedInstanceNodesSpecification.cpp" />
+    <ClCompile Include="Rules\CalculatedPropertySpecification.cpp" />
+    <ClCompile Include="Rules\CheckBoxRule.cpp" />
+    <ClCompile Include="Rules\ChildNodeRule.cpp" />
+    <ClCompile Include="Rules\ChildNodeSpecification.cpp" />
+    <ClCompile Include="Rules\CommonTools.cpp" />
+    <ClCompile Include="Rules\ContentInstancesOfSpecificClassesSpecification.cpp" />
+    <ClCompile Include="Rules\ContentModifier.cpp" />
+    <ClCompile Include="Rules\ContentRelatedInstancesSpecification.cpp" />
+    <ClCompile Include="Rules\ContentRule.cpp" />
+    <ClCompile Include="Rules\ContentSpecification.cpp" />
+    <ClCompile Include="Rules\CustomizationRule.cpp" />
+    <ClCompile Include="Rules\CustomNodeSpecification.cpp" />
+    <ClCompile Include="Rules\CustomRendererSpecification.cpp" />
+    <ClCompile Include="Rules\DefaultPropertyCategoryOverride.cpp" />
+    <ClCompile Include="Rules\ExtendedDataRule.cpp" />
+    <ClCompile Include="Rules\GroupingRule.cpp" />
+    <ClCompile Include="Rules\ImageIdOverride.cpp" />
+    <ClCompile Include="Rules\InstanceLabelOverride.cpp" />
+    <ClCompile Include="Rules\InstanceNodesOfSpecificClassesSpecification.cpp" />
+    <ClCompile Include="Rules\LabelOverride.cpp" />
+    <ClCompile Include="Rules\LocalizationResourceKeyDefinition.cpp" />
+    <ClCompile Include="Rules\MultiSchemaClass.cpp" />
+    <ClCompile Include="Rules\NodeArtifactsRule.cpp" />
+    <ClCompile Include="Rules\PresentationRule.cpp" />
+    <ClCompile Include="Rules\PresentationRuleSet.cpp" />
+    <ClCompile Include="Rules\PropertyCategorySpecification.cpp" />
+    <ClCompile Include="Rules\PropertyEditorSpecification.cpp" />
+    <ClCompile Include="Rules\PropertySpecification.cpp" />
+    <ClCompile Include="Rules\RelatedInstanceNodesSpecification.cpp" />
+    <ClCompile Include="Rules\RelatedInstanceSpecification.cpp" />
+    <ClCompile Include="Rules\RelatedPropertiesSpecification.cpp" />
+    <ClCompile Include="Rules\RelationshipPathSpecification.cpp" />
+    <ClCompile Include="Rules\RequiredSchemaSpecification.cpp" />
+    <ClCompile Include="Rules\SearchResultInstanceNodesSpecification.cpp" />
+    <ClCompile Include="Rules\SelectedNodeInstancesSpecification.cpp" />
+    <ClCompile Include="Rules\SortingRule.cpp" />
+    <ClCompile Include="Rules\StyleOverride.cpp" />
+    <ClCompile Include="Rules\UserSettingsGroup.cpp" />
+    <ClCompile Include="Serialization\DefaultECPresentationSerializer.cpp" />
+    <ClCompile Include="Serialization\IECPresentationSerializer.cpp" />
+    <ClCompile Include="Shared\NodeLabelCalculator.cpp" />
+    <ClCompile Include="Shared\CustomizationHelper.cpp" />
+    <ClCompile Include="Shared\Diagnostics\Diagnostics.cpp" />
+    <ClCompile Include="Shared\Diagnostics\DiagnosticsHelpers.cpp" />
+    <ClCompile Include="Shared\ECExpressions\ECExpressionContextsProvider.cpp" />
+    <ClCompile Include="Shared\ECExpressions\ECExpressionOptimizer.cpp" />
+    <ClCompile Include="Shared\ECInstanceChangeEvents.cpp" />
+    <ClCompile Include="Shared\ECSchemaHelper.cpp" />
+    <ClCompile Include="Shared\ExtendedData.cpp" />
+    <ClCompile Include="Shared\ImageHelper.cpp" />
+    <ClCompile Include="Shared\Queries\CustomFunctions.cpp" />
+    <ClCompile Include="Shared\Queries\PresentationQuery.cpp" />
+    <ClCompile Include="Shared\Queries\QueryBuilderHelpers.cpp" />
+    <ClCompile Include="Shared\Queries\QueryContracts.cpp" />
+    <ClCompile Include="Shared\Queries\QueryExecutor.cpp" />
+    <ClCompile Include="Shared\RelatedClass.cpp" />
+    <ClCompile Include="Shared\RulesDrivenProviderContext.cpp" />
+    <ClCompile Include="Shared\RulesetVariables.cpp" />
+    <ClCompile Include="Shared\RulesPreprocessor.cpp" />
+    <ClCompile Include="Shared\ValueHelpers.cpp" />
+    <ClCompile Include="TaskScheduler.cpp" />
+    <ClCompile Include="UpdateHandler.cpp" />
+    <ClCompile Include="UserSettings.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

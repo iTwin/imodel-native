@@ -1,0 +1,749 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ================================================================================== -->
+<!-- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.                -->
+<!-- * See LICENSE.md in the project root for license terms and full copyright notice.  -->
+<!-- ================================================================================== -->
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="AecUnitsSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/AecUnits.ecschema.xml -dSCHEMA_PATTERN=AecUnits.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/AecUnits.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BridgeStructuralPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/BridgeStructuralPhysical.ecschema.xml -dSCHEMA_PATTERN=BridgeStructuralPhysical.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BridgeStructuralPhysical.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingDataGroupBase" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/BuildingDataGroupBase.ecschema.xml -dSCHEMA_PATTERN=BuildingDataGroupBase.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/BuildingDataGroupBase.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingSpacePlanning" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/BuildingSpacePlanning.ecschema.xml -dSCHEMA_PATTERN=BuildingSpacePlanning.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BuildingSpacePlanning.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingSpatialSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/BuildingSpatial.ecschema.xml -dSCHEMA_PATTERN=BuildingSpatial.01.00.00.ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="SpatialCompositionSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BuildingSpatial.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingSpatial">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="BuildingSpatialSchema"/>
+    </Part>
+    
+    <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml -dSCHEMA_PATTERN=ArchitecturalPhysical.*ecschema.xml"/>
+    <Part Name="BuildingPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/BuildingPhysical.ecschema.xml -dSCHEMA_PATTERN=BuildingPhysical.*ecschema.xml"/>
+    
+    <Part Name="BuildingSchemas">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="ArchitecturalPhysical"/>
+        <SubPart PartName="BuildingPhysical"/>
+        <SubPart PartName="AecUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
+                ECSchemas/Domain/BuildingPhysical.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Construction"  BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Construction.ecschema.xml -dSCHEMA_PATTERN=Construction.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Construction.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BisCore" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/BisCore.ecschema.xml -dSCHEMA_PATTERN=BisCore.*ecschema.xml"/>
+    <Part Name="Generic" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Generic.ecschema.xml -dSCHEMA_PATTERN=Generic.*ecschema.xml"/>
+    <Part Name="Functional" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Functional.ecschema.xml -dSCHEMA_PATTERN=Functional.*ecschema.xml"/>
+    <Part Name="PhysicalMaterial" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/PhysicalMaterial.ecschema.xml -dSCHEMA_PATTERN=PhysicalMaterial.*ecschema.xml"/>
+    <Part Name="Analytical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Analytical.ecschema.xml -dSCHEMA_PATTERN=Analytical.*ecschema.xml"/>
+    <Part Name="Asset" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Asset.ecschema.xml -dSCHEMA_PATTERN=Asset.*ecschema.xml"/>
+    <Part Name="LinearReferencing" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/LinearReferencing.ecschema.xml -dSCHEMA_PATTERN=LinearReferencing.*ecschema.xml"/>
+
+    <Part Name="Core">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="BisCore"/>
+        <SubPart PartName="Generic"/>
+        <SubPart PartName="Functional"/>
+        <SubPart PartName="PhysicalMaterial"/>
+        <SubPart PartName="Analytical"/>
+        <SubPart PartName="Asset"/>
+        <SubPart PartName="LinearReferencing"/>
+        <SubPart PartName="StandardSchemas"/>
+        <SubPart PartName="PublicAPI" PartFile="iModelCore/ECDb/ECDb" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+                ECSchemas/BisCore.ecschema.xml
+                ECSchemas/Generic.ecschema.xml
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Analytical.ecschema.xml
+                ECSchemas/Asset.ecschema.xml
+                ECSchemas/Functional.ecschema.xml
+                ECSchemas/LinearReferencing.ecschema.xml
+                ECSchemas/PhysicalMaterial.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="LinearReferencing_100" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/LinearReferencing.01.00.00.ecschema.xml -dSCHEMA_PATTERN=LinearReferencing.01.00.00.ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/LinearReferencing.01.00.00.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ClassificationSystems" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/ClassificationSystems.ecschema.xml -dSCHEMA_PATTERN=ClassificationSystems.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ClassificationSystems.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="DistributionSystems" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/DistributionSystems.ecschema.xml -dSCHEMA_PATTERN=DistributionSystems.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/DistributionSystems.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnV8OpenRoadsDesignerSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/DgnV8OpenRoadsDesigner.ecschema.xml -dSCHEMA_PATTERN=DgnV8OpenRoadsDesigner.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/DgnV8OpenRoadsDesigner.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+  <Part Name="OpenBridgeModelerCESchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/OpenBridgeModelerCE.ecschema.xml -dSCHEMA_PATTERN=OpenBridgeModelerCE.*ecschema.xml">
+    <RequiredRepository>bisschemas</RequiredRepository>
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+        ECSchemas/Domain/OpenBridgeModelerCE.ecschema.xml
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="BridgePhysicalSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/BridgePhysical.ecschema.xml -dSCHEMA_PATTERN=BridgePhysical.ecschema.xml">
+    <RequiredRepository>bisschemas</RequiredRepository>
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+        ECSchemas/Domain/BridgePhysical.ecschema.xml
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="CivilPhysicalSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CivilPhysical.ecschema.xml -dSCHEMA_PATTERN=CivilPhysical.*ecschema.xml">
+    <RequiredRepository>bisschemas</RequiredRepository>
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+        ECSchemas/Domain/CivilPhysical.ecschema.xml
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="RoadSpatialSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RoadSpatial.ecschema.xml -dSCHEMA_PATTERN=RoadSpatial.ecschema.xml">
+    <RequiredRepository>bisschemas</RequiredRepository>
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+        ECSchemas/Domain/RoadSpatial.ecschema.xml
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="BridgeSpatialSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/BridgeSpatial.ecschema.xml -dSCHEMA_PATTERN=BridgeSpatial.ecschema.xml">
+    <RequiredRepository>bisschemas</RequiredRepository>
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+        ECSchemas/Domain/BridgeSpatial.ecschema.xml
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="EarthworkSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Earthwork.ecschema.xml -dSCHEMA_PATTERN=Earthwork.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Earthwork.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="RailNetworkSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RailNetwork.ecschema.xml -dSCHEMA_PATTERN=RailNetwork.ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/RailNetwork.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RoadNetworkSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RoadNetwork.ecschema.xml -dSCHEMA_PATTERN=RoadNetwork.ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/RoadNetwork.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Egress" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Egress.ecschema.xml -dSCHEMA_PATTERN=Egress.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Egress.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="FederatedDocumentStoreSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/FederatedDocumentStore.ecschema.xml -dSCHEMA_PATTERN=FederatedDocumentStore.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/FederatedDocumentStore.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="GeotechnicalExplorationSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/GeotechnicalExploration.ecschema.xml -dSCHEMA_PATTERN=GeotechnicalExploration.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="AecUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/GeotechnicalExploration.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="GeotechnicalInterpretationSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/GeotechnicalInterpretation.ecschema.xml -dSCHEMA_PATTERN=GeotechnicalInterpretation.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="AecUnitsSchema"/>
+        <SubPart PartName="GeotechnicalExplorationSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/GeotechnicalInterpretation.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="GeoModelerSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/GeoModeler.ecschema.xml -dSCHEMA_PATTERN=GeoModeler.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="AecUnitsSchema"/>
+        <SubPart PartName="GeotechnicalInterpretationSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/GeoModeler.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="GridsSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Grids.ecschema.xml -dSCHEMA_PATTERN=Grids.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="AecUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Grids.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="NetworkTopologySchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/NetworkTopology.ecschema.xml -dSCHEMA_PATTERN=NetworkTopology.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/NetworkTopology.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Duplicate part to the one below that does not deliver the Core schemas. -->
+    <Part Name="QuantityTakeoffsAspectsSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/QuantityTakeoffsAspects.ecschema.xml -dSCHEMA_PATTERN=QuantityTakeoffsAspects.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="AecUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/QuantityTakeoffsAspects.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="QuantityTakeoffsAspects" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/QuantityTakeoffsAspects.ecschema.xml -dSCHEMA_PATTERN=QuantityTakeoffsAspects.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="AecUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/QuantityTakeoffsAspects.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="PresentationRulesSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/PresentationRules.ecschema.xml -dSCHEMA_PATTERN=PresentationRules.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/PresentationRules*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ProfilesSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Profiles.ecschema.xml -dSCHEMA_PATTERN=Profiles.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Profiles.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="PlantCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/PlantCustomAttributes.ecschema.xml -dSCHEMA_PATTERN=PlantCustomAttributes.*ecschema.xml"/>
+    <Part Name="ProcessFunctional" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/ProcessFunctional.ecschema.xml -dSCHEMA_PATTERN=ProcessFunctional.*ecschema.xml"/>
+    <Part Name="ProcessPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/ProcessPhysical.ecschema.xml -dSCHEMA_PATTERN=ProcessPhysical.*ecschema.xml"/>
+    <Part Name="ProcessPidGraphical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/ProcessPidGraphical.ecschema.xml -dSCHEMA_PATTERN=ProcessPidGraphical.*ecschema.xml"/>
+    <Part Name="OpenPlantExtensions" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/OpenPlantExtensions.ecschema.xml -dSCHEMA_PATTERN=OpenPlantExtensions.*ecschema.xml"/>
+
+    <Part Name="PlantSchemas">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="PlantCustomAttributes"/>
+        <SubPart PartName="ProcessFunctional"/>
+        <SubPart PartName="ProcessPhysical"/>
+        <SubPart PartName="ProcessPidGraphical"/>
+        <SubPart PartName="OpenPlantExtensions"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+              ECSchemas/Domain/PlantCustomAttributes.ecschema.xml
+              ECSchemas/Domain/ProcessFunctional.ecschema.xml
+              ECSchemas/Domain/ProcessPhysical.ecschema.xml
+              ECSchemas/Domain/ProcessPidGraphical.ecschema.xml
+              ECSchemas/Domain/OpenPlantExtensions.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RebarSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Rebar.ecschema.xml -dSCHEMA_PATTERN=Rebar.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Rebar.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="StructuralPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/StructuralPhysical.ecschema.xml -dSCHEMA_PATTERN=StructuralPhysical.*ecschema.xml"/>  
+    <Part Name="StructuralPhysicalInterop" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/StructuralPhysicalInterop.ecschema.xml -dSCHEMA_PATTERN=StructuralPhysicalInterop.*ecschema.xml"/>
+
+    <Part Name="StructuralPhysicalSchema">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="StructuralPhysical"/>
+        <SubPart PartName="StructuralPhysicalInterop"/>
+        <SubPart PartName="Core"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/StructuralPhysical.ecschema.xml
+                ECSchemas/Domain/StructuralPhysicalInterop.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="FastenersSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Fasteners.ecschema.xml -dSCHEMA_PATTERN=Fasteners.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Fasteners.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ScalableMesh" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/ScalableMesh.ecschema.xml -dSCHEMA_PATTERN=ScalableMesh.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ScalableMesh*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="PointCloud" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/PointCloud.ecschema.xml -dSCHEMA_PATTERN=PointCloud.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/PointCloud*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Raster" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Raster.ecschema.xml -dSCHEMA_PATTERN=Raster.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Raster*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ThreeMx" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/ThreeMx.ecschema.xml -dSCHEMA_PATTERN=ThreeMx.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ThreeMx*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+
+    <Part Name="DataCaptureSchema" WipPartEnable="PhotoPlanner" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/DataCapture.01.00.00.ecschema.xml -dSCHEMA_PATTERN=DataCapture.01.00.00.ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/DataCapture*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Wrap-up part for all of the RealityModeling schemas. -->
+    <Part Name="RealityModeling">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="ScalableMesh"/>
+        <SubPart PartName="PointCloud"/>
+        <SubPart PartName="Raster"/>
+        <SubPart PartName="ThreeMx"/>
+        <SubPart PartName="DataCaptureSchema"/>
+    </Part>
+
+    <Part Name="RoadRailUnitsSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RoadRailUnits.ecschema.xml -dSCHEMA_PATTERN=RoadRailUnits.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/RoadRailUnits.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RoadRailAlignmentSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RoadRailAlignment.ecschema.xml -dSCHEMA_PATTERN=RoadRailAlignment.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="RoadRailUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/RoadRailAlignment.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RoadAttributionsSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RoadAttributions.ecschema.xml -dSCHEMA_PATTERN=RoadAttributions.ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="RoadRailUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/RoadAttributions.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="CorridorModelerSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CorridorModeler.ecschema.xml -dSCHEMA_PATTERN=CorridorModeler.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/CorridorModeler.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="CifCommon" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifCommon.ecschema.xml -dSCHEMA_PATTERN=CifCommon.*ecschema.xml"/>
+    <Part Name="CifUnits" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifUnits.ecschema.xml -dSCHEMA_PATTERN=CifUnits.*ecschema.xml"/>
+    <Part Name="CifGeometricRules" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifGeometricRules.ecschema.xml -dSCHEMA_PATTERN=CifGeometricRules.*ecschema.xml"/>
+    <Part Name="CifQuantityTakeoffs" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifQuantityTakeoffs.ecschema.xml -dSCHEMA_PATTERN=CifQuantityTakeoffs.*ecschema.xml"/>
+    <Part Name="CifRoads" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifRoads.ecschema.xml -dSCHEMA_PATTERN=CifRoads.*ecschema.xml"/>
+    <Part Name="CifBridge" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifBridge.ecschema.xml -dSCHEMA_PATTERN=CifBridge.*ecschema.xml"/>
+    <Part Name="CifRail" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifRail.ecschema.xml -dSCHEMA_PATTERN=CifRail.*ecschema.xml"/>
+    <Part Name="CifSubsurface" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifSubsurface.ecschema.xml -dSCHEMA_PATTERN=CifSubsurface.*ecschema.xml"/>
+    <Part Name="CifSubsurfaceConflictAnalysis" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifSubsurfaceConflictAnalysis.ecschema.xml -dSCHEMA_PATTERN=CifSubsurfaceConflictAnalysis.*ecschema.xml"/>
+    <Part Name="CifHydraulicAnalysis" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifHydraulicAnalysis.ecschema.xml -dSCHEMA_PATTERN=CifHydraulicAnalysis.*ecschema.xml"/>
+    <Part Name="CifHydraulicResults" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CifHydraulicResults.ecschema.xml -dSCHEMA_PATTERN=CifHydraulicResults.*ecschema.xml"/>
+
+    <Part Name="CivilInfrastructureFrameworkBridgeSchemas">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="CifCommon"/>
+        <SubPart PartName="CifUnits"/>
+        <SubPart PartName="CifGeometricRules"/>
+        <SubPart PartName="CifQuantityTakeoffs"/>
+        <SubPart PartName="CifRoads"/>
+        <SubPart PartName="CifBridge"/>
+        <SubPart PartName="CifRail"/>
+        <SubPart PartName="CifSubsurface"/>
+        <SubPart PartName="CifSubsurfaceConflictAnalysis"/>
+        <SubPart PartName="CifHydraulicAnalysis"/>
+        <SubPart PartName="CifHydraulicResults"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/CifCommon.ecschema.xml
+                ECSchemas/Domain/CifUnits.ecschema.xml
+                ECSchemas/Domain/CifGeometricRules.ecschema.xml
+                ECSchemas/Domain/CifQuantityTakeoffs.ecschema.xml
+                ECSchemas/Domain/CifRoads.ecschema.xml
+                ECSchemas/Domain/CifBridge.ecschema.xml
+                ECSchemas/Domain/CifRail.ecschema.xml
+                ECSchemas/Domain/CifSubsurface.ecschema.xml
+                ECSchemas/Domain/CifSubsurfaceConflictAnalysis.ecschema.xml
+                ECSchemas/Domain/CifHydraulicAnalysis.ecschema.xml
+                ECSchemas/Domain/CifHydraulicResults.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RoadRailPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RoadRailPhysical.ecschema.xml -dSCHEMA_PATTERN=RoadRailPhysical.*ecschema.xml"/>
+    <Part Name="RailPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RailPhysical.ecschema.xml -dSCHEMA_PATTERN=RailPhysical.*ecschema.xml"/>
+    <Part Name="RoadPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/RoadPhysical.ecschema.xml -dSCHEMA_PATTERN=RoadPhysical.*ecschema.xml"/>
+    <Part Name="RoadRailPhysicalSchema">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="RoadRailPhysical"/>
+        <SubPart PartName="RailPhysical"/>
+        <SubPart PartName="RoadPhysical"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/RoadRailPhysical.ecschema.xml
+                ECSchemas/Domain/RailPhysical.ecschema.xml
+                ECSchemas/Domain/RoadPhysical.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="CSPhysical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/CSPhysical.ecschema.xml -dSCHEMA_PATTERN=CSPhysical.*ecschema.xml"/>
+
+    <Part Name="ConceptStationConnectorSchemas">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="CSPhysical"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/CSPhysical.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SiteSchema"  BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Site.ecschema.xml -dSCHEMA_PATTERN=Site.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Site.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Simulation4DResultsSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Simulation4DResults.ecschema.xml -dSCHEMA_PATTERN=Simulation4DResults.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Simulation4DResults.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SpatialCompositionSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/SpatialComposition.ecschema.xml -dSCHEMA_PATTERN=SpatialComposition.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="AecUnitsSchema"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/SpatialComposition.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SpatialComposition">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="SpatialCompositionSchema"/>
+    </Part>
+
+    <Part Name="SchemaUpgradeCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/SchemaUpgradeCustomAttributes.01.00.00.ecschema.xml -dSCHEMA_PATTERN=SchemaUpgradeCustomAttributes.*ecschema.xml"/>
+    <Part Name="CoreCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/CoreCustomAttributes.01.00.03.ecschema.xml -dSCHEMA_PATTERN=CoreCustomAttributes.*ecschema.xml"/>
+    <Part Name="BisCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/BisCustomAttributes.01.00.00.ecschema.xml -dSCHEMA_PATTERN=BisCustomAttributes.*ecschema.xml"/>
+    <Part Name="SchemaLocalizationCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/SchemaLocalizationCustomAttributes.01.00.00.ecschema.xml -dSCHEMA_PATTERN=SchemaLocalizationCustomAttributes.*ecschema.xml"/>
+	  <Part Name="Units" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Units.01.00.07.ecschema.xml -dSCHEMA_PATTERN=Units.*ecschema.xml"/>
+    <Part Name="Formats" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Formats.01.00.00.ecschema.xml -dSCHEMA_PATTERN=Formats.*ecschema.xml"/>
+    
+    <Part Name="StandardSchemas">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="SchemaUpgradeCustomAttributes"/>
+        <SubPart PartName="CoreCustomAttributes"/>
+        <SubPart PartName="BisCustomAttributes"/>
+        <SubPart PartName="SchemaLocalizationCustomAttributes"/>
+        <SubPart PartName="Units"/>
+        <SubPart PartName="Formats"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+              ECSchemas/Standard/SchemaUpgradeCustomAttributes*.ecschema.xml
+              ECSchemas/Standard/CoreCustomAttributes*.ecschema.xml
+              ECSchemas/Standard/BisCustomAttributes*.ecschema.xml
+              ECSchemas/Standard/Formats*.ecschema.xml
+              ECSchemas/Standard/SchemaLocalizationCustomAttributes*.ecschema.xml
+              ECSchemas/Standard/Units*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECv3ConverstionSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/ECv3ConversionAttributes.01.00.01.ecschema.xml -dSCHEMA_PATTERN=ECv3ConversionAttributes.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/ECv3ConversionAttributes*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="StructuralAnalysisSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/StructuralAnalysis.ecschema.xml -dSCHEMA_PATTERN=StructuralAnalysis.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/StructuralAnalysis.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="StructuralDesignConcreteSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/StructuralDesignConcrete.ecschema.xml -dSCHEMA_PATTERN=StructuralDesignConcrete.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/StructuralDesignConcrete.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="StructuralMaterialsSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/StructuralMaterials.ecschema.xml -dSCHEMA_PATTERN=StructuralMaterials.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/StructuralMaterials.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TerrainSchema" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Domain/Terrain.ecschema.xml -dSCHEMA_PATTERN=Terrain.*ecschema.xml">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Terrain.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- This part is intended to be a wrap up of all BIS schemas. Used for BIS Schema Validation -->
+    <Part Name="BisSchemas">
+        <RequiredRepository>bisschemas</RequiredRepository>
+        <SubPart PartName="AecUnitsSchema"/>
+        <SubPart PartName="BridgeStructuralPhysical"/>
+        <SubPart PartName="BuildingDataGroupBase"/>
+        <SubPart PartName="BuildingSpatial"/>
+        <!--<SubPart PartName="BuildingSpacePlanning"/>-->
+        <SubPart PartName="BuildingSchemas"/>
+        <SubPart PartName="CivilInfrastructureFrameworkBridgeSchemas"/>
+        <SubPart PartName="ConceptStationConnectorSchemas"/>
+        <SubPart PartName="Construction"/>
+        <SubPart PartName="Core"/>
+        <SubPart PartName="LinearReferencing_100" />
+        <SubPart PartName="ClassificationSystems"/>
+        <SubPart PartName="DistributionSystems"/>
+        <SubPart PartName="DgnV8OpenRoadsDesignerSchema"/>
+        <SubPart PartName="OpenBridgeModelerCESchema"/>
+        <SubPart PartName="BridgePhysicalSchema"/>
+        <SubPart PartName="CivilPhysicalSchema"/>
+        <SubPart PartName="RoadSpatialSchema"/>
+        <SubPart PartName="BridgeSpatialSchema"/>
+        <SubPart PartName="EarthworkSchema"/>
+        <SubPart PartName="RailNetworkSchema"/>
+        <SubPart PartName="RoadNetworkSchema"/>
+        <!--<SubPart PartName="Egress"/>-->
+        <SubPart PartName="FederatedDocumentStoreSchema"/>
+        <SubPart PartName="GridsSchema"/>
+        <SubPart PartName="NetworkTopologySchema"/>
+        <SubPart PartName="QuantityTakeoffsAspects"/>
+        <SubPart PartName="PresentationRulesSchema"/>
+        <SubPart PartName="ProfilesSchema"/>
+        <SubPart PartName="PlantSchemas"/>
+        <SubPart PartName="RebarSchema"/>
+        <SubPart PartName="StructuralPhysicalSchema"/>
+        <SubPart PartName="FastenersSchema"/>
+        <SubPart PartName="RealityModeling"/>
+        <SubPart PartName="RoadRailAlignmentSchema"/>
+        <SubPart PartName="RoadAttributionsSchema"/>
+        <SubPart PartName="CorridorModelerSchema"/>
+        <SubPart PartName="RoadRailPhysicalSchema"/>
+        <SubPart PartName="RoadRailUnitsSchema"/>
+        <SubPart PartName="Simulation4DResultsSchema"/>
+        <!--<SubPart PartName="SiteSchema"/>-->
+        <SubPart PartName="SpatialCompositionSchema"/>
+        <SubPart PartName="StructuralAnalysisSchema"/>
+        <SubPart PartName="StructuralDesignConcreteSchema"/>
+        <SubPart PartName="StructuralMaterialsSchema"/>
+        <SubPart PartName="TerrainSchema"/>
+        <SubPart PartName="ECv3ConverstionSchema"/> <!--Just needed to validate the converted OP schemas ProcessPhysical/ProcessFunctional-->
+
+        <!-- Below are the BisSchemas are currently read-only within this repository. This should shortened as teams move their schemas to only live here. -->
+
+         <!--Delivers "PlantCustomAttributes", "ProcessFunctional", "ProcessPhysical" and "ProcessPidGraphical" -->
+        <!--<SubPart PartName="PlantDomainSchemas"          PartFile="PlantDomain"          Repository="DgnDomains-Plant"/> -->
+
+        <!-- Delivers "StructuralPhysical" -->
+        <!--<SubPart PartName="StructuralDomainPublicAPI"   PartFile="Domains/Structural/StructuralDomains" />-->
+
+        <!-- ECDb Standard Schemas -->
+        <SubPart PartName="PublicAPI"                   PartFile="iModelCore/ECDb/ECDb" />
+    </Part>
+
+    <ProductDirectoryList ListName="AllBisSchemas-Directories">
+        <ProductDirectory Name="Assets" Path="Assets"/>
+        <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="PlantDomainSchemasDir" Path="Assets/ECSchemas/Domain"/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="StructuralDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="ElectricalDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="BuildingDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="FormsDomainIncludes" Deliver="false"/>
+    </ProductDirectoryList>
+
+</BuildContext>

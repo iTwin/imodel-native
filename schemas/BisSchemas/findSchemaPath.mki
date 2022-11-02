@@ -1,0 +1,131 @@
+#-------------------------------------------------------------------------------------------------+
+#
+#  $Source: findSchemaPath.mki $
+#
+#  $Copyright (c) Bentley Systems, Incorporated. All rights reserved.  $
+#  $See LICENSE.md in the project root for license terms and full copyright notice.  $
+#
+#-------------------------------------------------------------------------------------------------+
+# Inputs:
+#       SYMLINK_OUT - It is the absolute path of symlinked file at out. 
+#                     Example: SYMLINK_OUT=$(BuildContext)ECSchemas/Domain/AecUnits.ecschema.xml
+#
+#       SCHEMA_PATTERN - It is the pattern of schema for which path is required. 
+#                     Example: SCHEMA_PATTERN=AecUnits.*ecschema.xml
+#
+#       WIP_SCHEMAS - Set this environment variable, when you need to consume WIP version of schema's.
+#                    This is a semi-colon delimited list of schema names. To include all WIP schemas 
+#                    use the character '*'. 
+#                     Example: set WIP_SCHEMAS=BisCore;Generic;etc.
+#   Output:
+#       schemaPath - Absolute path of schema file.
+#-------------------------------------------------------------------------------------------------+
+
+%if !defined(SYMLINK_OUT)
+    %error You must define SYMLINK_OUT to indicate the symlink output.
+%endif
+
+%if !defined(SCHEMA_PATTERN)
+    %error You must define SCHEMA_PATTERN to indicate the latest or any specific version.
+%endif
+
+BisSchemasDir = $(SrcRoot)BisSchemas/
+
+%if defined(winNT)
+
+  searchStr = $(BBPYTHONCMD) -c "print ('$(SCHEMA_PATTERN)'.split('.')[0] if '*' in '$(SCHEMA_PATTERN)' else '$(SCHEMA_PATTERN)')"
+
+  data = $(BBPYTHONCMD) -c "import json; inventoryJson = json.load(open(r'$(BisSchemasDir)SchemaInventory.json'));\
+       print([sd for sd in inventoryJson['$(SCHEMA_PATTERN)'.split('.')[0]]]);
+
+  status = $(BBPYTHONCMD) -c "dic=$[@readstdout $(data)]; print('true' if True in [obj['released'] for obj in dic if 'released' in obj and 'path' in obj] else 'false')"
+
+  postfix = $(BBPYTHONCMD) -c "dic=$[@readstdout $(data)];\
+       print ([(obj['path']) for obj in dic if ('path' in obj and '$[@readstdout $(searchStr)]' in obj['path'] and str(obj['released']).lower() == '$[@readstdout $(status)]')])"
+
+  relativePath = $(BBPYTHONCMD) -c "import os;\
+       print ('pathNotFound' if not $[@readstdout $(postfix)] else os.path.join(os.path.dirname($[@readstdout $(postfix)][0]), '$(SCHEMA_PATTERN)'))"
+
+  normalizedPath = $(BBPYTHONCMD) -c "import os; normalizedPath = r'$(BisSchemasDir)$[@readstdout $(relativePath)]';\
+                normalizedPath = os.path.normpath(normalizedPath);\
+                print (normalizedPath);"
+
+  SCHEMA_MATCHER = $[@readstdout $(normalizedPath)]
+
+%else
+  searchStr = $(BBPYTHONCMD) -c "import os; print('$(SCHEMA_PATTERN)'.split('.')[0] if '*' in '$(SCHEMA_PATTERN)' else '$(SCHEMA_PATTERN)');"
+
+  data = $(BBPYTHONCMD) -c "import os; import json; inventoryJson = json.load(open(r'$(BisSchemasDir)SchemaInventory.json'));\
+       print([json.loads(json.dumps(sd).replace('\\\\\\', '\/')) for sd in inventoryJson['$(SCHEMA_PATTERN)'.split('.')[0]]]);"
+
+  status = $(BBPYTHONCMD) -c "dic=$[@readstdout "$(data)"]; print('true' if True in [obj['released'] for obj in dic if 'released' in obj and 'path' in obj] else 'false')"
+
+  postfix = $(BBPYTHONCMD) -c "dic=$[@readstdout "$(data)"];\
+       print ([(obj['path']) for obj in dic if ('path' in obj and '$[@readstdout "$(searchStr)"]' in obj['path'] and str(obj['released']).lower() == '$[@readstdout "$(status)"]')])"
+
+  relativePath = $(BBPYTHONCMD) -c "import os; postfixPath = $[@readstdout "$(postfix)"];\
+              print ('pathNotFound' if not postfixPath else os.path.join(os.path.dirname(postfixPath[0]), '$(SCHEMA_PATTERN)'))"
+
+  normalizedPath = $(BBPYTHONCMD) -c "import os; normalizedPath = r'$(BisSchemasDir)$[@readstdout "$(relativePath)"]';\
+                normalizedPath = os.path.normpath(normalizedPath);\
+                print(normalizedPath.replace('\//', '\/'));"
+
+  SCHEMA_MATCHER = $[@readstdout "$(normalizedPath)"]
+
+%endif
+
+releasedDir = $[@dir $[@subst *., ., $(SCHEMA_MATCHER)]]
+getLatestReleasedVersion = $(BBPYTHONCMD) -c "import glob; items = glob.glob(r'$(SCHEMA_MATCHER)'); items.sort(reverse=True); print (items[0] if items else 'notFound')"
+
+getWIPVersion = $[@subst Released, \/, $(getLatestReleasedVersion)]
+
+%if defined(winNT)
+    wipVersion = $[@readstdout $(getWIPVersion)]
+%else
+    wipVersion = $[@readstdout "$(getWIPVersion)"]
+%endif
+
+useWIPVersion = 0
+
+%message "SCHEMA_MATCHER = $(SCHEMA_MATCHER)"
+%message "WIP_SCHEMAS = $(WIP_SCHEMAS)"
+
+%if defined(WIP_SCHEMAS)
+  %if "*" == $(WIP_SCHEMAS)
+    useWIPVersion = "1"
+  %else
+    useWIPVersionCmd =  $(BBPYTHONCMD) -c "import os; schemaFullName = os.path.basename(r'$(wipVersion)');\
+                      schemaName = schemaFullName.split('.')[0];\
+                      print(1 if schemaName in [schema for schema in '$(WIP_SCHEMAS)'.split(';')] else 0)"
+
+    %if defined(winNT)
+        useWIPVersion = $[@readstdout $(useWIPVersionCmd)]
+    %else
+        useWIPVersion = $[@readstdout "$(useWIPVersionCmd)"]
+    %endif
+
+  %endif
+%endif
+
+%if "1" == $(useWIPVersion)
+  schemaPath = $(wipVersion)
+%elif exists ($(releasedDir))
+  %if defined(winNT)
+      schemaPath = $[@readstdout $(getLatestReleasedVersion)]
+  %else
+      schemaPath = $[@readstdout "$(getLatestReleasedVersion)"]
+  %endif
+
+  %if $(schemaPath) == "notFound"
+    %message "Moving to WIP version because latest released schema version not found for SCHEMA_MATCHER $(SCHEMA_MATCHER)"
+    schemaPath = $(wipVersion)
+  %endif
+%else
+  schemaPath = $(wipVersion)
+%endif
+
+%message "Schema Path: $(schemaPath)"
+
+# Symlinked output file
+$(SYMLINK_OUT) : $(schemaPath)
+    ~linkfile "$@=$<"

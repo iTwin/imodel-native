@@ -1,0 +1,24 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+%ifndef LogFilesDir
+    %error Define LogFilesDir as the directory that contains the logfiles to analyze
+%endif
+
+# On MacOSARM64, only run GTests if the target processor matches the build machine's processor.
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64"
+    %if " " == $[@findstring Apple, $[@readstdout "sysctl -n machdep.cpu.brand_string"]]
+        BENTLEY_NO_RUN_GTEST=1
+    %endif
+%endif
+
+%ifndef BENTLEY_NO_RUN_GTEST
+    always:
+        $(BBPYTHONCMD) $(_makeFilePath)CheckLogfilesForFailures.py $(LogFilesDir) 1
+%endif
+

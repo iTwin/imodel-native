@@ -1,0 +1,20 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)imodel02/iModelCore/GeomLibs/common/inc/geomlibsdev.mki
+
+genDir          = $(OutGeomLibs)PublishedAPI
+
+stampFileName   = $(genDir).stamp
+
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+cleanopt = --clean
+%else
+cleanopt =
+%endif
+
+always:
+    PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(cleanopt)
+    ~linkdir "$(BuildContext)Delivery/PublishedAPI/=$(genDir)"

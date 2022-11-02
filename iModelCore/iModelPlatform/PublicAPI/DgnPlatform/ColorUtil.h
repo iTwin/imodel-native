@@ -1,0 +1,37 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
+#pragma once
+
+#include <DgnPlatform/DgnPlatform.h>
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct HsvColorDef
+{
+    int32_t  hue;           /* red=0, yellow, green, cyan, blue, magenta */
+    int32_t  saturation;    /* 0=white, 100=no white, tints */
+    int32_t  value;         /* 0=black, 100=no black, shades */
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ColorUtil
+{
+    DGNPLATFORM_EXPORT static RgbFactor ToRgbFactor(ColorDef);
+    DGNPLATFORM_EXPORT static ColorDef FromRgbFactor(RgbFactor);
+    DGNPLATFORM_EXPORT static FPoint3d ToFloatRgb(ColorDef);
+    DGNPLATFORM_EXPORT static ColorDef FromFloatRgb(FPoint3d);
+    DGNPLATFORM_EXPORT static HsvColorDef ToHSV(ColorDef);
+    DGNPLATFORM_EXPORT static ColorDef FromHSV(HsvColorDef);
+    DGNPLATFORM_EXPORT static ColorDef AdjustForContrast(ColorDef color, ColorDef againstColor, ColorDef bgColor);
+    DGNPLATFORM_EXPORT static void AdjustValueAndSaturation(ColorDefP colors, size_t nColors, double valueAdjustment, double saturationAdjustment, bool valueAndSaturationFixed, double hueValue, bool hueFixed);
+    DGNPLATFORM_EXPORT static void Interpolate(ColorDefP interpolatedColors, size_t nInterpolatedColors, ColorDef startColor, ColorDef endColor);
+};
+
+END_BENTLEY_DGN_NAMESPACE

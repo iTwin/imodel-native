@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "Crashpad",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "Crashpad",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "Google Inc., Intel Corporation, Opera Software ASA, Vewd Software AS, LG Electronics, Inc., MIPS Technologies, Inc., Mark Mentovai <mark@chromium.org>, Robert Sesek <rsesek@chromium.org>, Scott Graham <scottmg@chromium.org>, Joshua Peraza <jperaza@chromium.org>",
+        "copyright": "Copyright 2015 The Crashpad Authors. All rights reserved.",
+        "description": "Crashpad is a crash-reporting system.",
+        "homepage": "https://crashpad.chromium.org/",
+        "licenseUrl": "https://chromium.googlesource.com/crashpad/crashpad/+/refs/heads/master/LICENSE",
+        "name": "Crashpad",
+        "SPDX-ID": "Apache-2.0",
+        "version": "c05bd0574b6838c93dffb679fe6ec1036719350c"
+        }
+    ]
+}

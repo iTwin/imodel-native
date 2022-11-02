@@ -1,0 +1,161 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+SourceDir = $(_MakeFilePath)vendor/source/
+
+baseAppName = BeIcu4c
+
+%if defined(BUILD_USING_VS2012)
+    BUILD_TOOLSET="VS2012"
+    OVERRIDE_DEFAULT_TOOLSET=VS2012
+    VC_Version = _VC11
+%endif
+
+# Tell MSVC to interpret files as UTF-8 by default (for Unicode character constants).
+%if (" " != $[@findstring VS, $(BUILD_TOOLSET)])
+    CCompOpts + -source-charset:utf-8
+%endif
+
+appName = $(baseAppName)$(VC_Version)
+
+CCompPDBName = $(appName)
+o = $(BuildDir)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+BuildToolsBuildDir = $(OutBuildDir)BeIcu4cDataTools/
+BuildToolsLibName = BeIcu4cDataToolsLib
+BuildToolsLibPath = $(BuildToolsBuildDir)$(libprefix)$(BuildToolsLibName)$(libext)
+
+DataFileBaseName = icudt64l
+DataFileName = $(DataFileBaseName).dat
+DataBuildDir = $(OutBuildDir)BeIcu4cData/$(DataFileBaseName)/
+DataBuildFilePath = $(DataBuildDir)$(DataFileName)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# This is defined like this by default.
+nameToDefine = U_ATTRIBUTE_DEPRECATED=
+%include cdefapnd.mki
+
+# Avoid namespace usings in header files.
+nameToDefine = U_USING_ICU_NAMESPACE=0
+%include cdefapnd.mki
+
+# Don't pull in all UTF headers all the time; just when needed.
+nameToDefine = U_NO_DEFAULT_INCLUDE_UTF_HEADERS=1
+%include cdefapnd.mki
+
+# Convert our TARGET_PLATFORM to their U_PLATFORM.
+%if $(TARGET_PLATFORM) == "iOS"
+    nameToDefine = U_PLATFORM=U_PF_IPHONE
+    %include cdefapnd.mki
+
+    # Fixes a compile problem specific to iOSArm
+    %if $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM"
+        dirToSearch = $(SrcRoot)libsrc/icu4c/vendor/source/tools/tzcode/
+        %include cincapnd.mki
+    %endif
+%elif $(TARGET_PLATFORM) == "Android"
+    nameToDefine = U_PLATFORM=U_PF_ANDROID
+    %include cdefapnd.mki
+
+    # Android does not contain langinfo-compatible data at all, and provides completely different localization tools.
+    # I think it's safe to skip this for our purposes, so pretend we don't have langinfo for Android.
+    # http://stackoverflow.com/questions/12816267/how-to-resolve-langinfo-h-not-found-error-when-building-libiconv-on-osx-for-an
+    nameToDefine = U_HAVE_NL_LANGINFO_CODESET=0
+    %include cdefapnd.mki
+%elif $(TARGET_PLATFORM) == "Linux"
+    nameToDefine = U_PLATFORM=U_PF_LINUX
+    %include cdefapnd.mki
+%elif $(TARGET_PLATFORM) == "MacOS"
+    nameToDefine = U_PLATFORM=U_PF_DARWIN
+    %include cdefapnd.mki
+%elif $(TARGET_PLATFORM) == "Windows"
+    nameToDefine = U_PLATFORM=U_PF_WINDOWS
+    %include cdefapnd.mki
+%elif $(TARGET_PLATFORM) == "WinRT"
+    nameToDefine = U_PLATFORM=U_PF_WINDOWS
+    %include cdefapnd.mki
+    
+    # _tzset is not available; hopefully we can just avoid its side effects.
+    nameToDefine = U_TZSET=\/\/
+    %include cdefapnd.mki
+    
+    # Environment is not available, but I don't think we want the library to check it to find data files regardless.
+    nameToDefine = ICU_NO_USER_DATA_OVERRIDE
+    %include cdefapnd.mki
+
+    nameToDefine = U_PLATFORM_HAS_WINUWP_API
+    %include cdefapnd.mki
+
+    # Need this so that MAP_IMPLEMENTATION -> MAP_NONE, so that umapfile.cpp doesn't try to call things like CreateFileW, CreateFileMappingW, or MapViewOfFile.
+    nameToDefine = UCONFIG_NO_FILE_IO
+    %include cdefapnd.mki
+%else
+    %error Unknown TARGET_PLATFORM '$(TARGET_PLATFORM)'; cannot map to an ICU U_PLATFORM value.
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# ICU has some debug code that doesn't compile; prevent our MKI files downstream from defining DEBUG.
+DONT_DEFINE_DEBUG = 1
+
+# ICU manually manages WIN32_LEAN_AND_MEAN.
+NO_LEAN_AND_MEAN = 1
+
+# ICU function MBCSAddFromUnicode needs to be able to cast to a smaller type with loss of data, and we don't want to modify third-party code to be explicit.
+VCRuntimeCheckOption =
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Prefer to add include search paths vs. modifying third-party code.
+
+dirToSearch = $(_makefilepath)vendor/source/
+%include cincapnd.mki
+
+dirToSearch = $(_makefilepath)vendor/source/common/
+%include cincapnd.mki
+
+dirToSearch = $(_makefilepath)vendor/source/i18n/
+%include cincapnd.mki
+
+dirToSearch = $(_makefilepath)vendor/source/io/
+%include cincapnd.mki
+
+dirToSearch = $(_makefilepath)vendor/source/layoutex/
+%include cincapnd.mki
+
+dirToSearch = $(_makefilepath)vendor/source/tools/toolutil/
+%include cincapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# We have to choose U_STATIC_IMPLEMENTATION or U_COMBINED_IMPLEMENTATION to build one monolithic library.
+# However, even though either of those overrides the others, we still need to define all the others due to #ifdef sanity checks in the code files.
+
+%if !defined(ICU4C_SKIP_EXPORT_DEFINES)
+    %if defined (CREATE_STATIC_LIBRARIES)
+        nameToDefine = U_STATIC_IMPLEMENTATION
+        %include cdefapnd.mki
+    %else
+        nameToDefine = U_COMBINED_IMPLEMENTATION
+        %include cdefapnd.mki
+    %endif
+
+    nameToDefine = U_COMMON_IMPLEMENTATION
+    %include cdefapnd.mki
+
+    nameToDefine = U_I18N_IMPLEMENTATION
+    %include cdefapnd.mki
+
+    nameToDefine = U_LAYOUT_IMPLEMENTATION
+    %include cdefapnd.mki
+
+    nameToDefine = U_LAYOUTEX_IMPLEMENTATION
+    %include cdefapnd.mki
+
+    nameToDefine = U_IO_IMPLEMENTATION
+    %include cdefapnd.mki
+
+    nameToDefine = U_TOOLUTIL_IMPLEMENTATION
+    %include cdefapnd.mki
+%endif

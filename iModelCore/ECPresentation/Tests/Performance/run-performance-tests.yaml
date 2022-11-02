@@ -1,0 +1,124 @@
+#---------------------------------------------------------------------------------------------^M
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.^M
+#  See LICENSE.md in the repository root for full copyright notice.^M
+#---------------------------------------------------------------------------------------------^M
+name: ecpresentation-native-library-performance-$(Date:yyyyMMdd)
+
+trigger: none
+
+pr: none
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+    - OpenSourceFork
+  always: true
+
+stages:
+
+  - stage: build
+    displayName: Build
+    jobs:
+      - job:
+        displayName: Pull and build for Windows
+
+        pool:
+          name: iModelTechCI
+          demands:
+          - Agent.OS -equals Windows_NT
+          - Cmd
+
+        variables:
+          PY_EXE: python
+          BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
+          BB_OUT_ROOT: $(Build.BinariesDirectory)
+          BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Performance --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
+
+        steps:
+        - template: ../../../../build/templates/prebuild.yml
+
+        - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
+          displayName: Pull
+          env:
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+        - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) build --tmrbuild --noprompt
+          displayName: Build
+          env:
+            SIGNING_TOKEN_VALUE: $(SIGNING_TOKEN_VALUE)
+
+        - publish: $(BB_OUT_ROOT)/Winx64/Product/ECPresentation-GTest-Performance
+          artifact: 'TestRunner'
+
+  - stage: run
+    displayName: Run
+    jobs:
+      - job:
+        displayName: Run on Windows
+        timeoutInMinutes: 180
+
+        pool:
+          name: iModelTech Performance Tests
+          demands:
+          - Agent.OS -equals Windows_NT
+          - SSD_MODEL -equals Samsung 850 EVO
+          - Cmd
+
+        variables:
+          - group: Performance Testing Database User
+
+        steps:
+          - download: current
+            displayName: Download test runner
+            artifact: TestRunner
+
+          # The test datasets are stored in a universal package: https://bentleycs.visualstudio.com/iModelTechnologies/_packaging?_a=package&feed=universal-test&package=presentation-performance-test-datasets&protocolType=UPack.
+          # We always take the latest version of the package, so uploading a new version with different datasets basically changes what we use for the tests.
+          # To create a new package version:
+          # 1. Put datasets into {some_folder}
+          # 2. cd {some_folder}
+          # 3. az artifacts universal publish --organization "https://bentleycs.visualstudio.com/" --feed "universal-test" --name "presentation-performance-test-datasets" --version {version_number} --path .
+          - task: DownloadPackage@1
+            displayName: Download test datasets
+            inputs:
+              packageType: 'upack'
+              feed: 'universal-test'
+              definition: 'presentation-performance-test-datasets'
+              version: '*'
+              extract: true
+              downloadPath: '$(Pipeline.Workspace)\TestRunner\Assets\Documents\Datasets\'
+
+          - script: '$(Pipeline.Workspace)\TestRunner\ECPresentationTest-Performance.exe --timeout=-1 --gtest_filter=HierarchyPerformanceAnalysis*:ContentPerformanceAnalysis*:MultiProcessPerformanceAnalysis*'
+            displayName: Run
+            workingDirectory: $(Pipeline.Workspace)\TestRunner
+            timeoutInMinutes: 180
+
+          - publish: $(Pipeline.Workspace)\TestRunner\run\Output\Reports
+            artifact: 'PerformanceReports'
+            continueOnError: true
+
+          - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
+            displayName: 'Upload report data to DB: Content'
+            inputs:
+              AppId: ECPresentation Native Library
+              CsvPath: $(Pipeline.Workspace)\TestRunner\run\Output\Reports\ContentPerformanceReport.export.csv
+              BuildId: $(Build.BuildId)
+              DbName: imodeljsperfdata.database.windows.net
+              DbUser: $(DB_USER)
+              DbPassword: $(DB_PW)
+            timeoutInMinutes: 1
+            continueOnError: true
+
+          - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
+            displayName: 'Upload report data to DB: Hierarchies'
+            inputs:
+              AppId: ECPresentation Native Library
+              CsvPath: $(Pipeline.Workspace)\TestRunner\run\Output\Reports\HierarchiesPerformanceReport.export.csv
+              BuildId: $(Build.BuildId)
+              DbName: imodeljsperfdata.database.windows.net
+              DbUser: $(DB_USER)
+              DbPassword: $(DB_PW)
+            timeoutInMinutes: 1
+            continueOnError: true

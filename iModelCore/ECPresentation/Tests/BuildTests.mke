@@ -1,0 +1,27 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+BUILD_WITH_C17=1
+ENABLE_VARIABLE_HIDING_WARNINGS=1
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+vendorInclude = $(BuildContext)VendorAPI/
+cIncs + -I$(vendorInclude)
+
+# Compile and Link the unit tests
+BEGTEST_NAME    = $(TestDir)ECPresentation
+BEGTEST_INPUT   = $(_MakeFilePath)$(TestDir)/
+BEGTEST_OUTPUT  = $(OutputRootDir)build/ECPresentation/UnitTests/
+BEGTEST_IGNORE  = $(_MakeFilePath)ignore_list.txt
+o = $(PartBuildDir)$(BEGTEST_NAME)/
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

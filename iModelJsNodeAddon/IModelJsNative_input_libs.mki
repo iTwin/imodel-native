@@ -1,0 +1,97 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%ifdef __unix
+
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeoCoord.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinCsmapStatic.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeCurl.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinFolly.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeIcu4c.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJpeg.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJsonCpp.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeLibJpegTurbo.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeLibxml2.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinBentley.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeom.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeomSerialization.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBePng.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinSQLite.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinSQLiteEC.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinXml.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeZlib.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPlatform.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinECObjects.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinECPresentation.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libfreetype2.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)liblzma.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libsnappy.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinUnits.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeOpenSSL.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwin_google_re2.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPugixml.a
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPSBRepGeometry.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinBRepCore.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libpskernel.a
+%endif
+
+%if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinVisualization.a
+%endif
+
+%if defined (USING_BREAKPAD)
+%if $(USING_BREAKPAD) == 1
+    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad_client.a
+    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad.a
+    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libdisasm.a
+%endif
+%endif
+
+%if defined(BENTLEYCONFIG_CRASHPAD)
+    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libCrashpadClient.a
+%endif
+
+%else
+
+DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext)
+DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwin_google_re2$(stlibext)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinECPresentation$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinUnits$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinGeoCoord$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(libext)
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinPSBRepGeometry$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBRepCore$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)pskernel$(libext)
+%endif
+
+%if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinVisualization$(libext)
+%endif
+
+%if defined (USING_BREAKPAD)
+%if $(USING_BREAKPAD) == 1
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)libbreakpad.lib
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)libbreakpad_client.lib
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)libdisasm.lib
+%endif
+%endif
+
+%if defined(BENTLEYCONFIG_CRASHPAD)
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)CrashpadClient$(stlibext)
+%endif
+
+%endif

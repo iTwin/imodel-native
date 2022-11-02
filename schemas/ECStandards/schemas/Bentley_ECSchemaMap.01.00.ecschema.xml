@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_ECSchemaMap" nameSpacePrefix="Bentley_ECSchemaMap" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="PropertyMap" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourcePropertyName" typeName="string" />
+        <ECProperty propertyName="TargetPropertyName" typeName="string" />
+        <ECProperty propertyName="PropertyType" typeName="string" />
+        <ECProperty propertyName="UnitConversionRequired" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="ClassMap" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceClassName" typeName="string" />
+        <ECProperty propertyName="TargetClassName" typeName="string" />
+        <ECProperty propertyName="ClassType" typeName="string" />
+        <ECArrayProperty propertyName="PropertyMaps" typeName="PropertyMap" minOccurs="1" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="SchemaMap" isDomainClass="True">
+        <ECProperty propertyName="SourceSchemaNamespacePrefix" typeName="string" />
+        <ECProperty propertyName="TargetSchemaNamespacePrefix" typeName="string" />
+        <ECArrayProperty propertyName="ClassMaps" typeName="ClassMap" minOccurs="1" maxOccurs="unbounded" isStruct="True" />
+        <ECProperty propertyName="SourceSchemaFullName" typeName="string" />
+        <ECProperty propertyName="TargetSchemaFullName" typeName="string" />
+    </ECClass>
+</ECSchema>

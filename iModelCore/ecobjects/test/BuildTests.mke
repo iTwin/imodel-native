@@ -1,0 +1,31 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+DISABLE_COMPILER_ANALYZE_FOR_UNIT_TESTS=1
+BUILD_WITH_C17=1
+
+# *** NEEDS WORK: Must turn off clang warnings until we can clean up these tests
+NO_DEFAULT_CLANG_WARNINGS   = 1
+
+%include mdl.mki
+%include $(_MakeFilePath)../mki/ECObjects.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_NAME    = $(TestDir)ECObjects
+BEGTEST_INPUT   = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE  = $(baseDir)ignore_list.txt
+BEGTEST_OUTPUT  = $(OutputRootDir)build/ECObjects/UnitTests/
+o               = $(PartBuildDir)$(BEGTEST_NAME)/
+
+%include $(sharedmki)DetectAndCompileUnitTests.mki
+
+# Deliver
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

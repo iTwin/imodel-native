@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="google_re2">
+        <SubPart PartName="google_re2_static_lib" />
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="re2" />
+        </Bindings>
+    </Part>
+
+    <Part Name="google_re2_static_lib" BentleyBuildMakeFile="google_re2.mke">
+        <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwin_google_re2$(stlibext)</Libs>
+            <!-- N.B. This library is forced to build statically, and chooses to embed symbols directly in the LIB file (vs. a PDB). -->
+            <VendorNotices>Delivery/google_re2-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+</BuildContext>

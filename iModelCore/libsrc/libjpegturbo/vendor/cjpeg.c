@@ -36,7 +36,7 @@
 #endif
 #include "cdjpeg.h"             /* Common decls for cjpeg/djpeg applications */
 #include "jversion.h"           /* for version message */
-#include "jconfigint.h"
+#include "win/jconfigint.h.in"
 
 #ifdef USE_CCOMMAND             /* command-line reader for Macintosh */
 #ifdef __MWERKS__

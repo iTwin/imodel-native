@@ -1,0 +1,32 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+PublicApiIncludes + -I$(GUnitTestDir)
+PublicApiIncludes + -I$(GUnitTestDir)include
+
+%if !defined(GUNITTEST_OBJ_DEST)
+    GUNITTEST_OBJ_DEST = $(o)
+%endif
+
+%mkdir $(GUNITTEST_OBJ_DEST)
+
+#--------------------------------------------------------------------------------------
+# Compile the test framework itself, including the main if requested.
+#--------------------------------------------------------------------------------------
+$(GUNITTEST_OBJ_DEST)gtest-all$(oext) : $(GUnitTestDir)src/gtest-all.cc $(GUnitTestDir)include/gtest/gtest-assertion-result.h $(GUnitTestDir)include/gtest/gtest.h $(GUnitTestDir)include/gtest/gtest-spi.h
+
+%if !defined(GTEST_MAIN_IS_SUPPLIED)
+$(GUNITTEST_OBJ_DEST)gtest_main$(oext) : $(GUnitTestDir)src/gtest_main.cc $(GUnitTestDir)include/gtest/gtest.h
+%endif
+
+#--------------------------------------------------------------------------------------
+# Unit test objects.
+#--------------------------------------------------------------------------------------
+LOCAL_GUNITTEST_OBJS = $(GUNITTEST_OBJ_DEST)gtest-all$(oext) \
+                       $(GUNITTEST_OBJS)
+
+%if !defined(GTEST_MAIN_IS_SUPPLIED)
+    LOCAL_GUNITTEST_OBJS + $(GUNITTEST_OBJ_DEST)gtest_main$(oext)
+%endif

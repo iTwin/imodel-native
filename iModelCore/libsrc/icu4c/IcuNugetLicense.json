@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "IcuNuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "IcuNuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "",
+        "copyright": "Unicode, Inc.",
+        "description": "International Components for Unicode. ICU is a mature, widely used set of C/C++ and Java libraries providing Unicode and Globalization support for software applications.",
+        "homepage": "http://site.icu-project.org",
+        "licenseUrl": "http://www.unicode.org/copyright.html#License",
+        "name": "ICU",
+        "SPDX-ID": "ICU",
+        "version": "64.2"
+        }
+    ]
+}

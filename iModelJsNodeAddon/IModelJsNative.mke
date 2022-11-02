@@ -1,0 +1,199 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+CLANG_ALLOW_UNDEFINED=1
+BUILD_WITH_C17=1
+%include mdl.mki
+
+appName = imodeljs-addon
+
+baseDir = $(_MakeFilePath)
+presentationDir = $(baseDir)presentation/
+
+cDefs + -DBUILDING_NODE_EXTENSION
+
+%if $(TARGET_PLATFORM) == "MacOS"
+  cDefs + -D_DARWIN_USE_64_BIT_INODE=1
+%endif
+
+%if defined (BENTLEYCONFIG_NO_VISUALIZATION)
+  cDefs + -DBENTLEYCONFIG_NO_VISUALIZATION=1
+%endif
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+    cDefs + -DBENTLEYCONFIG_PARASOLID=1
+%endif
+
+o = $(OutputRootDir)Build/imodeljs-addon/
+always:
+    !~@mkdir $(o)
+
+# vvvv Hack for breakpad vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+# Assumes you have <RequiredRepository>Thirdparty-breakpad_54fa71efbe50</RequiredRepository>
+
+USING_BREAKPAD = 0
+
+%if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64")
+    USING_BREAKPAD = 1
+%endif
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#
+# Burn the package version # into the code
+#
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+$(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.package.version.h.template $(baseDir)/package_version.txt
+    $(msg)
+    $(copyCmd) "$<" $@
+    $(BBPYTHONCMD) $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
+    ~time
+
+cIncs + -I$(o)
+
+%if ($(USING_BREAKPAD) == 1)
+    cDefs + -DUSING_GOOGLE_BREAKPAD
+
+    # breakpad's own .h files include each other relative to the "client" directory.
+    # For example, a file that is located in breakpad/client/windows/handler will
+    # include another header file like this:
+    # #include "client/windows/crash_generation/crash_generation_client.h"
+    # Now, "client" is a subdirectory of "breakpad".
+    # So, we have to add the breakpad directory itself to the include path
+    cIncs + -I$(BuildContext)VendorAPI/breakpad
+
+%endif
+
+# Add this so we don't have to modify vendor code.
+%if defined(BENTLEYCONFIG_CRASHPAD)
+    dirToSearch = $(BuildContext)VendorAPI/crashpad
+    %include cincapnd.mki
+%endif
+
+# DLM_NAME and CCompPDBName must be the same.
+CCompPDBName    =% $(appName)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)IModelJsNative$(oext) : $(baseDir)IModelJsNative.cpp $(baseDir)IModelJsNative.h $(baseDir)SignalTestUtility.h $(o)imodeljs-nodeaddonapi.package.version.h ${MultiCompileDepends}
+
+$(o)JsLogger$(oext) : $(baseDir)JsLogger.cpp $(baseDir)IModelJsNative.h $(baseDir)JsLogger.h ${MultiCompileDepends}
+
+$(o)JsCloudSqlite$(oext) : $(baseDir)JsCloudSqlite.cpp ${MultiCompileDepends}
+
+$(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
+
+$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+$(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+$(o)InlineGeometryParts$(oext) : $(baseDir)InlineGeometryParts.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+$(o)GeoServicesInterop$(oext) : $(baseDir)GeoServicesInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+$(o)JsInteropExportGraphics$(oext) : $(baseDir)JsInteropExportGraphics.cpp ${MultiCompileDepends}
+
+$(o)SignalTestUtility$(oext) : $(baseDir)SignalTestUtility.cpp $(baseDir)SignalTestUtility.h ${MultiCompileDepends}
+
+$(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends}
+
+$(o)CrashReportingCommon$(oext) : $(baseDir)CrashReportingCommon.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+$(o)ECPresentationUtils$(oext) : $(presentationDir)ECPresentationUtils.cpp $(presentationDir)ECPresentationUtils.h ${MultiCompileDepends}
+
+$(o)DgnDbECInstanceChangeEventSource$(oext) : $(presentationDir)DgnDbECInstanceChangeEventSource.cpp $(presentationDir)DgnDbECInstanceChangeEventSource.h ${MultiCompileDepends}
+
+$(o)UpdateRecordsHandler$(oext) : $(presentationDir)UpdateRecordsHandler.cpp $(presentationDir)UpdateRecordsHandler.h ${MultiCompileDepends}
+
+$(o)ECPresentationSerializer$(oext) : $(presentationDir)ECPresentationSerializer.cpp $(presentationDir)ECPresentationSerializer.h ${MultiCompileDepends}
+
+$(o)UiStateProvider$(oext) : $(presentationDir)UiStateProvider.cpp $(presentationDir)UiStateProvider.h ${MultiCompileDepends}
+
+$(o)DgnDbWorker$(oext) : $(baseDir)DgnDbWorker.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
+
+$(o)TextureImageWorker$(oext) : $(baseDir)TextureImageWorker.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
+
+$(o)SchemaUtil$(oext) : $(baseDir)SchemaUtil.cpp $(baseDir)SchemaUtil.h ${MultiCompileDepends}
+
+%if (($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") && (USING_BREAKPAD == 1))
+
+    $(o)CrashReportingWindows$(oext) : $(baseDir)CrashReportingWindows.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+%elif defined(BENTLEYCONFIG_CRASHPAD)
+
+    $(o)CrashReportingLinuxCrashpad$(oext) : $(baseDir)CrashReportingLinuxCrashpad.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+%endif
+
+%include MultiCppCompileGo.mki
+
+%if defined(BUILD_FOR_IMODELJS_MOBILE)
+always:
+    ~linkdir "$(BuildContext)Delivery/$(appName)-objs=${o}"
+    ~linkfile "$(BuildContext)Delivery/IModelJsNative_input_libs.mki=$(_MakeFilePath)IModelJsNative_input_libs.mki"
+
+    %return
+%endif
+
+#----------------------------------------------------------------------
+#   Link the shared library
+#----------------------------------------------------------------------
+
+# This is how node-gyp on Linux links an addon:
+# g++ -shared -pthread -rdynamic -m64  -Wl,-soname=nodeprime.node -o Release/obj.target/nodeprime.node   Release/obj.target/nodeprime/../prime4lib/prime_sieve.o Release/obj.target/nodeprime/../prime4lib/exchange.o Release/obj.target/nodeprime/addon.o -Wl,--end-group
+
+# On MacOS:
+# c++ -shared -stdlib=libc++ -Wl,-no_pie -Wl,-search_paths_first -mmacosx-version-min=10.7 -arch x86_64 -L./Release -install_name @rpath/prime.dylib -stdlib=libc++  -o "Release/prime.dylib" ./Release/obj.target/libprime/../prime4lib/prime_sieve.o ./Release/obj.target/libprime/../prime4lib/exchange.o ./Release/obj.target/libprime/primeapi.o
+
+# DLM_NAME and CCompPDBName must be the same.
+DLM_NAME            =% $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOENTRY         = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%include $(baseDir)IModelJsNative_input_libs.mki
+
+%ifdef __unix
+    THIN_ARCHIVE_NAME = libiModelJsNodeAddon.inputs.a
+
+    %include $(sharedMki)rollUpSubPartsLibsThin.mki
+
+    DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
+
+    %ifdef __apple
+        # OSX Specific library
+        LINKER_LIBRARIES  + -framework CoreFoundation
+
+        # macOS 10.6+, iOS 2.0+, Mac Catalyst 13.0+
+        LINKER_LIBRARIES  + -framework CFNetwork
+
+        # Future Deprecation - macOS 10.0 - 12.0, Mac Catalyst 13.0 - 15.0
+        LINKER_LIBRARIES  + -framework IOKit
+
+        # macOS 10.15+
+        LINKER_LIBRARIES  + -framework DriverKit
+        # This is a hack, Mac is not set up with the various context definitions like linux
+        BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
+    %endif
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
+
+%else
+    LINKER_LIBRARIES  + $(ContextSubpartsLibs)iTwinNapi.lib
+
+    %include $(sharedMki)linkLibrary.mki
+
+%endif
+
+#----------------------------------------------------------------------
+#   Deliver the shared library using the .node extension
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+    $(LinkFirstDepToFirstTarget)

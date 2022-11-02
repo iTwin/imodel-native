@@ -1,0 +1,14 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+conversionDataSource  = $(_MakeFilePath)../../Units/tests/ConversionData/
+
+# Wire in conversion data
+always:
+    ~linkmultifiles "$(ContextDeliveryDir)ConversionData=$(conversionDataSource)*.csv"
+
+# Expose seed data as assets needed by ECObjects unit tests
+BEGTEST_ASSETS     + $(ContextDeliveryDir)ConversionData/

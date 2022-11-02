@@ -1,0 +1,49 @@
+// test schema file
+
+include "include_test1.fbs";
+
+namespace MyGame.Example;
+
+enum Color:byte (bit_flags) { Red = 0, Green, Blue = 3, }
+
+union Any { Monster }  // TODO: add more elements
+
+struct Test { a:short; b:byte; }
+
+struct Vec3 (force_align: 16) {
+  x:float;
+  y:float;
+  z:float;
+  test1:double;
+  test2:Color;
+  test3:Test;
+}
+
+table Stat {
+  id:string;
+  val:long;
+}
+
+table Monster {
+  pos:Vec3 (id: 0);
+  hp:short = 100 (id: 2);
+  mana:short = 150 (id: 1);
+  name:string (id: 3, required);
+  color:Color = Blue (id: 6);
+  inventory:[ubyte] (id: 5);
+  friendly:bool = false (deprecated, priority: 1, id: 4);
+  /// an example documentation comment: this will end up in the generated code
+  /// multiline too
+  testarrayoftables:[Monster] (id: 11);
+  testarrayofstring:[string] (id: 10);
+  enemy:Monster (id:12);
+  test:Any (id: 8);
+  test4:[Test] (id: 9);
+  testnestedflatbuffer:[ubyte] (id:13, nested_flatbuffer: "Monster");
+  testempty:Stat (id:14);
+}
+
+root_type Monster;
+
+file_identifier "MONS";
+file_extension "mon";

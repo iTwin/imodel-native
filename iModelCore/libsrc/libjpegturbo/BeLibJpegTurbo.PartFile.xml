@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+   
+    <Part Name="BeLibJpegTurbo" BentleyBuildMakeFile="BeLibJpegTurbo.mke">
+        <RequiredRepository>Bsitools-Nasm_2.10</RequiredRepository>
+        <Bindings>
+            <VendorAPI Domain="libjpeg-turbo"/>
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeLibJpegTurbo$(stlibext)</Libs>
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeLibJpegTurbo$(stlibdebugext)</Libs>
+            <VendorNotices>Delivery/jpeg-turbo-license.txt</VendorNotices>
+            <VendorNotices IfNotPresent="Continue">Delivery/nasm-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <NuGetProduct Name="JpegTurboNuget" LicenseFile="JpegTurboNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="BeLibJpegTurbo" LibType="Static"/>
+    </NuGetProduct>
+
+</BuildContext>

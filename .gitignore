@@ -1,0 +1,49 @@
+# python
+*.pyc
+
+# javascript
+**/node_modules
+
+# android
+.gradle/
+gradle.properties
+local.properties
+.project
+
+# clangd
+.cache
+compile_commands.json
+compile_commands.sqlite3
+compile_commands.sqlite3-journal
+
+# vs
+ipch
+*.vcxproj.user
+.vs
+
+# vscode
+.vscode
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+
+# local backup files
+*.orig
+*.bak
+
+# macOS
+.DS_Store
+
+# xcode
+*.xcuserstate
+*.xcuserdatad
+xcuserdata
+iModelJsApp.xcconfig
+
+# emacs
+*~
+
+# misc logs
+debug.log
+
+# C# temporary files
+obj/

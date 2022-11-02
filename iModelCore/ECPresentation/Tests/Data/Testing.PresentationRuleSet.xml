@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresentationRuleSet RuleSetId="CustomNodeTesting" VersionMajor="1" VersionMinor="3" SupportedSchemas="ECDbMeta">
+
+  <!-- Root Node rules -->
+  <RootNodeRule>
+    <CustomNode Type='NODE_TYPE_RootTestNode' Label='RootNode' Description='Test for Root Node' ImageId='Image://RootCustomNode' />
+  </RootNodeRule>
+
+  <RootNodeRule>
+    <CustomNode Type='NODE_TYPE_ClassTestNode' Label='ClassNode' Description='Test for Class Node' ImageId='Image://ClassCustomNode' />
+  </RootNodeRule>
+
+
+  <!-- Child Node rules -->
+  <ChildNodeRule Condition='NOT ParentNode.Type="NODE_TYPE_BottomTestNode" AND NOT ParentNode.Type="NODE_TYPE_EmptyTestNode"' Priority="4">
+    <CustomNode Type='NODE_TYPE_EmptyTestNode' Label='EmptyNode' Description='Test for Empty Node' ImageId='Image://EmptyCustomNode' HideIfNoChildren='true'/>
+  </ChildNodeRule>
+
+  <ChildNodeRule Condition='ParentNode.Type="NODE_TYPE_RootTestNode"'>
+    <CustomNode Type='NODE_TYPE_ChildTestNode' Label='ChildNode' Description='Test for Child Node' ImageId='Image://ChildCustomNode' />
+  </ChildNodeRule>
+
+  <ChildNodeRule Condition='ParentNode.Type="NODE_TYPE_RootTestNode" OR ParentNode.Type="NODE_TYPE_ClassTestNode"'>
+    <CustomNode Type='NODE_TYPE_ElementTestNode' Label='ElementNode' Description='Test for Element Node' ImageId='Image://ElementCustomNode' />
+  </ChildNodeRule>
+
+  <ChildNodeRule Condition='NOT ParentNode.Type="NODE_TYPE_BottomTestNode" AND NOT ParentNode.Type="NODE_TYPE_EmptyTestNode"'>
+    <CustomNode Type='NODE_TYPE_BottomTestNode' Label='BottomNode' Description='Test for Bottom Node' ImageId='Image://BottomCustomNode' />
+  </ChildNodeRule>
+
+</PresentationRuleSet>

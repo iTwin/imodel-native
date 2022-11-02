@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd" >
+
+    <Part Name="StandardSchemas" BentleyBuildMakeFile="StandardSchemas.prewire.mke">
+        <!-- Native Schema de-serialization expects to find these standard schemas in a subdirectory of the location of the ECObjects dll.  When setting up
+        your ProductDirectoryList, the ProductDirectory specification for 'ECSchemas' should be at the same level as 'ECObjectsNativeAssemblies' -->
+        <Bindings>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/*.xml
+            </Files>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/General/*.xml
+            </Files>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/LibraryUnits/*.xml
+            </Files>
+            <Files Required="false" SubPartDirectory="mki" >StandardSchemas.delivery.mki</Files>
+        </Bindings>
+    </Part>
+
+    <!-- DgnDb has its own way of delivery 'assets' so needs a separate part.  Use this on DgnDb0601 and later branches.  Otherwise, use the standard part -->
+    <Part Name="StandardSchemasBim" BentleyBuildMakeFile="StandardSchemas.prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/*.*.*.ecschema.xml
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/General/*.xml
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/LibraryUnits/*.xml
+            </Files>
+            <Files Required="false" SubPartDirectory="mki" >StandardSchemas.delivery.mki</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="V3ConversionSchemas" BentleyBuildMakeFile="V3ConversionSchemas.prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/V3Conversion" SubPartDirectory="ECSchemas/V3Conversion">
+                ECSchemas/V3Conversion/*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="V3_1ValidationSchemas" BentleyBuildMakeFile="V3_1ValidationSchemas.prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/xsd" SubPartDirectory="ECSchemas/xsd">
+                ECSchemas/xsd/ECSchemaXML3.*.xsd
+                ECSchemas/xsd/convert-enumerations.xsl
+            </Files>
+        </Bindings>
+    </Part>
+</BuildContext>

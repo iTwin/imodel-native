@@ -27,7 +27,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jsimd.h"
-#include "jconfigint.h"
+#include "jconfigint.h.in"
 #include <limits.h>
 
 /*

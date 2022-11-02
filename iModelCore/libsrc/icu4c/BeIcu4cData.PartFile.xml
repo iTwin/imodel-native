@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd"
+    >
+    <Part Name="BeIcu4cData_Lib" BentleyBuildMakeFile="BeIcu4cData_Lib.mke"/>
+    
+    <Part Name="BeIcu4cData_Apps" BentleyBuildMakeFile="BeIcu4cData_Apps.mke">
+        <SubPart PartName="BeIcu4cData_Lib"/>
+    </Part>
+
+    <Part Name="BeIcu4cData" BentleyBuildMakeFile="BeIcu4cData.mke">
+        <SubPart PartName="BeIcu4cData_Apps"/>
+    </Part>
+</BuildContext>

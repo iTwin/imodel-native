@@ -1,0 +1,21 @@
+{
+  "name": "@bentley/imodeljs-${NODE_OS}-${NODE_CPU}",
+  "os": ["${NODE_OS}"],
+  "cpu":  ["${NODE_CPU}"],
+  "license": "SEE LICENSE IN LICENSE.md",
+  "version": "${PACKAGE_VERSION}",
+  "keywords": [
+    "Bentley",
+    "iModel",
+    "iTwin"
+  ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/imodeljs/imodeljs"
+  },
+  "description": "iModel.js native module",
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  }
+}

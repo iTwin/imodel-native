@@ -23,7 +23,7 @@
 
 #include "cmyk.h"
 #include "cdjpeg.h"             /* Common decls for cjpeg/djpeg applications */
-#include "jconfigint.h"
+#include "jconfigint.h.in"
 
 #ifdef BMP_SUPPORTED
 

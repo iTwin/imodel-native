@@ -475,6 +475,13 @@ int wrap_cmp( xmlNodePtr x, xmlNodePtr y );
  *									*
  ************************************************************************/
 
+
+// BENTLEY_CHANGES -- need an additional header on some platforms
+#if defined (__clang__) && (defined (__APPLE__) || defined(__linux))
+#include <float.h>
+#endif
+
+
 double xmlXPathNAN = 0.0;
 double xmlXPathPINF = 0.0;
 double xmlXPathNINF = 0.0;

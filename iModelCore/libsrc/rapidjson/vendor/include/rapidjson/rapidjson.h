@@ -432,10 +432,15 @@ RAPIDJSON_NAMESPACE_END
     \note Parsing errors are handled and can be customized by the
           \ref RAPIDJSON_ERRORS APIs.
 */
+#ifndef NO_BENTLEY_CHANGES
+#include <Bentley/BeAssert.h>
+#define RAPIDJSON_ASSERT(x) BeAssert(x)
+#else
 #ifndef RAPIDJSON_ASSERT
 #include <cassert>
 #define RAPIDJSON_ASSERT(x) assert(x)
 #endif // RAPIDJSON_ASSERT
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // RAPIDJSON_STATIC_ASSERT

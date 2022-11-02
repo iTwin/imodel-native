@@ -1,0 +1,25 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+SrciModelPlatform                  = $(_MakeFilePath)
+iModelPlatformPublicAPISrc         = $(SrciModelPlatform)PublicAPI/
+
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------
+#   Wire in my own public header files.
+#----------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)PublicAPI/DgnPlatform=$(iModelPlatformPublicAPISrc)DgnPlatform"
+
+#----------------------------------------------------------------------------------------
+#   Wire in my own private header files (for unit tests).
+#----------------------------------------------------------------------------------------
+iModelPlatformInternalApiSrc = $(SrciModelPlatform)PrivateApi/DgnPlatformInternal/
+
+always:
+    ~linkdir "$(BuildContext)PrivateAPI/DgnPlatformInternal=$(iModelPlatformInternalApiSrc)"
+
+$(BuildContext)ECSchemas/Dgn/ChangedElements.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ChangedElements.01.00.00.ecschema.xml
+   $(LinkFirstDepToFirstTarget)

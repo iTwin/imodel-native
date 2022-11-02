@@ -1,0 +1,38 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%if defined (__Units_mki__)
+    %return
+%endif
+
+__Units_mki__ = 1
+
+unitsSrc =% $(_CurrentFilePath)../
+OutUnits = $(OutBuildDir)Units/
+buildDir = $(OutUnits)
+
+%if !defined (programName)
+    programName = $(ASSEMBLY_NAME)
+%endif
+
+o                           = $(PartBuildDir)
+
+always:
+    !~@mkdir $(o)
+
+#-----------------------------------------------------------------------
+#       Source directories
+#-----------------------------------------------------------------------
+unitsPublicAPISrc       = $(unitsSrc)PublicAPI/Units/
+
+#-----------------------------------------------------------------------
+# Configure Google Test macros
+#-----------------------------------------------------------------------
+#The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
+GUnitTestDir            = $(BuildContext)SubParts/google_gtest/
+
+#-----------------------------------------------------------------------
+# Configure includes
+#-----------------------------------------------------------------------
+PublicApiIncludes       + -I$(unitsPublicAPISrc)

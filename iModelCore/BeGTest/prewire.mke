@@ -1,0 +1,13 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+srcDir = $(_MakeFilePath)
+
+always:
+    ~linkdir "$(BuildContext)PublicAPI/BeGTest=$(srcDir)PublicAPI/BeGTest"
+    ~linkdir "$(BuildContext)Delivery/BeGTest/Android=$(srcDir)Android"
+    ~linkdir "$(BuildContext)Delivery/BeGTest/gtest=$(srcDir)gtest"
+    ~linkdir "$(BuildContext)Delivery/BeGTest/iOS=$(srcDir)iOS"

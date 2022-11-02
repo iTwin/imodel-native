@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bentleybuild/PartFile.xsd">
+
+    <!-- The delivers the "Napi/napi.h" source files. -->
+    <Part Name="VendorAPI" BentleyBuildMakeFile="prewire-api.mke">
+        <SubPart PartName="BeJsonCpp"  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <Bindings>
+            <VendorAPI Domain="Napi"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="napi-lib" BentleyBuildMakeFile="node-addon-lib.mke">
+        <SubPart PartName="VendorAPI"/>
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)iTwinNapi$(stlibext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!--
+        NOTE: The Following two Parts should ONLY be included directly from a Product, NEVER from another Part. That's because they bind
+        two different files that have the same name (which is tricky and generally not a good idea). If they are included as a SubPart of
+        another Part, they pollute the build context and can cause binding errors if they are somehow both referenced from the same PartFile.
+
+        The choice of which to use must be made at the PRODUCT level only!!!
+    -->
+
+    <!-- SEE NOTE ABOVE! Products that *do* need to run Node/Javascript (i.e. they are a "Node addon") should include this as a SubPart. Otherwise, you must instead choose "node-stub". -->
+    <Part Name="napi-dll-win" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="napi-lib" />
+        <Bindings>
+            <Assemblies>Delivery/Node/iTwinNapi.dll</Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- SEE NOTE ABOVE! Products that do *not* need to run Node/Javascript should include this as a SubPart. Otherwise, you must instead choose "node-dll-win". -->
+    <Part Name="napi-stub">
+        <SubPart PartName="napi-lib"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)iTwinNapi$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+</BuildContext>

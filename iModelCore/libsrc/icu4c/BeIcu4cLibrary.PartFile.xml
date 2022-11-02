@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+    
+    <!--
+        TRICKY - to support LKGs and products that mix static vs. dynamic,
+        shared bindings (e.g. API, notices, etc.) must always be treated as
+        one LibType or the other. This prevents collisions when linking static
+        bindings over dynamic. While the files are actually the same, BB
+        doesn't know this, and will fail.
+     -->
+    
+    <Part Name="__Notices" BentleyBuildMakeFile="beicu4c-notices.mke" ExcludeLibType="Dynamic">
+        <Bindings>
+            <VendorNotices>Delivery/icu-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="__StaticDataFiles" BentleyBuildMakeFile="StaticDataFiles.mke" ExcludeLibType="Dynamic">
+        <Bindings> 
+            <Files ProductDirectoryName="Assets">Delivery/icudt64l.dat</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="__VendorApi" BentleyBuildMakeFile="BeIcu4cVendorApi.mke" ExcludeLibType="Dynamic">
+        <Bindings>
+            <VendorAPI Domain="icu4c"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="__Library" BentleyBuildMakeFile="BeIcu4cLibrary.mke" ApiNumber="B02">
+        <Bindings>
+            <Assemblies IfNotPresent="Continue">Delivery/$(shlibprefix)BeIcu4c$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)BeIcu4c$(libext)</Libs>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)BeIcu4c$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="BeIcu4cLibrary">
+        <SubPart PartName="__Notices" LibType="Static"/>
+        <SubPart PartName="__StaticDataFiles" LibType="Static"/>
+        <SubPart PartName="__VendorApi" LibType="Static"/>
+        <SubPart PartName="__Library"/>
+    </Part>
+
+    <Part Name="BeIcu4cLibraryDynamic" ExcludePlatforms="Android*,iOS*,Linux*,MacOS*">
+        <SubPart PartName="BeIcu4cLibrary" LibType="Dynamic"/>
+    </Part>
+    
+    <Part Name="BeIcu4cLibraryStatic">
+        <SubPart PartName="BeIcu4cLibrary" LibType="Static"/>
+    </Part>
+
+    <NuGetProduct Name="IcuNuget" LicenseFile="IcuNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="BeIcu4cLibraryDynamic"/>
+        <SubPart PartName="BeIcu4cLibraryStatic"/>
+    </NuGetProduct>
+    
+  <Part Name="BeIcu4cLibrary_VS2012" BentleyBuildMakeFile="BeIcu4cLibrary.mke" BentleyBuildMakeOptions="+dBUILD_USING_VS2012=1">
+    <SubPart PartName="StaticDataFiles" LibType="Static"/>
+    <Bindings>
+      <VendorAPI Domain="icu4c" />
+      <Libs>Delivery/$(libprefix)BeIcu4c_VC11$(libext)</Libs>
+      <Assemblies>Delivery/$(shlibprefix)BeIcu4c_VC11$(shlibext)</Assemblies>
+    </Bindings>
+  </Part>
+</BuildContext>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="StartupCompany_Supplemental_ECDbTest" alias="sbc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="StartupCompany" version="02.00.00" alias="stco"/>
+    <ECCustomAttributes>
+        <SupplementalSchema xmlns="CoreCustomAttributes.01.00.00">
+            <PrimarySchemaReference>
+                <SchemaName>StartupCompany</SchemaName>
+                <MajorVersion>2</MajorVersion>
+                <WriteVersion>0</WriteVersion>
+                <MinorVersion>0</MinorVersion>
+            </PrimarySchemaReference>
+            <Precedence>200</Precedence>
+            <Purpose>ECDbTest</Purpose>
+        </SupplementalSchema>
+    </ECCustomAttributes>
+    <ECEntityClass typeName="AAA" modifier="None">
+        <ECCustomAttributes>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="AAFoo" modifier="None">
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassWithPrimitiveArrayProperties" modifier="None">
+    </ECEntityClass>
+    <ECEntityClass typeName="Employee" modifier="None">
+        <ECStructProperty propertyName="Address" typeName="stco:Location" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Furniture" modifier="None">
+        <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="LikesToShare2" modifier="None">
+        <ECProperty propertyName="Conflicted" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECStructClass typeName="Location" modifier="None">
+        <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code" readOnly="false">
+            <ECCustomAttributes>
+                <Localizable xmlns="CoreCustomAttributes.01.00.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECStructClass>
+    <ECEntityClass typeName="Project" description="Project" modifier="None">
+        <ECProperty propertyName="InProgress" typeName="boolean" displayLabel="In Progress" readOnly="false"/>
+        <ECProperty propertyName="TeamSize" typeName="int" displayLabel="Team Size" readOnly="false"/>
+    </ECEntityClass>
+</ECSchema>

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // ECPresentation Library                                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="ECPresentation">
+        <SubPart PartName="ECPresentation-PublicAPI" />
+        <SubPart PartName="ECPresentation-Library" />
+        <SubPart PartName="PresentationRulesSchema" PartFile="schemas\BisSchemas\BisSchemas"/>
+    </Part>
+
+    <Part Name="ECPresentation-PublicAPI" BentleyBuildMakeFile="Prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ECPresentation" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ECPresentation-Library" BentleyBuildMakeFile="ECPresentation.mke">
+        <SubPart PartName="ECPresentation-PublicAPI" />
+        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
+        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="ECDb" PartFile="iModelCore/ECDb/ECDb" />
+        <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwinECPresentation$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iTwinECPresentation$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Documentation                                                          // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="Docs/Prewire.mke">
+        <SubPart PartName="Docs-CodeSamples" />
+        <SubPart PartName="Docs-BuildCodeSamples" />
+        <Bindings>
+            <Directory SourceName="Delivery/Docs/Pages" SubPartDirectory="Dox/Pages/ECPresentation"/>
+        </Bindings>
+    </Part>
+
+    <!-- ============================================================================ -->
+    <!-- Unit Tests                                                                   -->
+    <!-- ============================================================================ -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="ECPresentation" />
+        <Bindings>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/ECPresentation">Delivery/UnitTests/ECPresentationTest.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/ECPresentation">Delivery/UnitTests/TestConnectionCache.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/ECPresentation">Delivery/UnitTests/TestRuleSetLocater.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/ECPresentation">Delivery/UnitTests/TestECInstanceChangeEventsSource.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/ECPresentation">Delivery/UnitTests/TestUserSettings.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/ECPresentation">Delivery/UnitTests/IssueReporter.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/ECPresentation">Delivery/UnitTests/PresentationRulesetTest.h</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECPresentation" SubPartDirectory="UnitTests/ECPresentation">Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="Documents/ECPresentationTestData" SourceName="Delivery/UnitTests/ECPresentationTestData" />
+            <Directory ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="Documents/Rulesets" SourceName="Delivery/UnitTests/ECPresentationTestData/PerformanceAnalysis/Rulesets" />
+            <Directory ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="SupplementalRulesets" SourceName="Delivery/UnitTests/ECPresentationTestData/SupplementalRulesets" />
+            <Files Required="false" ProductDirectoryName="UnitTests-Assets" SubPartDirectory="ECPresentationJsonSchema">Delivery/ExpectedNavNodes.jsd</Files>
+        </Bindings>
+    </Part>
+    <Part Name="TestHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestHelpers">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/TestHelpers" SourceName="Delivery/UnitTests/Objects/TestHelpers"/>
+        </Bindings>
+    </Part>
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="TestHelpers" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/NonPub" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished" />
+    </Part>
+    <Product Name="ECPresentation-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests" />
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest" />
+    </Product>
+
+    <!-- Performance -->
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+      <SubPart PartName="TestHelpers" />
+      <SubPart PartName="PrewireForUnitTests" />
+      <SubPart PartName="ECPresentation-PublicAPI" />
+      <Bindings>
+        <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/Perf" SourceName="Delivery/UnitTests/Objects/Performance"/>
+      </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Tests-Performance">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Performance" />
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest" />
+    </Product>
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest-Performance -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests-Performance" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECPresentation-Tests-Performance"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECPresentationTest-Performance/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECPresentationTest-Performance/Assets" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Gtest-Performance">
+        <SubPart PartName="__ECPresentation-Gtest-Performance-Dynamic" />
+        <SubPart PartName="__ECPresentation-Gtest-Performance-Static" />
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+    <Part Name="__ECPresentation-Gtest-Performance-Dynamic" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="Gtest-Performance" LibType="Dynamic" />
+    </Part>
+    <Part Name="__ECPresentation-Gtest-Performance-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
+        <SubPart PartName="Gtest-Performance" LibType="Static" />
+    </Part>
+
+    <Part Name="iOSXCTest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation-Performance -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests-Performance -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECPresentation-Tests-Performance"/>
+        <SubPart PartName="iOSXCTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECPresentation-Performance/Project" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-iOSXCTest-Performance">
+        <SubPart PartName="iOSXCTest-Performance" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <!-- Stress -->
+    <Part Name="UnitTests-Stress" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Stress">
+        <SubPart PartName="TestHelpers" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="ECPresentation-PublicAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/Stress" SourceName="Delivery/UnitTests/Objects/Stress"/>
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Tests-Stress">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Stress" />
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest" />
+    </Product>
+    <Part Name="Gtest-Stress" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest-Stress -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests-Stress" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECPresentation-Tests-Stress"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECPresentationTest-Stress/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECPresentationTest-Stress/Assets" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Gtest-Stress">
+        <SubPart PartName="__ECPresentation-Gtest-Stress-Dynamic" />
+        <SubPart PartName="__ECPresentation-Gtest-Stress-Static" />
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+    <Part Name="__ECPresentation-Gtest-Stress-Dynamic" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="Gtest-Stress" LibType="Dynamic" />
+    </Part>
+    <Part Name="__ECPresentation-Gtest-Stress-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
+        <SubPart PartName="Gtest-Stress" LibType="Static" />
+    </Part>
+
+    <!-- Memory leak testing -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="ECPresentation-Gtest" />
+    </Part>
+
+    <!-- Desktop -->
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests TEST_SHORT_NAME=ECP" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECPresentationTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECPresentationTest/Assets" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECPresentation-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECPresentationTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Android -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_SHORT_NAME=ECPresTst -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-AndroidJUnit">
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECPresentation-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECPresentation-AndroidJUnit"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/ECPresentation-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+    <!-- iOS -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECPresentation/Project" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-iOSXCTest">
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECPresentation-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECPresentation-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/ECPresentation-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+    <!-- UWP -->
+    <Part Name="UwpTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests" OnlyPlatforms="WinRT*" ApiNumber="M02">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="UwpTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/ECPresentationUwpTest"/>
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+    <Part Name="RunUwpTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke" BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECPresentation-UwpTest" OnlyPlatforms="WinRT*">
+        <SubPart PartName="UwpTest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubProduct ProductName="ECPresentation-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/ECPresentation-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

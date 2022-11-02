@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<PresentationRuleSet RuleSetId="Items" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+    <!-- Selection scope: Any other (including Element) -->
+    <ContentRule OnlyIfNotHandled='true'>
+        <SelectedNodeInstances />
+    </ContentRule>
+</PresentationRuleSet>

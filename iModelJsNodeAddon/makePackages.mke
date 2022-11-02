@@ -1,0 +1,26 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+ProductDir = $(OutputRootDir)Product/
+o = $(OutputRootDir)imodeljsnodeaddon_pkgs/
+baseDir = $(_MakeFilePath)
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) != "x64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "LinuxX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSX64" && $(TARGET_PROCESSOR_ARCHITECTURE) != "MacOSARM64"
+    %error iModelJsNodeAddon is not available for this platform ($(TARGET_PROCESSOR_ARCHITECTURE))
+%endif
+
+# NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+    %return
+%endif
+
+always:
+    |-- Making package imodeljs-$(NodeOS)-$(NodeCPU) --
+    -@$(rmdirRecursiveCmd) $(o)
+    $(BBPYTHONCMD) $(_MakeFilePath)makePackages.py $(ProductDir) $(o) $(baseDir)package_version.txt $(baseDir) $(TARGET_PROCESSOR_ARCHITECTURE)

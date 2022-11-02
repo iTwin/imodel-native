@@ -14,7 +14,7 @@
  * progressive decoder (jdphuff.c).  No other modules need to see these.
  */
 
-#include "jconfigint.h"
+#include "jconfigint.h.in"
 
 
 /* Derived data constructed for each Huffman table */

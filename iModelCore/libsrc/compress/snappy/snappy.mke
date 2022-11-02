@@ -1,0 +1,50 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: snappy/snappy.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# Export/make visible all functions in JsonCpp
+GCC_DEFAULT_VISIBILITY=default
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+VendorApi_snappy = $(baseDir)../VendorAPI/snappy
+
+cIncs + -I$(VendorApi_snappy)
+
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+appName             = snappy
+CCompPDBName        = $(appName)
+o                   = $(OutputRootDir)build/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+# disable checking of assignment to smaller data types.
+# VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
+%if !defined(IS_VERACODE_BUILD)
+    VCRuntimeCheckOption = -RTCsu
+%endif
+
+MultiCompileDepends     = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)snappy$(oext)       : $(baseDir)snappy.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+LIB_NAME                = $(appName)
+LIB_DEST                = $(o)
+LIB_TMP_DIR             = $(o)
+LIB_OBJS                = $(MultiCompileObjectList)
+LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+
+%include creatlib.mki
+
+$(BuildContext)Delivery/snappy-license.txt : $(_MakeFilePath)snappy-notice.txt
+    $(LinkFirstDepToFirstTarget)

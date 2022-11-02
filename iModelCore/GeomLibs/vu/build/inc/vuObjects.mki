@@ -1,0 +1,38 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+# Include this file in your .mke file to append to vuObjects, the complete list of the vu library objects
+
+vuObjects + $(OBJ_DIR)vu$(oext)
+vuObjects + $(OBJ_DIR)vucoord$(oext)
+vuObjects + $(OBJ_DIR)vumem$(oext)
+vuObjects + $(OBJ_DIR)vusubset$(oext)
+vuObjects + $(OBJ_DIR)vuarray$(oext)
+vuObjects + $(OBJ_DIR)vumod$(oext)
+vuObjects + $(OBJ_DIR)vumod2$(oext)
+vuObjects + $(OBJ_DIR)vuconvex$(oext)
+vuObjects + $(OBJ_DIR)vuaddedges$(oext)
+vuObjects + $(OBJ_DIR)vuunion$(oext)
+vuObjects + $(OBJ_DIR)vuprint$(oext)
+vuObjects + $(OBJ_DIR)vumerge$(oext)
+vuObjects + $(OBJ_DIR)vumerge2$(oext)
+vuObjects + $(OBJ_DIR)vufilter$(oext)
+vuObjects + $(OBJ_DIR)vutriang$(oext)
+vuObjects + $(OBJ_DIR)vureg$(oext)
+vuObjects + $(OBJ_DIR)vustack$(oext)
+vuObjects + $(OBJ_DIR)vuexcise$(oext)
+vuObjects + $(OBJ_DIR)vucluster$(oext)
+vuObjects + $(OBJ_DIR)vuperiodicconnect$(oext)
+vuObjects + $(OBJ_DIR)vugrid$(oext)
+vuObjects + $(OBJ_DIR)pbfvu$(oext)
+vuObjects + $(OBJ_DIR)vumemfuncs$(oext)
+vuObjects + $(OBJ_DIR)vudangler$(oext)
+vuObjects + $(OBJ_DIR)VuMultiClip$(oext)
+vuObjects + $(OBJ_DIR)vumaskops$(oext)
+
+#vuObjects + $(OBJ_DIR)vumeshsv$(oext)
+#vuObjects + $(OBJ_DIR)vumod3$(oext)
+#vuObjects + $(OBJ_DIR)vuoffset$(oext)
+#vuObjects + $(OBJ_DIR)vupoly$(oext)

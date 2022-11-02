@@ -1,0 +1,38 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+NO_DEFAULT_CLANG_WARNINGS=1
+
+DISABLE_COMPILER_ANALYZE_FOR_UNIT_TESTS=1
+BUILD_WITH_C17=1
+
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+tempInclude = $(OutputRootDir)build/iModelPlatform/UnitTests/include/
+cIncs + -I$(tempInclude)
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)iModelPlatform
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+BEGTEST_OUTPUT=$(OutputRootDir)build/iModelPlatform/UnitTests/
+o = $(PartBuildDir)
+
+dirToSearch = $(OutputRootDir)BuildContexts/iModelPlatform/VendorAPI
+%include cincapnd.mki
+
+dirToSearch = $(baseDir)../../PrivateApi/
+%include cincapnd.mki
+
+%include $(sharedmki)DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

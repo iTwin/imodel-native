@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Unit_Attributes" nameSpacePrefix="units_attribs" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.08" prefix="besc" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.01" prefix="beca" />
+    <ECCustomAttributes>
+        <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <Hidden>True</Hidden>
+        </DisplayOptions>
+    </ECCustomAttributes>
+    <ECClass typeName="Dimension_Attributes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="DimensionName" typeName="string" />
+        <ECProperty propertyName="DisplayName" typeName="string"  >
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.01" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ShortLabel" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.01" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DimensionalDescription" typeName="string" />
+        <ECProperty propertyName="DimensionalDerivation" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DisplayUnitSpecification" isStruct="True" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="DisplayFormatString" typeName="string" description="This string follows the format of the format string used by Double.ToString (string format)" />
+        <ECProperty propertyName="DisplayFormatKey" typeName="string" description="The UnitSpecification key of the group of properties this DisplayUnitSpecification is to be applied to.  It may be prefixed with the full schema name to restrict it to a perticular schema" />
+        <ECProperty propertyName="DisplayUnitName" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DisplayUnitSpecifications" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="DisplayUnitSpecificationList" typeName="DisplayUnitSpecification" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>	
+    <!-- Used to identify a schema with unit system defaults  -->
+    <ECClass typeName="IsUnitSystemSchema" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="KindOfQuantity_Attributes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="DisplayName" typeName="string" >
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.01" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ShortLabel" typeName="string">
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.01" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="Dimension" typeName="string" />
+        <ECProperty propertyName="DimensionDisplayName" typeName="string" />
+        <ECProperty propertyName="DimensionalDescription" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Mixed_UnitSystem" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="SI_UnitSystem" isDomainClass="False" isCustomAttributeClass="True" />
+    <ECClass typeName="Unit_Attributes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Dimension" typeName="string" />
+        <ECProperty propertyName="UnitSystem" typeName="string" />
+        <ECProperty propertyName="Label" typeName="string" >
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.01" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ShortLabel" typeName="string" >
+            <ECCustomAttributes>
+                <Localizable xmlns="EditorCustomAttributes.01.01" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ConversionType" typeName="string" />
+        <ECProperty propertyName="BaseUnit" typeName="string" />
+        <ECProperty propertyName="ConversionFactor" typeName="double" />
+        <ECProperty propertyName="ConversionOffset" typeName="double" />
+    </ECClass>
+    <ECClass typeName="UnitSpecification" isStruct="True" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="DimensionName" typeName="string" />
+        <ECProperty propertyName="KindOfQuantityName" typeName="string" />
+        <ECProperty propertyName="UnitName" typeName="string" />
+        <ECArrayProperty propertyName="AllowableUnits" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="UnitSpecifications" isDomainClass="False" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="UnitSpecificationList" typeName="UnitSpecification" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="US_UnitSystem" isDomainClass="False" isCustomAttributeClass="True" />
+</ECSchema>

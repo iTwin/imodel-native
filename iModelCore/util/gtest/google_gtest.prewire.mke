@@ -1,0 +1,9 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+always:
+    ~linkdir "$(BuildContext)VendorAPI/gtest=$(_MakeFilePath)include/gtest"
+    ~linkdir "$(BuildContext)Delivery/google_gtest=$(_MakeFilePath)"
+    ~linkfile "$(BuildContext)Delivery/gtestobj.mki=$(_MakeFilePath)gtestobj.mki"

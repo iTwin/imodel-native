@@ -1,0 +1,37 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+NO_DEFAULT_CLANG_WARNINGS   = 1
+BUILD_WITH_C17=1
+
+DISABLE_COMPILER_ANALYZE_FOR_UNIT_TESTS=1
+
+%include mdl.mki
+
+%if !defined (BE_TEST_TESTHARNESS)
+    %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+%endif
+
+testDir                     = $(_MakeFilePath)
+o                           = $(PartBuildDir)
+always:
+    !~@mkdir $(o)
+
+# ignore: local variable is initialized but not referenced
+# CCompOpts       + -wd4189
+
+CCompPDBName    = GeomLibsCheckers
+
+dirToSearch     = $(baseDir)src/
+%include cincapnd.mki
+
+$(o)SampleGeometry$(oext)   : $(testDir)src/SampleGeometry.cpp 
+
+$(o)checkers$(oext)         : $(testDir)src/checkers.cpp 
+
+$(o)FileOps$(oext)         : $(testDir)src/FileOps.cpp 
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/Checkers : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

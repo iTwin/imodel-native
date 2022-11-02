@@ -1,0 +1,21 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+# Use `bb pull` to do the `npm install`.
+# Since this builds into $SrcRoot, always clean and rebuild.
+
+srcDir = $(_MakeFilePath)
+outDir = $(_MakeFilePath)lib/
+
+always:
+    ~chdir $(srcDir)
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+    -$(BBPYTHONCMD) $(SrcRoot)thirdparty/nodejs_14_16_0/bentley/npm.py run clean
+%endif
+    -$(BBPYTHONCMD) $(SrcRoot)thirdparty/nodejs_14_16_0/bentley/npm.py run build
+
+$(BuildContext)Delivery/lib : $(outDir)
+    $(LinkFirstDepToFirstTargetAsDirectory)

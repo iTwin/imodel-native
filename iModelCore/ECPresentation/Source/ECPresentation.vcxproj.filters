@@ -1,0 +1,702 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Rules">
+      <UniqueIdentifier>{d18e31ad-b275-466a-a2b1-90404cb177c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Content">
+      <UniqueIdentifier>{dec8fc83-6f1c-4002-81ae-f75b3413921f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Hierarchies">
+      <UniqueIdentifier>{376e284c-f80c-436e-8093-6977b6145872}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rules">
+      <UniqueIdentifier>{bb12495d-c536-43f8-bee6-2ec880ed5756}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Serialization">
+      <UniqueIdentifier>{846a6ea3-2da6-4174-a994-cc1c5e2ccb04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared">
+      <UniqueIdentifier>{cfa9db16-e2d4-4a15-a7c3-190701fc76b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\Diagnostics">
+      <UniqueIdentifier>{59d13970-6258-4b08-b58f-e49949bbddbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\ECExpressions">
+      <UniqueIdentifier>{1dea6d4c-c8a9-4682-a779-249366e17d79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\Queries">
+      <UniqueIdentifier>{2951f873-1cc0-4e97-8d4d-4cef3052c3a2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Connection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Content.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\ContentFieldEditors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\DataSource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\DefaultECPresentationSerializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Diagnostics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECInstanceChangeEvents.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentationManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentationTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\ExtendedData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\IECPresentationSerializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\IRulesPreprocessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Iterators.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\IUiStateProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\KeySet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\LabelDefinition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\NavNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\NavNodeKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\RuleSetLocater.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\RulesetVariables.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Update.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\UserSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllInstanceNodesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllRelatedInstanceNodesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CalculatedPropertySpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CheckBoxRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ChildNodeRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ChildNodeSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CommonTools.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentInstancesOfSpecificClassesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentModifier.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentRelatedInstancesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ContentSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CustomizationRules.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CustomNodeSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CustomRendererSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\DefaultPropertyCategoryOverride.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ExtendedDataRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\GroupingRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ImageIdOverride.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\InstanceLabelOverride.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\InstanceNodesOfSpecificClassesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\LabelOverride.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\LocalizationResourceKeyDefinition.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\MultiSchemaClass.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\NodeArtifactsRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRules.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRuleSet.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PresentationRulesTypes.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PropertyCategorySpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PropertyEditorSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\PropertySpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelatedInstanceNodesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelatedInstanceSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelatedPropertiesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RelationshipPathSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\RequiredSchemaSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SearchResultInstanceNodesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SelectedNodeInstancesSpecification.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SortingRule.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\SpecificationVisitor.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\StyleOverride.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\UserSettingsGroup.h">
+      <Filter>Header Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="ECPresentationPch.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PresentationManagerImpl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RulesEngineTypes.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TaskScheduler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UpdateHandler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentCache.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentClassesLocater.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentItemBuilder.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentProviders.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentQuery.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentQueryBuilder.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentQueryContracts.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentQueryResultsReader.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentSpecificationsHandler.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\PropertyInfoStore.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\DataSourceInfo.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\HierarchiesComparer.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavigationQuery.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavigationQueryBuilder.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavigationQueryContracts.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavigationQueryResultsReader.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavNodeProviders.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavNodesCache.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavNodesCacheHelpers.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavNodesCacheWrapper.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavNodesDataSource.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NavNodesHelper.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Hierarchies\NodePathsHelper.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
+    <ClInclude Include="Rules\CommonToolsInternal.h">
+      <Filter>Source Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="Rules\PresentationRuleCommonConstants.h">
+      <Filter>Source Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="Rules\PresentationRuleJsonConstants.h">
+      <Filter>Source Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="Rules\PresentationRuleXmlConstants.h">
+      <Filter>Source Files\Rules</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\CustomizationHelper.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\ECSchemaHelper.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\ExtendedData.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\ImageHelper.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\NavNodeLocater.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\RulesDrivenProviderContext.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\RulesPreprocessor.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\UsedClassesListener.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\ValueHelpers.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\ECExpressions\ECExpressionContextsProvider.h">
+      <Filter>Source Files\Shared\ECExpressions</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\ECExpressions\ECExpressionOptimizer.h">
+      <Filter>Source Files\Shared\ECExpressions</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\Queries\CustomFunctions.h">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\Queries\PresentationQuery.h">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\Queries\QueryBuilder.h">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\Queries\QueryBuilderHelpers.h">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\Queries\QueryBuilding.h">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\Queries\QueryContracts.h">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\Queries\QueryExecutor.h">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\NodeLabelCalculator.h">
+      <Filter>Source Files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ContentHelpers.h">
+      <Filter>Source Files\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentationErrors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Connection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECPresentationManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECPresentationPch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KeySet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LabelDefinition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PresentationManagerImpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RuleSetLocater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TaskScheduler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UpdateHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UserSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Content.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentCache.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentClassesLocater.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentDescriptorBuilder.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentFieldEditors.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentItemBuilder.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentProviders.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentQuery.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentQueryBuilder.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentQueryContracts.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentQueryResultsReader.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentSpecificationsHandler.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\PropertyInfoStore.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\HierarchiesComparer.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavigationQuery.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavigationQueryBuilder.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavigationQueryContracts.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavigationQueryResultsReader.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavNode.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavNodeProviders.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavNodesCache.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavNodesCacheHelpers.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavNodesCacheWrapper.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NavNodesHelper.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\NodePathsHelper.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\Update.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\AllInstanceNodesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\AllRelatedInstanceNodesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\CalculatedPropertySpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\CheckBoxRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ChildNodeRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ChildNodeSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\CommonTools.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ContentInstancesOfSpecificClassesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ContentModifier.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ContentRelatedInstancesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ContentRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ContentSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\CustomizationRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\CustomNodeSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\CustomRendererSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\DefaultPropertyCategoryOverride.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ExtendedDataRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\GroupingRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\ImageIdOverride.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\InstanceLabelOverride.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\InstanceNodesOfSpecificClassesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\LabelOverride.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\LocalizationResourceKeyDefinition.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\MultiSchemaClass.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\NodeArtifactsRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\PresentationRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\PresentationRuleSet.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\PropertyCategorySpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\PropertyEditorSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\PropertySpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\RelatedInstanceNodesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\RelatedInstanceSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\RelatedPropertiesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\RelationshipPathSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\RequiredSchemaSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\SearchResultInstanceNodesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\SelectedNodeInstancesSpecification.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\SortingRule.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\StyleOverride.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Rules\UserSettingsGroup.cpp">
+      <Filter>Source Files\Rules</Filter>
+    </ClCompile>
+    <ClCompile Include="Serialization\DefaultECPresentationSerializer.cpp">
+      <Filter>Source Files\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="Serialization\IECPresentationSerializer.cpp">
+      <Filter>Source Files\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\CustomizationHelper.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\ECInstanceChangeEvents.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\ECSchemaHelper.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\ExtendedData.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\ImageHelper.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\RelatedClass.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\RulesDrivenProviderContext.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\RulesetVariables.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\RulesPreprocessor.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\ValueHelpers.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\Diagnostics\Diagnostics.cpp">
+      <Filter>Source Files\Shared\Diagnostics</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\Diagnostics\DiagnosticsHelpers.cpp">
+      <Filter>Source Files\Shared\Diagnostics</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\ECExpressions\ECExpressionContextsProvider.cpp">
+      <Filter>Source Files\Shared\ECExpressions</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\ECExpressions\ECExpressionOptimizer.cpp">
+      <Filter>Source Files\Shared\ECExpressions</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\Queries\CustomFunctions.cpp">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\Queries\PresentationQuery.cpp">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\Queries\QueryBuilderHelpers.cpp">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\Queries\QueryContracts.cpp">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\Queries\QueryExecutor.cpp">
+      <Filter>Source Files\Shared\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include="Shared\NodeLabelCalculator.cpp">
+      <Filter>Source Files\Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\ContentHelpers.cpp">
+      <Filter>Source Files\Content</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

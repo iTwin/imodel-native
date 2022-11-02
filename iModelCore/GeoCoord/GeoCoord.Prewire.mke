@@ -1,0 +1,16 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+PublicApiDir    = $(OutBuildContexts)GeoCoord/PublicAPI/
+srcDir          = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+# Put the BaseGeoCoord publicAPI file into the output directory so it
+# is available to other builds.
+#----------------------------------------------------------------------
+always:
+   ~linkdir "$(PublicApiDir)GeoCoord=$(srcDir)PublicAPI\GeoCoord"
+

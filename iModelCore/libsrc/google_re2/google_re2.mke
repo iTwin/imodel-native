@@ -1,0 +1,127 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Export/make visible all functions in Google RE2
+GCC_DEFAULT_VISIBILITY=default
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+# We have had issues in firebug where the PDB produced here sometimes does not match the LIB.
+# Instead of sinking more time into determining why the PDB is bad, link symbol information directly into the LIB as, effectively, a workaround.
+# This must be defined /before/ including mdl.mki.
+DEBUG_INFO_IN_OBJ = 1
+
+BUILD_WITH_C17=1
+
+%include mdl.mki
+
+base_dir            = $(_MakeFilePath)
+appName             = iTwin_google_re2
+o                   = $(OutputRootDir)build/$(appName)/
+
+
+
+always:
+    !~@mkdir $(o)
+
+# includes in library is relative to root directory
+dirToSearch = $(base_dir)
+%include cincapnd.mki
+
+# Disable min/max macros
+cDefs + -DNOMINMAX
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+
+$(o)bitstate$(oext):            $(base_dir)re2/bitstate.cc ${MultiCompileDepends} 
+
+$(o)compile$(oext):             $(base_dir)re2/compile.cc ${MultiCompileDepends} 
+
+$(o)dfa$(oext):                 $(base_dir)re2/dfa.cc ${MultiCompileDepends}
+
+$(o)filtered_re2$(oext):        $(base_dir)re2/filtered_re2.cc ${MultiCompileDepends}
+
+$(o)mimics_pcre$(oext):         $(base_dir)re2/mimics_pcre.cc ${MultiCompileDepends} 
+
+$(o)nfa$(oext):                 $(base_dir)re2/nfa.cc ${MultiCompileDepends}
+
+$(o)onepass$(oext):             $(base_dir)re2/onepass.cc ${MultiCompileDepends}
+
+$(o)parse$(oext):               $(base_dir)re2/parse.cc ${MultiCompileDepends}
+
+$(o)perl_groups$(oext):         $(base_dir)re2/perl_groups.cc ${MultiCompileDepends}
+
+$(o)prefilter$(oext):           $(base_dir)re2/prefilter.cc ${MultiCompileDepends}
+
+$(o)prefilter_tree$(oext):      $(base_dir)re2/prefilter_tree.cc ${MultiCompileDepends}
+
+$(o)prog$(oext):                $(base_dir)re2/prog.cc ${MultiCompileDepends}
+
+$(o)re2$(oext):                 $(base_dir)re2/re2.cc ${MultiCompileDepends}
+
+$(o)regexp$(oext):              $(base_dir)re2/regexp.cc ${MultiCompileDepends}
+
+$(o)set$(oext):                 $(base_dir)re2/set.cc ${MultiCompileDepends}
+
+$(o)simplify$(oext):            $(base_dir)re2/simplify.cc ${MultiCompileDepends}
+
+$(o)stringpiece$(oext):         $(base_dir)re2/stringpiece.cc ${MultiCompileDepends}
+
+$(o)tostring$(oext):            $(base_dir)re2/tostring.cc ${MultiCompileDepends}
+
+$(o)unicode_casefold$(oext):    $(base_dir)re2/unicode_casefold.cc ${MultiCompileDepends}
+
+$(o)unicode_groups$(oext):      $(base_dir)re2/unicode_groups.cc ${MultiCompileDepends}
+
+$(o)rune$(oext):                $(base_dir)util/rune.cc ${MultiCompileDepends}
+
+$(o)strutil$(oext):             $(base_dir)util/strutil.cc ${MultiCompileDepends}
+
+re2_objs        = $(o)bitstate$(oext) \
+                  $(o)compile$(oext) \
+                  $(o)dfa$(oext) \
+                  $(o)filtered_re2$(oext) \
+                  $(o)mimics_pcre$(oext) \
+                  $(o)nfa$(oext) \
+                  $(o)onepass$(oext) \
+                  $(o)parse$(oext) \
+                  $(o)perl_groups$(oext) \
+                  $(o)prefilter$(oext) \
+                  $(o)prefilter_tree$(oext) \
+                  $(o)prog$(oext) \
+                  $(o)re2$(oext) \
+                  $(o)regexp$(oext) \
+                  $(o)set$(oext) \
+                  $(o)simplify$(oext) \
+                  $(o)stringpiece$(oext) \
+                  $(o)tostring$(oext) \
+                  $(o)unicode_casefold$(oext) \
+                  $(o)unicode_groups$(oext) \
+                  $(o)rune$(oext) \
+                  $(o)strutil$(oext)
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(re2_objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+CREATE_STATIC_LIBRARIES     = 1
+DLM_NO_SOURCEINDEX =1
+
+
+%include $(sharedMki)linkLibrary.mki
+
+$(BuildContext)Delivery/google_re2-license.txt : $(_MakeFilePath)LICENSE
+    $(LinkFirstDepToFirstTarget)

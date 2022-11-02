@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../bentleybuild/PartFile.xsd"
+    >
+    
+    <ToolPart Name="OpenCppCoverage">
+      <Upack>OpenCppCoverage</Upack>
+    </ToolPart>
+
+    <Part Name="RunUnitGTest" OnlyPlatforms="x64,macos*,linux*" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs"
+            >
+        <SubToolPart Name="OpenCppCoverage"/>
+        <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" />
+
+        <SubPart PartName="RunGtest" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/BeSQLite/BeSQLite" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/ECDb/ECDb" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/ecobjects/ECObjects" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/Units/Units" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp.PartFile.xml" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/GeoCoord/GeoCoord" />
+        <SubPart PartName="RunGtest" PartFile="iModelCore/BRepCore/BRepCore" />
+        <!--
+            IModelEvolution tests take too long to run, IModelEvolutionTest BuildStrategy is used to run.
+         -->
+        <SubPart PartName="BuildIModelEvolutionGTest" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+    </Part>
+
+    <Part Name="RunUnitJUnit" OnlyPlatforms="android*" Sequential="true" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/ANJU/Logs"
+            >
+        <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" />
+
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/BeSQLite/BeSQLite" />
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/ECDb/ECDb" />
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/ecobjects/ECObjects" />
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/Units/Units" />
+    </Part>
+
+    <Part Name="RunUnitXCTest" OnlyPlatforms="ios*" Sequential="true" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/XCTest/Logs"
+            >
+        <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" />
+
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/BeSQLite/BeSQLite" />
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/ECDb/ECDb" />
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/ecobjects/ECObjects" />
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/Units/Units" />
+    </Part>
+
+    <Part Name="RunUnitCppTest" OnlyPlatforms="winrt*" Sequential="true" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/UwpTest/Logs"
+            >
+        <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" />
+
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/BeSQLite/BeSQLite" />
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal"/>
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/ECDb/ECDb" />
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/ecobjects/ECObjects" />
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/Units/Units" />
+    </Part>
+
+</BuildContext>
