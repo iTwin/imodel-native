@@ -21,10 +21,10 @@
 /iModelCore/BeSQLite/*                        @kabentley @khanaffan
 /iModelCore/BRepCore/*                        @pmconne @bbastings
 /iModelCore/ECDb/*                            @khanaffan @kabentley @calebmshafer @rschili
-/iModelCore/ecobjects/*                       @calebmshafer @ColinKerr
+/iModelCore/ecobjects/*                       @calebmshafer @ColinKerr @c-macdonald
 /iModelCore/ECPresentation/*                  @grigasp @saskliutas
-/iModelCore/GeoCoord/*                        @kabentley @saskliutas
-/iModelCore/GeomLibs/*                        @EarlinLutz @bbastings @kabentley  @dassaf4
+/iModelCore/GeoCoord/*                        @kabentley @AlainRobertAtBentley
+/iModelCore/GeomLibs/*                        @EarlinLutz @bbastings @kabentley @dassaf4
 /iModelCore/iModelPlatform/*                  @pmconne @swwilson-bsi @kabentley @bbastings
 /iModelCore/Units/*                           @calebmshafer @ColinKerr @bbastings
 /iModelCore/iModelPlatform/**/*Tile*.*        @pmconne
