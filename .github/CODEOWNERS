@@ -1,0 +1,33 @@
+# This CODEOWNERS file follows the format of Github's CODEOWNERS
+#   Documentation for reference, https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @iTwin/itwinjs-core-admins will be requested for
+# review when someone opens a pull request.
+*                         @iTwin/itwinjs-core-admins
+
+.github/workflows         @iTwin/itwinjs-core-admins
+.github/CODEOWNERS        @iTwin/itwinjs-core-admins
+
+.gitattributes            @iTwin/itwinjs-core-admins
+.gitignore                @iTwin/itwinjs-core-admins
+
+# These are owners for specific files in the repository
+# Each line is a file pattern followed by one or more owners
+
+/build/*                                      @chuckkir @calebmshafer @skirby1996
+/iModelCore/Bentley/*                         @swwilson-bsi @kabentley @bbastings @pmconne
+/iModelCore/BeSQLite/*                        @kabentley @khanaffan
+/iModelCore/BRepCore/*                        @pmconne @bbastings
+/iModelCore/ECDb/*                            @khanaffan @kabentley @calebmshafer @rschili
+/iModelCore/ecobjects/*                       @calebmshafer @ColinKerr @c-macdonald
+/iModelCore/ECPresentation/*                  @grigasp @saskliutas
+/iModelCore/GeoCoord/*                        @kabentley @AlainRobertAtBentley
+/iModelCore/GeomLibs/*                        @EarlinLutz @bbastings @kabentley @dassaf4
+/iModelCore/iModelPlatform/*                  @pmconne @swwilson-bsi @kabentley @bbastings
+/iModelCore/Units/*                           @calebmshafer @ColinKerr @bbastings
+/iModelCore/iModelPlatform/**/*Tile*.*        @pmconne
+/iModelCore/iModelPlatform/**/*Render*.*      @pmconne
+
+/iModelJsNodeAddon/*                          @pmconne @swwilson-bsi @khanaffan @kabentley @calebmshafer
