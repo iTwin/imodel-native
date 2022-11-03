@@ -1,4 +1,4 @@
-name: test-from-open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
+name: open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
 
 pr:
   branches:
