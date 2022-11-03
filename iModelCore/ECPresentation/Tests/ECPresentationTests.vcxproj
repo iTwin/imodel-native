@@ -180,7 +180,7 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
-    <NMakeBuildCommandLine>bb re ECPresentation:Gtest -s</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb re -s ECPresentation:Gtest</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb re ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb clean ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -188,7 +188,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
-    <NMakeBuildCommandLine>bb re ECPresentation:Gtest -s</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb re -s ECPresentation:Gtest</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb re ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb clean ECPresentation:Test* ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
