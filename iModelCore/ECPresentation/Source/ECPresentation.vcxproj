@@ -37,16 +37,16 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb re -c ECPresentation-Library ECPresentation-PublicAPI</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re -c ECPresentation-Library ECPresentation-PublicAPI</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(SrcRoot)imodel-native\iModelCore\ECPresentation\PublicAPI;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Source;$(SrcRoot)imodel-native\iModelCore\ecobjects\PublicApi;$(SrcRoot)imodel-native\iModelCore\ECDb\PublicAPI;$(SrcRoot)imodel-native\iModelCore\BeSQLite\PublicAPI;$(SrcRoot)imodel-native\iModelCore\GeomLibs\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Units\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\BeRapidJson\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\include;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(IncludePath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>bb b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb re -c ECPresentation-Library ECPresentation-PublicAPI</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re -c ECPresentation-Library ECPresentation-PublicAPI</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(SrcRoot)imodel-native\iModelCore\ECPresentation\PublicAPI;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Source;$(SrcRoot)imodel-native\iModelCore\ecobjects\PublicApi;$(SrcRoot)imodel-native\iModelCore\ECDb\PublicAPI;$(SrcRoot)imodel-native\iModelCore\BeSQLite\PublicAPI;$(SrcRoot)imodel-native\iModelCore\GeomLibs\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Units\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\BeRapidJson\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\include;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(IncludePath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
