@@ -7,110 +7,96 @@
 
 using namespace IModelJsNative;
 
-void JsLogger::clearSeverities()  {
-    BeSystemMutexHolder ___;
-    m_categorySeverity.clear();
-  }
-
 /** call the JavaScript logger */
-void JsLogger::logToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg) {
-    if (JsInterop::IsJsExecutionDisabled())
-        return;
-
-    auto env = m_loggerObj.Env();
-    Napi::HandleScope scope(env);
-
-    Utf8CP fname = (sev == NativeLogging::LOG_TRACE) ?   "logTrace":
-                   (sev == NativeLogging::LOG_DEBUG) ?   "logTrace": // Logger does not distinguish between trace and debug
-                   (sev == NativeLogging::LOG_INFO) ?    "logInfo":
-                   (sev == NativeLogging::LOG_WARNING) ? "logWarning":
-                                                        "logError"; // Logger does not distinguish between error and fatal
+void JsLogger::logToJs(Utf8CP category, SEVERITY sev, Utf8CP msg) {
+    Utf8CP fname = (sev == LOG_TRACE) ?   "logTrace" :
+                   (sev == LOG_INFO) ?    "logInfo" :
+                   (sev == LOG_WARNING) ? "logWarning" :
+                   "logError";
 
     auto method = m_loggerObj.Get(fname).As<Napi::Function>();
-    if (method == env.Undefined())
-        BeNapi::ThrowJsException(JsInterop::Env(), Utf8PrintfString("Invalid Logger -- missing %s function", fname).c_str());
-
-    method({toJsString(env, category), toJsString(env, msg)});
-    }
-
-/** Get the native log level setting for a category */
-SEVERITY JsLogger::getJsGetLogLevel(Utf8StringCR category) {
-    if (!canUseJavaScript()) {
-       BeAssert(false);
-       return NativeLogging::LOG_TRACE;
-    }
-
     auto env = m_loggerObj.Env();
-    Napi::HandleScope scope(env);
+    if (method != env.Undefined())
+        method({toJsString(env, category), toJsString(env, msg)});
+}
 
-    auto method = m_loggerObj.Get("getLevel").As<Napi::Function>();
-    if (method == env.Undefined())
-       BeNapi::ThrowJsException(env, "Invalid Logger");
-
-    auto catJS = toJsString(env, category);
-    auto jsLevelValue = method({catJS});
-    int logLevel = (jsLevelValue == env.Undefined()) ? 4 : jsLevelValue.ToNumber().Int32Value();
-
+/** convert a JavaScript log level value to a C++ log level value */
+SEVERITY JsLogger::JsLevelToSeverity(Napi::Number jsLevel) {
+    int logLevel = jsLevel == jsLevel.Env().Undefined() ? 4 : jsLevel.ToNumber().Int32Value();
     switch (logLevel) {
     case 0:
-       return NativeLogging::LOG_TRACE;
+       return LOG_TRACE;
     case 1:
-       return NativeLogging::LOG_INFO;
+       return LOG_INFO;
     case 2:
-       return NativeLogging::LOG_WARNING;
+       return LOG_WARNING;
     case 3:
-       return NativeLogging::LOG_ERROR;
-    case 4:
-       return (NativeLogging::SEVERITY)(NativeLogging::LOG_FATAL + 1); // LogLevel.None => Fake importance that is higher than the highest that could really be set.
+       return LOG_ERROR;
     }
-    BeAssert(false);
-    return NativeLogging::LOG_TRACE;
+    return LOG_NEVER;
+}
+
+/** Synchronize the native std::map on this logger with the "_categoryFilter" map on the JavaScript object. */
+void JsLogger::SyncLogLevels() {
+    m_defaultSeverity = JsLevelToSeverity(m_loggerObj.Get("_minLevel").As<Napi::Number>());
+
+    auto undefined = m_loggerObj.Env().Undefined();
+    auto jsCategoryFilter = m_loggerObj.Get("_categoryFilter").As<Napi::Object>();
+    if (jsCategoryFilter == undefined)
+        BeNapi::ThrowJsException(JsInterop::Env(), "Invalid Logger");
+
+    m_categoryFilter.clear();
+    auto iterator = jsCategoryFilter.Get("entries").As<Napi::Function>().Call(jsCategoryFilter, {}).As<Napi::Object>();
+    auto next = iterator.Get("next").As<Napi::Function>();
+    while (true) {
+        auto entry = next.Call(iterator, {}).As<Napi::Object>();
+        if (entry.Get("done").ToBoolean())
+            break;
+        auto arr = entry.Get("value").As<Napi::Array>();
+        if (arr == undefined)
+            break;
+        auto categoryName = arr.Get(0u).As<Napi::String>();
+        auto logLevel = arr.Get(1u).As<Napi::Number>();
+        if (categoryName != undefined && logLevel != undefined)
+            m_categoryFilter[categoryName.Utf8Value()] = JsLevelToSeverity(logLevel);
+    }
 }
 
 bool JsLogger::canUseJavaScript() {
     return !m_loggerObj.IsEmpty() && !JsInterop::IsJsExecutionDisabled();
 }
 
-bool JsLogger::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev) {
-    auto entry = m_categorySeverity.find(category);
-    if (entry != m_categorySeverity.end())
-       return sev >= entry->second;
-
-    if (!canUseJavaScript())
-       return true;
-
-    auto level = getJsGetLogLevel(category);
-    m_categorySeverity[category] = level;
-    return sev >= level;
+bool JsLogger::IsSeverityEnabled(Utf8CP category, SEVERITY sev) {
+    SEVERITY severity = m_defaultSeverity;
+    auto it = m_categoryFilter.find(category);
+    if (it != m_categoryFilter.end())
+        severity = it->second;
+    return (sev >= severity);
 }
 
-void JsLogger::deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg) {
-    BeSystemMutexHolder ___;
+void JsLogger::deferLogging(Utf8CP category, SEVERITY sev, Utf8CP msg) {
+    BeMutexHolder lock(m_deferredLogMutex);
     if (IsSeverityEnabled(category, sev))
        m_deferredLogging.push_back(LoggedMessage(category, sev, msg));
 }
 
 void JsLogger::processDeferred() {
-    BeSystemMutexHolder ___;
+    BeMutexHolder lock(m_deferredLogMutex);
     if (m_deferredLogging.empty())
        return;
 
-    Napi::HandleScope scope(m_loggerObj.Env());
-    for (auto const& message : m_deferredLogging) {
-       if (IsSeverityEnabled(message.m_category.c_str(), message.m_severity))
-           logToJs(message.m_category.c_str(), message.m_severity, message.m_message.c_str());
-    }
+    for (auto const& message : m_deferredLogging)
+        logToJs(message.m_category.c_str(), message.m_severity, message.m_message.c_str());
 
     m_deferredLogging.clear();
 }
 
 void JsLogger::OnExit() {
     m_deferredLogging.clear();
-    if (!m_loggerObj.IsEmpty())
-        m_loggerObj.Reset();
+    m_loggerObj.Reset();
 }
 
-void JsLogger::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg) {
+void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg) {
     if (m_loggerObj.IsEmpty())
         return; // before we've been initialized, skip
 

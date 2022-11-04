@@ -26,23 +26,27 @@ struct LoggedMessage {
  * settings are cached so we don't have to call the JavaScript "getLogLevel" method repeatedly.
  */
 struct JsLogger : NativeLogging::Logger {
+  BeMutex m_deferredLogMutex;
+  /** the default severity for categories not specified in `m_categoryFilter` */
+  SEVERITY m_defaultSeverity = LOG_NEVER;
   /** the logger object from JS */
   Napi::ObjectReference m_loggerObj;
   /** messages that are deferred from other threads. They are displayed on the next log message on the main thread or when "flushLog" is called */
   bvector<LoggedMessage> m_deferredLogging;
   /** cached set of severity levels. Can be cleared from JS by `NativeLibrary.clearLogLevelCache` */
-  bmap<Utf8String, NativeLogging::SEVERITY> m_categorySeverity;
+  std::map<Utf8String, NativeLogging::SEVERITY> m_categoryFilter;
 
   Napi::Value getJsLogger() { return m_loggerObj.Value(); }
   void setJsLogger(Napi::CallbackInfo const& info) {
       m_loggerObj = Napi::ObjectReference::New(info[0].ToObject(), 1);
       m_loggerObj.SuppressDestruct();
+      SyncLogLevels();
   }
 
+  SEVERITY JsLevelToSeverity(Napi::Number jsLevel);
+  void SyncLogLevels();
   bool canUseJavaScript();
-  void clearSeverities();
   void logToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
-  SEVERITY getJsGetLogLevel(Utf8StringCR category);
   void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
   void processDeferred();
   void OnExit();

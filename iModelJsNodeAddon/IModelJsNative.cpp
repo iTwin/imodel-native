@@ -5973,7 +5973,7 @@ static void setLogger(Napi::CallbackInfo const& info) {
   s_jsLogger.setJsLogger(info);
 }
 static void clearLogLevelCache(Napi::CallbackInfo const&){
-    s_jsLogger.clearSeverities();
+    s_jsLogger.SyncLogLevels();
 }
 
 /*---------------------------------------------------------------------------------**//**
