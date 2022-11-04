@@ -108,7 +108,7 @@ describe("SQLite statements", () => {
     }
   });
 
-  it.only("test logging", ()=> {
+  it("test logging", ()=> {
     Logger.setLevel("test-info", LogLevel.Info);
     Logger.setLevel("test-warn", LogLevel.Warning);
     Logger.setLevel("test-error", LogLevel.Error);
