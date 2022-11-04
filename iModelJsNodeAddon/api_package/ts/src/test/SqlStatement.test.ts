@@ -108,7 +108,7 @@ describe("SQLite statements", () => {
     }
   });
 
-  it("test logging", ()=> {
+  it("test logging", () => {
     Logger.setLevel("test-info", LogLevel.Info);
     Logger.setLevel("test-warn", LogLevel.Warning);
     Logger.setLevel("test-error", LogLevel.Error);
@@ -117,15 +117,18 @@ describe("SQLite statements", () => {
     const errorLogStub = sinon.stub(Logger, "logError").callsFake(() => { });
 
     const stmt = new iModelJsNative.SqliteStatement();
-    const sql = "SELECT 100 from xxx";
-    expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
-    expect(errorLogStub.callCount).eq(1);
+    try {
+      const sql = "SELECT 100 from xxx";
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(errorLogStub.callCount).eq(1);
 
-    Logger.setLevel("BeSQLite", LogLevel.None);
-    iModelJsNative.clearLogLevelCache();
-    expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
-    expect(errorLogStub.callCount).eq(1);
-    stmt.dispose();
+      Logger.setLevel("BeSQLite", LogLevel.None);
+      iModelJsNative.clearLogLevelCache();
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(errorLogStub.callCount).eq(1);
+    } finally {
+      stmt.dispose();
+    }
   });
 
 });
