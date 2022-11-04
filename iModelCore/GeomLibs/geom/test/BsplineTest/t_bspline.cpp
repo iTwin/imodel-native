@@ -490,7 +490,7 @@ void checkCurve (char const *title, MSBsplineCurveCR curve, MSBsplineSurfaceCR s
         surface.EvaluatePoint (surfaceXYZ, u, v);
         curve.FractionToPoint (curveXYZ, s);
         char message[1000];
-        sprintf (message, "%s (s=%g) (uv %g %g) (surfaceXYZ %g,%g,%g) (curveXYZ %g,%g,%g)\n",
+        snprintf (message, sizeof(message), "%s (s=%g) (uv %g %g) (surfaceXYZ %g,%g,%g) (curveXYZ %g,%g,%g)\n",
                     title, s,
                     u, v,
                     surfaceXYZ.x, surfaceXYZ.y, surfaceXYZ.z,

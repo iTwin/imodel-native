@@ -778,7 +778,7 @@ void CheckTransformedCurveInRange (ICurvePrimitivePtr curve, TransformCR worldTo
 void CheckConstructiveFrame (ISolidPrimitiveR primitive, char const*typeName)
     {
     char message[1024];
-    sprintf (message, "ConstructiveFrame %s", typeName == NULL ? "" : typeName);
+    snprintf (message, sizeof(message), "ConstructiveFrame %s", typeName == NULL ? "" : typeName);
     Check::StartScope (message);
     Transform localToWorld, worldToLocal;
     DRange3d rangeA;

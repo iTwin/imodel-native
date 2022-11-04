@@ -1162,7 +1162,7 @@ TEST(BSurfPatch,DoubledKnotIntervals)
             for (size_t j = 0; j + order < numYPoles + 1; j++)
                 {
                 char message [1024];
-                sprintf (message, " interval %d %d\n", (int)i, (int)j);
+                snprintf (message, sizeof(message), " interval %d %d\n", (int)i, (int)j);
                 Check::Print (message);
                 bool nullI = 0 != (i & 0x01);
                 bool nullJ = 0 != (j & 0x01);

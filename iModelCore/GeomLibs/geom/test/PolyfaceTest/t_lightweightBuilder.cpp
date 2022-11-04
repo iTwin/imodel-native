@@ -97,7 +97,7 @@ static BuilderWrapperPtr Create(double pointGridSize, double normalGridSize, dou
     }
 char const * Name() override { return "LightWeightMap";}
 void GetDescription(char buffer[2048]) override {
-    sprintf(buffer, "(clustered %d)", m_clusteredSearch ? 1 : 0);
+    snprintf(buffer, sizeof(*buffer), "(clustered %d)", m_clusteredSearch ? 1 : 0);
     }
 void Finish() override {/* nothing to do */}
 PolyfaceHeaderPtr PeekMesh() override {return m_polyface;}
@@ -148,11 +148,11 @@ struct DirectBuilderWrapper : BuilderWrapper
     void GetDescription (char buffer[2048]) override
         {
         if (m_compressParam < 0.0)
-            sprintf(buffer, "(no compress)");
+            snprintf(buffer, sizeof(*buffer), "(no compress)");
         else if (m_compressParam > 0)
-            sprintf(buffer, "(postcompress %g)", m_compressParam);
+            snprintf(buffer, sizeof(*buffer), "(postcompress %g)", m_compressParam);
         else
-            sprintf(buffer, "(postcompress default)");
+            snprintf(buffer, sizeof(*buffer), "(postcompress default)");
         }
     void Finish() override
         {
@@ -195,7 +195,7 @@ struct ClassicBuilderWrapped : BuilderWrapper
     char const * Name() override { return "Classic";}
     void GetDescription(char buffer[2048]) override
         {
-        sprintf(buffer, "(no params)");
+        snprintf(buffer, sizeof(*buffer), "(no params)");
         }
     void Finish() override {}
 

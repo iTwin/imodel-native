@@ -41,7 +41,7 @@ void TestPolyfaceConstructionTriangulation(int numPerFace, bool convexRequired)
         char title[200];
         builder->Clear();
         builder->AddTriangulation(points);
-        sprintf(title, "TriangulatedRegularPolygon%d", (int)numPoint);
+        snprintf(title, sizeof(title), "TriangulatedRegularPolygon%d", (int)numPoint);
         ExaminePolyface(builder->GetClientMeshR(), title);
         Check::SaveTransformed(builder->GetClientMeshR());
         Check::Shift(oneStep, 0, 0);
@@ -59,7 +59,7 @@ void TestPolyfaceConstructionTriangulation(int numPerFace, bool convexRequired)
             points[i].x += deltaX;
         builder->Clear();
         builder->AddTriangulation(points);
-        sprintf(title, "TriangulatedRegularPolygon%d_minusOneSlice", (int)numPoint);
+        snprintf(title, sizeof(title), "TriangulatedRegularPolygon%d_minusOneSlice", (int)numPoint);
         ExaminePolyface(builder->GetClientMeshR(), title);
         Check::SaveTransformed(builder->GetClientMeshR());
         Check::Shift(oneStep, 0, 0);
