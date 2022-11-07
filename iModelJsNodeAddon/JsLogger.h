@@ -36,7 +36,9 @@ struct JsLogger : NativeLogging::Logger {
   /** cached set of severity levels. Can be cleared from JS by `NativeLibrary.clearLogLevelCache` */
   std::map<Utf8String, NativeLogging::SEVERITY> m_categoryFilter;
 
-  Napi::Value getJsLogger() { return m_loggerObj.Value(); }
+  Napi::Value getJsLogger() {
+      return m_loggerObj.Value();
+  }
   void setJsLogger(Napi::CallbackInfo const& info) {
       m_loggerObj = Napi::ObjectReference::New(info[0].ToObject(), 1);
       m_loggerObj.SuppressDestruct();
