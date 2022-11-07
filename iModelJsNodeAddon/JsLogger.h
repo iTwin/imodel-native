@@ -28,7 +28,7 @@ struct LoggedMessage {
 struct JsLogger : NativeLogging::Logger {
   BeMutex m_deferredLogMutex;
   /** the default severity for categories not specified in `m_categoryFilter` */
-  SEVERITY m_defaultSeverity = LOG_NEVER;
+  SEVERITY m_defaultSeverity = LOG_ERROR;
   /** the logger object from JS */
   Napi::ObjectReference m_loggerObj;
   /** messages that are deferred from other threads. They are displayed on the next log message on the main thread or when "flushLog" is called */

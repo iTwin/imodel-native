@@ -67,6 +67,7 @@ bool JsLogger::canUseJavaScript() {
 }
 
 bool JsLogger::IsSeverityEnabled(Utf8CP category, SEVERITY sev) {
+    BeMutexHolder lock(m_deferredLogMutex);
     SEVERITY severity = m_defaultSeverity;
     auto it = m_categoryFilter.find(category);
     if (it != m_categoryFilter.end())
@@ -97,9 +98,6 @@ void JsLogger::OnExit() {
 }
 
 void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg) {
-    if (m_loggerObj.IsEmpty())
-        return; // before we've been initialized, skip
-
     if (!canUseJavaScript()) {
        deferLogging(category, sev, msg);
     } else {
