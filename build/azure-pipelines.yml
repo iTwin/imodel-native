@@ -1,9 +1,15 @@
 name: open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
 
+trigger:
+  branches:
+    include:
+      - main
+      - release/*
 pr:
   branches:
     include:
-    - '*'
+      - main
+      - release/*
 
 resources:
   repositories:
