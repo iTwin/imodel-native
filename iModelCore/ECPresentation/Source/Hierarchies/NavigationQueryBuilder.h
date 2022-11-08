@@ -54,25 +54,10 @@ private:
     RelatedPathsCache* m_relatedPathsCache;
 
 private:
-    template<typename SpecificationType> Utf8String GetSupportedSchemas(SpecificationType const& specification) const;
-
-    // the real specification handlers
     bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
     bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
     bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const;
     bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
-
-    // called by SpecificationsVisitor:
-    bvector<NavigationQueryPtr> GetQueries(AllInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(AllRelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(RelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(InstanceNodesOfSpecificClassesSpecification const& specification, RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(SearchResultInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, AllRelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, RelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
 
 public:
     ECPRESENTATION_EXPORT NavigationQueryBuilder(NavigationQueryBuilderParameters params);

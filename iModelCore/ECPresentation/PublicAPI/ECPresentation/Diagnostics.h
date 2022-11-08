@@ -184,7 +184,7 @@ public:
 #define DIAGNOSTICS_LOG(category, devSeverity, editorSeverity, msg)     Diagnostics::Log(category, devSeverity, editorSeverity, msg);
 #define DIAGNOSTICS_DEV_LOG(category, severity, msg)                    Diagnostics::DevLog(category, severity, msg);
 #define DIAGNOSTICS_EDITOR_LOG(category, severity, msg)                 Diagnostics::EditorLog(category, severity, msg);
-#define DIAGNOSTICS_ASSERT_SOFT(category, condition, failureMsg)        { if (!(condition)) Diagnostics::DevLog(category, LOG_ERROR, failureMsg); }
+#define DIAGNOSTICS_ASSERT_SOFT(category, condition, failureMsg)        { if (!(condition)) { BeAssert(false); Diagnostics::DevLog(category, LOG_ERROR, failureMsg); } }
 #define DIAGNOSTICS_HANDLE_FAILURE(category, msg)                       { Diagnostics::DevLog(category, LOG_ERROR, msg); throw InternalError(msg); }
 
 #define DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules "rules"
