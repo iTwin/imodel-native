@@ -8,7 +8,6 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
-#define NODESCACHE_FUNCNAME_ConcatBinaryIndex   "ConcatBinaryIndex"
 #define NODESCACHE_FUNCNAME_VariablesMatch      "VariablesMatch"
 #define NODESCACHE_FUNCNAME_GuidConcat          "GuidConcat"
 
@@ -81,14 +80,18 @@ private:
     NodesCacheHelpers() {}
 
 public:
-    ECPRESENTATION_EXPORT static bvector<uint64_t> IndexFromString(Utf8StringCR str);
     ECPRESENTATION_EXPORT static Utf8String GetPaddedNumber(uint64_t number);
-    ECPRESENTATION_EXPORT static Utf8String IndexToString(bvector<uint64_t> const& index, bool pad);
     ECPRESENTATION_EXPORT static int CompareIndexes(bvector<uint64_t> const& lhs, bvector<uint64_t> const& rhs);
+
+    ECPRESENTATION_EXPORT static DbResult BindVectorIndex(Statement&, int columnIndex, bvector<uint64_t> const&, bool swapEndian);
+    ECPRESENTATION_EXPORT static bvector<uint64_t> GetVectorIndex(Statement&, int columnIndex, bool swapEndian);
+
     ECPRESENTATION_EXPORT static NavNodePtr CreateNodeFromStatement(Statement&, NavNodesFactoryCR, IConnectionCR);
+
     ECPRESENTATION_EXPORT static void BindGuid(Statement& stmt, int index, BeGuidCR id);
     ECPRESENTATION_EXPORT static void BindGuid(Statement& target, int targetIndex, Statement& source, int sourceIndex);
     ECPRESENTATION_EXPORT static BeGuid GetGuid(Statement& stmt, int index);
+
     ECPRESENTATION_EXPORT static bool VariablesExists(Db& db, BeGuidCR variablesId);
     ECPRESENTATION_EXPORT static bool RulesetExists(Db& db, Utf8StringCR rulesetId);
     ECPRESENTATION_EXPORT static bool NodeExists(Db& db, BeGuidCR nodeId);
@@ -97,7 +100,9 @@ public:
     ECPRESENTATION_EXPORT static bool HierarchyLevelHasDataSources(Db& db, BeGuidCR hierarchyLevelId);
     ECPRESENTATION_EXPORT static bvector<BeGuid> GetChildHierarchyLevelIds(Db& db, bool isPhysical, BeGuidCR nodeId, Utf8CP rulesetId);
     ECPRESENTATION_EXPORT static Utf8String GetNodePathHash(Db& db, BeGuidCR nodeId);
+
     ECPRESENTATION_EXPORT static bool LimitHierarchyVariations(Db& db, Utf8CP query, BeGuidCR hierarchyLevelId, int threshold);
+
     ECPRESENTATION_EXPORT static int DataSourceNodesCount(Db& db, BeGuidCR dataSourceId);
     ECPRESENTATION_EXPORT static BeGuid GetPhysicalHierarchyLevelId(Db& db, CombinedHierarchyLevelIdentifier const& identifier);
     ECPRESENTATION_EXPORT static BeGuid CachePhysicalHierarchyLevel(Db& db, CombinedHierarchyLevelIdentifier const& identifier, BeGuidCR id = BeGuid());

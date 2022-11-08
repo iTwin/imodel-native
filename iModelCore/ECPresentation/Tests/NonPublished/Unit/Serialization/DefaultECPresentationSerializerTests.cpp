@@ -757,6 +757,7 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationC
 TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationWithExpandedChildren)
     {
     auto node = TestNodesHelper::CreateCustomNode(*m_connection, "TestType", "TestLabel", "");
+    node->SetHasChildren(false);
     node->GetKey()->GetHashPath().clear();
 
     HierarchyUpdateRecord updateRecord("ruleset-id", "db-file-name", nullptr, 2, {HierarchyUpdateRecord::ExpandedNode(*node, 2)});

@@ -74,14 +74,14 @@ public:
     //! Is this node equal to the supplied one.
     bool Equals(NavNodeCR other) const {return 0 == GetKey()->Compare(*other.GetKey());}
 
-    //! Set unique ID of this node.
+    //! Set guid for this node.
     void SetNodeId(BeGuid id) {m_nodeId = id;}
-    //! Get the unique ID of this node.
+    //! Get guid of this node.
     BeGuidCR GetNodeId() const {return m_nodeId;}
 
-    //! Get unique parent node ID or 0 if this is a root node.
+    //! Get guid of the parent node. Invalid guid is returned if this is a root node.
     BeGuidCR GetParentNodeId() const {return m_parentNodeId;}
-    //! Set unique parent node ID
+    //! Set parent node guid.
     ECPRESENTATION_EXPORT void SetParentNodeId(BeGuid id);
     void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
 
