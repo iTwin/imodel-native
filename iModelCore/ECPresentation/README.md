@@ -16,7 +16,8 @@ developers avoid building too much.
 - `bb re -s imodeljsmakepackages` builds the imodeljs-native addon and all its dependencies, including our library. Use when building addon for the first time.
 
 - `bb re ecpresentation-library` builds just our library. Use after making source code changes to our library.
-  - When building for native tests, using this command to rebuild the library is enough when only source (\*.cpp) files are changed. When there are changes in headers (\*.h) included in the tests, it's recommended to also remove `{platform our root}/build/ECPresentation/UnitTests-NonPublished` and rebuild the tests.
+  - When building for native tests, using this command to rebuild the library is enough when only source (\*.cpp) files are changed. When there are changes in headers (\*.h) included in the tests, it's recommended to also remove `{platform out root}/build/ECPresentation/UnitTests-NonPublished` and rebuild the tests.
+
   - When build for native addon, the following are necessary to re-create the addon package:
     ```
     bb re -c imodeljsmakepackages
