@@ -50,8 +50,6 @@ TEST_F(MultiSpecificationNodesProviderTests, ReturnsNodesForAllSpecifications)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MultiSpecificationNodesProviderTests, SkipsEmptySpecifications)
     {
-    BeTest::SetFailOnAssert(false);
-
     RootNodeRule rule;
     CustomNodeSpecification spec1(1, false, "type", "label1", "", "imageId");
     CustomNodeSpecification spec2(1, false, "", "label2", "", ""); // invalid
@@ -74,7 +72,6 @@ TEST_F(MultiSpecificationNodesProviderTests, SkipsEmptySpecifications)
 
     ++iter;
     EXPECT_TRUE(iter == provider->end());
-    BeTest::SetFailOnAssert(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -82,8 +79,6 @@ TEST_F(MultiSpecificationNodesProviderTests, SkipsEmptySpecifications)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MultiSpecificationNodesProviderTests, HasNodesReturnsFalseWhenNoSpecificationsReturnNodes)
     {
-    BeTest::SetFailOnAssert(false);
-
     RootNodeRule rule;
     CustomNodeSpecification spec1(1, false, "", "label1", "", ""); // invalid
     CustomNodeSpecification spec2(1, false, "", "label2", "", ""); // invalid
@@ -94,8 +89,6 @@ TEST_F(MultiSpecificationNodesProviderTests, HasNodesReturnsFalseWhenNoSpecifica
 
     NavNodesProviderPtr provider = MultiSpecificationNodesProvider::Create(*m_context, specs);
     EXPECT_FALSE(provider->HasNodes());
-
-    BeTest::SetFailOnAssert(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,8 +96,6 @@ TEST_F(MultiSpecificationNodesProviderTests, HasNodesReturnsFalseWhenNoSpecifica
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MultiSpecificationNodesProviderTests, HasNodesReturnsTrueWhenAtLeastOneSpecificationReturnsNodes)
     {
-    BeTest::SetFailOnAssert(false);
-
     RootNodeRule rule;
     CustomNodeSpecification spec1(1, false, "", "label1", "", ""); // invalid
     CustomNodeSpecification spec2(1, false, "type2", "label2", "description2", "imageId2");
@@ -115,8 +106,6 @@ TEST_F(MultiSpecificationNodesProviderTests, HasNodesReturnsTrueWhenAtLeastOneSp
 
     NavNodesProviderPtr provider = MultiSpecificationNodesProvider::Create(*m_context, specs);
     EXPECT_TRUE(provider->HasNodes());
-
-    BeTest::SetFailOnAssert(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,8 +113,6 @@ TEST_F(MultiSpecificationNodesProviderTests, HasNodesReturnsTrueWhenAtLeastOneSp
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MultiSpecificationNodesProviderTests, CountsNodes)
     {
-    BeTest::SetFailOnAssert(false);
-
     RootNodeRule rule;
     CustomNodeSpecification spec1(1, false, "type", "label1", "", "imageId");
     CustomNodeSpecification spec2(1, false, "", "label2", "", ""); // invalid
@@ -141,8 +128,6 @@ TEST_F(MultiSpecificationNodesProviderTests, CountsNodes)
     for (NavNodePtr node : *provider)
         ;
     EXPECT_EQ(2, provider->GetNodesCount());
-
-    BeTest::SetFailOnAssert(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

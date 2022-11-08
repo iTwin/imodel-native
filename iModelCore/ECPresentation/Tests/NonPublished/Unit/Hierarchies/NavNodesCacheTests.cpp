@@ -699,15 +699,13 @@ TEST_F(NodesCacheTests, ReturnsNullsWhenEmpty)
     EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "test ruleset id", BeGuid(), BeGuid()).IsValid());
     EXPECT_FALSE(m_cache->FindHierarchyLevel(BeGuid(true)).IsValid());
     EXPECT_FALSE(m_cache->FindDataSource(DataSourceIdentifier(BeGuid(true), { 0 }), RulesetVariables()).GetIdentifier().IsValid());
-    EXPECT_FALSE(m_cache->FindDataSource(BeGuid(true)).GetIdentifier().IsValid());
 
     BeGuid id(true);
     auto context = CreateContext("test ruleset id", id);
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(*context, CombinedHierarchyLevelIdentifier(m_connection->GetId(), "test ruleset id", id)).IsNull());
     EXPECT_TRUE(m_cache->GetHierarchyLevel(*context, HierarchyLevelIdentifier(BeGuid(true), m_connection->GetId(), "test ruleset id", BeGuid(), BeGuid())).IsNull());
-    EXPECT_TRUE(m_cache->GetDataSource(*context, DataSourceIdentifier(BeGuid(true), { 0 }), false).IsNull());
-    EXPECT_TRUE(m_cache->GetDataSource(*context, id).IsNull());
     EXPECT_TRUE(m_cache->GetNode(id).IsNull());
+    EXPECT_EQ(0, m_cache->GetCachedDirectNodesIterator(*context, DataSourceIdentifier(BeGuid(true), { 0 }))->NodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,7 +726,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
 
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(*context, CombinedHierarchyLevelIdentifier(m_connection->GetId(), info.first.GetRulesetId(), BeGuid())).IsValid());
     EXPECT_TRUE(m_cache->GetHierarchyLevel(*context, info.first).IsValid());
-    EXPECT_TRUE(m_cache->GetDataSource(*context, info.second).IsValid());
+    EXPECT_TRUE(m_cache->GetCachedDirectNodesIterator(*context, info.second) != nullptr);
 
     // verify it's not found when looking with invalid parameters
     EXPECT_FALSE(IsHierarchyLevelCached(*m_cache, "invalid"));
@@ -789,10 +787,6 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(0, cachedProvider->GetNodesCount());
 
-    // the node's data source should also be empty
-    cachedProvider = m_cache->GetDataSource(*context, node->GetNodeId());
-    ASSERT_FALSE(cachedProvider.IsValid());
-
     // cache the node
     m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
@@ -804,11 +798,6 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
 
     EXPECT_TRUE(IsNodeCached(*m_cache, node->GetNodeId()));
     EXPECT_TRUE(m_cache->GetNode(node->GetNodeId()).IsValid());
-
-    // verify node's datasource is not empty
-    cachedProvider = m_cache->GetDataSource(*context, node->GetNodeId());
-    ASSERT_TRUE(cachedProvider.IsValid());
-    EXPECT_EQ(1, cachedProvider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -903,11 +892,6 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
 
     EXPECT_TRUE(IsNodeCached(*m_cache, childNodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->GetNode(childNodes[0]->GetNodeId()).IsValid());
-
-    // verify we can get its parent data source
-    cachedProvider = m_cache->GetDataSource(*context, childNodes[0]->GetNodeId());
-    ASSERT_TRUE(cachedProvider.IsValid());
-    EXPECT_EQ(1, cachedProvider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1795,6 +1779,7 @@ TEST_F(NodesCacheTests, Savepoint_DoesntDiscardChangesWhenNotCanceled)
     EXPECT_TRUE(m_cache->GetNode(nodes[0]->GetNodeId()).IsValid());
     }
 
+#ifdef wip_datasource_variations
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1991,6 +1976,7 @@ TEST_F(NodesCacheTests, HierarchyVariationsLimit_DoesNotClearDataSourceFromDiffe
     // check that data source with same variables in different hierarchy level still exists
     EXPECT_TRUE(m_cache->GetDataSource(*CreateContext(secondHierarchyLevel.first.GetCombined()), secondHierarchyLevel.second).IsValid());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
