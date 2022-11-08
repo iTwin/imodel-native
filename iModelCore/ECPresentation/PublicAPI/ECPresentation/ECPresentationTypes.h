@@ -88,6 +88,20 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
     }
 
 /*=================================================================================**//**
+* A `less` compare macro for vectors. Vector items must have a less compare operator.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+#define VECTOR_LESS_COMPARE(lhs, rhs) \
+    if (lhs.size() < rhs.size()) \
+        return true; \
+    if (lhs.size() > rhs.size()) \
+        return false; \
+    for (size_t i = 0; i < lhs.size(); ++i) \
+        { \
+        NUMERIC_LESS_COMPARE(lhs[i], rhs[i]) \
+        }
+
+/*=================================================================================**//**
 * ECClass comparer which guarantees that classes in a sorted set always are in the same
 * order (as opposed to the default comparer which compares by pointers).
 * @bsiclass
