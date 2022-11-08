@@ -24,7 +24,7 @@ void TestSchema(WString schemaPath)
 
 TEST_F(ECSchemaMemoryTests, SizeOfObjects)
     {
-    Json::Value ecSizes(Json::ValueType::objectValue);
+    BeJsDocument ecSizes;
     ecSizes["ECSchema"] = (int) sizeof(ECSchema);
     ecSizes["ECClass"] = (int) sizeof(ECClass);
     ecSizes["ECEntityClass"] = (int) sizeof(ECEntityClass);
@@ -50,9 +50,13 @@ TEST_F(ECSchemaMemoryTests, SizeOfObjects)
     ecSizes["IECCustomAttributeContainer"] = (int) sizeof(IECCustomAttributeContainer);
 
     size_t totalSize = 0;
-    std::for_each(ecSizes.begin(), ecSizes.end(), [&totalSize](Json::Value size) { totalSize += size.asUInt64(); });
+    ecSizes.ForEachArrayMemberValue([&](BeJsValue::ArrayIndex, BeJsValue size)
+        {
+        totalSize += size.asUInt64();
+        return false;
+        });
 
-    LOGPERFDB(TEST_DETAILS, "sizeof for all EC structs", (double)totalSize, ecSizes.ToString().c_str());
+    LOGPERFDB(TEST_DETAILS, "sizeof for all EC structs", (double)totalSize, ecSizes.Stringify().c_str());
     }
 
 //---------------------------------------------------------------------------------------

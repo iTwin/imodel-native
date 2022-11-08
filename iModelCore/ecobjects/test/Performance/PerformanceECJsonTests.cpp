@@ -22,7 +22,7 @@ void SerializeSchemaToJson(ECSchemaPtr schema, bool useDescription = true)
     for(size_t i = 0; i < repeats; i++)
         {
         StopWatch serializationTimer("Serialization to JSON", true);
-        Json::Value schemaJson;
+        BeJsDocument schemaJson;
         EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
         serializationTimer.Stop();
         results.push_back(serializationTimer.GetElapsedSeconds());

@@ -15,7 +15,7 @@ struct ECJsonUtilitiesTestFixture : ECTestFixture
     {
 
 protected:
-    static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
+    static BentleyStatus ParseJson(BeJsDocument& json, Utf8StringCR jsonStr) { json.Parse(jsonStr); return json.hasParseError() ? ERROR : SUCCESS; }
     static BentleyStatus ParseJson(rapidjson::Document& json, Utf8StringCR jsonStr) { return json.Parse<0>(jsonStr.c_str()).HasParseError() ? ERROR : SUCCESS; }
     };
 
@@ -29,7 +29,7 @@ void PrintTo(BeInt64Id id, std::ostream* os) { *os << id.GetValueUnchecked(); }
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
     {
-    Json::Value jsonCpp;
+    BeJsDocument jsonCpp;
     rapidjson::Document rapidJson;
 
     //Ids formatted numerically in JSON
@@ -104,7 +104,7 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECJsonUtilitiesTestFixture, IdToJson)
     {
-    Json::Value jsonCpp;
+    BeJsDocument jsonCpp;
     rapidjson::Document rapidJson;
 
     BeInt64Id id(UINT64_C(1234));
@@ -133,7 +133,7 @@ TEST_F(ECJsonUtilitiesTestFixture, IdToJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECJsonUtilitiesTestFixture, JsonToInt64)
     {
-    Json::Value jsonCpp;
+    BeJsDocument jsonCpp;
     rapidjson::Document rapidJson;
 
     Utf8CP jsonStr = nullptr;
@@ -311,7 +311,7 @@ TEST_F(ECJsonUtilitiesTestFixture, Int64ToJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECJsonUtilitiesTestFixture, JsonToDateTime)
     {
-    Json::Value jsonCpp;
+    BeJsDocument jsonCpp;
     rapidjson::Document rapidJson;
 
     Utf8CP jsonStr = nullptr;
@@ -368,7 +368,7 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToDateTime)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECJsonUtilitiesTestFixture, DateTimeToJson)
     {
-    Json::Value jsonCpp;
+    BeJsDocument jsonCpp;
     rapidjson::Document rapidJson;
 
     DateTime dt(DateTime::Kind::Utc, 2017, 11, 20, 10, 45, 32, 111);
@@ -407,7 +407,7 @@ TEST_F(ECJsonUtilitiesTestFixture, DateTimeToJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECJsonUtilitiesTestFixture, JsonToBinary)
     {
-    Json::Value jsonCppVal;
+    BeJsDocument jsonCppVal;
     BeJsValue jsonCpp(jsonCppVal);
 
     rapidjson::Document rapidJsonVal;
@@ -697,7 +697,7 @@ TEST_F(ECJsonUtilitiesTestFixture, IGeometryIModelJsonRoundTrip)
 struct JsonECInstanceConverterTestFixture : ECJsonUtilitiesTestFixture
     {
 protected:
-    Json::Value m_jsonCpp;
+    BeJsDocument m_jsonCpp;
     rapidjson::Document m_rapidJson;
 
     static IECInstancePtr CreateTestInstance(ECSchemaR schema, PrimitiveType propertyType)
