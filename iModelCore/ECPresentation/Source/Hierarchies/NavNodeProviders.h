@@ -125,10 +125,10 @@ struct NavNodesProviderContext : RulesDrivenProviderContext
         public:
             PageOptions(size_t start) : m_start(start) {}
             PageOptions(size_t start, size_t size) : m_start(start), m_size(size) {}
-
             bool HasSize() const {return m_size.IsValid();}
-            size_t GetSize() const {return m_size.Value();}
             size_t GetStart() const {return m_start;}
+            size_t GetSize() const {return m_size.Value();}
+            size_t GetAdjustedPageSize(size_t totalCount) const;
         };
 
 private:
@@ -602,18 +602,41 @@ public:
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct DirectNodesIterator
-    {
-    protected:
-        virtual NavNodePtr _NextNode() = 0;
-        virtual bool _SkippedNodesToPageStart() const = 0;
-        virtual size_t _NodesCount() const = 0;
+{
+protected:
+    virtual NavNodePtr _NextNode() = 0;
+    virtual bool _SkippedNodesToPageStart() const = 0;
+    virtual size_t _NodesCount() const = 0;
 
-    public:
-        virtual ~DirectNodesIterator() {}
-        NavNodePtr NextNode() {return _NextNode();}
-        bool SkippedNodesToPageStart() const {return _SkippedNodesToPageStart();}
-        size_t NodesCount() const {return _NodesCount();}
-    };
+public:
+    virtual ~DirectNodesIterator() {}
+    NavNodePtr NextNode() {return _NextNode();}
+    bool SkippedNodesToPageStart() const {return _SkippedNodesToPageStart();}
+    size_t NodesCount() const {return _NodesCount();}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct BVectorDirectNodesIterator : DirectNodesIterator
+{
+private:
+    bvector<NavNodePtr> m_nodes;
+    size_t m_currentNode;
+
+protected:
+    NavNodePtr _NextNode() override
+        {
+        if (m_nodes.size() <= m_currentNode)
+            return nullptr;
+        return m_nodes.at(m_currentNode++);
+        }
+    size_t _NodesCount() const override {return m_nodes.size();}
+    bool _SkippedNodesToPageStart() const override {return false;}
+
+public:
+    BVectorDirectNodesIterator(bvector<NavNodePtr> nodes) : m_nodes(nodes), m_currentNode(0) {}
+};
 
 /*=================================================================================**//**
 * @bsiclass
@@ -1047,29 +1070,6 @@ struct CachedCombinedHierarchyLevelProvider : SQLiteCacheNodesProvider
 
     public:
         ECPRESENTATION_EXPORT static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR physicalHierarchyLevelId);
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct CachedPartialDataSourceProvider : SQLiteCacheNodesProvider
-    {
-    private:
-        BeGuid m_dataSourceId;
-        bool m_wantOnlyVisibleNodes;
-    private:
-        CachedPartialDataSourceProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, BeGuidCR dataSourceId, bool loadOnlyVisibleNodes)
-            : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex), m_dataSourceId(dataSourceId), m_wantOnlyVisibleNodes(loadOnlyVisibleNodes)
-            {}
-    protected:
-        Utf8CP _GetName() const override { return "Cached partial hierarchy level provider"; }
-        BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
-        BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetCountStatement() const override;
-    public:
-        ECPRESENTATION_EXPORT static RefCountedPtr<CachedPartialDataSourceProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR dataSourceId, bool loadOnlyVisibleNodes = false);
-        std::unique_ptr<DirectNodesIterator> CreateDirectNodesIterator() const;
     };
 
 /*=================================================================================**//**

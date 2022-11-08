@@ -83,14 +83,7 @@ TEST_F(NodesCacheWrapperTests, FindDataSource_ReturnsDataSourceFromPersistedCach
 
     auto wrapper = CreateWrapper();
 
-    // get by node id
-    DataSourceInfo cacheDataSource = wrapper->FindDataSource(node->GetNodeId(), 0);
-    EXPECT_TRUE(cacheDataSource.GetIdentifier().IsValid());
-    EXPECT_EQ(rootInfo.second.GetId(), cacheDataSource.GetIdentifier().GetId());
-    EXPECT_TRUE(nullptr == wrapper->GetMemoryCache());
-
-    // get by identifier
-    cacheDataSource = wrapper->FindDataSource(DataSourceIdentifier(rootInfo.first.GetId(), {0}), RulesetVariables(), 0);
+    DataSourceInfo cacheDataSource = wrapper->FindDataSource(DataSourceIdentifier(rootInfo.first.GetId(), {0}), RulesetVariables(), 0);
     EXPECT_TRUE(cacheDataSource.GetIdentifier().IsValid());
     EXPECT_EQ(rootInfo.second.GetId(), cacheDataSource.GetIdentifier().GetId());
     EXPECT_TRUE(nullptr == wrapper->GetMemoryCache());
@@ -108,10 +101,13 @@ TEST_F(NodesCacheWrapperTests, ReturnsRootDataSourceFromPersistedCache)
 
     NavNodesProviderPtr cacheDataSource = wrapper->GetCombinedHierarchyLevel(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.first.GetCombined());
     EXPECT_TRUE(cacheDataSource.IsValid());
+
     cacheDataSource = wrapper->GetHierarchyLevel(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.first);
     EXPECT_TRUE(cacheDataSource.IsValid());
-    cacheDataSource = wrapper->GetDataSource(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.second);
+
+    auto iterator = wrapper->GetCachedDirectNodesIterator(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.second);
     EXPECT_TRUE(cacheDataSource.IsValid());
+
     EXPECT_TRUE(nullptr == wrapper->GetMemoryCache());
     }
 
@@ -280,15 +276,15 @@ TEST_F(NodesCacheWrapperTests, CacheNodeForPersistedRootDataSourceWithNodes)
 
     CacheNewNode(*wrapper, rootInfo.second, "RootNode2", {});
 
-    NavNodesProviderPtr persistedProvider = m_cache->GetDataSource(*CreateContext(rootInfo.first.GetCombined()), rootInfo.second);
-    ASSERT_TRUE(persistedProvider.IsValid());
-    EXPECT_EQ(1, persistedProvider->GetNodesCount());
+    auto iterator = m_cache->GetCachedDirectNodesIterator(*CreateContext(rootInfo.first.GetCombined()), rootInfo.second);
+    ASSERT_TRUE(nullptr != iterator);
+    EXPECT_EQ(1, iterator->NodesCount());
 
     wrapper = nullptr;
 
-    persistedProvider = m_cache->GetDataSource(*CreateContext(rootInfo.first.GetCombined()), rootInfo.second);
-    ASSERT_TRUE(persistedProvider.IsValid());
-    EXPECT_EQ(2, persistedProvider->GetNodesCount());
+    iterator = m_cache->GetCachedDirectNodesIterator(*CreateContext(rootInfo.first.GetCombined()), rootInfo.second);
+    ASSERT_TRUE(nullptr != iterator);
+    EXPECT_EQ(2, iterator->NodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,19 +311,16 @@ TEST_F(NodesCacheWrapperTests, CacheMultiLevelHierarchyAndPersist)
     wrapper = nullptr;
 
     auto cachedChildInfo = GetDataSourceInfo(*m_cache, m_connection->GetId().c_str(), "ruleset_id", node->GetNodeId());
-    NavNodesProviderPtr childDataSource = m_cache->GetDataSource(*CreateContext(cachedChildInfo.first.GetCombined()), cachedChildInfo.second);
-    ASSERT_TRUE(childDataSource.IsValid());
-    ASSERT_EQ(1, childDataSource->GetNodesCount());
-    auto cachedChildNodeIter = childDataSource->begin();
-    EXPECT_TRUE(cachedChildNodeIter != childDataSource->end());
-    EXPECT_TRUE((*cachedChildNodeIter)->Equals(*childNode));
+    auto childIterator = m_cache->GetCachedDirectNodesIterator(*CreateContext(cachedChildInfo.first.GetCombined()), cachedChildInfo.second);
+    ASSERT_TRUE(nullptr != childIterator);
+    ASSERT_EQ(1, childIterator->NodesCount());
+    EXPECT_TRUE(childIterator->NextNode()->Equals(*childNode));
+    EXPECT_TRUE(childIterator->NextNode().IsNull());
 
-    auto cachedGrandchildInfo = GetDataSourceInfo(*m_cache, m_connection->GetId().c_str(), "ruleset_id", (*cachedChildNodeIter)->GetNodeId());
-    NavNodesProviderPtr grandchildDataSource = m_cache->GetDataSource(*CreateContext(cachedGrandchildInfo.first.GetCombined()), cachedGrandchildInfo.second);
-    ASSERT_TRUE(grandchildDataSource.IsValid());
-    ASSERT_EQ(1, grandchildDataSource->GetNodesCount());
-
-    auto cachedGrandchildNodeIter = grandchildDataSource->begin();
-    EXPECT_TRUE(cachedGrandchildNodeIter != grandchildDataSource->end());
-    EXPECT_TRUE((*cachedGrandchildNodeIter)->Equals(*grandchildNode));
+    auto cachedGrandchildInfo = GetDataSourceInfo(*m_cache, m_connection->GetId().c_str(), "ruleset_id", childNode->GetNodeId());
+    auto grandchildIterator = m_cache->GetCachedDirectNodesIterator(*CreateContext(cachedGrandchildInfo.first.GetCombined()), cachedGrandchildInfo.second);
+    ASSERT_TRUE(nullptr != grandchildIterator);
+    ASSERT_EQ(1, grandchildIterator->NodesCount());
+    EXPECT_TRUE(grandchildIterator->NextNode()->Equals(*grandchildNode));
+    EXPECT_TRUE(grandchildIterator->NextNode().IsNull());
     }
