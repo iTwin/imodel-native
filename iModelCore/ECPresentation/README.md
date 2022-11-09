@@ -37,7 +37,7 @@ BentleyBuild notes:
 - The `-s` option means "also build dependencies".
 - The `-c` option means "clean build output".
 
-It's always recommended to do a clean build after pulling changes, unless you're sure they're not significant and won't affect the result.
+It's always recommended to do a clean build by removing the `{imodel-native}/out` directory after pulling changes, unless you're sure they're not significant and won't affect the result.
 
 ### Visual Studio projects setup
 
