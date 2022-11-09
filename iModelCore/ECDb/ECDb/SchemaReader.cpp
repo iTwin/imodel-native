@@ -2170,7 +2170,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
         Utf8String extendTypeName;
         if (ExtendedTypeHelper::TryGetSystemExtendedType(extendTypeName, ecClass.GetName(), rowInfo.m_name)) 
             {
-            if (rowInfo.m_extendedTypeName != extendTypeName && rowInfo.m_name != ECDBSYS_PROP_ECInstanceId) 
+            if (rowInfo.m_extendedTypeName != extendTypeName) 
                 {
                 LOG.debugv("patching extended type for '%s.%s' from '%s' to '%s'", 
                     ecClass.GetName().c_str(),

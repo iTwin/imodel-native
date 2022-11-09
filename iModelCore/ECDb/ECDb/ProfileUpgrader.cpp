@@ -529,6 +529,13 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
         }
 
+    // Update the extended type name value in DB for ECInstanceID Property in EC_PROPERTY table to "Id" to be consistent with the value in memory.
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Property " SET ExtendedTypeName = '" EXTENDEDTYPENAME_Id "' WHERE Name = '" ECDBSYS_PROP_ECInstanceId "'"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating extended type name for property " ECDBSYS_PROP_ECInstanceId " in table " TABLE_Property " table failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
     PERFLOG_FINISH("ECDb", "Profile schema import");
     return BE_SQLITE_OK;
     }
