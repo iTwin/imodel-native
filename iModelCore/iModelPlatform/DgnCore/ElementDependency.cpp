@@ -232,7 +232,7 @@ Graph::Nodes::Nodes(Graph& graph) : T_Super(graph)
     if (!db.TableExists(NODES))
         db.CreateTable(NODES, "ElementId INTEGER PRIMARY KEY, InDegree INTEGER DEFAULT 0, InputsProcessed INTEGER DEFAULT 0, OutputsProcessed INTEGER DEFAULT 0, Direct INTEGER DEFAULT 0");
 
-    db.GetCachedStatement(m_insert, "INSERT INTO " NODES " (ElementId) VALUES(?)");
+    db.GetCachedStatement(m_insert, "INSERT OR IGNORE INTO " NODES " (ElementId) VALUES(?)");
     db.GetCachedStatement(m_incrementInDegree, "UPDATE " NODES " SET InDegree=InDegree+1 WHERE ElementId=?");
     db.GetCachedStatement(m_selectInDegree, "SELECT InDegree FROM " NODES " WHERE ElementId=?");
     db.GetCachedStatement(m_setDirect, "UPDATE " NODES " SET Direct=1 WHERE ElementId=?");

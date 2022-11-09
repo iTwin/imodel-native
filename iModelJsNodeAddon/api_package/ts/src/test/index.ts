@@ -3,11 +3,6 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-// console.log('Platform: ', process.platform);
-// console.log('Node version: ', process.version);
-// console.log('Node arch: ', process.arch);
-// console.log('Node dependencies: ', process.versions);
-
 import * as fs from "fs";
 import * as Mocha from "mocha";
 import * as path from "path";
@@ -34,7 +29,7 @@ function runMochaTests() {
 }
 
 Logger.initializeToConsole();
-Logger.setLevelDefault(LogLevel.Warning);
+Logger.setLevelDefault(LogLevel.Error);
 iModelJsNative.logger = Logger;
 
 export function openDgnDb(filename: string) {
