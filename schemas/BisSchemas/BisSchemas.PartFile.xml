@@ -88,7 +88,7 @@
     <Part Name="BisCore" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/BisCore.ecschema.xml -dSCHEMA_PATTERN=BisCore.*ecschema.xml"/>
     <Part Name="Generic" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Generic.ecschema.xml -dSCHEMA_PATTERN=Generic.*ecschema.xml"/>
     <Part Name="Functional" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Functional.ecschema.xml -dSCHEMA_PATTERN=Functional.01.00.03.ecschema.xml"/>
-    <Part Name="PhysicalMaterial" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/PhysicalMaterial.ecschema.xml -dSCHEMA_PATTERN=PhysicalMaterial.01.00.00.ecschema.xml"/>
+    <Part Name="PhysicalMaterial" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/PhysicalMaterial.ecschema.xml -dSCHEMA_PATTERN=PhysicalMaterial.01.00.01.ecschema.xml"/>
     <Part Name="Analytical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Analytical.ecschema.xml -dSCHEMA_PATTERN=Analytical.*ecschema.xml"/>
     <Part Name="Asset" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Asset.ecschema.xml -dSCHEMA_PATTERN=Asset.*ecschema.xml"/>
     <Part Name="LinearReferencing" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/LinearReferencing.ecschema.xml -dSCHEMA_PATTERN=LinearReferencing.*ecschema.xml"/>
