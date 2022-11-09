@@ -16,13 +16,18 @@ developers avoid building too much.
 - `bb re -s imodeljsmakepackages` builds the imodeljs-native addon and all its dependencies, including our library. Use when building addon for the first time.
 
 - `bb re ecpresentation-library` builds just our library. Use after making source code changes to our library.
-  - When building for native tests, using this command to rebuild the library is enough when only source (\*.cpp) files are changed. When there are changes in headers (\*.h) included in the tests, it's recommended to also remove `{platform out root}/build/ECPresentation/UnitTests-NonPublished` and rebuild the tests.
 
-  - When build for native addon, the following are necessary to re-create the addon package:
+  - When building for native tests, using this command to rebuild the library is enough when only source (\*.cpp) files are changed. When there are changes in headers (\*.h) included in the tests,
+    it's recommended to also remove `{imodel-native}/out/{platform}/build/ECPresentation/UnitTests-NonPublished` and rebuild the tests.
+
+  - When building for native addon, the following are necessary to re-create the addon package:
     ```
     bb re -c imodeljsmakepackages
     bb re iModelJsNative-Dynamic iModelJsMakePackages iModelJsApiDeclarations
     ```
+
+    **Note:** The locally built addon can be linked into local itwinjs-core repo by running the `{imodel-native}/src/imodel-native/iModelJsNodeAddon/linknativeplatform.bat` script. The script has to be run
+    only once and doesn't need to be run again after rebuilding the addon.
 
 - It's recommended to use "Rebuild" command on a test project after making test changes to rebuild the tests.
 
@@ -30,6 +35,7 @@ BentleyBuild notes:
 
 - `re` is an alias for `rebuild`.
 - The `-s` option means "also build dependencies".
+- The `-c` option means "clean build output".
 
 It's always recommended to do a clean build after pulling changes, unless you're sure they're not significant and won't affect the result.
 
