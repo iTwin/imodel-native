@@ -38,6 +38,8 @@ SEVERITY JsLogger::JsLevelToSeverity(Napi::Number jsLevel) {
 
 /** Synchronize the native std::map on this logger with the "_categoryFilter" map on the JavaScript logger object. */
 void JsLogger::SyncLogLevels() {
+    BeMutexHolder lock(m_deferredLogMutex);
+
     // first sync the default severity level for categories not specified
     m_defaultSeverity = JsLevelToSeverity(m_loggerObj.Get("_minLevel").As<Napi::Number>());
 
