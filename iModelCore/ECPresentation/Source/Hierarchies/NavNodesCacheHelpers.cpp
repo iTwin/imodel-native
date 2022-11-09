@@ -22,11 +22,12 @@ Utf8String NodesCacheHelpers::GetPaddedNumber(uint64_t number)
     return padded;
     }
 
+#ifndef NAVNODES_CACHE_BINARY_INDEX
 static const Utf8String DS_INDEX_SEPARATOR = "-";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String NodesCacheHelpers::IndexToString(bvector<uint64_t> const& index, bool pad)
+static Utf8String IndexToString(bvector<uint64_t> const& index, bool pad)
     {
     Utf8String str;
     if (pad)
@@ -36,7 +37,7 @@ Utf8String NodesCacheHelpers::IndexToString(bvector<uint64_t> const& index, bool
         if (!str.empty())
             str.append(DS_INDEX_SEPARATOR);
         if (pad)
-            str.append(GetPaddedNumber(i).c_str());
+            str.append(NodesCacheHelpers::GetPaddedNumber(i).c_str());
         else
             str.append(std::to_string(i).c_str());
         }
@@ -46,7 +47,7 @@ Utf8String NodesCacheHelpers::IndexToString(bvector<uint64_t> const& index, bool
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<uint64_t> NodesCacheHelpers::IndexFromString(Utf8StringCR str)
+static bvector<uint64_t> IndexFromString(Utf8StringCR str)
     {
     bvector<uint64_t> index;
     size_t offset = 0;
@@ -55,6 +56,7 @@ bvector<uint64_t> NodesCacheHelpers::IndexFromString(Utf8StringCR str)
         index.push_back(BeStringUtilities::ParseUInt64(token.c_str()));
     return index;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -69,6 +71,83 @@ int NodesCacheHelpers::CompareIndexes(bvector<uint64_t> const& lhs, bvector<uint
             return 1;
         }
     return 0;
+    }
+
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+/*---------------------------------------------------------------------------------**//**
+* note: need to use little-endian in the db for sorting to work
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t SwapEndian(uint64_t number)
+    {
+    union
+        {
+        uint64_t n;
+        unsigned char u8[sizeof(uint64_t)];
+        } res;
+    res.n = number;
+    size_t len = sizeof(uint64_t);
+    for (size_t i = 0; i < len / 2; i++)
+        {
+        unsigned char t = res.u8[i];
+        res.u8[i] = res.u8[len - i - 1];
+        res.u8[len - i - 1] = t;
+        }
+    return res.n;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SwapEndian(bvector<uint64_t>& list)
+    {
+    for (size_t i = 0; i < list.size(); ++i)
+        list[i] = SwapEndian(list[i]);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<uint64_t> IndexFromBlob(void const* blob, int size, bool swapEndian)
+    {
+    uint64_t const* arr = static_cast<uint64_t const*>(blob);
+    int count = size / sizeof(uint64_t);
+    bvector<uint64_t> index;
+    index.reserve(count);
+    for (int i = 0; i < count; ++i)
+        index.push_back(swapEndian ? SwapEndian(arr[i]) : arr[i]);
+    return index;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NodesCacheHelpers::BindVectorIndex(Statement& stmt, int bindingIndex, bvector<uint64_t> const& value, bool swapEndian)
+    {
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+    if (value.empty())
+        return stmt.BindNull(bindingIndex);
+    if (swapEndian)
+        {
+        bvector<uint64_t> swapped(value);
+        SwapEndian(swapped);
+        return stmt.BindBlob(bindingIndex, reinterpret_cast<void const*>(&swapped.front()), swapped.size() * sizeof(uint64_t), Statement::MakeCopy::Yes);
+        }
+    return stmt.BindBlob(bindingIndex, reinterpret_cast<void const*>(&value.front()), value.size() * sizeof(uint64_t), Statement::MakeCopy::No);
+#else
+    return stmt.BindText(bindingIndex, IndexToString(value, true), Statement::MakeCopy::Yes);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<uint64_t> NodesCacheHelpers::GetVectorIndex(Statement& stmt, int columnIndex, bool swapEndian)
+    {
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+    return IndexFromBlob(stmt.GetValueBlob(columnIndex), stmt.GetColumnBytes(columnIndex), swapEndian);
+#else
+    return IndexFromString(stmt.GetValueText(columnIndex));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -510,10 +589,6 @@ static void RemoveRuleset(BeSQLite::Db& db, BeGuidCR rulesetId)
     static Utf8CP nodesQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Nodes "] WHERE NOT EXISTS("
         "SELECT [ds].[Id] FROM [" NODESCACHE_TABLENAME_DataSources "] ds WHERE [ds].[Id] = [DataSourceId])";
     db.ExecuteSql(nodesQuery);
-
-    static Utf8CP nodesOrderQuery = "DELETE FROM [" NODESCACHE_TABLENAME_NodesOrder "] WHERE NOT EXISTS("
-        "SELECT [n].[Id] FROM [" NODESCACHE_TABLENAME_Nodes "] n WHERE [n].[Id] = [NodeId])";
-    db.ExecuteSql(nodesOrderQuery);
 
     static Utf8CP nodesKeysQuery = "DELETE FROM [" NODESCACHE_TABLENAME_NodeKeys "] WHERE NOT EXISTS("
         "SELECT [n].[Id] FROM [" NODESCACHE_TABLENAME_Nodes "] n WHERE [n].[Id] = [NodeId])";

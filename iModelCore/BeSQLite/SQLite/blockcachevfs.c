@@ -1014,8 +1014,6 @@ static int bcvfsCopyBlock(
   int ii;
   int rc = SQLITE_OK;
 
-  int nZero = 0;                  /* Trailing zeroes in copied block */
-
   assert( (szBlk % nCopy)==0 );
   aBuf = (u8*)sqlite3_malloc(nCopy);
   if( aBuf==0 ) rc = SQLITE_NOMEM;
@@ -1026,24 +1024,8 @@ static int bcvfsCopyBlock(
     rc = bcvReadfile(pFile->pCacheFile, aBuf, nCopy, i2);
     if( rc==SQLITE_OK ){
       rc = bcvWritefile(pFile->pCacheFile, aBuf, nCopy, i1);
-
-      if( pFs->mLog & SQLITE_BCV_LOG_UPLOAD ){
-        int ii;
-        for(ii=szBlk; ii>0 && aBuf[ii-1]==0x00; ii--);
-        if( ii==0 ){
-          nZero += szBlk;
-        }else{
-          nZero = szBlk-ii;
-        }
-      }
-
     }
   }
-
-  bcvfsUploadLog(pFs, 
-      "copied block %d of cache file to block %d (%d trailing zeroes)",
-      iFrom, iTo, nZero
-  );
 
   sqlite3_free(aBuf);
   return rc;

@@ -239,6 +239,73 @@ TEST_F(RuleSetLocaterManagerTests, FindsRulesetsCreatedAfterLocate)
     EXPECT_EQ(1, rulesets[1]->GetRulesetVersion().Value().GetMinor());
     }
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ThrowingRulesetLocater : RefCounted<RuleSetLocater>
+{
+private:
+    bool m_throw;
+    ThrowingRulesetLocater() : m_throw(true) {}
+protected:
+    bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP) const override
+        {
+        if (m_throw)
+            throw std::runtime_error("test");
+        return {};
+        }
+    bvector<Utf8String> _GetRuleSetIds() const override {return {};}
+    void _InvalidateCache(Utf8CP) override {}
+    int _GetPriority() const override {return 99999;}
+    IConnectionCP _GetDesignatedConnection() const override {return nullptr;}
+public:
+    static RefCountedPtr<ThrowingRulesetLocater> Create() {return new ThrowingRulesetLocater();}
+    void SetThrow(bool value) {m_throw = value;}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RuleSetLocaterManagerTests, FindsRulesetsCreatedAfterThrowingLocate)
+    {
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    m_manager->RegisterLocater(*locater);
+
+    auto throwingLocater = ThrowingRulesetLocater::Create();
+    m_manager->RegisterLocater(*throwingLocater);
+
+    m_project->Create(BeTest::GetNameOfCurrentTest());
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
+
+    auto rulesetVer0 = PresentationRuleSet::CreateInstance("Test");
+    rulesetVer0->SetRulesetVersion(Version(1, 0, 0));
+    locater->AddRuleSet(*rulesetVer0);
+
+    bool didThrow = false;
+    try
+        {
+        m_manager->LocateRuleSets(*connection, "Test");
+        }
+    catch (...)
+        {
+        didThrow = true;
+        }
+    ASSERT_TRUE(didThrow);
+    throwingLocater->SetThrow(false);
+
+    auto rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    ASSERT_EQ(1, rulesets.size());
+
+    auto rulesetVer1 = PresentationRuleSet::CreateInstance("Test");
+    rulesetVer1->SetRulesetVersion(Version(1, 1, 0));
+    locater->AddRuleSet(*rulesetVer1);
+
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    ASSERT_EQ(2, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetRulesetVersion().Value().GetMinor());
+    EXPECT_EQ(1, rulesets[1]->GetRulesetVersion().Value().GetMinor());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/

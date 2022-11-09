@@ -118,6 +118,17 @@ static bool ReturnsInstanceNodes(NavigationQueryCR query)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+template<typename SpecificationType>
+static Utf8StringCR GetSupportedSchemas(SpecificationType const& specification, PresentationRuleSetCR ruleset)
+    {
+    if (!specification.GetSupportedSchemas().empty())
+        return specification.GetSupportedSchemas();
+    return ruleset.GetSupportedSchemas();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 NavigationQueryBuilder::NavigationQueryBuilder(NavigationQueryBuilderParameters params)
     : m_params(params)
     {
@@ -138,40 +149,44 @@ struct NavigationQueryBuilder::SpecificationsVisitor : PresentationRuleSpecifica
 private:
     NavigationQueryBuilder const& m_queryBuilder;
     NavNodeCP m_parentNode;
-    RootNodeRuleCP m_rootNodeRule;
-    ChildNodeRuleCP m_childNodeRule;
+    ChildNodeRuleCR m_rule;
     bvector<NavigationQueryPtr> m_queries;
 
-private:
-    template<typename T> void HandleSpecification(T const& specification)
-        {
-        if (nullptr != m_parentNode)
-            {
-            if (nullptr == m_childNodeRule)
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Parent node specified, but got no child node rule");
-            m_queries = m_queryBuilder.GetQueries(*m_parentNode, specification, *m_childNodeRule);
-            }
-        else
-            {
-            if (nullptr == m_rootNodeRule)
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Parent node not specified, but got no root node rule");
-            m_queries = m_queryBuilder.GetQueries(specification, *m_rootNodeRule);
-            }
-        }
-
 protected:
-    void _Visit(AllInstanceNodesSpecification const& specification) override {HandleSpecification(specification);}
-    void _Visit(AllRelatedInstanceNodesSpecification const& specification) override {HandleSpecification(specification);}
-    void _Visit(RelatedInstanceNodesSpecification const& specification) override {HandleSpecification(specification);}
-    void _Visit(InstanceNodesOfSpecificClassesSpecification const& specification) override {HandleSpecification(specification);}
-    void _Visit(SearchResultInstanceNodesSpecification const& specification) override {HandleSpecification(specification);}
+    void _Visit(AllInstanceNodesSpecification const& specification) override
+        {
+        m_queries = m_queryBuilder.GetQueries(m_parentNode, specification, m_rule);
+        }
+    void _Visit(AllRelatedInstanceNodesSpecification const& specification) override
+        {
+        RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetHasChildren(),
+            specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(),
+            specification.GetGroupByLabel(), specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(),
+            GetSupportedSchemas(specification, m_queryBuilder.GetParameters().GetRuleset()), "", "");
+        relatedInstanceNodesSpecification.SetGroupByRelationship(specification.GetGroupByRelationship());
+        m_queries = m_queryBuilder.GetQueries(m_parentNode, relatedInstanceNodesSpecification, specification.GetHash(), m_rule);
+        for (NavigationQueryPtr query : m_queries)
+            query->GetResultParametersR().SetSpecification(&specification);
+        }
+    void _Visit(RelatedInstanceNodesSpecification const& specification) override
+        {
+        m_queries = m_queryBuilder.GetQueries(m_parentNode, specification, specification.GetHash(), m_rule);
+        }
+    void _Visit(InstanceNodesOfSpecificClassesSpecification const& specification) override
+        {
+        m_queries = m_queryBuilder.GetQueries(m_parentNode, specification, m_rule);
+        }
+    void _Visit(SearchResultInstanceNodesSpecification const& specification) override
+        {
+        m_queries = m_queryBuilder.GetQueries(m_parentNode, specification, m_rule);
+        }
 
 public:
     SpecificationsVisitor(NavigationQueryBuilder const& queryBuilder, RootNodeRuleCR rule)
-        : m_queryBuilder(queryBuilder), m_rootNodeRule(&rule), m_parentNode(nullptr), m_childNodeRule(nullptr)
+        : m_queryBuilder(queryBuilder), m_rule(rule), m_parentNode(nullptr)
         {}
-    SpecificationsVisitor(NavigationQueryBuilder const& queryBuilder, ChildNodeRuleCR rule, NavNodeCP parentNode)
-        : m_queryBuilder(queryBuilder), m_rootNodeRule(nullptr), m_parentNode(parentNode), m_childNodeRule(&rule)
+    SpecificationsVisitor(NavigationQueryBuilder const& queryBuilder, ChildNodeRuleCR rule, NavNodeCR parentNode)
+        : m_queryBuilder(queryBuilder), m_rule(rule), m_parentNode(&parentNode)
         {}
     bvector<NavigationQueryPtr> const& GetQueries() const {return m_queries;}
 };
@@ -181,7 +196,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(ChildNodeRuleCR rule, ChildNodeSpecificationCR spec, NavNodeCR parentNode) const
     {
-    SpecificationsVisitor visitor(*this, rule, &parentNode);
+    SpecificationsVisitor visitor(*this, rule, parentNode);
     spec.Accept(visitor);
     return visitor.GetQueries();
     }
@@ -2598,18 +2613,6 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename SpecificationType>
-Utf8String NavigationQueryBuilder::GetSupportedSchemas(SpecificationType const& specification) const
-    {
-    if (!specification.GetSupportedSchemas().empty())
-        return specification.GetSupportedSchemas();
-
-    return m_params.GetRuleset().GetSupportedSchemas();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 template<typename RuleType>
 static void CallbackOnRuleClasses(bvector<RuleType const*> const& rules, ECSchemaHelper const& helper, std::function<void(RuleType const&, ECEntityClassCR)> const& callback)
     {
@@ -2681,120 +2684,6 @@ static bvector<RelatedClassPath> ProcessSelectPathsBasedOnCustomizationRules(bve
         [](RelatedClassPath const& path) {return &path.back().GetTargetClass(); });
     bvector<RuleApplicationInfo> customizationRuleInfos = GetCustomizationRuleInfos(selectClassPtrs, resolver, instanceLabelOverrideClasses, parentNode, params);
     return QueryBuilderHelpers::ProcessRelationshipPathsBasedOnCustomizationRules(selectPaths, customizationRuleInfos, params.GetConnection().GetECDb().Schemas());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(AllInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(nullptr, specification, rule);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(AllRelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-
-    RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetHasChildren(),
-        specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(),
-        specification.GetGroupByLabel(), specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
-    if (specification.GetGroupByRelationship())
-        relatedInstanceNodesSpecification.SetGroupByRelationship(true);
-
-    bvector<NavigationQueryPtr> queries = GetQueries(nullptr, relatedInstanceNodesSpecification, specification.GetHash(), rule);
-    for (NavigationQueryPtr query : queries)
-        {
-        query->GetResultParametersR().SetSpecification(&specification);
-        }
-    return queries;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(RelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(nullptr, specification, specification.GetHash(), rule);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(InstanceNodesOfSpecificClassesSpecification const& specification, RootNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(nullptr, specification, rule);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(SearchResultInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(nullptr, specification, rule);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(&parentNode, specification, rule);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, AllRelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-
-    RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetHasChildren(),
-        specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(),
-        specification.GetGroupByLabel(), specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
-    if (specification.GetGroupByRelationship())
-        relatedInstanceNodesSpecification.SetGroupByRelationship(true);
-
-    bvector<NavigationQueryPtr> queries = GetQueries(&parentNode, relatedInstanceNodesSpecification, specification.GetHash(), rule);
-    for (NavigationQueryPtr query : queries)
-        {
-        query->GetResultParametersR().SetSpecification(&specification);
-        }
-    return queries;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, RelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(&parentNode, specification, specification.GetHash(), rule);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(&parentNode, specification, rule);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-    return GetQueries(&parentNode, specification, rule);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2932,7 +2821,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
         }
     else
         {
-        Utf8String supportedSchemas = GetSupportedSchemas(specification);
+        Utf8String supportedSchemas = GetSupportedSchemas(specification, m_params.GetRuleset());
         ECClassSet queryClasses = m_params.GetSchemaHelper().GetECClassesFromSchemaList(supportedSchemas);
         for (auto pair : queryClasses)
             selectClasses.push_back(SelectClassWithExcludes<ECClass>(*pair.first, "this", pair.second));
@@ -3011,7 +2900,7 @@ static void FilterRelationshipPathsByTargetClass(bvector<RelatedClassPath>& path
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const
     {
-    Utf8String supportedSchemas = GetSupportedSchemas(specification);
+    Utf8String supportedSchemas = GetSupportedSchemas(specification, m_params.GetRuleset());
     ECClassUseCounter classesCounter;
     GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params.GetRulesPreprocessor(), m_params, parentNode, specificationHash, specification);
     RootQueryContext queryContext(groupingResolver);

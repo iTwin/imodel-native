@@ -40,6 +40,7 @@ export const NativeLoggerCategory = {
   DgnCore: "DgnCore",
   ECDb: "ECDb",
   ECObjectsNative: "ECObjectsNative",
+  SQLite: "SQLite",
   UnitsNative: "UnitsNative",
 } as const;
 

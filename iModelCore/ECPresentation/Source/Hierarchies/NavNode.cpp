@@ -308,7 +308,7 @@ NavNode::NavNode()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNode::NavNode(NavNode const& other)
+NavNode::NavNode(NavNodeCR other)
     : m_allocator(NAVNODE_JSON_CHUNK_SIZE), m_internalExtendedData(&m_allocator)
     {
     m_internalExtendedData.CopyFrom(other.m_internalExtendedData, m_allocator);
