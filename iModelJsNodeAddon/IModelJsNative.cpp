@@ -1208,7 +1208,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     void OpenDgnDb(BeFileNameCR dbname, DgnDb::OpenParams& openParams) {
         if (!openParams.IsReadonly())
-            openParams.SetBusyRetry(new BeSQLite::BusyRetry(40, 500)); // retry 40 times, 1/2 second intervals (20 seconds total)
+            openParams.SetBusyRetry(new BeSQLite::BusyRetry(40, 500)); // retry 40 times, 1/2 second intervals (20 seconds total) s
         NativeLogging::CategoryLogger("BeSQLite").infov(L"Opening DgnDb %ls", dbname.c_str());
 
         DbResult result;
