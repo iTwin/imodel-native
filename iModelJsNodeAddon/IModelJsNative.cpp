@@ -5964,7 +5964,7 @@ static void setMaxTileCacheSize(Napi::CallbackInfo const& info) {
 }
 
 static void flushLog(Napi::CallbackInfo const& info) {
-  s_jsLogger.processDeferred();
+  s_jsLogger.FlushDeferred();
 }
 static Napi::Value getLogger(Napi::CallbackInfo const& info) {
   return s_jsLogger.getJsLogger();
