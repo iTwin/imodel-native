@@ -5,11 +5,12 @@
 
 import { expect } from "chai";
 import { dbFileName, iModelJsNative } from "./utils";
-import { DbResult } from "@itwin/core-bentley";
+import { DbResult, Logger, LogLevel } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { openDgnDb } from ".";
+import * as sinon from "sinon";
 
-describe("origin property on ColumnInfo", () => {
+describe("SQLite statements", () => {
   let dgndb: IModelJsNative.DgnDb;
   before((done) => {
     dgndb = openDgnDb(dbFileName);
@@ -102,6 +103,29 @@ describe("origin property on ColumnInfo", () => {
       expect(colInfo.getPropertyName()).eq("SchemaName");
       expect(colInfo.hasOriginProperty()).to.be.true;
       expect(colInfo.getOriginPropertyName()).eq("Name");
+    } finally {
+      stmt.dispose();
+    }
+  });
+
+  it("test logging", () => {
+    Logger.setLevel("test-info", LogLevel.Info);
+    Logger.setLevel("test-warn", LogLevel.Warning);
+    Logger.setLevel("test-error", LogLevel.Error);
+    Logger.setLevel("test-trace", LogLevel.Trace);
+    iModelJsNative.clearLogLevelCache();
+    const errorLogStub = sinon.stub(Logger, "logError").callsFake(() => { });
+
+    const stmt = new iModelJsNative.SqliteStatement();
+    try {
+      const sql = "SELECT 100 from xxx";
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(errorLogStub.callCount).eq(1);
+
+      Logger.setLevel("BeSQLite", LogLevel.None);
+      iModelJsNative.clearLogLevelCache();
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(errorLogStub.callCount).eq(1);
     } finally {
       stmt.dispose();
     }
