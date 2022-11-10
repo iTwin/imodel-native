@@ -174,6 +174,7 @@ protected:
     virtual TaskDependencies const& _GetDependencies() const = 0;
     virtual Predicate const& _GetOtherTasksBlockingPredicate() const = 0;
     virtual bool _IsBlocked() const = 0;
+    virtual void _SetTaskConnection(IConnectionCR) const = 0;
 public:
     BeGuidCR GetId() const {return _GetId();}
     uint64_t GetCreateTimestamp() const {return _GetCreateTimestamp();}
@@ -189,6 +190,7 @@ public:
     TaskDependencies const& GetDependencies() const {return _GetDependencies();}
     Predicate const& GetOtherTasksBlockingPredicate() const {return _GetOtherTasksBlockingPredicate();}
     bool IsBlocked() const {return _IsBlocked();}
+    void SetTaskConnection(IConnectionCR connection) const {_SetTaskConnection(connection);}
 };
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(IECPresentationTask);
 DEFINE_REF_COUNTED_PTR(IECPresentationTask);
@@ -224,6 +226,7 @@ private:
     folly::SharedPromise<folly::Unit> m_completionPromise;
     folly::Executor* m_futureExecutor;
     std::shared_ptr<bool> m_promiseResolved;
+    mutable IConnectionCPtr m_connection;
 protected:
     BeMutex& m_mutex;
     TPromise m_promise;
@@ -255,14 +258,22 @@ protected:
     virtual folly::Future<folly::Unit> _GetCompletion() const override {return const_cast<folly::SharedPromise<folly::Unit>&>(m_completionPromise).getFuture();}
     virtual void _Complete() override {m_completionPromise.setValue();}
     virtual ICancelationTokenCP _GetCancelationToken() const override {return m_cancelationToken.get();}
-    virtual void _Cancel() override {m_promise.getFuture().cancel();}
+    virtual void _Cancel() override 
+        {
+        m_promise.getFuture().cancel();
+        }
     virtual void _Restart() override
         {
         BeMutexHolder lock(m_mutex);
         if (m_cancelationToken.IsValid())
-            {
             m_cancelationToken->SetCanceled(true);
+
+        if (m_connection.IsValid() && m_connection->IsOpen())
+            {
+            DisableProxyConnectionThreadVerification noThreadVerification(*m_connection);
+            m_connection->InterruptRequests();
             }
+
         m_completionPromise.getFuture().ensure([this]()
             {
             m_cancelationToken = m_cancelationToken.IsValid() ? SimpleCancelationToken::Create() : nullptr;
@@ -314,6 +325,7 @@ protected:
     virtual int _GetPriority() const override {return m_priority;}
     virtual IECPresentationTask::Predicate const& _GetOtherTasksBlockingPredicate() const override {return m_otherTasksBlockingPredicate;}
     virtual bool _IsBlocked() const override {return m_blockPredicate && m_blockPredicate();}
+    void _SetTaskConnection(IConnectionCR connection) const override {m_connection = &connection;}
 public:
     ECPresentationTaskBase(BeMutex& mutex)
         : m_id(true), m_createTimestamp(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_mutex(mutex), m_priority(1000), m_futureExecutor(nullptr)
@@ -333,6 +345,12 @@ public:
 
             if (m_cancelationToken.IsValid())
                 m_cancelationToken->SetCanceled(true);
+
+            if (m_connection.IsValid() && m_connection->IsOpen())
+                {
+                DisableProxyConnectionThreadVerification noThreadVerification(*m_connection);
+                m_connection->InterruptRequests();
+                }
 
             if (e.is_compatible_with<folly::FutureCancellation>())
                 {
