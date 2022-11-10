@@ -371,6 +371,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RuleSetLocaterManager : IRulesetLocaterManager, I
         CacheValue(PresentationRuleSetPtr ruleset, int locaterPriority) : m_locaterPriority(locaterPriority), m_ruleset(ruleset) {}
         };
 
+    struct LocateContext;
+
 private:
     bvector<RuleSetLocaterPtr> m_locaters;
     mutable bool m_isLocating;

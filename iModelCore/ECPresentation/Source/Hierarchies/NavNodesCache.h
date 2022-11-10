@@ -99,14 +99,16 @@ protected:
 
     virtual BeGuid _FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const&) const = 0;
     virtual HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const = 0;
+#ifdef wip_enable_display_label_postprocessor
     virtual bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int partsToGet) const = 0;
+#endif
     virtual DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int partsToGet) const = 0;
     virtual DataSourceInfo _FindDataSource(BeGuidCR nodeId, int partsToGet) const = 0;
 
     virtual NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR context, CombinedHierarchyLevelIdentifier const&, bool) const = 0;
     virtual NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const&, bool) const = 0;
-    virtual NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const&, bool, bool) const = 0;
-    virtual NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, BeGuidCR nodeId, bool, bool) const = 0;
+
+    virtual std::unique_ptr<DirectNodesIterator> _GetCachedDirectNodesIterator(NavNodesProviderContextCR, DataSourceIdentifier const&) const = 0;
 
     virtual void _Cache(HierarchyLevelIdentifier&) = 0;
     virtual void _Cache(DataSourceInfo&) = 0;
@@ -134,8 +136,10 @@ public:
     bvector<uint64_t> GetNodeIndex(BeGuidCR nodeId) const {return _GetNodeIndex(nodeId);}
 
     BeGuid FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const& identifier) const {return _FindPhysicalHierarchyLevelId(identifier);}
-    HierarchyLevelIdentifier FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const {return _FindHierarchyLevel(connectionId, rulesetId, virtualParentNodeId, removalId);}
-    bvector<DataSourceInfo> FindDataSources(CombinedHierarchyLevelIdentifier const& hlIdentifier, RulesetVariables const& variables, int partsToGet = 0) const {return _FindDataSources(hlIdentifier, variables, partsToGet);}
+    HierarchyLevelIdentifier FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const { return _FindHierarchyLevel(connectionId, rulesetId, virtualParentNodeId, removalId); }
+#ifdef wip_enable_display_label_postprocessor
+    bvector<DataSourceInfo> FindDataSources(CombinedHierarchyLevelIdentifier const& hlIdentifier, RulesetVariables const& variables, int partsToGet = 0) const { return _FindDataSources(hlIdentifier, variables, partsToGet); }
+#endif
     DataSourceInfo FindDataSource(DataSourceIdentifier const& identifier, RulesetVariables const& variables, int partsToGet = 0) const {return _FindDataSource(identifier, variables, partsToGet);}
     DataSourceInfo FindDataSource(BeGuidCR nodeId, int partsToGet = 0) const {return _FindDataSource(nodeId, partsToGet);}
 
@@ -145,12 +149,8 @@ public:
     //! Get data source for the whole hierarchy level.
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
     NavNodesProviderPtr GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const& info, bool onlyInitialized = true) const {return _GetHierarchyLevel(context, info, onlyInitialized);}
-    //! Get partial data source (which is a subset of a hierarchy level).
-    //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const& info, bool onlyInitialized = true, bool onlyVisible = false) const {return _GetDataSource(context, info, onlyInitialized, onlyVisible);}
-    //! Get partial data source the node with the supplied ID belongs to.
-    //  Cached datasource can be deleted if user settings used by cached datasource have changed.
-    NavNodesProviderPtr GetDataSource(NavNodesProviderContextR context, BeGuidCR nodeId, bool onlyInitialized = true, bool onlyVisible = false) const {return _GetDataSource(context, nodeId, onlyInitialized, onlyVisible);}
+
+    std::unique_ptr<DirectNodesIterator> GetCachedDirectNodesIterator(NavNodesProviderContextCR context, DataSourceIdentifier const& identifier) const {return _GetCachedDirectNodesIterator(context, identifier);}
 
     void Cache(HierarchyLevelIdentifier& info) {_Cache(info);}
     void Cache(DataSourceInfo& info) {_Cache(info);}
@@ -180,7 +180,6 @@ public:
 #define NODESCACHE_TABLENAME_Nodes                   "Nodes"
 #define NODESCACHE_TABLENAME_NodeKeys                "NodeKeys"
 #define NODESCACHE_TABLENAME_NodeInstances           "NodeInstances"
-#define NODESCACHE_TABLENAME_NodesOrder              "NodesOrder"
 #define NODESCACHE_TABLENAME_MergedNodes             "MergedNodes"
 #define NODESCACHE_TABLENAME_Rulesets                "Rulesets"
 
@@ -314,13 +313,14 @@ protected:
     ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(BeGuidCR nodeId) const override;
     ECPRESENTATION_EXPORT BeGuid _FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const&) const override;
     ECPRESENTATION_EXPORT HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const override;
+#ifdef wip_enable_display_label_postprocessor
     ECPRESENTATION_EXPORT bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int) const override;
+#endif
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int) const override;
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(BeGuidCR nodeId, int) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR, CombinedHierarchyLevelIdentifier const&, bool) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR, HierarchyLevelIdentifier const&, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR, DataSourceIdentifier const&, bool, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR, BeGuidCR nodeId, bool, bool) const override;
+    ECPRESENTATION_EXPORT std::unique_ptr<DirectNodesIterator> _GetCachedDirectNodesIterator(NavNodesProviderContextCR, DataSourceIdentifier const&) const override;
     ECPRESENTATION_EXPORT void _Cache(HierarchyLevelIdentifier&) override;
     ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&) override;
     ECPRESENTATION_EXPORT void _Cache(NavNodeR, DataSourceIdentifier const&, bvector<uint64_t> const&, NodeVisibility) override;
@@ -429,6 +429,59 @@ public:
         : m_cache(cache), m_hierarchyLevelIdentifier(identifier)
         {}
     ~NodesCacheHierarchyLevelLocker() {Unlock();}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct SqliteCacheDirectNodeIteratorBase : DirectNodesIterator
+{
+private:
+    Db& m_db;
+    BeSQLite::StatementCache& m_statements;
+    BeMutex& m_cacheMutex;
+    NavNodesProviderContextCPtr m_context;
+    mutable Nullable<bool> m_hasVirtualNodes;
+    mutable Nullable<size_t> m_nodesCount;
+    mutable Nullable<int> m_offset;
+    std::unique_ptr<bvector<NavNodePtr>> m_loadedNodes;
+    int m_currNodeIndex;
+    int m_pageSize;
+
+private:
+    size_t GetTotalNodesCount() const;
+    CachedStatementPtr GetNodesPageStatement() const;
+    void LoadNodesPage();
+
+protected:
+    virtual bool _QueryHasVirtualNodes() const = 0;
+    virtual size_t _QueryTotalNodesCount() const = 0;
+    virtual Utf8CP _GetNodesQuery() const = 0;
+    virtual void _BindNodesStatement(StatementR, int&) const = 0;
+
+protected:
+    bool _SkippedNodesToPageStart() const override;
+    size_t _NodesCount() const override;
+    NavNodePtr _NextNode() override;
+
+protected:
+    SqliteCacheDirectNodeIteratorBase(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& cacheMutex)
+        : m_context(&context), m_db(db), m_statements(statements), m_cacheMutex(cacheMutex), m_pageSize(0), m_currNodeIndex(0)
+        {
+        m_pageSize = m_context->GetOptimizationFlags().GetMaxNodesToLoad();
+        if (m_pageSize == 0 && m_context->HasPageOptions() && m_context->GetPageOptions()->HasSize())
+            m_pageSize = m_context->GetPageOptions()->GetSize();
+        }
+    Db& GetDb() const {return m_db;}
+    StatementCache& GetStatements() const {return m_statements;}
+    NavNodesProviderContextCR GetContext() const {return *m_context;}
+    int GetPageSize() const {return m_pageSize;}
+    int GetOffset() const;
+    bool HasVirtualNodes() const;
+
+public:
+    static std::unique_ptr<DirectNodesIterator> CreateForHierarchyLevel(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& mutex, BeGuid hierarchyLevelId);
+    static std::unique_ptr<DirectNodesIterator> CreateForDataSource(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& mutex, BeGuid dataSourceId);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

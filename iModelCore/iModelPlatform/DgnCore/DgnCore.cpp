@@ -249,7 +249,7 @@ void PlatformLib::Host::Initialize()
     BeStringUtilities::Initialize(assetDir);
     ECDb::Initialize(m_knownLocationsAdmin->GetLocalTempDirectoryBaseName(),
                       &assetDir,
-                       BeSQLiteLib::LogErrors::No);
+                       BeSQLiteLib::LogErrors::Yes);
 
     GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().GetNameUtf8().c_str());
 

@@ -26,7 +26,9 @@
 #include <list>
 #include <re2/re2.h>
 
-#define LOG (NativeLogging::CategoryLogger("BeSQLite"))
+static NativeLogging::CategoryLogger LOG("BeSQLite");
+static NativeLogging::CategoryLogger NativeSqliteLog("SQLite");
+
 #define RUNONCE_CHECK(var,stat) {if (var) return stat; var=true;}
 using namespace re2;
 using namespace std;
@@ -5358,20 +5360,26 @@ static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_rou
     initLanguageSupportOnDb(db);
 
     return BE_SQLITE_OK;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg)
-    {
-    NativeLogging::SEVERITY severity = (iErrCode == SQLITE_NOTICE)? NativeLogging::LOG_TRACE:
-                                        (iErrCode == SQLITE_WARNING)? NativeLogging::LOG_WARNING:
-                                                                      NativeLogging::LOG_ERROR;
-    LOG.messagev(severity, "SQLITE_ERROR %x [%s]", iErrCode, zMsg);
+static void logCallback(void* pArg, int rc, Utf8CP zMsg) {
+    USING_NAMESPACE_BENTLEY_LOGGING
+    SEVERITY sev = LOG_ERROR;
+    switch (rc & 0xff) { // mask low byte to check for error level
+    case BE_SQLITE_NOTICE:
+        sev = LOG_TRACE;
+        break;
+    case BE_SQLITE_WARNING:
+    case BE_SQLITE_SCHEMA: // automatically recovered, usually not a problem
+    case BE_SQLITE_ERROR:  // often expected for testing whether columns exist
+        sev = LOG_WARNING;
+        break;
     }
-
-// #define NO_LOG_CALLBACK 1
+    NativeSqliteLog.messagev(sev, "rc=%d, %s", rc, zMsg);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
