@@ -69,14 +69,16 @@ struct QueryRequest {
         static constexpr auto JKind = "kind";
         static constexpr auto JUsePrimaryConn = "usePrimaryConn";
         static constexpr auto JRestartToken = "restartToken";
+        static constexpr auto JDelay = "delay";
         QueryQuota m_quota;
         int32_t m_priority;
         Kind m_kind;
         bool m_usePrimaryConn;
         std::string m_restartToken;
+        std::chrono::milliseconds m_delay;
 
     public:
-        QueryRequest(Kind kind):m_usePrimaryConn(false), m_priority(0), m_kind(kind) {}
+        QueryRequest(Kind kind):m_usePrimaryConn(false), m_priority(0), m_kind(kind), m_delay(0u) {}
         virtual ~QueryRequest(){}
         ECDB_EXPORT QueryRequest(QueryRequest&&) noexcept;
         ECDB_EXPORT QueryRequest(const QueryRequest&) noexcept;
@@ -87,7 +89,9 @@ struct QueryRequest {
         QueryRequest& SetPriority(int32_t priority) noexcept { m_priority = priority;return *this;}
         QueryRequest& SetUsePrimaryConnection(bool usePrimary) { m_usePrimaryConn = usePrimary; return *this;}
         QueryRequest& SetRestartToken(std::string const& token) { m_restartToken = token; return *this;}
+        QueryRequest& SetDelay(std::chrono::milliseconds t) noexcept { m_delay = t; return *this;}
         bool UsePrimaryConnection() const noexcept {return m_usePrimaryConn;}
+        std::chrono::milliseconds GetDelay() const { return m_delay; }
         QueryQuota const& GetQuota() const noexcept {return m_quota;}
         std::string const& GetRestartToken() const { return m_restartToken; }
         int32_t GetPriority() const noexcept {return m_priority;}
@@ -541,6 +545,7 @@ struct ConcurrentQueryMgr final {
             ECDB_EXPORT static Config const& GetDefault();
             ECDB_EXPORT static Config GetFromEnv();
             ECDB_EXPORT static Config& GetInstance();
+            void Reset() { *this = GetDefault(); }
     };    
     public:
         struct Impl; // prevent circular dependency on ECDb
