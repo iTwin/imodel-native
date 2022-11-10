@@ -48,9 +48,11 @@ protected:
             {
             return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId));
             });
-        m_manager.GetTasksManager().CreateAndExecute([&, connectionId = connection->GetId(), changes](IECPresentationTaskCR)
+        m_manager.GetTasksManager().CreateAndExecute([&, connectionId = connection->GetId(), changes](IECPresentationTaskCR task)
             {
-            NotifyECInstancesChanged(connections.GetConnection(connectionId.c_str())->GetECDb(), changes);
+            IConnectionPtr taskConnection = connections.GetConnection(connectionId.c_str());
+            task.SetTaskConnection(*taskConnection);
+            NotifyECInstancesChanged(taskConnection->GetECDb(), changes);
             }, taskParams);
         }
 public:
