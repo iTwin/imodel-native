@@ -231,6 +231,15 @@ protected:
     BeMutex& m_mutex;
     TPromise m_promise;
     std::shared_ptr<Diagnostics::Scope> m_diagnosticsScope;
+private:
+    void InterruptConnection()
+        {
+        if (m_connection.IsValid() && m_connection->IsOpen())
+            {
+            DisableProxyConnectionThreadVerification noThreadVerification(*m_connection);
+            m_connection->InterruptRequests();
+            }
+        }
 protected:
     void Resolve(folly::Try<TResult>&& res)
         {
@@ -266,12 +275,9 @@ protected:
         {
         BeMutexHolder lock(m_mutex);
         if (m_cancelationToken.IsValid())
-            m_cancelationToken->SetCanceled(true);
-
-        if (m_connection.IsValid() && m_connection->IsOpen())
             {
-            DisableProxyConnectionThreadVerification noThreadVerification(*m_connection);
-            m_connection->InterruptRequests();
+            m_cancelationToken->SetCanceled(true);
+            InterruptConnection();
             }
 
         m_completionPromise.getFuture().ensure([this]()
@@ -344,12 +350,9 @@ public:
                 }
 
             if (m_cancelationToken.IsValid())
-                m_cancelationToken->SetCanceled(true);
-
-            if (m_connection.IsValid() && m_connection->IsOpen())
                 {
-                DisableProxyConnectionThreadVerification noThreadVerification(*m_connection);
-                m_connection->InterruptRequests();
+                m_cancelationToken->SetCanceled(true);
+                InterruptConnection();
                 }
 
             if (e.is_compatible_with<folly::FutureCancellation>())
