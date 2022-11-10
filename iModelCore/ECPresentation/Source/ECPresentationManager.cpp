@@ -48,7 +48,7 @@ protected:
             {
             return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId));
             });
-        m_manager.GetTasksManager().CreateAndExecute([&, connectionId = connection->GetId(), changes](IECPresentationTaskCR task)
+        m_manager.GetTasksManager().CreateAndExecute([&, connectionId = connection->GetId(), changes](IECPresentationTaskR task)
             {
             IConnectionPtr taskConnection = connections.GetConnection(connectionId.c_str());
             task.SetTaskConnection(*taskConnection);
@@ -375,7 +375,7 @@ Utf8CP ECPresentationManager::GetConnectionId(ECDbCR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IConnectionCR ECPresentationManager::GetTaskConnection(Utf8CP connectionId) const
+IConnectionCR ECPresentationManager::GetConnection(Utf8CP connectionId) const
     {
     auto scope = Diagnostics::Scope::Create("Get task connection");
 
@@ -469,11 +469,11 @@ folly::Future<NodesResponse> ECPresentationManager::GetNodes(WithPageOptions<Asy
     if (!connectionId)
         return folly::makeFuture<NodesResponse>(InvalidArgumentException("ECDb not registered as a connection"));
 
-    return m_tasksManager->CreateAndExecute<NodesResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodesResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         INavNodesDataSourcePtr source = m_impl->GetNodes(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -495,11 +495,11 @@ folly::Future<NodesCountResponse> ECPresentationManager::GetNodesCount(AsyncHier
     if (!connectionId)
         return folly::makeFuture<NodesCountResponse>(InvalidArgumentException("ECDb not registered as a connection"));
 
-    return m_tasksManager->CreateAndExecute<NodesCountResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodesCountResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->GetNodesCount(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -521,11 +521,11 @@ folly::Future<NodeResponse> ECPresentationManager::GetParent(AsyncNodeParentRequ
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies({ std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()) });
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<NodeResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodeResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->GetParent(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -547,11 +547,11 @@ folly::Future<NodeResponse> ECPresentationManager::GetNode(AsyncNodeByKeyRequest
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies({ std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()) });
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<NodeResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodeResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->GetNode(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -581,11 +581,11 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
         return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId)) && task.GetDependencies().Has(TaskDependencyOnRuleset(rulesetId));
         });
 
-    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         Utf8String escapedString(params.GetFilterText());
@@ -621,11 +621,11 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
         {
         return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId)) && task.GetDependencies().Has(TaskDependencyOnRuleset(rulesetId));
         });
-    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         auto pathParamsBase = NodePathFromInstanceKeyPathRequestImplParams::Create(taskConnection, task.GetCancelationToken(), HierarchyRequestParams(params, nullptr), bvector<ECInstanceKey>());
@@ -654,11 +654,11 @@ folly::Future<ContentClassesResponse> ECPresentationManager::GetContentClasses(A
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies({ std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()) });
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentClassesResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentClassesResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->GetContentClasses(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -711,11 +711,11 @@ folly::Future<ContentDescriptorResponse> ECPresentationManager::GetContentDescri
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentDescriptorResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentDescriptorResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->GetContentDescriptor(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -749,11 +749,11 @@ folly::Future<ContentResponse> ECPresentationManager::GetContent(WithPageOptions
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentResponse>([&, params](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(params.GetContentDescriptor().GetConnectionId().c_str());
+        IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
         task.SetTaskConnection(taskConnection);
 
         ContentCPtr content = m_impl->GetContent(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -790,11 +790,11 @@ folly::Future<ContentSetSizeResponse> ECPresentationManager::GetContentSetSize(A
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentSetSizeResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentSetSizeResponse>([&, params](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(params.GetContentDescriptor().GetConnectionId().c_str());
+        IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->GetContentSetSize(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -834,11 +834,11 @@ folly::Future<DisplayLabelResponse> ECPresentationManager::GetDisplayLabel(Async
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<DisplayLabelResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<DisplayLabelResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->GetDisplayLabel(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -865,11 +865,11 @@ folly::Future<DistinctValuesResponse> ECPresentationManager::GetDistinctValues(W
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<DistinctValuesResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<DistinctValuesResponse>([&, params](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(params.GetContentDescriptor().GetConnectionId().c_str());
+        IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
         task.SetTaskConnection(taskConnection);
 
         PagingDataSourceCPtr<DisplayValueGroupCPtr> source = m_impl->GetDistinctValues(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
@@ -908,11 +908,11 @@ folly::Future<HierarchiesCompareResponse> ECPresentationManager::CompareHierarch
         std::make_shared<TaskDependencyOnRuleset>(params.GetRhsRulesetId()),
         });
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<HierarchiesCompareResponse>([&, params, connectionId = Utf8String(connectionId)](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<HierarchiesCompareResponse>([&, params, connectionId = Utf8String(connectionId)](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(connectionId.c_str());
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
         return m_impl->CompareHierarchies(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
