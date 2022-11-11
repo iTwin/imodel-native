@@ -174,6 +174,7 @@ protected:
     virtual TaskDependencies const& _GetDependencies() const = 0;
     virtual Predicate const& _GetOtherTasksBlockingPredicate() const = 0;
     virtual bool _IsBlocked() const = 0;
+    virtual void _SetTaskConnection(IConnectionCR) = 0;
 public:
     BeGuidCR GetId() const {return _GetId();}
     uint64_t GetCreateTimestamp() const {return _GetCreateTimestamp();}
@@ -189,6 +190,7 @@ public:
     TaskDependencies const& GetDependencies() const {return _GetDependencies();}
     Predicate const& GetOtherTasksBlockingPredicate() const {return _GetOtherTasksBlockingPredicate();}
     bool IsBlocked() const {return _IsBlocked();}
+    void SetTaskConnection(IConnectionCR connection) {_SetTaskConnection(connection);}
 };
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(IECPresentationTask);
 DEFINE_REF_COUNTED_PTR(IECPresentationTask);
@@ -224,10 +226,20 @@ private:
     folly::SharedPromise<folly::Unit> m_completionPromise;
     folly::Executor* m_futureExecutor;
     std::shared_ptr<bool> m_promiseResolved;
+    IConnectionCPtr m_connection;
 protected:
     BeMutex& m_mutex;
     TPromise m_promise;
     std::shared_ptr<Diagnostics::Scope> m_diagnosticsScope;
+private:
+    void InterruptConnection()
+        {
+        if (m_connection.IsValid() && m_connection->IsOpen())
+            {
+            DisableProxyConnectionThreadVerification noThreadVerification(*m_connection);
+            m_connection->InterruptRequests();
+            }
+        }
 protected:
     void Resolve(folly::Try<TResult>&& res)
         {
@@ -255,14 +267,19 @@ protected:
     virtual folly::Future<folly::Unit> _GetCompletion() const override {return const_cast<folly::SharedPromise<folly::Unit>&>(m_completionPromise).getFuture();}
     virtual void _Complete() override {m_completionPromise.setValue();}
     virtual ICancelationTokenCP _GetCancelationToken() const override {return m_cancelationToken.get();}
-    virtual void _Cancel() override {m_promise.getFuture().cancel();}
+    virtual void _Cancel() override 
+        {
+        m_promise.getFuture().cancel();
+        }
     virtual void _Restart() override
         {
         BeMutexHolder lock(m_mutex);
         if (m_cancelationToken.IsValid())
             {
             m_cancelationToken->SetCanceled(true);
+            InterruptConnection();
             }
+
         m_completionPromise.getFuture().ensure([this]()
             {
             m_cancelationToken = m_cancelationToken.IsValid() ? SimpleCancelationToken::Create() : nullptr;
@@ -314,6 +331,7 @@ protected:
     virtual int _GetPriority() const override {return m_priority;}
     virtual IECPresentationTask::Predicate const& _GetOtherTasksBlockingPredicate() const override {return m_otherTasksBlockingPredicate;}
     virtual bool _IsBlocked() const override {return m_blockPredicate && m_blockPredicate();}
+    void _SetTaskConnection(IConnectionCR connection) override {BeMutexHolder lock(m_mutex); m_connection = &connection;}
 public:
     ECPresentationTaskBase(BeMutex& mutex)
         : m_id(true), m_createTimestamp(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_mutex(mutex), m_priority(1000), m_futureExecutor(nullptr)
@@ -332,7 +350,10 @@ public:
                 }
 
             if (m_cancelationToken.IsValid())
+                {
                 m_cancelationToken->SetCanceled(true);
+                InterruptConnection();
+                }
 
             if (e.is_compatible_with<folly::FutureCancellation>())
                 {
@@ -358,11 +379,11 @@ public:
 struct ECPresentationTask : ECPresentationTaskBase<IECPresentationTaskWithResult<folly::Unit>, folly::Unit>
 {
 private:
-    std::function<void(IECPresentationTaskCR)> m_handler;
+    std::function<void(IECPresentationTaskR)> m_handler;
 protected:
     folly::Unit _CreateResult() override {m_handler(*this); return folly::unit;}
 public:
-    ECPresentationTask(BeMutex& mutex, std::function<void(IECPresentationTaskCR)> handler)
+    ECPresentationTask(BeMutex& mutex, std::function<void(IECPresentationTaskR)> handler)
         : ECPresentationTaskBase<IECPresentationTaskWithResult<folly::Unit>, folly::Unit>(mutex), m_handler(handler)
         {}
 };
@@ -374,11 +395,11 @@ template<typename TResult>
 struct ECPresentationTaskWithResult : ECPresentationTaskBase<IECPresentationTaskWithResult<TResult>, TResult>
 {
 private:
-    std::function<TResult(IECPresentationTaskWithResult<TResult> const&)> m_handler;
+    std::function<TResult(IECPresentationTaskWithResult<TResult>&)> m_handler;
 protected:
     TResult _CreateResult() override {return m_handler(*this);}
 public:
-    ECPresentationTaskWithResult(BeMutex& mutex, std::function<TResult(IECPresentationTaskWithResult<TResult> const&)> handler)
+    ECPresentationTaskWithResult(BeMutex& mutex, std::function<TResult(IECPresentationTaskWithResult<TResult>&)> handler)
         : ECPresentationTaskBase<IECPresentationTaskWithResult<TResult>, TResult>(mutex), m_handler(handler)
         {}
 };
@@ -620,14 +641,14 @@ public:
     ECPRESENTATION_EXPORT ECPresentationTasksManager(TThreadAllocationsMap threadAllocations);
     ECPRESENTATION_EXPORT ~ECPresentationTasksManager();
     BeMutex& GetMutex() const {return m_scheduler->GetMutex();}
-    folly::Future<folly::Unit> CreateAndExecute(std::function<void(IECPresentationTaskCR)> func, ECPresentationTaskParams const& params = {})
+    folly::Future<folly::Unit> CreateAndExecute(std::function<void(IECPresentationTaskR)> func, ECPresentationTaskParams const& params = {})
         {
         RefCountedPtr<ECPresentationTask> task = new ECPresentationTask(m_scheduler->GetMutex(), func);
         task->SetExecutor(m_tasksExecutor.get());
         params.Apply(*task);
         return Execute<folly::Unit>(*task);
         }
-    template<typename TResult> folly::Future<TResult> CreateAndExecute(std::function<TResult(IECPresentationTaskWithResult<TResult> const&)> func, ECPresentationTaskParams const& params = {})
+    template<typename TResult> folly::Future<TResult> CreateAndExecute(std::function<TResult(IECPresentationTaskWithResult<TResult>&)> func, ECPresentationTaskParams const& params = {})
         {
         RefCountedPtr<ECPresentationTaskWithResult<TResult>> task = new ECPresentationTaskWithResult<TResult>(m_scheduler->GetMutex(), func);
         task->SetExecutor(m_tasksExecutor.get());

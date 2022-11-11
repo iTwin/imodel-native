@@ -31,17 +31,6 @@
         </Bindings>
     </Part>
 
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // Documentation                                                          // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="Docs/Prewire.mke">
-        <SubPart PartName="Docs-CodeSamples" />
-        <SubPart PartName="Docs-BuildCodeSamples" />
-        <Bindings>
-            <Directory SourceName="Delivery/Docs/Pages" SubPartDirectory="Dox/Pages/ECPresentation"/>
-        </Bindings>
-    </Part>
-
     <!-- ============================================================================ -->
     <!-- Unit Tests                                                                   -->
     <!-- ============================================================================ -->

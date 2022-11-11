@@ -24,52 +24,21 @@ private:
 
 public:
     CombinedHierarchyLevelIdentifier() {}
-    CombinedHierarchyLevelIdentifier(CombinedHierarchyLevelIdentifier&& other)
-        : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), m_physicalParentNodeId(std::move(other.m_physicalParentNodeId)), m_removalId(std::move(other.m_removalId))
-        {}
-    CombinedHierarchyLevelIdentifier(CombinedHierarchyLevelIdentifier const& other)
-        : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_physicalParentNodeId(other.m_physicalParentNodeId), m_removalId(other.m_removalId)
-        {}
     CombinedHierarchyLevelIdentifier(Utf8String connectionId, Utf8String rulesetId, BeGuid physicalParentNodeId)
         : m_connectionId(connectionId), m_rulesetId(rulesetId), m_physicalParentNodeId(physicalParentNodeId)
         {}
-    CombinedHierarchyLevelIdentifier& operator=(CombinedHierarchyLevelIdentifier&& other)
-        {
-        m_connectionId = std::move(other.m_connectionId);
-        m_rulesetId = std::move(other.m_rulesetId);
-        m_physicalParentNodeId = std::move(other.m_physicalParentNodeId);
-        m_removalId = std::move(other.m_removalId);
-        return *this;
-        }
-    CombinedHierarchyLevelIdentifier& operator=(CombinedHierarchyLevelIdentifier const& other)
-        {
-        m_connectionId = other.m_connectionId;
-        m_rulesetId = other.m_rulesetId;
-        m_physicalParentNodeId = other.m_physicalParentNodeId;
-        m_removalId = other.m_removalId;
-        return *this;
-        }
     bool operator<(CombinedHierarchyLevelIdentifier const& other) const
         {
-        if (m_physicalParentNodeId < other.m_physicalParentNodeId)
-            return true;
-        if (m_physicalParentNodeId != other.m_physicalParentNodeId)
-            return false;
-        if (m_removalId < other.m_removalId)
-            return true;
-        if (m_removalId != other.m_removalId)
-            return false;
-        int rulesetIdCmp = m_rulesetId.CompareTo(other.m_rulesetId);
-        if (rulesetIdCmp < 0)
-            return true;
-        if (rulesetIdCmp > 0)
-            return false;
-        return (m_connectionId < other.m_connectionId);
+        NUMERIC_LESS_COMPARE(m_physicalParentNodeId, other.m_physicalParentNodeId);
+        NUMERIC_LESS_COMPARE(m_removalId, other.m_removalId);
+        STR_LESS_COMPARE(m_rulesetId.c_str(), other.m_rulesetId.c_str());
+        STR_LESS_COMPARE(m_connectionId.c_str(), other.m_connectionId.c_str());
+        return false;
         }
     bool operator==(CombinedHierarchyLevelIdentifier const& other) const
         {
         return m_connectionId == other.m_connectionId
-            && m_rulesetId.Equals(other.m_rulesetId)
+            && m_rulesetId == other.m_rulesetId
             && m_physicalParentNodeId == other.m_physicalParentNodeId
             && m_removalId == other.m_removalId;
         }
@@ -93,12 +62,6 @@ private:
     BeGuid m_virtualParentNodeId;
 public:
     HierarchyLevelIdentifier() {}
-    HierarchyLevelIdentifier(HierarchyLevelIdentifier&& other)
-        : m_id(std::move(other.m_id)), m_combined(std::move(other.m_combined)), m_virtualParentNodeId(std::move(other.m_virtualParentNodeId))
-        {}
-    HierarchyLevelIdentifier(HierarchyLevelIdentifier const& other)
-        : m_id(other.m_id), m_combined(other.m_combined), m_virtualParentNodeId(other.m_virtualParentNodeId)
-        {}
     HierarchyLevelIdentifier(CombinedHierarchyLevelIdentifier combined, BeGuid virtualParentNodeId)
         : m_combined(combined), m_virtualParentNodeId(virtualParentNodeId)
         {}
@@ -108,32 +71,13 @@ public:
     HierarchyLevelIdentifier(BeGuid id, Utf8String connectionId, Utf8String rulesetId, BeGuid physicalParentNodeId, BeGuid virtualParentNodeId)
         : m_id(id), m_combined(connectionId, rulesetId, physicalParentNodeId), m_virtualParentNodeId(virtualParentNodeId)
         {}
-    HierarchyLevelIdentifier& operator=(HierarchyLevelIdentifier&& other)
-        {
-        m_id = std::move(other.m_id);
-        m_combined = std::move(other.m_combined);
-        m_virtualParentNodeId = std::move(other.m_virtualParentNodeId);
-        return *this;
-        }
-    HierarchyLevelIdentifier& operator=(HierarchyLevelIdentifier const& other)
-        {
-        m_id = other.m_id;
-        m_combined = other.m_combined;
-        m_virtualParentNodeId = other.m_virtualParentNodeId;
-        return *this;
-        }
-    bool IsValid() const {return m_id.IsValid();}
+
     bool operator<(HierarchyLevelIdentifier const& other) const
         {
-        if (m_id < other.m_id)
-            return true;
-        if (m_id != other.m_id)
-            return false;
-        if (m_virtualParentNodeId < other.m_virtualParentNodeId)
-            return true;
-        if (m_virtualParentNodeId != other.m_virtualParentNodeId)
-            return false;
-        return (m_combined < other.m_combined);
+        NUMERIC_LESS_COMPARE(m_id, other.m_id);
+        NUMERIC_LESS_COMPARE(m_virtualParentNodeId, other.m_virtualParentNodeId);
+        NUMERIC_LESS_COMPARE(m_combined, other.m_combined);
+        return false;
         }
     bool operator==(HierarchyLevelIdentifier const& other) const
         {
@@ -141,7 +85,10 @@ public:
             && m_virtualParentNodeId == other.m_virtualParentNodeId
             && m_combined == other.m_combined;
         }
+
+    bool IsValid() const {return m_id.IsValid();}
     void Invalidate() {m_id.Invalidate();}
+
     BeGuidCR GetId() const {return m_id;}
     void SetId(BeGuid id) {m_id = id;}
     BeGuidCR GetVirtualParentNodeId() const {return m_virtualParentNodeId;}
@@ -166,55 +113,18 @@ private:
     bvector<uint64_t> m_index;
 public:
     DataSourceIdentifier() : m_id(), m_hierarchyLevelId() {}
-    DataSourceIdentifier(DataSourceIdentifier const& other)
-        : m_id(other.m_id), m_hierarchyLevelId(other.m_hierarchyLevelId), m_index(other.m_index)
-        {}
-    DataSourceIdentifier(DataSourceIdentifier&& other)
-        : m_id(std::move(other.m_id)), m_hierarchyLevelId(std::move(other.m_hierarchyLevelId)), m_index(std::move(other.m_index))
-        {}
     DataSourceIdentifier(BeGuid hierarchyLevelId, bvector<uint64_t> index)
         : m_id(), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
         {}
-    DataSourceIdentifier(BeGuid id, BeGuid hierarchyLevelId, bvector<uint64_t> index, bool isInitialized)
+    DataSourceIdentifier(BeGuid id, BeGuid hierarchyLevelId, bvector<uint64_t> index)
         : m_id(id), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
         {}
-    bool IsValid() const {return m_id.IsValid();}
     bool operator<(DataSourceIdentifier const& other) const
         {
-        if (m_id < other.m_id)
-            return true;
-        if (m_id != other.m_id)
-            return false;
-        if (m_hierarchyLevelId < other.m_hierarchyLevelId)
-            return true;
-        if (m_hierarchyLevelId != other.m_hierarchyLevelId)
-            return false;
-        if (m_index.size() < other.m_index.size())
-            return true;
-        if (m_index.size() > other.m_index.size())
-            return false;
-        for (size_t i = 0; i < m_index.size(); ++i)
-            {
-            if (m_index[i] < other.m_index[i])
-                return true;
-            if (m_index[i] > other.m_index[i])
-                return false;
-            }
+        NUMERIC_LESS_COMPARE(m_id, other.m_id);
+        NUMERIC_LESS_COMPARE(m_hierarchyLevelId, other.m_hierarchyLevelId);
+        VECTOR_LESS_COMPARE(m_index, other.m_index);
         return false;
-        }
-    DataSourceIdentifier& operator=(DataSourceIdentifier const& other)
-        {
-        m_id = other.m_id;
-        m_hierarchyLevelId = other.m_hierarchyLevelId;
-        m_index = other.m_index;
-        return *this;
-        }
-    DataSourceIdentifier& operator=(DataSourceIdentifier&& other)
-        {
-        m_id = std::move(other.m_id);
-        m_hierarchyLevelId = std::move(other.m_hierarchyLevelId);
-        m_index = std::move(other.m_index);
-        return *this;
         }
     bool operator==(DataSourceIdentifier const& other) const
         {
@@ -230,6 +140,7 @@ public:
             && m_hierarchyLevelId == other.m_hierarchyLevelId
             && m_index == other.m_index;
         }
+    bool IsValid() const { return m_id.IsValid(); }
     void Invalidate() {m_id.Invalidate();}
     BeGuidCR GetId() const {return m_id;}
     void SetId(BeGuid id) {m_id = id;}
