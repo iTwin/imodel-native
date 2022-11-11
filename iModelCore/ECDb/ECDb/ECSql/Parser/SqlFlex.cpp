@@ -1,4 +1,4 @@
-#line 2 "D:\\bsw\\m0\\imodel02\\src\\imodel02\\iModelCore\\ECDb\\ECDb\\ECSql\\parser\\SQLflex.l"
+#line 2 "D:\\bsw\\git-native4\\src\\imodel-native\\iModelCore\\ECDb\\Scripts\\\\..\\ECDb\\ECSql\\parser\\SQLflex.l"
 //------------------------------------------------------------
 //
 // Licensed to the Apache Software Foundation (ASF) under one
