@@ -173,6 +173,8 @@ namespace connectivity
                 opt_column_ref_commalist,
                 opt_cte_recursive,
                 opt_disqualify_primary_join,
+                opt_only,
+                opt_disqualify_polymorphic_constraint,
                 opt_ecsqloptions_clause,
                 opt_escape,
                 opt_group_by_clause,
@@ -331,7 +333,9 @@ namespace connectivity
     //-----------------------------------------------------------------------------
     inline OSQLParseNode* OSQLParseNode::getChild(size_t nPos) const
         {
-        OSL_ENSURE(nPos < m_aChildren.size(), "Invalid Position");
+        if (nPos >= m_aChildren.size()) {
+            OSL_ENSURE(nPos < m_aChildren.size(), "Invalid Position");
+        }
         return m_aChildren.at(nPos);
         }
     inline OSQLParseNode* OSQLParseNode::getLast() const
@@ -354,5 +358,4 @@ namespace connectivity
 #define SQL_ISTOKEN(pParseNode, token)          ((pParseNode)->isToken() && (pParseNode)->getTokenID() == SQL_TOKEN_##token)
 #define SQL_ISPUNCTUATION(pParseNode, aString)  ((pParseNode)->getNodeType() == SQL_NODE_PUNCTUATION && !(pParseNode)->getTokenValue().Equals(aString))
     }
-
 #endif    //_CONNECTIVITY_SQLNODE_HXX

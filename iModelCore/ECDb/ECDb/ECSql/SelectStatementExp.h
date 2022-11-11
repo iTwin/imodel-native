@@ -439,7 +439,7 @@ struct SubqueryRefExp final : RangeClassRefExp
         Utf8String _ToString() const override;
 
     public:
-        SubqueryRefExp(std::unique_ptr<SubqueryExp>, Utf8CP alias, bool isPolymorphic);
+        SubqueryRefExp(std::unique_ptr<SubqueryExp>, Utf8CP alias, PolymorphicInfo polymorphic);
         SubqueryExp const* GetSubquery() const { return GetChild<SubqueryExp>(0); }
     };
 
