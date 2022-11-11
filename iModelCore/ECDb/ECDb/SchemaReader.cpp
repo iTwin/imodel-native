@@ -2165,28 +2165,26 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
         return ERROR;
 
     const auto isSystemSchema = ecClass.GetSchema().GetId() == GetSystemSchemaId();
-    auto patchExtendedTypeForClassIdSystemProperty = [&](PropReaderHelper::RowInfo& rowInfo) 
-        {
+    auto patchExtendedTypeForClassIdSystemProperty = [&](PropReaderHelper::RowInfo& rowInfo) {
         Utf8String extendTypeName;
-        if (ExtendedTypeHelper::TryGetSystemExtendedType(extendTypeName, ecClass.GetName(), rowInfo.m_name)) 
-            {
-            if (rowInfo.m_extendedTypeName != extendTypeName) 
-                {
+        if (ExtendedTypeHelper::TryGetSystemExtendedType(extendTypeName, ecClass.GetName(), rowInfo.m_name)) {
+            if (rowInfo.m_extendedTypeName != extendTypeName) {
                 LOG.debugv("patching extended type for '%s.%s' from '%s' to '%s'", 
                     ecClass.GetName().c_str(),
                     rowInfo.m_name.c_str(),
                     rowInfo.m_extendedTypeName.c_str(),
                     extendTypeName.c_str());
                 rowInfo.m_extendedTypeName.assign(extendTypeName);
-                }
             }
-        };
+        }
+    };
 
     for (PropReaderHelper::RowInfo const& rowInfo : rowInfos)
         {
         ECPropertyP prop = nullptr;
-        if (isSystemSchema)
+        if (isSystemSchema) {
             patchExtendedTypeForClassIdSystemProperty(const_cast<PropReaderHelper::RowInfo&>(rowInfo));
+        }
 
         switch (rowInfo.m_kind)
             {
