@@ -226,7 +226,7 @@ private:
     folly::SharedPromise<folly::Unit> m_completionPromise;
     folly::Executor* m_futureExecutor;
     std::shared_ptr<bool> m_promiseResolved;
-    mutable IConnectionCPtr m_connection;
+    IConnectionCPtr m_connection;
 protected:
     BeMutex& m_mutex;
     TPromise m_promise;
