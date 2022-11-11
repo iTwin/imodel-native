@@ -16,6 +16,7 @@
     <ClCompile Include="NonPublished\Helpers\TestNavNode.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\ContentIntegrationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\Content_DistinctValuesTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_Filtering.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\Content_LocatingClasses.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\Content_PropertyCategorizationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\Content_RelatedPropertiesTests.cpp" />

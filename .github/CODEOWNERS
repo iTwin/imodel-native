@@ -22,7 +22,7 @@
 /iModelCore/BRepCore/                        @pmconne @bbastings
 /iModelCore/ECDb/                            @khanaffan @kabentley @calebmshafer @rschili
 /iModelCore/ecobjects/                       @calebmshafer @ColinKerr @c-macdonald
-/iModelCore/ECPresentation/                  @grigasp @saskliutas
+/iModelCore/ECPresentation/                  @iTwin/itwinjs-core-presentation
 /iModelCore/GeoCoord/                        @kabentley @AlainRobertAtBentley
 /iModelCore/GeomLibs/                        @EarlinLutz @bbastings @kabentley @dassaf4
 /iModelCore/iModelPlatform/                  @pmconne @swwilson-bsi @kabentley @bbastings
@@ -31,3 +31,4 @@
 /iModelCore/iModelPlatform/**/*Render*.*     @pmconne @markschlosseratbentley
 
 /iModelJsNodeAddon/                          @pmconne @swwilson-bsi @khanaffan @kabentley @calebmshafer
+/iModelJsNodeAddon/presentation/             @iTwin/itwinjs-core-presentation

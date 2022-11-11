@@ -96,8 +96,8 @@ Utf8String TableValuedFunctionExp::_ToString () const {
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TableValuedFunctionExp::TableValuedFunctionExp (Utf8StringCR schemaName, std::unique_ptr<MemberFunctionCallExp> func, bool isPolymorphic) 
-    : RangeClassRefExp (Exp::Type::TableValuedFunction, isPolymorphic), m_schemaName(schemaName){
+TableValuedFunctionExp::TableValuedFunctionExp (Utf8StringCR schemaName, std::unique_ptr<MemberFunctionCallExp> func, PolymorphicInfo polymorphic) 
+    : RangeClassRefExp (Exp::Type::TableValuedFunction, polymorphic), m_schemaName(schemaName){
         AddChild(std::move(func));
 }
 //****************************** ClassNameExp *****************************************
@@ -231,8 +231,8 @@ PropertyMatchResult ClassNameExp::_FindProperty(ECSqlParseContext& ctx, Property
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassNameExp::ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8CP tableSpace, std::shared_ptr<Info> info, bool isPolymorphic, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall, bool disqualifyPrimaryJoin)
-    : RangeClassRefExp(Type::ClassName, isPolymorphic), m_className(className), m_schemaAlias(schemaAlias), m_tableSpace(tableSpace), m_info(info),m_disqualifyPrimaryJoin(disqualifyPrimaryJoin)
+ClassNameExp::ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8CP tableSpace, std::shared_ptr<Info> info, PolymorphicInfo polymorphic, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall, bool disqualifyPrimaryJoin)
+    : RangeClassRefExp(Type::ClassName, polymorphic), m_className(className), m_schemaAlias(schemaAlias), m_tableSpace(tableSpace), m_info(info),m_disqualifyPrimaryJoin(disqualifyPrimaryJoin)
     {
     if (memberFuntionCall)
         AddChild(std::move(memberFuntionCall));
@@ -282,14 +282,68 @@ Utf8String ClassNameExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassNameExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    if (!IsPolymorphic())
-        ctx.AppendToECSql("ONLY ");
+    const auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+    if (!polymorphicInfo.empty())
+        ctx.AppendToECSql(polymorphicInfo).AppendToECSql(" ");
 
     ctx.AppendToECSql(GetFullName());
-
     if (!GetAlias().empty())
         ctx.AppendToECSql(" ").AppendToECSql(GetAlias());
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PolymorphicInfo::TryParseToken(Type& type, Utf8StringCR str) 
+    {
+        if (str.EqualsIAscii("ONLY")) {
+            type = Type::Only;
+            return true;
+        }
+        if (str.EqualsIAscii("ALL")) {
+            type = Type::All;
+            return true;
+        }
+        return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String PolymorphicInfo::ToECSql() const 
+    {
+    Utf8String ecsql;
+    if (m_disqualify)
+        {
+        ecsql.append("+");
+        }
+    if (m_type == Type::Only)
+        {
+        ecsql.append("ONLY");
+        }
+    if (m_disqualify && m_type == Type::All)
+        {
+        ecsql.append("ALL");
+        }
+    return ecsql;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+PolymorphicInfo PolymorphicInfo::Only()
+    {
+    static PolymorphicInfo ct(Type::Only, false);
+    return ct;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+PolymorphicInfo PolymorphicInfo::All()
+    {
+    static PolymorphicInfo ct(Type::All, false);
+    return ct;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

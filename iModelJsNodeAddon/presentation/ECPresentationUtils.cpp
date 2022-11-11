@@ -969,7 +969,7 @@ static ECClassCP GetECClassByFullName(Utf8CP fullName, ECDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db)
+static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db, bool defaultIsPolymorphicValue = false)
     {
     RelatedClass invalid;
     if (!json.IsObject())
@@ -985,9 +985,9 @@ static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db)
     if (!sourceClass || !targetClass || !relationship || !relationship->IsRelationshipClass())
         return invalid;
 
-    bool isPolymorphicRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship].GetBool() : false;
     bool isForwardRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsForwardRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsForwardRelationship].GetBool() : false;
-    bool isPolymorphicTargetClass = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass].GetBool() : false;
+    bool isPolymorphicRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship].GetBool() : defaultIsPolymorphicValue;
+    bool isPolymorphicTargetClass = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass].GetBool() : defaultIsPolymorphicValue;
 
     return RelatedClass(*sourceClass, SelectClass<ECRelationshipClass>(*relationship->GetRelationshipClassCP(), "", isPolymorphicRelationship),
         isForwardRelationship, SelectClass<ECClass>(*targetClass, "", isPolymorphicTargetClass));
@@ -996,7 +996,7 @@ static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RelatedClassPath GetRelatedClassPathFromJson(RapidJsonValueCR json, ECDbCR db)
+static RelatedClassPath GetRelatedClassPathFromJson(RapidJsonValueCR json, ECDbCR db, bool defaultIsPolymorphicValue = false)
     {
     RelatedClassPath path;
     if (!json.IsArray())
@@ -1004,7 +1004,7 @@ static RelatedClassPath GetRelatedClassPathFromJson(RapidJsonValueCR json, ECDbC
 
     for (rapidjson::SizeType i = 0; i < json.Size(); ++i)
         {
-        RelatedClass rc = GetRelatedClassFromJson(json[i], db);
+        RelatedClass rc = GetRelatedClassFromJson(json[i], db, defaultIsPolymorphicValue);
         if (rc.IsValid())
             path.push_back(rc);
         }
@@ -1186,6 +1186,7 @@ static ParseResult<KeySetPtr> ParseKeysFromJson(IConnectionCR connection, RapidJ
 
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides                                 "descriptorOverrides"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression                 "filterExpression"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression           "fieldsFilterExpression"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesSorting                          "sorting"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesSortingField                     "field"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesSortingDirection                 "direction"
@@ -1194,6 +1195,67 @@ static ParseResult<KeySetPtr> ParseKeysFromJson(IConnectionCR connection, RapidJ
 #define PRESENTATION_JSON_ATTRIBUTE_VALUE_DescriptorOverridesFieldsSelectorTypeInclude  "include"
 #define PRESENTATION_JSON_ATTRIBUTE_VALUE_DescriptorOverridesFieldsSelectorTypeExclude  "exclude"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsSelectorFields             "fields"
+
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter                   "instanceFilter"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName    "selectClassName"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression         "expression"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances   "relatedInstances"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty     "pathFromSelectToPropertyClass"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired         "isRequired"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias              "alias"
+#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias  "relationshipAlias"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ParseResult<bvector<RelatedClassPath>> ParseInstanceFilterRelatedInstances(RapidJsonValueCR filterJson, ECDbCR db)
+    {
+    if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances))
+        return CreateParseResult(bvector<RelatedClassPath>());
+
+    RapidJsonValueCR instancesJson = filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances];
+    if (!instancesJson.IsArray())
+         return CreateParseError<bvector<RelatedClassPath>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances "` to be an array");
+
+    bvector<RelatedClassPath> instances; 
+    for (rapidjson::SizeType i = 0; i < instancesJson.Size(); ++i)
+        {
+        RapidJsonValueCR instanceDef = instancesJson[i];
+        if (!instanceDef.IsObject() || !instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty))
+            continue;
+
+        RelatedClassPath pathToProperty = GetRelatedClassPathFromJson(instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty], db, true);
+        if (pathToProperty.empty())
+            continue;
+
+        bool hasAlias = false;
+        if (instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias) && instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias].IsString())
+            {
+            Utf8String alias = instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias].GetString();
+            pathToProperty.back().GetTargetClass().SetAlias(alias);
+            hasAlias = true;
+            }
+
+        if (instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias) && instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias].IsString())
+            {
+            Utf8String alias = instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias].GetString();
+            pathToProperty.back().GetRelationship().SetAlias(alias);
+            }
+
+        if (!hasAlias)
+            continue;
+
+        if (instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired))
+            {
+            bool isRequired = instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired].IsBool() ? instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired].GetBool() : false;
+            pathToProperty.back().SetIsTargetOptional(!isRequired);
+            }
+
+        instances.push_back(pathToProperty);
+        }
+    return CreateParseResult(instances);
+    }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1213,30 +1275,80 @@ private:
 private:
     Nullable<int> m_contentFlags;
     Nullable<Utf8String> m_displayType;
-    Nullable<Utf8String> m_filterExpression;
+    Nullable<Utf8String> m_fieldsFilterExpression;
     Nullable<TSortingParams> m_sortParams;
+    std::shared_ptr<InstanceFilterDefinition> m_instanceFilter;
     TFieldsSelector m_fieldsSelector;
 
 private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> filterExpression, Nullable<TSortingParams> sortParams, TFieldsSelector fieldsSelector)
-        : m_displayType(displayType), m_contentFlags(contentFlags), m_filterExpression(filterExpression), m_sortParams(sortParams), m_fieldsSelector(fieldsSelector)
+    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> fieldsDilterExpression, Nullable<TSortingParams> sortParams, 
+        TFieldsSelector fieldsSelector, std::shared_ptr<InstanceFilterDefinition> instanceFilter)
+        : m_displayType(displayType), m_contentFlags(contentFlags), m_fieldsFilterExpression(fieldsDilterExpression), m_sortParams(sortParams), 
+        m_fieldsSelector(fieldsSelector), m_instanceFilter(instanceFilter)
         {}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static ParseResult<Nullable<Utf8String>> ParseFilterExpression(RapidJsonValueCR json)
+    static ParseResult<Nullable<Utf8String>> ParseFieldsFilterExpression(RapidJsonValueCR json)
         {
-        if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression))
-            return CreateParseResult<Nullable<Utf8String>>(nullptr);
+        if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression))
+            {
+            if (!json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression].IsString())
+                return CreateParseError<Nullable<Utf8String>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression "` to be a string");
 
-        if (!json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].IsString())
-            return CreateParseError<Nullable<Utf8String>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "` to be a string");
+            return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression].GetString()));
+            }
+                                                                                                                                      
+        // deprecated property
+        if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression))
+            {
+            if (!json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].IsString())
+                return CreateParseError<Nullable<Utf8String>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "` to be a string");
 
-        return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].GetString()));
+            return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression].GetString()));
+            }
+
+        return CreateParseResult<Nullable<Utf8String>>(nullptr);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ParseResult<std::shared_ptr<InstanceFilterDefinition>> ParseInstanceFilter(ECDbCR db, RapidJsonValueCR json)
+        {
+        if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter))
+            {
+            RapidJsonValueCR filterJson = json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter];
+            if (!filterJson.IsObject())
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to be an object");
+
+            if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression))
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "`");
+
+            if (!filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression].IsString())
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "` to be a string");
+
+            Utf8String expression = filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression].GetString();
+
+            if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName))
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "`");
+
+            ECClassCP selectClass = GetECClassByFullName(filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName].GetString(), db);
+            if (!selectClass)
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "` to be full name of a valid class");
+
+            ParseResult<bvector<RelatedClassPath>> relatedInstances = ParseInstanceFilterRelatedInstances(filterJson, db);
+            if (relatedInstances.HasError())
+                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>(relatedInstances.GetError());
+
+            return CreateParseResult<std::shared_ptr<InstanceFilterDefinition>>(std::make_shared<InstanceFilterDefinition>(expression, selectClass, relatedInstances.GetValue()));
+            }
+
+        return CreateParseResult<std::shared_ptr<InstanceFilterDefinition>>(nullptr);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1349,9 +1461,9 @@ public:
         if (contentFlags.HasError())
             return CreateParseError<DescriptorOverrides>(contentFlags.GetError());
 
-        auto filterExpression = ParseFilterExpression(json);
-        if (filterExpression.HasError())
-            return CreateParseError<DescriptorOverrides>(filterExpression.GetError());
+        auto fieldsFilterExpression = ParseFieldsFilterExpression(json);
+        if (fieldsFilterExpression.HasError())
+            return CreateParseError<DescriptorOverrides>(fieldsFilterExpression.GetError());
 
         auto sortingParams = ParseSortingParams(db, json);
         if (sortingParams.HasError())
@@ -1361,8 +1473,12 @@ public:
         if (fieldsSelector.HasError())
             return CreateParseError<DescriptorOverrides>(fieldsSelector.GetError());
 
-        return CreateParseResult(DescriptorOverrides(displayType.GetValue(), contentFlags.GetValue(),
-            filterExpression.GetValue(), sortingParams.GetValue(), fieldsSelector.GetValue()));
+        auto instanceFilter = ParseInstanceFilter(db, json);
+        if (instanceFilter.HasError())
+            return CreateParseError<DescriptorOverrides>(instanceFilter.GetError());
+
+        return CreateParseResult(DescriptorOverrides(displayType.GetValue(), contentFlags.GetValue(), fieldsFilterExpression.GetValue(),
+            sortingParams.GetValue(), fieldsSelector.GetValue(), instanceFilter.GetValue()));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1392,9 +1508,9 @@ public:
             descriptorCopy->SetPreferredDisplayType(m_displayType.Value());
             didModifyDescriptor = true;
             }
-        if (!m_filterExpression.IsNull())
+        if (!m_fieldsFilterExpression.IsNull())
             {
-            descriptorCopy->SetFilterExpression(m_filterExpression.Value());
+            descriptorCopy->SetFieldsFilterExpression(m_fieldsFilterExpression.Value());
             didModifyDescriptor = true;
             }
         if (!m_sortParams.IsNull())
@@ -1418,6 +1534,11 @@ public:
                 didModifyDescriptor |= descriptorCopy->ExcludeFields(fields);
             else if (m_fieldsSelector.first == FieldSelectorType::Include)
                 didModifyDescriptor |= descriptorCopy->ExclusivelyIncludeFields(fields);
+            }
+        if (m_instanceFilter)
+            {
+            descriptorCopy->SetInstanceFilter(m_instanceFilter);
+            didModifyDescriptor = true;
             }
         if (didModifyDescriptor)
             descriptor = descriptorCopy;
