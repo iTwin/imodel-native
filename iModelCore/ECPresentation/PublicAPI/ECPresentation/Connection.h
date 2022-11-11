@@ -206,8 +206,8 @@ struct DisableProxyConnectionThreadVerification
 private:
     IConnectionCP m_connection;
 public:
-    DisableProxyConnectionThreadVerification(IConnectionCR);
-    virtual ~DisableProxyConnectionThreadVerification();
+    ECPRESENTATION_EXPORT DisableProxyConnectionThreadVerification(IConnectionCR);
+    ECPRESENTATION_EXPORT virtual ~DisableProxyConnectionThreadVerification();
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

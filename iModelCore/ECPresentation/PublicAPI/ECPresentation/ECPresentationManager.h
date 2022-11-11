@@ -327,7 +327,7 @@ private:
 
 private:
     Utf8CP GetConnectionId(ECDbCR) const;
-    IConnectionCR GetTaskConnection(IECPresentationTask const&) const;
+    IConnectionCR GetConnection(Utf8CP) const;
 
 public:
     ECPresentationTasksManager& GetTasksManager() const {return *m_tasksManager;}
