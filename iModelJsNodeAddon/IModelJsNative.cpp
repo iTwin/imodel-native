@@ -5243,8 +5243,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         if (!props.Get("id").IsString())
             THROW_JS_TYPE_EXCEPTION("props.id must be a string");
-        if (!props.Get("mode").IsString())
-            THROW_JS_TYPE_EXCEPTION("props.mode must be a string");
         if (!props.Get("isChangeTrackingEnabled").IsBoolean())
             THROW_JS_TYPE_EXCEPTION("props.isChangeTrackingEnabled must be a boolean");
         if (!props.Get("taskAllocationsMap").IsObject())

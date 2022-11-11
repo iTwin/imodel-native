@@ -100,15 +100,26 @@ private:
     Utf8CP m_instanceFilter;
     ExpressionContext* m_expressionContext;
     InputFilteringParams const* m_inputFilter;
+    InstanceFilterDefinition const* m_instanceFilterDefinition;
+    SelectClassWithExcludes<ECClass> m_selectClass;
 
 public:
     InstanceFilteringParams(ECExpressionsCache& ecexpressionsCache, ExpressionContext* expressionContext, Utf8CP instanceFilter, InputFilteringParams const* inputFilter)
-        : m_ecexpressionsCache(ecexpressionsCache), m_instanceFilter(instanceFilter), m_expressionContext(expressionContext), m_inputFilter(inputFilter)
+        : m_ecexpressionsCache(ecexpressionsCache), m_instanceFilter(instanceFilter), m_expressionContext(expressionContext), m_inputFilter(inputFilter),
+        m_instanceFilterDefinition(nullptr)
         {}
+    InstanceFilteringParams(ECExpressionsCache& ecexpressionsCache, ExpressionContext* expressionContext, Utf8CP instanceFilter, InputFilteringParams const* inputFilter,
+        InstanceFilterDefinition const* instanceFilterDefinition, SelectClassWithExcludes<ECClass> const& selectClass)
+        : m_ecexpressionsCache(ecexpressionsCache), m_instanceFilter(instanceFilter), m_expressionContext(expressionContext), m_inputFilter(inputFilter),
+        m_instanceFilterDefinition(instanceFilterDefinition), m_selectClass(selectClass)
+        {}
+
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     ExpressionContext* GetECExpressionContext() const {return m_expressionContext;}
     Utf8CP GetInstanceFilter() const {return m_instanceFilter;}
     InputFilteringParams const* GetInputFilter() const {return m_inputFilter;}
+    InstanceFilterDefinition const* GetInstanceFilterDefinition() const {return m_instanceFilterDefinition;}
+    SelectClassWithExcludes<ECClass> const& GetSelectClass() const {return m_selectClass;}
 };
 
 /*=================================================================================**//**
