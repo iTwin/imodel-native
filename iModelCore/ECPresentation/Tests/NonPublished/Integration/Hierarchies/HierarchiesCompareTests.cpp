@@ -36,15 +36,6 @@ struct HierarchiesCompareTests : PresentationManagerIntegrationTests
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void _ConfigureManagerParams(ECPresentationManager::Params& params) override
-        {
-        PresentationManagerIntegrationTests::_ConfigureManagerParams(params);
-        params.SetMode(ECPresentationManager::Mode::ReadOnly);
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
     void SetUp() override
         {
         m_changeRecordsHandler = std::make_shared<TestChangeRecordsHandler>();

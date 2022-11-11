@@ -324,8 +324,6 @@ ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::Platf
     params.SetECPropertyFormatter(new DefaultPropertyFormatter(CreateDefaultFormatsMap(props.Get("defaultFormats").As<Napi::Object>())));
     params.SetCachingParams(CreateCachingParams(props.Get("cacheConfig").As<Napi::Object>()));
     params.SetLocalState(&localState);
-    Utf8String mode = props.Get("mode").As<Napi::String>().Utf8Value();
-    params.SetMode(mode.Equals("ro") ? ECPresentationManager::Mode::ReadOnly : ECPresentationManager::Mode::ReadWrite);
     if (props.Get("isChangeTrackingEnabled").As<Napi::Boolean>())
         {
         params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});

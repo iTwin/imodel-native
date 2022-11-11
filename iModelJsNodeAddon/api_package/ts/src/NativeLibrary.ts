@@ -1077,11 +1077,6 @@ export declare namespace IModelJsNative {
     InvalidArgument = Error + 1,
   }
 
-  const enum ECPresentationManagerMode {
-    ReadOnly = "ro",
-    ReadWrite = "rw",
-  }
-
   interface ECPresentationMemoryHierarchyCacheConfig {
     mode: "memory";
   }
@@ -1112,7 +1107,6 @@ export declare namespace IModelJsNative {
         serializedFormat: string;
       };
     };
-    mode: ECPresentationManagerMode;
     isChangeTrackingEnabled: boolean;
     cacheConfig: ECPresentationHierarchyCacheConfig;
     contentCacheSize?: number;
