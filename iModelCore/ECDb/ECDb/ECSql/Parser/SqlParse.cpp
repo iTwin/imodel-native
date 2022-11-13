@@ -169,6 +169,8 @@ namespace connectivity
                             {OSQLParseNode::opt_column_ref_commalist, "opt_column_ref_commalist"},
                             {OSQLParseNode::opt_cte_recursive, "opt_cte_recursive"},
                             {OSQLParseNode::opt_disqualify_primary_join, "opt_disqualify_primary_join"},
+                            {OSQLParseNode::opt_only, "opt_only"},
+                            {OSQLParseNode::opt_disqualify_polymorphic_constraint, "opt_disqualify_polymorphic_constraint"},
                             {OSQLParseNode::opt_ecsqloptions_clause, "opt_ecsqloptions_clause"},
                             {OSQLParseNode::opt_escape, "opt_escape"},
                             {OSQLParseNode::opt_group_by_clause, "opt_group_by_clause"},

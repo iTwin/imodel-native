@@ -607,6 +607,68 @@ std::unique_ptr<InputFilteringParams> QueryBuilderHelpers::CreateInputFilter(ICo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void AssignMissingAliases(bvector<RelatedClassPath>& relatedPaths)
+    {
+    ECClassUseCounter classUseCounter;
+    for (RelatedClassPath& path : relatedPaths)
+        {
+        for (RelatedClass& step : path)
+            {
+            if (step.GetRelationship().GetAlias().empty())
+                {
+                ECClassCR relClass = step.GetRelationship().GetClass();
+                step.GetRelationship().SetAlias(RULES_ENGINE_RELATED_CLASS_ALIAS(relClass, classUseCounter.Inc(&relClass)));
+                }
+            if (step.GetTargetClass().GetAlias().empty())
+                {
+                ECClassCR targetClass = step.GetTargetClass().GetClass();
+                step.GetTargetClass().SetAlias(RULES_ENGINE_RELATED_CLASS_ALIAS(targetClass, classUseCounter.Inc(&targetClass)));
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+static void ApplyInstanceFilterDefinition(ComplexPresentationQuery<T>& query, SelectClassWithExcludes<ECClass> const& selectClass, InstanceFilterDefinition const& filter,
+    QueryClauseAndBindings const& expressionClause)
+    {
+    bool needToFilterClass = filter.GetSelectClass() ? !selectClass.GetClass().Is(filter.GetSelectClass()) : false;
+    if (filter.GetRelatedInstances().empty() && !needToFilterClass)
+        {
+        query.Where(expressionClause);
+        return;
+        }
+
+    SelectClassWithExcludes<ECClass> filterSelectClass = selectClass;
+    filterSelectClass.SetAlias("this");
+    if (needToFilterClass)
+        filterSelectClass.SetClass(*filter.GetSelectClass());
+
+    ComplexGenericQueryPtr filterQuery = ComplexGenericQuery::Create();
+    filterQuery->SelectContract(*SimpleQueryContract::Create({ *PresentationQueryContractSimpleField::Create(nullptr, "[this].[ECInstanceId]") }));
+    filterQuery->From(filterSelectClass);
+
+    bvector<RelatedClassPath> relatedPaths = filter.GetRelatedInstances();
+    AssignMissingAliases(relatedPaths);
+    for (RelatedClassPathCR relatedPath : relatedPaths)
+        filterQuery->Join(relatedPath);
+
+    filterQuery->Where(expressionClause);
+
+    Utf8String whereClause;
+    if (needToFilterClass)
+        whereClause.append("[").append(selectClass.GetAlias()).append("].[ECClassId] IS (").append(filter.GetSelectClass()->GetFullName()).append(") AND ");
+    whereClause.append("[").append(selectClass.GetAlias()).append("].[ECInstanceId] IN (").append(filterQuery->ToString()).append(")");
+
+    query.Where(QueryClauseAndBindings(whereClause, filterQuery->GetBoundValues()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
 void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params)
     {
@@ -629,6 +691,11 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
     if (params.GetInstanceFilter() && 0 != *params.GetInstanceFilter())
         query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter(), nullptr, params.GetECExpressionContext()));
 
+    if (params.GetSelectClass().IsValid() && params.GetInstanceFilterDefinition())
+        {
+        QueryClauseAndBindings expressionClause = ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilterDefinition()->GetExpression(), nullptr, params.GetECExpressionContext());
+        ApplyInstanceFilterDefinition(query, params.GetSelectClass(), *params.GetInstanceFilterDefinition(), expressionClause);
+        }
     }
 template void QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&);
 template void QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&);
