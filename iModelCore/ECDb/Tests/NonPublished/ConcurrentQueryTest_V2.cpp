@@ -15,7 +15,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
 struct ConcurrentQueryFixture : ECDbTestFixture {
-    void SetUp() override { 
+    void SetUp() override {
          // ConsoleLogger::SetSeverity("ECDb.ConcurrentQuery", BentleyApi::NativeLogging::LOG_TRACE);
         ConcurrentQueryMgr::Config::GetInstance().Reset();
         ECDbTestFixture::SetUp();
@@ -231,12 +231,12 @@ TEST_F(ConcurrentQueryFixture, StressTest) {
 TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
     ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(2),1024));    
+    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(2),1024));
     const auto delay = std::chrono::milliseconds(5000);
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
-    req->SetDelay(delay);    
-    auto r = mgr.Enqueue(std::move(req)).Get();  
+    req->SetDelay(delay);
+    auto r = mgr.Enqueue(std::move(req)).Get();
     ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Timeout);
 }
 //---------------------------------------------------------------------------------------
@@ -245,14 +245,14 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
     ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(2),1000));    
+    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(2),1000));
     const auto delay = std::chrono::milliseconds(5000);
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest(
-        "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x, CAST(randomblob(1000) AS BINARY) from cnt", 
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
         ECSqlParams().BindInt(1, 3));
 
-    auto r = mgr.Enqueue(std::move(req)).Get();  
+    auto r = mgr.Enqueue(std::move(req)).Get();
     ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Partial);
 }
 //---------------------------------------------------------------------------------------
@@ -262,13 +262,13 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
     ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     m_ecdb.AddFunction(SleepFunc::Instance());
-    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(1),1000));    
+    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(1),1000));
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest(
-        "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x,imodel_sleep(500, x)  from cnt", 
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x,imodel_sleep(500, x)  from cnt",
         ECSqlParams().BindInt(1, 10));
 
-    auto r = mgr.Enqueue(std::move(req)).Get();  
+    auto r = mgr.Enqueue(std::move(req)).Get();
     ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Partial);
 }
 
@@ -512,7 +512,7 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
     const auto delay = std::chrono::milliseconds(2000);
-    req->SetDelay(delay);    
+    req->SetDelay(delay);
     auto r = mgr.Enqueue(std::move(req)).Get();
     ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
     ASSERT_GT(r->GetStats().TotalTime(), delay);

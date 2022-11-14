@@ -544,9 +544,10 @@ struct ConcurrentQueryMgr final {
             bool IsDefault() const { return this == &Config::GetDefault() || Config::GetDefault().Equals(*this);}
             ECDB_EXPORT static Config const& GetDefault();
             ECDB_EXPORT static Config GetFromEnv();
-            ECDB_EXPORT static Config& GetInstance();
+            //ECDB_EXPORT static Config& GetInstance();
+            ECDB_EXPORT static Config From(BeJsValue);
             void Reset() { *this = GetDefault(); }
-    };    
+    };
     public:
         struct Impl; // prevent circular dependency on ECDb
     private:
@@ -569,6 +570,8 @@ struct ConcurrentQueryMgr final {
         ECDB_EXPORT void SetCacheStatementsPerWork(uint32_t);
         ECDB_EXPORT void SetMaxQuota(QueryQuota const&);
         ECDB_EXPORT static ConcurrentQueryMgr& GetInstance(ECDb const&);
+        ECDB_EXPORT static void ResetConfig(ECDb const&, Config const&);
+        ECDB_EXPORT static Config const& GetConfig(ECDb const&);
 };
 
 //=======================================================================================

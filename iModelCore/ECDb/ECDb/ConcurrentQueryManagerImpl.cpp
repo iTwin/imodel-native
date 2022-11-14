@@ -23,34 +23,18 @@ static NativeLogging::CategoryLogger s_logger("ECDb.ConcurrentQuery");
     #define log_trace(...) s_logger.tracev(__VA_ARGS__)
     #define log_debug(...) s_logger.debugv(__VA_ARGS__)
 #else
-    #define log_trace(...) 
-    #define log_debug(...) 
+    #define log_trace(...)
+    #define log_debug(...)
 #endif
 
 #define log_info(...)  s_logger.infov(__VA_ARGS__)
 #define log_warn(...)  s_logger.warningv(__VA_ARGS__)
 #define log_error(...) s_logger.errorv(__VA_ARGS__)
 
-static const char* GetTimestamp() {
-    constexpr uint32_t kTimeLen = 32;
-    static char zTime[kTimeLen]={0};
-    static auto s_clock = std::chrono::steady_clock::now();
-
-    constexpr uint32_t kDaysInMs = 86400000;
-    constexpr uint32_t kHrsInMs = 3600000;
-    constexpr uint32_t kMinInMs = 60000;
-    constexpr uint32_t kSecInMs = 1000;
-
-    const auto tMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - s_clock).count();
-    const uint16_t days = static_cast<uint16_t>(tMs / kDaysInMs);
-    const uint16_t hours =  static_cast<uint16_t>((tMs - days*kDaysInMs) / kHrsInMs);
-    const uint16_t minutes =  static_cast<uint16_t>((tMs - days*kDaysInMs - hours*kHrsInMs) / kMinInMs);
-    const uint16_t seconds =  static_cast<uint16_t>((tMs - days*kDaysInMs - hours*kHrsInMs - minutes*kMinInMs) / kSecInMs);
-    const uint16_t milliseconds =  static_cast<uint16_t>(tMs - days*kDaysInMs - hours*kHrsInMs - minutes*kMinInMs - seconds*kSecInMs);    
-    
-    snprintf(zTime, kTimeLen, "%02" PRIu16 "-%02" PRIu16 ":%02" PRIu16 ":%02" PRIu16 ".%03" PRIu16,days, hours, minutes, seconds, milliseconds);
-    return &zTime[0];
+static Utf8String GetTimestamp() {
+    return DateTime::GetCurrentTime().ToTimestampString();
 }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -278,6 +262,10 @@ void ConnectionCache::SetCacheStatementsPerWork(uint32_t newSize) {
 ConnectionCache::ConnectionCache(ECDb const& primaryDb, uint32_t pool_size): m_primaryDb(primaryDb), m_poolSize(pool_size) {
     if (!primaryDb.IsDbOpen())
         throw std::runtime_error("primary db connection must be open");
+
+    if (m_poolSize < 1) {
+        m_poolSize = ConcurrentQueryMgr::GetConfig(primaryDb).GetWorkerThreadCount();
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -397,7 +385,7 @@ void QueryQuota::ToJs(BeJsValue& v) const{
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryQuota QueryQuota::FromJs(BeJsConst const& v) noexcept{
-    QueryQuota quota;
+    QueryQuota quota(DEFAULT_QUOTA_MAX_TIME, DEFAULT_QUOTA_MAX_MEM);
     if (v.hasMember(kTime))
         quota.m_timeLimit = std::chrono::seconds(v[kTime].asUInt64());
 
@@ -483,8 +471,8 @@ QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJ
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RunnableRequestQueue::RunnableRequestQueue(): m_nextId(0), m_state(State::Running), m_lastDelayedQueryId(0) {
-    auto env = ConcurrentQueryMgr::Config::GetInstance();
+RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(State::Running), m_lastDelayedQueryId(0),m_ecdb(ecdb) {
+    auto env = ConcurrentQueryMgr::GetConfig(ecdb);
     m_quota = env.GetQuota();
     m_maxQueueSize = env.GetRequestQueueSize();
 }
@@ -524,16 +512,16 @@ uint32_t RunnableRequestQueue::GetNextId () {
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::InsertSorted(ConnectionCache& conns, std::unique_ptr<RunnableRequestBase>&& request) {
     guard_t lock(m_mutex);
-    log_trace("%s enqueuing request [id=%" PRIu32 "]", GetTimestamp(), request->GetId());
+    log_trace("%s enqueuing request [id=%" PRIu32 "]", GetTimestamp().c_str(), request->GetId());
     auto& restartToken = request->GetRequest().GetRestartToken();
     if (!restartToken.empty()) {
-        log_trace("%s request [id=%" PRIu32 "] has restart token '%s', attempting to cancel any existing request in queue.",GetTimestamp(), request->GetId(), restartToken.c_str());
+        log_trace("%s request [id=%" PRIu32 "] has restart token '%s', attempting to cancel any existing request in queue.",GetTimestamp().c_str(), request->GetId(), restartToken.c_str());
         for (auto it = m_requests.begin(); it != m_requests.end();) {
             auto& existingRestartToken = (*it)->GetRequest().GetRestartToken();
             if (restartToken == existingRestartToken) {
-                 log_trace("%s found request [id=%" PRIu32 "] with restart token '%s' and will be cancelled in response to request [id=%" PRIu32 "]", 
-                    GetTimestamp(),
-                    (*it)->GetId(), 
+                 log_trace("%s found request [id=%" PRIu32 "] with restart token '%s' and will be cancelled in response to request [id=%" PRIu32 "]",
+                    GetTimestamp().c_str(),
+                    (*it)->GetId(),
                     restartToken.c_str(),
                     request->GetId());
                 (*it)->SetResponse((*it)->CreateCancelResponse());
@@ -542,14 +530,14 @@ void RunnableRequestQueue::InsertSorted(ConnectionCache& conns, std::unique_ptr<
                 ++it;
             }
         }
-        log_trace("%s request [id=%" PRIu32 "] has restart token '%s', attempting to interrupt any running query.",GetTimestamp(), request->GetId(), restartToken.c_str());
+        log_trace("%s request [id=%" PRIu32 "] has restart token '%s', attempting to interrupt any running query.",GetTimestamp().c_str(), request->GetId(), restartToken.c_str());
         conns.InterruptIf([&](RunnableRequestBase const& rrb){
             if (rrb.GetRequest().GetRestartToken() == restartToken) {
                 log_trace("%s found running request [id=%" PRIu32 "] with restart token '%s' and will be cancelled in response to request [id=%" PRIu32 "]",
-                    GetTimestamp(),
-                    rrb.GetId(), 
+                    GetTimestamp().c_str(),
+                    rrb.GetId(),
                     restartToken.c_str(),
-                    request->GetId());                
+                    request->GetId());
                 return true;
             }
             return false;
@@ -563,7 +551,7 @@ void RunnableRequestQueue::InsertSorted(ConnectionCache& conns, std::unique_ptr<
              return;
         }
     }
-    log_trace("%s enqueuing request [id=%" PRIu32 "] complete", GetTimestamp(), request->GetId());
+    log_trace("%s enqueuing request [id=%" PRIu32 "] complete", GetTimestamp().c_str(), request->GetId());
     m_requests.insert( m_requests.end(), std::move(request));
 }
 
@@ -573,17 +561,17 @@ void RunnableRequestQueue::InsertSorted(ConnectionCache& conns, std::unique_ptr<
 std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::Dequeue() {
     if (m_requests.empty())
         return nullptr;
-    
+
     auto req = std::move(m_requests.back());
     m_requests.pop_back();
     if (req->IsReady()) {
-        log_trace("%s dequeued request [id=%" PRIu32 "]", GetTimestamp(), req->GetId());
+        log_trace("%s dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), req->GetId());
         req->OnDequeued();
         return req;
     }
     if (m_lastDelayedQueryId != req->GetId()) {
         m_lastDelayedQueryId = req->GetId();
-        log_trace("%s dequeued request [id=%" PRIu32 "] has delay and will be deferred and put back in queue.",GetTimestamp(), req->GetId());
+        log_trace("%s dequeued request [id=%" PRIu32 "] has delay and will be deferred and put back in queue.",GetTimestamp().c_str(), req->GetId());
     }
     if (m_requests.size() > 1)
         m_requests.insert(m_requests.end() - 1, std::move(req));
@@ -626,12 +614,12 @@ QueryQuota RunnableRequestQueue::AdjustQuota(QueryQuota const& requestedQuota) c
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::ExecuteSynchronously(ConnectionCache& conns, std::unique_ptr<RunnableRequestBase> runnableReq) {
     // sync connection must be called on main thread.
-    log_trace("%s executing query synchronously [id=%" PRIu32 "] started.", GetTimestamp(), runnableReq->GetId());
+    log_trace("%s executing query synchronously [id=%" PRIu32 "] started.", GetTimestamp().c_str(), runnableReq->GetId());
     runnableReq->OnDequeued();
     conns.GetSyncConnection().Execute([](QueryAdaptorCache& adaptorCache, RunnableRequestBase& runnableQuery) {
         QueryHelper::Execute(adaptorCache, runnableQuery);
         }, std::move(runnableReq));
-    log_trace("%s executing query synchronously [id=%" PRIu32 "] ended.",GetTimestamp(), runnableReq->GetId());
+    log_trace("%s executing query synchronously [id=%" PRIu32 "] ended.",GetTimestamp().c_str(), runnableReq->GetId());
 }
 
 //---------------------------------------------------------------------------------------
@@ -643,11 +631,11 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
     auto future = ((RunnableRequestWithPromise*)runnableReq.get())->GetFuture();
 
     if (m_requests.size() >= m_maxQueueSize) {
-        log_warn("%s queue is full, rejecting request [id=%" PRIu32 "]", GetTimestamp(), runnableReq->GetId());
+        log_warn("%s queue is full, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
         runnableReq->SetResponse(RunnableRequestBase::CreateQueueFullResponse());
     } else  {
         if (m_state.load()==State::Stop) {
-            log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp(), runnableReq->GetId());
+            log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
             runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::Error, "concurrent query is shutting down"));
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
@@ -668,11 +656,11 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithCallback(*this, std::move(request), adjustedQuota, GetNextId(), onComplete));
     if (m_requests.size() >= m_maxQueueSize) {
-        log_warn("%s queue is full, rejecting request [id=%" PRIu32 "]", GetTimestamp(), runnableReq->GetId());
+        log_warn("%s queue is full, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
         runnableReq->SetResponse(RunnableRequestBase::CreateQueueFullResponse());
     } else  {
         if (m_state.load()==State::Stop) {
-            log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp(), runnableReq->GetId());
+            log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
             runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::Error,"concurrent query is shutting down"));
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
@@ -700,12 +688,12 @@ bool RunnableRequestQueue::Suspend() {
     if (m_state.load() == State::Paused || m_state.load() == State::Stop)
         return false;
 
-    log_trace("%s suspending request queue.", GetTimestamp());
+    log_trace("%s suspending request queue.", GetTimestamp().c_str());
     m_state.store(State::Paused);
-    
+
     guard_t lock(m_mutex);
     m_cond.notify_all();
-    log_trace("%s request queue suspended.", GetTimestamp());
+    log_trace("%s request queue suspended.", GetTimestamp().c_str());
     return true;
 }
 
@@ -716,15 +704,15 @@ bool RunnableRequestQueue::Stop() {
     if (m_state.load() == State::Stop)
         return false;
 
-    log_trace("%s stopping request queue.", GetTimestamp());
+    log_trace("%s stopping request queue.", GetTimestamp().c_str());
     m_state.store(State::Stop);
-    
+
     guard_t lock(m_mutex);
     for(auto & request : m_requests) {
         request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::Error,"concurrent query is shutting down"));
     }
     m_cond.notify_all();
-    log_trace("%s request queue stopped.", GetTimestamp());
+    log_trace("%s request queue stopped.", GetTimestamp().c_str());
     return true;
 }
 
@@ -750,10 +738,10 @@ bool RunnableRequestQueue::Resume() {
     if (m_state.load() == State::Running || m_state.load() == State::Stop)
         return false;
 
-    log_trace("%s resuming request queue", GetTimestamp());
+    log_trace("%s resuming request queue", GetTimestamp().c_str());
     m_state.store(State::Running);
     m_cond.notify_all();
-    log_trace("%s request queue resumed.", GetTimestamp());
+    log_trace("%s request queue resumed.", GetTimestamp().c_str());
     return true;
 }
 
@@ -762,12 +750,12 @@ bool RunnableRequestQueue::Resume() {
 //---------------------------------------------------------------------------------------
 bool RunnableRequestQueue::CancelRequest(uint32_t id) {
     guard_t lock(m_mutex);
-    log_trace("%s request to cancel [id=%" PRIu32 "]", GetTimestamp(), id);
+    log_trace("%s request to cancel [id=%" PRIu32 "]", GetTimestamp().c_str(), id);
     auto it = std::find_if(std::begin(m_requests), std::end(m_requests), [id](std::unique_ptr<RunnableRequestBase>& v){
         return v->GetId() == id;
     });
     if (it != std::end(m_requests)) {
-        log_trace("%s request [id=%" PRIu32 "] cancelled", GetTimestamp(), id);
+        log_trace("%s request [id=%" PRIu32 "] cancelled", GetTimestamp().c_str(), id);
         (*it)->SetResponse((*it)->CreateCancelResponse());
         m_requests.erase(it);
         return true;
@@ -1033,7 +1021,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
             }
         }
         if (runnableRequest.IsTimeOrMemoryExceeded(result)) {
-            log_trace("%s time or memory exceeded for request [id=%" PRIu32 "]",GetTimestamp(), runnableRequest.GetId());
+            log_trace("%s time or memory exceeded for request [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
             setResult(status::partial);
             return;
         }
@@ -1109,7 +1097,8 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
 void QueryHelper::ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest) {
     QueryProperty::List props;
     props.append("", "id", "id", "long", false, "", 0);
-    const auto maxMem = (int64_t)ConcurrentQueryMgr::Config::GetInstance().GetQuota().MaxMemoryAllowed();
+
+    const auto maxMem = (int64_t)ConcurrentQueryMgr::GetConfig(runnableRequest.GetQueue().GetECDb()).GetQuota().MaxMemoryAllowed();
     auto pingResultSize = pingJson["ping"]["resultSize"].asInt64();
     const auto pingSleepTime = std::chrono::milliseconds(pingJson["ping"]["sleepTime"].asUInt());
     const auto sleepUntil = std::chrono::steady_clock::now() + pingSleepTime;
@@ -1142,6 +1131,10 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
     auto setError = [&] (QueryResponse::Status status, std::string err) {
         runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
     };
+    if (runnableRequest.IsTimeExceeded()) {
+        runnableRequest.SetResponse(runnableRequest.CreateTimeoutResponse());
+        return;
+    }
     if (runnableRequest.GetRequest().GetKind() == QueryRequest::Kind::BlobIO) {
         auto& request = runnableRequest.GetRequest().GetAsConst<BlobIORequest>();
         auto& conn = request.UsePrimaryConnection() ? adaptorCache.GetConnection().GetPrimaryDb() : adaptorCache.GetConnection().GetDb();
@@ -1196,14 +1189,17 @@ void QueryExecutor::SetWorkerPoolSize(uint32_t newSize) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint32_t pool_size) :m_queue(queue), m_connCache(primaryDb, pool_size),m_maxPoolSize(pool_size),m_threadCount(0) {
+    if (pool_size < 1) {
+        pool_size = ConcurrentQueryMgr::GetConfig(primaryDb).GetWorkerThreadCount();
+    }
     for (uint32_t i = 0; i < pool_size; ++i) {
         m_threads.emplace_back(std::thread([&](){
             thread_local const auto execId = m_threadCount.fetch_add(1);
-            log_trace("%s executor started [id=%" PRIu32 "]",GetTimestamp(), execId);
+            log_trace("%s executor started [id=%" PRIu32 "]",GetTimestamp().c_str(), execId);
             do {
                 auto runnableQuery = m_queue.WaitForDequeue();
                 if (runnableQuery != nullptr) {
-                    log_trace("%s executor [id=%" PRIu32 "] dequeued request [id=%" PRIu32 "]", GetTimestamp(), execId, runnableQuery->GetId());
+                    log_trace("%s executor [id=%" PRIu32 "] dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), execId, runnableQuery->GetId());
                     std::shared_ptr<CachedConnection> conn;
                     conn = m_connCache.GetConnection();
                     while (conn == nullptr) {
@@ -1212,15 +1208,15 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                         conn = m_connCache.GetConnection();
                     }
                     runnableQuery->SetExecutorContext(execId, conn->Id());
-                    log_trace("%s executor [id=%" PRIu32 "] with request [id=%" PRIu32 "] is assigned connection [id=%" PRIu32 "]", 
-                        GetTimestamp(),
-                        runnableQuery->GetExecutorId(), 
-                        runnableQuery->GetId(), 
+                    log_trace("%s executor [id=%" PRIu32 "] with request [id=%" PRIu32 "] is assigned connection [id=%" PRIu32 "]",
+                        GetTimestamp().c_str(),
+                        runnableQuery->GetExecutorId(),
+                        runnableQuery->GetId(),
                         runnableQuery->GetConnectionId());
 
                     conn->Execute([](QueryAdaptorCache& adaptorCache, RunnableRequestBase& runnableQuery) {
                         log_trace("%s executing [exec_id=%" PRIu32 ", conn_id=%" PRIu32 ", req_id=%" PRIu32 "] started.",
-                            GetTimestamp() ,
+                            GetTimestamp().c_str() ,
                             runnableQuery.GetExecutorId(),
                             runnableQuery.GetConnectionId(),
                             runnableQuery.GetId());
@@ -1231,8 +1227,8 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                             Savepoint txn(adaptorCache.GetConnection().GetDbR(), "concurrent_query");
                             QueryHelper::Execute(adaptorCache, runnableQuery);
                         }
-                        log_trace("%s executing [exec_id=%" PRIu32 ", conn_id=%" PRIu32 ", req_id=%" PRIu32 "] ended.", 
-                            GetTimestamp(),
+                        log_trace("%s executing [exec_id=%" PRIu32 ", conn_id=%" PRIu32 ", req_id=%" PRIu32 "] ended.",
+                            GetTimestamp().c_str(),
                             runnableQuery.GetExecutorId(),
                             runnableQuery.GetConnectionId(),
                             runnableQuery.GetId());
@@ -1241,7 +1237,7 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                 }
             } while(m_queue.GetState() != RunnableRequestQueue::State::Stop);
             m_threadCount.fetch_sub(1);
-            log_trace("%s executor stopped Id=%" PRIu32, GetTimestamp(), execId);
+            log_trace("%s executor stopped Id=%" PRIu32, GetTimestamp().c_str(), execId);
         }));
         // wait for atleast one thread to startup.
         while(m_threadCount.load() == 0) {
@@ -1265,7 +1261,7 @@ QueryExecutor::~QueryExecutor() {
 QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor, std::chrono::milliseconds pollInterval)
     :m_stop(false), m_queue(queue),m_pollInterval(pollInterval),m_executor(executor) {
     auto notifyThreadHasStarted = std::make_unique<std::promise<void>>();
-    log_trace("%s monitor started.", GetTimestamp());
+    log_trace("%s monitor started.", GetTimestamp().c_str());
     m_thread = std::thread([&](std::promise<void>* notifyWhenThreadStarted) {
         if (notifyWhenThreadStarted != nullptr) {
             notifyWhenThreadStarted->set_value();
@@ -1277,12 +1273,12 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
                 }
                 // send respond to client
                 request.SetResponse(request.CreateTimeoutResponse());
-                log_trace("%s monitor cancel query [id=%" PRIu32 "] with timeout", GetTimestamp(), request.GetId());
+                log_trace("%s monitor cancel query [id=%" PRIu32 "] with timeout", GetTimestamp().c_str(), request.GetId());
                 return true;
                 });
             m_executor.GetConnectionCache().InterruptIf([&](RunnableRequestBase const& request) {
                 if (request.IsTimeExceeded() ){
-                    log_trace("%s monitor cancel query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp(), request.GetId());
+                    log_trace("%s monitor cancel query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
                     return true;
                 }
                 return false;
@@ -1291,7 +1287,7 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
             std::this_thread::sleep_for(m_pollInterval);
             std::this_thread::yield();
         } while (m_stop.load() == false);
-        log_trace("%s monitor stopped.", GetTimestamp());
+        log_trace("%s monitor stopped.", GetTimestamp().c_str());
     }, notifyThreadHasStarted.get());
     notifyThreadHasStarted->get_future().get();
     notifyThreadHasStarted = nullptr;
@@ -1432,7 +1428,7 @@ void ConcurrentQueryMgr::Impl::_OnAfterClearECDbCache() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ConcurrentQueryMgr::Impl::Impl(ECDbCR ecdb): m_executor(m_queue, ecdb),m_monitor(m_queue, m_executor) {
+ConcurrentQueryMgr::Impl::Impl(ECDbCR ecdb): m_executor(m_queue, ecdb),m_monitor(m_queue, m_executor),m_queue(ecdb) {
     auto removeBeforeSchemaChanges = ecdb.Schemas().OnBeforeSchemaChanges().AddListener([&](ECDbCR ecdb, SchemaChangeType type){
         Suspend(ClearCacheOption::Yes, DetachAttachDbs::Yes);
     });
@@ -1457,17 +1453,56 @@ ConcurrentQueryMgr::Impl::~Impl() {
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+// static
+//---------------------------------------------------------------------------------------
+void ConcurrentQueryMgr::ResetConfig(ECDb const& ecdb, Config const& config) {
+    if (!ecdb.IsDbOpen()) {
+        throw std::runtime_error("ecdb is closed or not open");
+    }
+
+    BeMutexHolder lock (ecdb.GetImpl().GetMutex());
+    auto& appKey = ConcurrentQueryConfigAppData::GetKey();
+    auto appData = ecdb.FindAppDataOfType<ConcurrentQueryConfigAppData>(appKey);
+    if (appData.IsNull()) {
+        appData = ConcurrentQueryConfigAppData::Create();
+        ecdb.AddAppData(appKey, appData.get());
+    }
+    appData->SetConfig(config);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// static
+//---------------------------------------------------------------------------------------
+ConcurrentQueryMgr::Config const& ConcurrentQueryMgr::GetConfig(ECDb const& ecdb) {
+    if (!ecdb.IsDbOpen()) {
+        throw std::runtime_error("ecdb is closed or not open");
+    }
+
+    BeMutexHolder lock (ecdb.GetImpl().GetMutex());
+    auto& appKey = ConcurrentQueryConfigAppData::GetKey();
+    auto appData = ecdb.FindAppDataOfType<ConcurrentQueryConfigAppData>(appKey);
+    if (appData.IsNull()) {
+        appData = ConcurrentQueryConfigAppData::Create();
+        ecdb.AddAppData(appKey, appData.get());
+    }
+    return appData->GetConfig();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// static
 //---------------------------------------------------------------------------------------
 ConcurrentQueryMgr& ConcurrentQueryMgr::GetInstance(ECDbCR &ecdb) {
     if (!ecdb.IsDbOpen()) {
         throw std::runtime_error("ecdb is closed or not open");
     }
+
     BeMutexHolder lock (ecdb.GetImpl().GetMutex());
-    auto& appkey = ConcurrentQueryAppData::GetKey();
-    auto appData = ecdb.FindAppDataOfType<ConcurrentQueryAppData>(appkey);
+    auto& appKey = ConcurrentQueryAppData::GetKey();
+    auto appData = ecdb.FindAppDataOfType<ConcurrentQueryAppData>(appKey);
     if (appData.IsNull()) {
         appData = ConcurrentQueryAppData::Create(ecdb);
-        ecdb.AddAppData(appkey, appData.get());
+        ecdb.AddAppData(appKey, appData.get());
     }
     return appData->GetConcurrentQuery();
 }
@@ -1494,7 +1529,7 @@ void QueryRequest::FromJs(BeJsConst const& val) {
     }
     if (val.isNumericMember(JDelay)) {
         m_delay = std::chrono::milliseconds(val[JDelay].asInt());
-    }      
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -1926,29 +1961,45 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(std::string const& j
     if (!val.isObject()) {
         return Config::GetDefault();
     }
-    auto& defaultConfig = Config::GetDefault();
-    auto threads = val[Config::JThreads].asUInt(defaultConfig.GetWorkerThreadCount());
-    auto queueSize = val[Config::JQueueSize].asUInt(defaultConfig.GetRequestQueueSize());
-    auto ignorePriority = val[Config::JIgnorePriority].asBool(defaultConfig.GetIgnorePriority());
-    auto quota = defaultConfig.GetQuota();
-    if (val[Config::JQuota].isObject()) {
-        auto jsVal = BeJsConst(val[Config::JQuota]);
-        quota = QueryQuota::FromJs(jsVal);
-    }
-    if (threads > std::thread::hardware_concurrency() || threads < MIN_WORKER_THREAD_COUNT) {
-        threads = Config::GetDefault().GetWorkerThreadCount();
-    }
-    if (queueSize < RunnableRequestQueue::kMinQueueSize || queueSize > MAX_REQUEST_QUERY_SIZE) {
-        queueSize = Config::GetDefault().GetRequestQueueSize();
-    }
-    Config config;
-    config.SetWorkerThreadCount(threads);
-    config.SetRequestQueueSize(queueSize);
-    config.SetIgnorePriority(ignorePriority);
-    config.SetQuota(quota);
-    return config;
+    auto jsVal = BeJsConst(val);
+    return From(val);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
+    if (!val.isObject()) {
+        return GetDefault();
+    }
+
+    auto& defaultConfig = Config::GetDefault();
+    Config config = defaultConfig;
+    if (val.isNumericMember(Config::JThreads)) {
+        auto threads = val[Config::JThreads].asUInt(defaultConfig.GetWorkerThreadCount());
+        if (threads > std::thread::hardware_concurrency() || threads < MIN_WORKER_THREAD_COUNT) {
+            threads = Config::GetDefault().GetWorkerThreadCount();
+        }
+        config.SetWorkerThreadCount(threads);
+    }
+    if (val.isNumericMember(Config::JQueueSize)) {
+        auto queueSize = val[Config::JQueueSize].asUInt(defaultConfig.GetRequestQueueSize());
+        if (queueSize < RunnableRequestQueue::kMinQueueSize || queueSize > MAX_REQUEST_QUERY_SIZE) {
+            queueSize = Config::GetDefault().GetRequestQueueSize();
+        }
+        config.SetRequestQueueSize(queueSize);
+    }
+    if (val.isBoolMember(Config::JIgnorePriority)) {
+        const auto ignorePriority = val[Config::JIgnorePriority].asBool(defaultConfig.GetIgnorePriority());
+        config.SetIgnorePriority(ignorePriority);
+    }
+    if (val.isObjectMember(Config::JQuota)) {
+        auto quota = defaultConfig.GetQuota();
+        quota = QueryQuota::FromJs(val[Config::JQuota]);
+        config.SetQuota(quota);
+    }
+    return config;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1971,15 +2022,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
     }
 #endif
     return Config::GetDefault();
-}
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::GetInstance() {
-    static Config s = Config::GetFromEnv();
-    return s;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2072,7 +2114,7 @@ BentleyStatus QueryJsonAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlVal
     if (propType == ECN::PRIMITIVETYPE_Boolean) {
         out = in.GetBoolean();
         return SUCCESS;
-    }    
+    }
     if (propType == ECN::PRIMITIVETYPE_Binary) {
         return RenderBinaryProperty(out, in);
     }

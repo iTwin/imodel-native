@@ -703,10 +703,16 @@ public:
 
         return Napi::Number::New(Env(), (int)status);
     }
+
     void ConcurrentQueryExecute(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
+    }
+
+    void ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, configObj);
+        JsInterop::ConcurrentQueryResetConfig(m_ecdb, configObj);
     }
 
     void CloseDbIfOpen() {
@@ -762,6 +768,7 @@ public:
             InstanceMethod("abandonChanges", &NativeECDb::AbandonChanges),
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
+            InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
             InstanceMethod("dispose", &NativeECDb::Dispose),
             InstanceMethod("dropSchema", &NativeECDb::DropSchema),
@@ -2489,6 +2496,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::ConcurrentQueryExecute(GetDgnDb(), requestObj, callback);
     }
 
+    void ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
+        REQUIRE_DB_TO_BE_OPEN;
+        REQUIRE_ARGUMENT_ANY_OBJ(0, configObj);
+        JsInterop::ConcurrentQueryResetConfig(GetDgnDb(), configObj);
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2522,6 +2534,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("completeCreateChangeset", &NativeDgnDb::CompleteCreateChangeset),
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
+            InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
