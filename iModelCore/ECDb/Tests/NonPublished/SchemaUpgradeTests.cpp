@@ -12354,7 +12354,9 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryDelete)
                                         </ECEntityClass>
                                     </ECSchema>)xml";
 
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(SchemaSourceWithDeletion)))
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+    auto status = ImportSchema(SchemaItem(SchemaSourceWithDeletion), options);
+    ASSERT_EQ(SUCCESS, status)
         << "PropertyCategory deletion should work if there are no dangling references";
     }
 
