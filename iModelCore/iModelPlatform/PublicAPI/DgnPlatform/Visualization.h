@@ -115,6 +115,8 @@ public:
   virtual void CancelContentRequests(DgnDbR db, Utf8StringCR treeId, bvector<Utf8String> const& contentIds) { }
 
   virtual ElementGraphicsRequestsUPtr CreateElementGraphicsRequests(DgnDbR) { return nullptr; }
+
+  virtual Napi::Value GenerateElementMeshes(DgnDbR, BeJsConst requestProps, Napi::Env) { throw std::runtime_error("unimplemented"); }
 };
 
 END_BENTLEY_DGN_NAMESPACE
