@@ -219,8 +219,9 @@ private:
     BentleyStatus ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSubquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const& tableNode, ECSqlType, bool) const;
-    BentleyStatus ParseTableNodeWithOptMemberCall(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const&, ECSqlType, bool isPolymorphic, bool disqualifyPrimaryJoin) const;    BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*, ECSqlType ecsqlType) const;
+    BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const& tableNode, ECSqlType, PolymorphicInfo) const;
+    BentleyStatus ParseTableNodeWithOptMemberCall(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const&, ECSqlType, PolymorphicInfo polymorphic, bool disqualifyPrimaryJoin) const;
+    BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*, ECSqlType ecsqlType) const;
     BentleyStatus ParseTerm(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseTruthValue(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const* node) const { return ParseValueExp(exp, node); }
 
@@ -236,10 +237,10 @@ private:
     BentleyStatus ParseTableValuedFunction(std::unique_ptr<TableValuedFunctionExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseIIFExp(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
     BentleyStatus ParseTypePredicate(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
+    static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     IssueDataSource const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
     static bool IsPredicate(connectivity::OSQLParseNode const&);
     static Utf8CP SqlDataTypeKeywordToString(sal_uInt32 sqlKeywordId);
-
 public:
     ECSqlParser() {}
     ~ECSqlParser() {}

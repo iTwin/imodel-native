@@ -529,6 +529,15 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
         }
 
+    // This sql update fixes an issue that occurs when upgrading profile version to 4002.
+    // The profile upgrade code modifies values in memory, but is leaving the ExtendedTypeName value inconsistent between memory and DB for the property ECInstanceID in the table ec_Property.
+    // So, we run this sql update to make the DB value consistent with the one in memory.
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Property " SET ExtendedTypeName = '" EXTENDEDTYPENAME_Id "' WHERE Id = (select p.Id from main." TABLE_Property " p join main." TABLE_Class " c on c.id = p.ClassId join main." TABLE_Schema " s on s.id = c.SchemaId where s.Name = '" ECSCHEMA_ECDbSystem "' and c.Name = '" ECDBSYS_CLASS_ClassECSqlSystemProperties "' and p.Name = '" ECDBSYS_PROP_ECInstanceId "')"))
+        {
+        LOG.errorv("ECDb profile upgrade failed with error: Failed to update ExtendedTypeName value for property '" ECDBSYS_PROP_ECInstanceId "' in table " TABLE_Property ".");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
     PERFLOG_FINISH("ECDb", "Profile schema import");
     return BE_SQLITE_OK;
     }

@@ -980,6 +980,91 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(JoinedTableTestFixture,  Disqualifying_PolymorphicFilter)
+    {
+    SchemaItem testSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='DisqualifyingTest' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' >"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Moo' >"
+        "        <BaseClass>Goo</BaseClass>"
+        "        <ECProperty propertyName='C1' typeName='long'/>"
+        "        <ECProperty propertyName='D1' typeName='string'/>"
+        "    </ECEntityClass>"        
+        "   <ECEntityClass typeName='Doo' >"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "    </ECEntityClass>"        
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    auto prepareAndMatchSql = [&](Utf8String ecsql, std::vector<Utf8String> sqlFragments, ECSqlStatus status) {
+        ECSqlStatement stmt;
+        const auto prepareStatus = stmt.Prepare(m_ecdb, ecsql.c_str());
+        EXPECT_EQ(status, prepareStatus) << "does not match prepare status";
+        if (prepareStatus == ECSqlStatus::Success) {
+            const Utf8String nativeSql = stmt.GetNativeSql();
+            for(const auto& sqlFragment : sqlFragments) {
+                if (!nativeSql.Contains(sqlFragment)) {
+                    EXPECT_TRUE(false) << "SQL Fragment: " << sqlFragment.c_str() << " does not exist in SQL: " << nativeSql.c_str();
+                }
+            }
+        }
+    };
+    prepareAndMatchSql("SELECT * FROM +ALL ts.Goo", {
+        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=75"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM ALL ts.Goo", {
+        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=75"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM ts.Goo", {
+        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=75"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM ONLY ts.Goo", {
+        "[ts_Foo].ECClassId=75"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM +ONLY ts.Goo", {
+        "+[ts_Foo].ECClassId=75"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM ONLY ts.Doo", {
+        "[ts_Foo].ECClassId=73"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM +ONLY ts.Doo", {
+        "+[ts_Foo].ECClassId=73"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM ALL ts.Doo", {
+        "[ts_Foo].ECClassId=73"
+        }, ECSqlStatus::Success);
+
+    prepareAndMatchSql("SELECT * FROM +ALL ts.Doo", {
+        "+[ts_Foo].ECClassId=73"
+        }, ECSqlStatus::Success);        
+    }    
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(JoinedTableTestFixture,  Disqualifying_PrimaryJoinTerm)
     {
     SchemaItem testSchema(

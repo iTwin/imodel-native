@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::vector<Utf8String> colList, std::unique_ptr<SelectStatementExp> stmt)
-    :RangeClassRefExp(Exp::Type::CommonTableBlock, false), m_name(name), m_columnList(colList),m_deferredExpand(true) {
+    :RangeClassRefExp(Exp::Type::CommonTableBlock, PolymorphicInfo::Only()), m_name(name), m_columnList(colList),m_deferredExpand(true) {
     AddChild(std::move(stmt));
 }
 //-----------------------------------------------------------------------------------------

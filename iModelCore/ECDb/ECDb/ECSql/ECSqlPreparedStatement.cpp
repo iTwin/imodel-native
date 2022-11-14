@@ -920,7 +920,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     {
     PrepareInfo prepareInfo(ctx, exp.GetAs<UpdateStatementExp>());
 
-    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
+    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().GetPolymorphicInfo().IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
 
     ECSqlStatus checkReadOnlyStat = CheckForReadonlyProperties(prepareInfo);
     if (checkReadOnlyStat != ECSqlStatus::Success)
@@ -1306,7 +1306,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
-    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetInfo().GetMap(), m_type, exp.GetAs<DeleteStatementExp>().GetClassNameExp()->IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
+    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetInfo().GetMap(), m_type, exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetPolymorphicInfo().IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
 
     //WIP this will probably not be enough
     return SingleECSqlPreparedStatement::_Prepare(ctx, exp);

@@ -715,7 +715,6 @@ protected:
             context->SetRootNodeContext(nullptr);
 
         context->SetPropertyFormattingContext(m_manager.GetECPropertyFormatter(), UnitSystem::Undefined);
-        context->GetOptimizationFlags().SetIsUpdatesDisabled(m_manager.m_mode == Mode::ReadOnly);
         context->SetCancelationToken(cancelationToken);
 
         // notify listener with ECClasses used in this ruleset
@@ -734,7 +733,6 @@ public:
 RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Params const& params)
     : m_connections(params.GetConnections() ? params.GetConnections() : std::make_shared<ConnectionManager>())
     {
-    m_mode = params.GetMode();
     m_localState = params.GetLocalState();
     m_ecPropertyFormatter = params.GetECPropertyFormatter();
     m_categorySupplier = params.GetCategorySupplier();
@@ -906,10 +904,6 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
 void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> changes)
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("ECInstances changed with %" PRIu64 " changes", (uint64_t)changes.size()));
-
-    if (m_mode == Mode::ReadOnly)
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Should never get an 'ECInstance Changed' event in read-only mode");
-
     IConnectionPtr connection = m_connections->GetConnection(db);
     if (connection.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, "Failed to get a connection for current task");

@@ -11,6 +11,23 @@
 #define PRESENTATION_RULESET_EXTENSION_Xml   L".PresentationRuleSet.xml"
 #define PRESENTATION_RULESET_EXTENSION_Json  L".PresentationRuleSet.json"
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct RuleSetLocaterManager::LocateContext
+    {
+    RuleSetLocaterManager const& m_manager;
+    LocateContext(RuleSetLocaterManager const& manager)
+        : m_manager(manager)
+        {
+        m_manager.m_isLocating = true;
+        }
+    ~LocateContext()
+        {
+        m_manager.m_isLocating = false;
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -175,16 +192,12 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnecti
         }
 
     bvector<RuleSetLocaterPtr> sortedLocaters = m_locaters;
-    std::sort(sortedLocaters.begin(), sortedLocaters.end(), [](RuleSetLocaterPtr a, RuleSetLocaterPtr b)
+    std::stable_sort(sortedLocaters.begin(), sortedLocaters.end(), [](auto const& a, auto const& b)
         {
-        if (a->GetPriority() < b->GetPriority())
-            return -1;
-        if (a->GetPriority() > b->GetPriority())
-            return 1;
-        return 0;
+        return a->GetPriority() > b->GetPriority();
         });
 
-    m_isLocating = true;
+    LocateContext ctx(*this);
 
     bmap<Utf8String, PresentationRuleSetPtr> locatedRulesets;
     for (RuleSetLocaterPtr& locater : sortedLocaters)
@@ -203,8 +216,6 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnecti
                 }
             }
         }
-
-    m_isLocating = false;
 
     bvector<PresentationRuleSetPtr> results;
     for (auto& pair : locatedRulesets)

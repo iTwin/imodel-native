@@ -928,8 +928,8 @@ void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*G
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP alias, bool isPolymorphic)
-    : RangeClassRefExp(Type::SubqueryRef, isPolymorphic)
+SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP alias, PolymorphicInfo polymorphic)
+    : RangeClassRefExp(Type::SubqueryRef, polymorphic)
     {
     if (!Utf8String::IsNullOrEmpty(alias))
         SetAlias(alias);
@@ -956,9 +956,10 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
 //+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryRefExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    if (!IsPolymorphic())
+    if (GetPolymorphicInfo().IsOnly())
         ctx.AppendToECSql("ONLY ");
-    
+
+
     ctx.AppendToECSql(*GetSubquery());
     
     if (!GetAlias().empty())

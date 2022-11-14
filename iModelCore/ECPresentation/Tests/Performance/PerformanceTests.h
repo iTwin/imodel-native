@@ -57,7 +57,7 @@ protected:
     void _SetupProjects() override;
     virtual BeFileName _SupplyProjectPath() const = 0;
     virtual PresentationRuleSetPtr _SupplyRuleset() const = 0;
-    Utf8StringCR GetRulesetId() const;
+    Utf8String GetRulesetId() const;
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

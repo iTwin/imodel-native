@@ -16,18 +16,19 @@
 # These are owners for specific files in the repository
 # Each line is a file pattern followed by one or more owners
 
-/build/*                                      @chuckkir @calebmshafer @skirby1996
-/iModelCore/Bentley/*                         @swwilson-bsi @kabentley @bbastings @pmconne
-/iModelCore/BeSQLite/*                        @kabentley @khanaffan
-/iModelCore/BRepCore/*                        @pmconne @bbastings
-/iModelCore/ECDb/*                            @khanaffan @kabentley @calebmshafer @rschili
-/iModelCore/ecobjects/*                       @calebmshafer @ColinKerr @c-macdonald
-/iModelCore/ECPresentation/*                  @grigasp @saskliutas
-/iModelCore/GeoCoord/*                        @kabentley @AlainRobertAtBentley
-/iModelCore/GeomLibs/*                        @EarlinLutz @bbastings @kabentley @dassaf4
-/iModelCore/iModelPlatform/*                  @pmconne @swwilson-bsi @kabentley @bbastings
-/iModelCore/Units/*                           @calebmshafer @ColinKerr @bbastings
-/iModelCore/iModelPlatform/**/*Tile*.*        @pmconne
-/iModelCore/iModelPlatform/**/*Render*.*      @pmconne
+/build/                                      @chuckkir @calebmshafer @skirby1996
+/iModelCore/Bentley/                         @swwilson-bsi @kabentley @bbastings @pmconne
+/iModelCore/BeSQLite/                        @kabentley @khanaffan
+/iModelCore/BRepCore/                        @pmconne @bbastings
+/iModelCore/ECDb/                            @khanaffan @kabentley @calebmshafer @rschili
+/iModelCore/ecobjects/                       @calebmshafer @ColinKerr @c-macdonald
+/iModelCore/ECPresentation/                  @iTwin/itwinjs-core-presentation
+/iModelCore/GeoCoord/                        @kabentley @AlainRobertAtBentley
+/iModelCore/GeomLibs/                        @EarlinLutz @bbastings @kabentley @dassaf4
+/iModelCore/iModelPlatform/                  @pmconne @swwilson-bsi @kabentley @bbastings
+/iModelCore/Units/                           @calebmshafer @ColinKerr @bbastings
+/iModelCore/iModelPlatform/**/*Tile*.*       @pmconne @markschlosseratbentley
+/iModelCore/iModelPlatform/**/*Render*.*     @pmconne @markschlosseratbentley
 
-/iModelJsNodeAddon/*                          @pmconne @swwilson-bsi @khanaffan @kabentley @calebmshafer
+/iModelJsNodeAddon/                          @pmconne @swwilson-bsi @khanaffan @kabentley @calebmshafer
+/iModelJsNodeAddon/presentation/             @iTwin/itwinjs-core-presentation

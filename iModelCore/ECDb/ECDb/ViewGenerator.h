@@ -6,6 +6,7 @@
 #include "ECDbInternalTypes.h"
 #include "DbSchema.h"
 #include "ECDbSqlFunctions.h"
+#include "ECSql/ClassRefExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -13,7 +14,7 @@ struct TableSpaceSchemaManager;
 struct ECSqlPrepareContext;
 struct ConstraintECClassIdJoinInfo;
 struct MemberFunctionCallExp;
-
+struct PolymorphicInfo;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -56,15 +57,15 @@ struct ViewGenerator final
             {
         private:
             ECSqlPrepareContext const& m_prepareCtx;
-            bool m_isPolymorphicQuery = false;
+            PolymorphicInfo m_polymorphicInfo;
             bool m_disqualifyPrimaryJoin = false;
             MemberFunctionCallExp const* m_memberFunctionCallExp = nullptr;
         public:
-            SelectFromViewContext(ECSqlPrepareContext const&, TableSpaceSchemaManager const& manager, bool isPolymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const*);
+            SelectFromViewContext(ECSqlPrepareContext const&, TableSpaceSchemaManager const& manager, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const*);
             ~SelectFromViewContext() {}
 
             ECSqlPrepareContext const& GetPrepareCtx() const { return m_prepareCtx; }
-            bool IsPolymorphicQuery() const { return m_isPolymorphicQuery; }
+            PolymorphicInfo const& GetPolymorphicInfo() const { return m_polymorphicInfo; }
             bool IsDisqualifyPrimaryJoin() const {return m_disqualifyPrimaryJoin; }
             MemberFunctionCallExp const* GetMemberFunctionCallExp() const { return m_memberFunctionCallExp; }
 
@@ -172,9 +173,9 @@ struct ViewGenerator final
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);
-        static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, bool polymorphic);
+        static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, PolymorphicInfo const& polymorphic);
     public:
-        static BentleyStatus GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp = nullptr);
+        static BentleyStatus GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp = nullptr);
         static BentleyStatus CreateECClassViews(ECDbCR, bvector<ECN::ECClassId> const&);
         static BentleyStatus CreateECClassViews(ECDbCR);
         static BentleyStatus DropECClassViews(ECDbCR);
