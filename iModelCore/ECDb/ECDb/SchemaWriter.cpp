@@ -3873,8 +3873,8 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
             if (!change.Name().GetOld().IsValid())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old PropertyCategory name was unexpectedly invalid",
-                                        oldSchema.GetFullSchemaName().c_str(), change.Name().GetOld().Value().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Old PropertyCategory name was unexpectedly invalid",
+                                        oldSchema.GetFullSchemaName().c_str());
                 return ERROR;
                 }
 
@@ -4650,7 +4650,7 @@ BentleyStatus SchemaWriter::UpdateFormats(Context& ctx, FormatChanges& changes, 
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Format %s: Modifying formats is not supported in a file that does not support EC3.2 yet.",
                                     oldSchema.GetFullSchemaName().c_str(),
-                                    change.Name().GetOld().IsNull() ? "Name not available" : change.Name().GetOld().Value().c_str());
+                                    change.Name().GetOld().Value().c_str());
             return ERROR;
             }
 
@@ -4658,7 +4658,7 @@ BentleyStatus SchemaWriter::UpdateFormats(Context& ctx, FormatChanges& changes, 
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Format %s: Deleting Formats from an ECSchema is not supported.",
                                     oldSchema.GetFullSchemaName().c_str(),
-                                    change.Name().GetOld().IsNull() ? "Name not available" : change.Name().GetOld().Value().c_str());
+                                    change.Name().GetOld().Value().c_str());
             return ERROR;
             }
 
@@ -4708,7 +4708,7 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECS
     if (!ctx.IsEC32AvailableInFile())
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s: Failed to upgrade Unit '%s'. Formats are not supported in a file that does not support EC3.2 yet.",
-                                change.Name().GetOld().IsNull() ? "Name not available" : oldVal.GetFullName().c_str());
+                                oldVal.GetFullName().c_str());
         return ERROR;
         }
 
@@ -4719,8 +4719,8 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECS
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Unit %s: Changing the name of a Format is not supported. Modified '%s' to '%s'",
                                 oldSchema.GetFullSchemaName().c_str(),
-                                change.Name().GetOld().IsNull() ? "Name not available" : oldVal.GetFullName().c_str(),
-                                change.Name().GetOld().IsNull() ? "Name not available" : oldVal.GetFullName().c_str(),
+                                oldVal.GetFullName().c_str(),
+                                oldVal.GetFullName().c_str(),
                                 change.Name().GetNew().IsNull() ? "Name not available" : newVal.GetFullName().c_str());
         return ERROR;
         }
