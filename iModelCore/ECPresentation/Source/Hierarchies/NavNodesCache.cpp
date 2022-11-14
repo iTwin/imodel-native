@@ -15,7 +15,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_SUFFIX            L"-hierarchies"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR     32
+#define NAVNODES_CACHE_DB_VERSION_MAJOR     33
 #define NAVNODES_CACHE_DB_VERSION_MINOR     0
 
 #define NAVNODES_CACHE_LockWaitTime 200
@@ -169,66 +169,6 @@ rapidjson::Document DataSourceFilter::AsJson() const
         }
     return json;
     }
-
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<uint64_t> IndexFromBlob(void const* blob, int size)
-    {
-    uint64_t const* arr = static_cast<uint64_t const*>(blob);
-    int count = size / sizeof(uint64_t);
-    bvector<uint64_t> index;
-    index.reserve(count);
-    for (int i = 0; i < count; ++i)
-        index.push_back(arr[i]);
-    return index;
-    }
-/*---------------------------------------------------------------------------------**//**
-* note: need to use little-endian for binary index concatenation to work
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static uint64_t SwapEndian(uint64_t number)
-    {
-    union
-        {
-        uint64_t n;
-        unsigned char u8[sizeof(uint64_t)];
-        } res;
-    res.n = number;
-    size_t len = sizeof(uint64_t);
-    for (size_t i = 0; i < len / 2; i++)
-        {
-        unsigned char t = res.u8[i];
-        res.u8[i] = res.u8[len - i - 1];
-        res.u8[len - i - 1] = t;
-        }
-    return res.n;
-    }
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ConcatBinaryIndexScalar : BeSQLite::ScalarFunction
-    {
-    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
-        {
-        uint64_t const* lhsArr = static_cast<uint64_t const*>(args[0].GetValueBlob());
-        int lhsCount = args[0].GetValueBytes() / sizeof(uint64_t);
-        uint64_t const* rhsArr = static_cast<uint64_t const*>(args[1].GetValueBlob());
-        int rhsCount = args[1].GetValueBytes() / sizeof(uint64_t);
-        bvector<uint64_t> result;
-        result.reserve(lhsCount + rhsCount);
-        for (int i = 0; i < lhsCount; ++i)
-            result.push_back(SwapEndian(lhsArr[i]));
-        for (int i = 0; i < rhsCount; ++i)
-            result.push_back(SwapEndian(rhsArr[i]));
-        ctx.SetResultBlob(reinterpret_cast<void const*>(&result.front()), result.size() * sizeof(uint64_t), DbFunction::Context::CopyData::Yes);
-        }
-    ConcatBinaryIndexScalar()
-        : ScalarFunction(NODESCACHE_FUNCNAME_ConcatBinaryIndex, 2, DbValueType::BlobVal)
-        {}
-    };
-#endif
 
 /*=================================================================================**//**
 * @bsiclass
@@ -574,6 +514,11 @@ BentleyStatus NodesCache::DbFactory::InitializeCacheTables(Db& db)
             "[Visibility] INTEGER NOT NULL DEFAULT 0, "
             "[Data] TEXT NOT NULL, "
             "[Label] TEXT, "
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+            "[OrderValue] BINARY, "
+#else
+            "[OrderValue] TEXT NOT NULL, "
+#endif
             "[InstanceKeysSelectQuery] TEXT";
         EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_Nodes, ddl));
         EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Nodes_DataSourceId] ON [" NODESCACHE_TABLENAME_Nodes "]([DataSourceId])"));
@@ -622,44 +567,6 @@ BentleyStatus NodesCache::DbFactory::InitializeCacheTables(Db& db)
             "[LastUsedTime] INTEGER NOT NULL";
         EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_Rulesets, ddl));
         EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE UNIQUE INDEX [UX_Rulesets_Identifier] ON [" NODESCACHE_TABLENAME_Rulesets "]([Identifier])"));
-        }
-    if (!db.TableExists(NODESCACHE_TABLENAME_NodesOrder))
-        {
-        Utf8CP ddl =
-            "[HierarchyLevelId] " NAVNODES_CACHE_ID_TYPE " NOT NULL REFERENCES " NODESCACHE_TABLENAME_HierarchyLevels "([Id]) ON DELETE CASCADE, "
-            "[PhysicalHierarchyLevelId] " NAVNODES_CACHE_ID_TYPE " NOT NULL REFERENCES " NODESCACHE_TABLENAME_PhysicalHierarchyLevels "([Id]) ON DELETE CASCADE, "
-            "[DataSourceId] " NAVNODES_CACHE_ID_TYPE " NOT NULL REFERENCES " NODESCACHE_TABLENAME_DataSources "([Id]) ON DELETE CASCADE, "
-            "[NodeId] " NAVNODES_CACHE_ID_TYPE " PRIMARY KEY NOT NULL UNIQUE REFERENCES " NODESCACHE_TABLENAME_Nodes "([Id]) ON DELETE CASCADE, "
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-            "[OrderValue] BINARY";
-#else
-            "[OrderValue] TEXT NOT NULL";
-#endif
-        EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_NodesOrder, ddl));
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Order_PhysicalHierarchy] ON [" NODESCACHE_TABLENAME_NodesOrder "]([PhysicalHierarchyLevelId],[OrderValue])"));
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Order_HierarchyLevel] ON [" NODESCACHE_TABLENAME_NodesOrder "]([HierarchyLevelId],[OrderValue])"));
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_Order_DataSource] ON [" NODESCACHE_TABLENAME_NodesOrder "]([DataSourceId],[OrderValue])"));
-        Utf8CP triggerDdl = "CREATE TRIGGER IF NOT EXISTS [TRIGG_" NODESCACHE_TABLENAME_NodesOrder "] AFTER INSERT ON [" NODESCACHE_TABLENAME_Nodes "] "
-            "BEGIN"
-            "    INSERT INTO [" NODESCACHE_TABLENAME_NodesOrder "] "
-            "    SELECT [hl].[Id], [hl].[PhysicalHierarchyLevelId], [d].[Id], NEW.[Id], "
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-            "    " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([d].[FullIndex], NEW.[Index]) "
-#else
-            "    CASE WHEN length([d].[FullIndex]) > 0 THEN ([d].[FullIndex] || '-' || NEW.[Index]) ELSE (NEW.[Index]) END "
-#endif
-            "    FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
-            "    JOIN [" NODESCACHE_TABLENAME_DataSources "] d ON [d].[HierarchyLevelId] = [hl].[Id] "
-            "    WHERE [d].[Id] = NEW.[DataSourceId]; "
-            "END";
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql(triggerDdl));
-        Utf8CP triggerPhysicalHierarchyUpdateDdl = "CREATE TRIGGER IF NOT EXISTS [TRIGG_" NODESCACHE_TABLENAME_NodesOrder "_PhysicalHierarchyLevelUpdate] AFTER UPDATE OF [PhysicalHierarchyLevelId] ON [" NODESCACHE_TABLENAME_HierarchyLevels "] "
-            "BEGIN"
-            "    UPDATE [" NODESCACHE_TABLENAME_NodesOrder "] "
-            "    SET [PhysicalHierarchyLevelId] = NEW.[PhysicalHierarchyLevelId] "
-            "    WHERE [HierarchyLevelId] = NEW.[Id]; "
-            "END";
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql(triggerPhysicalHierarchyUpdateDdl));
         }
     return SUCCESS;
     }
@@ -874,10 +781,6 @@ BentleyStatus NodesCache::OpenCache()
     m_db.AddFunction(*m_customFunctions.back());
     m_customFunctions.push_back(std::make_unique<GuidConcatAggregate>());
     m_db.AddFunction(*m_customFunctions.back());
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-    m_customFunctions.push_back(std::make_unique<ConcatBinaryIndexScalar>());
-    m_db.AddFunction(*m_customFunctions.back());
-#endif
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_INFO, "Opened successfully");
     return SUCCESS;
@@ -1458,8 +1361,8 @@ void NodesCache::CacheNode(DataSourceIdentifier const& datasourceIdentifier, Nav
 
     static Utf8CP query =
         "INSERT INTO [" NODESCACHE_TABLENAME_Nodes "] ("
-        "[Id], [DataSourceId], [Index], [Visibility], [Data], [Label], [InstanceKeysSelectQuery]"
-        ") VALUES (?, ?, ?, ?, ?, ?, ?)";
+        "[Id], [DataSourceId], [Index], [Visibility], [Data], [Label], [OrderValue], [InstanceKeysSelectQuery]"
+        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -1469,18 +1372,23 @@ void NodesCache::CacheNode(DataSourceIdentifier const& datasourceIdentifier, Nav
     BeGuid nodeId(true);
 
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, nodeId);
+
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, datasourceIdentifier.GetId());
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-    stmt->BindBlob(bindingIndex++, reinterpret_cast<void const*>(&index.front()), index.size() * sizeof(uint64_t), Statement::MakeCopy::No);
-#else
-    Utf8String indexStr = NodesCacheHelpers::IndexToString(index, true);
-    stmt->BindText(bindingIndex++, indexStr.c_str(), Statement::MakeCopy::No);
-#endif
+
+    NodesCacheHelpers::BindVectorIndex(*stmt, bindingIndex++, index, false);
+
     stmt->BindInt(bindingIndex++, (int)visibility);
 
     Utf8String nodeStr = GetSerializedJson(NavNodesHelper::SerializeNodeToJson(node));
     stmt->BindText(bindingIndex++, nodeStr.c_str(), Statement::MakeCopy::No);
+
     stmt->BindText(bindingIndex++, node.GetLabelDefinition().GetDisplayValue(), Statement::MakeCopy::Yes);
+
+    bvector<uint64_t> orderValue;
+    ContainerHelpers::Push(orderValue, datasourceIdentifier.GetIndex());
+    ContainerHelpers::Push(orderValue, index);
+    NodesCacheHelpers::BindVectorIndex(*stmt, bindingIndex++, orderValue, true);
+
     if (node.GetInstanceKeysSelectQuery().IsValid())
         stmt->BindText(bindingIndex++, BeRapidJsonUtilities::ToString(node.GetInstanceKeysSelectQuery()->ToJson()), Statement::MakeCopy::Yes);
     else
@@ -1571,15 +1479,7 @@ void NodesCache::CacheEmptyDataSource(DataSourceIdentifier& info, DataSourceFilt
 
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, dataSourceId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, info.GetHierarchyLevelId());
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-    if (info.GetIndex().empty())
-        stmt->BindNull(bindingIndex++);
-    else
-        stmt->BindBlob(bindingIndex++, reinterpret_cast<void const*>(&info.GetIndex().front()), info.GetIndex().size() * sizeof(uint64_t), Statement::MakeCopy::No);
-#else
-    Utf8String dsIndex = NodesCacheHelpers::IndexToString(info.GetIndex(), true);
-    stmt->BindText(bindingIndex++, dsIndex.c_str(), Statement::MakeCopy::No);
-#endif
+    NodesCacheHelpers::BindVectorIndex(*stmt, bindingIndex++, info.GetIndex(), false);
     stmt->BindText(bindingIndex++, filterStr.c_str(), Statement::MakeCopy::No);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, variablesId);
     stmt->BindText(bindingIndex++, specificationHash, Statement::MakeCopy::No);
@@ -1870,6 +1770,7 @@ DataSourceInfo NodesCache::CreateDataSourceInfo(DataSourceIdentifier identifier,
     return info;
     }
 
+#ifdef wip_enable_display_label_postprocessor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1903,16 +1804,17 @@ bvector<DataSourceInfo> NodesCache::_FindDataSources(CombinedHierarchyLevelIdent
     bvector<DataSourceInfo> infos;
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        DataSourceIdentifier identifier(NodesCacheHelpers::GetGuid(*stmt, 0), NodesCacheHelpers::GetGuid(*stmt, 1),
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-            IndexFromBlob(stmt->GetValueBlob(2), stmt->GetColumnBytes(2)), stmt->GetValueBoolean(3));
-#else
-            NodesCacheHelpers::IndexFromString(stmt->GetValueText(2)), stmt->GetValueBoolean(3));
-#endif
+        DataSourceIdentifier identifier(
+            NodesCacheHelpers::GetGuid(*stmt, 0),
+            NodesCacheHelpers::GetGuid(*stmt, 1),
+            NodesCacheHelpers::GetVectorIndex(*stmt, 2, false),
+            stmt->GetValueBoolean(3)
+        );
         infos.push_back(CreateDataSourceInfo(identifier, partsToGet));
         }
     return infos;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1934,15 +1836,7 @@ DataSourceInfo NodesCache::_FindDataSource(DataSourceIdentifier const& identifie
 
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, identifier.GetHierarchyLevelId());
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-    if (identifier.GetIndex().empty())
-        stmt->BindNull(bindingIndex++);
-    else
-        stmt->BindBlob(bindingIndex++, reinterpret_cast<void const*>(&identifier.GetIndex().front()), identifier.GetIndex().size() * sizeof(uint64_t), Statement::MakeCopy::No);
-#else
-    Utf8String dsIndex = NodesCacheHelpers::IndexToString(identifier.GetIndex(), true);
-    stmt->BindText(bindingIndex++, dsIndex, Statement::MakeCopy::No);
-#endif
+    NodesCacheHelpers::BindVectorIndex(*stmt, bindingIndex++, identifier.GetIndex(), false);
     stmt->BindText(bindingIndex++, variables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -1950,6 +1844,9 @@ DataSourceInfo NodesCache::_FindDataSource(DataSourceIdentifier const& identifie
 
     DataSourceIdentifier persistentIdentifier(identifier);
     persistentIdentifier.SetId(NodesCacheHelpers::GetGuid(*stmt, 0));
+
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, stmt->Step() == BE_SQLITE_DONE, "Query returned more than 1 row for data source request");
+
     return CreateDataSourceInfo(persistentIdentifier, partsToGet);
     }
 
@@ -1977,12 +1874,11 @@ DataSourceInfo NodesCache::_FindDataSource(BeGuidCR nodeId, int partsToGet) cons
     if (BE_SQLITE_ROW != stmt->Step())
         return DataSourceInfo();
 
-    DataSourceIdentifier identifier(NodesCacheHelpers::GetGuid(*stmt, 0), NodesCacheHelpers::GetGuid(*stmt, 1),
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-        IndexFromBlob(stmt->GetValueBlob(2), stmt->GetColumnBytes(2)), stmt->GetValueBoolean(3));
-#else
-        NodesCacheHelpers::IndexFromString(stmt->GetValueText(2)), stmt->GetValueBoolean(3));
-#endif
+    DataSourceIdentifier identifier(
+        NodesCacheHelpers::GetGuid(*stmt, 0),
+        NodesCacheHelpers::GetGuid(*stmt, 1),
+        NodesCacheHelpers::GetVectorIndex(*stmt, 2, false)
+    );
     return CreateDataSourceInfo(identifier, partsToGet);
     }
 
@@ -2016,6 +1912,8 @@ NavNodePtr NodesCache::_GetNode(BeGuidCR id) const
         return nullptr;
 
     node = NodesCacheHelpers::CreateNodeFromStatement(*stmt, m_nodesFactory, m_dbFactory->GetConnection());
+
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, stmt->Step() == BE_SQLITE_DONE, "Query returned more than 1 row for node request");
 
     AddQuick(*node);
     return node;
@@ -2069,14 +1967,9 @@ bvector<uint64_t> NodesCache::_GetNodeIndex(BeGuidCR nodeId) const
     if (BE_SQLITE_ROW != result)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, Utf8PrintfString("Unexpected step result: %d", (int)result));
 
-    bvector<uint64_t> dsIndex, nodeIndex;
-#ifdef NAVNODES_CACHE_BINARY_INDEX
-    dsIndex = IndexFromBlob(stmt->GetValueBlob(0), stmt->GetColumnBytes(0));
-    nodeIndex = IndexFromBlob(stmt->GetValueBlob(1), stmt->GetColumnBytes(1));
-#else
-    dsIndex = NodesCacheHelpers::IndexFromString(stmt->GetValueText(0));
-    nodeIndex = NodesCacheHelpers::IndexFromString(stmt->GetValueText(1));
-#endif
+    bvector<uint64_t> dsIndex = NodesCacheHelpers::GetVectorIndex(*stmt, 0, false);
+    bvector<uint64_t> nodeIndex = NodesCacheHelpers::GetVectorIndex(*stmt, 1, false);
+
     bvector<uint64_t> index;
     std::move(dsIndex.begin(), dsIndex.end(), std::back_inserter(index));
     std::move(nodeIndex.begin(), nodeIndex.end(), std::back_inserter(index));
@@ -2167,29 +2060,9 @@ NavNodesProviderPtr NodesCache::_GetHierarchyLevel(NavNodesProviderContextR cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::_GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const& id, bool onlyInitialized, bool onlyVisible) const
+std::unique_ptr<DirectNodesIterator> NodesCache::_GetCachedDirectNodesIterator(NavNodesProviderContextCR context, DataSourceIdentifier const& id) const
     {
-    // make sure data source is initialized
-    if (onlyInitialized && !_IsInitialized(id, context.GetRulesetVariables()))
-        return nullptr;
-
-    HierarchyLevelIdentifier hlInfo = FindHierarchyLevel(id.GetHierarchyLevelId());
-    if (!hlInfo.IsValid())
-        return nullptr;
-
-    return CachedPartialDataSourceProvider::Create(context, m_db, m_statements, m_mutex, id.GetId(), onlyVisible);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::_GetDataSource(NavNodesProviderContextR context, BeGuidCR nodeId, bool onlyInitialized, bool onlyVisible) const
-    {
-    DataSourceInfo dsInfo = FindDataSource(nodeId);
-    if (!dsInfo.GetIdentifier().IsValid() || onlyInitialized && !_IsInitialized(dsInfo.GetIdentifier(), context.GetRulesetVariables()))
-        return nullptr;
-
-    return GetDataSource(context, dsInfo.GetIdentifier(), onlyInitialized, onlyVisible);
+    return SqliteCacheDirectNodeIteratorBase::CreateForDataSource(context, m_db, m_statements, m_mutex, id.GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2607,7 +2480,7 @@ bool NodesCache::_IsInitialized(CombinedHierarchyLevelIdentifier const& info, Ru
 bool NodesCache::_IsInitialized(HierarchyLevelIdentifier const& info, RulesetVariables const& variables) const
     {
     if (!info.IsValid())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Checking if invalid hierarchy level is initialized");
+        return false;
 
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
 
@@ -2639,7 +2512,7 @@ bool NodesCache::_IsInitialized(HierarchyLevelIdentifier const& info, RulesetVar
 bool NodesCache::_IsInitialized(DataSourceIdentifier const& info, RulesetVariables const&) const
     {
     if (!info.IsValid())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Checking if invalid data source is initialized");
+        return false;
 
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
 
@@ -3185,4 +3058,335 @@ void NodesCacheHierarchyLevelLocker::_WaitForUnlock()
             Utf8PrintfString("Waiting for hierarchy to be unlocked on thread - %d", (int)BeThreadUtilities::GetCurrentThreadId()));
         BeThreadUtilities::BeSleep(NAVNODES_CACHE_LockWaitTime);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t SqliteCacheDirectNodeIteratorBase::GetTotalNodesCount() const
+    {
+    if (m_nodesCount.IsNull())
+        m_nodesCount = _QueryTotalNodesCount();
+    return m_nodesCount.Value();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedStatementPtr SqliteCacheDirectNodeIteratorBase::GetNodesPageStatement() const
+    {
+    Utf8String query = _GetNodesQuery();
+    if (GetPageSize() != 0 || GetOffset() != 0)
+        query.append("LIMIT ? OFFSET ? ");
+
+#ifdef CHECK_ORDERED_QUERY_PLANS
+    CheckQueryPlan(GetDb(), query.c_str(), GetStatements());
+#endif
+
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetDb().GetDbFile(), query.c_str()))
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to create next nodes page statement");
+
+    int bindingIndex = 1;
+    _BindNodesStatement(*stmt, bindingIndex);
+    if (GetPageSize() != 0 || GetOffset() != 0)
+        {
+        stmt->BindInt(bindingIndex++, GetPageSize() == 0 ? -1 : GetPageSize());
+        stmt->BindInt(bindingIndex++, GetOffset());
+        }
+    return stmt;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SqliteCacheDirectNodeIteratorBase::LoadNodesPage()
+    {
+    BeMutexHolder lock(m_cacheMutex);
+    CachedStatementPtr stmt = GetNodesPageStatement();
+    if (stmt.IsNull())
+        return;
+
+    m_loadedNodes = std::make_unique<bvector<NavNodePtr>>();
+    DbResult stepResult;
+    while (BE_SQLITE_ROW == (stepResult = stmt->Step()))
+        {
+        NavNodePtr node = NodesCacheHelpers::CreateNodeFromStatement(*stmt, m_context->GetNodesFactory(), m_context->GetConnection());
+        if (node.IsNull())
+            continue;
+
+        m_loadedNodes->push_back(node);
+        }
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, BE_SQLITE_DONE == stepResult, Utf8PrintfString("Nodes page load ended with unexpected db result code: %d", (int)stepResult));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SqliteCacheDirectNodeIteratorBase::_SkippedNodesToPageStart() const
+    {
+    if (HasVirtualNodes())
+        return false;
+
+    return m_context->HasPageOptions() && m_context->GetPageOptions()->GetStart() != 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t SqliteCacheDirectNodeIteratorBase::_NodesCount() const
+    {
+    if (HasVirtualNodes() || !m_context->HasPageOptions())
+        return GetTotalNodesCount();
+
+    return m_context->GetPageOptions()->GetAdjustedPageSize(GetTotalNodesCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodePtr SqliteCacheDirectNodeIteratorBase::_NextNode()
+    {
+    /*
+    * if we're out of loaded nodes, we need to load some more if there's a defined page size and our offset
+    * is less than total nodes count
+    */
+    if (!m_loadedNodes || m_currNodeIndex >= m_loadedNodes->size() && GetPageSize() && GetOffset() < GetTotalNodesCount())
+        {
+        LoadNodesPage();
+        m_currNodeIndex = 0;
+        m_offset.ValueR() += GetPageSize();
+        }
+    return (m_loadedNodes && m_currNodeIndex < m_loadedNodes->size()) ? m_loadedNodes->at(m_currNodeIndex++) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int SqliteCacheDirectNodeIteratorBase::GetOffset() const
+    {
+    if (m_offset.IsNull())
+        {
+        BeMutexHolder lock(m_cacheMutex);
+        m_offset = !HasVirtualNodes() && m_context->HasPageOptions() ? m_context->GetPageOptions()->GetStart() : 0;
+        }
+    return m_offset.Value();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SqliteCacheDirectNodeIteratorBase::HasVirtualNodes() const
+    {
+    if (m_hasVirtualNodes.IsNull())
+        {
+        BeMutexHolder lock(m_cacheMutex);
+        m_hasVirtualNodes = _QueryHasVirtualNodes();
+        }
+    return m_hasVirtualNodes.Value();
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct CachedHierarchyLevelDirectNodeIterator : SqliteCacheDirectNodeIteratorBase
+{
+private:
+    BeGuid m_hierarchyLevelId;
+
+protected:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool _QueryHasVirtualNodes() const override
+        {
+        static Utf8CP query =
+            "SELECT 1 "
+            "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
+            "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
+            "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
+            "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+            " WHERE [hl].[Id] = ? AND [n].[Visibility] = ? AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+
+        CachedStatementPtr stmt;
+        if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetDb().GetDbFile(), query))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to prepare virtual nodes statement");
+
+        int bindingIndex = 1;
+        NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_hierarchyLevelId);
+        stmt->BindInt(bindingIndex++, (int)NodeVisibility::Virtual);
+        stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
+        return BE_SQLITE_ROW == stmt->Step();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    size_t _QueryTotalNodesCount() const override
+        {
+        static Utf8CP query =
+            "SELECT COUNT(1) "
+            "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
+            "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
+            "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId]"
+            "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+            " WHERE [hl].[Id] = ? "
+            "    AND [n].[Visibility] != ? "
+            "    AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+
+        CachedStatementPtr stmt;
+        if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetDb().GetDbFile(), query))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to prepare nodes count statement");
+
+        int bindingIndex = 1;
+        NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_hierarchyLevelId);
+        stmt->BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+        stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
+
+        DbResult stepResult = stmt->Step();
+        if (BE_SQLITE_ROW != stepResult)
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Unexpected nodes count statement result: %d", (int)stepResult));
+
+        return (size_t)stmt->GetValueUInt64(0);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Utf8CP _GetNodesQuery() const override
+        {
+        static Utf8CP query =
+            "SELECT " NODE_SELECT_STMT("hl", "phl", "n", "nk")
+            "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
+            "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
+            "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+            "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] "
+            "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
+            "  JOIN [" NODESCACHE_TABLENAME_PhysicalHierarchyLevels "] phl ON [phl].[Id] = [hl].[PhysicalHierarchyLevelId] "
+            " WHERE  [hl].[Id] = ? "
+            "    AND  [n].[Visibility] != ? "
+            "    AND " NODESCACHE_FUNCNAME_VariablesMatch "(+[dsv].[Variables], ?) "
+            "ORDER BY [n].[OrderValue] ";
+        return query;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void _BindNodesStatement(StatementR stmt, int& bindingIndex) const override
+        {
+        NodesCacheHelpers::BindGuid(stmt, bindingIndex++, m_hierarchyLevelId);
+        stmt.BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+        stmt.BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
+        }
+
+public:
+    CachedHierarchyLevelDirectNodeIterator(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& mutex, BeGuid hierarchyLevelId)
+        : SqliteCacheDirectNodeIteratorBase(context, db, statements, mutex), m_hierarchyLevelId(hierarchyLevelId)
+        {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<DirectNodesIterator> SqliteCacheDirectNodeIteratorBase::CreateForHierarchyLevel(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& mutex, BeGuid hierarchyLevelId)
+    {
+    return std::make_unique<CachedHierarchyLevelDirectNodeIterator>(context, db, statements, mutex, hierarchyLevelId);
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct CachedPartialDataSourceDirectNodeIterator : SqliteCacheDirectNodeIteratorBase
+{
+private:
+    BeGuid m_dataSourceId;
+
+protected:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool _QueryHasVirtualNodes() const override
+        {
+        static Utf8CP query =
+            "SELECT 1 "
+            "  FROM [" NODESCACHE_TABLENAME_Nodes "] n"
+            " WHERE [n].[DataSourceId] = ? AND [n].[Visibility] = ? ";
+
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Virtual nodes query: `%s`", query));
+
+        CachedStatementPtr stmt;
+        if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetDb().GetDbFile(), query))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to prepare virtual nodes statement");
+
+        int bindingIndex = 1;
+        NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_dataSourceId);
+        stmt->BindInt(bindingIndex++, (int)NodeVisibility::Virtual);
+        return BE_SQLITE_ROW == stmt->Step();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    size_t _QueryTotalNodesCount() const override
+        {
+        static Utf8CP query =
+            "SELECT COUNT(1) "
+            "  FROM [" NODESCACHE_TABLENAME_Nodes "] n"
+            " WHERE [n].[DataSourceId] = ? AND [n].[Visibility] != ? ";
+
+        CachedStatementPtr stmt;
+        if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetDb().GetDbFile(), query))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to prepare nodes count statement");
+
+        int bindingIndex = 1;
+        NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_dataSourceId);
+        stmt->BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+
+        DbResult stepResult = stmt->Step();
+        if (BE_SQLITE_ROW != stepResult)
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Unexpected nodes count statement result: %d", (int)stepResult));
+
+        return (size_t)stmt->GetValueUInt64(0);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Utf8CP _GetNodesQuery() const override
+        {
+        static Utf8CP query =
+            "SELECT " NODE_SELECT_STMT("hl", "phl", "n", "nk")
+            "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
+            "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
+            "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+            "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
+            "  JOIN [" NODESCACHE_TABLENAME_PhysicalHierarchyLevels "] phl ON [phl].[Id] = [hl].[PhysicalHierarchyLevelId] "
+            " WHERE     [ds].[Id] = ? "
+            "       AND [n].[Visibility] != ? "
+            "ORDER BY [n].[OrderValue] ";
+        return query;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void _BindNodesStatement(StatementR stmt, int& bindingIndex) const override
+        {
+        NodesCacheHelpers::BindGuid(stmt, bindingIndex++, m_dataSourceId);
+        stmt.BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+        }
+
+public:
+    CachedPartialDataSourceDirectNodeIterator(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& mutex, BeGuid dataSourceId)
+        : SqliteCacheDirectNodeIteratorBase(context, db, statements, mutex), m_dataSourceId(dataSourceId)
+        {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<DirectNodesIterator> SqliteCacheDirectNodeIteratorBase::CreateForDataSource(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& mutex, BeGuid dataSourceId)
+    {
+    return std::make_unique<CachedPartialDataSourceDirectNodeIterator>(context, db, statements, mutex, dataSourceId);
     }

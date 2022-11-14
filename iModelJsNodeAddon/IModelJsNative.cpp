@@ -5243,8 +5243,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         if (!props.Get("id").IsString())
             THROW_JS_TYPE_EXCEPTION("props.id must be a string");
-        if (!props.Get("mode").IsString())
-            THROW_JS_TYPE_EXCEPTION("props.mode must be a string");
         if (!props.Get("isChangeTrackingEnabled").IsBoolean())
             THROW_JS_TYPE_EXCEPTION("props.isChangeTrackingEnabled must be a boolean");
         if (!props.Get("taskAllocationsMap").IsObject())
@@ -5964,7 +5962,7 @@ static void setMaxTileCacheSize(Napi::CallbackInfo const& info) {
 }
 
 static void flushLog(Napi::CallbackInfo const& info) {
-  s_jsLogger.processDeferred();
+  s_jsLogger.FlushDeferred();
 }
 static Napi::Value getLogger(Napi::CallbackInfo const& info) {
   return s_jsLogger.getJsLogger();
@@ -5973,7 +5971,7 @@ static void setLogger(Napi::CallbackInfo const& info) {
   s_jsLogger.setJsLogger(info);
 }
 static void clearLogLevelCache(Napi::CallbackInfo const&){
-    s_jsLogger.clearSeverities();
+    s_jsLogger.SyncLogLevels();
 }
 
 /*---------------------------------------------------------------------------------**//**

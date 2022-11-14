@@ -47,14 +47,16 @@ protected:
     ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(BeGuidCR nodeId) const override;
 
     ECPRESENTATION_EXPORT HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const override;
+#ifdef wip_enable_display_label_postprocessor
     ECPRESENTATION_EXPORT bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int partsToGet) const override;
+#endif
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int partsToGet) const override;
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(BeGuidCR nodeId, int partsToGet) const override;
 
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR context, CombinedHierarchyLevelIdentifier const&, bool) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const&, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, DataSourceIdentifier const&, bool, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(NavNodesProviderContextR context, BeGuidCR nodeId, bool, bool) const override;
+
+    ECPRESENTATION_EXPORT std::unique_ptr<DirectNodesIterator> _GetCachedDirectNodesIterator(NavNodesProviderContextCR, DataSourceIdentifier const&) const override;
 
     ECPRESENTATION_EXPORT void _Cache(HierarchyLevelIdentifier&) override;
     ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&) override;

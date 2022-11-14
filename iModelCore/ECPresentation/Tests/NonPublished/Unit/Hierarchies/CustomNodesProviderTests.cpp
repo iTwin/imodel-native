@@ -21,8 +21,6 @@ struct CustomNodesProviderTests : NodesProviderTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomNodesProviderTests, InvalidSpecification_DoesntReturnNodes)
     {
-    BeTest::SetFailOnAssert(false);
-
     RootNodeRule rule;
     m_context->SetRootNodeContext(&rule);
 
@@ -35,8 +33,6 @@ TEST_F(CustomNodesProviderTests, InvalidSpecification_DoesntReturnNodes)
     NavNodesProviderPtr provider2 = CustomNodesProvider::Create(*m_context, specNoLabel);
     EXPECT_EQ(0, provider2->GetNodesCount());
     EXPECT_TRUE(provider2->begin() == provider2->end());
-
-    BeTest::SetFailOnAssert(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,11 +192,9 @@ TEST_F(CustomNodesProviderTests, HasNodesReturnsFalseWhenSpecificationIsInvalid)
     RootNodeRule rule;
     m_context->SetRootNodeContext(&rule);
 
-    BeTest::SetFailOnAssert(false);
     CustomNodeSpecification specNoType(1, false, "", "label", "", "imageId");
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, specNoType);
     EXPECT_FALSE(provider->HasNodes());
-    BeTest::SetFailOnAssert(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

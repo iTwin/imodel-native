@@ -66,12 +66,11 @@ private:
     OptimizationFlagsContainer const* m_parentContainer;
     bool m_isFullLoadDisabled;
     bool m_isPostProcessingDisabled;
-    bool m_isUpdatesDisabled;
     Nullable<size_t> m_maxNodesToLoad;
 
 public:
     OptimizationFlagsContainer()
-        : m_isFullLoadDisabled(false), m_isPostProcessingDisabled(false), m_isUpdatesDisabled(false), m_maxNodesToLoad(nullptr), m_parentContainer(nullptr)
+        : m_isFullLoadDisabled(false), m_isPostProcessingDisabled(false), m_maxNodesToLoad(nullptr), m_parentContainer(nullptr)
         {}
     OptimizationFlagsContainer(OptimizationFlagsContainer const&) = delete;
     OptimizationFlagsContainer(OptimizationFlagsContainer&&) = delete;
@@ -81,7 +80,6 @@ public:
         m_parentContainer = other.m_parentContainer;
         m_isFullLoadDisabled = other.m_isFullLoadDisabled;
         m_isPostProcessingDisabled = other.m_isPostProcessingDisabled;
-        m_isUpdatesDisabled = other.m_isUpdatesDisabled;
         m_maxNodesToLoad = other.m_maxNodesToLoad;
         }
 
@@ -98,9 +96,6 @@ public:
 
     bool IsPostProcessingDisabled(bool checkParent = true) const {return m_isPostProcessingDisabled || checkParent && m_parentContainer && m_parentContainer->IsPostProcessingDisabled();}
     void SetDisablePostProcessing(bool value) {m_isPostProcessingDisabled = value;}
-
-    bool IsUpdatesDisabled(bool checkParent = true) const {return m_isUpdatesDisabled || checkParent && m_parentContainer && m_parentContainer->IsUpdatesDisabled();}
-    void SetIsUpdatesDisabled(bool value) {m_isUpdatesDisabled = value;}
 
     size_t GetMaxNodesToLoad(bool checkParent = true) const
         {
@@ -125,10 +120,10 @@ struct NavNodesProviderContext : RulesDrivenProviderContext
         public:
             PageOptions(size_t start) : m_start(start) {}
             PageOptions(size_t start, size_t size) : m_start(start), m_size(size) {}
-
             bool HasSize() const {return m_size.IsValid();}
-            size_t GetSize() const {return m_size.Value();}
             size_t GetStart() const {return m_start;}
+            size_t GetSize() const {return m_size.Value();}
+            size_t GetAdjustedPageSize(size_t totalCount) const;
         };
 
 private:
@@ -602,18 +597,41 @@ public:
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct DirectNodesIterator
-    {
-    protected:
-        virtual NavNodePtr _NextNode() = 0;
-        virtual bool _SkippedNodesToPageStart() const = 0;
-        virtual size_t _NodesCount() const = 0;
+{
+protected:
+    virtual NavNodePtr _NextNode() = 0;
+    virtual bool _SkippedNodesToPageStart() const = 0;
+    virtual size_t _NodesCount() const = 0;
 
-    public:
-        virtual ~DirectNodesIterator() {}
-        NavNodePtr NextNode() {return _NextNode();}
-        bool SkippedNodesToPageStart() const {return _SkippedNodesToPageStart();}
-        size_t NodesCount() const {return _NodesCount();}
-    };
+public:
+    virtual ~DirectNodesIterator() {}
+    NavNodePtr NextNode() {return _NextNode();}
+    bool SkippedNodesToPageStart() const {return _SkippedNodesToPageStart();}
+    size_t NodesCount() const {return _NodesCount();}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct BVectorDirectNodesIterator : DirectNodesIterator
+{
+private:
+    bvector<NavNodePtr> m_nodes;
+    size_t m_currentNode;
+
+protected:
+    NavNodePtr _NextNode() override
+        {
+        if (m_nodes.size() <= m_currentNode)
+            return nullptr;
+        return m_nodes.at(m_currentNode++);
+        }
+    size_t _NodesCount() const override {return m_nodes.size();}
+    bool _SkippedNodesToPageStart() const override {return false;}
+
+public:
+    BVectorDirectNodesIterator(bvector<NavNodePtr> nodes) : m_nodes(nodes), m_currentNode(0) {}
+};
 
 /*=================================================================================**//**
 * @bsiclass
@@ -1047,29 +1065,6 @@ struct CachedCombinedHierarchyLevelProvider : SQLiteCacheNodesProvider
 
     public:
         ECPRESENTATION_EXPORT static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR physicalHierarchyLevelId);
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct CachedPartialDataSourceProvider : SQLiteCacheNodesProvider
-    {
-    private:
-        BeGuid m_dataSourceId;
-        bool m_wantOnlyVisibleNodes;
-    private:
-        CachedPartialDataSourceProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, BeGuidCR dataSourceId, bool loadOnlyVisibleNodes)
-            : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex), m_dataSourceId(dataSourceId), m_wantOnlyVisibleNodes(loadOnlyVisibleNodes)
-            {}
-    protected:
-        Utf8CP _GetName() const override { return "Cached partial hierarchy level provider"; }
-        BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
-        BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetCountStatement() const override;
-    public:
-        ECPRESENTATION_EXPORT static RefCountedPtr<CachedPartialDataSourceProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR dataSourceId, bool loadOnlyVisibleNodes = false);
-        std::unique_ptr<DirectNodesIterator> CreateDirectNodesIterator() const;
     };
 
 /*=================================================================================**//**

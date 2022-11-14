@@ -88,6 +88,20 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
     }
 
 /*=================================================================================**//**
+* A `less` compare macro for vectors. Vector items must have a less compare operator.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+#define VECTOR_LESS_COMPARE(lhs, rhs) \
+    if (lhs.size() < rhs.size()) \
+        return true; \
+    if (lhs.size() > rhs.size()) \
+        return false; \
+    for (size_t i = 0; i < lhs.size(); ++i) \
+        { \
+        NUMERIC_LESS_COMPARE(lhs[i], rhs[i]) \
+        }
+
+/*=================================================================================**//**
 * ECClass comparer which guarantees that classes in a sorted set always are in the same
 * order (as opposed to the default comparer which compares by pointers).
 * @bsiclass
@@ -513,6 +527,30 @@ public:
         {}
     TValue const& GetValue() const {return m_value;}
     bool IsApproximate() const {return m_isApproximate;}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct InstanceFilterDefinition
+{
+private:
+    ECClassCP m_selectClass;
+    Utf8String m_expression;
+    bvector<RelatedClassPath> m_relatedInstances;
+
+public:
+    InstanceFilterDefinition(Utf8String expression, ECClassCP selectClass, bvector<RelatedClassPath> relatedInstances)
+        : m_expression(expression), m_selectClass(selectClass), m_relatedInstances(relatedInstances)
+        {}
+
+    bool Equals(InstanceFilterDefinition const& other) const {return m_selectClass == other.m_selectClass && m_expression.Equals(other.m_expression) && m_relatedInstances == other.m_relatedInstances;}
+    bool operator==(InstanceFilterDefinition const& other) const {return Equals(other);}
+    bool operator!=(InstanceFilterDefinition const& other) const {return !Equals(other);}
+
+    ECClassCP GetSelectClass() const {return m_selectClass;}
+    bvector<RelatedClassPath> const& GetRelatedInstances() const {return m_relatedInstances;}
+    Utf8StringCR GetExpression() const {return m_expression;}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

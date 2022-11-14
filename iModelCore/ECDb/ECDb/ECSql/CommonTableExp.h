@@ -96,7 +96,7 @@ struct CommonTableBlockNameExp final : RangeClassRefExp {
         void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         CommonTableBlockExp const* ResolveBlock(ECSqlParseContext const&,bool) const;
     public:
-        explicit CommonTableBlockNameExp(Utf8CP blockName): RangeClassRefExp(Exp::Type::CommonTableBlockName, false), m_name(blockName), m_blockExp(nullptr){}
+        explicit CommonTableBlockNameExp(Utf8CP blockName): RangeClassRefExp(Exp::Type::CommonTableBlockName, PolymorphicInfo::Only()), m_name(blockName), m_blockExp(nullptr){}
         Utf8String GetName() const { return m_name; }
         void SetBlock(CommonTableBlockExp const &block) {
             BeAssert(m_blockExp == nullptr);

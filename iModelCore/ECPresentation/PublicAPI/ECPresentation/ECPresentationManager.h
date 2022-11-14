@@ -164,15 +164,6 @@ struct ECPresentationManager : public NonCopyableClass
     struct ECInstanceChangeEventSourceWrapper;
 
     //===================================================================================
-    // @bsiclass
-    //===================================================================================
-    enum class Mode
-        {
-        ReadOnly,
-        ReadWrite,
-        };
-
-    //===================================================================================
     //! An object that stores paths used by ECPresentationManager
     // @bsiclass
     //===================================================================================
@@ -271,7 +262,6 @@ struct ECPresentationManager : public NonCopyableClass
     private:
         std::shared_ptr<IConnectionManager> m_connections;
         Paths m_paths;
-        Mode m_mode;
         CachingParams m_cachingParams;
         MultiThreadingParams m_multiThreadingParams;
         ContentCachingParams m_contentCachingParams;
@@ -286,13 +276,10 @@ struct ECPresentationManager : public NonCopyableClass
         //! @param[in] paths Known directory paths required by the presentation manager
         Params(Paths paths)
             : m_paths(paths), m_localState(nullptr),
-            m_propertyFormatter(nullptr), m_categorySupplier(nullptr), m_mode(Mode::ReadWrite)
+            m_propertyFormatter(nullptr), m_categorySupplier(nullptr)
             {}
 
         Paths const& GetPaths() const {return m_paths;}
-
-        Mode GetMode() const {return m_mode;}
-        void SetMode(Mode mode) {m_mode = mode;}
 
         CachingParams const& GetCachingParams() const { return m_cachingParams; }
         void SetCachingParams(CachingParams params) { m_cachingParams = params; }
@@ -327,7 +314,7 @@ private:
 
 private:
     Utf8CP GetConnectionId(ECDbCR) const;
-    IConnectionCR GetTaskConnection(IECPresentationTask const&) const;
+    IConnectionCR GetConnection(Utf8CP) const;
 
 public:
     ECPresentationTasksManager& GetTasksManager() const {return *m_tasksManager;}

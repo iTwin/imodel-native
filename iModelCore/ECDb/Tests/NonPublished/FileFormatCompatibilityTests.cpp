@@ -1304,6 +1304,24 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
 
+    {
+    // Verify Extended Type Names are NULL before Profile Upgrade
+    ECDb benchmarkFile;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    ECSqlStatement ecSqlStatement;
+    ASSERT_EQ(ECSqlStatus::Success, ecSqlStatement.Prepare(benchmarkFile, "SELECT p.ExtendedTypeName, p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id JOIN meta.ECSchemaDef s ON s.ECInstanceId=c.Schema.Id WHERE s.Name='ECDbSystem' AND p.PrimitiveType=?"));
+    ASSERT_EQ(ECSqlStatus::Success, ecSqlStatement.BindInt(1, PrimitiveType::PRIMITIVETYPE_Long));
+    auto rowCount = 0;
+    while (BE_SQLITE_ROW == ecSqlStatement.Step())
+        {
+        rowCount++;
+        EXPECT_STREQ(NULL, ecSqlStatement.GetValueText(0)) << "Expected ExtendedTypeName for property: "  << ecSqlStatement.GetValueText(1);
+        }
+    ASSERT_EQ(8, rowCount) << "Expected number of id properties in ECDbSystem schema";
+    ecSqlStatement.Finalize();
+    }
+
     BeFileName artefactOutDir;
     BeTest::GetHost().GetOutputRoot(artefactOutDir);
     if (!artefactOutDir.DoesPathExist())
