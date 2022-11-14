@@ -17,7 +17,6 @@ using namespace std::chrono_literals;
 struct ConcurrentQueryFixture : ECDbTestFixture {
     void SetUp() override {
          // ConsoleLogger::SetSeverity("ECDb.ConcurrentQuery", BentleyApi::NativeLogging::LOG_TRACE);
-        ConcurrentQueryMgr::Config::GetInstance().Reset();
         ECDbTestFixture::SetUp();
     }
 };
@@ -229,9 +228,12 @@ TEST_F(ConcurrentQueryFixture, StressTest) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
+
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(2),1024));
+    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    config.SetQuota(QueryQuota(std::chrono::seconds(2), 1024));
+    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+
     const auto delay = std::chrono::milliseconds(5000);
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
@@ -243,9 +245,12 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(2),1000));
+
+    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
+    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+
     const auto delay = std::chrono::milliseconds(5000);
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest(
@@ -259,10 +264,13 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+
+    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    config.SetQuota(QueryQuota(std::chrono::seconds(1), 1000));
+    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+
     m_ecdb.AddFunction(SleepFunc::Instance());
-    ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(1),1000));
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest(
         "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x,imodel_sleep(500, x)  from cnt",
@@ -276,7 +284,6 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, ECSqlParams) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     int i = 111;
     int64_t i64 = 1111;
     double d = 1111.1111;
@@ -458,7 +465,6 @@ TEST_F(ConcurrentQueryFixture, ECSqlParams) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, sqlite_only_eval_function_with_no_arg_or_constant_arg_only_once) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     m_ecdb.AddFunction(CountFunc::Instance());
 
@@ -507,7 +513,6 @@ TEST_F(ConcurrentQueryFixture, sqlite_only_eval_function_with_no_arg_or_constant
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, DelayRequest) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
@@ -522,7 +527,6 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, RestartToken) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
@@ -590,7 +594,6 @@ TEST_F(ConcurrentQueryFixture, FutureAndCallback) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, ReaderSchema) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -702,7 +705,6 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, ReaderBinding) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -764,7 +766,6 @@ TEST_F(ConcurrentQueryFixture, ReaderBinding) {
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, BlobIO) {
-    ASSERT_TRUE(ConcurrentQueryMgr::Config::GetInstance() == ConcurrentQueryMgr::Config::GetDefault());
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
