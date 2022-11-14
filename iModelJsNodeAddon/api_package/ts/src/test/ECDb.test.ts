@@ -63,12 +63,12 @@ class ConcurrentQueryHelper {
 
 describe("concurrent query tests", () => {
   let conn: IModelJsNative.DgnDb;
-  before((done) => {
+  beforeEach((done) => {
     conn = openDgnDb(dbFileName);
     done();
   })
 
-  after((done) => {
+  afterEach((done) => {
     conn.closeIModel();
     done();
   })
@@ -88,18 +88,39 @@ describe("concurrent query tests", () => {
   });
 
   it("query max memory", async () => {
-    // set max time for query to 1 sec
-    ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { memory: 1024 } });
+    ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { memory: 100 } });
 
     // run a query with delay of 5 sec.
     const rc = await ConcurrentQueryHelper.executeQueryRequest(conn, {
       kind :DbRequestKind.ECSql,
-      query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
-      delay: 0,
+      query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
     } as DbQueryRequest);
 
     expect(rc.status).eq(DbResponseStatus.Partial);
   });
 
+  it("restart query", async () => {
+    // set max time for query to 1 sec
+    ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { time: 20 } });
+
+    const q0 = ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind :DbRequestKind.ECSql,
+      query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
+      delay: 5000,
+      restartToken:"token1"
+    } as DbQueryRequest);
+
+    const q1 = ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind :DbRequestKind.ECSql,
+      query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
+      delay: 0,
+      restartToken:"token1"
+    } as DbQueryRequest);
+
+    const r0 = await q0;
+    const r1 = await q1;
+    expect(r0.status).eq(DbResponseStatus.Cancel);
+    expect(r1.status).eq(DbResponseStatus.Done);
+  });
 });
 
