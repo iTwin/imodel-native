@@ -8,6 +8,7 @@
 #include "DgnPlatform.h"
 #include "Render.h"
 #include <memory>
+#include <stdexcept>
 
 // Some of our build machines don't currently supply std::variant.
 #ifdef BENTLEY_HAVE_VARIANT
