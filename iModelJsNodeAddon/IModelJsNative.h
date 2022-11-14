@@ -327,6 +327,12 @@ inline static Napi::Array requireArray(Napi::Object const& obj, Utf8CP name) {
     return member.As<Napi::Array>();
 }
 
+enum class ProcessPolyfaceResult {
+  Empty, // polyface had no triangles
+  Bad, // polyface contains bad data that could not be fixed up
+  Ok, // polyface was processed
+};
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -481,8 +487,15 @@ public:
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
+
+    // Used by ExportGraphics, ExportPartGraphics, and GenerateElementMeshes.
+    // Checks for common "bad" polyfaces, fixing them up if possible.
+    // If bad or empty, returns status without processing.
+    // Otherwise, fixes up the input polyface if applicable, passes it to supplied function, and returns Ok.
+    static ProcessPolyfaceResult ProcessPolyface(PolyfaceQueryCR, std::function<void(PolyfaceQueryCR)>);
     static DgnDbStatus ExportGraphics(DgnDbR db, Napi::Object const& exportProps);
     static DgnDbStatus ExportPartGraphics(DgnDbR db, Napi::Object const& exportProps);
+
     static DgnDbStatus ProcessGeometryStream(DgnDbR db, Napi::Object const& requestProps);
     static DgnDbStatus CreateBRepGeometry(DgnDbR db, Napi::Object const& createProps);
     static Napi::String InsertLinkTableRelationship(DgnDbR db, Napi::Object props);

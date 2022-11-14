@@ -389,45 +389,16 @@ bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg) override
-    {
-    uint32_t indexCount = (uint32_t)pfQuery.GetPointIndexCount();
-    uint32_t pointCount = (uint32_t)pfQuery.GetPointCount();
-    // Receiving empty polyfaces isn't ideal, but just ignore and don't count as real error condition
-    // < 3 to account for valid inputs collapsed to a single sliver face.
-    if (indexCount < 3 || pointCount < 3)
-        return true;
+bool _ProcessPolyface(PolyfaceQueryCR pfIn, bool filled, SimplifyGraphic& sg) override {
+  auto result = JsInterop::ProcessPolyface(pfIn, [&](PolyfaceQueryCR pf) {
+    ProcessPolyfaceAfterValidation(pf, filled, sg);
+  });
 
-    // Polyfaces missing requested information or in the wrong style are indicative of real problems upstream
-    bool hasNormals = pfQuery.GetNormalIndexCP() != nullptr && pfQuery.GetNormalCount() > 0;
-    bool hasParams = pfQuery.GetParamIndexCP() != nullptr && pfQuery.GetParamCount() > 0;
-    bool isIndexedFaceLoops = pfQuery.GetMeshStyle() == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
-    if (!hasNormals || !hasParams || !isIndexedFaceLoops)
-        {
-        m_gotBadPolyface = true;
-        return true;
-        }
+  if (ProcessPolyfaceResult::Bad == result)
+    m_gotBadPolyface = true;
 
-    // If this polyface was saved with numPerFace explicitly set to 3 and style set to INDEXED_FACE_LOOPS,
-    // it could be valid and not have the expected 0 blocking (1 2 3 4 5 6 instead of 1 2 3 0 4 5 6).
-    // Check for this case ahead of VerifyTriangulationAndZeroBlocking and force 0 blocking to be added.
-    if (pfQuery.GetNumPerFace() == 3 && !pfQuery.IsVariableSizeIndexed())
-        {
-        PolyfaceHeaderPtr variableSizeIndexed = PolyfaceHeader::CreateVariableSizeIndexed();
-        variableSizeIndexed->CopyFrom(pfQuery);
-        variableSizeIndexed->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
-        return ProcessPolyfaceAfterValidation(*variableSizeIndexed, filled, sg);
-        }
-
-    // Guarantee that we are receiving (1 2 3 0 4 5 6) style indices.
-    if (!VerifyTriangulationAndZeroBlocking(pfQuery))
-        {
-        m_gotBadPolyface = true;
-        return true;
-        }
-
-    return ProcessPolyfaceAfterValidation(pfQuery, filled, sg);
-    }
+  return true;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1227,3 +1198,55 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
 
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
+    {
+    const int32_t* indices = pfQuery.GetPointIndexCP();
+    for (uint32_t i = 0, indexCount = (uint32_t)pfQuery.GetPointIndexCount(); i < indexCount; i += 4)
+        {
+        for (uint32_t j = 0; j < 3; ++j)
+            {
+            if (indices[i + j] == 0)
+                return false;
+            }
+        if (indices[i + 3] != 0)
+            return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ProcessPolyfaceResult JsInterop::ProcessPolyface(PolyfaceQueryCR pfQuery, std::function<void(PolyfaceQueryCR pfQuery)> process) {
+  auto indexCount = static_cast<uint32_t>(pfQuery.GetPointIndexCount());
+  auto pointCount = static_cast<uint32_t>(pfQuery.GetPointCount());
+  // Receiving empty polyfaces isn't ideal, but just ignore and don't count as real error condition
+  // < 3 to account for valid inputs collapsed to a single sliver face.
+  if (indexCount < 3 || pointCount < 3)
+    return ProcessPolyfaceResult::Empty;
+  // Polyfaces missing requested information or in the wrong style are indicative of real problems upstream
+  bool hasNormals = pfQuery.GetNormalIndexCP() != nullptr && pfQuery.GetNormalCount() > 0;
+  bool hasParams = pfQuery.GetParamIndexCP() != nullptr && pfQuery.GetParamCount() > 0;
+  bool isIndexedFaceLoops = pfQuery.GetMeshStyle() == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
+  if (!hasNormals || !hasParams || !isIndexedFaceLoops)
+    return ProcessPolyfaceResult::Bad;
+  // If this polyface was saved with numPerFace explicitly set to 3 and style set to INDEXED_FACE_LOOPS,
+  // it could be valid and not have the expected 0 blocking (1 2 3 4 5 6 instead of 1 2 3 0 4 5 6).
+  // Check for this case ahead of VerifyTriangulationAndZeroBlocking and force 0 blocking to be added.
+  if (pfQuery.GetNumPerFace() == 3 && !pfQuery.IsVariableSizeIndexed()) {
+    PolyfaceHeaderPtr variableSizeIndexed = PolyfaceHeader::CreateVariableSizeIndexed();
+    variableSizeIndexed->CopyFrom(pfQuery);
+    variableSizeIndexed->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
+    process(*variableSizeIndexed);
+    return ProcessPolyfaceResult::Ok;
+  }
+  // Guarantee that we are receiving (1 2 3 0 4 5 6) style indices.
+  if (!VerifyTriangulationAndZeroBlocking(pfQuery))
+    return ProcessPolyfaceResult::Bad;
+  process(pfQuery);
+  return ProcessPolyfaceResult::Ok;
+}
