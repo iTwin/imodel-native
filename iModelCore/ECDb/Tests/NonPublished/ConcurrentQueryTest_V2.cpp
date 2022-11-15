@@ -232,6 +232,7 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
     config.SetQuota(QueryQuota(std::chrono::seconds(2), 1024));
+    config.SetIgnoreDelay(false);
     ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
 
     const auto delay = std::chrono::milliseconds(5000);
@@ -251,7 +252,6 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
     config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
     ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
 
-    const auto delay = std::chrono::milliseconds(5000);
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest(
         "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
@@ -514,6 +514,10 @@ TEST_F(ConcurrentQueryFixture, sqlite_only_eval_function_with_no_arg_or_constant
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, DelayRequest) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    conf.SetIgnoreDelay(false);
+    ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
+
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
     const auto delay = std::chrono::milliseconds(2000);
@@ -528,6 +532,10 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, RestartToken) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    conf.SetIgnoreDelay(false);
+    ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
+        
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
     auto req0 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));

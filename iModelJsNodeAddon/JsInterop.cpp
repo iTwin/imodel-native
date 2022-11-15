@@ -478,13 +478,23 @@ NativeLogging::CategoryLogger JsInterop::GetNativeLogger() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::ConcurrentQueryResetConfig(ECDbCR ecdb, Napi::Object configObj) {
-    if (!configObj.IsObject()) {
-        return;
+Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, ECDbCR ecdb) {
+    auto outConf = Napi::Object::New(env);
+    ConcurrentQueryMgr::ResetConfig(ecdb).To(outConf);
+    return outConf;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, ECDbCR ecdb, Napi::Object configObj) {
+    if (configObj.IsObject()) {
+        auto outConf = Napi::Object::New(env);
+        BeJsValue inJsConf(configObj);
+        auto inConf = ConcurrentQueryMgr::Config::From(inJsConf);
+        ConcurrentQueryMgr::ResetConfig(ecdb, inConf).To(outConf);
+        return outConf;
     }
-    BeJsValue beJsConfig(configObj);
-    auto config = ConcurrentQueryMgr::Config::From(beJsConfig);
-    ConcurrentQueryMgr::ResetConfig(ecdb, config);
+    return ConcurrentQueryResetConfig(env, ecdb);
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

@@ -523,11 +523,13 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JQueueSize = "requestQueueSize";
          static constexpr auto JIgnorePriority = "ignorePriority";
          static constexpr auto JQuota = "globalQuota";
+         static constexpr auto JIgnoreDelay = "ignoreDelay";
         private:
             QueryQuota m_quota;
             uint32_t m_workerThreadCount;
             uint32_t m_requestQueueSize;
             bool m_ignorePriority;
+            bool m_ignoreDelay;
             static Config From(std::string const& json);
         public:
             ECDB_EXPORT Config();
@@ -537,6 +539,8 @@ struct ConcurrentQueryMgr final {
             uint32_t GetWorkerThreadCount() const{ return m_workerThreadCount;}
             uint32_t GetRequestQueueSize() const{ return m_requestQueueSize;}
             bool GetIgnorePriority() const {return m_ignorePriority; }
+            bool GetIgnoreDelay() const {return m_ignoreDelay; }
+            Config& SetIgnoreDelay(bool ignoreDelay) { m_ignoreDelay = ignoreDelay; return *this; }
             Config& SetQuota(QueryQuota const& quota) { m_quota = quota; return *this; }
             Config& SetWorkerThreadCount(uint32_t workerThreadCount) { m_workerThreadCount = workerThreadCount; return *this;}
             Config& SetRequestQueueSize(uint32_t requestQueueSize) { m_requestQueueSize = requestQueueSize; return *this;}
@@ -546,6 +550,7 @@ struct ConcurrentQueryMgr final {
             ECDB_EXPORT static Config GetFromEnv();
             //ECDB_EXPORT static Config& GetInstance();
             ECDB_EXPORT static Config From(BeJsValue);
+            ECDB_EXPORT void To(BeJsValue) const;
             void Reset() { *this = GetDefault(); }
     };
     public:
@@ -570,7 +575,8 @@ struct ConcurrentQueryMgr final {
         ECDB_EXPORT void SetCacheStatementsPerWork(uint32_t);
         ECDB_EXPORT void SetMaxQuota(QueryQuota const&);
         ECDB_EXPORT static ConcurrentQueryMgr& GetInstance(ECDb const&);
-        ECDB_EXPORT static void ResetConfig(ECDb const&, Config const&);
+        ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
+        ECDB_EXPORT static Config const&  ResetConfig(ECDb const&, Config const&  config = Config::GetFromEnv());
         ECDB_EXPORT static Config const& GetConfig(ECDb const&);
 };
 

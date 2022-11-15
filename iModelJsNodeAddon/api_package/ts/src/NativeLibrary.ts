@@ -200,7 +200,8 @@ export declare namespace IModelJsNative {
   }
   interface IConcurrentQueryManager {
     concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
-    concurrentQueryResetConfig(config?: QueryConfig):void;
+    concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    concurrentQueryShutdown(): void;
   }
 
 /** Concurrent query config which should be set before making first call to concurrent query manager.
@@ -208,9 +209,10 @@ export declare namespace IModelJsNative {
  */
   export interface QueryConfig {
     globalQuota?: QueryQuota,
-    workerThreads?: number,
+    ignoreDelay?: boolean
+    ignorePriority?: boolean,
     requestQueueSize?: number,
-    ignorePriority?: boolean
+    workerThreads?: number,
   }
 
   interface TileContent {
@@ -440,7 +442,8 @@ export declare namespace IModelJsNative {
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
-    public concurrentQueryResetConfig(config?: QueryConfig):void;
+    public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    public concurrentQueryShutdown(): void;
     public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
@@ -618,7 +621,8 @@ export declare namespace IModelJsNative {
     public getLastInsertRowId(): number;
     public static enableSharedCache(enable: boolean): DbResult;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
-    public concurrentQueryResetConfig(config?: QueryConfig):void;
+    public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    public concurrentQueryShutdown(): void;
   }
 
   class ChangedElementsECDb implements IDisposable {

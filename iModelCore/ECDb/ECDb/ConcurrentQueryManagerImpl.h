@@ -11,14 +11,16 @@
 #include <random>
 #include <chrono>
 
+#define DEFAULT_QUERY_DELAY_MAX_TIME    std::chrono::seconds(10) // 20 sec
 #define DEFAULT_QUOTA_MAX_TIME          std::chrono::seconds(60) // 60 sec
 #define DEFAULT_QUOTA_MAX_MEM           0x800000                 // 8  Mb
-#define DEFAULT_REQUEST_QUERY_SIZE      1200
+#define DEFAULT_REQUEST_QUERY_SIZE      2000
 #define DEFAULT_IGNORE_PRIORITY         false
+#define DEFAULT_IGNORE_DELAY            true
 #define DEFAULT_WORKER_THREAD_COUNT     std::min(4u, std::thread::hardware_concurrency())
 #define MAX_REQUEST_QUERY_SIZE          4000
 #define MIN_WORKER_THREAD_COUNT         2
-#define QUERY_WORKER_RESULT_RESERVE_BYTES 1024*1
+#define QUERY_WORKER_RESULT_RESERVE_BYTES 1024*4  // 4Kb and its cached buffer on for each thread.
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;

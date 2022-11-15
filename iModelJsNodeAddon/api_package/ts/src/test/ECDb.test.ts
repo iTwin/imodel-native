@@ -55,8 +55,8 @@ class ConcurrentQueryHelper {
       yield reader.formatCurrentRow();
     }
   }
-  public static resetConfig(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, config: IModelJsNative.QueryConfig) {
-    conn.concurrentQueryResetConfig(config);
+  public static resetConfig(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, config?: IModelJsNative.QueryConfig) : IModelJsNative.QueryConfig {
+    return conn.concurrentQueryResetConfig(config);
   }
 
 }
@@ -72,10 +72,43 @@ describe("concurrent query tests", () => {
     conn.closeIModel();
     done();
   })
+  it("reset config", async () => {
+    const defaultConf = ConcurrentQueryHelper.resetConfig(conn);
+    expect(defaultConf.ignorePriority).eq(false);
+    expect(defaultConf.ignoreDelay).eq(true);
+    expect(defaultConf.requestQueueSize).eq(2000);
+    expect(defaultConf.workerThreads).not.eq(0);
+    expect(defaultConf.globalQuota?.memory).eq(0x800000);
+    expect(defaultConf.globalQuota?.time).eq(60);
+    const modifiedConf = ConcurrentQueryHelper.resetConfig(conn, {
+      globalQuota: {
+        time: 1,
+        memory: 10000
+      },
+      ignorePriority: true,
+      ignoreDelay: false,
+      requestQueueSize: 1000,
+      workerThreads: 6
+    });
+    expect(modifiedConf.ignorePriority).eq(true);
+    expect(modifiedConf.ignoreDelay).eq(false);
+    expect(modifiedConf.requestQueueSize).eq(1000);
+    expect(modifiedConf.workerThreads).eq(6);
+    expect(modifiedConf.globalQuota?.memory).eq(10000);
+    expect(modifiedConf.globalQuota?.time).eq(1);
+
+    const resetConf = ConcurrentQueryHelper.resetConfig(conn);
+    expect(resetConf.ignorePriority).eq(false);
+    expect(resetConf.ignoreDelay).eq(true);    
+    expect(resetConf.requestQueueSize).eq(2000);
+    expect(resetConf.workerThreads).not.eq(0);
+    expect(resetConf.globalQuota?.memory).eq(0x800000);
+    expect(resetConf.globalQuota?.time).eq(60);
+  });
 
   it("query timeout", async () => {
     // set max time for query to 1 sec
-    ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { time: 1 } });
+    ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { time: 1 }, ignoreDelay: false });
 
     // run a query with delay of 5 sec.
     const rc = await ConcurrentQueryHelper.executeQueryRequest(conn, {
@@ -101,7 +134,7 @@ describe("concurrent query tests", () => {
 
   it("restart query", async () => {
     // set max time for query to 1 sec
-    ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { time: 20 } });
+    ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { time: 20 }, ignoreDelay: false });
 
     const q0 = ConcurrentQueryHelper.executeQueryRequest(conn, {
       kind :DbRequestKind.ECSql,

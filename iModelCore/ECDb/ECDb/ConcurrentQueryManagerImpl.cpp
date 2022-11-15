@@ -626,10 +626,18 @@ void RunnableRequestQueue::ExecuteSynchronously(ConnectionCache& conns, std::uni
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request) {
+    // Put a upper limit on query delay to make it safe.
+    if (ConcurrentQueryMgr::GetConfig(m_ecdb).GetIgnoreDelay()) {
+        request->SetDelay(0ms);
+    } else {
+        const auto maxDelayAllowed = (std::chrono::milliseconds)DEFAULT_QUERY_DELAY_MAX_TIME;
+        if (request->GetDelay() >  maxDelayAllowed) {
+            request->SetDelay(maxDelayAllowed);
+        }
+    }
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithPromise(*this, std::move(request), adjustedQuota, GetNextId()));
     auto future = ((RunnableRequestWithPromise*)runnableReq.get())->GetFuture();
-
     if (m_requests.size() >= m_maxQueueSize) {
         log_warn("%s queue is full, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
         runnableReq->SetResponse(RunnableRequestBase::CreateQueueFullResponse());
@@ -653,6 +661,15 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request, ConcurrentQueryMgr::OnCompletion onComplete) {
+    // Put a upper limit on query delay to make it safe.
+    if (ConcurrentQueryMgr::GetConfig(m_ecdb).GetIgnoreDelay()) {
+        request->SetDelay(0ms);
+    } else {
+        const auto maxDelayAllowed = (std::chrono::milliseconds)DEFAULT_QUERY_DELAY_MAX_TIME;
+        if (request->GetDelay() >  maxDelayAllowed) {
+            request->SetDelay(maxDelayAllowed);
+        }
+    }
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithCallback(*this, std::move(request), adjustedQuota, GetNextId(), onComplete));
     if (m_requests.size() >= m_maxQueueSize) {
@@ -1455,7 +1472,7 @@ ConcurrentQueryMgr::Impl::~Impl() {
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-void ConcurrentQueryMgr::ResetConfig(ECDb const& ecdb, Config const& config) {
+ConcurrentQueryMgr::Config const& ConcurrentQueryMgr::ResetConfig(ECDb const& ecdb, Config const& config) {
     if (!ecdb.IsDbOpen()) {
         throw std::runtime_error("ecdb is closed or not open");
     }
@@ -1468,6 +1485,7 @@ void ConcurrentQueryMgr::ResetConfig(ECDb const& ecdb, Config const& config) {
         ecdb.AddAppData(appKey, appData.get());
     }
     appData->SetConfig(config);
+    return appData->GetConfig();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1492,7 +1510,7 @@ ConcurrentQueryMgr::Config const& ConcurrentQueryMgr::GetConfig(ECDb const& ecdb
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-ConcurrentQueryMgr& ConcurrentQueryMgr::GetInstance(ECDbCR &ecdb) {
+ConcurrentQueryMgr& ConcurrentQueryMgr::GetInstance(ECDbCR ecdb) {
     if (!ecdb.IsDbOpen()) {
         throw std::runtime_error("ecdb is closed or not open");
     }
@@ -1506,7 +1524,21 @@ ConcurrentQueryMgr& ConcurrentQueryMgr::GetInstance(ECDbCR &ecdb) {
     }
     return appData->GetConcurrentQuery();
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// static
+//---------------------------------------------------------------------------------------
+void ConcurrentQueryMgr::Shutdown(ECDbCR ecdb) {
+    if (!ecdb.IsDbOpen()) {
+        throw std::runtime_error("ecdb is closed or not open");
+    }
 
+    BeMutexHolder lock (ecdb.GetImpl().GetMutex());
+    const auto& appKey = ConcurrentQueryAppData::GetKey();
+    if (ecdb.FindAppDataOfType<ConcurrentQueryAppData>(appKey).IsValid()) {
+        ecdb.DropAppData(appKey);
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1921,7 +1953,8 @@ ConcurrentQueryMgr::Config::Config():
     m_quota(DEFAULT_QUOTA_MAX_TIME, DEFAULT_QUOTA_MAX_MEM),
     m_workerThreadCount(DEFAULT_WORKER_THREAD_COUNT),
     m_requestQueueSize(DEFAULT_REQUEST_QUERY_SIZE),
-    m_ignorePriority(DEFAULT_IGNORE_PRIORITY) {
+    m_ignorePriority(DEFAULT_IGNORE_PRIORITY),
+    m_ignoreDelay(DEFAULT_IGNORE_DELAY) {
 }
 
 //---------------------------------------------------------------------------------------
@@ -1938,6 +1971,8 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
         return false;
     if (m_ignorePriority != rhs.GetIgnorePriority())
         return false;
+    if (m_ignoreDelay != rhs.GetIgnoreDelay())
+        return false;        
     return true;
 }
 
@@ -1968,12 +2003,26 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(std::string const& j
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
+    if (!val.isObject()) {
+        val.toObject();
+    }
+    val[Config::JThreads] = GetWorkerThreadCount();
+    val[Config::JQueueSize] = GetRequestQueueSize();
+    val[Config::JIgnorePriority] = GetIgnorePriority();
+    val[Config::JIgnoreDelay] = GetIgnoreDelay();
+    auto quota = val[Config::JQuota];
+    m_quota.ToJs(quota);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (!val.isObject()) {
-        return GetDefault();
+        return GetFromEnv();
     }
-
-    auto& defaultConfig = Config::GetDefault();
+    auto defaultConfig = Config::GetFromEnv();
     Config config = defaultConfig;
     if (val.isNumericMember(Config::JThreads)) {
         auto threads = val[Config::JThreads].asUInt(defaultConfig.GetWorkerThreadCount());
@@ -1993,6 +2042,10 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
         const auto ignorePriority = val[Config::JIgnorePriority].asBool(defaultConfig.GetIgnorePriority());
         config.SetIgnorePriority(ignorePriority);
     }
+    if (val.isBoolMember(Config::JIgnoreDelay)) {
+        const auto ignoreDelay = val[Config::JIgnoreDelay].asBool(defaultConfig.GetIgnoreDelay());
+        config.SetIgnoreDelay(ignoreDelay);
+    }    
     if (val.isObjectMember(Config::JQuota)) {
         auto quota = defaultConfig.GetQuota();
         quota = QueryQuota::FromJs(val[Config::JQuota]);

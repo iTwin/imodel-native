@@ -710,11 +710,16 @@ public:
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
 
-    void ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, configObj);
-        JsInterop::ConcurrentQueryResetConfig(m_ecdb, configObj);
+    Napi::Value ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
+        if (info.Length() > 0 && info[0].IsObject()) {
+            Napi::Object inConf = info[0].As<Napi::Object>();
+            return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb, inConf);
+        }
+        return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb);
     }
-
+    void ConcurrentQueryShutdown(Napi::CallbackInfo const& info) {
+        ConcurrentQueryMgr::Shutdown(m_ecdb);
+    }
     void CloseDbIfOpen() {
         if (m_ecdb.IsDbOpen()) {
             m_ecdb.AbandonChanges();
@@ -769,6 +774,7 @@ public:
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
+            InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
             InstanceMethod("dispose", &NativeECDb::Dispose),
             InstanceMethod("dropSchema", &NativeECDb::DropSchema),
@@ -2496,10 +2502,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::ConcurrentQueryExecute(GetDgnDb(), requestObj, callback);
     }
 
-    void ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
+    Napi::Value ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
         REQUIRE_DB_TO_BE_OPEN;
-        REQUIRE_ARGUMENT_ANY_OBJ(0, configObj);
-        JsInterop::ConcurrentQueryResetConfig(GetDgnDb(), configObj);
+        if (info.Length() > 0 && info[0].IsObject()) {
+            Napi::Object inConf = info[0].As<Napi::Object>();
+            return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb(), inConf);
+        }
+        return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb());
+    }
+
+    void ConcurrentQueryShutdown(Napi::CallbackInfo const& info) {
+        REQUIRE_DB_TO_BE_OPEN;
+        ConcurrentQueryMgr::Shutdown(GetDgnDb());
     }
     // ========================================================================================
     // Test method handler
@@ -2535,6 +2549,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
+            InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
