@@ -4380,31 +4380,32 @@ BentleyStatus SchemaWriter::UpdateUnitSystems(Context& ctx, UnitSystemChanges& c
         if (!change.IsChanged())
             continue;
 
-        UnitSystemCP system = oldSchema.GetUnitSystemCP(change.GetChangeName());
+        UnitSystemCP oldSystem = oldSchema.GetUnitSystemCP(change.GetChangeName());
 
         if (!ctx.IsEC32AvailableInFile())
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: UnitSystem %s: Modifying unit systems is not supported in a file that does not support EC3.2 yet.",
-                                    oldSchema.GetFullSchemaName().c_str(), system->GetFullName().c_str());
+                                    oldSchema.GetFullSchemaName().c_str(), oldSystem->GetFullName().c_str());
             return ERROR;
             }
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: UnitSystem %s: Deleting UnitSystems from an ECSchema is not supported.",
-                                    oldSchema.GetFullSchemaName().c_str(), system->GetFullName().c_str());
+                                    oldSchema.GetFullSchemaName().c_str(), oldSystem->GetFullName().c_str());
             return ERROR;
             }
 
         if (change.GetOpCode() == ECChange::OpCode::New)
             {
-            if (system == nullptr)
+            UnitSystemCP newSystem = newSchema.GetUnitSystemCP(change.GetChangeName());
+            if (newSystem == nullptr)
                 {
                 BeAssert(false && "Failed to find unit system");
                 return ERROR;
                 }
 
-            if (SUCCESS != ImportUnitSystem(ctx, *system))
+            if (SUCCESS != ImportUnitSystem(ctx, *newSystem))
                 return ERROR;
             }
 
