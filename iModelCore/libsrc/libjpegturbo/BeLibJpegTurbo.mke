@@ -244,7 +244,7 @@ $(o)wrppm$(oext)                    : $(turboJpegSrcDir)wrppm.c             ${Mu
 
     %ifnofile $(nasmCmd)
         %error Cannot find nasmCmd; expecting it at $(nasmCmd) \
-               Did you forget to add <RequiredRepository>Bsitools-Nasm_x.xx</RequiredRepository> to your part dependency?
+               Did you forget to add a ToolPart with UPack nasm to your part dependency?
     %endif
 
     .asm.obj:

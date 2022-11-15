@@ -4,7 +4,7 @@
     xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
     >
    
-    <ToolPart Name="nasm">
+    <ToolPart Name="nasm" OnlyPlatforms="x64">
         <Upack>nasm</Upack>
     </ToolPart>
 
