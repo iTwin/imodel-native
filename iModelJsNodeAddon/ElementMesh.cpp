@@ -88,16 +88,41 @@ private:
   void Execute() final;
   void OnOK() final;
 
-  ElementMeshWorker(DgnDbR db, Napi::Env env, DgnElementId elementId)
-    : DgnDbWorker(db, env), m_elementId(elementId) {
+  ElementMeshWorker(DgnDbR db, Napi::Env env, DgnElementId elementId, IFacetOptionsR facetOptions)
+    : DgnDbWorker(db, env), m_elementId(elementId), m_facetOptions(&facetOptions) {
     m_result.AppendChunk(ChunkType::ElementMeshes, 0, nullptr);
   }
 public:
-  static DgnDbWorkerPtr Create(DgnDbR db, Napi::CallbackInfo const& info);
+  static DgnDbWorkerPtr Create(DgnDbR db, Napi::Object const& obj);
 };
 
-// DgnDbWorkerPtr ElementMeshWorker::Create(DgnDbR db, Napi::CallbackInfo const& info) {
-// }
+DgnDbWorkerPtr ElementMeshWorker::Create(DgnDbR db, Napi::Object const& obj) {
+  BeJsConst props(obj);
+
+  double chordTol = props["chordTolerance"].asDouble(0.0);
+  double angleTol = props["angleTolerance"].asDouble(msGeomConst_piOver12);
+
+  // Per Earlin's advice on avoiding topology problems, restrict max angle tolerance to 45 deg
+  angleTol = std::min(msGeomConst_piOver4, angleTol);
+
+  double maxEdgeLen = 0.0;
+  bool triangulate = true;
+  bool normals = false;
+  bool params = false;
+  auto opts = IFacetOptions::CreateForSurfaces(chordTol, angleTol, maxEdgeLen, triangulate, normals, params);
+
+  auto minFeatSzVal = props["minBRepFeatureSize"];
+  if (minFeatSzVal.isNumeric())
+    opts->SetBRepIgnoredFeatureSize(minFeatSzVal.asDouble());
+
+  opts->SetIgnoreHiddenBRepEntities(true);
+  opts->SetBRepConcurrentFacetting(false);
+
+  DgnElementId elemId;
+  elemId.FromJson(props["source"]);
+
+  return new ElementMeshWorker(db, obj.Env(), elemId, *opts);
+}
 
 void ElementMeshWorker::Execute() {
 }
