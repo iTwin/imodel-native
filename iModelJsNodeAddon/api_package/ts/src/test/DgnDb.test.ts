@@ -259,7 +259,7 @@ describe("basic tests", () => {
         });
 
         expect(fewerBytes.length < bytes.length).to.be.true;
-        expect(fewerBytes.length).least(8);
+        expect(fewerBytes.length).least(32);
 
         u32 = new Uint32Array(fewerBytes.buffer);
         expect(u32[3] < numPolyfaceBytes).to.be.true;
