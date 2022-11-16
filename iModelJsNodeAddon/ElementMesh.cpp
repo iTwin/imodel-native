@@ -3,8 +3,9 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-#include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include "IModelJsNative.h"
+#include <GeomSerialization/GeomLibsFlatBufferApi.h>
+#include <DgnPlatform/SimplifyGraphic.h>
 #include "DgnDbWorker.h"
 
 using namespace IModelJsNative;
@@ -16,6 +17,7 @@ struct ElementMeshOptions {
   double m_minBRepFeatureSize;
 
   explicit ElementMeshOptions(BeJsConst);
+  IFacetOptionsPtr CreateFacetOptions() const;
 };
 
 enum class ChunkType : uint32_t {
@@ -33,7 +35,6 @@ static_assert(sizeof(ChunkHeader) == 8, "unexpected size");
 struct ChunkStream : ByteStream {
 private:
   void AppendHeader(ChunkType type, uint32_t dataLength) {
-
     ChunkHeader hdr = { type, dataLength };
     Append(hdr);
   }
@@ -47,6 +48,33 @@ public:
     if (nullptr != data)
       Append(data, dataLength);
   }
+};
+
+struct ElementMeshProcessor : IGeometryProcessor {
+private:
+  ChunkStream& m_output;
+  IFacetOptionsPtr m_facetOptions;
+
+  IFacetOptionsP _GetFacetOptionsP() override {return m_facetOptions.get();}
+  UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const final {return UnhandledPreference::Facet;}
+  UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const final {return UnhandledPreference::Facet;}
+  UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const final {return UnhandledPreference::Facet;}
+  UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const final {return UnhandledPreference::Ignore;}
+  UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const final {return UnhandledPreference::Facet;}
+
+  bool _ProcessPolyface(PolyfaceQueryCR inputPf, bool filled, SimplifyGraphic&) final {
+    JsInterop::ProcessPolyface(inputPf, [&](PolyfaceQueryCR pf) {
+      bvector<uint8_t> flatBuffer;
+      BentleyGeometryFlatBuffer::GeometryToBytes(pf, flatBuffer);
+      if (!flatBuffer.empty())
+        m_output.AppendChunk(ChunkType::Polyface, static_cast<uint32_t>(flatBuffer.size()), &flatBuffer[0]);
+    });
+
+    return true;
+  }
+public:
+  ElementMeshProcessor(ChunkStream& output, IFacetOptionsR facetOptions) : m_output(output), m_facetOptions(&facetOptions) { }
+  virtual ~ElementMeshProcessor() { }
 };
 
 struct ElementMeshWorker : DgnDbWorker {
@@ -64,13 +92,6 @@ private:
   ElementMeshWorker(DgnDbR db, Napi::Env env, DgnElementId elementId, ElementMeshOptions const& options)
     : DgnDbWorker(db, env), m_elementId(elementId), m_options(options) {
     m_result.AppendChunk(ChunkType::ElementMeshes, 0, nullptr);
-  }
-
-  void Append(PolyfaceQueryCR polyface) {
-    bvector<uint8_t> flatBuffer;
-    BentleyGeometryFlatBuffer::GeometryToBytes(polyface, flatBuffer);
-    if (!flatBuffer.empty())
-      m_result.AppendChunk(ChunkType::Polyface, static_cast<uint32_t>(flatBuffer.size()), &flatBuffer[0]);
   }
 public:
   static DgnDbWorkerPtr Create(DgnDbR db, Napi::CallbackInfo const& info);
