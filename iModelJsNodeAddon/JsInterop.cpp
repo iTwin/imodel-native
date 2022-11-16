@@ -820,6 +820,7 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    JsInterop::AddSchemaSearchPaths(schemaContext);
     schemaContext->SetFinalSchemaLocater(ecdb.GetSchemaLocater());
 
     ECSchemaPtr schema;
@@ -839,12 +840,32 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void JsInterop::AddSchemaSearchPaths(ECSchemaReadContextPtr schemaContext) 
+    {
+    BeFileName rootDir = PlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    rootDir.AppendToPath(L"ECSchemas");
+    BeFileName dgnPath = rootDir;
+    dgnPath.AppendToPath(L"Dgn").AppendSeparator();
+    BeFileName domainPath = rootDir;
+    domainPath.AppendToPath(L"Domain").AppendSeparator();
+    BeFileName ecdbPath = rootDir;
+    ecdbPath.AppendToPath(L"ECDb").AppendSeparator();
+    schemaContext->AddSchemaPath(dgnPath);
+    schemaContext->AddSchemaPath(domainPath);
+    schemaContext->AddSchemaPath(ecdbPath);
+    return;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames)
     {
     if (0 == schemaFileNames.size())
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    JsInterop::AddSchemaSearchPaths(schemaContext);
     schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
     bvector<ECSchemaCP> schemas;
 
@@ -886,6 +907,7 @@ DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& se
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    JsInterop::AddSchemaSearchPaths(schemaContext);
     schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
     bvector<ECSchemaCP> schemas;
 
