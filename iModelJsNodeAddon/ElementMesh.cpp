@@ -24,22 +24,28 @@ enum class ChunkType : uint32_t {
 };
 
 struct ChunkHeader {
-  ChunkType m_type;
-  // The length of the chunk, excluding the fixed length of this header.
-  uint32_t m_dataLength;
-
-  ChunkHeader(ChunkType type, uint32_t length) : m_type(type), m_dataLength(length) { }
+  ChunkType type;
+  uint32_t length;
 };
 
-static_assert(sizeof(ChunkHeader) == 8, "unexpected ChunkHeader size");
+static_assert(sizeof(ChunkHeader) == 8, "unexpected size");
 
-struct Chunk : ChunkHeader {
-  uint8_t const* m_data;
+struct ChunkStream : ByteStream {
+private:
+  void AppendHeader(ChunkType type, uint32_t dataLength) {
 
-  Chunk(ChunkType type, uint32_t length, uint8_t const* data) : ChunkHeader(type, length), m_data(data) { }
+    ChunkHeader hdr = { type, dataLength };
+    Append(hdr);
+  }
 
-  uint32_t GetTotalSize() const {
-    return sizeof(ChunkHeader) + m_dataLength;
+public:
+  void AppendChunk(ChunkType type, uint32_t dataLength, uint8_t const* data) {
+    BeAssert((nullptr == data) == (0 == dataLength));
+
+    Reserve(GetSize() + dataLength + sizeof(ChunkHeader));
+    AppendHeader(type, dataLength);
+    if (nullptr != data)
+      Append(data, dataLength);
   }
 };
 
@@ -50,30 +56,21 @@ private:
   ElementMeshOptions m_options;
 
   // Output
-  ByteStream m_result;
+  ChunkStream m_result;
 
   void Execute() final;
   void OnOK() final;
 
   ElementMeshWorker(DgnDbR db, Napi::Env env, DgnElementId elementId, ElementMeshOptions const& options)
     : DgnDbWorker(db, env), m_elementId(elementId), m_options(options) {
-    Append(Chunk(ChunkType::ElementMeshes, 0, nullptr));
-  }
-
-  void Append(Chunk const& chunk) {
-    BeAssert((nullptr == chunk.m_data) == (chunk.m_dataLength == 0));
-
-    m_result.Reserve(m_result.GetSize() + chunk.GetTotalSize());
-    m_result.Append(static_cast<ChunkHeader>(chunk));
-    if (nullptr != chunk.m_data)
-      m_result.Append(chunk.m_data, chunk.m_dataLength);
+    m_result.AppendChunk(ChunkType::ElementMeshes, 0, nullptr);
   }
 
   void Append(PolyfaceQueryCR polyface) {
     bvector<uint8_t> flatBuffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(polyface, flatBuffer);
     if (!flatBuffer.empty())
-      Append(Chunk(ChunkType::Polyface, static_cast<uint32_t>(flatBuffer.size()), &flatBuffer[0]));
+      m_result.AppendChunk(ChunkType::Polyface, static_cast<uint32_t>(flatBuffer.size()), &flatBuffer[0]);
   }
 public:
   static DgnDbWorkerPtr Create(DgnDbR db, Napi::CallbackInfo const& info);
