@@ -492,7 +492,7 @@ public:
     // Checks for common "bad" polyfaces, fixing them up if possible.
     // If bad or empty, returns status without processing.
     // Otherwise, fixes up the input polyface if applicable, passes it to supplied function, and returns Ok.
-    static ProcessPolyfaceResult ProcessPolyface(PolyfaceQueryCR, std::function<void(PolyfaceQueryCR)>);
+    static ProcessPolyfaceResult ProcessPolyface(PolyfaceQueryCR, bool wantParamsAndNormals, std::function<void(PolyfaceQueryCR)>);
     static DgnDbStatus ExportGraphics(DgnDbR db, Napi::Object const& exportProps);
     static DgnDbStatus ExportPartGraphics(DgnDbR db, Napi::Object const& exportProps);
     static Napi::Value GenerateElementMeshes(DgnDbR, Napi::Object const&);

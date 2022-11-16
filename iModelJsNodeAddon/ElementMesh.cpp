@@ -53,7 +53,7 @@ private:
   UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const final {return UnhandledPreference::Facet;}
 
   bool _ProcessPolyface(PolyfaceQueryCR inputPf, bool filled, SimplifyGraphic& gf) final {
-    JsInterop::ProcessPolyface(inputPf, [&](PolyfaceQueryCR pf) {
+    JsInterop::ProcessPolyface(inputPf, false, [&](PolyfaceQueryCR pf) {
       bvector<uint8_t> flatBuffer;
 
       auto tf = gf.GetLocalToWorldTransform();
