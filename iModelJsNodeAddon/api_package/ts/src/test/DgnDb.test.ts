@@ -218,5 +218,17 @@ describe("basic tests", () => {
     expectResult(4, { low: [-10, -16, -10], high: [14, 6, 10] });
     expectResult(5, { low: [5, 3, -10], high: [30, 25, 10] });
   });
-});
 
+  describe("generateElementMeshes", () => {
+    it("throws if source is not a geometric element", async () => {
+      const msg = "Geometric element required";
+      await expect(dgndb.generateElementMeshes({source: "NotAnId"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ })).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0x1"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0"})).rejectedWith(msg);
+    });
+
+    it("produces meshes", () => {
+    });
+  });
+});
