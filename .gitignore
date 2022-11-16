@@ -22,7 +22,7 @@ ipch
 .vs
 
 # vscode
-.vscode
+# Note: we want launch.json tracked. You can't un-ignore a file if its parent directory is ignored.
 .vscode/c_cpp_properties.json
 .vscode/settings.json
 
