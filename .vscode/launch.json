@@ -218,22 +218,6 @@
             ]
         },
         {
-            "name": "LNX Native VisualizationTest",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/VisualizationGtest/VisualizationTest",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
             "name": "LNX Native iModelPlatformTest",
             "type": "cppdbg",
             "request": "launch",
