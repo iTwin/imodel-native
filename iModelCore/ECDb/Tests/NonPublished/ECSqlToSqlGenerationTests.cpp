@@ -1016,4 +1016,57 @@ TEST_F(ECSqlToSqlGenerationTests, RoadRailPhysicalManyJoins)
     
     m_ecdb.CloseDb();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlToSqlGenerationTests, SelectOnlyRequiredPropertiesOnSelfJoin)
+    {
+    SchemaItem schemaItem(R"schema(
+        <?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo1">
+                    <ECProperty propertyName="Prop" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Foo2">
+                    <ECProperty propertyName="Prop" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("SelectOnlyRequiredPropertiesOnSelfJoin.ecdb", schemaItem));
+
+    m_ecdb.SaveChanges();
+    {
+    // Self join with only one table having alias
+    ECSqlStatement ecsqlStmt;
+    Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo1";
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
+    AssertFrequencyCount(ecsql, {{ "JOIN", 0 }, { "Prop", 2 }});
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
+    }
+
+    {
+    // Self join with a table having different aliases
+    ECSqlStatement ecsqlStmt;
+    Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo1 f2";
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
+    AssertFrequencyCount(ecsql, {{ "JOIN", 0 }, { "Prop", 2 }});
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
+    }
+    
+    {
+    ECSqlStatement ecsqlStmt;
+    Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo2 f2";
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
+    AssertFrequencyCount(ecsql, {{ "JOIN", 0 }, { "Prop", 2 }});
+    Statement sqlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
+    }
+    }
 END_ECDBUNITTESTS_NAMESPACE
