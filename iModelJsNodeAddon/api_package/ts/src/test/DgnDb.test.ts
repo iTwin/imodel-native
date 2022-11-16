@@ -233,7 +233,7 @@ describe("basic tests", () => {
     it("produces meshes", async () => {
       const elemIds = ["0x38", "0x3a", "0x3b", "0x39"];
       for (const source of elemIds) {
-        const bytes = await dgndb.generateElementMeshes({
+        let bytes = await dgndb.generateElementMeshes({
           source,
           chordTolerance: 0.001,
         });
@@ -244,13 +244,25 @@ describe("basic tests", () => {
         for (let i = 0; i < 4; i++)
           expect(bytes[i]).to.equal("LMSH".charCodeAt(i));
 
-        const u32 = new Uint32Array(bytes.buffer);
+        let u32 = new Uint32Array(bytes.buffer);
         expect(u32[1]).to.equal(0);
 
         for (let i = 0; i < 4; i++)
           expect(bytes[8 + i]).to.equal("PLFC".charCodeAt(i));
 
-        expect(u32[3]).least(8);
+        const numPolyfaceBytes = u32[3];
+        expect(numPolyfaceBytes).least(8);
+
+        const fewerBytes = await dgndb.generateElementMeshes({
+          source,
+          chordTolerance: 0.1,
+        });
+
+        expect(fewerBytes.length < bytes.length).to.be.true;
+        expect(fewerBytes.length).least(8);
+
+        u32 = new Uint32Array(fewerBytes.buffer);
+        expect(u32[3] < numPolyfaceBytes).to.be.true;
       }
     });
   });
