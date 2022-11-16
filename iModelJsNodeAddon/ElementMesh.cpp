@@ -126,11 +126,14 @@ DgnDbWorkerPtr ElementMeshWorker::Create(DgnDbR db, Napi::Object const& obj) {
 
 void ElementMeshWorker::Execute() {
   auto elem = GetDb().Elements().Get<GeometricElement>(m_elementId);
-  if (elem.IsNull())
-    throw new std::runtime_error("Geometric element required");
+  auto geom = elem.IsValid() ? elem->ToGeometrySource() : nullptr;
+  if (nullptr == geom) {
+    SetError("Geometric element required");
+    return;
+  }
 
   ElementMeshProcessor processor(m_result, *m_facetOptions);
-  GeometryProcessor::Process(processor, *elem->ToGeometrySource());
+  GeometryProcessor::Process(processor, *geom);
 }
 
 void ElementMeshWorker::OnOK() {
