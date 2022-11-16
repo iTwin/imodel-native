@@ -138,3 +138,8 @@ void ElementMeshWorker::OnOK() {
   memcpy(bytes.Data(), m_result.GetData(), m_result.size());
   m_promise.Resolve(bytes);
 }
+
+Napi::Value JsInterop::GenerateElementMeshes(DgnDbR db, Napi::Object const& requestProps) {
+  auto worker = ElementMeshWorker::Create(db, requestProps);
+  return worker->Queue();
+}

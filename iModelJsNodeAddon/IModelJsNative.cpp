@@ -1935,6 +1935,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return ObtainTileGraphicsRequests().Enqueue(requestProps, info.Env());
         }
 
+    Napi::Value GenerateElementMeshes(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN;
+        REQUIRE_ARGUMENT_ANY_OBJ(0, requestProps);
+        return JsInterop::GenerateElementMeshes(GetDgnDb(), requestProps);
+        }
+
     Napi::Value IsLinkTableRelationship(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN;
@@ -2552,6 +2559,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("extractEmbeddedFile", &NativeDgnDb::ExtractEmbeddedFile),
             InstanceMethod("findGeometryPartReferences", &NativeDgnDb::FindGeometryPartReferences),
             InstanceMethod("generateElementGraphics", &NativeDgnDb::GenerateElementGraphics),
+            InstanceMethod("generateElementMeshes", &NativeDgnDb::GenerateElementMeshes),
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getChangesetSize", &NativeDgnDb::GetChangesetSize),
             InstanceMethod("getChangeTrackingMemoryUsed", &NativeDgnDb::GetChangeTrackingMemoryUsed),

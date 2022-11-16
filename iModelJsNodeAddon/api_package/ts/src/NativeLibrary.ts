@@ -18,8 +18,8 @@ import type {
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type  {
-  ChangesetIndexAndId, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
-  FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
+  ChangesetIndexAndId, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps,
+  ElementProps, FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
@@ -458,6 +458,7 @@ export declare namespace IModelJsNative {
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public findGeometryPartReferences(partIds: Id64String[], is2d: boolean): Id64String[];
     public generateElementGraphics(request: ElementGraphicsRequestProps): Promise<ElementGraphicsResult>;
+    public generateElementMeshes(request: ElementMeshRequestProps): Promise<Uint8Array>;
     public getBriefcaseId(): number;
     public getChangesetSize(): number;
     public getChangeTrackingMemoryUsed(): number;
