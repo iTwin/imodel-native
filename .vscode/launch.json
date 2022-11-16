@@ -154,42 +154,10 @@
             "processId": "${command:pickProcess}"
         },
         {
-            "name": "LNX Native BeHttpTest",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/BeHttp-Gtest/BeHttpTest",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
             "name": "LNX Native BentleyTest",
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/Bentley-Gtest/BentleyTest",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
-            "name": "LNX Native BeSecurityTest",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/BeSecurity-Gtest/BeSecurityTest",
             "cwd": "${workspaceFolder}",
             "externalConsole": false,
             "MIMode": "gdb",
