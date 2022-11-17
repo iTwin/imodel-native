@@ -558,10 +558,12 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
             return locStatus;
 
         BeAssert(locStatus == SchemaStatus::SchemaNotFound || locStatus == SchemaStatus::SchemaUpgradeRequired || locStatus == SchemaStatus::SchemaUpgradeRecommended);
-        if ((locStatus == SchemaStatus::SchemaUpgradeRecommended && status != SchemaStatus::SchemaUpgradeRequired) || (locStatus == SchemaStatus::SchemaNotFound && status == SchemaStatus::SchemaUpgradeRecommended))
+        // A referenced schema that is not found does not make a recommended domain schema upgrade required
+        if (status != SchemaStatus::SchemaUpgradeRequired && (locStatus == SchemaStatus::SchemaUpgradeRecommended || locStatus == SchemaStatus::SchemaNotFound))
             status = SchemaStatus::SchemaUpgradeRecommended;
         else
             status = SchemaStatus::SchemaUpgradeRequired;
+        
         if (schemasToImport)
             schemasToImport->push_back(schema);
         }
