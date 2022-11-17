@@ -532,12 +532,8 @@ public:
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);
-    static Napi::Value ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Object cfg);
-    static Napi::Value PostConcurrentQuery(ECDbCR ecdb, Napi::Env env, Utf8StringCR ecsql, Utf8StringCR bindings, Napi::Object limit, Napi::Object quota, int32_t priority,Utf8StringCR restartToken, bool abbreviateBlobs = false);
-    static Napi::Value PollConcurrentQuery(ECDbCR ecdb, Napi::Env env, uint32_t taskId);
-    static Napi::Value CancelQuery(ECDbCR ecdb, Napi::Env env, uint32_t taskId);
-    static Napi::Value CaptureStatistics(ECDbCR ecdb, Napi::Env env, bool reset);
-
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR, Napi::Object);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR);
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);
