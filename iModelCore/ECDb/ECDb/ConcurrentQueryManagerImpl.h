@@ -11,9 +11,9 @@
 #include <random>
 #include <chrono>
 
-#define DEFAULT_QUERY_DELAY_MAX_TIME    std::chrono::seconds(10) // 20 sec
-#define DEFAULT_QUOTA_MAX_TIME          std::chrono::seconds(60) // 60 sec
-#define DEFAULT_QUOTA_MAX_MEM           0x800000                 // 8  Mb
+#define DEFAULT_QUERY_DELAY_MAX_TIME    std::chrono::seconds(10)
+#define DEFAULT_QUOTA_MAX_TIME          std::chrono::seconds(60)
+#define DEFAULT_QUOTA_MAX_MEM           0x800000
 #define DEFAULT_REQUEST_QUERY_SIZE      2000
 #define DEFAULT_IGNORE_PRIORITY         false
 #define DEFAULT_IGNORE_DELAY            true
