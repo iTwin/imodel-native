@@ -558,7 +558,7 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
             return locStatus;
 
         BeAssert(locStatus == SchemaStatus::SchemaNotFound || locStatus == SchemaStatus::SchemaUpgradeRequired || locStatus == SchemaStatus::SchemaUpgradeRecommended);
-        if (locStatus == SchemaStatus::SchemaUpgradeRecommended && status != SchemaStatus::SchemaUpgradeRequired)
+        if ((locStatus == SchemaStatus::SchemaUpgradeRecommended && status != SchemaStatus::SchemaUpgradeRequired) || (locStatus == SchemaStatus::SchemaNotFound && status == SchemaStatus::SchemaUpgradeRecommended))
             status = SchemaStatus::SchemaUpgradeRecommended;
         else
             status = SchemaStatus::SchemaUpgradeRequired;
