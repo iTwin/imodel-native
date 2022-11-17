@@ -1221,7 +1221,7 @@ bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProcessPolyfaceResult JsInterop::ProcessPolyface(PolyfaceQueryCR pfQuery, bool wantParamsAndNormals, std::function<void(PolyfaceQueryCR pfQuery)> process) {
+ProcessPolyfaceResult JsInterop::ProcessPolyface(PolyfaceQueryCR pfQuery, bool requireParamsAndNormals, std::function<void(PolyfaceQueryCR pfQuery)> process) {
   auto indexCount = static_cast<uint32_t>(pfQuery.GetPointIndexCount());
   auto pointCount = static_cast<uint32_t>(pfQuery.GetPointCount());
   // Receiving empty polyfaces isn't ideal, but just ignore and don't count as real error condition
@@ -1233,7 +1233,7 @@ ProcessPolyfaceResult JsInterop::ProcessPolyface(PolyfaceQueryCR pfQuery, bool w
   bool hasNormals = pfQuery.GetNormalIndexCP() != nullptr && pfQuery.GetNormalCount() > 0;
   bool hasParams = pfQuery.GetParamIndexCP() != nullptr && pfQuery.GetParamCount() > 0;
   bool isIndexedFaceLoops = pfQuery.GetMeshStyle() == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
-  if (!isIndexedFaceLoops || (hasNormals != wantParamsAndNormals) || (hasParams != wantParamsAndNormals))
+  if (!isIndexedFaceLoops || (requireParamsAndNormals && (!hasParams || !hasNormals)))
     return ProcessPolyfaceResult::Bad;
 
   // If this polyface was saved with numPerFace explicitly set to 3 and style set to INDEXED_FACE_LOOPS,

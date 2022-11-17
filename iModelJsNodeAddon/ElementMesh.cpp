@@ -56,14 +56,23 @@ private:
     JsInterop::ProcessPolyface(inputPf, false, [&](PolyfaceQueryCR pf) {
       bvector<uint8_t> flatBuffer;
 
+      PolyfaceHeaderPtr modifiedPf;
+      if (pf.GetParamCount() > 0 || pf.GetNormalCount() > 0) {
+        modifiedPf = pf.Clone();
+        modifiedPf->ClearParameters(false);
+        modifiedPf->ClearNormals(false);
+      }
+
       auto tf = gf.GetLocalToWorldTransform();
       if (!tf.IsIdentity()) {
-        auto transformedPf = pf.Clone();
-        transformedPf->Transform(tf);
-        BentleyGeometryFlatBuffer::GeometryToBytes(*transformedPf, flatBuffer);
-      } else {
-        BentleyGeometryFlatBuffer::GeometryToBytes(pf, flatBuffer);
+        if (modifiedPf.IsNull())
+          modifiedPf = pf.Clone();
+
+        modifiedPf->Transform(tf);
       }
+
+      PolyfaceQueryCP outputPf = modifiedPf.IsValid() ? modifiedPf.get() : &pf;
+      BentleyGeometryFlatBuffer::GeometryToBytes(*outputPf, flatBuffer);
 
       if (!flatBuffer.empty())
         m_output.AppendChunk(ChunkType::Polyface, static_cast<uint32_t>(flatBuffer.size()), &flatBuffer[0]);
