@@ -2,12 +2,14 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { dbFileName, iModelJsNative } from "./utils";
+import { copyFile, dbFileName, iModelJsNative } from "./utils";
 import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
 import { openDgnDb } from ".";
+import * as path from "path";
 import * as os from "os";
+import { ProfileOptions } from "@itwin/core-common";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
@@ -41,6 +43,9 @@ describe("basic tests", () => {
     expect(() => db.nonsense()).to.throw("not a function");
   });
 
+  it("testImportSchemas", () => {
+
+  })
 
   it("testTileVersionInfo", () => {
     const ver = iModelJsNative.getTileVersionInfo();
@@ -73,6 +78,23 @@ describe("basic tests", () => {
     for (const id of elementIdArray)
       assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
   });
+
+  it("testSchemaImport", () => {
+    const writeDbFileName = copyFile("testSchemaImport.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db = openDgnDb(writeDbFileName, {profile: ProfileOptions.Upgrade});
+    assert.isTrue(db !== undefined);
+    expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found"); // presentationrules alias is 'pr'.
+    let bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.00");
+    const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
+    const result = db.importSchemas([schemaPath]);
+    assert.isTrue(result === DbResult.BE_SQLITE_OK);
+
+    const prProps = db.getSchemaProps("PresentationRules");
+    bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.15"); // PR references 01.00.15, so importing PR will cause it to upgrade.
+  })
 
   it("testSchemaExport", () => {
     const xml = dgndb.schemaToXmlString("BisCore", IModelJsNative.ECVersion.V2_0);

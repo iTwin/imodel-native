@@ -513,14 +513,15 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
     ctx.GetSelectionOptionsR().Clear();
     for (auto& parentPropertyExp : parentPropertyExps)
         {
-        PropertyNameExp const* propertyName = parentPropertyExp->GetAsCP<PropertyNameExp>();
-        if (propertyName->IsPropertyRef())
+        PropertyNameExp const* propertyNameExp = parentPropertyExp->GetAsCP<PropertyNameExp>();
+        if (propertyNameExp->IsPropertyRef())
             continue;
-        if (propertyName->IsVirtualProperty())
+        if (propertyNameExp->IsVirtualProperty())
             break;
 
-        if (&classMap == &propertyName->GetPropertyMap().GetClassMap())
-            ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap());
+        const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
+        if (&exp == classRefExp)
+            ctx.GetSelectionOptionsR().AddProperty(propertyNameExp->GetPropertyMap());
         }
     }
 
