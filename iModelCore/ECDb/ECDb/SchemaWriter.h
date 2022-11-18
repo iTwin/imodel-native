@@ -206,21 +206,21 @@ struct SchemaWriter final
         static BentleyStatus UpdateSchemaReferences(Context&, ECN::SchemaReferenceChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         static BentleyStatus UpdateClasses(Context&, ECN::ClassChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         static BentleyStatus UpdateEnumerations(Context&, ECN::EnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateEnumeration(Context&, ECN::EnumerationChange&, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
-        static BentleyStatus VerifyEnumeratorChanges(Context&, ECN::ECEnumerationCR oldEnum, ECN::EnumeratorChanges&);
+        static BentleyStatus UpdateEnumeration(Context&, ECN::EnumerationChange&, ECN::ECSchemaCR oldSchema, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
+        static BentleyStatus VerifyEnumeratorChanges(Context&, ECN::ECSchemaCR oldSchema, ECN::ECEnumerationCR oldEnum, ECN::EnumeratorChanges&);
 
         static BentleyStatus UpdateKindOfQuantities(Context&, ECN::KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateKindOfQuantity(Context&, ECN::KindOfQuantityChange&, ECN::KindOfQuantityCR oldKoq, ECN::KindOfQuantityCR newKoq);
+        static BentleyStatus UpdateKindOfQuantity(Context&, ECN::KindOfQuantityChange&, ECN::ECSchemaCR oldSchema, ECN::KindOfQuantityCR oldKoq, ECN::KindOfQuantityCR newKoq);
         static BentleyStatus UpdatePropertyCategories(Context&, ECN::PropertyCategoryChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdatePropertyCategory(Context&, ECN::PropertyCategoryChange&, ECN::PropertyCategoryCR oldCat, ECN::PropertyCategoryCR newCat);
+        static BentleyStatus UpdatePropertyCategory(Context&, ECN::PropertyCategoryChange&, ECN::ECSchemaCR oldSchema, ECN::PropertyCategoryCR oldCat, ECN::PropertyCategoryCR newCat);
         static BentleyStatus UpdatePhenomena(Context&, ECN::PhenomenonChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdatePhenomenon(Context&, ECN::PhenomenonChange&, ECN::PhenomenonCR oldVal, ECN::PhenomenonCR newVal);
+        static BentleyStatus UpdatePhenomenon(Context&, ECN::PhenomenonChange&, ECN::ECSchemaCR oldSchema, ECN::PhenomenonCR oldVal, ECN::PhenomenonCR newVal);
         static BentleyStatus UpdateUnitSystems(Context&, ECN::UnitSystemChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateUnitSystem(Context&, ECN::UnitSystemChange&, ECN::UnitSystemCR oldVal, ECN::UnitSystemCR newVal);
+        static BentleyStatus UpdateUnitSystem(Context&, ECN::UnitSystemChange&, ECN::ECSchemaCR oldSchema, ECN::UnitSystemCR oldVal, ECN::UnitSystemCR newVal);
         static BentleyStatus UpdateUnits(Context&, ECN::UnitChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateUnit(Context&, ECN::UnitChange&, ECN::ECUnitCR oldVal, ECN::ECUnitCR newVal);
+        static BentleyStatus UpdateUnit(Context&, ECN::UnitChange&, ECN::ECSchemaCR oldSchema, ECN::ECUnitCR oldVal, ECN::ECUnitCR newVal);
         static BentleyStatus UpdateFormats(Context&, ECN::FormatChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateFormat(Context&, ECN::FormatChange&, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal);
+        static BentleyStatus UpdateFormat(Context&, ECN::FormatChange&, ECN::ECSchemaCR oldSchema, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal);
         static BentleyStatus UpdateFormatCompositeUnitLabel(Context&, ECN::FormatId, ECN::StringChange& unitLabelChange, int ordinal);
 
         static BentleyStatus UpdateProperties(Context&, ECN::PropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);

@@ -11,14 +11,16 @@
 #include <random>
 #include <chrono>
 
-#define DEFAULT_QUOTA_MAX_TIME          std::chrono::seconds(60) // 60 sec
-#define DEFAULT_QUOTA_MAX_MEM           0x800000                 // 8  Mb
-#define DEFAULT_REQUEST_QUERY_SIZE      1200
+#define DEFAULT_QUERY_DELAY_MAX_TIME    std::chrono::seconds(10)
+#define DEFAULT_QUOTA_MAX_TIME          std::chrono::seconds(60)
+#define DEFAULT_QUOTA_MAX_MEM           0x800000
+#define DEFAULT_REQUEST_QUERY_SIZE      2000
 #define DEFAULT_IGNORE_PRIORITY         false
+#define DEFAULT_IGNORE_DELAY            true
 #define DEFAULT_WORKER_THREAD_COUNT     std::min(4u, std::thread::hardware_concurrency())
 #define MAX_REQUEST_QUERY_SIZE          4000
 #define MIN_WORKER_THREAD_COUNT         2
-#define QUERY_WORKER_RESULT_RESERVE_BYTES 1024*1
+#define QUERY_WORKER_RESULT_RESERVE_BYTES 1024*4  // 4Kb and its cached buffer on for each thread.
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -238,9 +240,13 @@ struct RunnableRequestBase {
         RunnableRequestQueue& m_queue;
         QueryQuota m_quota;
         std::atomic_bool m_cancelled;
+        uint32_t m_executorId;
+        uint32_t m_connId;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
-        RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id):m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s), m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false){}
+        RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
+            :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),
+             m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0){}
         virtual ~RunnableRequestBase(){}
         QueryRequest const& GetRequest() const {return *m_request;}
         uint32_t GetId() const {return m_id; }
@@ -248,11 +254,15 @@ struct RunnableRequestBase {
         bool IsCompleted() const {return m_isCompleted; }
         RunnableRequestQueue& GetQueue() { return m_queue;}
         void Cancel() { m_cancelled.store(true); }
+        bool IsReady() const { return GetTotalTime() > m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
         bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : std::chrono::duration_cast<std::chrono::seconds>(GetTotalTime()) >  m_quota.MaxTimeAllowed();}
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
         bool IsTimeOrMemoryExceeded(std::string const& result) const { return IsTimeExceeded() || IsMemoryExceeded(result);}
         void OnDequeued()  { m_dequeuedOn = std::chrono::steady_clock::now(); }
+        uint32_t GetExecutorId() const {return m_executorId; }
+        uint32_t GetConnectionId() const {return m_connId; }
+        void SetExecutorContext(uint32_t executorId, uint32_t connId) { m_executorId = executorId;  m_connId= connId;}
         std::chrono::milliseconds GetTotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_submittedOn);}
         std::chrono::microseconds GetCpuTime() const { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_dequeuedOn) ;}
         QueryResponse::Ptr CreateErrorResponse(QueryResponse::Status status, std::string error) const;
@@ -309,8 +319,10 @@ struct RunnableRequestQueue final {
         std::atomic<State> m_state;
         uint32_t m_maxQueueSize;
         uint32_t m_nextId;
+        uint32_t m_lastDelayedQueryId;
         QueryQuota m_quota;
         std::vector<std::unique_ptr<RunnableRequestBase>> m_requests;
+        ECDbCR m_ecdb;
 
     private:
         void InsertSorted(ConnectionCache&,std::unique_ptr<RunnableRequestBase>&& request);
@@ -320,13 +332,14 @@ struct RunnableRequestQueue final {
         QueryQuota AdjustQuota(QueryQuota const& quota) const;
         void ExecuteSynchronously(ConnectionCache&, std::unique_ptr<RunnableRequestBase>);
     public:
-        explicit RunnableRequestQueue();
+        explicit RunnableRequestQueue(ECDbCR ecdb);
         ~RunnableRequestQueue() { Stop();}
         bool CancelRequest(uint32_t id);
         void SetRequestQueueMaxSize(uint32_t size);
         void SetMaxQuota(QueryQuota const&);
         bool Suspend();
         bool Resume();
+        ECDbCR GetECDb() const { return m_ecdb; }
         void RemoveIf (std::function<bool(RunnableRequestBase&)> predicate);
         State GetState() const { return m_state.load(); }
         QueryResponse::Future Enqueue(ConnectionCache&,QueryRequest::Ptr);
@@ -344,10 +357,9 @@ struct QueryExecutor final {
         ConnectionCache m_connCache;
         std::vector<std::thread> m_threads;
         uint32_t m_maxPoolSize;
-        std::atomic_int m_threadCount;
+        std::atomic<uint32_t> m_threadCount;
     public:
-        QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb,
-            uint32_t pool_size = ConcurrentQueryMgr::Config::GetInstance().GetWorkerThreadCount());
+        QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint32_t pool_size = 0);
         ~QueryExecutor();
         void SetWorkerPoolSize(uint32_t);
         ConnectionCache& GetConnectionCache() {return m_connCache; }
@@ -441,4 +453,24 @@ struct ConcurrentQueryAppData : Db::AppData {
         }
 };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ConcurrentQueryConfigAppData : Db::AppData {
+    private:
+        mutable ConcurrentQueryMgr::Config m_config;
+    public:
+        ConcurrentQueryConfigAppData(){
+            m_config = ConcurrentQueryMgr::Config::GetFromEnv();
+        }
+        static Db::AppData::Key& GetKey() {
+            static Db::AppData::Key s_key;
+            return s_key;
+        }
+        ConcurrentQueryMgr::Config const& GetConfig() const { return m_config; }
+        void SetConfig(ConcurrentQueryMgr::Config const& config) { m_config = config; }
+        static RefCountedPtr<ConcurrentQueryConfigAppData> Create() {
+            return new ConcurrentQueryConfigAppData();
+        }
+};
 END_BENTLEY_SQLITE_EC_NAMESPACE
