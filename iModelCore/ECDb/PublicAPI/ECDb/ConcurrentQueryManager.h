@@ -69,14 +69,16 @@ struct QueryRequest {
         static constexpr auto JKind = "kind";
         static constexpr auto JUsePrimaryConn = "usePrimaryConn";
         static constexpr auto JRestartToken = "restartToken";
+        static constexpr auto JDelay = "delay";
         QueryQuota m_quota;
         int32_t m_priority;
         Kind m_kind;
         bool m_usePrimaryConn;
         std::string m_restartToken;
+        std::chrono::milliseconds m_delay;
 
     public:
-        QueryRequest(Kind kind):m_usePrimaryConn(false), m_priority(0), m_kind(kind) {}
+        QueryRequest(Kind kind):m_usePrimaryConn(false), m_priority(0), m_kind(kind), m_delay(0u) {}
         virtual ~QueryRequest(){}
         ECDB_EXPORT QueryRequest(QueryRequest&&) noexcept;
         ECDB_EXPORT QueryRequest(const QueryRequest&) noexcept;
@@ -87,7 +89,9 @@ struct QueryRequest {
         QueryRequest& SetPriority(int32_t priority) noexcept { m_priority = priority;return *this;}
         QueryRequest& SetUsePrimaryConnection(bool usePrimary) { m_usePrimaryConn = usePrimary; return *this;}
         QueryRequest& SetRestartToken(std::string const& token) { m_restartToken = token; return *this;}
+        QueryRequest& SetDelay(std::chrono::milliseconds t) noexcept { m_delay = t; return *this;}
         bool UsePrimaryConnection() const noexcept {return m_usePrimaryConn;}
+        std::chrono::milliseconds GetDelay() const { return m_delay; }
         QueryQuota const& GetQuota() const noexcept {return m_quota;}
         std::string const& GetRestartToken() const { return m_restartToken; }
         int32_t GetPriority() const noexcept {return m_priority;}
@@ -519,11 +523,13 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JQueueSize = "requestQueueSize";
          static constexpr auto JIgnorePriority = "ignorePriority";
          static constexpr auto JQuota = "globalQuota";
+         static constexpr auto JIgnoreDelay = "ignoreDelay";
         private:
             QueryQuota m_quota;
             uint32_t m_workerThreadCount;
             uint32_t m_requestQueueSize;
             bool m_ignorePriority;
+            bool m_ignoreDelay;
             static Config From(std::string const& json);
         public:
             ECDB_EXPORT Config();
@@ -533,6 +539,8 @@ struct ConcurrentQueryMgr final {
             uint32_t GetWorkerThreadCount() const{ return m_workerThreadCount;}
             uint32_t GetRequestQueueSize() const{ return m_requestQueueSize;}
             bool GetIgnorePriority() const {return m_ignorePriority; }
+            bool GetIgnoreDelay() const {return m_ignoreDelay; }
+            Config& SetIgnoreDelay(bool ignoreDelay) { m_ignoreDelay = ignoreDelay; return *this; }
             Config& SetQuota(QueryQuota const& quota) { m_quota = quota; return *this; }
             Config& SetWorkerThreadCount(uint32_t workerThreadCount) { m_workerThreadCount = workerThreadCount; return *this;}
             Config& SetRequestQueueSize(uint32_t requestQueueSize) { m_requestQueueSize = requestQueueSize; return *this;}
@@ -540,8 +548,11 @@ struct ConcurrentQueryMgr final {
             bool IsDefault() const { return this == &Config::GetDefault() || Config::GetDefault().Equals(*this);}
             ECDB_EXPORT static Config const& GetDefault();
             ECDB_EXPORT static Config GetFromEnv();
-            ECDB_EXPORT static Config& GetInstance();
-    };    
+            //ECDB_EXPORT static Config& GetInstance();
+            ECDB_EXPORT static Config From(BeJsValue);
+            ECDB_EXPORT void To(BeJsValue) const;
+            void Reset() { *this = GetDefault(); }
+    };
     public:
         struct Impl; // prevent circular dependency on ECDb
     private:
@@ -564,6 +575,9 @@ struct ConcurrentQueryMgr final {
         ECDB_EXPORT void SetCacheStatementsPerWork(uint32_t);
         ECDB_EXPORT void SetMaxQuota(QueryQuota const&);
         ECDB_EXPORT static ConcurrentQueryMgr& GetInstance(ECDb const&);
+        ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
+        ECDB_EXPORT static Config const&  ResetConfig(ECDb const&, Config const&  config = Config::GetFromEnv());
+        ECDB_EXPORT static Config const& GetConfig(ECDb const&);
 };
 
 //=======================================================================================

@@ -682,3 +682,50 @@ TEST_F(SchemaVersionTestFixture, DomainUpgradeAutoUpgradesProfileVersion)
     SaveDb();
     CloseDb();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaVersionTestFixture, ModifyingDomainSchema)
+    {
+    DbResult result = BE_SQLITE_OK;
+
+    SetupSeedProject();
+    BeFileName fileName = m_db->GetFileName();
+    SaveDb();
+
+    SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
+
+    SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::No);
+
+    SaveDb();
+    BackupTestFile();
+
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    CloseDb();
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    CloseDb();
+
+    // Schema version 02.02.06 contains only one change where TestSchema schema is added as reference schema which is not already present in BIM
+    EXPECT_FALSE(m_db->Schemas().ContainsSchema("TestSchema"));
+
+    SchemaVersionTestDomain::GetDomain().SetVersion("02.02.06");
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Schema version 02.02.07 contains one new elements 
+    SchemaVersionTestDomain::GetDomain().SetVersion("02.02.07");
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    m_db->CloseDb();
+    }
