@@ -3787,7 +3787,9 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
     BeAssert(toDeleteCategoryName.IsValid());
     if (!toDeleteCategoryName.IsValid())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Old name of PropertyCategory to delete did not exist");
+        ctx.IgnoreIllegalDeletionsAndModifications() ? 
+            LOG.info("ECSchema Upgrade failed. ECSchema %s: Old name of PropertyCategory to delete did not exist") :
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Old name of PropertyCategory to delete did not exist");
         return false;
         }
 
@@ -3799,11 +3801,17 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
                 if (property->GetCategory() != nullptr &&
                     property->GetCategory()->GetName() == toDeleteCategoryName.Value())
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Cannot delete a PropertyCategory, %s, "
-                                        "which is still referenced in the schema by a property, %s.",
-                                        oldSchema.GetFullSchemaName().c_str(),
-                                        toDeleteCategoryName.Value().c_str(),
-                                        property->GetCategory()->GetName().c_str());
+                    ctx.IgnoreIllegalDeletionsAndModifications() ? 
+                        LOG.infov("ECSchema Upgrade failed. ECSchema %s: Cannot delete a PropertyCategory, %s, "
+                                            "which is still referenced in the schema by a property, %s.",
+                                            oldSchema.GetFullSchemaName().c_str(),
+                                            toDeleteCategoryName.Value().c_str(),
+                                            property->GetCategory()->GetName().c_str()) :
+                        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Cannot delete a PropertyCategory, %s, "
+                                            "which is still referenced in the schema by a property, %s.",
+                                            oldSchema.GetFullSchemaName().c_str(),
+                                            toDeleteCategoryName.Value().c_str(),
+                                            property->GetCategory()->GetName().c_str());
                     return true;
                     }
                 }
@@ -3849,15 +3857,13 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory (%s) from an ECSchema is not supported.",
-                                     oldSchema.GetFullSchemaName().c_str(), change.GetChangeName());
-                continue;
-                }
-
             if (!IsPropertyCategoryDeletionValid(ctx, change, oldSchema, newSchema))
+                {
+                if(ctx.IgnoreIllegalDeletionsAndModifications())
+                    continue;
+                    
                 return ERROR;
+                }
 
             if (!change.Name().GetOld().IsValid())
                 {
