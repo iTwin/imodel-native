@@ -475,7 +475,27 @@ void JsInterop::InitializeSolidKernel()
 NativeLogging::CategoryLogger JsInterop::GetNativeLogger() {
     return NativeLogging::CategoryLogger("imodeljs");
 }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, ECDbCR ecdb) {
+    auto outConf = Napi::Object::New(env);
+    ConcurrentQueryMgr::ResetConfig(ecdb).To(outConf);
+    return outConf;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, ECDbCR ecdb, Napi::Object configObj) {
+    if (configObj.IsObject()) {
+        auto outConf = Napi::Object::New(env);
+        BeJsValue inJsConf(configObj);
+        auto inConf = ConcurrentQueryMgr::Config::From(inJsConf);
+        ConcurrentQueryMgr::ResetConfig(ecdb, inConf).To(outConf);
+        return outConf;
+    }
+    return ConcurrentQueryResetConfig(env, ecdb);
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
