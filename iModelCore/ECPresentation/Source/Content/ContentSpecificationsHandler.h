@@ -141,12 +141,13 @@ struct RelatedPropertySpecificationPaths
     };
 
 private:
-    std::unique_ptr<FlattenedRelatedPropertiesSpecification> m_specification;
+    std::shared_ptr<FlattenedRelatedPropertiesSpecification> m_specification;
     bvector<Path> m_paths;
 public:
-    RelatedPropertySpecificationPaths(std::unique_ptr<FlattenedRelatedPropertiesSpecification> spec, bvector<Path> paths)
-        : m_specification(std::move(spec)), m_paths(paths)
+    RelatedPropertySpecificationPaths(std::shared_ptr<FlattenedRelatedPropertiesSpecification> spec, bvector<Path> paths)
+        : m_specification(spec), m_paths(paths)
         {}
+    std::shared_ptr<FlattenedRelatedPropertiesSpecification> GetSpecificationPtr() const {return m_specification;}
     FlattenedRelatedPropertiesSpecification const& GetSpecification() const {return *m_specification;}
     bvector<Path> const& GetPaths() const {return m_paths;}
 };
@@ -272,37 +273,65 @@ struct ContentSpecificationsHandler
     };
     typedef RefCountedPtr<PropertyAppender> PropertyAppenderPtr;
 
+    /*=================================================================================**//**
+    * @bsiclass
+    +===============+===============+===============+===============+===============+======*/
+    struct RelatedInstancePathsCache : bvector<std::pair<ECClassCP, bmap<Utf8String, bvector<RelatedClassPath>>>>
+        {
+        bmap<Utf8String, bvector<RelatedClassPath>> const& GetPathsForSelectClass(ECClassCR selectClass) const
+            {
+            for (auto const& cacheEntry : *this)
+                {
+                if (selectClass.Is(cacheEntry.first))
+                    return cacheEntry.second;
+                }
+            static bmap<Utf8String, bvector<RelatedClassPath>> s_empty;
+            return s_empty;
+            }
+        bvector<RelatedClassPath> GetMergedPathsForSelectClass(ECClassCR selectClass) const
+            {
+            bvector<RelatedClassPath> merged;
+            for (auto const& entry : GetPathsForSelectClass(selectClass))
+                ContainerHelpers::Push(merged, entry.second);
+            return merged;
+            }
+        };
+
     struct AppendRelatedPropertiesParams;
+    typedef bvector<std::pair<ECClassCP, bvector<std::shared_ptr<RelatedPropertySpecificationPaths>>>> RelatedPropertyPathsCache;
 
 private:
     Context& m_context;
-    mutable bvector<RuleApplicationInfo> const* m_customizationRuleInfos;
 
 private:
-    void AppendContent(ContentSource const&, ContentSpecificationCR, IParsedInput const*, Utf8StringCR instanceFilter, RecursiveQueryInfo const*);
+    void AppendContent(ContentSource const&, ContentSpecificationCR, IParsedInput const*, Utf8StringCR instanceFilter, RecursiveQueryInfo const*, RelatedPropertyPathsCache const*);
     PropertyAppendResult AppendRelatedProperties(PropertySpecificationsList const&, PropertyAppender&, ECClassCR propertiesClass, Utf8StringCR propertiesClassAlias);
     bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertiesParams const&);
-    bvector<RuleApplicationInfo> const& GetCustomizationRuleInfos() const;
+    bvector<RuleApplicationInfo> CreateCustomizationRuleInfos(ContentSpecificationCR) const;
 
 protected:
     ECPRESENTATION_EXPORT virtual int _GetContentFlags(ContentSpecificationCR) const;
     virtual PropertyAppenderPtr _CreatePropertyAppender(std::unordered_set<ECClassCP> const& actualSourceClasses, RelatedClassPathCR pathFromSelectToPropertyClass, ECClassCR propertyClass,
         bvector<RelatedPropertiesSpecification const*> const& relatedPropertyStack, PropertyCategorySpecificationsList const*) = 0;
-    virtual bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const&) const;
+    virtual std::unique_ptr<RelatedPropertyPathsCache> _CreateRelatedPropertyPathsCache(bvector<SelectClassWithExcludes<ECClass>> const&, ContentInstancesOfSpecificClassesSpecificationCR, RelatedInstancePathsCache const&) const;
+    virtual RelatedInstancePathsCache _CreateRelatedInstancePathsCache(bvector<SelectClassWithExcludes<ECClass>> const&, ContentSpecificationCR) const;
+    virtual bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const&) const;
     virtual void _AppendClass(SelectClassInfo const&) = 0;
     virtual PropertyAppendResult _OnPropertiesAppended(PropertyAppender&, ECClassCR, Utf8StringCR) {return PropertyAppendResult(false);}
     virtual void _OnContentAppended() {}
-    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<SelectClassWithExcludes<ECClass>> const&, ContentSpecificationCR);
-    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const&, ContentSpecificationCR);
-    bvector<ContentSource> CreateContentSources(SelectClassWithExcludes<ECClass> const& selectClass, ECClassCP propertiesSourceClass, ContentSpecificationCR) const;
-    bvector<ContentSource> CreateContentSources(RelatedClassPath const& pathFromInputToSelectClass, ContentSpecificationCR) const;
+    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<SelectClassWithExcludes<ECClass>> const&, RelatedInstancePathsCache const&, bvector<RuleApplicationInfo> const&);
+    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const&, RelatedInstancePathsCache const&, bvector<RuleApplicationInfo> const&);
+    bvector<ContentSource> CreateContentSources(SelectClassWithExcludes<ECClass> const& selectClass, ECClassCP propertiesSourceClass, RelatedInstancePathsCache const&) const;
+    bvector<ContentSource> CreateContentSources(RelatedClassPath const& pathFromInputToSelectClass, RelatedInstancePathsCache const&) const;
     PropertyAppendResult AppendProperty(PropertyAppender&, ECPropertyCR, Utf8CP alias, PropertySpecificationsList const& overrides);
+    bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> GetRelatedPropertySpecifications(SelectClass<ECClass> const&,
+        RelatedPropertiesSpecificationList const&, PropertyCategorySpecificationsList const&, bool) const;
     static int GetDefaultContentFlags(Utf8CP displayType, ContentSpecificationCR spec);
 
 protected:
-    ContentSpecificationsHandler(Context& context) : m_context(context), m_customizationRuleInfos(nullptr) {}
-    ContentSpecificationsHandler(ContentSpecificationsHandler const& other) : m_context(other.m_context), m_customizationRuleInfos(nullptr) {}
-    virtual ~ContentSpecificationsHandler() {DELETE_AND_CLEAR(m_customizationRuleInfos);}
+    ContentSpecificationsHandler(Context& context) : m_context(context) {}
+    ContentSpecificationsHandler(ContentSpecificationsHandler const& other) : m_context(other.m_context) {}
+    virtual ~ContentSpecificationsHandler() {}
     Context& GetContext() {return m_context;}
     Context const& GetContext() const {return m_context;}
     ECPRESENTATION_EXPORT void HandleSpecification(SelectedNodeInstancesSpecificationCR, IParsedInput const&);

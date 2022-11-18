@@ -421,7 +421,7 @@ protected:
         RelatedClass pathFromPropertyClassToNavigationPropertyTargetClass;
         if (ecProperty.GetIsNavigation())
             {
-            // note: pathFromPropertyClassToNavigationPropertyTargetClass need to be declared outside this scope, because 
+            // note: pathFromPropertyClassToNavigationPropertyTargetClass need to be declared outside this scope, because
             // we're using its target class alias
             pathFromPropertyClassToNavigationPropertyTargetClass = m_context.GetSchemaHelper().GetForeignKeyClass(ecProperty);
             pathFromPropertyClassToNavigationPropertyTargetClass.GetTargetClass().SetAlias(m_context.CreateNavigationClassAlias(pathFromPropertyClassToNavigationPropertyTargetClass.GetTargetClass().GetClass()));
@@ -1171,11 +1171,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const& params) const override
+    bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const& params) const override
         {
         if (ShouldCreateFields(*m_descriptor))
             return ContentSpecificationsHandler::_GetRelatedPropertyPaths(params);
-        return bvector<std::unique_ptr<RelatedPropertySpecificationPaths>>();
+        return bvector<std::shared_ptr<RelatedPropertySpecificationPaths>>();
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1250,7 +1250,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const& paths, ContentSpecificationCR spec) override
+    bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const& paths, RelatedInstancePathsCache const& relatedInstancePaths, bvector<RuleApplicationInfo> const& customizationRules) override
         {
         if (m_isRecursiveSpecification)
             {
@@ -1258,11 +1258,11 @@ protected:
             // derived paths based on content modifiers. Don't do that for recursive selects.
             bvector<ContentSource> sources;
             for (RelatedClassPathCR path : paths)
-                ContainerHelpers::Push(sources, CreateContentSources(path, spec));
+                ContainerHelpers::Push(sources, CreateContentSources(path, relatedInstancePaths));
             return sources;
             }
 
-        return ContentSpecificationsHandler::_BuildContentSource(paths, spec);
+        return ContentSpecificationsHandler::_BuildContentSource(paths, relatedInstancePaths, customizationRules);
         }
 
     /*---------------------------------------------------------------------------------**//**

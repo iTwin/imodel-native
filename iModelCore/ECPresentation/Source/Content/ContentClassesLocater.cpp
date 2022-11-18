@@ -235,40 +235,24 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const& params) const override
+    std::unique_ptr<RelatedPropertyPathsCache> _CreateRelatedPropertyPathsCache(bvector<SelectClassWithExcludes<ECClass>> const&, ContentInstancesOfSpecificClassesSpecificationCR, RelatedInstancePathsCache const&) const override
+        {
+        return nullptr;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const& params) const override
         {
         auto const& propertyClass = params.GetSourceClassInfo().GetSelectClass();
 
         // first build a flat list of all related properties specifications
-        auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(params.GetRelatedPropertySpecs(), RelatedPropertiesSpecificationScopeInfo(params.GetScopeCategorySpecifications()));
-        for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
-            {
-            if (modifier->GetRelatedProperties().empty())
-                {
-                // only interested in the ones with related property specs
-                continue;
-                }
-
-            ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (modifierClass == nullptr)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Content modifier %s specifies non-existing class: %s.%s.",
-                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
-                continue;
-                }
-
-            bool propertyClassMatchesModifierClass = propertyClass.GetClass().Is(modifierClass);
-            bool modifierClassMatchesPropertyClass = propertyClass.IsSelectPolymorphic() && modifierClass->Is(&propertyClass.GetClass());
-            if (propertyClassMatchesModifierClass || modifierClassMatchesPropertyClass)
-                {
-                DiagnosticsHelpers::ReportRule(*modifier);
-                ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
-                }
-            }
+        auto flatSpecs = GetRelatedPropertySpecifications(params.GetSourceClassInfo().GetSelectClass(), params.GetRelatedPropertySpecs(), params.GetScopeCategorySpecifications(), true);
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
-        // finally, build the response
-        return ContainerHelpers::MoveTransformContainer<bvector<std::unique_ptr<RelatedPropertySpecificationPaths>>>(flatSpecs, [this, &propertyClass](auto&& spec)
+        // then, build the response
+        return ContainerHelpers::MoveTransformContainer<bvector<std::shared_ptr<RelatedPropertySpecificationPaths>>>(flatSpecs, [this, &propertyClass](auto&& spec)
             {
             bvector<RelatedClassPath> paths;
             auto propertiesSource = spec->GetFlattened().GetPropertiesSource();
@@ -306,7 +290,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ContentSource> _BuildContentSource(bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, ContentSpecificationCR spec) override
+    bvector<ContentSource> _BuildContentSource(bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, RelatedInstancePathsCache const&, bvector<RuleApplicationInfo> const&) override
         {
         return ContainerHelpers::TransformContainer<bvector<ContentSource>>(selectClasses, [](auto const& sc)
             {
@@ -318,7 +302,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const& paths, ContentSpecificationCR spec) override
+    bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const& paths, RelatedInstancePathsCache const&, bvector<RuleApplicationInfo> const&) override
         {
         return ContainerHelpers::TransformContainer<bvector<ContentSource>>(paths, [](auto const& path)
             {

@@ -175,8 +175,8 @@ bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FlattenedRelat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(ContentSpecificationsHandler::Context const& context, SelectClassWithExcludes<ECClass> const& sourceClass,
-    InstanceFilteringParams const& contentInstanceFilteringParams, bvector<RelatedClassPath> const& relatedInstancePaths, bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& relatedPropertyAppendInfos)
+static bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> FindRelatedPropertyPaths(ContentSpecificationsHandler::Context const& context, SelectClassWithExcludes<ECClass> const& sourceClass,
+    InstanceFilteringParams const& contentInstanceFilteringParams, bvector<RelatedClassPath> const& relatedInstancePaths, bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&& relatedPropertyAppendInfos)
     {
     // transform property specs to path specs
     bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs;
@@ -220,40 +220,166 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
     // find all paths that match each spec (associated by index)
     auto countTargets = !(context.GetContentFlagsCalculator()(0) & (int)ContentFlags::DescriptorOnly);
     ECSchemaHelper::RelationshipPathsRequestParams params(sourceClass, pathSpecs, &contentInstanceFilteringParams, relatedInstancePaths, context.GetRelationshipUseCounts(), countTargets);
-    return context.GetSchemaHelper().GetRelationshipPaths(params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecificationsHandler::_GetRelatedPropertyPaths(RelatedPropertyPathsParams const& params) const
-    {
-    // first build a flat list of all related properties specifications
-    auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(params.GetRelatedPropertySpecs(), RelatedPropertiesSpecificationScopeInfo(params.GetScopeCategorySpecifications()));
-    for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
-        {
-        if (params.GetSourceClassInfo().GetSelectClass().GetClass().Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
-            {
-            DiagnosticsHelpers::ReportRule(*modifier);
-            ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
-            }
-        }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
-
-    // then determine actual related class paths for every specification
-    auto paths = FindRelatedPropertyPaths(GetContext(), params.GetSourceClassInfo().GetSelectClass(), params.GetInstanceFilteringParams(), params.GetSourceClassInfo().GetRelatedInstancePaths(), flatSpecs);
+    auto paths = context.GetSchemaHelper().GetRelationshipPaths(params);
 
     // finally, build the response
-    bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> result;
-    for (size_t i = 0; i < flatSpecs.size(); ++i)
+    bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> result;
+    for (size_t i = 0; i < relatedPropertyAppendInfos.size(); ++i)
         {
         auto thisPaths = ContainerHelpers::MoveTransformContainer<bvector<RelatedPropertySpecificationPaths::Path>>(paths.GetPaths(i), [](auto&& p)
             {
             return RelatedPropertySpecificationPaths::Path(std::move(p.m_path), std::move(p.m_actualSourceClasses));
             });
-        result.push_back(std::make_unique<RelatedPropertySpecificationPaths>(std::move(flatSpecs[i]), std::move(thisPaths)));
+        result.push_back(std::make_unique<RelatedPropertySpecificationPaths>(std::move(relatedPropertyAppendInfos[i]), std::move(thisPaths)));
         }
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Creates related properties paths' cache for given content specification. Note that only
+* `ContentInstancesOfSpecificClassesSpecification` is supported - that's because it's the only
+* specification that doesn't depend on input keys. When input keys are involved, creating the
+* cache looses its benefits.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<ContentSpecificationsHandler::RelatedPropertyPathsCache> ContentSpecificationsHandler::_CreateRelatedPropertyPathsCache(
+    bvector<SelectClassWithExcludes<ECClass>> const& selectClasses,
+    ContentInstancesOfSpecificClassesSpecificationCR specification,
+    RelatedInstancePathsCache const& relatedInstancePaths
+) const
+    {
+    // don't create the cache if we only want keys or specifically don't want any fields
+    if (0 != (_GetContentFlags(specification) & (ENUM_FLAG(ContentFlags::KeysOnly) | ENUM_FLAG(ContentFlags::NoFields))))
+        return nullptr;
+
+    // find specs that apply for given content specification
+    auto relatedPropertySpecsFromContentSpecification = FlattenedRelatedPropertiesSpecification::Create(specification.GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(specification.GetPropertyCategories()));
+
+    // find specs from content modifiers that apply for given select classes
+    bvector<std::pair<ECClassCP, bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>>> relatedPropertySpecsFromModifiers;
+    for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
+        {
+        if (modifier->GetRelatedProperties().empty())
+            {
+            // only interested in the ones with related property specs
+            continue;
+            }
+
+        ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
+        if (modifierClass == nullptr)
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Content modifier %s specifies non-existing class: %s.%s.",
+                DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str(), modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
+            continue;
+            }
+
+        bool doesModifierApply =
+            // handle situation where we select from derived class and the modifier is for its base class
+            ContainerHelpers::Contains(selectClasses, [&](auto const& selectClass){return selectClass.GetClass().Is(modifierClass);})
+            // handle situation where we select from base class polymorphically and the modifier is for derived class
+            || ContainerHelpers::Contains(selectClasses, [&](auto const& selectClass){return selectClass.IsSelectPolymorphic() && modifierClass->Is(&selectClass.GetClass());});
+        if (!doesModifierApply)
+            continue;
+
+        auto specs = FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories()));
+        auto iter = std::find_if(relatedPropertySpecsFromModifiers.begin(), relatedPropertySpecsFromModifiers.end(), [&modifierClass](auto const& pair){return pair.first == modifierClass;});
+        if (iter != relatedPropertySpecsFromModifiers.end())
+            ContainerHelpers::MovePush(iter->second, std::move(specs));
+        else
+            relatedPropertySpecsFromModifiers.push_back(std::make_pair(modifierClass, std::move(specs)));
+        }
+
+    // find actual paths
+    auto relatedPropertyPaths = std::make_unique<RelatedPropertyPathsCache>();
+    auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(GetContext());
+    InstanceFilteringParams filteringParams(GetContext().GetSchemaHelper().GetECExpressionsCache(), filteringExpressionContext.get(), specification.GetInstanceFilter().c_str(), nullptr);
+
+    // handle related property specs from content specification
+    bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> contentSpecificationRelatedPropertyPaths;
+    for (auto const& selectClass : selectClasses)
+        {
+        ContainerHelpers::MovePush(contentSpecificationRelatedPropertyPaths, FindRelatedPropertyPaths(GetContext(), selectClass,
+            filteringParams, relatedInstancePaths.GetMergedPathsForSelectClass(selectClass.GetClass()), std::move(relatedPropertySpecsFromContentSpecification)));
+        }
+    relatedPropertyPaths->push_back(std::make_pair(nullptr, std::move(contentSpecificationRelatedPropertyPaths)));
+
+    // handle related property specs from content modifiers
+    for (auto& entry : relatedPropertySpecsFromModifiers)
+        {
+        bool wasHandled = false;
+        for (auto const& selectClass : selectClasses)
+            {
+            if (!selectClass.GetClass().Is(entry.first))
+                continue;
+
+            relatedPropertyPaths->push_back(std::make_pair(&selectClass.GetClass(), FindRelatedPropertyPaths(GetContext(), selectClass,
+                filteringParams, relatedInstancePaths.GetMergedPathsForSelectClass(selectClass.GetClass()), std::move(entry.second))));
+            wasHandled = true;
+            }
+        if (!wasHandled)
+            {
+            SelectClass<ECClass> selectClass(*entry.first, "this", true);
+            relatedPropertyPaths->push_back(std::make_pair(&selectClass.GetClass(), FindRelatedPropertyPaths(GetContext(), selectClass,
+                filteringParams, relatedInstancePaths.GetMergedPathsForSelectClass(selectClass.GetClass()), std::move(entry.second))));
+            }
+        }
+
+    return relatedPropertyPaths;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> ContentSpecificationsHandler::GetRelatedPropertySpecifications(
+    SelectClass<ECClass> const& propertyClass,
+    RelatedPropertiesSpecificationList const& relatedPropertySpecs,
+    PropertyCategorySpecificationsList const& scopeCategorySpecifications,
+    bool includeSubclassModifiers
+) const
+    {
+    // first, handle related property specs specified in the content specification
+    auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(relatedPropertySpecs, RelatedPropertiesSpecificationScopeInfo(scopeCategorySpecifications));
+
+    // then, look at content modifiers
+    for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
+        {
+        if (modifier->GetRelatedProperties().empty())
+            {
+            // only interested in the ones with related property specs
+            continue;
+            }
+
+        ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
+        if (modifierClass == nullptr)
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Content modifier %s specifies non-existing class: %s.%s.",
+                DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str(), modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
+            continue;
+            }
+
+        bool propertyClassMatchesModifierClass = propertyClass.GetClass().Is(modifierClass);
+        bool modifierClassMatchesPropertyClass = includeSubclassModifiers && propertyClass.IsSelectPolymorphic() && modifierClass->Is(&propertyClass.GetClass());
+        if (propertyClassMatchesModifierClass || modifierClassMatchesPropertyClass)
+            {
+            DiagnosticsHelpers::ReportRule(*modifier);
+            ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
+            }
+        }
+
+    return flatSpecs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> ContentSpecificationsHandler::_GetRelatedPropertyPaths(RelatedPropertyPathsParams const& params) const
+    {
+    auto flatSpecs = GetRelatedPropertySpecifications(params.GetSourceClassInfo().GetSelectClass(), params.GetRelatedPropertySpecs(), params.GetScopeCategorySpecifications(), false);
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
+
+    // then determine actual related class paths for every specification
+    return FindRelatedPropertyPaths(GetContext(), params.GetSourceClassInfo().GetSelectClass(), params.GetInstanceFilteringParams(),
+        params.GetSourceClassInfo().GetRelatedInstancePaths(), std::move(flatSpecs));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,21 +463,22 @@ private:
     IParsedInput const* m_specificationInput;
     Utf8StringCR m_inputInstanceFilter;
     RecursiveQueryInfo const* m_recursiveFilteringInfo;
-    RelatedPropertiesSpecificationList const& m_relatedPropertySpecs;
-    PropertyCategorySpecificationsList const& m_scopeCategorySpecifications;
+    ContentSpecification const& m_specification;
+    RelatedPropertyPathsCache const* m_relatedPropertyPathsCache;
 public:
     AppendRelatedPropertiesParams(SelectClassInfo const& sourceClassInfo,  IParsedInput const* specificationInput,
         Utf8StringCR inputInstanceFilter, RecursiveQueryInfo const* recursiveFilteringInfo,
-        RelatedPropertiesSpecificationList const& specs, PropertyCategorySpecificationsList const& scopeCategorySpecifications)
-        : m_sourceClassInfo(sourceClassInfo), m_relatedPropertySpecs(specs), m_scopeCategorySpecifications(scopeCategorySpecifications),
-        m_specificationInput(specificationInput), m_inputInstanceFilter(inputInstanceFilter), m_recursiveFilteringInfo(recursiveFilteringInfo)
+        ContentSpecification const& contentSpecification, RelatedPropertyPathsCache const* relatedPropertyPathsCache)
+        : m_sourceClassInfo(sourceClassInfo), m_specification(contentSpecification),
+        m_specificationInput(specificationInput), m_inputInstanceFilter(inputInstanceFilter), m_recursiveFilteringInfo(recursiveFilteringInfo),
+        m_relatedPropertyPathsCache(relatedPropertyPathsCache)
         {}
     SelectClassInfo const& GetSourceClassInfo() const {return m_sourceClassInfo;}
     IParsedInput const* GetSpecificationInput() const {return m_specificationInput;}
     Utf8StringCR GetInputInstanceFilter() const {return m_inputInstanceFilter;}
     RecursiveQueryInfo const* GetRecursiveFilteringInfo() const {return m_recursiveFilteringInfo;}
-    RelatedPropertiesSpecificationList const& GetRelatedPropertySpecs() const {return m_relatedPropertySpecs;}
-    PropertyCategorySpecificationsList const& GetScopeCategorySpecifications() const {return m_scopeCategorySpecifications;}
+    ContentSpecification const& GetSpecification() const {return m_specification;}
+    RelatedPropertyPathsCache const* GetRelatedPropertyPathsCache() const {return m_relatedPropertyPathsCache;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -361,22 +488,53 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
     {
     auto relatedPropertiesScope = Diagnostics::Scope::Create("Appending related properties");
 
-    std::unique_ptr<InputFilteringParams> inputFilteringParams;
-    if (params.GetSpecificationInput())
+    bvector<std::shared_ptr<RelatedPropertySpecificationPaths>> specPathsList;
+    if (params.GetRelatedPropertyPathsCache())
         {
-        inputFilteringParams = QueryBuilderHelpers::CreateInputFilter(GetContext().GetConnection(), params.GetSourceClassInfo(), params.GetRecursiveFilteringInfo(), *params.GetSpecificationInput());
-        if (!inputFilteringParams)
+        auto const& selectClass = params.GetSourceClassInfo().GetSelectClass();
+        for (auto const& cacheEntry : *params.GetRelatedPropertyPathsCache())
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Input filter results in no content. No need to handle related properties.");
-            return bvector<RelatedClassPath>();
+            // - nullptr ECClass in cache entry means the paths are based on content specification (always apply)
+            // - we want to always use the paths if select class derives from cache entry class
+            // - we want to use the paths if select is polymorphic and cache entry class derives from select class
+            if (nullptr == cacheEntry.first || selectClass.GetClass().Is(cacheEntry.first) || selectClass.IsSelectPolymorphic() && cacheEntry.first->Is(&selectClass.GetClass()))
+                {
+                for (auto const& pathsEntry : cacheEntry.second)
+                    {
+                    bvector<RelatedPropertySpecificationPaths::Path> pathsForThisSelectClass;
+                    for (auto const& path : pathsEntry->GetPaths())
+                        {
+                        auto pathClass = ContainerHelpers::FindFirst<ECClassCP>(path.GetActualSourceClasses(), [&](ECClassCP pathClass){return pathClass->Is(&selectClass.GetClass());}, nullptr);
+                        if (nullptr != pathClass)
+                            {
+                            RelatedPropertySpecificationPaths::Path copy(path);
+                            if (!copy.front().GetSourceClass()->Is(&selectClass.GetClass()))
+                                copy.front().SetSourceClass(selectClass.GetClass());
+                            pathsForThisSelectClass.push_back(copy);
+                            }
+                        }
+                    if (!pathsForThisSelectClass.empty())
+                        specPathsList.push_back(std::make_unique<RelatedPropertySpecificationPaths>(pathsEntry->GetSpecificationPtr(), pathsForThisSelectClass));
+                    }
+                }
             }
         }
-
-    auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(GetContext());
-    InstanceFilteringParams filteringParams(GetContext().GetSchemaHelper().GetECExpressionsCache(), filteringExpressionContext.get(), params.GetInputInstanceFilter().c_str(), inputFilteringParams.get());
-
-    bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> specPathsList = _GetRelatedPropertyPaths(RelatedPropertyPathsParams(params.GetSourceClassInfo(),
-        filteringParams, params.GetRelatedPropertySpecs(), params.GetScopeCategorySpecifications()));
+    else
+        {
+        std::unique_ptr<InputFilteringParams> inputFilteringParams;
+        if (params.GetSpecificationInput())
+            {
+            inputFilteringParams = QueryBuilderHelpers::CreateInputFilter(GetContext().GetConnection(), params.GetSourceClassInfo(), params.GetRecursiveFilteringInfo(), *params.GetSpecificationInput());
+            if (!inputFilteringParams)
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Input filter results in no content. No need to handle related properties.");
+                return bvector<RelatedClassPath>();
+                }
+            }
+        auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(GetContext());
+        InstanceFilteringParams filteringParams(GetContext().GetSchemaHelper().GetECExpressionsCache(), filteringExpressionContext.get(), params.GetInputInstanceFilter().c_str(), inputFilteringParams.get());
+        specPathsList = _GetRelatedPropertyPaths(RelatedPropertyPathsParams(params.GetSourceClassInfo(), filteringParams, params.GetSpecification().GetRelatedProperties(), params.GetSpecification().GetPropertyCategories()));
+        }
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " related property paths", (uint64_t)specPathsList.size()));
     ThrowIfCancelled(m_context.GetCancellationToken());
 
@@ -695,7 +853,7 @@ static bvector<ContentSource> FilterContentSourcesWithInstances(bvector<ContentS
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSource, ContentSpecificationCR spec, IParsedInput const* specificationInput,
-    Utf8StringCR instanceFilter, RecursiveQueryInfo const* recursiveFilteringInfo)
+    Utf8StringCR instanceFilter, RecursiveQueryInfo const* recursiveFilteringInfo, RelatedPropertyPathsCache const* relatedPropertyPathsCache)
     {
     SelectClass<ECClass> const& selectClass = contentSource.GetSelectClass();
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Append content for `%s`", selectClass.GetClass().GetFullName()));
@@ -728,7 +886,7 @@ void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSou
     selectInfo.SetNavigationPropertyClasses(GetContext().GetNavigationPropertiesPaths(selectClass.GetClass()));
     selectInfo.SetRelatedInstancePaths(contentSource.GetPathsFromSelectToRelatedInstanceClasses());
     selectInfo.SetRelatedPropertyPaths(AppendRelatedProperties(AppendRelatedPropertiesParams(selectInfo,
-        specificationInput, instanceFilter, recursiveFilteringInfo, spec.GetRelatedProperties(), spec.GetPropertyCategories())));
+        specificationInput, instanceFilter, recursiveFilteringInfo, spec, relatedPropertyPathsCache)));
 
     _AppendClass(selectInfo);
     }
@@ -799,31 +957,39 @@ static bool IsECClassAccepted(SelectedNodeInstancesSpecificationCR specification
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizationRuleInfos() const
+bvector<RuleApplicationInfo> ContentSpecificationsHandler::CreateCustomizationRuleInfos(ContentSpecificationCR specification) const
     {
-    if (nullptr == m_customizationRuleInfos)
+    bvector<RuleApplicationInfo> infos;
+
+    auto contentFlags = _GetContentFlags(specification);
+    if (0 != (contentFlags & (ENUM_FLAG(ContentFlags::KeysOnly) | ENUM_FLAG(ContentFlags::NoFields))))
+        return infos;
+
+    for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
         {
-        auto infos = new bvector<RuleApplicationInfo>();
-        for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
+        ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
+        if (nullptr == ecClass)
             {
-            ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (nullptr == ecClass)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in ContentModifier rule was not found", modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str())); // TODO: rule ref
-                continue;
-                }
-            infos->push_back(RuleApplicationInfo(*ecClass, true));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in ContentModifier rule was not found", modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str())); // TODO: rule ref
+            continue;
             }
-        for (InstanceLabelOverrideCP labelOverride : GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides())
+        infos.push_back(RuleApplicationInfo(*ecClass, true));
+        }
+
+    for (InstanceLabelOverrideCP labelOverride : GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides())
+        {
+        ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(labelOverride->GetClassName().c_str());
+        if (nullptr == ecClass)
             {
-            ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(labelOverride->GetClassName().c_str());
-            if (nullptr == ecClass)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in InstanceLabelOverride rule was not found", labelOverride->GetClassName().c_str())); // TODO: rule ref
-                continue;
-                }
-            infos->push_back(RuleApplicationInfo(*ecClass, true));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in InstanceLabelOverride rule was not found", labelOverride->GetClassName().c_str())); // TODO: rule ref
+            continue;
             }
+        infos.push_back(RuleApplicationInfo(*ecClass, true));
+        }
+
+    if (0 == (contentFlags & ENUM_FLAG(ContentFlags::DescriptorOnly)))
+        {
+        // don't care about sorting rules if we're not going to request content
         for (SortingRuleCP sortingRule : GetContext().GetRulesPreprocessor().GetSortingRules())
             {
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str());
@@ -832,11 +998,61 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
                 DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in sorting rule was not found", sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str())); // TODO: rule ref
                 continue;
                 }
-            infos->push_back(RuleApplicationInfo(*ecClass, sortingRule->GetIsPolymorphic()));
+            infos.push_back(RuleApplicationInfo(*ecClass, sortingRule->GetIsPolymorphic()));
             }
-        m_customizationRuleInfos = infos;
         }
-    return *m_customizationRuleInfos;
+
+    return infos;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECClassCR GetRootBaseClass(ECClassCR ecClass)
+    {
+    ECClassCP base = &ecClass;
+    while (true)
+        {
+        bool didChange = false;
+        for (auto const& curr : base->GetBaseClasses())
+            {
+            if (curr->IsEntityClass())
+                {
+                base = curr;
+                didChange = true;
+                break;
+                }
+            }
+        if (!didChange)
+            break;
+        }
+    return *base;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentSpecificationsHandler::RelatedInstancePathsCache ContentSpecificationsHandler::_CreateRelatedInstancePathsCache(
+    bvector<SelectClassWithExcludes<ECClass>> const& selectClasses,
+    ContentSpecificationCR contentSpecification
+) const
+    {
+    bvector<ECClassCP> baseClasses;
+    for (auto const& selectClass : selectClasses)
+        {
+        ECClassCR base = GetRootBaseClass(selectClass.GetClass());
+        if (!ContainerHelpers::Contains(baseClasses, &base))
+            baseClasses.push_back(&base);
+        }
+
+    RelatedInstancePathsCache cache;
+    for (auto const& selectClass : baseClasses)
+        {
+        bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = GetContext().GetSchemaHelper().GetRelatedInstancePaths(
+            *selectClass, contentSpecification.GetRelatedInstances(), GetContext().GetRelationshipUseCounts());
+        cache.push_back(std::make_pair(selectClass, relatedInstancePaths));
+        }
+    return cache;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -844,6 +1060,9 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void JoinRelatedInstancePaths(bvector<ContentSource>& sources, bvector<RelatedClassPath> const& pathsFromSelectToRelatedInstanceClass)
     {
+    if (pathsFromSelectToRelatedInstanceClass.empty())
+        return;
+
     bvector<ContentSource> newSources;
     for (ContentSource const& source : sources)
         {
@@ -860,18 +1079,16 @@ static void JoinRelatedInstancePaths(bvector<ContentSource>& sources, bvector<Re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<ContentSource> CreateContentSourcesWithRelatedInstancePaths(ContentSource const& source,
-    RelatedInstanceSpecificationList const& relatedInstanceSpecs, ContentSpecificationsHandler::Context const& context)
+static bvector<ContentSource> CreateContentSourcesWithRelatedInstancePaths(ContentSource const& source, ContentSpecificationsHandler::RelatedInstancePathsCache const& relatedInstancePaths)
     {
     bvector<ContentSource> sources = {source};
-    bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = context.GetSchemaHelper().GetRelatedInstancePaths(
-        source.GetSelectClass().GetClass(), relatedInstanceSpecs, context.GetRelationshipUseCounts());
-    for (auto const& relatedInstancePathEntry : relatedInstancePaths)
+    auto const& pathsForThisSource = relatedInstancePaths.GetPathsForSelectClass(source.GetSelectClass().GetClass());
+    for (auto const& entry : pathsForThisSource)
         {
         // note: if a single related instance specification results in more than one path, we have to
         // multiply content sources to avoid having multiple paths based on the same specification being
         // assigned to the same content source
-        JoinRelatedInstancePaths(sources, relatedInstancePathEntry.second);
+        JoinRelatedInstancePaths(sources, entry.second);
         }
     return sources;
     }
@@ -879,33 +1096,23 @@ static bvector<ContentSource> CreateContentSourcesWithRelatedInstancePaths(Conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ContentSource> ContentSpecificationsHandler::CreateContentSources(SelectClassWithExcludes<ECClass> const& selectClass, ECClassCP propertiesSourceClass, ContentSpecificationCR spec) const
+bvector<ContentSource> ContentSpecificationsHandler::CreateContentSources(SelectClassWithExcludes<ECClass> const& selectClass, ECClassCP propertiesSourceClass, RelatedInstancePathsCache const& relatedInstancePaths) const
     {
-    return CreateContentSourcesWithRelatedInstancePaths(ContentSource(selectClass, propertiesSourceClass),
-        spec.GetRelatedInstances(), GetContext());
+    return CreateContentSourcesWithRelatedInstancePaths(ContentSource(selectClass, propertiesSourceClass), relatedInstancePaths);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool ShouldSplitOnDerivedClasses(int flags)
-    {
-    return 0 == ((int)ContentFlags::KeysOnly & flags);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ContentSource> ContentSpecificationsHandler::_BuildContentSource(bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, ContentSpecificationCR spec)
+bvector<ContentSource> ContentSpecificationsHandler::_BuildContentSource(bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, RelatedInstancePathsCache const& relatedInstancePaths, bvector<RuleApplicationInfo> const& customizationRules)
     {
     bvector<ContentSource> sources;
     bvector<SelectClassSplitResult> splitResults = QueryBuilderHelpers::ProcessSelectClassesBasedOnCustomizationRules(selectClasses,
-        ShouldSplitOnDerivedClasses(_GetContentFlags(spec)) ? GetCustomizationRuleInfos() : bvector<RuleApplicationInfo>(),
-        GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
+        customizationRules, GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
     for (SelectClassSplitResult const& split : splitResults)
         {
         ECClassCP propertiesSourceClass = split.GetSplitPath().empty() ? nullptr : &split.GetSplitPath().front().GetClass();
-        ContainerHelpers::Push(sources, CreateContentSources(split.GetSelectClass(), propertiesSourceClass, spec));
+        ContainerHelpers::Push(sources, CreateContentSources(split.GetSelectClass(), propertiesSourceClass, relatedInstancePaths));
         }
     return sources;
     }
@@ -913,27 +1120,26 @@ bvector<ContentSource> ContentSpecificationsHandler::_BuildContentSource(bvector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ContentSource> ContentSpecificationsHandler::CreateContentSources(RelatedClassPath const& pathFromInputToSelectClass, ContentSpecificationCR spec) const
+bvector<ContentSource> ContentSpecificationsHandler::CreateContentSources(RelatedClassPath const& pathFromInputToSelectClass, RelatedInstancePathsCache const& relatedInstancePaths) const
     {
     ContentSource source(pathFromInputToSelectClass.back().GetTargetClass(), nullptr);
     source.GetSelectClass().SetAlias("this");
     source.SetPathFromInputToSelectClass(pathFromInputToSelectClass);
     for (RelatedClass& rc : source.GetPathFromInputToSelectClass())
         rc.SetIsTargetOptional(false);
-    return CreateContentSourcesWithRelatedInstancePaths(source, spec.GetRelatedInstances(), GetContext());
+    return CreateContentSourcesWithRelatedInstancePaths(source, relatedInstancePaths);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ContentSource> ContentSpecificationsHandler::_BuildContentSource(bvector<RelatedClassPath> const& paths, ContentSpecificationCR spec)
+bvector<ContentSource> ContentSpecificationsHandler::_BuildContentSource(bvector<RelatedClassPath> const& paths, RelatedInstancePathsCache const& relatedInstancePaths, bvector<RuleApplicationInfo> const& customizationRules)
     {
     bvector<ContentSource> sources;
     bvector<RelatedClassPath> splitPaths = QueryBuilderHelpers::ProcessRelationshipPathsBasedOnCustomizationRules(paths,
-        ShouldSplitOnDerivedClasses(_GetContentFlags(spec)) ? GetCustomizationRuleInfos() : bvector<RuleApplicationInfo>(),
-        GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
+        customizationRules, GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
     for (RelatedClassPathCR path : splitPaths)
-        ContainerHelpers::Push(sources, CreateContentSources(path, spec));
+        ContainerHelpers::Push(sources, CreateContentSources(path, relatedInstancePaths));
     return sources;
     }
 
@@ -970,7 +1176,10 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
         }
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " select classes.", (uint64_t)selectClasses.size()));
 
-    bvector<ContentSource> contentSources = _BuildContentSource(selectClasses, specification);
+    auto customizationRules = CreateCustomizationRuleInfos(specification);
+    auto relatedInstancePaths = _CreateRelatedInstancePathsCache(selectClasses, specification);
+
+    bvector<ContentSource> contentSources = _BuildContentSource(selectClasses, relatedInstancePaths, customizationRules);
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
 
     for (ContentSource const& src : contentSources)
@@ -981,7 +1190,7 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
             DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Skipping content source for `%s` - it doesn't match specification requirements.", src.GetSelectClass().GetClass().GetFullName()));
             continue;
             }
-        AppendContent(src, specification, &input, "", nullptr);
+        AppendContent(src, specification, &input, "", nullptr, nullptr);
         }
     _OnContentAppended();
     }
@@ -999,8 +1208,10 @@ void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSp
         }
 
     int contentFlags = _GetContentFlags(specification);
-    bool skipContentWithInstancesCheck = (specification.IsRecursive() || 0 != (contentFlags & (int)ContentFlags::SkipInstancesCheck));
-    bool groupByInputKey = (0 != (contentFlags & (int)ContentFlags::IncludeInputKeys));
+    bool skipContentWithInstancesCheck = (specification.IsRecursive() || 0 != (contentFlags & ENUM_FLAG(ContentFlags::SkipInstancesCheck)));
+    bool groupByInputKey = (0 != (contentFlags & ENUM_FLAG(ContentFlags::IncludeInputKeys)));
+
+    auto customizationRules = CreateCustomizationRuleInfos(specification);
 
     for (ECClassCP ecClass : input.GetClasses())
         {
@@ -1009,7 +1220,12 @@ void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSp
         bvector<RelatedClassPath> paths = GetRelatedClassPaths(GetContext(), *ecClass, input, specification, skipContentWithInstancesCheck, groupByInputKey);
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Input class has %" PRIu64 " related classes.", (uint64_t)paths.size()));
 
-        bvector<ContentSource> contentSources = _BuildContentSource(paths, specification);
+        auto relatedInstancePaths = _CreateRelatedInstancePathsCache(ContainerHelpers::TransformContainer<bvector<SelectClassWithExcludes<ECClass>>>(paths, [](auto const& path)
+            {
+            return path[path.size() - 1].GetTargetClass();
+            }), specification);
+
+        bvector<ContentSource> contentSources = _BuildContentSource(paths, relatedInstancePaths, customizationRules);
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
 
         if (!skipContentWithInstancesCheck)
@@ -1022,7 +1238,7 @@ void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSp
         for (ContentSource const& src : contentSources)
             {
             ThrowIfCancelled(m_context.GetCancellationToken());
-            AppendContent(src, specification, &input, specification.GetInstanceFilter(), recursiveInfo.get());
+            AppendContent(src, specification, &input, specification.GetInstanceFilter(), recursiveInfo.get(), nullptr);
             }
         }
     _OnContentAppended();
@@ -1091,14 +1307,13 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSpecificationsHandler::HandleSpecification(ContentInstancesOfSpecificClassesSpecificationCR specification)
     {
-    SupportedClassInfos classInfos = GetContext().GetSchemaHelper().GetECClassesFromClassList(specification.GetClasses(), false);
     SupportedClassInfos excludedClassInfos = GetContext().GetSchemaHelper().GetECClassesFromClassList(specification.GetExcludedClasses(), true);
-
     auto const excludedClasses = ContainerHelpers::TransformContainer<bvector<SelectClass<ECClass>>>(excludedClassInfos, [&](auto const& eci)
         {
         return SelectClass<ECClass>(eci.GetClass(), "", eci.IsPolymorphic());
         });
 
+    SupportedClassInfos classInfos = GetContext().GetSchemaHelper().GetECClassesFromClassList(specification.GetClasses(), false);
     auto selectClasses = ContainerHelpers::TransformContainer<bvector<SelectClassWithExcludes<ECClass>>>(classInfos, [&](auto const& ci)
         {
         SelectClassWithExcludes<ECClass> selectClass(ci.GetClass(), "this", ci.IsPolymorphic());
@@ -1107,19 +1322,23 @@ void ContentSpecificationsHandler::HandleSpecification(ContentInstancesOfSpecifi
         });
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " select classes.", (uint64_t)selectClasses.size()));
 
+    auto customizationRules = CreateCustomizationRuleInfos(specification);
+    auto relatedInstancePaths = _CreateRelatedInstancePathsCache(selectClasses, specification);
+    auto relatedPropertyPaths = _CreateRelatedPropertyPathsCache(selectClasses, specification, relatedInstancePaths);
+
     if (specification.ShouldHandlePropertiesPolymorphically())
         {
         selectClasses = FindActualSelectClassesWithInstances(selectClasses, specification.GetInstanceFilter(), GetContext());
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " select classes after filtering-out classes without instances.", (uint64_t)selectClasses.size()));
         }
 
-    bvector<ContentSource> contentSources = _BuildContentSource(selectClasses, specification);
+    bvector<ContentSource> contentSources = _BuildContentSource(selectClasses, relatedInstancePaths, customizationRules);
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
 
     for (ContentSource const& src : contentSources)
         {
         ThrowIfCancelled(m_context.GetCancellationToken());
-        AppendContent(src, specification, nullptr, specification.GetInstanceFilter(), nullptr);
+        AppendContent(src, specification, nullptr, specification.GetInstanceFilter(), nullptr, relatedPropertyPaths.get());
         }
 
     _OnContentAppended();
