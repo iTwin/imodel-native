@@ -2,12 +2,14 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { dbFileName, iModelJsNative } from "./utils";
+import { copyFile, dbFileName, iModelJsNative } from "./utils";
 import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
 import { openDgnDb } from ".";
+import * as path from "path";
 import * as os from "os";
+import { ProfileOptions } from "@itwin/core-common";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
@@ -41,6 +43,9 @@ describe("basic tests", () => {
     expect(() => db.nonsense()).to.throw("not a function");
   });
 
+  it("testImportSchemas", () => {
+
+  })
 
   it("testTileVersionInfo", () => {
     const ver = iModelJsNative.getTileVersionInfo();
@@ -73,6 +78,23 @@ describe("basic tests", () => {
     for (const id of elementIdArray)
       assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
   });
+
+  it("testSchemaImport", () => {
+    const writeDbFileName = copyFile("testSchemaImport.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db = openDgnDb(writeDbFileName, {profile: ProfileOptions.Upgrade});
+    assert.isTrue(db !== undefined);
+    expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found"); // presentationrules alias is 'pr'.
+    let bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.00");
+    const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
+    const result = db.importSchemas([schemaPath]);
+    assert.isTrue(result === DbResult.BE_SQLITE_OK);
+
+    const prProps = db.getSchemaProps("PresentationRules");
+    bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.15"); // PR references 01.00.15, so importing PR will cause it to upgrade.
+  })
 
   it("testSchemaExport", () => {
     const xml = dgndb.schemaToXmlString("BisCore", IModelJsNative.ECVersion.V2_0);
@@ -218,5 +240,52 @@ describe("basic tests", () => {
     expectResult(4, { low: [-10, -16, -10], high: [14, 6, 10] });
     expectResult(5, { low: [5, 3, -10], high: [30, 25, 10] });
   });
-});
 
+  // NB: The test iModel contains 4 spheres and no other geometry.
+  describe("generateElementMeshes", () => {
+    it("throws if source is not a geometric element", async () => {
+      const msg = "Geometric element required";
+      await expect(dgndb.generateElementMeshes({source: "NotAnId"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ })).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0x1"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0x123456789"})).rejectedWith(msg);
+    });
+
+    it("produces meshes", async () => {
+      const elemIds = ["0x38", "0x3a", "0x3b", "0x39"];
+      for (const source of elemIds) {
+        let bytes = await dgndb.generateElementMeshes({
+          source,
+          chordTolerance: 0.001,
+        });
+
+        const numBytes = bytes.length;
+        expect(numBytes).least(32);
+
+        for (let i = 0; i < 4; i++)
+          expect(bytes[i]).to.equal("LMSH".charCodeAt(i));
+
+        let u32 = new Uint32Array(bytes.buffer);
+        expect(u32[1]).to.equal(0);
+
+        for (let i = 0; i < 4; i++)
+          expect(bytes[8 + i]).to.equal("PLFC".charCodeAt(i));
+
+        const numPolyfaceBytes = u32[3];
+        expect(numPolyfaceBytes).least(8);
+
+        const fewerBytes = await dgndb.generateElementMeshes({
+          source,
+          chordTolerance: 0.1,
+        });
+
+        expect(fewerBytes.length < bytes.length).to.be.true;
+        expect(fewerBytes.length).least(32);
+
+        u32 = new Uint32Array(fewerBytes.buffer);
+        expect(u32[3] < numPolyfaceBytes).to.be.true;
+      }
+    });
+  });
+});
