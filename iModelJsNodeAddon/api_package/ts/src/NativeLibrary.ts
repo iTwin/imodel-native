@@ -26,6 +26,9 @@ import type  {
 } from "@itwin/core-common";
 import type { Range3dProps } from "@itwin/core-geometry";
 
+// ###TODO import from core-common after merge with master
+export type ElementMeshRequestProps = any;
+
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 /* eslint-disable @bentley/prefer-get, no-restricted-syntax */
 
@@ -474,6 +477,7 @@ export declare namespace IModelJsNative {
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public findGeometryPartReferences(partIds: Id64String[], is2d: boolean): Id64String[];
     public generateElementGraphics(request: ElementGraphicsRequestProps): Promise<ElementGraphicsResult>;
+    public generateElementMeshes(request: ElementMeshRequestProps): Promise<Uint8Array>;
     public getBriefcaseId(): number;
     public getChangesetSize(): number;
     public getChangeTrackingMemoryUsed(): number;
