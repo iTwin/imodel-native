@@ -28,7 +28,7 @@
 /iModelCore/iModelPlatform/                  @pmconne @swwilson-bsi @kabentley @bbastings
 /iModelCore/Units/                           @calebmshafer @ColinKerr @bbastings
 /iModelCore/iModelPlatform/**/*Tile*.*       @pmconne @markschlosseratbentley
-/iModelCore/iModelPlatform/**/*Render*.*     @pmconne @markschlosseratbentley
+/iModelCore/iModelPlatform/**/*Render*.*     @pmconne @markschlosseratbentley @bbastings
 
-/iModelJsNodeAddon/                          @pmconne @swwilson-bsi @khanaffan @kabentley @calebmshafer
+/iModelJsNodeAddon/                          @pmconne @swwilson-bsi @khanaffan @kabentley @calebmshafer @bbastings
 /iModelJsNodeAddon/presentation/             @iTwin/itwinjs-core-presentation
