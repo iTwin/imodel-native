@@ -34,8 +34,10 @@ always:
 
 USING_BREAKPAD = 0
 
-%if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64")
-    USING_BREAKPAD = 1
+%if defined (BSI)
+    %if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") 
+        USING_BREAKPAD = 1
+    %endif
 %endif
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
