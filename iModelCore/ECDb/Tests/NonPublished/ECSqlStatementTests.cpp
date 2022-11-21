@@ -94,7 +94,7 @@ TEST_F(ECSqlStatementTestFixture, ECSqlStatus)
 TEST_F(ECSqlStatementTestFixture, CTECrash) {
     ASSERT_EQ(SUCCESS, SetupECDb("cte_crash.ecdb"));
     auto ecsql = R"(
-        WITH RECURSIVE 
+        WITH RECURSIVE
         F (A) AS (SELECT 1),
         S (A) AS (SELECT * FROM F UNION SELECT 1 FROM S WHERE S.A = 1)
         SELECT A FROM S
@@ -125,15 +125,15 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     };
     auto assertFunc = [&](Utf8StringCR ecsql, Utf8String functionNameInECSql, Utf8String disableFunc) {
         ECSqlStatement stmt;
-        
+
         //TEST A - Just prepare ecsql as is to verify it can be prepared.
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should succeed without disabling the function" 
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should succeed without disabling the function"
             << "\nECDb (err)" << listener.GetLastError().c_str();
         stmt.Finalize();
 
         //TEST B - Disable function and prepare the ecsql, with expectation that it will fail and puts out a expected error message.
         m_ecdb.GetECSqlConfig().GetDisableFunctions().Add(disableFunc);
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should now fail when function is disabled";       
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should now fail when function is disabled";
         Utf8String erroMessageExpected = getExpectedErrorMessage(functionNameInECSql);
         ASSERT_STREQ(listener.GetLastError().c_str(), erroMessageExpected.c_str()) << "Perpare should fail with expected error message";
         stmt.Finalize();
@@ -156,7 +156,7 @@ TEST_F(ECSqlStatementTestFixture, NestedValConstructor) {
     ASSERT_EQ(SUCCESS, SetupECDb("RowConstructor.ecdb"));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (SELECT 1001 a)")); 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (SELECT 1001 a)"));
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0] FROM (SELECT 1001 [K0])");
 }
 /*---------------------------------------------------------------------------------**//**
@@ -564,7 +564,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAsteriskOnRelationshipClass)
                       </Target>
                     </ECRelationshipClass>
                 </ECSchema>)xml")));
-        
+
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AOwnsB"));
     bool hasSourceECClassId = false, hasTargetECClassId = false;
@@ -575,11 +575,11 @@ TEST_F(ECSqlStatementTestFixture, SelectAsteriskOnRelationshipClass)
         Utf8String colName = colInfo.GetProperty()->GetName().c_str();
         if (colName.CompareTo("SourceECClassId") == 0)
             hasSourceECClassId = true;
-        
+
         if (colName.CompareTo("TargetECClassId") == 0)
             hasTargetECClassId = true;
         }
-    
+
     ASSERT_EQ(true, hasSourceECClassId) << "Select * should include SourceECClassId";
     ASSERT_EQ(true, hasTargetECClassId) << "Select * should include TargetECClassId";;
     stmt.Finalize();
@@ -1433,6 +1433,31 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, pragma_ecdb_version)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("pragma.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_version"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ(stmt.GetValueText(0), m_ecdb.GetECDbProfileVersion().ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, pragma_schema_version)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("pragma.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA version(1) FOR ECDbMap"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ(stmt.GetValueText(0), m_ecdb.Schemas().GetSchema("ECDbMap")->GetSchemaKey().GetVersionString().c_str());
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -5559,11 +5584,11 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoGetOriginPropertyForNonPropertyColum
         {
         ECSqlStatement statement;
         auto status = statement.Prepare(m_ecdb, R"sqlstr(
-        with recursive 
-         cte0 (a,b) as (select 100,200) 
+        with recursive
+         cte0 (a,b) as (select 100,200)
          select * from (select a from cte0 where a=100 and b=200)
          )sqlstr");
-        ASSERT_EQ(ECSqlStatus::Success, status); 
+        ASSERT_EQ(ECSqlStatus::Success, status);
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
         ASSERT_EQ(1, statement.GetColumnCount());
@@ -5578,11 +5603,11 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoGetOriginPropertyForNonPropertyColum
         {
         ECSqlStatement statement;
         auto status = statement.Prepare(m_ecdb, R"sqlstr(
-        with recursive 
-         cte0 (a,b) as (select 100,200) 
+        with recursive
+         cte0 (a,b) as (select 100,200)
          select a from cte0 where a=100 and b=200
          )sqlstr");
-        ASSERT_EQ(ECSqlStatus::Success, status); 
+        ASSERT_EQ(ECSqlStatus::Success, status);
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
         ASSERT_EQ(1, statement.GetColumnCount());

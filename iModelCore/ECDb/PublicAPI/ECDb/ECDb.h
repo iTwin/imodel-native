@@ -86,13 +86,13 @@ struct ChangeSetArg final
 //+===============+===============+===============+===============+===============+======
 struct ECSqlConfig {
     struct DisableSqlFunctions {
-        private: 
+        private:
             bvector<Utf8String> m_disabledFuncList;
         public:
             DisableSqlFunctions(){}
             DisableSqlFunctions(const DisableSqlFunctions&)=delete;
             DisableSqlFunctions& operator=(const DisableSqlFunctions&)=delete;
-            void Add(Utf8StringCR functionName) { 
+            void Add(Utf8StringCR functionName) {
                 if (!Exists(functionName)) {
                     m_disabledFuncList.push_back(functionName);
                 }
@@ -254,7 +254,7 @@ protected:
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
-    
+
     //! @return return true if schema EC version requires does not support current profile version and need profile version to be upgraded.
     ECDB_EXPORT bool SchemaRequiresProfileUpgrade(ECN::ECSchemaCR ecSchema) const;
 #endif
@@ -287,6 +287,9 @@ public:
 
     //! Gets the version of the ECDb profile of this file.
     ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
+
+    //! Gets ECSQL version
+    static BeVersion GetECSqlVersion() { return BeVersion(1, 0, 0, 0); }
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 2); }
@@ -398,7 +401,7 @@ public:
     ECDB_EXPORT static BeFileName GetDefaultChangeCachePath(Utf8CP ecdbPath);
 
     //! @}
-    
+
     //! Allow to configure settings for ECSql
     ECDB_EXPORT ECSqlConfig& GetECSqlConfig() const;
 
@@ -424,7 +427,7 @@ public:
 
     //! Unique id for current connection.
     ECDB_EXPORT BeGuid GetId() const;
-    
+
     //! Return all registered function
     ECDB_EXPORT bvector<DbFunction*> GetSqlFunctions() const;
 

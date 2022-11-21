@@ -672,6 +672,41 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, pragma_version_for_ecdbmap) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_test.ecdb"));
+    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    ECSqlReader reader(mgr, "PRAGMA version FOR ECDbMap");
+    ASSERT_TRUE(reader.Next());
+    ASSERT_STREQ(reader.GetRow()["version"].asCString(), "02.00.00");
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, pragma_file_info) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_test.ecdb"));
+    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    ECSqlReader reader(mgr, "PRAGMA file_info");
+    int i = 0;
+    while(reader.Next()) {
+        if (BeStringUtilities::StricmpAscii("ecsql_ver", reader.GetRow()["key"].asCString()) == 0) {
+            ASSERT_STREQ(reader.GetRow()["value"].asCString(), "1.0.0.0");
+            ++i;
+        }
+        if (BeStringUtilities::StricmpAscii("ecdb_profile_ver", reader.GetRow()["key"].asCString()) == 0) {
+            ASSERT_STREQ(reader.GetRow()["value"].asCString(), "4.0.0.2");
+            ++i;
+        }
+        if (BeStringUtilities::StricmpAscii("journal_mode", reader.GetRow()["key"].asCString()) == 0) {
+            ASSERT_STREQ(reader.GetRow()["value"].asCString(), "delete");
+            ++i;
+        }
+    }
+    ASSERT_EQ(i, 3);
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, ReaderBinding) {
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">

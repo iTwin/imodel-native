@@ -1,0 +1,85 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
+#pragma once
+
+#include "Exp.h"
+#include <any>
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+
+struct PragmaVal {
+private:
+    enum class Type {
+        Integer,
+        Double,
+        String,
+        Bool,
+        Name,
+        Null,
+        Empty,
+    };
+    Type m_type;
+    std::any m_val;
+    explicit PragmaVal(Type t):m_type(t){}
+public:
+    PragmaVal():m_type(Type::Empty){}
+    PragmaVal(PragmaVal&&) = default;
+    PragmaVal(const PragmaVal&) = default;
+    PragmaVal& operator =(PragmaVal&&) = default;
+    PragmaVal& operator =(const PragmaVal&) = default;
+    explicit PragmaVal(int64_t val):m_type(Type::Integer), m_val(val){}
+    explicit PragmaVal(double val):m_type(Type::Double), m_val(val){}
+    explicit PragmaVal(bool val):m_type(Type::Bool), m_val(val){}
+    explicit PragmaVal(std::string val, bool isName):m_type(isName?Type::Name:Type::String), m_val(val){}
+    bool IsBool() const { return m_type == Type::Bool; }
+    bool IsInteger() const { return m_type == Type::Integer; }
+    bool IsDouble() const { return m_type == Type::Double; }
+    bool IsString() const { return m_type == Type::String; }
+    bool IsName() const { return m_type == Type::Name; }
+    bool IsEmpty() const { return m_type == Type::Empty; }
+    bool IsNull() const { return m_type == Type::Null; }
+    bool IsNumeric() const { return IsInteger() || IsDouble(); }
+    int64_t GetInteger() const;
+    double GetDouble() const;
+    bool GetBool() const;
+    PragmaVal& operator = (int64_t v) { m_val = v; m_type = Type::Integer;}
+    PragmaVal& operator = (double v) { m_val = v; m_type = Type::Double;}
+    PragmaVal& operator = (std::string const&v) { m_val = v; m_type = Type::String;}
+    PragmaVal& operator = (bool v) { m_val = v; m_type = Type::Bool;}
+    PragmaVal& operator = (nullptr_t v) { m_val = v; m_type = Type::Null;}
+    void SetName(std::string const& name) { m_val= name; m_type = Type::Name; }
+    void Reset() { m_val.reset(), m_type = Type::Empty; }
+    std::string GetString() const;
+    std::string GetName() const;
+    static PragmaVal const& Null();
+};
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaStatementExp final : Exp {
+private:
+    FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override { return FinalizeParseStatus::Completed; }
+    bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override { return false; }
+    void _ToECSql(ECSqlRenderContext& ctx) const override { }
+    Utf8String _ToString() const override { return "Pragma"; }
+
+    PragmaVal m_val;
+    Utf8String m_name;
+    bool m_readValue;
+    std::vector<Utf8String> m_pathTokens;
+
+ public:
+     PragmaStatementExp(Utf8StringCR name, PragmaVal val, bool readVal, std::vector<Utf8String> pathTokens)
+        : Exp(Exp::Type::Pragma), m_name(name), m_val(val), m_readValue(readVal), m_pathTokens(pathTokens){}
+     Utf8StringCR GetName() const { return m_name; }
+     bool IsReadValue() const { return m_readValue;}
+     std::vector<Utf8String> const& GetPathTokens() const { return m_pathTokens; }
+     PragmaVal const& GetValue() const { return m_val; }
+};
+
+
+END_BENTLEY_SQLITE_EC_NAMESPACE
+

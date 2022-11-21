@@ -74,7 +74,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     //Step 2: translate into SQLite SQL and prepare SQLite statement
     IECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ecdb, *exp);
 
-    Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ecdb, preparedStatement.GetType() != ECSqlType::Select, writeToken));
+    Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ecdb, preparedStatement.GetType() != ECSqlType::Select  && preparedStatement.GetType() != ECSqlType::Pragma , writeToken));
     if (!policy.IsSupported())
         {
         filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, policy.GetNotSupportedMessage().c_str());
@@ -196,6 +196,9 @@ DbResult ECSqlStatement::Impl::Step()
             case ECSqlType::Delete:
                 return GetPreparedStatementP<ECSqlDeletePreparedStatement>()->Step();
 
+            case ECSqlType::Pragma:
+                return GetPreparedStatementP<PragmaECSqlPreparedStatement>()->Step();
+
             default:
                 BeAssert(false && "Unhandled ECSqlType in ECSqlStatement::Step.");
                 return BE_SQLITE_ERROR;
@@ -218,6 +221,10 @@ DbResult ECSqlStatement::Impl::Step(ECInstanceKey& ecInstanceKey)
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::Impl::Reset()
     {
+    if(IsPrepared() && ECSqlType::Pragma == GetPreparedStatementP()->GetType()) {
+        return GetPreparedStatementP<PragmaECSqlPreparedStatement>()->Reset();
+    }
+
     ECSqlStatus stat = FailIfNotPrepared("Cannot call Reset on an unprepared ECSqlStatement.");
     if (!stat.IsSuccess())
         return stat;
@@ -230,6 +237,10 @@ ECSqlStatus ECSqlStatement::Impl::Reset()
 //---------------------------------------------------------------------------------------
 int ECSqlStatement::Impl::GetColumnCount() const
     {
+    if(IsPrepared() && ECSqlType::Pragma == GetPreparedStatementP()->GetType()) {
+        return GetPreparedStatementP<PragmaECSqlPreparedStatement>()->GetColumnCount();
+    }
+
     if (FailIfWrongType(ECSqlType::Select, "Cannot call query result API on an unprepared or non-SELECT ECSqlStatement.") != ECSqlStatus::Success)
         return -1;
 
@@ -241,6 +252,10 @@ int ECSqlStatement::Impl::GetColumnCount() const
 //---------------------------------------------------------------------------------------
 IECSqlValue const& ECSqlStatement::Impl::GetValue(int columnIndex) const
     {
+    if(IsPrepared() && ECSqlType::Pragma == GetPreparedStatementP()->GetType()) {
+        return GetPreparedStatementP<PragmaECSqlPreparedStatement>()->GetValue(columnIndex);
+    }
+
     if (FailIfWrongType(ECSqlType::Select, "Cannot call query result API on an unprepared or non-SELECT ECSqlStatement.") != ECSqlStatus::Success)
         return NoopECSqlValue::GetSingleton();
 
@@ -349,6 +364,11 @@ IECSqlPreparedStatement& ECSqlStatement::Impl::CreatePreparedStatement(ECDbCR ec
             case Exp::Type::Delete:
                 m_preparedStatement = std::make_unique<ECSqlDeletePreparedStatement>(ecdb);
                 break;
+
+            case Exp::Type::Pragma:
+                m_preparedStatement = std::make_unique<PragmaECSqlPreparedStatement>(ecdb);
+                break;
+
             default:
                 BeAssert(false && "ECSqlParseTree is expected to only be of type Select, Insert, Update, Delete");
                 break;
