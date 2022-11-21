@@ -22,9 +22,12 @@ import type  {
   FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
 import type { Range3dProps } from "@itwin/core-geometry";
+
+// ###TODO import from core-common after merge with master
+export type ElementMeshRequestProps = any;
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 /* eslint-disable @bentley/prefer-get, no-restricted-syntax */
@@ -199,8 +202,22 @@ export declare namespace IModelJsNative {
      */
   }
   interface IConcurrentQueryManager {
-    concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse):void;
+    concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    concurrentQueryShutdown(): void;
   }
+
+/** Concurrent query config which should be set before making first call to concurrent query manager.
+ * @internal
+ */
+  export interface QueryConfig {
+    globalQuota?: QueryQuota,
+    ignoreDelay?: boolean
+    ignorePriority?: boolean,
+    requestQueueSize?: number,
+    workerThreads?: number,
+  }
+
   interface TileContent {
     content: Uint8Array;
     elapsedSeconds: number;
@@ -427,7 +444,9 @@ export declare namespace IModelJsNative {
     public closeIModel(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
-    public concurrentQueryExecute(request: any, onResponse: ConcurrentQuery.OnResponse):void;
+    public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    public concurrentQueryShutdown(): void;
     public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
@@ -458,6 +477,7 @@ export declare namespace IModelJsNative {
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public findGeometryPartReferences(partIds: Id64String[], is2d: boolean): Id64String[];
     public generateElementGraphics(request: ElementGraphicsRequestProps): Promise<ElementGraphicsResult>;
+    public generateElementMeshes(request: ElementMeshRequestProps): Promise<Uint8Array>;
     public getBriefcaseId(): number;
     public getChangesetSize(): number;
     public getChangeTrackingMemoryUsed(): number;
@@ -604,7 +624,9 @@ export declare namespace IModelJsNative {
     public getLastError(): string;
     public getLastInsertRowId(): number;
     public static enableSharedCache(enable: boolean): DbResult;
-    public concurrentQueryExecute(request: any, onResponse: ConcurrentQuery.OnResponse):void;
+    public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    public concurrentQueryShutdown(): void;
   }
 
   class ChangedElementsECDb implements IDisposable {
