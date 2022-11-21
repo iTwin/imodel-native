@@ -840,7 +840,8 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    JsInterop::AddFallbackSchemaLocaters(ecdb, schemaContext);
+    JsInterop::AddSchemaSearchPaths(schemaContext);
+    schemaContext->SetFinalSchemaLocater(ecdb.GetSchemaLocater());
 
     ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), *schemaContext);
@@ -859,11 +860,8 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext) 
+void JsInterop::AddSchemaSearchPaths(ECSchemaReadContextPtr schemaContext) 
     {
-    // Add the db then the standard schema paths as fallback locations to load referenced schemas.
-    schemaContext->SetFinalSchemaLocater(db.GetSchemaLocater());
-    
     BeFileName rootDir = PlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     rootDir.AppendToPath(L"ECSchemas");
     BeFileName dgnPath = rootDir;
@@ -872,12 +870,9 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
     domainPath.AppendToPath(L"Domain").AppendSeparator();
     BeFileName ecdbPath = rootDir;
     ecdbPath.AppendToPath(L"ECDb").AppendSeparator();
-    bvector<WString> pathVector;
-    pathVector.push_back(dgnPath);
-    pathVector.push_back(domainPath);
-    pathVector.push_back(ecdbPath);
-    SearchPathSchemaFileLocaterPtr locater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(pathVector, true);
-    schemaContext->SetFinalSchemaLocater(*locater);
+    schemaContext->AddSchemaPath(dgnPath);
+    schemaContext->AddSchemaPath(domainPath);
+    schemaContext->AddSchemaPath(ecdbPath);
     return;
     }
 
@@ -890,8 +885,8 @@ DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& 
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
-
+    JsInterop::AddSchemaSearchPaths(schemaContext);
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
     bvector<ECSchemaCP> schemas;
 
     for (Utf8String schemaFileName : schemaFileNames)
@@ -932,8 +927,8 @@ DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& se
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
-
+    JsInterop::AddSchemaSearchPaths(schemaContext);
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
     bvector<ECSchemaCP> schemas;
 
     for (Utf8String schemaXml : serializedXmlSchemas)

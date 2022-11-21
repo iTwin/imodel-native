@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { copyFile, dbFileName, getAssetsDir, iModelJsNative } from "./utils";
+import { copyFile, dbFileName, iModelJsNative } from "./utils";
 import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
@@ -10,7 +10,6 @@ import { openDgnDb } from ".";
 import * as path from "path";
 import * as os from "os";
 import { ProfileOptions } from "@itwin/core-common";
-import { join } from "path";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
@@ -95,31 +94,6 @@ describe("basic tests", () => {
     const prProps = db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.15"); // PR references 01.00.15, so importing PR will cause it to upgrade.
-  })
-
-  it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
-    const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
-    const db = openDgnDb(testFileName);
-    const assetsDir = join(getAssetsDir(), 'ImportSchemaTests');
-    const test100Path = join(assetsDir, "Test.01.00.00.ecschema.xml");
-    
-    // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
-    // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
-    let bisProps = db.getSchemaProps("BisCore");
-    let result = db.importSchemas([test100Path]);
-    assert.isTrue(result === DbResult.BE_SQLITE_OK);
-    assert.deepEqual(db.getSchemaProps("BisCore"), bisProps);
-
-    let testRefProps = db.getSchemaProps("TestRef");
-    assert.equal("01.00.00", testRefProps.version);
-
-    // TestRef is updated to version 1.0.1 even though Test only references 1.0.0
-    // local directory has higher precedence than the db
-    const subAssetsDir = join(assetsDir, "LocalReferences");
-    const test101Path = join(subAssetsDir, "Test.01.00.00.ecschema.xml");
-    result = db.importSchemas([test101Path]);
-    assert.isTrue(result === DbResult.BE_SQLITE_OK);
-    assert.deepEqual(db.getSchemaProps("TestRef"), testRefProps);
   })
 
   it("testSchemaExport", () => {
