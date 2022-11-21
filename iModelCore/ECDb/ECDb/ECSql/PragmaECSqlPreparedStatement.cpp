@@ -87,7 +87,7 @@ struct PragmaExplainQuery : PragmaManager::GlobalHandler {
 //================================================================================
 struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
     std::set<ECClassId> m_disqualifiedClassSet;
-    DisqualifyTypeIndex():ClassHandler("disqualify_type_index","set/get disqualify_type_filter flag for a given ECClass"){}
+    DisqualifyTypeIndex():ClassHandler("disqualify_type_index","set/get disqualify_type_index flag for a given ECClass"){}
     ~DisqualifyTypeIndex(){}
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, ECClassCR cls) override {
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
