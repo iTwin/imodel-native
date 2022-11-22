@@ -3,16 +3,12 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-// console.log('Platform: ', process.platform);
-// console.log('Node version: ', process.version);
-// console.log('Node arch: ', process.arch);
-// console.log('Node dependencies: ', process.versions);
-
 import * as fs from "fs";
 import * as Mocha from "mocha";
 import * as path from "path";
 import { Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
 import { iModelJsNative } from "./utils";
+import { UpgradeOptions } from "@itwin/core-common";
 
 // Run mocha tests on all *.test.ts files
 function runMochaTests() {
@@ -34,12 +30,12 @@ function runMochaTests() {
 }
 
 Logger.initializeToConsole();
-Logger.setLevelDefault(LogLevel.Warning);
+Logger.setLevelDefault(LogLevel.Error);
 iModelJsNative.logger = Logger;
 
-export function openDgnDb(filename: string) {
+export function openDgnDb(filename: string, upgradeOptions?: UpgradeOptions) {
   const db = new iModelJsNative.DgnDb();
-  db.openIModel(filename, OpenMode.ReadWrite);
+  db.openIModel(filename, OpenMode.ReadWrite, upgradeOptions);
   return db;
 }
 

@@ -327,6 +327,12 @@ inline static Napi::Array requireArray(Napi::Object const& obj, Utf8CP name) {
     return member.As<Napi::Array>();
 }
 
+enum class ProcessPolyfaceResult {
+  Empty, // polyface had no triangles
+  Bad, // polyface contains bad data that could not be fixed up
+  Ok, // polyface was processed
+};
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -461,7 +467,7 @@ private:
     static void GetRowAsJson(BeJsValue json, BeSQLite::EC::ECSqlStatement &);
     static void RegisterOptionalDomains();
     static void InitializeSolidKernel();
-
+    static void AddSchemaSearchPaths(ECSchemaReadContextPtr schemaContext);
 public:
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
     static void GetECValuesCollectionAsJson(BeJsValue json, ECN::ECValuesCollectionCR);
@@ -481,8 +487,16 @@ public:
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
+
+    // Used by ExportGraphics, ExportPartGraphics, and GenerateElementMeshes.
+    // Checks for common "bad" polyfaces, fixing them up if possible.
+    // If bad or empty, returns status without processing.
+    // Otherwise, fixes up the input polyface if applicable, passes it to supplied function, and returns Ok.
+    static ProcessPolyfaceResult ProcessPolyface(PolyfaceQueryCR, bool wantParamsAndNormals, std::function<void(PolyfaceQueryCR)>);
     static DgnDbStatus ExportGraphics(DgnDbR db, Napi::Object const& exportProps);
     static DgnDbStatus ExportPartGraphics(DgnDbR db, Napi::Object const& exportProps);
+    static Napi::Value GenerateElementMeshes(DgnDbR, Napi::Object const&);
+
     static DgnDbStatus ProcessGeometryStream(DgnDbR db, Napi::Object const& requestProps);
     static DgnDbStatus CreateBRepGeometry(DgnDbR db, Napi::Object const& createProps);
     static Napi::String InsertLinkTableRelationship(DgnDbR db, Napi::Object props);
@@ -518,12 +532,8 @@ public:
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);
-    static Napi::Value ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Object cfg);
-    static Napi::Value PostConcurrentQuery(ECDbCR ecdb, Napi::Env env, Utf8StringCR ecsql, Utf8StringCR bindings, Napi::Object limit, Napi::Object quota, int32_t priority,Utf8StringCR restartToken, bool abbreviateBlobs = false);
-    static Napi::Value PollConcurrentQuery(ECDbCR ecdb, Napi::Env env, uint32_t taskId);
-    static Napi::Value CancelQuery(ECDbCR ecdb, Napi::Env env, uint32_t taskId);
-    static Napi::Value CaptureStatistics(ECDbCR ecdb, Napi::Env env, bool reset);
-
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR, Napi::Object);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR);
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);

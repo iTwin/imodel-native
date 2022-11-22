@@ -16,15 +16,15 @@ BEGIN_BENTLEY_NAMESPACE
 namespace NativeLogging {
 
 /** Logger message severity levels.*/
-typedef enum
-    {
-    LOG_FATAL = 0,      //!< Used for fatal errors that will terminate the application
-    LOG_ERROR = -1,   //!< Used for general errors
-    LOG_WARNING = -2, //!< Used for general warnings
-    LOG_INFO = -3,    //!< Used for general information
+typedef enum {
+    LOG_NEVER = 1,  // cannot be enabled.
+    LOG_FATAL = 0,  // errors that will terminate the application
+    LOG_ERROR = -1,
+    LOG_WARNING = -2,
+    LOG_INFO = -3,
     LOG_DEBUG = -4, // for debugging
     LOG_TRACE = -4    //alias for debug
-    } SEVERITY;
+} SEVERITY;
 
 /** Base class for Logger implementation. Default implementation does nothing. */
 struct Logger {

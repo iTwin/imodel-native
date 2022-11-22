@@ -484,7 +484,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Conte
     json.AddMember("SortDirection", (int)contentDescriptor.GetSortDirection(), json.GetAllocator());
     json.AddMember("ContentFlags", contentDescriptor.GetContentFlags(), json.GetAllocator());
     json.AddMember("ConnectionId", rapidjson::StringRef(contentDescriptor.GetConnectionId().c_str()), json.GetAllocator());
-    json.AddMember("FilterExpression", rapidjson::StringRef(contentDescriptor.GetFilterExpression().c_str()), json.GetAllocator());
+    json.AddMember("FilterExpression", rapidjson::StringRef(contentDescriptor.GetFieldsFilterExpression().c_str()), json.GetAllocator());
     json.AddMember("InputKeysHash", rapidjson::Value(contentDescriptor.GetInputNodeKeys().GetHash().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("RulesetId", rapidjson::StringRef(contentDescriptor.GetRuleset().GetRuleSetId().c_str()), json.GetAllocator());
     json.AddMember("UnitSystem", (int)contentDescriptor.GetUnitSystem(), json.GetAllocator());

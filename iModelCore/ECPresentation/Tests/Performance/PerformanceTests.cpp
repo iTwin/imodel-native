@@ -28,6 +28,7 @@ void RulesEngineTests::SetUp()
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDirectory);
     BeTest::GetHost().GetTempDir(temporaryDirectory);
     ECSchemaReadContext::Initialize(assetsDirectory);
+    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory);
 
     ECPresentationManager::Params params(ECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
     ECPresentationManager::Params::CachingParams cachingParams;
@@ -117,7 +118,7 @@ void RulesEngineSingleProjectTests::_SetupProjects()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR RulesEngineSingleProjectTests::GetRulesetId() const
+Utf8String RulesEngineSingleProjectTests::GetRulesetId() const
     {
     return m_locater->GetRuleSetIds().front();
     }
