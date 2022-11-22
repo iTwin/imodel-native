@@ -3899,13 +3899,6 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
         if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Modifying PropertyCategory from an ECSchema is not supported.",
-                                     oldSchema.GetFullSchemaName().c_str());
-                continue;
-                }
-
             PropertyCategoryCP oldCat = oldSchema.GetPropertyCategoryCP(change.GetChangeName());
             PropertyCategoryCP newCat = newSchema.GetPropertyCategoryCP(change.GetChangeName());
             if (oldCat == nullptr || newCat == nullptr)
@@ -3915,7 +3908,13 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
                 }
 
             if (SUCCESS != UpdatePropertyCategory(ctx, change, *oldCat, *newCat))
+                {
+                if(ctx.IgnoreIllegalDeletionsAndModifications())
+                    {
+                        continue;
+                    }
                 return ERROR;
+                }
             }
         }
 
@@ -3933,7 +3932,10 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
 
     if (change.Name().IsChanged())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. Changing the name of a PropertyCategory is not supported.");
+        ctx.IgnoreIllegalDeletionsAndModifications() ? 
+            LOG.info("ECSchema Upgrade failed. Changing the name of a PropertyCategory is not supported.") :
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. Changing the name of a PropertyCategory is not supported.");
+
         return ERROR;
         }
 
@@ -3969,8 +3971,12 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
 
     if (change.MemberChangesCount() > actualChanges)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for Priority, DisplayLabel and Description.",
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
+            LOG.infov("ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for Priority, DisplayLabel and Description.",
+                        oldCat.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for Priority, DisplayLabel and Description.",
                          oldCat.GetFullName().c_str());
+
         return ERROR;
         }
 
