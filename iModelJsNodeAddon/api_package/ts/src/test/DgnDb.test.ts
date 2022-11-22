@@ -107,19 +107,19 @@ describe("basic tests", () => {
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
     let bisProps = db.getSchemaProps("BisCore");
     let result = db.importSchemas([test100Path]);
-    assert.isTrue(result === DbResult.BE_SQLITE_OK);
-    assert.deepEqual(db.getSchemaProps("BisCore"), bisProps);
+    assert.equal(result, DbResult.BE_SQLITE_OK);
+    assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
 
     let testRefProps = db.getSchemaProps("TestRef");
-    assert.equal("01.00.00", testRefProps.version);
+    assert.equal(testRefProps.version, "01.00.00", "TestRef after Test 1.0.0 import");
 
     // TestRef is updated to version 1.0.1 even though Test only references 1.0.0
     // local directory has higher precedence than the db
     const subAssetsDir = join(assetsDir, "LocalReferences");
-    const test101Path = join(subAssetsDir, "Test.01.00.00.ecschema.xml");
+    const test101Path = join(subAssetsDir, "Test.01.00.01.ecschema.xml");
     result = db.importSchemas([test101Path]);
-    assert.isTrue(result === DbResult.BE_SQLITE_OK);
-    assert.deepEqual(db.getSchemaProps("TestRef"), testRefProps);
+    assert.equal(result, DbResult.BE_SQLITE_OK);
+    assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
   })
 
   it("testSchemaExport", () => {

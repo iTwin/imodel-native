@@ -157,6 +157,10 @@ public:
     //! @param[in] locater  Locater that should be used as the last locater when trying to find a schema
     void SetFinalSchemaLocater(IECSchemaLocaterR locater) {m_locaters.push_back (&locater);}
 
+    //! Adds the input search paths to a new schema locater added as the last locater in the current list of locaters
+    //! @param[in] searchPaths  Directories to search for schemas
+    void AddFinalSchemaPaths(bvector<WString> const& searchPaths);
+
     //! Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
     //! @param[in] key  The SchemaKey that defines the schema (name and version information) that is being looked for
     //! @param[in] matchType    The match type criteria used to locate the requested schema

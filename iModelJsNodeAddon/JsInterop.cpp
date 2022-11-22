@@ -872,13 +872,11 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
     domainPath.AppendToPath(L"Domain").AppendSeparator();
     BeFileName ecdbPath = rootDir;
     ecdbPath.AppendToPath(L"ECDb").AppendSeparator();
-    bvector<WString> pathVector;
-    pathVector.push_back(dgnPath);
-    pathVector.push_back(domainPath);
-    pathVector.push_back(ecdbPath);
-    SearchPathSchemaFileLocaterPtr locater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(pathVector, true);
-    schemaContext->SetFinalSchemaLocater(*locater);
-    return;
+    bvector<WString> searchPaths;
+    searchPaths.push_back(dgnPath);
+    searchPaths.push_back(domainPath);
+    searchPaths.push_back(ecdbPath);
+    schemaContext->AddFinalSchemaPaths(searchPaths);
     }
 
 //---------------------------------------------------------------------------------------
