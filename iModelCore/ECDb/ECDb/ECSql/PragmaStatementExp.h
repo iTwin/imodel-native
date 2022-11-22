@@ -50,11 +50,11 @@ public:
     int64_t GetInteger() const;
     double GetDouble() const;
     bool GetBool() const;
-    PragmaVal& operator = (int64_t v) { m_integer = v; m_type = Type::Integer;}
-    PragmaVal& operator = (double v) { m_double = v; m_type = Type::Double;}
-    PragmaVal& operator = (std::string const&v) { m_str = v; m_type = Type::String;}
-    PragmaVal& operator = (bool v) { m_bool = v; m_type = Type::Bool;}
-    PragmaVal& operator = (std::nullptr_t v) { m_str.clear(); m_integer = 0; m_type = Type::Null;}
+    PragmaVal& operator = (int64_t v) { m_integer = v; m_type = Type::Integer; return *this;}
+    PragmaVal& operator = (double v) { m_double = v; m_type = Type::Double; return *this;}
+    PragmaVal& operator = (std::string const&v) { m_str = v; m_type = Type::String; return *this;}
+    PragmaVal& operator = (bool v) { m_bool = v; m_type = Type::Bool; return *this;}
+    PragmaVal& operator = (std::nullptr_t v) { m_str.clear(); m_integer = 0; m_type = Type::Null; return *this;}
     void SetName(std::string const& name) { m_str = name; m_type = Type::Name; }
     std::string GetString() const;
     std::string GetName() const;
