@@ -54,7 +54,7 @@ public:
     PragmaVal& operator = (double v) { m_double = v; m_type = Type::Double;}
     PragmaVal& operator = (std::string const&v) { m_str = v; m_type = Type::String;}
     PragmaVal& operator = (bool v) { m_bool = v; m_type = Type::Bool;}
-    PragmaVal& operator = (nullptr_t v) { m_str.clear(); m_integer = 0; m_type = Type::Null;}
+    PragmaVal& operator = (std::nullptr_t v) { m_str.clear(); m_integer = 0; m_type = Type::Null;}
     void SetName(std::string const& name) { m_str = name; m_type = Type::Name; }
     std::string GetString() const;
     std::string GetName() const;

@@ -7,7 +7,7 @@
 #include <ECDb/ECSqlStatement.h>
 #include "PragmaStatementExp.h"
 #include "ECSqlPreparedStatement.h"
-#include <any>
+
 
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
