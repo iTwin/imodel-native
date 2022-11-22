@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { copyFile, dbFileName, getAssetsDir, iModelJsNative } from "./utils";
+import { copyFile, dbFileName, iModelJsNative } from "./utils";
 import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
@@ -10,7 +10,6 @@ import { openDgnDb } from ".";
 import * as path from "path";
 import * as os from "os";
 import { ProfileOptions } from "@itwin/core-common";
-import { join } from "path";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
