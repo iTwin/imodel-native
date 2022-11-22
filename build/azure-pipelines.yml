@@ -16,14 +16,14 @@ pr:
 
 resources:
   repositories:
-    - repository: imodel-internal
+    - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
       endpoint: github.com_imodel-native
       ref: Link-imodel-repos #need my branch to test for PR
       
 extends:
-  template: /build/templates/pipeline.yml@imodel-internal
+  template: /build/templates/pipeline.yml@imodel-native-internal
   parameters:
-    otherRepo: imodel-internal
+    otherRepo: imodel-native-internal
 
