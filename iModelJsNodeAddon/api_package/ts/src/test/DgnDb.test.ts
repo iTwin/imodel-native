@@ -99,8 +99,8 @@ describe("basic tests", () => {
   it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
     const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
     const db = openDgnDb(testFileName);
-    const assetsDir = join(getAssetsDir(), 'ImportSchemaTests');
-    const test100Path = join(assetsDir, "Test.01.00.00.ecschema.xml");
+    const assetsDir = path.join(getAssetsDir(), 'ImportSchemaTests');
+    const test100Path = path.join(assetsDir, "Test.01.00.00.ecschema.xml");
     
     // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
@@ -114,8 +114,8 @@ describe("basic tests", () => {
 
     // TestRef is updated to version 1.0.1 even though Test only references 1.0.0
     // local directory has higher precedence than the db
-    const subAssetsDir = join(assetsDir, "LocalReferences");
-    const test101Path = join(subAssetsDir, "Test.01.00.01.ecschema.xml");
+    const subAssetsDir = path.join(assetsDir, "LocalReferences");
+    const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
     result = db.importSchemas([test101Path]);
     assert.equal(result, DbResult.BE_SQLITE_OK);
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
