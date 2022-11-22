@@ -12989,7 +12989,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
         else
             {
             ASSERT_TRUE(format->HasNumeric()) << assertMessage;
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << assertMessage;
             ASSERT_EQ(numericSpec, JsonValue(jval)) << assertMessage;
             }
@@ -12998,7 +12998,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
             ASSERT_FALSE(format->HasComposite()) << assertMessage;
         else
             {
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << assertMessage;
             ASSERT_TRUE(format->HasComposite()) << assertMessage;
             ASSERT_EQ(compSpec, JsonValue(jval)) << assertMessage;

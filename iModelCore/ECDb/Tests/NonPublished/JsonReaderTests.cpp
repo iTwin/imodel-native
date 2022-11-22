@@ -258,7 +258,7 @@ TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    Json::Value json;
+    BeJsDocument json;
     JsonECSqlSelectAdapter adapter(stmt);
     ASSERT_EQ(SUCCESS, adapter.GetRow(json)) << stmt.GetECSql();
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"id":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str())), JsonValue(json)) << stmt.GetECSql();
@@ -505,22 +505,20 @@ TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
     Utf8PrintfString expectedJsonCore(R"json("id":"%s", "Name": "%s", "Type": %d, "Modifier": %d)json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str(),
                                       stmt.GetValueText(1), stmt.GetValueInt(2), stmt.GetValueInt(3));
     {
-    Json::Value json(Json::objectValue);
+    BeJsDocument json;
     ASSERT_EQ(SUCCESS, adapter.GetRow(json, true)) << "Append to empty JSON object";
-    EXPECT_EQ(4, (int) json.size()) << json.ToString();
-    EXPECT_EQ(JsonValue(Utf8PrintfString("{%s}", expectedJsonCore.c_str())), JsonValue(json)) << json.ToString();
+    EXPECT_EQ(4, (int) json.size()) << json.Stringify();
+    EXPECT_EQ(JsonValue(Utf8PrintfString("{%s}", expectedJsonCore.c_str())), JsonValue(json)) << json.Stringify();
 
-    json = Json::Value(Json::objectValue);
-    json["MyNumber"] = Json::Value(54321);
-    json["MyArray"] = Json::Value(Json::arrayValue);
-    json["MyArray"].append(Json::Value(5));
-    json["MyArray"].append(Json::Value(4));
-    json["MyObj"]["FirstName"] = Json::Value("Gustav");
-    json["MyObj"]["LastName"] = Json::Value("Mueller");
+    json["MyNumber"] = 54321;
+    json["MyArray"][0] = 5;
+    json["MyArray"][1] = 4;
+    json["MyObj"]["FirstName"] = "Gustav";
+    json["MyObj"]["LastName"] = "Mueller";
 
     ASSERT_EQ(SUCCESS, adapter.GetRow(json, true)) << "Append to non-empty JSON object";
-    EXPECT_EQ(7, (int) json.size()) << json.ToString();
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyNumber":54321,"MyArray":[5,4],"MyObj":{"FirstName":"Gustav","LastName":"Mueller"},%s})json", expectedJsonCore.c_str())), JsonValue(json)) << json.ToString();
+    EXPECT_EQ(7, (int) json.size()) << json.Stringify();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyNumber":54321,"MyArray":[5,4],"MyObj":{"FirstName":"Gustav","LastName":"Mueller"},%s})json", expectedJsonCore.c_str())), JsonValue(json)) << json.Stringify();
     }
     {
     rapidjson::Document json;
@@ -1220,7 +1218,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 
     ASSERT_TRUE_NULLABLE(actualJson.HasMember("G")) << actualJson.ToString();
     ASSERT_TRUE_NULLABLE(actualJson["G"].IsObject()) << actualJson.ToString();
-    EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1,1,1],\"startPoint\":[0,0,0]}}"), JsonValue(actualJson["G"].JsonCpp())) << actualJson.ToString();
+    // EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1,1,1],\"startPoint\":[0,0,0]}}"), JsonValue(actualJson["G"].JsonCpp())) << actualJson.ToString();
     EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1,1,1],\"startPoint\":[0,0,0]}}"), JsonValue(TestUtilities::ToString(actualJson["G"].RapidJson()))) << actualJson.ToString();
 
     ASSERT_TRUE_NULLABLE(actualJson.HasMember("I")) << actualJson.ToString();
@@ -1284,7 +1282,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 
     ASSERT_TRUE_NULLABLE(actualJson.HasMember("g")) << actualJson.ToString();
     ASSERT_TRUE_NULLABLE(actualJson["g"].IsObject()) << actualJson.ToString();
-    EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(actualJson["g"].JsonCpp())) << actualJson.ToString();
+    // EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(actualJson["g"].JsonCpp())) << actualJson.ToString();
     EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(TestUtilities::ToString(actualJson["g"].RapidJson()))) << actualJson.ToString();
     }
 
@@ -1596,11 +1594,11 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
 
     JsonDoc expectedDefaultJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.RapidJson(), expectedDefaultJsonStr));
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.JsonCpp(), expectedDefaultJsonStr));
+    // ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.JsonCpp(), expectedDefaultJsonStr));
 
     JsonDoc expectedJavaScriptJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.RapidJson(), expectedJavaScriptJsonStr));
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.JsonCpp(), expectedJavaScriptJsonStr));
+    // ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.JsonCpp(), expectedJavaScriptJsonStr));
 
     ASSERT_TRUE_NULLABLE(expectedDefaultJson.Equals(actualDefaultJson)) << "Expected: " << expectedDefaultJson.ToString() << " | Actual: " << actualDefaultJson.ToString();
     ASSERT_TRUE_NULLABLE(expectedJavaScriptJson.Equals(actualJavaScriptJson)) << "Expected: " << expectedDefaultJson.ToString() << " | Actual: " << actualDefaultJson.ToString();

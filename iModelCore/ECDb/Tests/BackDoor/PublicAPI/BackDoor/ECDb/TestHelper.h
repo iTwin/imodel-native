@@ -118,9 +118,11 @@ struct TestUtilities final
 
     public:
         static BentleyStatus ReadFile(Utf8StringR, BeFileNameCR);
+        static BentleyStatus ReadFile(Json::Value&, BeFileNameCR);
         static BentleyStatus ReadFile(BeJsDocument&, BeFileNameCR);
         static BentleyStatus ReadFile(rapidjson::Document&, BeFileNameCR);
 
+        static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
         static BentleyStatus ParseJson(BeJsDocument& json, Utf8StringCR jsonStr) 
             { 
                 json.Parse(jsonStr.c_str()); 

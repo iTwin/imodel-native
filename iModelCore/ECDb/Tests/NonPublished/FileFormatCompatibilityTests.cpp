@@ -2273,6 +2273,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
                 enumValue["Description"] = enumValue["DisplayLabel"].asCString();
             return false;
             });
+        ASSERT_FALSE(hadError);
 
         stmt.Finalize();
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE ec_Enumeration SET EnumValues=? WHERE Id=?"));

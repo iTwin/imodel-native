@@ -17,7 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 JsonValue::JsonValue(Utf8CP json)
     {
     if (SUCCESS != TestUtilities::ParseJson(m_value, json))
-        m_value = Json::Value(Json::nullValue);
+        m_value.SetNull();
     }
 
 //---------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ bool JsonValue::operator==(JsonValue const& rhs) const
 
         for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
             {
-            if (JsonValue(m_value[i]) != JsonValue(rhs.m_value[i]))
+            if (m_value[i] != rhs.m_value[i])
                 return false;
             }
 
@@ -47,41 +47,29 @@ bool JsonValue::operator==(JsonValue const& rhs) const
         if (!rhs.m_value.isObject())
             return false;
 
-        bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
-        if (lhsMemberNames.size() != rhs.m_value.size())
+        if (m_value.size() != rhs.m_value.size())
             return false;
 
-        for (Utf8StringCR memberName : lhsMemberNames)
-            {
-            if (!rhs.m_value.isMember(memberName))
-                return false;
+        bool failed = m_value.ForEachProperty([&](Utf8CP name, BeJsConst member) {
+            if (!member.isAlmostEqual(rhs.m_value[name]))
+                return true;
 
-            if (JsonValue(m_value[memberName]) != JsonValue(rhs.m_value[memberName]))
-                return false;
-            }
+            return false;
+            });
 
-        return true;
+        return !failed;
         }
-
-    if (m_value.isIntegral() && !rhs.m_value.isIntegral())
-        return false;
 
     if (m_value.isBool())
         return rhs.m_value.isBool() && m_value.asBool() == rhs.m_value.asBool();
 
-    if (m_value.isInt())
-        return rhs.m_value.isConvertibleTo(Json::intValue) && m_value.asInt64() == rhs.m_value.asInt64();
-
-    if (m_value.isUInt())
-        return rhs.m_value.isConvertibleTo(Json::uintValue) && m_value.asUInt64() == rhs.m_value.asUInt64();
-
-    if (m_value.isDouble())
-        return rhs.m_value.isDouble() && TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
+    if (m_value.isNumeric())
+        return rhs.m_value.isNumeric() && m_value.areAlmostEqual(m_value.asDouble(), rhs.m_value.asDouble(), 0, 0);
 
     if (m_value.isString())
         return rhs.m_value.isString() && strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
 
-    BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
+    BeAssert(false && "Unhandled BeJsDocument value type. This method needs to be adjusted");
     return false;
     }
 

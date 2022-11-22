@@ -1923,7 +1923,7 @@ TEST_F(SchemaManagerTests, Formats)
         else
             {
             ASSERT_TRUE(format->HasNumeric()) << format->GetFullName();
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << format->GetFullName();
             ASSERT_EQ(numericSpec, JsonValue(jval)) << format->GetFullName();
             }
@@ -1932,7 +1932,7 @@ TEST_F(SchemaManagerTests, Formats)
             ASSERT_FALSE(format->HasComposite()) << format->GetFullName();
         else
             {
-            Json::Value jval;
+            BeJsDocument jval;
             ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << format->GetFullName();
             ASSERT_TRUE(format->HasComposite()) << format->GetFullName();
             ASSERT_EQ(compSpec, JsonValue(jval)) << format->GetFullName();

@@ -408,13 +408,13 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    // Parse JSON value using JsonCpp
+    // Parse JSON value using BeJsDocument
     BeJsDocument jsonInput;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(jsonInput, jsonInputFile));
 
     // Parse JSON value using RapidJson
     rapidjson::Document rapidJsonInput;
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(rapidJsonInput, Json::FastWriter().write(jsonInput)));
+    ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(rapidJsonInput, jsonInputFile));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
@@ -1375,48 +1375,48 @@ TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(JsonValueHelper, Comparisons)
-    {
-    JsonValue uintVal(Json::Value(UINT32_C(1)));
-    EXPECT_TRUE(uintVal.m_value.isUInt());
-    EXPECT_FALSE(uintVal.m_value.isInt());
-    EXPECT_TRUE(uintVal.m_value.isIntegral());
+// TEST(JsonValueHelper, Comparisons)
+//     {
+//     JsonValue uintVal(Json::Value(UINT32_C(1)));
+//     EXPECT_TRUE(uintVal.m_value.isUInt());
+//     EXPECT_FALSE(uintVal.m_value.isInt());
+//     EXPECT_TRUE(uintVal.m_value.isIntegral());
 
-    JsonValue intVal(Json::Value((int) 1));
-    EXPECT_TRUE(intVal.m_value.isInt());
-    EXPECT_FALSE(intVal.m_value.isUInt());
-    EXPECT_TRUE(intVal.m_value.isIntegral());
+//     JsonValue intVal(Json::Value((int) 1));
+//     EXPECT_TRUE(intVal.m_value.isInt());
+//     EXPECT_FALSE(intVal.m_value.isUInt());
+//     EXPECT_TRUE(intVal.m_value.isIntegral());
 
-    EXPECT_FALSE(uintVal.m_value == intVal.m_value) << "JsonCpp comparison is strict on exact integral type";
-    EXPECT_TRUE(uintVal == intVal) << "JsonValue helper API does integral type coercion";
+//     EXPECT_FALSE(uintVal.m_value == intVal.m_value) << "JsonCpp comparison is strict on exact integral type";
+//     EXPECT_TRUE(uintVal == intVal) << "JsonValue helper API does integral type coercion";
 
-    JsonValue int64Val(Json::Value((int64_t) 1));
-    EXPECT_TRUE(int64Val.m_value.isInt());
-    EXPECT_TRUE(int64Val.m_value.isIntegral());
+//     JsonValue int64Val(Json::Value((int64_t) 1));
+//     EXPECT_TRUE(int64Val.m_value.isInt());
+//     EXPECT_TRUE(int64Val.m_value.isIntegral());
 
-    EXPECT_TRUE(int64Val.m_value == intVal.m_value) << "JsonCpp comparison allows comparing int32 with int64";
-    EXPECT_TRUE(int64Val == intVal) << "JsonValue helper API does integral type coercion";
-    EXPECT_FALSE(int64Val.m_value == uintVal.m_value) << "JsonCpp comparison is strict on exact integral type";
-    EXPECT_TRUE(int64Val == uintVal) << "JsonValue helper API does integral type coercion";
+//     EXPECT_TRUE(int64Val.m_value == intVal.m_value) << "JsonCpp comparison allows comparing int32 with int64";
+//     EXPECT_TRUE(int64Val == intVal) << "JsonValue helper API does integral type coercion";
+//     EXPECT_FALSE(int64Val.m_value == uintVal.m_value) << "JsonCpp comparison is strict on exact integral type";
+//     EXPECT_TRUE(int64Val == uintVal) << "JsonValue helper API does integral type coercion";
 
-    JsonValue uint64Val(Json::Value((uint64_t) 1));
-    EXPECT_TRUE(uint64Val.m_value.isUInt());
-    EXPECT_TRUE(uint64Val.m_value.isIntegral());
+//     JsonValue uint64Val(Json::Value((uint64_t) 1));
+//     EXPECT_TRUE(uint64Val.m_value.isUInt());
+//     EXPECT_TRUE(uint64Val.m_value.isIntegral());
 
-    EXPECT_FALSE(int64Val.m_value == uint64Val.m_value) << "JsonCpp comparison is strict on exact integral type";
-    EXPECT_TRUE(int64Val == uint64Val) << "JsonValue helper API does integral type coercion";
+//     EXPECT_FALSE(int64Val.m_value == uint64Val.m_value) << "JsonCpp comparison is strict on exact integral type";
+//     EXPECT_TRUE(int64Val == uint64Val) << "JsonValue helper API does integral type coercion";
 
-    EXPECT_TRUE(uintVal.m_value == uint64Val.m_value) << "JsonCpp comparison allows comparing uint32 with uint64";
-    EXPECT_TRUE(uintVal == uint64Val) << "JsonValue helper API does integral type coercion";
+//     EXPECT_TRUE(uintVal.m_value == uint64Val.m_value) << "JsonCpp comparison allows comparing uint32 with uint64";
+//     EXPECT_TRUE(uintVal == uint64Val) << "JsonValue helper API does integral type coercion";
 
-    JsonValue boolVal(Json::Value(true));
-    EXPECT_TRUE(boolVal.m_value.isBool());
-    EXPECT_FALSE(boolVal.m_value.isUInt());
-    EXPECT_FALSE(boolVal.m_value.isInt());
-    EXPECT_TRUE(boolVal.m_value.isIntegral());
-    EXPECT_FALSE(boolVal.m_value == int64Val.m_value) << "JsonCpp comparison is strict on exact integral type";
-    EXPECT_EQ(boolVal.m_value.asUInt(), int64Val.m_value.asUInt()) << "JsonCpp asUInt is supported on bools";
-    EXPECT_FALSE(boolVal == int64Val) << "JsonValueHelper does not treat bools equal with other numeric values";
-    }
+//     JsonValue boolVal(Json::Value(true));
+//     EXPECT_TRUE(boolVal.m_value.isBool());
+//     EXPECT_FALSE(boolVal.m_value.isUInt());
+//     EXPECT_FALSE(boolVal.m_value.isInt());
+//     EXPECT_TRUE(boolVal.m_value.isIntegral());
+//     EXPECT_FALSE(boolVal.m_value == int64Val.m_value) << "JsonCpp comparison is strict on exact integral type";
+//     EXPECT_EQ(boolVal.m_value.asUInt(), int64Val.m_value.asUInt()) << "JsonCpp asUInt is supported on bools";
+//     EXPECT_FALSE(boolVal == int64Val) << "JsonValueHelper does not treat bools equal with other numeric values";
+//     }
 
 END_ECDBUNITTESTS_NAMESPACE
