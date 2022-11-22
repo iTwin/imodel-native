@@ -983,7 +983,7 @@ IECSqlValue const& PragmaECSqlPreparedStatement::GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 int64_t PragmaVal::GetInteger() const {
     if (IsInteger()) {
-        return std::any_cast<int64_t>(m_val);
+        return m_integer;
     }
     if (IsDouble()) {
         return static_cast<int64_t>(GetDouble());
@@ -1002,7 +1002,7 @@ int64_t PragmaVal::GetInteger() const {
 //---------------------------------------------------------------------------------------
 double PragmaVal::GetDouble() const {
     if(IsDouble()) {
-        return std::any_cast<double>(m_val);
+        return m_double;
     }
     if (IsInteger()) {
         return static_cast<double>(GetInteger());
@@ -1021,13 +1021,13 @@ double PragmaVal::GetDouble() const {
 //---------------------------------------------------------------------------------------
 bool PragmaVal::GetBool() const {
     if(IsBool()) {
-        return std::any_cast<bool>(m_val);
+        return m_integer;
     }
     if(IsDouble()) {
-        return std::any_cast<double>(m_val);
+        return GetDouble() != 0;
     }
     if (IsInteger()) {
-        return std::any_cast<int64_t>(m_val);
+        return GetInteger() != 0;
     }
     if (IsString()) {
         auto str = GetString();
@@ -1047,7 +1047,7 @@ bool PragmaVal::GetBool() const {
 //---------------------------------------------------------------------------------------
 std::string PragmaVal::GetString() const {
     if(IsString()) {
-        return std::any_cast<std::string const&>(m_val);
+        return m_str;
     }
     if(IsDouble()) {
         return std::to_string(GetDouble());
@@ -1069,7 +1069,7 @@ std::string PragmaVal::GetString() const {
 //---------------------------------------------------------------------------------------
 std::string PragmaVal::GetName() const {
     if(IsName()) {
-        return std::any_cast<std::string const&>(m_val);
+        return m_str;
     }
     return "";
 }

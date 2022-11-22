@@ -22,7 +22,13 @@ private:
         Empty,
     };
     Type m_type;
-    std::any m_val;
+
+    std::string m_str;
+    union {
+        int64_t m_integer;
+        double m_double;
+        bool m_bool;
+    };
     explicit PragmaVal(Type t):m_type(t){}
 public:
     PragmaVal():m_type(Type::Empty){}
@@ -30,10 +36,10 @@ public:
     PragmaVal(const PragmaVal&) = default;
     PragmaVal& operator =(PragmaVal&&) = default;
     PragmaVal& operator =(const PragmaVal&) = default;
-    explicit PragmaVal(int64_t val):m_type(Type::Integer), m_val(val){}
-    explicit PragmaVal(double val):m_type(Type::Double), m_val(val){}
-    explicit PragmaVal(bool val):m_type(Type::Bool), m_val(val){}
-    explicit PragmaVal(std::string val, bool isName):m_type(isName?Type::Name:Type::String), m_val(val){}
+    explicit PragmaVal(int64_t val):m_type(Type::Integer), m_integer(val){}
+    explicit PragmaVal(double val):m_type(Type::Double), m_double(val){}
+    explicit PragmaVal(bool val):m_type(Type::Bool), m_bool(val){}
+    explicit PragmaVal(std::string val, bool isName):m_type(isName?Type::Name:Type::String), m_str(val){}
     bool IsBool() const { return m_type == Type::Bool; }
     bool IsInteger() const { return m_type == Type::Integer; }
     bool IsDouble() const { return m_type == Type::Double; }
@@ -45,13 +51,12 @@ public:
     int64_t GetInteger() const;
     double GetDouble() const;
     bool GetBool() const;
-    PragmaVal& operator = (int64_t v) { m_val = v; m_type = Type::Integer;}
-    PragmaVal& operator = (double v) { m_val = v; m_type = Type::Double;}
-    PragmaVal& operator = (std::string const&v) { m_val = v; m_type = Type::String;}
-    PragmaVal& operator = (bool v) { m_val = v; m_type = Type::Bool;}
-    PragmaVal& operator = (nullptr_t v) { m_val = v; m_type = Type::Null;}
-    void SetName(std::string const& name) { m_val= name; m_type = Type::Name; }
-    void Reset() { m_val.reset(), m_type = Type::Empty; }
+    PragmaVal& operator = (int64_t v) { m_integer = v; m_type = Type::Integer;}
+    PragmaVal& operator = (double v) { m_double = v; m_type = Type::Double;}
+    PragmaVal& operator = (std::string const&v) { m_str = v; m_type = Type::String;}
+    PragmaVal& operator = (bool v) { m_bool = v; m_type = Type::Bool;}
+    PragmaVal& operator = (nullptr_t v) { m_str.clear(); m_integer = 0; m_type = Type::Null;}
+    void SetName(std::string const& name) { m_str = name; m_type = Type::Name; }
     std::string GetString() const;
     std::string GetName() const;
     static PragmaVal const& Null();
