@@ -5,7 +5,6 @@
 #pragma once
 
 #include "Exp.h"
-#include <any>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
