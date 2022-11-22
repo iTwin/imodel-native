@@ -12401,8 +12401,8 @@ TEST_F(SchemaUpgradeTestFixture, IllegalPropertyCategoryDeleteWithDoNotFailFlag)
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
-    PropertyCategoryCP cat = schema.GetPropertyCategoryCP(name);
-    ASSERT_TRUE(cat != nullptr) << name;
+    PropertyCategoryCP cat = (*schema).GetPropertyCategoryCP("C2");
+    ASSERT_TRUE(cat != nullptr) << "C2";
     }
 
 //---------------------------------------------------------------------------------------
