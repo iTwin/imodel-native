@@ -1,4 +1,3 @@
-#Irrelevant change for Testing Linking between imodel-native and imodel-native-internal PRs
 name: open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
 
 trigger:
