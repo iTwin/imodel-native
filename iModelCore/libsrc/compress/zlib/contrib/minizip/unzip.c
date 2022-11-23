@@ -112,7 +112,7 @@
 # define ALLOC(size) (malloc(size))
 #endif
 #ifndef TRYFREE
-# define TRYFREE(p) {if (p) free(p);}
+# define TRYFREE(p) { free(p);}
 #endif
 
 #define SIZECENTRALDIRITEM (0x2e)
