@@ -73,10 +73,10 @@ typedef RefCountedPtr<struct BuilderWrapper>  BuilderWrapperPtr;
 struct BuilderWrapper : RefCountedBase
 {
 virtual void InsertPointTriangle (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2, bool terminate) = 0;
-virtual char const * Name () = 0;
+virtual Utf8CP Name () = 0;
+virtual Utf8CP GetDescription () = 0;
 virtual void Finish () = 0;
 virtual PolyfaceHeaderPtr PeekMesh () = 0;
-virtual void GetDescription(char buffer[2048]) = 0;
 };
 
 struct LWBuilderWrapper : BuilderWrapper
@@ -95,10 +95,8 @@ static BuilderWrapperPtr Create(double pointGridSize, double normalGridSize, dou
     {
     return new LWBuilderWrapper (pointGridSize, normalGridSize, paramGridSize, clusteredSearch);
     }
-char const * Name() override { return "LightWeightMap";}
-void GetDescription(char buffer[2048]) override {
-    snprintf(buffer, sizeof(*buffer), "(clustered %d)", m_clusteredSearch ? 1 : 0);
-    }
+Utf8CP Name() override { return "LightWeightMap";}
+Utf8CP GetDescription() override { return Utf8PrintfString("(clustered %d)", m_clusteredSearch ? 1 : 0).c_str(); }
 void Finish() override {/* nothing to do */}
 PolyfaceHeaderPtr PeekMesh() override {return m_polyface;}
 
@@ -144,15 +142,15 @@ struct DirectBuilderWrapper : BuilderWrapper
         {
         return new DirectBuilderWrapper(compressParam);
         }
-    char const * Name() override { return "Direct";}
-    void GetDescription (char buffer[2048]) override
+    Utf8CP Name() override { return "Direct";}
+    Utf8CP GetDescription () override
         {
         if (m_compressParam < 0.0)
-            snprintf(buffer, sizeof(*buffer), "(no compress)");
+            return "(no compress)";
         else if (m_compressParam > 0)
-            snprintf(buffer, sizeof(*buffer), "(postcompress %g)", m_compressParam);
+            return Utf8PrintfString("(postcompress %g)", m_compressParam).c_str();
         else
-            snprintf(buffer, sizeof(*buffer), "(postcompress default)");
+            return "(postcompress default)";
         }
     void Finish() override
         {
@@ -192,11 +190,8 @@ struct ClassicBuilderWrapped : BuilderWrapper
         {
         return new ClassicBuilderWrapped();
         }
-    char const * Name() override { return "Classic";}
-    void GetDescription(char buffer[2048]) override
-        {
-        snprintf(buffer, sizeof(*buffer), "(no params)");
-        }
+    Utf8CP Name() override { return "Classic";}
+    Utf8CP GetDescription() override { return "(no params)"; }
     void Finish() override {}
 
     PolyfaceHeaderPtr PeekMesh() override { return m_builder->GetClientMeshPtr (); }
@@ -213,8 +208,6 @@ struct ClassicBuilderWrapped : BuilderWrapper
             m_builder->AddPointIndexTerminator();
         }
     };
-
-
 
 TEST(LightweightBuilder, PointsAcrossBoundaries)
     {
@@ -284,10 +277,9 @@ TEST(LightweightBuilder, PointsAcrossBoundaries)
             builder->Finish ();
             timer.AccumulateAndReset();
             double t = timer.Sum();
-            char buffer[2048];
-            builder->GetDescription(buffer);
 
-            printf ("     %s %s    (time %g)   (#V %d)\n", builder->Name (), buffer, t, (int)builder->PeekMesh()->Point ().size ());
+            printf ("     %s %s    (time %g)   (#V %d)\n", builder->Name (), builder->GetDescription(), t, (int)builder->PeekMesh()->Point ().size ());
+
         if (doOutput)
             {
             double xStep = 40.0;
@@ -365,9 +357,8 @@ TEST(LightweightBuilder, Sphere)
                 builder->Finish();
                 timer.AccumulateAndReset();
                 double t = timer.Sum();
-                char buffer[2048];
-                builder->GetDescription(buffer);
-                printf("     %s %s    (time %g) (#V %d) \n", builder->Name(), buffer, t, (int)builder->PeekMesh()->Point().size());
+
+                printf("     %s %s    (time %g) (#V %d) \n", builder->Name(), builder->GetDescription(), t, (int)builder->PeekMesh()->Point().size());
                 if (doOutput)
                     {
                     Check::SaveTransformed(*builder->PeekMesh());
