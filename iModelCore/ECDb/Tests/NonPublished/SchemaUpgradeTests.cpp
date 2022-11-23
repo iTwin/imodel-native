@@ -10742,7 +10742,7 @@ TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, LegalKoQModificationWithDoNotFailFlag)
+TEST_F(SchemaUpgradeTestFixture, KoQModificationWithDoNotFailFlag)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                             <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
