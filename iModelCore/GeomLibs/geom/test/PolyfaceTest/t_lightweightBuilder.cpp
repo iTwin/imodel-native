@@ -74,7 +74,7 @@ struct BuilderWrapper : RefCountedBase
 {
 virtual void InsertPointTriangle (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2, bool terminate) = 0;
 virtual Utf8CP Name () = 0;
-virtual Utf8CP GetDescription () = 0;
+virtual Utf8String GetDescription () = 0;
 virtual void Finish () = 0;
 virtual PolyfaceHeaderPtr PeekMesh () = 0;
 };
@@ -96,7 +96,7 @@ static BuilderWrapperPtr Create(double pointGridSize, double normalGridSize, dou
     return new LWBuilderWrapper (pointGridSize, normalGridSize, paramGridSize, clusteredSearch);
     }
 Utf8CP Name() override { return "LightWeightMap";}
-Utf8CP GetDescription() override { return Utf8PrintfString("(clustered %d)", m_clusteredSearch ? 1 : 0).c_str(); }
+Utf8String GetDescription() override { return Utf8PrintfString("(clustered %d)", m_clusteredSearch ? 1 : 0); }
 void Finish() override {/* nothing to do */}
 PolyfaceHeaderPtr PeekMesh() override {return m_polyface;}
 
@@ -142,8 +142,8 @@ struct DirectBuilderWrapper : BuilderWrapper
         {
         return new DirectBuilderWrapper(compressParam);
         }
-    Utf8CP Name() override { return "Direct";}
-    Utf8CP GetDescription () override
+    Utf8CP Name() override { return "Direct"; }
+    Utf8String GetDescription () override
         {
         if (m_compressParam < 0.0)
             return "(no compress)";
@@ -191,7 +191,7 @@ struct ClassicBuilderWrapped : BuilderWrapper
         return new ClassicBuilderWrapped();
         }
     Utf8CP Name() override { return "Classic";}
-    Utf8CP GetDescription() override { return "(no params)"; }
+    Utf8String GetDescription() override { return "(no params)"; }
     void Finish() override {}
 
     PolyfaceHeaderPtr PeekMesh() override { return m_builder->GetClientMeshPtr (); }
@@ -278,7 +278,7 @@ TEST(LightweightBuilder, PointsAcrossBoundaries)
             timer.AccumulateAndReset();
             double t = timer.Sum();
 
-            printf ("     %s %s    (time %g)   (#V %d)\n", builder->Name (), builder->GetDescription(), t, (int)builder->PeekMesh()->Point ().size ());
+            printf ("     %s %s    (time %g)   (#V %d)\n", builder->Name (), builder->GetDescription().c_str(), t, (int)builder->PeekMesh()->Point ().size ());
 
         if (doOutput)
             {
@@ -358,7 +358,7 @@ TEST(LightweightBuilder, Sphere)
                 timer.AccumulateAndReset();
                 double t = timer.Sum();
 
-                printf("     %s %s    (time %g) (#V %d) \n", builder->Name(), builder->GetDescription(), t, (int)builder->PeekMesh()->Point().size());
+                printf("     %s %s    (time %g) (#V %d) \n", builder->Name(), builder->GetDescription().c_str(), t, (int)builder->PeekMesh()->Point().size());
                 if (doOutput)
                     {
                     Check::SaveTransformed(*builder->PeekMesh());
