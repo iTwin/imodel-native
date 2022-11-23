@@ -770,7 +770,6 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
         BeAssert(false && "unsupported type. Only bool, double, integer, long and string are supported type");
         return nullptr;
     }
-    auto typeDesc = ECN::ECTypeDescriptor::CreatePrimitiveTypeDescriptor(property->GetType());
     DateTime::Info dateTimeInfo;
     ECSqlPropertyPath path;
     path.AddEntry(*property);

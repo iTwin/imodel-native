@@ -355,7 +355,7 @@ BentleyStatus ECSqlParser::ParsePragmaStatement(std::unique_ptr<PragmaStatementE
     };
     ParseFunc parse_opt_pragma_value = [&](ParseNode const* parseNode) {
         if (parseNode->getNodeType() == SQL_NODE_INTNUM) {
-            outPragmaVal = PragmaVal(std::stoll(parseNode->getTokenValue()));
+            outPragmaVal = PragmaVal((int64_t)std::stoll(parseNode->getTokenValue()));
         } else if (parseNode->getNodeType() == SQL_NODE_APPROXNUM) {
             outPragmaVal = PragmaVal(std::stod(parseNode->getTokenValue()));
         } else if (parseNode->getNodeType() == SQL_NODE_STRING) {

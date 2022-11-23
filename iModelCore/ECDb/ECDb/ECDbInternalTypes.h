@@ -8,6 +8,7 @@
 #include <Bentley/BeId.h>
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
+#include <chrono>
 #include <type_traits>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -116,4 +117,24 @@ struct FNV1HashBuilder final {
         void UpdateChar(char v) {UpdateBytes((uint8_t const*)&v, sizeof(v));}
         uint64_t GetHashCode() const { return m_hashCode;}
 };
+
+///=======================================================================================
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct PerfLogScope final {
+    private:
+        Utf8CP m_module;
+        Utf8CP m_method;
+        bool m_disposed;
+
+    public:
+        PerfLogScope(Utf8CP module, Utf8CP method): m_module(module), m_method(method),m_disposed(false) { PERFLOG_START(m_module, m_method); }
+        void Dispose() { m_disposed = true; PERFLOG_FINISH(m_module, m_method);}
+        ~PerfLogScope() { if (!m_disposed) Dispose(); }
+};
+
+#define ECDB_PERF_LOG_SCOPE_BEGIN(NAME,DESC) PerfLogScope __perfScope_##NAME("ECDb",DESC)
+#define ECDB_PERF_LOG_SCOPE_END(NAME) __perfScope_##NAME.Dispose()
+#define ECDB_PERF_LOG_SCOPE(DESC) ECDB_PERF_LOG_SCOPE_BEGIN(main,DESC)
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
