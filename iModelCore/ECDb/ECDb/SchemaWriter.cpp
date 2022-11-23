@@ -3692,13 +3692,6 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Modifying KindOfQuantity is not supported.",
-                                oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
-                continue;
-                }
-
             if (oldKoq == nullptr || newKoq == nullptr)
                 {
                 BeAssert(oldKoq != nullptr && newKoq != nullptr);
@@ -3706,7 +3699,11 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
                 }
 
             if (SUCCESS != UpdateKindOfQuantity(ctx, change, oldSchema, *oldKoq, *newKoq))
+            {
+                if (ctx.IgnoreIllegalDeletionsAndModifications())   
+                    continue;
                 return ERROR;
+            }
             }
         }
 
@@ -3723,11 +3720,19 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
 
     if (change.Name().IsChanged())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
-                                oldSchema.GetFullSchemaName().c_str(),
-                                oldKoq.GetFullName().c_str(),
-                                oldKoq.GetFullName().c_str(),
-                                newKoq.GetFullName().c_str());
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
+            LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
+                                    oldSchema.GetFullSchemaName().c_str(),
+                                    oldKoq.GetFullName().c_str(),
+                                    oldKoq.GetFullName().c_str(),
+                                    newKoq.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
+                    oldSchema.GetFullSchemaName().c_str(),
+                    oldKoq.GetFullName().c_str(),
+                    oldKoq.GetFullName().c_str(),
+                    newKoq.GetFullName().c_str());
+
         return ERROR;
         }
 
@@ -3755,8 +3760,12 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
         {
         if (change.RelativeError().GetNew().IsNull())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
-                                    oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value());
+            ctx.IgnoreIllegalDeletionsAndModifications() ?
+                LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
+                            oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value()) :
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                    "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
+                        oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value());
             return ERROR;
             }
 
@@ -3782,8 +3791,12 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
 
     if (change.MemberChangesCount() > actualChanges)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
-                                oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str());
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
+            LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
+                        oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
+                    oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str());
         return ERROR;
         }
 
