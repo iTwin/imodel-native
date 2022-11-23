@@ -132,8 +132,8 @@ struct PerfLogScope final {
         ~PerfLogScope() { if (!m_disposed) Dispose(); }
 };
 
-#define ECDB_PERF_LOG_SCOPE_BEGIN(NAME,DESC) PerfLogScope __perfScope_##NAME##("ECDb",DESC);
-#define ECDB_PERF_LOG_SCOPE_END(NAME) __perfScope_##NAME##.Dispose();
-#define ECDB_PERF_LOG_SCOPE(DESC) ECDB_PERF_LOG_SCOPE_BEGIN(main,DESC);
+#define ECDB_PERF_LOG_SCOPE_BEGIN(NAME,DESC) PerfLogScope __perfScope_##NAME("ECDb",DESC)
+#define ECDB_PERF_LOG_SCOPE_END(NAME) __perfScope_##NAME.Dispose()
+#define ECDB_PERF_LOG_SCOPE(DESC) ECDB_PERF_LOG_SCOPE_BEGIN(main,DESC)
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
