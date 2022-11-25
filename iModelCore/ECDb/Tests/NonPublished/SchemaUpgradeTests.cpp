@@ -10715,7 +10715,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
                                     <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
                                     <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="G" relativeError="3" />
@@ -10723,7 +10723,7 @@ TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
                             </ECSchema>)xml")));
 
     auto modifiedSchemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
                                         <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
                                         <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
@@ -10745,7 +10745,7 @@ TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
 TEST_F(SchemaUpgradeTestFixture, KoQModificationWithDoNotFailFlag)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
                                     <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
                                     <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="G" relativeError="3" />
@@ -10753,7 +10753,7 @@ TEST_F(SchemaUpgradeTestFixture, KoQModificationWithDoNotFailFlag)
                             </ECSchema>)xml")));
 
     auto modifiedSchemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
                                         <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
                                         <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="New KOQ 3 label" persistenceUnit="KG" presentationUnits="G" relativeError="3" />
@@ -10770,6 +10770,40 @@ TEST_F(SchemaUpgradeTestFixture, KoQModificationWithDoNotFailFlag)
     ASSERT_TRUE(koq != nullptr) << "K3";
     EXPECT_STRCASEEQ("New KOQ 3 label", koq->GetDisplayLabel().c_str()) << "Display label should be modified";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, IllegalKoQModificationWithDoNotFailFlag)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
+                                    <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
+                                    <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="G" relativeError="3" />
+                                    <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
+                            </ECSchema>)xml")));
+
+    auto modifiedSchemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                        <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
+                                        <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
+                                        <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="L" presentationUnits="G" relativeError="3" />
+                                        <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
+                                    </ECSchema>)xml");
+                                    
+
+    auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";   
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("K3");
+    ASSERT_TRUE(koq != nullptr) << "K3";
+    EXPECT_STRCASEEQ("KG", koq->GetDisplayLabel().c_str()) << "PersistenceUnit should no be modified";
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
