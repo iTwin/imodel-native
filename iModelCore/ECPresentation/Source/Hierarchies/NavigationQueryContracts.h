@@ -335,7 +335,7 @@ public:
     ECPropertyCR GetProperty() const {return m_property;}
     Utf8StringCR GetGroupingPropertyClassAlias() const {return m_groupingPropertyClassAlias;}
     ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery(NavNodeCR) const;
+    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery(RapidJsonValueCR groupingValuesJson) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

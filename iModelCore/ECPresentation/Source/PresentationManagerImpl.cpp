@@ -476,7 +476,7 @@ static HierarchyRequestImplParams CreateHierarchyRequestParams(ImplTaskParams<TD
 struct RulesDrivenECPresentationManagerImpl::NavNodeLocater
 {
 private:
-    RulesDrivenECPresentationManagerImpl& m_manager;
+    RulesDrivenECPresentationManagerImpl const& m_manager;
     RequestWithRulesetImplParams m_params;
 
 private:
@@ -516,13 +516,10 @@ private:
                 }
 
             if (found)
-                break;
+                return curr;
             }
 
-        if (!found)
-            return nullptr;
-
-        return NodesFinalizer(nodes->GetProvider()->GetContextR()).Finalize(*curr);
+        return nullptr;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -545,7 +542,10 @@ private:
         }
 
 public:
-    NavNodeLocater(RulesDrivenECPresentationManagerImpl& manager, RequestWithRulesetImplParams params)
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodeLocater(RulesDrivenECPresentationManagerImpl const& manager, RequestWithRulesetImplParams params)
         : m_manager(manager), m_params(params)
         {}
 
@@ -559,23 +559,16 @@ public:
         std::shared_ptr<INavNodesCache> nodesCache = m_manager.GetHierarchyCache(m_params.GetConnection().GetId());
         VALID_HIERARCHY_CACHE_PRECONDITION(nodesCache, nullptr);
 
-        IUserSettings& userSettings = m_manager.GetUserSettings(m_params.GetRulesetId().c_str());
-        RulesetVariables variables(m_params.GetRulesetVariables());
-        variables.Merge(userSettings);
-
-        NavNodeCPtr node = nodesCache->LocateNode(m_params.GetConnection(), m_params.GetRulesetId(), nodeKey, variables);
+        NavNodeCPtr node = nodesCache->LocateNode(m_params.GetConnection(), m_params.GetRulesetId(), nodeKey);
         if (node.IsValid())
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Node taken from cache");
-            node = m_manager.FinalizeNode(m_params, *node);
+            return node;
             }
-        else
-            {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Node not found in cache.");
-            auto locateScope = Diagnostics::Scope::Create("Load & Locate");
-            node = LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr);
-            }
-        return node;
+
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Node not found in cache.");
+        auto locateScope = Diagnostics::Scope::Create("Load & Locate");
+        return LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr);
         }
 };
 
@@ -933,15 +926,27 @@ NavNodesProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateNodesProv
     {
     auto scope = Diagnostics::Scope::Create("Create nodes provider context");
 
+    // locate the parent node if it's passed by key
+    NavNodeCPtr parentNode = params.GetParentNode();
+    if (parentNode.IsNull() && params.GetParentNodeKey())
+        {
+        parentNode = NavNodeLocater(*this, RequestWithRulesetImplParams::Create(params)).LocateNode(*params.GetParentNodeKey());
+        if (parentNode.IsNull())
+            throw InvalidArgumentException("Node for given parent node key does not exist");
+        }
+
     // get the nodes cache
     if (nullptr == cache)
-        cache = m_nodesCachesManager->GetCache(params.GetConnection().GetId(), params.GetParentNode() ? params.GetParentNode()->GetNodeId() : BeGuid());
+        cache = m_nodesCachesManager->GetCache(params.GetConnection().GetId(), parentNode.IsValid() ? parentNode->GetNodeId() : BeGuid());
     if (nullptr == cache)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Failed to find the hierarchy cache for given connection: '%s'.", params.GetConnection().GetId().c_str()));
 
     // create the nodes provider context
-    return m_nodesProviderContextFactory->Create(params.GetConnection(), params.GetRulesetId().c_str(),
-        params.GetParentNode(), cache, params.GetCancellationToken(), params.GetRulesetVariables());
+    NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(params.GetConnection(), params.GetRulesetId().c_str(),
+        parentNode.get(), cache, params.GetCancellationToken(), params.GetRulesetVariables());
+    if (context.IsValid())
+        context->SetInstanceFilter(params.GetInstanceFilter());
+    return context;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -951,12 +956,14 @@ void RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRulesetImplPa
     {
     auto scope = Diagnostics::Scope::Create("Finalize node");
 
-    auto parentNode = node.GetParentNodeId().IsValid() ? m_nodesCachesManager->GetCache(params.GetConnection().GetId())->GetNode(node.GetParentNodeId()) : nullptr;
+    auto hierarchyCache = m_nodesCachesManager->GetCache(params.GetConnection().GetId());
+    auto parentNodeId = hierarchyCache->GetVirtualParentNodeId(node.GetNodeId());
+    auto parentNode = parentNodeId.IsValid() ? hierarchyCache->GetNode(parentNodeId) : nullptr;
     auto contextParams = CreateHierarchyRequestParams(params, parentNode.get());
     auto context = CreateNodesProviderContext(contextParams);
     if (context.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to create context for finalizing node.");
-    
+
     NodesFinalizer(*context).Finalize(node);
     }
 
@@ -973,11 +980,14 @@ NavNodePtr RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRuleset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl::_CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams const& params) const
+std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl::_CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const& params) const
     {
     auto scope = Diagnostics::Scope::Create("Create nodes instance keys provider");
 
-    auto context = CreateNodesProviderContext(CreateHierarchyRequestParams(params));
+    auto hierarchyParams = CreateHierarchyRequestParams(params);
+    hierarchyParams.SetInstanceFilter(params.GetInstanceFilter());
+
+    auto context = CreateNodesProviderContext(hierarchyParams);
     if (context.IsNull())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create context. Returning NULL.");
@@ -990,13 +1000,13 @@ std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(NavNodesProviderContextR context, PageOptionsCP pageOptions)
+NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(NavNodesProviderContextR context, PageOptionsCP pageOptions) const
     {
     auto scope = Diagnostics::Scope::Create("Create data source");
 
-    if (context.GetPhysicalParentNode().IsValid() && !context.GetPhysicalParentNode()->HasChildren())
+    if (context.GetVirtualParentNode().IsValid() && NodesFinalizer(context).HasSimilarNodeInHierarchy(*context.GetVirtualParentNode()))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_WARNING, LOG_INFO, "Requested children for node that has none. Returning empty data source.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Parent node has similar ancestor - returning empty data source");
         return nullptr;
         }
 
@@ -1029,7 +1039,7 @@ NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const& params)
+NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const& params) const
     {
     auto scope = Diagnostics::Scope::Create("Create data source");
 
@@ -1049,30 +1059,75 @@ NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static Diagnostics::Scope::Holder CreateScopeForHierarchyRequest(HierarchyRequestParams const& params, Utf8CP requestIdentifier)
+    {
+    if (params.GetParentNode())
+        return Diagnostics::Scope::Create(Utf8PrintfString("Get child %s for parent %s", requestIdentifier, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+
+    if (params.GetParentNodeKey())
+        return Diagnostics::Scope::Create(Utf8PrintfString("Get child %s for parent %s", requestIdentifier, DiagnosticsHelpers::CreateNodeKeyIdentifier(*params.GetParentNodeKey()).c_str()));
+
+    return Diagnostics::Scope::Create(Utf8PrintfString("Get root %s", requestIdentifier));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ReportNodesResponse(WithPageOptions<HierarchyRequestParams> const& params, INavNodesDataSourceCR ds)
+    {
+    auto pageStart = (uint64_t)params.GetPageOptions().GetPageStart();
+    auto dsSizeWithOffset = (uint64_t)(params.GetPageOptions().GetPageStart() + ds.GetSize());
+    if (params.GetParentNode())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") child nodes for parent %s",
+            pageStart, dsSizeWithOffset, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+        }
+    else if (params.GetParentNodeKey())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") child nodes for parent %s",
+            pageStart, dsSizeWithOffset, DiagnosticsHelpers::CreateNodeKeyIdentifier(*params.GetParentNodeKey()).c_str()));
+        }
+    else
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") root nodes",
+            pageStart, dsSizeWithOffset));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params)
     {
-    Diagnostics::Scope::Holder scope;
-    if (params.GetParentNode())
-        scope = Diagnostics::Scope::Create(Utf8PrintfString("Get child nodes for parent %s", DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
-    else
-        scope = Diagnostics::Scope::Create("Get root nodes");
+    auto scope = CreateScopeForHierarchyRequest(params, "nodes");
 
     INavNodesDataSourcePtr source = GetCachedDataSource(params);
     if (source.IsNull())
         source = EmptyDataSource<NavNodePtr>::Create();
 
+    ReportNodesResponse(params, *source);
+    return PreloadedDataSource<NavNodePtr>::Create(*source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ReportNodesCountResponse(WithPageOptions<HierarchyRequestParams> const& params, size_t nodesCount)
+    {
     if (params.GetParentNode())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") child nodes for parent %s",
-            (uint64_t)params.GetPageOptions().GetPageStart(), (uint64_t)(params.GetPageOptions().GetPageStart() + source->GetSize()), DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64 " for parent %s",
+            (uint64_t)nodesCount, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+        }
+    else if (params.GetParentNodeKey())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64 " for parent %s",
+            (uint64_t)nodesCount, DiagnosticsHelpers::CreateNodeKeyIdentifier(*params.GetParentNodeKey()).c_str()));
         }
     else
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") root nodes",
-            (uint64_t)params.GetPageOptions().GetPageStart(), (uint64_t)(params.GetPageOptions().GetPageStart() + source->GetSize())));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64, (uint64_t)nodesCount));
         }
-
-    return PreloadedDataSource<NavNodePtr>::Create(*source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1080,25 +1135,11 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetNodes(WithPageO
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t RulesDrivenECPresentationManagerImpl::_GetNodesCount(HierarchyRequestImplParams const& params)
     {
-    Diagnostics::Scope::Holder scope;
-    if (params.GetParentNode())
-        scope = Diagnostics::Scope::Create(Utf8PrintfString("Get child nodes count for parent %s", DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
-    else
-        scope = Diagnostics::Scope::Create("Get root nodes count");
+    auto scope = CreateScopeForHierarchyRequest(params, "nodes count");
 
     INavNodesDataSourcePtr source = GetCachedDataSource(params);
     size_t size = source.IsValid() ? source->GetSize() : 0;
-
-    if (params.GetParentNode())
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64 " for parent %s",
-            (uint64_t)size, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
-        }
-    else
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64, (uint64_t)size));
-        }
-
+    ReportNodesCountResponse(params, size);
     return size;
     }
 
@@ -1109,13 +1150,10 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestIm
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Get parent for node %s", DiagnosticsHelpers::CreateNodeIdentifier(params.GetNode()).c_str()));
 
-    if (!params.GetNode().GetParentNodeId().IsValid())
-        return nullptr;
-
     std::shared_ptr<NodesCache> cache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
     VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
 
-    auto node = cache->GetNode(params.GetNode().GetParentNodeId());
+    auto node = cache->GetPhysicalParentNode(params.GetNode().GetNodeId(), params.GetRulesetVariables(), params.GetInstanceFilter());
     if (node.IsValid())
         FinalizeNode(RequestWithRulesetImplParams::Create(params), *node);
 
@@ -1125,16 +1163,7 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestIm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetNode(NodeByKeyRequestImplParams const& params)
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Get node for key %s", DiagnosticsHelpers::CreateNodeKeyIdentifier(params.GetNodeKey()).c_str()));
-    return NavNodeLocater(*this, RequestWithRulesetImplParams::Create(params)).LocateNode(params.GetNodeKey());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImplParams const& params, std::shared_ptr<INavNodesCache> cache)
+void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImplParams const& params, std::shared_ptr<INavNodesCache> cache) const
     {
     ThrowIfCancelled(params.GetCancellationToken());
 
@@ -1164,10 +1193,10 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     std::shared_ptr<NodesCache> nodesCache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
     VALID_HIERARCHY_CACHE_PRECONDITION(nodesCache, result);
 
-    // create a savepoint to avoid commiting any changes while we're creating the hierarchy
+    // create a savepoint to avoid committing any changes while we're creating the hierarchy
     auto cacheSavepoint = nodesCache->CreateSavepoint(true);
 
-    if (!nodesCache->IsInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables()))
+    if (!nodesCache->IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables(), ""))
         {
         NavNodesProviderContextPtr rootNodesContext = CreateNodesProviderContext(CreateHierarchyRequestParams(params), nodesCache);
         if (rootNodesContext.IsNull())
@@ -1258,7 +1287,7 @@ private:
         }
 
 public:
-    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, ContentProviderContextCR context)
+    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl const& manager, ContentProviderContextCR context)
         : m_context(context)
         {
         auto locaterParams = RequestWithRulesetImplParams::Create(context.GetConnection(), &context.GetCancelationToken(),
@@ -1330,7 +1359,7 @@ ContentProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateContentPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCP cancelationToken, ContentProviderKey const& key, RulesetVariables const& variables)
+SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCP cancelationToken, ContentProviderKey const& key, RulesetVariables const& variables) const
     {
     auto scope = Diagnostics::Scope::Create("Get content provider");
 
@@ -1445,7 +1474,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(ContentRequestImplParams const& params)
+SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(ContentRequestImplParams const& params) const
     {
     ContentDescriptorCR descriptor = params.GetContentDescriptor();
     ContentProviderKey key(params.GetConnection().GetId(), descriptor.GetRuleset().GetRuleSetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),

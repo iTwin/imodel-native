@@ -28,15 +28,7 @@ static void AddStringToHash(MD5& hash, Utf8StringCR str, bool useByteLength = tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodeKey::FromJson(IConnectionCR connection, RapidJsonValueCR json)
-    {
-    return ECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(connection, json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodeKey::FromJson(IConnectionCR connection, JsonValueCR json)
+NavNodeKeyPtr NavNodeKey::FromJson(IConnectionCR connection, BeJsConst json)
     {
     return ECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(connection, json);
     }
@@ -90,7 +82,8 @@ int NavNodeKey::_Compare(NavNodeKey const& other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> NavNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8StringCR type, Utf8StringCR label)
+bvector<Utf8String> NavNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
+    Utf8StringCR type, Utf8StringCR label, PresentationQueryBaseCP instanceKeysSelectQuery)
     {
     MD5 h;
     AddStringToHash(h, specificationIdentifier, false);
@@ -98,6 +91,8 @@ bvector<Utf8String> NavNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier
     AddStringToHash(h, connectionIdentifier);
     if (!label.empty())
         AddStringToHash(h, label);
+    if (instanceKeysSelectQuery && !instanceKeysSelectQuery->ToString().empty())
+        AddStringToHash(h, instanceKeysSelectQuery->ToString());
     return CombineHashes(parentKey ? parentKey->GetHashPath() : bvector<Utf8String>(), h.GetHashString());
     }
 
@@ -142,15 +137,7 @@ bvector<Utf8String> ECInstancesNodeKey::CreateHashPath(Utf8StringCR connectionId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(IConnectionCR connection, JsonValueCR json)
-    {
-    return ECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(connection, json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(IConnectionCR connection, RapidJsonValueCR json)
+RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::FromJson(IConnectionCR connection, BeJsConst json)
     {
     return ECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(connection, json);
     }
@@ -176,7 +163,7 @@ bool ECClassGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> ECClassGroupingNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-    ECClassCR groupingClass, bool isPolymorphic)
+    ECClassCR groupingClass, bool isPolymorphic, PresentationQueryBaseCP instanceKeysSelectQuery)
     {
     MD5 h;
     AddStringToHash(h, specificationIdentifier, false);
@@ -186,21 +173,15 @@ bvector<Utf8String> ECClassGroupingNodeKey::CreateHashPath(Utf8StringCR connecti
     h.Add(&classId, sizeof(classId));
     if (isPolymorphic)
         h.Add(&isPolymorphic, sizeof(isPolymorphic));
+    if (instanceKeysSelectQuery && !instanceKeysSelectQuery->ToString().empty())
+        AddStringToHash(h, instanceKeysSelectQuery->ToString());
     return CombineHashes(parentKey ? parentKey->GetHashPath() : bvector<Utf8String>(), h.GetHashString());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(IConnectionCR connection, JsonValueCR json)
-    {
-    return ECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(connection, json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(IConnectionCR connection, RapidJsonValueCR json)
+RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::FromJson(IConnectionCR connection, BeJsConst json)
     {
     return ECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(connection, json);
     }
@@ -227,7 +208,7 @@ bool ECPropertyGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> ECPropertyGroupingNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-    ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson)
+    ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson, PresentationQueryBaseCP instanceKeysSelectQuery)
     {
     MD5 h;
     AddStringToHash(h, specificationIdentifier, false);
@@ -238,21 +219,15 @@ bvector<Utf8String> ECPropertyGroupingNodeKey::CreateHashPath(Utf8StringCR conne
     ECClassId classId = propertyClass.GetId();
     h.Add(&classId, sizeof(classId));
     h.Add(propertyName.c_str(), propertyName.size());
+    if (instanceKeysSelectQuery && !instanceKeysSelectQuery->ToString().empty())
+        AddStringToHash(h, instanceKeysSelectQuery->ToString());
     return CombineHashes(parentKey ? parentKey->GetHashPath() : bvector<Utf8String>(), h.GetHashString());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(JsonValueCR json)
-    {
-    return ECPresentationManager::GetSerializer().GetLabelGroupingNodeKeyFromJson(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(RapidJsonValueCR json)
+RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::FromJson(BeJsConst json)
     {
     return ECPresentationManager::GetSerializer().GetLabelGroupingNodeKeyFromJson(json);
     }
@@ -277,13 +252,16 @@ bool LabelGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> LabelGroupingNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8StringCR label)
+bvector<Utf8String> LabelGroupingNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
+    Utf8StringCR label, PresentationQueryBaseCP instanceKeysSelectQuery)
     {
     MD5 h;
     AddStringToHash(h, specificationIdentifier, false);
     AddStringToHash(h, NAVNODE_TYPE_DisplayLabelGroupingNode);
     AddStringToHash(h, connectionIdentifier);
     AddStringToHash(h, label);
+    if (instanceKeysSelectQuery && !instanceKeysSelectQuery->ToString().empty())
+        AddStringToHash(h, instanceKeysSelectQuery->ToString());
     return CombineHashes(parentKey ? parentKey->GetHashPath() : bvector<Utf8String>(), h.GetHashString());
     }
 
@@ -295,7 +273,6 @@ NavNode::NavNode()
     : m_allocator(NAVNODE_JSON_CHUNK_SIZE), m_internalExtendedData(&m_allocator)
     {
     m_internalExtendedData.SetObject();
-    m_parentNodeId.Invalidate();
     m_nodeId.Invalidate();
     m_determinedChildren = false;
     m_hasChildren = false;
@@ -314,7 +291,6 @@ NavNode::NavNode(NavNodeCR other)
     m_internalExtendedData.CopyFrom(other.m_internalExtendedData, m_allocator);
     if (other.m_usersExtendedData != nullptr)
         InitUsersExtendedData(other.m_usersExtendedData.get());
-    m_parentNodeId = other.m_parentNodeId;
     m_nodeId = other.m_nodeId;
     m_nodeKey = other.m_nodeKey;
     m_labelDefinition = other.m_labelDefinition;
@@ -389,16 +365,6 @@ RapidJsonAccessor NavNode::GetUsersExtendedData() const
     if (!m_usersExtendedData)
         return RapidJsonAccessor();
     return RapidJsonAccessor(*m_usersExtendedData);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void NavNode::SetParentNodeId(BeGuid id)
-    {
-    m_parentNodeId = id;
-    if (NavNodeExtendedData(*this).GetVirtualParentIds().empty())
-        NavNodeExtendedData(*this).AddVirtualParentId(id);
     }
 
 /*---------------------------------------------------------------------------------**//**

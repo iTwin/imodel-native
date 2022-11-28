@@ -5213,9 +5213,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db);
         REQUIRE_ARGUMENT_STRING(1, ruleSetId);
-        REQUIRE_ARGUMENT_STRING(2, changeType);
-        REQUIRE_ARGUMENT_STRING(3, keys);
-        ECPresentationResult result = m_uiStateProvider->UpdateHierarchyState(*m_presentationManager, db->GetDgnDb(), ruleSetId, changeType, keys);
+        REQUIRE_ARGUMENT_ANY_OBJ(2, stateChanges);
+        ECPresentationResult result = m_uiStateProvider->UpdateHierarchyState(*m_presentationManager, db->GetDgnDb(), ruleSetId, stateChanges);
         return CreateReturnValue(result);
         }
 

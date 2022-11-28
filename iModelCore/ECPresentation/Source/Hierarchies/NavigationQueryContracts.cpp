@@ -526,7 +526,7 @@ NavigationQueryPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(NavNodeCR node) const
+NavigationQueryPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(RapidJsonValueCR groupingValuesJson) const
     {
     if (m_instanceKeysSelectQueryBase.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Properties grouping contract has no instance keys select query.");
@@ -534,7 +534,8 @@ NavigationQueryPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelec
     auto query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(*m_instanceKeysSelectQueryBase->Clone());
-    query->Where(QueryBuilderHelpers::CreatePropertyGroupFilteringClause(m_property, "[PropertyValue]", m_specification, node));
+    query->Where(QueryBuilderHelpers::CreatePropertyGroupFilteringClause(m_property, "[PropertyValue]",
+        m_specification, groupingValuesJson));
     return query;
     }
 

@@ -381,9 +381,8 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
 
     auto labelGroupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateDisplayLabelGroupingNode(classGroupingNode->GetKey().get(), "Label Grouping Node", 1);
-    labelGroupingNode->SetParentNode(*classGroupingNode);
     labelGroupingNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode, classGroupingNode->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());
@@ -543,8 +542,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *grandparentNode);
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB, ECInstanceId((uint64_t)456));
-    parentNode->SetParentNodeId(grandparentNode->GetNodeId());
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode, grandparentNode->GetNodeId());
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "parent.parent.Name = 999", classA->GetFullName(), false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -587,8 +585,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *grandparentNode);
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classB, ECInstanceId((uint64_t)456));
-    parentNode->SetParentNodeId(grandparentNode->GetNodeId());
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode, grandparentNode->GetNodeId());
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false,
         "parent.parent.NameC = parent.NameB", classA->GetFullName(), false);

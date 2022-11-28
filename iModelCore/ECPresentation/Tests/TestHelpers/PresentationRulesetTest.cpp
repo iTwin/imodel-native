@@ -205,7 +205,7 @@ int PresentationRulesetTester::ValidateTree(Utf8CP rulesetId, JsonValueCR treeFi
 
     StopWatch timer(nullptr, true);
     RequestWithRulesetParams rulesetParams(rulesetId, RulesetVariables());
-    auto rootsResponse = m_presentationManager->GetNodes(AsyncHierarchyRequestParams::Create(GetDb(), rulesetParams, nullptr)).get();
+    auto rootsResponse = m_presentationManager->GetNodes(AsyncHierarchyRequestParams::Create(GetDb(), rulesetParams)).get();
     auto const& roots = *rootsResponse;
     int jsonIndex = 0;
     int errorCount = 0;
@@ -310,7 +310,7 @@ Json::Value PresentationRulesetTester::ExportJson(Utf8CP rulesetId)
     Json::Value outputJson(Json::objectValue);
     outputJson["nodes"] = Json::Value(Json::arrayValue);
     RequestWithRulesetParams rulesetParams(rulesetId, RulesetVariables());
-    auto rootsResponse = m_presentationManager->GetNodes(AsyncHierarchyRequestParams::Create(GetDb(), rulesetParams, nullptr)).get();
+    auto rootsResponse = m_presentationManager->GetNodes(AsyncHierarchyRequestParams::Create(GetDb(), rulesetParams)).get();
     for (auto rootNode : *rootsResponse)
         outputJson["nodes"].append(CreateJsonNode(rootNode, rulesetParams));
     return outputJson;

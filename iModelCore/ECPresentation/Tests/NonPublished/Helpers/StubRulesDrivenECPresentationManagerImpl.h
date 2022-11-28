@@ -84,7 +84,7 @@ private:
         }
 
 protected:
-    std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams const&) const override
+    std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const&) const override
         {
         if (m_nodeInstanceKeysProviderFactory)
             return m_nodeInstanceKeysProviderFactory();
@@ -102,16 +102,6 @@ protected:
         {
         auto iter = m_parentship.find(&params.GetNode());
         return (m_parentship.end() != iter) ? iter->second : nullptr;
-        }
-    NavNodeCPtr _GetNode(NodeByKeyRequestImplParams const& params) override
-        {
-        for (auto const& pair : m_hierarchy)
-            {
-            NavNodeCP node = pair.first.get();
-            if (nullptr != node && node->GetKey()->GetHash().Equals(params.GetNodeKey().GetHash()))
-                return node;
-            }
-        return nullptr;
         }
     bvector<NavNodeCPtr> _GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const& params) override
         {
@@ -173,6 +163,27 @@ public:
     void SetNodeInstanceKeysProviderFactory(std::function<std::unique_ptr<INodeInstanceKeysProvider>()> nodeInstanceKeysProviderFactory)
         {
         m_nodeInstanceKeysProviderFactory = nodeInstanceKeysProviderFactory;
+        }
+
+    NavNodeCPtr GetNode(BeGuidCR nodeId) const
+        {
+        for (auto const& pair : m_hierarchy)
+            {
+            NavNodeCP node = pair.first.get();
+            if (nullptr != node && node->GetNodeId() == nodeId)
+                return node;
+            }
+        return nullptr;
+        }
+
+    NavNodeCPtr GetParentNode(BeGuidCR nodeId) const
+        {
+        for (auto const& entry : m_parentship)
+            {
+            if (entry.first->GetNodeId() == nodeId)
+                return entry.second;
+            }
+        return nullptr;
         }
     };
 

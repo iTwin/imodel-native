@@ -91,7 +91,8 @@ HierarchiesComparer::CompareResult HierarchiesComparer::CompareDataSources(Compa
     auto scope = Diagnostics::Scope::Create("Compare data sources");
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_DEBUG, Utf8PrintfString("Sizes LHS: %" PRIu64 ", RHS: %" PRIu64, (uint64_t)lhsProvider.GetNodesCount(), (uint64_t)rhsProvider.GetNodesCount()));
 
-    bool allowGettingPastLhsNodes = params.ShouldLoadLhsNodes() || m_params.GetNodesCache()->IsInitialized(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), params.GetLhsVariables());
+    bool allowGettingPastLhsNodes = params.ShouldLoadLhsNodes()
+        || m_params.GetNodesCache()->IsCombinedHierarchyLevelInitialized(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), params.GetLhsVariables(), lhsProvider.GetContext().GetInstanceFilter());
 
     uint64_t lhsPositionIndex = 0;
     auto lhsEnd = lhsProvider.end();
@@ -142,7 +143,10 @@ HierarchiesComparer::CompareResult HierarchiesComparer::CompareDataSources(Compa
         if (rhsSimilarNodeIter == rhsEnd)
             {
             CHECK_FOR_INTERRUPT(NavNodesHelper::NodeKeyHashPathToString(*lhsNode->GetKey()), NavNodesHelper::NodeKeyHashPathToString(*rhsNode->GetKey()));
-            NavNodeCPtr parent = lhsProvider.GetContext().GetNodesCache().GetNode(lhsNode->GetParentNodeId());
+            NavNodeCPtr parent = lhsProvider.GetContext().GetNodesCache().GetPhysicalParentNode(
+                lhsNode->GetNodeId(),
+                lhsProvider.GetContext().GetRulesetVariables(),
+                lhsProvider.GetContext().GetInstanceFilter());
             params.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), *lhsNode, parent, lhsPositionIndex);
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_TRACE, Utf8PrintfString("Node '%s' removed at index %" PRIu64, lhsNode->GetLabelDefinition().GetDisplayValue().c_str(), rhsPositionIndex));
             ++lhsIter;
@@ -166,7 +170,10 @@ HierarchiesComparer::CompareResult HierarchiesComparer::CompareDataSources(Compa
     for (; lhsIter != lhsEnd; ++lhsIter, ++lhsPositionIndex)
         {
         NavNodeCPtr node = *lhsIter;
-        NavNodeCPtr parent = lhsProvider.GetContext().GetNodesCache().GetNode(node->GetParentNodeId());
+        NavNodeCPtr parent = lhsProvider.GetContext().GetNodesCache().GetPhysicalParentNode(
+            node->GetNodeId(),
+            lhsProvider.GetContext().GetRulesetVariables(),
+            lhsProvider.GetContext().GetInstanceFilter());
         CHECK_FOR_INTERRUPT(NavNodesHelper::NodeKeyHashPathToString(*node->GetKey()), rhsNextNodeHash);
         params.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), *node, parent, lhsPositionIndex);
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_TRACE, Utf8PrintfString("Node '%s' removed at index %" PRIu64, node->GetLabelDefinition().GetDisplayValue().c_str(), rhsPositionIndex));

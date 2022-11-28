@@ -1212,17 +1212,6 @@ QueryClauseAndBindings QueryBuilderHelpers::CreatePropertyGroupFilteringClause(E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryClauseAndBindings QueryBuilderHelpers::CreatePropertyGroupFilteringClause(ECPropertyCR ecProperty, Utf8StringCR propertyValueSelector, PropertyGroupCR groupingSpecification, NavNodeCR filteringNode)
-    {
-    NavNodeExtendedData extendedData(filteringNode);
-    if (groupingSpecification.GetRanges().empty())
-        return CreatePropertyGroupFilteringClause(ecProperty, propertyValueSelector, groupingSpecification, extendedData.GetPropertyValues());
-    return CreatePropertyGroupFilteringClause(ecProperty, propertyValueSelector, groupingSpecification, extendedData.GetPropertyValueRangeIndexesJson());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static bool ShouldSplitIntoDerivedClasses(RuleApplicationInfo const& ruleInfo, ECClassCR candidate)
     {
     // expand ECClass into its subclasses in 2 cases:

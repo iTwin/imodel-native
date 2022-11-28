@@ -36,7 +36,7 @@ private:
 
 private:
     static bvector<Utf8String> CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-        Utf8StringCR type, Utf8StringCR label);
+        Utf8StringCR type, Utf8StringCR label, PresentationQueryBaseCP instanceKeysSelectQuery);
 
 protected:
     static Utf8String GetConnectionIdentifier(IConnectionCR connection) {return connection.IsOpen() ? connection.GetDb().GetDbGuid().ToString() : "";}
@@ -90,19 +90,19 @@ public:
 
     //! Create a new key.
     static NavNodeKeyPtr Create(Utf8String type, Utf8String specificationIdentifier, bvector<Utf8String> hashPath) {return new NavNodeKey(type, specificationIdentifier, hashPath);}
-    static NavNodeKeyPtr Create(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8String type, Utf8StringCR label)
+    static NavNodeKeyPtr Create(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
+        Utf8String type, Utf8StringCR label, PresentationQueryBaseCP instanceKeysSelectQuery)
         {
-        auto hashPath = CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, type, label);
+        auto hashPath = CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, type, label, instanceKeysSelectQuery);
         return new NavNodeKey(type, specificationIdentifier, hashPath);
         }
-    static NavNodeKeyPtr Create(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8String type, Utf8StringCR label)
+    static NavNodeKeyPtr Create(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
+        Utf8String type, Utf8StringCR label, PresentationQueryBaseCP instanceKeysSelectQuery)
         {
-        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, type, label);
+        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, type, label, instanceKeysSelectQuery);
         }
     //! Create a key from the supplied JSON.
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR connection, JsonValueCR);
-    //! Create a key from the supplied JSON.
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR connection, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR, BeJsConst);
 };
 
 //=======================================================================================
@@ -216,16 +216,14 @@ private:
         : GroupingNodeKey(NAVNODE_TYPE_ECClassGroupingNode, specificationIdentifier, path, groupedInstancesCount, std::move(groupedInstanceKeys)), m_class(&ecClass), m_isPolymorphic(isPolymorphic)
         {}
     static bvector<Utf8String> CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-        ECClassCR groupingClass, bool isPolymorphic);
+        ECClassCR groupingClass, bool isPolymorphic, PresentationQueryBaseCP instanceKeysSelectQuery);
 protected:
     ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
 public:
     //! Create an @ref ECClassGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(IConnectionCR, JsonValueCR);
-    //! Create an @ref ECClassGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(IConnectionCR, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> FromJson(IConnectionCR, BeJsConst);
     //! Create an @ref ECClassGroupingNodeKey using supplied parameters.
     //! @param[in] ecClass The grouping ECClass
     //! @param[in] isPolymorphic Is the class grouping polymorphically (instances of the class and its subclasses)
@@ -237,15 +235,18 @@ public:
         return new ECClassGroupingNodeKey(specificationIdentifier, path, ecClass, isPolymorphic, groupedInstancesCount, std::move(groupedInstanceKeys));
         }
     static RefCountedPtr<ECClassGroupingNodeKey> Create(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-        ECClassCR groupingClass, bool isPolymorphic, uint64_t groupedInstancesCount, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
+        ECClassCR groupingClass, bool isPolymorphic, uint64_t groupedInstancesCount,
+        PresentationQueryBaseCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
         {
-        auto hashPath = CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, groupingClass, isPolymorphic);
+        auto hashPath = CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, groupingClass, isPolymorphic, instanceKeysSelectQuery);
         return new ECClassGroupingNodeKey(specificationIdentifier, hashPath, groupingClass, isPolymorphic, groupedInstancesCount, std::move(groupedInstanceKeys));
         }
     static RefCountedPtr<ECClassGroupingNodeKey> Create(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-        ECClassCR groupingClass, bool isPolymorphic, uint64_t groupedInstancesCount, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
+        ECClassCR groupingClass, bool isPolymorphic, uint64_t groupedInstancesCount,
+        PresentationQueryBaseCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
         {
-        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, groupingClass, isPolymorphic, groupedInstancesCount, std::move(groupedInstanceKeys));
+        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, groupingClass, isPolymorphic,
+            groupedInstancesCount, instanceKeysSelectQuery, std::move(groupedInstanceKeys));
         }
     //! Get the ECClass
     ECClassCR GetECClass() const {return *m_class;}
@@ -276,16 +277,14 @@ private:
         m_groupingValuesArray.CopyFrom(groupingValuesArray, m_groupingValuesArrayAllocator);
         }
     static bvector<Utf8String> CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-        ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson);
+        ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson, PresentationQueryBaseCP instanceKeysSelectQuery);
 protected:
     ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
 public:
     //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(IConnectionCR, JsonValueCR);
-    //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(IConnectionCR, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> FromJson(IConnectionCR, BeJsConst);
     //! Create an @ref ECPropertyGroupingNodeKey using supplied parameters.
     //! @param[in] ecClass ECClass of the grouping property
     //! @param[in] propertyName Name of the grouping property
@@ -298,15 +297,18 @@ public:
         return new ECPropertyGroupingNodeKey(specificationIdentifier, path, ecClass, propertyName, groupingValuesArray, groupedInstancesCount, std::move(groupedInstanceKeys));
         }
     static RefCountedPtr<ECPropertyGroupingNodeKey> Create(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-        ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson, uint64_t groupedInstancesCount, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
+        ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson, uint64_t groupedInstancesCount,
+        PresentationQueryBaseCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
         {
-        auto hashPath = CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, propertyClass, propertyName, groupedValuesJson);
+        auto hashPath = CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, propertyClass, propertyName, groupedValuesJson, instanceKeysSelectQuery);
         return new ECPropertyGroupingNodeKey(specificationIdentifier, hashPath, propertyClass, propertyName, groupedValuesJson, groupedInstancesCount, std::move(groupedInstanceKeys));
         }
     static RefCountedPtr<ECPropertyGroupingNodeKey> Create(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-        ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson, uint64_t groupedInstancesCount, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
+        ECClassCR propertyClass, Utf8StringCR propertyName, RapidJsonValueCR groupedValuesJson, uint64_t groupedInstancesCount,
+        PresentationQueryBaseCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
         {
-        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, propertyClass, propertyName, groupedValuesJson, groupedInstancesCount, std::move(groupedInstanceKeys));
+        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, propertyClass, propertyName, groupedValuesJson,
+            groupedInstancesCount, instanceKeysSelectQuery, std::move(groupedInstanceKeys));
         }
     ECClassCR GetECClass() const {return *m_class;}
     ECClassId GetECClassId() const {return m_class->GetId();}
@@ -328,16 +330,15 @@ private:
     LabelGroupingNodeKey(Utf8String specificationIdentifier, bvector<Utf8String> path, Utf8String label, uint64_t groupedInstancesCount, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys)
         : GroupingNodeKey(NAVNODE_TYPE_DisplayLabelGroupingNode, specificationIdentifier, path, groupedInstancesCount, std::move(groupedInstanceKeys)), m_label(label)
         {}
-    static bvector<Utf8String> CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8StringCR label);
+    static bvector<Utf8String> CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
+        Utf8StringCR label, PresentationQueryBaseCP instanceKeysSelectQuery);
 protected:
     LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
 public:
     //! Create an @ref LabelGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<LabelGroupingNodeKey> Create(JsonValueCR);
-    //! Create an @ref LabelGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<LabelGroupingNodeKey> Create(RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<LabelGroupingNodeKey> FromJson(BeJsConst);
     //! Create an @ref LabelGroupingNodeKey using supplied parameters.
     //! @param[in] label Label of grouped nodes.
     //! @param[in] path The hashes which describe path from root node to this node.
@@ -346,13 +347,16 @@ public:
         {
         return new LabelGroupingNodeKey(specificationIdentifier, path, label, groupedInstancesCount, std::move(groupedInstanceKeys));
         }
-    static RefCountedPtr<LabelGroupingNodeKey> Create(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8String label, uint64_t groupedInstancesCount, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
+    static RefCountedPtr<LabelGroupingNodeKey> Create(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8String label,
+        uint64_t groupedInstancesCount, PresentationQueryBaseCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
         {
-        return new LabelGroupingNodeKey(specificationIdentifier, CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, label), label, groupedInstancesCount, std::move(groupedInstanceKeys));
+        return new LabelGroupingNodeKey(specificationIdentifier, CreateHashPath(connectionIdentifier, specificationIdentifier, parentKey, label, instanceKeysSelectQuery),
+            label, groupedInstancesCount, std::move(groupedInstanceKeys));
         }
-    static RefCountedPtr<LabelGroupingNodeKey> Create(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8String label, uint64_t groupedInstancesCount, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
+    static RefCountedPtr<LabelGroupingNodeKey> Create(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, Utf8String label,
+        uint64_t groupedInstancesCount, PresentationQueryBaseCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys = nullptr)
         {
-        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, label, groupedInstancesCount, std::move(groupedInstanceKeys));
+        return Create(GetConnectionIdentifier(connection), specificationIdentifier, parentKey, label, groupedInstancesCount, instanceKeysSelectQuery, std::move(groupedInstanceKeys));
         }
     Utf8StringCR GetLabel() const {return m_label;}
 };
