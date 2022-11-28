@@ -13,16 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 #include <memory>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-TEST(ECSqlVersion, CurrentECSqlVersion)
-    {
-    BeVersion expectedVersion (1, 0, 0, 0);
-    ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
-    }
-TEST(ECSqlVersion, CurrentECDbProfileVersion)
-    {
-    ProfileVersion expectedVersion (4, 0, 0, 2);
-    ASSERT_EQ(ECDb::GetECDbProfileVersion(), expectedVersion);
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -540,6 +530,26 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 
     guid.Invalidate();
     ASSERT_FALSE(guid.IsValid());
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, CurrentECSqlVersion)
+    {
+    BeVersion expectedVersion (1, 0, 0, 0);
+    ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
+    ProfileVersion expectedVersion (4, 0, 0, 2);
+    ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
 
 
