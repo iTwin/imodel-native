@@ -1020,7 +1020,7 @@ double PragmaVal::GetDouble() const {
 //---------------------------------------------------------------------------------------
 bool PragmaVal::GetBool() const {
     if(IsBool()) {
-        return m_integer;
+        return m_bool;
     }
     if(IsDouble()) {
         return GetDouble() != 0;

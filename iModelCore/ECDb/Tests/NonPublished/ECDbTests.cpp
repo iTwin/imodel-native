@@ -13,6 +13,16 @@ USING_NAMESPACE_BENTLEY_EC
 #include <memory>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+TEST(ECSqlVersion, CurrentECSqlVersion)
+    {
+    BeVersion expectedVersion (1, 0, 0, 0);
+    ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
+    }
+TEST(ECSqlVersion, CurrentECDbProfileVersion)
+    {
+    ProfileVersion expectedVersion (4, 0, 0, 2);
+    ASSERT_EQ(ECDb::GetECDbProfileVersion(), expectedVersion);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
