@@ -880,7 +880,7 @@ std::string QueryHelper::FormatQuery(const char* query) {
         }
     }
     if (trimmedECSql.StartsWithIAscii("pragma")) {
-        return trimmedECSql;
+        return std::move(trimmedECSql);
     }
     return Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
 }
