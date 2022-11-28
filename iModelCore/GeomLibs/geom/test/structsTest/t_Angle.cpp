@@ -1331,7 +1331,7 @@ void Dump ()
         if (easyTrig[i].Count () == 0)
             continue;
         char title[120];
-        sprintf (title, "(converge %d)", (int)i);
+        snprintf (title, sizeof(title), "(converge %d)", (int)i);
         PrintUsageSums (easyTrig[i], title, false);
         }
     printf (" (slow or non converged (n %d))\n",(int) hardTrig.size ());
@@ -1965,7 +1965,7 @@ TEST(HSV,RoundOff)
     for (size_t i = 0; i <= MAXFACTOR; i++)
         {
         char s[200];
-        sprintf (s, "HSV Rounding (i %d) (windows %d) (computed %d)", (int)i, (int)windowsResult[i], (int)computed[i]);
+        snprintf (s, sizeof(s), "HSV Rounding (i %d) (windows %d) (computed %d)", (int)i, (int)windowsResult[i], (int)computed[i]);
         EXPECT_EQ ((int)windowsResult[i], computed[i]) << s;
         }
     }

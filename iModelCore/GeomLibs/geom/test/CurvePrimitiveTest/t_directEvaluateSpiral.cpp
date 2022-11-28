@@ -123,7 +123,7 @@ TEST(PseudoSpiral,Serialize)
         Utf8String typeName;
         DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
         // add 1000 to ensure alphabetic sort maintains numeric order
-        sprintf (fileName, "Spiral.Serialize.%d%s", 1000+(int)spiralType, typeName.c_str());
+        snprintf (fileName, sizeof(fileName), "Spiral.Serialize.%d%s", 1000+(int)spiralType, typeName.c_str());
         Check::ClearGeometry (fileName);
         }
     }
@@ -255,9 +255,9 @@ TEST (PseudoSpiral, SerializeB)
         DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
         // add 1000 to ensure alphabetic sort maintains numeric order
         if (spiralType == DSpiral2dBase::TransitionType_Viennese)
-            sprintf(fileName, "Spiral.SerializeSetB.%d%s%d", 1000 + (int)spiralType, typeName.c_str(), numViennese);
+            snprintf(fileName, sizeof(fileName), "Spiral.SerializeSetB.%d%s%d", 1000 + (int)spiralType, typeName.c_str(), numViennese);
         else
-            sprintf (fileName, "Spiral.SerializeSetB.%d%s", 1000 + (int)spiralType, typeName.c_str ());
+            snprintf (fileName, sizeof(fileName), "Spiral.SerializeSetB.%d%s", 1000 + (int)spiralType, typeName.c_str ());
         Check::ClearGeometry (fileName);
         }
     }
@@ -368,7 +368,7 @@ TEST(PseudoSpiral,ExerciseDistances)
         Utf8String typeName;
         DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
         // add 1000 to ensure alphabetic sort maintains numeric order
-        sprintf (fileName, "Spiral.Exercise.%d%s", 1000+(int)spiralType, typeName.c_str());
+        snprintf (fileName, sizeof(fileName), "Spiral.Exercise.%d%s", 1000+(int)spiralType, typeName.c_str());
         Check::ClearGeometry (fileName);
         Check::EndScope();
         }
@@ -1314,7 +1314,7 @@ void RadiansToDMSString (double radians, Utf8String &string)
     double minutes = 60.0 * (degrees - iDegrees);
     int    iMinutes = (int)floor (minutes);
     double seconds = 60.0 * (minutes - iMinutes);
-    sprintf (buffer, "[%c%d deg   %d min   %6.3lf] [%.10lg deg]", s > 0.0 ? '+' : '-', iDegrees, iMinutes, seconds, degrees);
+    snprintf (buffer, sizeof(buffer), "[%c%d deg   %d min   %6.3lf] [%.10lg deg]", s > 0.0 ? '+' : '-', iDegrees, iMinutes, seconds, degrees);
     string = buffer;
     }
 void PrintTangents (DVec3dCR chordAB, double bearingChangeAB, double startCurvature, double endCurvature)
@@ -1874,7 +1874,7 @@ TEST (Spiral, WesternAustralianRoundTripCase)
                 }
             }
         char filename[1024];
-        sprintf (filename, "Spiral.WesternAustralianRoundTripCase%d", scale);
+        snprintf (filename, sizeof(filename), "Spiral.WesternAustralianRoundTripCase%d", scale);
         Check::ClearGeometry (filename);
         }
     }
@@ -2164,7 +2164,7 @@ ICurvePrimitivePtr RecentSpiralB() const { return m_spiralB; }
 
 //! Create one or more spirals which have
 //! <ul>
-//! <li> Start at pointA with direcction bearingA and radiusA
+//! <li> Start at pointA with direction bearingA and radiusA
 //! <li> end at pointB with direction bearingB.
 //! <li> if more than one spiral is required, join with curvature continuity at some intermediate point
 //! <ul>
