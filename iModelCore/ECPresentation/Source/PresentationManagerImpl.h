@@ -101,7 +101,6 @@ public:
 //=======================================================================================
 struct ECPresentationManager::Impl
 {
-    typedef ECPresentationManager::Mode Mode;
     typedef ECPresentationManager::Paths Paths;
     typedef ECPresentationManager::ImplParams Params;
 
@@ -185,7 +184,6 @@ struct RulesDrivenECPresentationManagerImpl : ECPresentationManager::Impl, ECIns
     struct NavNodeLocater;
 
 private:
-    Mode m_mode;
     std::shared_ptr<IConnectionManager> m_connections;
     NavNodesFactory const* m_nodesFactory;
     NodesProviderContextFactory const* m_nodesProviderContextFactory;

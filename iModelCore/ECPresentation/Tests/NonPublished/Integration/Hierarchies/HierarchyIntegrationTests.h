@@ -17,11 +17,5 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 +===============+===============+===============+===============+===============+======*/
 struct RulesDrivenECPresentationManagerNavigationTests : PresentationManagerIntegrationTests
 {
-    void _ConfigureManagerParams(ECPresentationManager::Params& params) override
-        {
-        PresentationManagerIntegrationTests::_ConfigureManagerParams(params);
-        params.SetMode(ECPresentationManager::Mode::ReadOnly);
-        }
-
     static CustomNodeSpecificationP CreateCustomNodeSpecification(Utf8String typeAndLabel, std::function<void(CustomNodeSpecificationR)> configure = nullptr);
 };

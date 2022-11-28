@@ -771,7 +771,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s > 1 or %s < 0", FIELD_NAME(classA, "IntProperty"), FIELD_NAME(classA, "DoubleProperty")).c_str());
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s > 1 or %s < 0", FIELD_NAME(classA, "IntProperty"), FIELD_NAME(classA, "DoubleProperty")));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -822,7 +822,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithEsc
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8String(FIELD_NAME(classA, "Property")).append(" LIKE \"%\\%%\"").c_str());
+    ovr->SetFieldsFilterExpression(Utf8String(FIELD_NAME(classA, "Property")).append(" LIKE \"%\\%%\""));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -873,7 +873,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Filters
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetUniqueName().c_str()));
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetUniqueName().c_str()));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -943,7 +943,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s = \"1\"", descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()));
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s = \"1\"", descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -4092,7 +4092,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInLabelO
 
     // set up the dataset
     IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA,
-        [] (IECInstanceR instance) { instance.SetValue("Property", ECValue("A label")); });
+        [](IECInstanceR instance){instance.SetValue("Property", ECValue("A label"));});
     IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB,
         [](IECInstanceR instance){instance.SetValue("Property", ECValue("B label"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
@@ -15748,7 +15748,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FilterW
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("GetVariableIntValues(\"values\").AnyMatches(x => x = %s)", FIELD_NAME(classA, "IntProp")).c_str());
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("GetVariableIntValues(\"values\").AnyMatches(x => x = %s)", FIELD_NAME(classA, "IntProp")));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);

@@ -938,7 +938,7 @@ GenericQuerySet SpecificationContentProvider::_GetCountQuerySet() const
     auto scope = Diagnostics::Scope::Create("Create content set size queries");
 
     ContentDescriptorPtr countDescriptor = ContentDescriptor::Create(*GetContentDescriptor());
-    if (countDescriptor->GetFilterExpression().empty())
+    if (countDescriptor->GetFieldsFilterExpression().empty())
         {
         // note: can't add `KeysOnly` if there's a filter expression - we need to select properties to filter by them
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT

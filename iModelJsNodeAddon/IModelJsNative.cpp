@@ -703,12 +703,23 @@ public:
 
         return Napi::Number::New(Env(), (int)status);
     }
+
     void ConcurrentQueryExecute(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
 
+    Napi::Value ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
+        if (info.Length() > 0 && info[0].IsObject()) {
+            Napi::Object inConf = info[0].As<Napi::Object>();
+            return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb, inConf);
+        }
+        return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb);
+    }
+    void ConcurrentQueryShutdown(Napi::CallbackInfo const& info) {
+        ConcurrentQueryMgr::Shutdown(m_ecdb);
+    }
     void CloseDbIfOpen() {
         if (m_ecdb.IsDbOpen()) {
             m_ecdb.AbandonChanges();
@@ -762,6 +773,8 @@ public:
             InstanceMethod("abandonChanges", &NativeECDb::AbandonChanges),
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
+            InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
+            InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
             InstanceMethod("dispose", &NativeECDb::Dispose),
             InstanceMethod("dropSchema", &NativeECDb::DropSchema),
@@ -1935,6 +1948,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return ObtainTileGraphicsRequests().Enqueue(requestProps, info.Env());
         }
 
+    Napi::Value GenerateElementMeshes(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN;
+        REQUIRE_ARGUMENT_ANY_OBJ(0, requestProps);
+        return JsInterop::GenerateElementMeshes(GetDgnDb(), requestProps);
+        }
+
     Napi::Value IsLinkTableRelationship(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN;
@@ -2489,6 +2509,19 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::ConcurrentQueryExecute(GetDgnDb(), requestObj, callback);
     }
 
+    Napi::Value ConcurrentQueryResetConfig(Napi::CallbackInfo const& info) {
+        REQUIRE_DB_TO_BE_OPEN;
+        if (info.Length() > 0 && info[0].IsObject()) {
+            Napi::Object inConf = info[0].As<Napi::Object>();
+            return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb(), inConf);
+        }
+        return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb());
+    }
+
+    void ConcurrentQueryShutdown(Napi::CallbackInfo const& info) {
+        REQUIRE_DB_TO_BE_OPEN;
+        ConcurrentQueryMgr::Shutdown(GetDgnDb());
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2522,6 +2555,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("completeCreateChangeset", &NativeDgnDb::CompleteCreateChangeset),
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
+            InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
+            InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
@@ -2552,6 +2587,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("extractEmbeddedFile", &NativeDgnDb::ExtractEmbeddedFile),
             InstanceMethod("findGeometryPartReferences", &NativeDgnDb::FindGeometryPartReferences),
             InstanceMethod("generateElementGraphics", &NativeDgnDb::GenerateElementGraphics),
+            InstanceMethod("generateElementMeshes", &NativeDgnDb::GenerateElementMeshes),
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getChangesetSize", &NativeDgnDb::GetChangesetSize),
             InstanceMethod("getChangeTrackingMemoryUsed", &NativeDgnDb::GetChangeTrackingMemoryUsed),
@@ -5243,8 +5279,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         if (!props.Get("id").IsString())
             THROW_JS_TYPE_EXCEPTION("props.id must be a string");
-        if (!props.Get("mode").IsString())
-            THROW_JS_TYPE_EXCEPTION("props.mode must be a string");
         if (!props.Get("isChangeTrackingEnabled").IsBoolean())
             THROW_JS_TYPE_EXCEPTION("props.isChangeTrackingEnabled must be a boolean");
         if (!props.Get("taskAllocationsMap").IsObject())
