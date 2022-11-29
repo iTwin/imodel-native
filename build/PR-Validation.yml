@@ -1,0 +1,37 @@
+# https://aka.ms/yaml
+
+name: imodel-native-internal-$(Date:yyyy.MM.dd)$(Rev:.r)
+trigger: none
+
+pr:
+  drafts: false
+  branches:
+    include:
+      - master
+      - release/*
+    exclude:
+      - release/2*
+      - release/1*
+
+resources:
+  repositories:
+    - repository: iTwinjs-core
+      type: github
+      name: iTwin/itwinjs-core
+      ref: imodel02-PR-validation
+      endpoint: iTwin
+    - repository: imodeljs-build-pipeline-scripts
+      type: git
+      name: iModelTechnologies/imodeljs-build-pipeline-scripts
+      ref: Edit-install-addon-template
+    - repository: imodel-native
+      type: github
+      endpoint: github.com_imodel-native
+      name: iTwin/imodel-native
+
+extends:
+  template: ./templates/PR_Validation_Pipeline.yml
+  parameters:
+    otherRepo: imodel-native-internal
+    iTwinRepo: iTwinjs-core
+    scriptsRepo: imodeljs-build-pipeline-scripts
