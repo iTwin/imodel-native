@@ -29,7 +29,6 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir, authHeader, packageO
     if os.path.exists(pkgPathName):
         print ('Package {0} already exists; skipping'.format(pkgPathName))
         return
-    # Format:  https://pkgs.dev.azure.com/bentleycs/_packaging/Packages/nuget/v2?id=opensslnuget_x64&version=2.0.2.168
     pkgGetUrl = '{0}?id={1}&version={2}'.format(pkgAddress, pkgName, version)
     try:
         packageObj.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir, authHeader)
@@ -44,7 +43,12 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir, authHeader, packageO
 #------------------------------------------------------------------------
 def pullAllNugets(path, pathToNugetPuller, name, minimumVersion=None, ignoreVersionsSet=None):
     print ('Pulling all versions of NuGets for {0}'.format(name))
-    address = "https://pkgs.dev.azure.com/bentleycs/_packaging/Packages/nuget/v2"
+
+    if "NuGetFeed_Address" in os.environ:
+      address = os.environ["NuGetFeed_Address"]
+    else:
+      raise ValueError("NuGetFeed_Address was not found. Please set an environment variable 'NuGetFeed_Address' to provide the address.")
+
     nugetFeed = nugetpkg.NuGetFeed ('azure', address, globalvars.CREDENTIAL_PROVIDER_AUTO, None)
     globalvars.buildStrategy = strategy.BuildStrategy()
     globalvars.buildStrategy.m_nugetFeeds['azure'] = nugetFeed
