@@ -289,6 +289,14 @@ public:
     ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
 
     //! Gets ECSQL version
+    //.@remarks ECSql version description for left to right digit in version string i.e. "Major.Minor.Sub1.Sub2"
+    //  Major: Any breaking change to 'Syntax'. This will cause a 'Prepare()' to fail with InvalidECSql which in previous version prepared successfully.
+    //         e.g. Changing or removing support for existing supported ECSql syntax.
+    //  Minor: Any breaking change to 'Runtime' e.g. Removing support for a previously accessible sql function or change it in a way where it will not
+    //         work as before. In this case 'Prepare()' phase may or may not detect a failure but result are not as expected as it use to in previous version.
+    //         e.g. Remove a sql function or change required argument or format of its return value.
+    //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
+    //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
     static BeVersion GetECSqlVersion() { return BeVersion(1, 0, 0, 0); }
 
     //! Gets the current version of the ECDb profile

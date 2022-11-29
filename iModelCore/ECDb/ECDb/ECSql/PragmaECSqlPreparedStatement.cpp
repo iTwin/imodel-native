@@ -129,13 +129,16 @@ struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
 // @bsiclass PragmaECDbVersion
 //================================================================================
 struct PragmaECDbVersion : PragmaManager::GlobalHandler {
-    PragmaECDbVersion():GlobalHandler("ecdb_version","return current profile version of ecdb."){}
+    PragmaECDbVersion():GlobalHandler("ecdb_ver","return current and file profile versions"){}
     ~PragmaECDbVersion(){}
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty(GetName(), PRIMITIVETYPE_String);
+        result->AppendProperty("current", PRIMITIVETYPE_String);
+        result->AppendProperty("file", PRIMITIVETYPE_String);
         result->FreezeSchemaChanges();
-        result->AppendRow().appendValue() = ecdb.GetECDbProfileVersion().ToString();
+        auto row = result->AppendRow();
+        row.appendValue() = ECDb::CurrentECDbProfileVersion().ToString();
+        row.appendValue() =  ecdb.GetECDbProfileVersion().ToString();
         rowSet = std::move(result);
         return BE_SQLITE_OK;
     }
@@ -184,7 +187,11 @@ struct PragmaFileInfo : PragmaManager::GlobalHandler {
     }
     void AppendFileName(ECDbCR ecdb, BeJsValue row) {
         row.appendValue() = "filename";
-        row.appendValue() = ecdb.GetDbFileName();
+        if (ecdb.GetBriefcaseId().IsValid()) {
+            row.appendValue() = ecdb.GetDbFileName();
+        } else {
+            row.appendValue().SetNull();
+        }
     }
     void AppendConnectionId(ECDbCR ecdb, BeJsValue row) {
         row.appendValue() = "connection_id";
