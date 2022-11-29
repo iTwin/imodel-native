@@ -18,7 +18,7 @@ resources:
     - repository: iTwinjs-core
       type: github
       name: iTwin/itwinjs-core
-      ref: imodel02-PR-validation
+      ref: imodel02-PR-validation #temp ref until merge
       endpoint: iTwin
     - repository: imodeljs-build-pipeline-scripts
       type: git
@@ -28,6 +28,7 @@ resources:
       type: github
       endpoint: github.com_imodel-native-internal
       name: iTwin/imodel-native
+      ref: imodel02-PR-validation #temp ref until merge
 
 extends:
   template: /build/templates/PR_Validation_Pipeline.yml@imodel-native-internal
