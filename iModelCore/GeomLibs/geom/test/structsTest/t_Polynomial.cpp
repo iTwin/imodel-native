@@ -91,7 +91,7 @@ TEST (PolynomialPowerDegree2, BigRoots)
             int n2 = qneg.RealRootsWithSafeDivideCheck (s2);
 
             char buffer[1000];
-            sprintf (buffer, " (center %g) (c %g) (n0 %d) (n1 %d)", center, c, n0, n1);
+            snprintf (buffer, sizeof(buffer), " (center %g) (c %g) (n0 %d) (n1 %d)", center, c, n0, n1);
             Check::StartScope (buffer);
 
 

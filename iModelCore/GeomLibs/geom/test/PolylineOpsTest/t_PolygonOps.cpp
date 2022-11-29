@@ -96,7 +96,7 @@ TEST(PolygonOps,PlaneIntersection)
 bool CheckClosestPoint (DSegment3dCR segment, bool extend0, bool extend1, double fA)
     {
     char message[1024];
-    sprintf (message, "ExtendedSegment projetion %d %d (f %g)", extend0 ? 1 : 0, extend1 ? 1 : 0, fA);
+    snprintf (message, sizeof(message), "ExtendedSegment projetion %d %d (f %g)", extend0 ? 1 : 0, extend1 ? 1 : 0, fA);
     Check::StartScope (message);
     bvector<DPoint3d> points;
     // make a polyline that matches the segment, with an added midpoint...
