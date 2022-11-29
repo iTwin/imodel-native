@@ -17,7 +17,7 @@ else:
 #-------------------------------------------------------------------------------------------
  # bsimethod
 #-------------------------------------------------------------------------------------------
-def DownloadPackage(pkgAddress, pkgName, version, localDir, authHeader):
+def DownloadPackage(pkgAddress, pkgName, version, localDir, authHeader, packageObj):
     pkgBaseName = '{0}.{1}'.format(pkgName, version)
     pkgDirName = localDir
     print ('Downloading {0} to {1}'.format(pkgBaseName, pkgDirName))
@@ -32,7 +32,7 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir, authHeader):
     # Format:  https://pkgs.dev.azure.com/bentleycs/_packaging/Packages/nuget/v2?id=opensslnuget_x64&version=2.0.2.168
     pkgGetUrl = '{0}?id={1}&version={2}'.format(pkgAddress, pkgName, version)
     try:
-        nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir, authHeader)
+        packageObj.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir, authHeader)
         return pkgPathName
     except BaseException as err:
         print (err)
@@ -45,8 +45,12 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir, authHeader):
 def pullAllNugets(path, pathToNugetPuller, name, minimumVersion=None, ignoreVersionsSet=None):
     print ('Pulling all versions of NuGets for {0}'.format(name))
     address = "https://pkgs.dev.azure.com/bentleycs/_packaging/Packages/nuget/v2"
-    nugetSource = strategy.NuGetFeed ('azure', address, globalvars.CREDENTIAL_PROVIDER_AUTO)
-    versions = nugetpkg.SearchVersionsFromServer(address, name, False, nugetSource.GetAuthenticationHeader())
+    nugetFeed = nugetpkg.NuGetFeed ('azure', address, globalvars.CREDENTIAL_PROVIDER_AUTO, None)
+    globalvars.buildStrategy = strategy.BuildStrategy()
+    globalvars.buildStrategy.m_nugetFeeds['azure'] = nugetFeed
+    nugetSource = nugetpkg.NuGetSource(name, '*', feed='azure')
+    packageObj = nugetpkg.RemoteNugetPackage(nugetSource);
+    versions = packageObj.SearchVersionsFromServer(address)
     if versions:
         print ('  Found versions: {}'.format(repr(versions)))
     else:
@@ -57,7 +61,7 @@ def pullAllNugets(path, pathToNugetPuller, name, minimumVersion=None, ignoreVers
             continue
         # Dowload and save all versions
         localDir = path
-        DownloadPackage(address, name, v, localDir, nugetSource.GetAuthenticationHeader())
+        DownloadPackage(address, name, v, localDir, nugetSource.GetAuthenticationHeader(), packageObj)
 
 #------------------------------------------------------------------------
 # bsimethod
