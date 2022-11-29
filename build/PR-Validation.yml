@@ -24,13 +24,13 @@ resources:
       type: git
       name: iModelTechnologies/imodeljs-build-pipeline-scripts
       ref: Edit-install-addon-template
-    - repository: imodel-native
+    - repository: imodel-native-internal
       type: github
-      endpoint: github.com_imodel-native
+      endpoint: github.com_imodel-native-internal
       name: iTwin/imodel-native
 
 extends:
-  template: ./templates/PR_Validation_Pipeline.yml
+  template: /build/templates/PR_Validation_Pipeline.yml@imodel-native-internal
   parameters:
     otherRepo: imodel-native-internal
     iTwinRepo: iTwinjs-core
