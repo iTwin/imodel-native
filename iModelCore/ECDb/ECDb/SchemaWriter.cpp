@@ -27,45 +27,45 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
         }
         return schemas;
     };
-    // CustomAttribute has no forign key to container id, following method 
-    // gather all customattributes for a given schema and delete them before 
-    // schema or its mapping is deleted. 
+    // CustomAttribute has no forign key to container id, following method
+    // gather all customattributes for a given schema and delete them before
+    // schema or its mapping is deleted.
     auto dropCustomAttributeInstanceAppliedToSchema =[&](ECSchemaId id) {
         auto stmt = ctx.GetECDb().GetCachedStatement(R"sql(
             with [all_schema_custom_attributes]([schema_id], [custom_attribute_id]) as(
-                select 
-                    [p].[schemaid], 
+                select
+                    [p].[schemaid],
                     [ca].[id] [caid]
-                from   (select 
-                            [s].[Id] [schemaId], 
-                            [s].[id] [container_id], 
+                from   (select
+                            [s].[Id] [schemaId],
+                            [s].[id] [container_id],
                             1 [container_type]
                         from   [ec_schema] [s]
                         union
-                        select 
-                            [c].[schemaId], 
-                            [c].[id] [container_id], 
+                        select
+                            [c].[schemaId],
+                            [c].[id] [container_id],
                             30 [container_type]
                         from   [ec_class] [c]
                         union
-                        select 
-                            [c].[schemaid], 
-                            [p].[id] [container_id], 
+                        select
+                            [c].[schemaid],
+                            [p].[id] [container_id],
                             992 [container_type]
                         from   [ec_property] [p]
                             join [ec_class] [c] on [c].[Id] = [p].[classid]
                         union
-                        select 
-                            [c].[schemaid], 
-                            [r].[id] [container_id], 
+                        select
+                            [c].[schemaid],
+                            [r].[id] [container_id],
                             1024 [container_type]
                         from   [ec_RelationshipConstraint] [r]
                             join [ec_class] [c] on [c].[Id] = [r].[relationshipclassid]
                         where  [r].[RelationshipEnd] = 0
                         union
-                        select 
-                            [c].[schemaid], 
-                            [r].[id] [container_id], 
+                        select
+                            [c].[schemaid],
+                            [r].[id] [container_id],
                             2048 [container_type]
                         from   [ec_RelationshipConstraint] [r]
                             join [ec_class] [c] on [c].[Id] = [r].[relationshipclassid]
@@ -90,7 +90,7 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
     // make sure the schema exist
     auto schemaCP = ctx.GetECDb().Schemas().GetSchema(schemaName);
     if (schemaCP == nullptr) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Drop ECSchema failed. ECSchema: Schema %s not found.", schemaName.c_str());        
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Drop ECSchema failed. ECSchema: Schema %s not found.", schemaName.c_str());
         return DropSchemaResult(DropSchemaResult::Status::Error);
     }
     const auto schemaId =  schemaCP->GetId();
@@ -138,8 +138,7 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
 //static
 BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext& schemaImportCtx, bvector<ECSchemaCP> const& schemasRaw)
     {
-    PERFLOG_START("ECDb", "Schema import> Persist schemas");
-
+    ECDB_PERF_LOG_SCOPE("Schema import> Persist schemas");
     Context ctx(schemaImportCtx);
     bvector<ECSchemaCP> schemas;
     if (SUCCESS != ctx.PreprocessSchemas(schemas, schemasRaw))
@@ -192,7 +191,6 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
         }
 
     schemasToMap.insert(schemasToMap.begin(), ctx.GetSchemasToImport().begin(), ctx.GetSchemasToImport().end());
-    PERFLOG_FINISH("ECDb", "Schema import> Persist schemas");
     return SUCCESS;
     }
 
@@ -388,7 +386,7 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(Context& ctx, ECSchemaC
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindId(3, ctx.GetECDb().GetImpl().GetIdFactory().SchemaReference().NextId()))
-            return ERROR;   
+            return ERROR;
 
         if (BE_SQLITE_DONE != stmt->Step())
             return ERROR;
@@ -813,7 +811,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
         if (BE_SQLITE_OK != stmt->BindId(invertingUnitIdParamIx, invertingUnit->GetId()))
             return ERROR;
         }
-    
+
     if (BE_SQLITE_OK != stmt->BindId(idIx, ctx.GetECDb().GetImpl().GetIdFactory().Unit().NextId()))
         return ERROR;
 
@@ -896,7 +894,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
                 return ERROR;
             }
         }
-    
+
     if (BE_SQLITE_OK != stmt->BindId(idx, ctx.GetECDb().GetImpl().GetIdFactory().Format().NextId()))
         return ERROR;
 
@@ -1076,7 +1074,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
         if (BE_SQLITE_OK != stmt->BindText(7, presUnitsJsonStr, Statement::MakeCopy::Yes))
             return ERROR;
         }
-    
+
     if (BE_SQLITE_OK != stmt->BindId(8, ctx.GetECDb().GetImpl().GetIdFactory().KindOfQuantity().NextId()))
         return ERROR;
 
@@ -1576,8 +1574,8 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
             if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
                 return ERROR;
             }
-        
-        
+
+
         if (BE_SQLITE_OK != stmt->BindId(10, ecdb.GetImpl().GetIdFactory().Schema().NextId()))
             return ERROR;
         }
@@ -2029,26 +2027,26 @@ bool SchemaWriter::UnitChangeAllowed (Context& ctx, ECPropertyCR oldProperty, EC
     IECInstancePtr ca = newProperty.GetCustomAttribute("SchemaUpgradeCustomAttributes", "AllowUnitChange");
     if (!ca.IsValid())
         return false;
-    
+
     ECValue from, to;
     ca->GetValue(from, "From");
     ca->GetValue(to, "To");
     if (from.IsNull() || to.IsNull())
         {
-        ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
+        ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
             "AllowUnitChange custom attribute applied to %s.%s malformed, it must have both 'From' and 'To' properties set.",
             oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         return false;
         }
-    
+
     if (!persistenceUnitMatches(oldKoq, from.ToString()))
         {
-        ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
+        ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
             "AllowUnitChange custom attribute applied to %s.%s malformed, the 'From' value must match the persistence unit from the old KindOfQuantity.",
             oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         return false;
         }
-    
+
     if (nullptr == newKoq && to.ToString().Equals(""))
         return true;
 
@@ -2278,12 +2276,12 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
                     "Changes to ECProperty %s.%s skipped because %s a property is not supported without an appropriate 'AllowUnitChange' custom attribute applied the property.",
                         oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), change.GetNew().IsNull() ? "removing a KindOfQuantity from" : "changing the persistence unit of");
                 return SUCCESS;
                 }
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
                 "ECSchema Upgrade failed. ECProperty %s.%s: %s a property is not supported without an appropriate 'AllowUnitChange' custom attribute applied the property.",
                         oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), change.GetNew().IsNull() ? "Removing a KindOfQuantity from" : "Changing the persistence unit of");
             return ERROR;
@@ -2407,7 +2405,7 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
             {
             BeDataAssert(relMap != nullptr && "ClassMap for existing relationship must exist");
             return ERROR;
-            }            
+            }
         // Rule 3: FK relationship is only allowed to change Upper limit of multiplicity for source/target constraint as long as that is the side where FK is persisted.
         if (relMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
@@ -2492,7 +2490,7 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
                 }
             else
                 resolvedOldConstraintClass = newSchema.GetClassCP(oldConstraintClass->GetName().c_str());
-            
+
             if (resolvedOldConstraintClass == nullptr)
                 {
                 ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Old constraint class '%s' not found in updated schema.",
@@ -2645,7 +2643,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
         else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
             IECInstancePtr newCA = newContainer.GetCustomAttribute(schemaName, className);
-            if (containerType == SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class && 
+            if (containerType == SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class &&
                     className.EqualsIAscii("IsMixin") && schemaName.EqualsIAscii("CoreCustomAttributes"))
                 {
                 /* SCHEMA_EVOLUTION_RULE AppliesToEntityClass can modified only if old value is dervied from new value
@@ -2693,7 +2691,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
                     return ERROR;
                     }
                 }
-            
+
             BeAssert(newCA.IsValid());
             if (newCA.IsNull())
                 return ERROR;
@@ -2906,7 +2904,7 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
                     return ERROR;
                     }
                 }
-            
+
             auto classMap = ctx.GetSchemaManager().GetClassMap(oldClass);
             bool isTablePerHierarchy = classMap != nullptr && classMap->GetMapStrategy().IsTablePerHierarchy();
             if(!isTablePerHierarchy)
@@ -3192,7 +3190,7 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
                                           oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
                 return ERROR;
                 }
-            
+
             ECSchemaId referenceSchemaId = SchemaPersistenceHelper::GetSchemaId(ctx.GetECDb(), DbTableSpace::Main(), newRef.GetName().c_str(), SchemaLookupMode::ByName);
             CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_SchemaReference "(SchemaId, ReferencedSchemaId,Id) VALUES (?,?,?)");
             if (stmt == nullptr)
@@ -3417,7 +3415,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
     ECClassCR ecClass = deletedProperty.GetClass();
     bool isOverriddenProperty = newBaseProperty != nullptr;
 
-    // fail if major version changes are not allowed or major version has not been incremented, but continue if newBaseProperty is available, meaning we are merely removing an overridden property 
+    // fail if major version changes are not allowed or major version has not been incremented, but continue if newBaseProperty is available, meaning we are merely removing an overridden property
     if ((!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId())) && !isOverriddenProperty)
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
@@ -3450,7 +3448,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
         return ERROR;
         }
 
-    
+
     for (Partition const& partition : classMap->GetStorageDescription().GetHorizontalPartitions())
         {
         ECClassCP rootClass = ctx.GetSchemaManager().GetClass(partition.GetRootClassId());
@@ -5228,7 +5226,7 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
             ECSchemaId id = SchemaPersistenceHelper::GetSchemaId(GetECDb(), DbTableSpace::Main(), schema->GetName().c_str(), SchemaLookupMode::ByName);
             if (!id.IsValid() || id != schema->GetId())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file. (Incoming schemaId %s != existing schemaId %s", schema->GetFullSchemaName().c_str(), 
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file. (Incoming schemaId %s != existing schemaId %s", schema->GetFullSchemaName().c_str(),
                                  schema->GetId().ToString().c_str(), id.IsValid() ? id.ToString().c_str() : "(0)");
                 return ERROR;
                 }
@@ -5553,7 +5551,7 @@ int SchemaWriter::Context::GetNextPropertyOrdinal(ECClassId classId) {
         int ordinal = -1;
         if (stmt->Step() == BE_SQLITE_ROW && !stmt->IsColumnNull(0)) {
             ordinal = stmt->GetValueInt(0);
-        } 
+        }
         it = m_propertyOrdinal.insert(make_bpair(classId, ordinal)).first;
     }
     it->second = it->second + 1;
