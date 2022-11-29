@@ -26,8 +26,8 @@ resources:
       ref: Edit-install-addon-template
     - repository: imodel-native-internal
       type: github
-      endpoint: github.com_imodel-native-internal
-      name: iTwin/imodel-native
+      name: iTwin/imodel-native-internal
+      endpoint: github.com_imodel-native
       ref: imodel02-PR-validation #temp ref until merge
 
 extends:
