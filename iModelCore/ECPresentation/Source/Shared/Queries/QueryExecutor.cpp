@@ -79,9 +79,16 @@ static CachedECSqlStatementPtr GetStatement(IConnectionCR connection, Presentati
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, txn.IsActive(), "Failed to start a transaction");
 
     Utf8CP queryString = query.ToString().c_str();
-    CachedECSqlStatementPtr statement = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), queryString);
+    ECSqlStatus status;
+    CachedECSqlStatementPtr statement = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), queryString, false, &status);
     if (statement.IsNull())
         {
+        if (status.IsSQLiteError() && status.GetSQLiteError() == BE_SQLITE_INTERRUPT)
+            {
+            // this might happen due to cancellation, which is not a failure
+            throw DbConnectionInterruptException();
+            }
+
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare query. Error: '%s'. Query: %s",
             connection.GetDb().GetLastError().c_str(), queryString));
         }
