@@ -7,7 +7,6 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="iModelPlatform.prewire.mke">
         <SubPart PartName="StandardSchemasBim" PartFile="schemas\ECStandards\ECStandards"/>
         <SubPart PartName="Core" PartFile="schemas\BisSchemas\BisSchemas"/>
-        <SubPart PartName="PublicAPI" PartFile="iModelCore/BRepCore/BRepCore" />
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
@@ -30,7 +29,6 @@
         <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="iModelCore/GeoCoord/GeoCoord" />
-        <SubPart PartName="BRepCore"            PartFile="iModelCore/BRepCore/BRepCore" />
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap" />
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore/libsrc/compress/Zlib"/>
         <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" />
@@ -464,7 +462,7 @@
         <SubPart PartFile="iModelCore/iModelPlatform/iModelPlatform"      PartName="RunGtest" />
         <SubPart PartFile="iModelCore/BeSQLite/BeSQLite"         PartName="RunGtest" />
         <SubPart PartFile="iModelCore/Bentley/Bentley"          PartName="RunGtest" />
-        <SubPart PartFile="iModelCore/BRepCore/BRepCore"       PartName="RunGtest" />
+        <SubPart PartFile="iModelCore/BRepCore/BRepCore"       PartName="RunGtest" Repository="imodel-native-internal" />
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
         <!-- Test that are too time-consuming to run every time:
         <SubPart PartFile="iModelCore/GeoCoord/GeoCoord"         PartName="RunGtest"/>

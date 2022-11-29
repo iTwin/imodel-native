@@ -113,9 +113,10 @@ ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleS
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
-    : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_specificationClasses(other.m_specificationClasses), m_filterExpression(other.m_filterExpression), m_contentFlags(other.m_contentFlags),
-    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
-    m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem),
+    : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_specificationClasses(other.m_specificationClasses), 
+    m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags), 
+    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys), 
+    m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem), 
     m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables)
     {
     for (Field const* field : other.m_fields)
@@ -548,8 +549,8 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     if (m_sortDirection != other.m_sortDirection)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Attempting to merge descriptors with different sort directions: %d vs %d", m_sortDirection, other.m_sortDirection));
 
-    if (!m_filterExpression.Equals(other.m_filterExpression))
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Attempting to merge descriptors with different filter expressions: '%s' vs '%s'", m_filterExpression.c_str(), other.m_filterExpression.c_str()));
+    if (!m_fieldsFilterExpression.Equals(other.m_fieldsFilterExpression))
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Attempting to merge descriptors with different filter expressions: '%s' vs '%s'", m_fieldsFilterExpression.c_str(), other.m_fieldsFilterExpression.c_str()));
 
     if (!m_connectionId.Equals(other.m_connectionId))
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Attempting to merge descriptors with different connection IDs: '%s' vs '%s'", m_connectionId.c_str(), other.m_connectionId.c_str()));
@@ -565,6 +566,9 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
 
     if (m_selectionInfo.IsNull() && other.m_selectionInfo.IsValid() || m_selectionInfo.IsValid() && other.m_selectionInfo.IsNull() || m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && *m_selectionInfo != *other.m_selectionInfo)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Attempting to merge descriptors with different selection infos");
+
+    if (m_instanceFilter && !other.m_instanceFilter || !m_instanceFilter && other.m_instanceFilter || m_instanceFilter && other.m_instanceFilter && *m_instanceFilter != *other.m_instanceFilter)
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Attempting to merge descriptors with different instance filters");
 
     std::unordered_map<size_t, size_t> selectClassesRemap; // index in other.m_classes => index in this->m_classes
     for (size_t i = 0; i < other.m_classes.size(); ++i)

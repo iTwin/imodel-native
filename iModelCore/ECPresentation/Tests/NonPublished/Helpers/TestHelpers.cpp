@@ -739,16 +739,30 @@ static void VerifyInstanceKeysMatch(bvector<RefCountedPtr<IECInstance const>> co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR connection, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
+void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR db, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
     {
-    auto nodeInstanceKeys = ReadNodeInstanceKeys(connection, static_cast<NavNodeCR>(node));
+    auto nodeInstanceKeys = ReadNodeInstanceKeys(db, static_cast<NavNodeCR>(node));
     VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
 
     if (node.GetKey()->AsECInstanceNodeKey())
+        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesEngineTestHelpers::ValidateNodeInstances(INodeInstanceKeysProvider const& instanceKeysProvider, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
+    {
+    bset<ECInstanceKey> nodeInstanceKeys;
+    instanceKeysProvider.IterateInstanceKeys(node, [&nodeInstanceKeys](ECInstanceKeyCR k)
         {
-        auto nodeKeyInstanceKeys = GetECInstanceNodeKeys(node);
-        VerifyInstanceKeysMatch(instances, nodeKeyInstanceKeys);
-        }
+        nodeInstanceKeys.insert(k);
+        return true;
+        });
+    VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
+
+    if (node.GetKey()->AsECInstanceNodeKey())
+        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
     }
 
 /*---------------------------------------------------------------------------------**//**

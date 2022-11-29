@@ -513,14 +513,15 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
     ctx.GetSelectionOptionsR().Clear();
     for (auto& parentPropertyExp : parentPropertyExps)
         {
-        PropertyNameExp const* propertyName = parentPropertyExp->GetAsCP<PropertyNameExp>();
-        if (propertyName->IsPropertyRef())
+        PropertyNameExp const* propertyNameExp = parentPropertyExp->GetAsCP<PropertyNameExp>();
+        if (propertyNameExp->IsPropertyRef())
             continue;
-        if (propertyName->IsVirtualProperty())
+        if (propertyNameExp->IsVirtualProperty())
             break;
 
-        if (&classMap == &propertyName->GetPropertyMap().GetClassMap())
-            ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap());
+        const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
+        if (&exp == classRefExp)
+            ctx.GetSelectionOptionsR().AddProperty(propertyNameExp->GetPropertyMap());
         }
     }
 
@@ -533,7 +534,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     const ECSqlType currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
     ClassMap const& classMap = exp.GetInfo().GetMap();
 
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.GetPolymorphicInfo().IsPolymorphic()));
     if (!policy.IsSupported())
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
@@ -548,7 +549,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             if (ctx.GetECDb().GetECSqlConfig().GetOptimizationOption(OptimizationOptions::OptimizeJoinForNestedSelectQuery))
                 RemovePropertyRefs(ctx, exp, classMap);
             NativeSqlBuilder classViewSql;
-            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.IsPolymorphic(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp()))
+            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp()))
                 return ECSqlStatus::InvalidECSql;
 
             classViewSql.AppendSpace().AppendEscaped(exp.GetId());
@@ -558,7 +559,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
             case ECSqlType::Insert:
             {
-            BeAssert(!exp.IsPolymorphic());
+            BeAssert(!exp.GetPolymorphicInfo().IsPolymorphic());
             SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
             table = &preparedStmt.GetContextTable();
             break;
@@ -1266,7 +1267,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
-    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), true, relationshipClassNameExp.DisqualifyPrimaryJoin()))
+    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), relationshipClassNameExp.GetPolymorphicInfo(), relationshipClassNameExp.DisqualifyPrimaryJoin()))
         {
         BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::Error;
@@ -1724,11 +1725,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     while(it != classNames.end()) 
         {
         auto const& srcClass = (*it)->GetInfo().GetMap().GetClass();
-        auto const isSrcPoly = (*it)->IsPolymorphic();
+        auto const isSrcPoly = (*it)->GetPolymorphicInfo().IsPolymorphic();
         bool found = false;
         for (auto cn : classNames)
             {
-            auto const isTargPoly = cn->IsPolymorphic();
+            auto const isTargPoly = cn->GetPolymorphicInfo().IsPolymorphic();
             auto const& targClass = cn->GetInfo().GetMap().GetClass();
             if (cn != (*it))
                 {
@@ -1753,7 +1754,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     // create coma seperated hex string of exact ids.
     for (auto classNameExp : classNames)
         {
-        if (classNameExp->IsPolymorphic())
+        if (classNameExp->GetPolymorphicInfo().IsPolymorphic())
             continue;
 
         auto ecclassId = classNameExp->GetInfo().GetMap().GetClass().GetId();
@@ -1763,7 +1764,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     // create coma seperated hex string of poly ids
     for (auto classNameExp : exp.ClassNames())
         {
-        if (!classNameExp->IsPolymorphic())
+        if (!classNameExp->GetPolymorphicInfo().IsPolymorphic())
             continue;
 
         auto ecclassId = classNameExp->GetInfo().GetMap().GetClass().GetId();
@@ -2006,7 +2007,7 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
 
     Utf8String classIdColSql(classIdColumn.GetName());
 
-    if (!exp.IsPolymorphic())
+    if (exp.GetPolymorphicInfo().IsOnly())
         {
         if (partition->IsSharedTable())
             filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);

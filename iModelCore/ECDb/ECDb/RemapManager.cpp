@@ -32,7 +32,7 @@ SELECT [rootSchema].[Name], [rootClass].[Name], [rootClass].[Id], [s].[Name], [c
     JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
     JOIN [ec_Property] [ecp] on [ecp].[Id] = [pp].[RootPropertyId]
     JOIN [ec_Column] [col] on [col].[Id] = [pm].[ColumnId]
-    JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id] 
+    JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id]
     JOIN [ec_Class] [c] on [c].[Id] = [pm].[ClassId]
     JOIN [ec_Class] [rootClass] on [rootClass].[Id] = [ecp].[ClassId]
     JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
@@ -60,7 +60,7 @@ WHERE [ecp].[Id] = ? AND [col].[ColumnKind] = 4
         auto& cleanedInfos = GetOrAddCleanedMappingInfo(classId);
         cleanedInfos.emplace_back();
         auto& cleanedInfo = cleanedInfos.back(); //in c++ 17 emplace_back() already returns the reference, but we don't fully support that yet in our build chain.
-        
+
 
         cleanedInfo.m_rootSchemaName = stmt->GetValueText(0);
         cleanedInfo.m_rootClassName = stmt->GetValueText(1);
@@ -83,6 +83,7 @@ WHERE [ecp].[Id] = ? AND [col].[ColumnKind] = 4
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RemapManager::CleanModifiedMappings()
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Clean modified property mappings");
     std::set<ECPropertyId> cleanedPropertyIds; //hold a unique list of rootPropertyIds that have been cleaned, so we can purge orphans later
     for (auto& [key, remapInfo] : m_remapInfos)
         {
@@ -123,7 +124,7 @@ WHERE [ec_PropertyPath].[RootPropertyId] = ? AND NOT EXISTS (SELECT 1 FROM [ec_P
 
         if (BE_SQLITE_DONE != cleanPropertyPathStmt->Step())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean property path orphans: %s", 
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean property path orphans: %s",
                 m_ecdb.GetLastError().c_str());
             return ERROR;
             }
@@ -164,7 +165,7 @@ SELECT [rootSchema].[Name], [rootClass].[Name], [rootClass].[Id], [s].[Name], [c
     JOIN [ec_Property] [ecp] on [ecp].[Id] = [pp].[RootPropertyId]
     JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
     JOIN [ec_Column] [col] on [col].[Id] = [pm].[ColumnId]
-    JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id] 
+    JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id]
     JOIN [ec_Class] [c] on [c].[Id] = [pm].[ClassId]
     JOIN [ec_Class] [rootClass] on [rootClass].[Id] = [ecp].[ClassId]
     JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
@@ -260,7 +261,7 @@ WHERE [ecp].[Name] = ? AND [col].[ColumnKind] = 4 AND [pm].[ClassId] IN (SELECT 
 
     if (BE_SQLITE_DONE != deleteStmt->Step())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean mappings. Could not delete mapping for ECClass %s Property %s: %s", 
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean mappings. Could not delete mapping for ECClass %s Property %s: %s",
             classId.ToString().c_str(), propertyName.c_str(), m_ecdb.GetLastError().c_str());
         return ERROR;
         }
@@ -297,8 +298,8 @@ BentleyStatus RemapManager::CleanAddedBaseClass(RemapInfosForClass& remapInfo, A
           AND [cn].ColumnKind = 4
     ),
     [derivedClassColumns]([PropertyMapId], [ColumnId]) AS(
-        SELECT 
-               [pm].[Id], 
+        SELECT
+               [pm].[Id],
                [pm].[ColumnId]
         FROM   [ec_Property] [pt]
                JOIN [ec_Cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [pt].[ClassId]
@@ -318,7 +319,7 @@ BentleyStatus RemapManager::CleanAddedBaseClass(RemapInfosForClass& remapInfo, A
         FROM   [derivedClassColumns]
         WHERE  [ColumnId] IN (SELECT [ColumnId] FROM [baseClassColumns])
     )
-SELECT 
+SELECT
        DISTINCT [pp].[RootPropertyId] [RootPropertyId],[pm].[ClassId] [MappedClassId], [c].[Name], [p].[Name]
 FROM   [propertiesWhichNeedRemapping] [remap]
        JOIN [ec_PropertyMap] [pm] ON [pm].[id] = [remap].[PropertyMapId]
@@ -334,7 +335,7 @@ SELECT [rootSchema].[Name], [rootClass].[Name], [rootClass].[Id], [s].[Name], [c
     JOIN [ec_Property] [ecp] on [ecp].[Id] = [pp].[RootPropertyId]
     JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
     JOIN [ec_Column] [col] on [col].[Id] = [pm].[ColumnId]
-    JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id] 
+    JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id]
     JOIN [ec_Class] [c] on [c].[Id] = [pm].[ClassId]
     JOIN [ec_Class] [rootClass] on [rootClass].[Id] = [ecp].[ClassId]
     JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
@@ -344,7 +345,7 @@ WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SE
 
     Utf8CP cleanMappingsSql = R"sqlstatement(
 DELETE FROM [ec_PropertyMap] WHERE [Id] IN(
-SELECT [pm].[Id] 
+SELECT [pm].[Id]
     FROM [ec_PropertyMap] [pm]
     JOIN [ec_Property] [ecp] on [ecp].[Id] = [pp].[RootPropertyId]
     JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
@@ -353,7 +354,7 @@ SELECT [pm].[Id]
 WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] from [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2) AND [col].[ColumnKind] = 4)
     )sqlstatement";
 
-    
+
     CachedStatementPtr detectPropertiesToRemapStmt = m_ecdb.GetCachedStatement(detectPropertiesToRemapSql);
     if (detectPropertiesToRemapStmt == nullptr)
         return ERROR;
@@ -422,7 +423,7 @@ WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SE
 
         if (BE_SQLITE_DONE != cleanMappingsStmt->Step())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean mappings for new base class property. Could not delete mapping for ECClass %s.%s: %s", 
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean mappings for new base class property. Could not delete mapping for ECClass %s.%s: %s",
                 remapInfo.m_schemaName.c_str(), remapInfo.m_className.c_str(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
@@ -437,7 +438,7 @@ WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SE
 
     //here we detect properties that were once mapped directly, and now come from the base class, so they turn into overrides. We need to clean their mappings and move the data
     Utf8CP detectNewPropertyOverridesSql = R"sqlstatement(
-WITH 
+WITH
 [propertyNamesUpTheHierarchy]([PropertyName]) as(
     Select distinct [p].[Name]
     FROM [ec_Property] [p]
@@ -471,7 +472,7 @@ SELECT [PropertyName]
         if(CleanPropertyDownTheHierarchyByName(remapInfo.m_classId, propertyName, true, cleanedPropertyIds) != SUCCESS)
             return ERROR;
         }
-    
+
     return SUCCESS;
     }
 
@@ -481,7 +482,7 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
         return SUCCESS;
 
     DbMapSaveContext saveCtx(m_ecdb);
-    
+
     for(auto& pair : m_cleanedMappingInfo)
         {
         auto classId = pair.first;
@@ -535,7 +536,7 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
             bool isSameColumnName = columnName.EqualsI(cleaned.m_columnName);
             if(isSameTableName && isSameColumnName)
                 continue;//we ended up in the same column, nothing to move
-            
+
             auto& target = GetOrAddRemappedColumnInfo(classId);
             target.emplace_back(cleaned); //in c++ 17 emplace_back() already returns the reference, but we don't fully support that yet in our build chain.
             auto& remapInfo = target.back();
@@ -553,11 +554,12 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
 
 BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties()
     {
+    ECDB_PERF_LOG_SCOPE( "Schema import> Upgrading existing ECInstances with remapped properties to different columns");
     for(auto& pair : m_remappedColumns)
         {
         auto classId = pair.first;
         auto& remapInfos = pair.second;
-        
+
         if(remapInfos.empty())
             continue; //nothing to remap
 

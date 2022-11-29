@@ -24,7 +24,7 @@ void TestOrder3RootsIn01 (double a0, double a1, double a2, int numStep)
             bsiBezier_univariateRoots (rootA, &numA, bezCoffs, 3);
             int numB = bez.Roots (target, rootB, true);
             char message[1024];
-            sprintf (message, "Bezier (%g,%g,%g)(u)=%g (numA=%d) (numB %d)\n",
+            snprintf (message, sizeof(message), "Bezier (%g,%g,%g)(u)=%g (numA=%d) (numB %d)\n",
                         a0, a1, a2, target, numA, numB);
             if (Check::Int (numA, numB, "Order3 roots"))
                 {

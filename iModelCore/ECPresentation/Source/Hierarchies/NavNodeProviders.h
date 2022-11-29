@@ -66,12 +66,11 @@ private:
     OptimizationFlagsContainer const* m_parentContainer;
     bool m_isFullLoadDisabled;
     bool m_isPostProcessingDisabled;
-    bool m_isUpdatesDisabled;
     Nullable<size_t> m_maxNodesToLoad;
 
 public:
     OptimizationFlagsContainer()
-        : m_isFullLoadDisabled(false), m_isPostProcessingDisabled(false), m_isUpdatesDisabled(false), m_maxNodesToLoad(nullptr), m_parentContainer(nullptr)
+        : m_isFullLoadDisabled(false), m_isPostProcessingDisabled(false), m_maxNodesToLoad(nullptr), m_parentContainer(nullptr)
         {}
     OptimizationFlagsContainer(OptimizationFlagsContainer const&) = delete;
     OptimizationFlagsContainer(OptimizationFlagsContainer&&) = delete;
@@ -81,7 +80,6 @@ public:
         m_parentContainer = other.m_parentContainer;
         m_isFullLoadDisabled = other.m_isFullLoadDisabled;
         m_isPostProcessingDisabled = other.m_isPostProcessingDisabled;
-        m_isUpdatesDisabled = other.m_isUpdatesDisabled;
         m_maxNodesToLoad = other.m_maxNodesToLoad;
         }
 
@@ -98,9 +96,6 @@ public:
 
     bool IsPostProcessingDisabled(bool checkParent = true) const {return m_isPostProcessingDisabled || checkParent && m_parentContainer && m_parentContainer->IsPostProcessingDisabled();}
     void SetDisablePostProcessing(bool value) {m_isPostProcessingDisabled = value;}
-
-    bool IsUpdatesDisabled(bool checkParent = true) const {return m_isUpdatesDisabled || checkParent && m_parentContainer && m_parentContainer->IsUpdatesDisabled();}
-    void SetIsUpdatesDisabled(bool value) {m_isUpdatesDisabled = value;}
 
     size_t GetMaxNodesToLoad(bool checkParent = true) const
         {
