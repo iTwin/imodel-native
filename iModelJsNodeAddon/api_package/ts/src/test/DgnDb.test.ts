@@ -32,7 +32,7 @@ describe("basic tests", () => {
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function
-    expect(() => (iModelJsNative as any).storeObjectInVault()).to.throw("Argument 0");
+    expect(() => (iModelJsNative as any).addFontWorkspace()).to.throw("Argument 0");
 
     // now try methods
     const db = new iModelJsNative.DgnDb() as any;
@@ -101,7 +101,7 @@ describe("basic tests", () => {
     const db = openDgnDb(testFileName);
     const assetsDir = path.join(getAssetsDir(), 'ImportSchemaTests');
     const test100Path = path.join(assetsDir, "Test.01.00.00.ecschema.xml");
-    
+
     // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
     let bisProps = db.getSchemaProps("BisCore");
