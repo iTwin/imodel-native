@@ -896,9 +896,7 @@ private:
     DataSourceIdentifier m_parentDatasourceIdentifier;
 
 private:
-    QueryBasedNodesProvider(NavNodesProviderContextR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier)
-        : T_Super(context), m_query(&query), m_usedClassIds(usedClassIds), m_offset(0), m_parentDatasourceIdentifier(parentDatasourceIdentifier)
-        {}
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextR, NavigationQuery const&, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier);
     NodeCounts QueryNodeCounts() const;
     BentleyStatus InitializePartialProviders(bvector<PageNodeCounts> const&);
 
