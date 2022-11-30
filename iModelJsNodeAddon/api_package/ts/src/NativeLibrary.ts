@@ -160,11 +160,6 @@ export declare namespace IModelJsNative {
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
   function setCrashReportProperty(name: string, value: string | undefined): void;
   function getCrashReportProperties(): NameValuePair[];
-  function storeObjectInVault(obj: any, id: string): void;
-  function getObjectFromVault(id: string): any;
-  function dropObjectFromVault(id: string): void;
-  function addReferenceToObjectInVault(id: string): void;
-  function getObjectRefCountFromVault(id: string): number;
   function clearLogLevelCache(): void;
   function addFontWorkspace(fileName: LocalFileName, container?: CloudContainer): boolean;
   function addGcsWorkspaceDb(dbNames: string, container?: CloudContainer, priority?: number): boolean;

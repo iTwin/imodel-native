@@ -12361,6 +12361,100 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryDelete)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, LegalPropertyCategoryDeleteWithDoNotFailFlag)
+    {
+    auto OriginalSchemaSource = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <PropertyCategory typeName="C1" description="C1" displayLabel="C1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="C2" displayLabel="C2" priority="2" />
+                                        <PropertyCategory typeName="C3" description="C3" displayLabel="C3" priority="3" />
+                                        <PropertyCategory typeName="C4" description="C4" displayLabel="C4" priority="4" />
+                                        <ECEntityClass typeName="Foo" >
+                                            <ECProperty propertyName="P1" typeName="double" category="C1" />
+                                            <ECProperty propertyName="P2" typeName="double" category="C2" />
+                                            <ECProperty propertyName="P3" typeName="double" category="C3" />
+                                            <ECProperty propertyName="P4" typeName="double" category="C4" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("getpropertycategories.ecdb", SchemaItem(OriginalSchemaSource)))
+        << "initial schema setup should succeed";
+
+    auto SchemaSourceWithDeletion = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <PropertyCategory typeName="C1" description="C1" displayLabel="C1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="C2" displayLabel="C2" priority="2" />
+                                        <PropertyCategory typeName="C3" description="C3" displayLabel="C3" priority="3" />
+                                        <PropertyCategory typeName="C5" description="C5" displayLabel="C5" priority="5" />
+                                        <ECEntityClass typeName="Foo" >
+                                            <ECProperty propertyName="P1" typeName="double" category="C1" />
+                                            <ECProperty propertyName="P2" typeName="double" category="C2"/>
+                                            <ECProperty propertyName="P3" typeName="double" category="C3" />
+                                            <ECProperty propertyName="P4" typeName="double" category="C5" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+                                    
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(SchemaSourceWithDeletion), options))
+        << "PropertyCategory deletion should work if there are no dangling references";
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    PropertyCategoryCP cat = (*schema).GetPropertyCategoryCP("C4");
+    ASSERT_TRUE(cat == nullptr) << "C4";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, IllegalPropertyCategoryDeleteWithDoNotFailFlag)
+    {
+    auto Schema1ContainingCategorySrc = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <PropertyCategory typeName="C1" description="C1" displayLabel="C1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="C2" displayLabel="C2" priority="2" />
+                                        <ECEntityClass typeName="Foo">
+                                            <ECProperty propertyName="P1" typeName="double" category="C2" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("getpropertycategories.ecdb", SchemaItem(Schema1ContainingCategorySrc)))
+        << "initial schema1 setup should succeed";
+
+    auto Schema2ReferencingCategorySrc = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <ECSchemaReference name="Schema1" version="1.0" alias="s1" />
+                                        <ECEntityClass typeName="Foo">
+                                            <ECProperty propertyName="P2" typeName="double" category="s1:C2" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Schema2ReferencingCategorySrc)))
+        << "importing schema2 should succeed";
+
+    auto Schema1SourceWithDeletion = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <PropertyCategory typeName="C1" description="C1" displayLabel="C1" priority="1" />
+                                        <ECEntityClass typeName="Foo">
+                                            <ECProperty propertyName="P1" typeName="double" category="C1" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Schema1SourceWithDeletion), options))
+        << "Illegal Property Category should be ignored when DoNotFailForDeletionsOrModifications flag is set";
+        
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    PropertyCategoryCP cat = (*schema).GetPropertyCategoryCP("C2");
+    ASSERT_TRUE(cat != nullptr) << "C2";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, PropertyCategoryDeleteReferencedFails)
     {
     auto Schema1ContainingCategorySrc = R"xml(<?xml version="1.0" encoding="utf-8" ?>
