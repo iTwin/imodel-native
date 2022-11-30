@@ -461,3 +461,77 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
             }),
         });
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_ReturnsCorrectNodesWhenVariablesUsedInHideExpression)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("root", [](auto& spec)
+        {
+        spec.SetHideExpression("GetVariableBoolValue(\"should_hide\")");
+        }));
+
+    // returns the node when no variables set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateCustomNodeValidator("root")
+        });
+
+    // returns the node when `should_hide = false`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("should_hide", false) }), nullptr),
+        {
+        CreateCustomNodeValidator("root")
+        });
+
+    // doesn't return the node when `should_hide = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("should_hide", true) }), nullptr),
+        {
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_ReturnsCorrectNodesWhenVariablesUsedInChildHierarchyLevelsWithParentLevelHiddenIfNoChildren)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("root", [](auto& spec)
+        {
+        spec.SetHideIfNoChildren(true);
+        }));
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\" ANDALSO GetVariableBoolValue(\"show_child\")", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*childRule);
+    childRule->AddSpecification(*CreateCustomNodeSpecification("child"));
+
+    // returns empty list when no variables set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        });
+
+    // returns empty list node when `show_child = false`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_child", false) }), nullptr),
+        {
+        });
+
+    // return both the root and the child node when `show_child = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_child", true) }), nullptr),
+        {
+        ExpectedHierarchyDef(CreateCustomNodeValidator("root"),
+            {
+            CreateCustomNodeValidator("child")
+            }),
+        });
+    }
