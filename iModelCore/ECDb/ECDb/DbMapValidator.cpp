@@ -10,54 +10,54 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
-    // We do not enforce forignkey constraint on ec_CustomAttribute.ContainerId and 
+    // We do not enforce forignkey constraint on ec_CustomAttribute.ContainerId and
     // thus it is possible that deleting schema might result in orphan row in this table.
     // This can cause later schema import to fail due to unique constainer and id reused in ec_* tables.
     auto sql =R"sql(
-        select 
+        select
             [ca_id],
             [container_type],
             [container_id]
-        from   (select 
-                    'ECSchema' [container_type], 
-                    [c].[id] [ca_id], 
-                    [c].[containerid] [container_id], 
+        from   (select
+                    'ECSchema' [container_type],
+                    [c].[id] [ca_id],
+                    [c].[containerid] [container_id],
                     [t].[id] [related_row]
                 from   [ec_CustomAttribute] [c]
                     left join [ec_schema] [t] on [t].[id] = [c].[containerid]
                 where  [containerType] = 1
                 union
-                select 
-                    'ECClass', 
-                    [c].[id], 
-                    [c].[containerid], 
+                select
+                    'ECClass',
+                    [c].[id],
+                    [c].[containerid],
                     [t].[id]
                 from   [ec_CustomAttribute] [c]
                     left join [ec_class] [t] on [t].[id] = [c].[containerid]
                 where  [containerType] = 30
                 union
-                select 
-                    'ECProperty', 
-                    [c].[id], 
-                    [c].[containerid], 
+                select
+                    'ECProperty',
+                    [c].[id],
+                    [c].[containerid],
                     [t].[id]
                 from   [ec_CustomAttribute] [c]
                     left join [ec_property] [t] on [t].[id] = [c].[containerid]
                 where  [containerType] = 992
                 union
-                select 
-                    'SourceECRelationshipConstraint', 
-                    [c].[id], 
-                    [c].[containerid], 
+                select
+                    'SourceECRelationshipConstraint',
+                    [c].[id],
+                    [c].[containerid],
                     [t].[id]
                 from   [ec_CustomAttribute] [c]
                     left join [ec_RelationshipConstraint] [t] on [t].[id] = [c].[containerid]
                 where  [c].[containerType] = 1024 and [t].[RelationshipEnd] = 0
                 union
-                select 
-                    'TargetECRelationshipConstraint', 
-                    [c].[id], 
-                    [c].[containerid], 
+                select
+                    'TargetECRelationshipConstraint',
+                    [c].[id],
+                    [c].[containerid],
                     [t].[id]
                 from   [ec_CustomAttribute] [c]
                     left join [ec_RelationshipConstraint] [t] on [t].[id] = [c].[containerid]
@@ -78,7 +78,7 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
-                "Detected orphan custom attribute rows. CustomAttribute with id=%" PRId64 " applied to container of type '%s' with container id=%" PRId64 ".", 
+                "Detected orphan custom attribute rows. CustomAttribute with id=%" PRId64 " applied to container of type '%s' with container id=%" PRId64 ".",
                 caStmt.GetValueInt64(0),  // ca_id
                 caStmt.GetValueText(1),   // container_type
                 caStmt.GetValueInt64(2)); // container_id
@@ -182,6 +182,7 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::Validate() const
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Validate mappings");
     if (SUCCESS != Initialize())
         return ERROR;
 

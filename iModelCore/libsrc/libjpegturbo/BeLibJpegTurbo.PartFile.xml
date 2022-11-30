@@ -4,14 +4,17 @@
     xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
     >
    
-    <Part Name="BeLibJpegTurbo" BentleyBuildMakeFile="BeLibJpegTurbo.mke">
-        <RequiredRepository>Bsitools-Nasm_2.10</RequiredRepository>
+    <ToolPart Name="nasm" OnlyPlatforms="x64">
+        <Upack>nasm</Upack>
+    </ToolPart>
+
+      <Part Name="BeLibJpegTurbo" BentleyBuildMakeFile="BeLibJpegTurbo.mke">
+        <SubToolPart Name="nasm"/>
         <Bindings>
             <VendorAPI Domain="libjpeg-turbo"/>
             <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeLibJpegTurbo$(stlibext)</Libs>
             <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeLibJpegTurbo$(stlibdebugext)</Libs>
             <VendorNotices>Delivery/jpeg-turbo-license.txt</VendorNotices>
-            <VendorNotices IfNotPresent="Continue">Delivery/nasm-license.txt</VendorNotices>
         </Bindings>
     </Part>
 

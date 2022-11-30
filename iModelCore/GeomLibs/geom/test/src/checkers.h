@@ -359,7 +359,7 @@ static bool ValidIndex (size_t index, bvector<T> const &data, char const*pString
         return true;
     int printableIndex = (index == SIZE_MAX) ? (-1) : (int)index;
     char message[1024];
-    sprintf (message, "(index out of bounds (%s) %d %d)\n", pString ? pString : "", printableIndex, (int)data.size ());
+    snprintf (message, sizeof(message), "(index out of bounds (%s) %d %d)\n", pString ? pString : "", printableIndex, (int)data.size ());
     Check::PrintScope ();
     Check::Fail (message);
     return false;
@@ -391,7 +391,7 @@ static bool Near (bvector<T> &a, bvector<T> &b, char const*pName = NULL)
         for (size_t i = 0; stat && i < a.size (); i++)
             {
             char s[1024];
-            sprintf (s, "[%ld]", (long int)i);
+            snprintf (s, sizeof(s), "[%ld]", (long int)i);
             if (!Check::Near (a[i], b[i], s))
                 stat = false;
             }

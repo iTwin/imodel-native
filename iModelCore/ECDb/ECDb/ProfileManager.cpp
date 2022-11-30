@@ -47,7 +47,7 @@ DbResult ProfileManager::CreateProfile() const
         m_ecdb.AbandonChanges();
         return stat;
         }
-  
+
     m_ecdb.SaveChanges();
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End CreateECProfile");
     return BE_SQLITE_OK;
@@ -80,8 +80,7 @@ DbResult ProfileManager::UpgradeProfile() const
         return BE_SQLITE_ERROR_NoTxnActive;
         }
 
-    PERFLOG_START("ECDb", "Profile upgrade");
-
+    ECDB_PERF_LOG_SCOPE("Profile upgrade");
     DbResult stat = ReadProfileVersion();
     if (stat != BE_SQLITE_OK)
         {
@@ -107,7 +106,6 @@ DbResult ProfileManager::UpgradeProfile() const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-
     if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(m_ecdb))
         {
         m_ecdb.AbandonChanges();
@@ -120,7 +118,6 @@ DbResult ProfileManager::UpgradeProfile() const
                   versionBeforeUpgrade.ToString().c_str(), m_profileVersion.ToString().c_str(), m_ecdb.GetDbFileName());
         }
 
-    PERFLOG_FINISH("ECDb", "Profile upgrade");
     return BE_SQLITE_OK;
     }
 
@@ -564,7 +561,7 @@ DbResult ProfileManager::CreateProfileTables() const
 
 // Product Backlog Item 797894: Use delete trigger for cleaning up custom attributes
 // https://tinyurl.com/bdzxrxe8
-#ifdef WIP_USE_TRIGGER_FOR_CUSTOMATTRIBUTE_DELETION 
+#ifdef WIP_USE_TRIGGER_FOR_CUSTOMATTRIBUTE_DELETION
     // trigger to delete custom attributes for ec_Schema
     stat = m_ecdb.ExecuteDdl(R"sql(
         create trigger [ec_delete_custom_attributes_for_schema] before delete on [ec_Schema]

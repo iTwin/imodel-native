@@ -111,7 +111,8 @@ struct RulesEngineTestHelpers
     static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false);
     static void ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder = false);
     static void ValidateNodesPagination(std::function<NodesResponse(PageOptionsCR)> getter, bvector<NavNodeCPtr> const& expectedNodes);
-    static void ValidateNodeInstances(ECDbCR connection, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
+    static void ValidateNodeInstances(ECDbCR, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
+    static void ValidateNodeInstances(INodeInstanceKeysProvider const&, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
     static void ValidateNodeGroupedValues(NavNodeCR node, bvector<ECValue> const& groupedValues);
     static NavNodesContainer GetValidatedNodes(std::function<NodesResponse()> getter);
     static NavNodesContainer GetValidatedNodes(std::function<NodesResponse(PageOptionsCR)> nodesGetter, std::function<NodesCountResponse()> countGetter);

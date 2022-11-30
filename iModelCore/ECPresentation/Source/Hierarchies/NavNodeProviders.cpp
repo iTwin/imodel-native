@@ -80,36 +80,39 @@ public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_nodeProviders;}
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedVariablesUpdater::DataSourceRelatedVariablesUpdater(NavNodesProviderContextCR context, DataSourceIdentifier id)
-    : m_context(context), m_dsIdentifier(id)
-    {
-    m_relatedVariablesBefore = m_context.GetRelatedRulesetVariables();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedVariablesUpdater::~DataSourceRelatedVariablesUpdater()
-    {
-    if (!m_dsIdentifier.IsValid())
-        return;
-
-    bvector<RulesetVariableEntry> relatedVariablesAfter = m_context.GetRelatedRulesetVariables();
-    if (m_relatedVariablesBefore.Contains(relatedVariablesAfter, false))
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct DataSourceRelatedVariablesTracker
+{
+private:
+    NavNodesProviderContextCR m_context;
+    DataSourceIdentifier const& m_dsIdentifier;
+    RulesetVariables m_relatedVariablesBefore;
+public:
+    DataSourceRelatedVariablesTracker(NavNodesProviderContextCR context, DataSourceIdentifier const& id)
+        : m_context(context), m_dsIdentifier(id)
         {
-        // didn't notice any new variables
-        return;
+        m_relatedVariablesBefore = m_context.GetRelatedRulesetVariables();
         }
+    std::unique_ptr<RulesetVariables> GetChangedVariables()
+        {
+        if (!m_dsIdentifier.IsValid())
+            return nullptr;
 
-    DataSourceInfo info(m_dsIdentifier, relatedVariablesAfter, DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
-    m_context.GetNodesCache().Update(info, DataSourceInfo::PART_Vars);
+        bvector<RulesetVariableEntry> relatedVariablesAfter = m_context.GetRelatedRulesetVariables();
+        if (m_relatedVariablesBefore.Contains(relatedVariablesAfter, false))
+            {
+            // didn't notice any new variables
+            return nullptr;
+            }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Updated ruleset variable dependencies from %s to %s",
-        m_relatedVariablesBefore.GetSerializedInternalJsonObjectString().c_str(), RulesetVariables(relatedVariablesAfter).GetSerializedInternalJsonObjectString().c_str()));
-    }
+        m_relatedVariablesBefore = relatedVariablesAfter;
+        return std::make_unique<RulesetVariables>(relatedVariablesAfter);
+        }
+};
+END_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1138,13 +1141,32 @@ DataSourceIdentifier const& CachingNavNodesProviderBase<TProvider>::GetOrCreateD
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TProvider>
+CachingNavNodesProviderBase<TProvider>::CachingNavNodesProviderBase(NavNodesProviderContextR context)
+    : TProvider(context)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TProvider>
+CachingNavNodesProviderBase<TProvider>::~CachingNavNodesProviderBase()
+    {
+    // only here to hide use of `DataSourceRelatedVariablesTracker`
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TProvider>
 void CachingNavNodesProviderBase<TProvider>::OnCreated()
     {
     // call to ensure it's cached if necessary
     bool createdNew = false;
-    GetOrCreateDataSourceIdentifier(&createdNew);
+    auto const& identifier = GetOrCreateDataSourceIdentifier(&createdNew);
     if (createdNew)
         _OnFirstCreate();
+
+    m_variablesTracker = std::make_unique<DataSourceRelatedVariablesTracker>(TProvider::GetContext(), identifier);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1154,8 +1176,18 @@ template<typename TProvider>
 void CachingNavNodesProviderBase<TProvider>::UpdateDataSourceDirectNodesCount(DataSourceIdentifier const& id, size_t value)
     {
     DataSourceInfo info(id);
+    int partsToUpdate = 0;
+
     info.SetDirectNodesCount(value);
-    TProvider::GetContext().GetNodesCache().Update(info, DataSourceInfo::PART_DirectNodesCount);
+    partsToUpdate |= DataSourceInfo::PART_DirectNodesCount;
+
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
+        }
+
+    TProvider::GetContext().GetNodesCache().Update(info, partsToUpdate);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1179,6 +1211,12 @@ void CachingNavNodesProviderBase<TProvider>::UpdateDataSourceHasNodesFlag(DataSo
         info.SetIsInitialized(true);
         info.SetTotalNodesCount((size_t)0);
         partsToUpdate |= DataSourceInfo::PART_IsFinalized | DataSourceInfo::PART_TotalNodesCount;
+        }
+
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
         }
 
     context.GetNodesCache().Update(info, partsToUpdate);
@@ -1207,6 +1245,12 @@ void CachingNavNodesProviderBase<TProvider>::UpdateDataSourceTotalNodesCount(Dat
         partsToUpdate |= DataSourceInfo::PART_IsFinalized;
         }
 
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
+        }
+
     context.GetNodesCache().Update(info, partsToUpdate);
     }
 
@@ -1219,16 +1263,24 @@ void CachingNavNodesProviderBase<TProvider>::UpdateInitializedNodesState(DataSou
     if (SUCCESS != state.GetStatus())
         return;
 
-    if (!state.IsFullyInitialized())
-        return;
-
     NavNodesProviderContextCR context = TProvider::GetContext();
-    if (context.GetNodesCache().FindDataSource(id, TProvider::GetContext().GetRulesetVariables(), DataSourceInfo::PART_IsFinalized).IsInitialized())
-        return;
 
     DataSourceInfo info(id);
-    info.SetIsInitialized(true);
-    context.GetNodesCache().Update(info, DataSourceInfo::PART_IsFinalized);
+    int partsToUpdate = 0;
+
+    if (state.IsFullyInitialized() && !context.GetNodesCache().FindDataSource(id, context.GetRulesetVariables(), DataSourceInfo::PART_IsFinalized).IsInitialized())
+        {
+        info.SetIsInitialized(true);
+        partsToUpdate |= DataSourceInfo::PART_IsFinalized;
+        }
+
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
+        }
+
+    context.GetNodesCache().Update(info, partsToUpdate);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1757,6 +1809,13 @@ size_t const QueryBasedNodesProvider::PartialProviderSize = 1000;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier)
+    : T_Super(context), m_query(&query), m_usedClassIds(usedClassIds), m_offset(0), m_parentDatasourceIdentifier(parentDatasourceIdentifier)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 NodesInitializationState QueryBasedNodesProvider::_InitializeNodes()
     {
     bool shouldInitializeAllNodes = false;
@@ -1896,8 +1955,6 @@ QueryBasedNodesProvider::NodeCounts QueryBasedNodesProvider::QueryNodeCounts() c
         return NodeCounts{ dsInfo.GetTotalNodesCount().Value(), ParsePageNodeCounts(dsInfo.GetCustomJson()["PageCounts"]) };
         }
 
-    DataSourceRelatedVariablesUpdater variablesUpdater(GetContext(), GetIdentifier());
-
     // run a separate query to get the total nodes count (we already know this count
     // won't change during post-processing)
     SetupCustomFunctionsContext fnContext(GetContext(), m_query->GetExtendedData());
@@ -2011,8 +2068,6 @@ static GenericQueryPtr CreateRowsCheckQuery(NavigationQueryCR source)
 static size_t QueryHasNodes(NavNodesProviderContextCR context, NavNodeCP virtualParent, NavigationQueryCR query, DataSourceIdentifier const& dsIdentifier)
     {
     auto scope = Diagnostics::Scope::Create("Query has nodes");
-
-    DataSourceRelatedVariablesUpdater variablesUpdater(context, dsIdentifier);
 
     // run a separate query to check if there are any nodes
     SetupCustomFunctionsContext fnContext(context, query.GetExtendedData());
