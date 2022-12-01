@@ -476,6 +476,48 @@ SELECT [PropertyName]
     return SUCCESS;
     }
 
+BentleyStatus RemapManager::EnsureInvolvedSchemasAreLoaded(bvector<ECSchemaCP> const& schemasToMap)
+    {
+    /*
+    This method ensures that all schemas that we touch in remapping are being loaded before schema mapping takes place.
+    Schema Mapping relies on .DerivedClasses() to navigate to the leaf classes, so we have to make sure the necessary schemas are fully loaded.
+    */
+    if(m_cleanedMappingInfo.empty())
+        return SUCCESS;
+    IdSet<ECClassId> classIdsToMap;
+    IdSet<ECSchemaId> schemasIdsToMap;
+    for(ECSchemaCP schema : schemasToMap)
+        {
+        if(schema->HasId())
+            schemasIdsToMap.insert(schema->GetId());
+        }
+    for(auto& pair : m_cleanedMappingInfo)
+        {
+        auto classId = pair.first;
+        classIdsToMap.insert(classId);
+        }
+        Utf8CP complementarySchemaIdsSql = R"sqlstatement(
+SELECT DISTINCT [s].[Name] from [ec_Class] c
+    JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
+    WHERE NOT InVirtualSet(?,[c].[SchemaId]) AND InVirtualSet(?, [c].[Id])
+    )sqlstatement";
+    CachedStatementPtr complementarySchemaIdsStmt = m_ecdb.GetCachedStatement(complementarySchemaIdsSql);
+    if (complementarySchemaIdsStmt == nullptr)
+        return ERROR;
+    if(BE_SQLITE_OK != complementarySchemaIdsStmt->BindVirtualSet(1, schemasIdsToMap))
+        return ERROR;
+    if(BE_SQLITE_OK != complementarySchemaIdsStmt->BindVirtualSet(2, classIdsToMap))
+        return ERROR;
+    while (complementarySchemaIdsStmt->Step() == BE_SQLITE_ROW)
+        {
+        Utf8String schemaName = complementarySchemaIdsStmt->GetValueText(0);
+        ECSchemaCP schema = m_ecdb.Schemas().GetSchema(schemaName);
+        if(schema == nullptr)
+            return ERROR;
+        }
+    return SUCCESS;
+    }
+
 BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportContext& ctx)
     {
     if(m_cleanedMappingInfo.empty())
