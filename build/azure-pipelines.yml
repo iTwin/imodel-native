@@ -18,7 +18,7 @@ resources:
     - repository: imodel-internal
       type: github
       name: iTwin/imodel-native-internal
-      ref: refs/heads/release/3.x
+      ref: refs/heads/setup-release-branch
       endpoint: github.com_imodel-native
       
 extends:
