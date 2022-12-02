@@ -263,7 +263,7 @@ INavNodesCacheR NavNodesProviderContext::GetNodesCache() const {return *m_nodesC
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<RulesetVariableEntry> NavNodesProviderContext::GetRelatedRulesetVariables() const
     {
-    bset<Utf8String> ids = RulesDrivenProviderContext::GetRelatedVariablesIds();
+    auto const& ids = RulesDrivenProviderContext::GetRelatedVariablesIds();
     bvector<RulesetVariableEntry> idsWithValues;
     for (Utf8StringCR id : ids)
         idsWithValues.push_back(RulesetVariableEntry(id, GetRulesetVariables().GetJsonValue(id.c_str())));
@@ -478,14 +478,14 @@ static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesProviderContextCR baseContext, bool copyNodesContext)
+static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesProviderContextCR baseContext, bset<Utf8String> const& usedVariableIds, bool copyNodesContext)
     {
     NavNodesProviderContextPtr ctx = NavNodesProviderContext::Create(baseContext);
     ctx->SetProvidersIndexAllocator(baseContext.GetProvidersIndexAllocator());
     ctx->SetMayHaveArtifacts(baseContext.MayHaveArtifacts());
     ctx->SetArtifactsCapturers(baseContext.GetArtifactsCapturers());
     ctx->GetOptimizationFlags().SetParentContainer(&baseContext.GetOptimizationFlags());
-    ctx->SetUsedVariablesListener(baseContext, true);
+    ctx->InitUsedVariablesListener(usedVariableIds, &baseContext.GetUsedVariablesListener());
     ctx->SetRemovalId(baseContext.GetRemovalId());
 
     if (copyNodesContext)
@@ -775,15 +775,12 @@ HasChildrenFlag NodesFinalizer::AnyChildSpecificationReturnsNodes(NavNodeR paren
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Any child of %s specification returns nodes?", DiagnosticsHelpers::CreateNodeIdentifier(parentNode).c_str()));
 
     NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(*m_context, parentNode);
-    NavNodesProviderPtr childrenProvider = m_context->CreateHierarchyLevelProvider(*childrenContext, &parentNode, !m_context->HasPageOffset());
-    HasChildrenFlag result = childrenProvider->HasNodes() ? HASCHILDREN_True : HASCHILDREN_False;
-
     // we consider that this provider depends on a variable if we need the variable to determine
     // if node of this provider has children
-    for (Utf8StringCR id : childrenContext->GetRelatedVariablesIds())
-        m_context->GetUsedVariablesListener().OnVariableUsed(id.c_str());
+    childrenContext->InitUsedVariablesListener({}, &m_context->GetUsedVariablesListener());
 
-    return result;
+    NavNodesProviderPtr childrenProvider = m_context->CreateHierarchyLevelProvider(*childrenContext, &parentNode, !m_context->HasPageOffset());
+    return childrenProvider->HasNodes() ? HASCHILDREN_True : HASCHILDREN_False;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1290,7 +1287,7 @@ NavNodesProviderPtr NavNodesProvider::CreateProvider(NavNodeR node) const
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Create provider for %s", GetName(), DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
 
-    auto nodeContext = CreateContextForSameHierarchyLevel(GetContext(), true);
+    auto nodeContext = CreateContextForSameHierarchyLevel(GetContext(), GetContext().GetRelatedVariablesIds(), true);
     auto childrenProviderContext = CreateContextForChildHierarchyLevel(GetContext(), node);
 
     NavNodeExtendedData extendedData(node);
@@ -1794,7 +1791,7 @@ BentleyStatus QueryBasedNodesProvider::InitializePartialProviders(bvector<PageNo
         pageQuery->From(*m_query->Clone());
         pageQuery->Limit(pageCounts.total, offset);
 
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), true);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), GetContext().GetRelatedVariablesIds(), true);
         RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*nestedContext, *pageQuery, m_usedClassIds, GetIdentifier());
         provider->SetTotalNodesCount(pageCounts.unique);
         AddProvider(*provider);
@@ -2140,11 +2137,15 @@ QueryBasedSpecificationNodesProvider::QueryBasedSpecificationNodesProvider(NavNo
     : T_Super(context), m_specification(specification)
     {
     GetContextR().SetMayHaveArtifacts(HasNodeArtifactRules(GetContext().GetRulesPreprocessor(), specification));
+
     SpecificationUsedClassesListener usedClasses(GetContextR());
     bvector<NavigationQueryPtr> queries = CreateQueries(m_specification);
+
+    bset<Utf8String> usedVariables = GetContext().GetRelatedVariablesIds();
+
     for (NavigationQueryPtr const& query : queries)
         {
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), true);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), usedVariables, true);
         AddProvider(*QueryBasedNodesProvider::Create(*nestedContext, *query, usedClasses.GetUsedClassIds()));
         }
     }
@@ -2267,11 +2268,12 @@ MultiSpecificationNodesProvider::MultiSpecificationNodesProvider(NavNodesProvide
     : T_Super(baseContext)
     {
     baseContext.SetVirtualParentNode(nullptr);
+    bset<Utf8String> usedVariables = baseContext.GetRelatedVariablesIds();
 
     SpecificationsVisitor visitor;
     for (RootNodeRuleSpecification const& specification : specs)
         {
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), false);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), usedVariables, false);
         nestedContext->SetRootNodeContext(&specification.GetRule());
         visitor.SetContext(*nestedContext);
         specification.GetSpecification().Accept(visitor);
@@ -2286,11 +2288,12 @@ MultiSpecificationNodesProvider::MultiSpecificationNodesProvider(NavNodesProvide
     : T_Super(baseContext)
     {
     baseContext.SetVirtualParentNode(&virtualParent);
+    bset<Utf8String> usedVariables = baseContext.GetRelatedVariablesIds();
 
     SpecificationsVisitor visitor;
     for (ChildNodeRuleSpecification const& specification : specs)
         {
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), false);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), usedVariables, false);
         nestedContext->SetChildNodeContext(&specification.GetRule(), virtualParent);
         visitor.SetContext(*nestedContext);
         specification.GetSpecification().Accept(visitor);
@@ -3129,7 +3132,7 @@ NavNodePtr NodesFinalizingProvider::FinalizeNode(NavNodeR node) const
 NavNodesProviderPtr NodesFinalizingPostProcessor::_PostProcessProvider(NavNodesProviderR processedProvider) const
     {
     processedProvider.GetContext().GetHierarchyLevelLocker().WaitForUnlock();
-    auto context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), true);
+    auto context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), processedProvider.GetContext().GetRelatedVariablesIds(), true);
     return NodesFinalizingProvider::Create(*context, processedProvider);
     }
 
@@ -3347,7 +3350,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     processedProvider.GetContext().GetHierarchyLevelLocker().WaitForUnlock();
 
     // create a context for merged nodes provider
-    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), false);
+    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), processedProvider.GetContext().GetRelatedVariablesIds(), false);
     context->SetProvidersIndexAllocator(*new ParentProviderIndexAllocator(processedProvider.GetContext().GetVirtualParentNode().IsValid() ? processedProvider.GetContext().GetNodesCache().GetNodeIndex(processedProvider.GetContext().GetVirtualParentNode()->GetNodeId()) : bvector<uint64_t>()));
 
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
@@ -3450,7 +3453,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 +---------------+---------------+---------------+---------------+---------------+------*/
 static NavNodesProviderContextPtr CreatePostProcessingProviderContext(NavNodesProviderContextCR baseContext)
     {
-    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(baseContext, true);
+    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(baseContext, baseContext.GetRelatedVariablesIds(), true);
     context->SetVirtualParentNode(baseContext.GetVirtualParentNode().get());
     return context;
     }

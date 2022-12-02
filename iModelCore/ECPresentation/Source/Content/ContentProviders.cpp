@@ -31,7 +31,6 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
     m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys), m_contentFlags(other.m_contentFlags)
     {
     Init();
-    SetUsedVariablesListener(other, false);
 
     if (other.IsSelectionContext())
         SetSelectionInfo(other);
