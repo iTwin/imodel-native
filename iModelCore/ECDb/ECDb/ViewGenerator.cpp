@@ -71,7 +71,8 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
 //static
 BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Create ECClass views");
+    ECDB_PERF_LOG_SCOPE("Create ECClass views");
+
     if (ecdb.IsReadonly())
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
@@ -105,7 +106,6 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
             return ERROR;
         }
 
-    PERFLOG_FINISH("ECDb", "Create ECClass views");
     return SUCCESS;
     }
 
@@ -186,8 +186,7 @@ BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
 //static
 BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Drop ECClass views");
-
+    ECDB_PERF_LOG_SCOPE("Drop ECClass views");
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
                                      "SELECT ('DROP VIEW IF EXISTS main.[' || s.Alias || '.' || c.Name || '];') FROM main.ec_Class c "
@@ -201,7 +200,6 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
             return ERROR;
         }
 
-    PERFLOG_FINISH("ECDb", "Drop ECClass views");
     return SUCCESS;
     }
 

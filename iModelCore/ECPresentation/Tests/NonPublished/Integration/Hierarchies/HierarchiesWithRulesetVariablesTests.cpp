@@ -23,34 +23,30 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
-        "GetVariableIntValue(\"instance_id\")=this.ECInstanceId", classA->GetFullName(), false));
+        "GetVariableIntValue(\"instance_id\") = this.ECInstanceId", classA->GetFullName(), false));
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodesWithDefaultVariables = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(0, rootNodesWithDefaultVariables.GetSize());
+    // 0 root nodes with no ruleset variables
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        });
 
+    // returns node for `instance1`
     RulesetVariables rulesetVariables1{
         RulesetVariableEntry("instance_id", BeInt64Id::FromString(instance1->GetInstanceId().c_str())),
         };
-    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables1, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables1, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes1.GetSize());
-    VerifyNodeInstance(*rootNodes1[0], *instance1);
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables1, nullptr),
+        {
+        CreateInstanceNodeValidator({ instance1 }),
+        });
 
+    // returns node for `instance2`
     RulesetVariables rulesetVariables2{
         RulesetVariableEntry("instance_id", BeInt64Id::FromString(instance2->GetInstanceId().c_str())),
         };
-    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables2, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables2, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes2.GetSize());
-    VerifyNodeInstance(*rootNodes2[0], *instance2);
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables2, nullptr),
+        {
+        CreateInstanceNodeValidator({ instance2 }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,27 +68,20 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "GetVariableBoolValue(\"show_instances\")", classA->GetFullName(), false));
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("custom"));
 
-    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "TYPE_Custom", "Custom Node", "", ""));
+    // doesn't return nodes from disabled spec
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateCustomNodeValidator("custom"),
+        });
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodesWithDefaultVariables = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodesWithDefaultVariables.GetSize());
-    EXPECT_STREQ("Custom Node", rootNodesWithDefaultVariables[0]->GetLabelDefinition().GetDisplayValue().c_str());
-
-    RulesetVariables rulesetVariables{
-        RulesetVariableEntry("show_instances", true),
-        };
-    DataContainer<NavNodeCPtr> rootNodesWithVariables = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(2, rootNodesWithVariables.GetSize());
-    VerifyNodeInstance(*rootNodesWithVariables[0], *instance);
-    EXPECT_STREQ("Custom Node", rootNodesWithVariables[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    // returns nodes from enabled spec
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_instances", true) }), nullptr),
+        {
+        CreateInstanceNodeValidator({ instance }),
+        CreateCustomNodeValidator("custom"),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,32 +104,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "NOT GetVariableBoolValue(\"hide_instances\")", classA->GetFullName(), false));
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *instance);
+    // returns nodes when variable is not set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateInstanceNodeValidator({ instance }),
+        });
 
-    RulesetVariables rulesetVariables1{
-        RulesetVariableEntry("hide_instances", false),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables1, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables1, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *instance);
+    // returns nodes when `hide_instances = false`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_instances", false) }), nullptr),
+        {
+        CreateInstanceNodeValidator({ instance }),
+        });
 
-    RulesetVariables rulesetVariables2{
-        RulesetVariableEntry("hide_instances", true),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables2, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables2, nullptr)).get(); }
-        );
-    ASSERT_EQ(0, rootNodes.GetSize());
+    // doesn't return nodes when `hide_instances = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_instances", true) }), nullptr),
+        {
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,38 +141,27 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "NOT GetVariableBoolValue(\"hide_instances\")", classA->GetFullName(), false));
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("custom"));
 
-    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "TYPE_Custom", "Custom Node", "", ""));
+    // returns nodes from both specs when variable is not set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateInstanceNodeValidator({ instance }),
+        CreateCustomNodeValidator("custom"),
+        });
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(2, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *instance);
-    EXPECT_STREQ("Custom Node", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    // returns nodes from both specs when `hide_instances = false`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_instances", false) }), nullptr),
+        {
+        CreateInstanceNodeValidator({ instance }),
+        CreateCustomNodeValidator("custom"),
+        });
 
-    RulesetVariables rulesetVariables1{
-        RulesetVariableEntry("hide_instances", false),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables1, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables1, nullptr)).get(); }
-        );
-    ASSERT_EQ(2, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *instance);
-    EXPECT_STREQ("Custom Node", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
-
-    RulesetVariables rulesetVariables2{
-        RulesetVariableEntry("hide_instances", true),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables2, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables2, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("Custom Node", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    // returns node from only one spec when `hide_instances = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_instances", true) }), nullptr),
+        {
+        CreateCustomNodeValidator("custom"),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -221,30 +189,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "GetVariableBoolValue(\"show_b\")", classB->GetFullName(), false));
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
+    // returns nodes from A spec when no variables are set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateInstanceNodeValidator({ a }),
+        });
 
-    RulesetVariables rulesetVariables{
-        RulesetVariableEntry("hide_a", true),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(0, rootNodes.GetSize());
+    // returns no nodes when `hide_a = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_a", true) }), nullptr),
+        {
+        });
 
-    rulesetVariables.SetBoolValue("show_b", true);
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *b);
+    // returns nodes from B spec when `hide_a = true` and `show_b = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_a", true), RulesetVariableEntry("show_b", true) }), nullptr),
+        {
+        CreateInstanceNodeValidator({ b }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,30 +232,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "NOT GetVariableBoolValue(\"hide_b\")", classB->GetFullName(), false));
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *b);
+    // returns nodes from B spec when no variables are set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateInstanceNodeValidator({ b }),
+        });
 
-    RulesetVariables rulesetVariables{
-        RulesetVariableEntry("hide_b", true),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(0, rootNodes.GetSize());
+    // returns no nodes when `hide_b = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_b", true) }), nullptr),
+        {
+        });
 
-    rulesetVariables.SetBoolValue("show_a", true);
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
+    // returns nodes from A spec when `hide_b = true` and `show_a = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("hide_b", true), RulesetVariableEntry("show_a", true) }), nullptr),
+        {
+        CreateInstanceNodeValidator({ a }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -342,37 +294,21 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
         new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward)),
         }));
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
+    // returns no children when no variables set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateInstanceNodeValidator({ a }),
+        });
 
-    DataContainer<NavNodeCPtr> aChildren = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
-        );
-    ASSERT_EQ(0, aChildren.GetSize());
-
-    RulesetVariables rulesetVariables{
-        RulesetVariableEntry("show_children", true),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
-
-    aChildren = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, rootNodes[0].get()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, rootNodes[0].get())).get(); }
-        );
-    ASSERT_EQ(2, aChildren.GetSize());
-    VerifyNodeInstance(*aChildren[0], *b1);
-    VerifyNodeInstance(*aChildren[1], *b2);
+    // returns children when `show_children = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_children", true) }), nullptr),
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            CreateInstanceNodeValidator({ b2 }),
+            }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -418,42 +354,27 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
         {
         new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward)),
         }));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("custom"));
 
-    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "TYPE_Custom", "Custom Node", "", ""));
+    // returns only custom node child when no variables set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateCustomNodeValidator("custom"),
+            }),
+        });
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
-
-    DataContainer<NavNodeCPtr> aChildren = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
-        );
-    ASSERT_EQ(1, aChildren.GetSize());
-    EXPECT_STREQ("Custom Node", aChildren[0]->GetLabelDefinition().GetDisplayValue().c_str());
-
-    RulesetVariables rulesetVariables{
-        RulesetVariableEntry("show_children", true),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
-
-    aChildren = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, rootNodes[0].get()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, rootNodes[0].get())).get(); }
-        );
-    ASSERT_EQ(3, aChildren.GetSize());
-    VerifyNodeInstance(*aChildren[0], *b1);
-    VerifyNodeInstance(*aChildren[1], *b2);
-    EXPECT_STREQ("Custom Node", aChildren[2]->GetLabelDefinition().GetDisplayValue().c_str());
+    // returns all children when `show_children = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_children", true) }), nullptr),
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            CreateInstanceNodeValidator({ b2 }),
+            CreateCustomNodeValidator("custom"),
+            }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,30 +409,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     bCondition->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classB->GetFullName(), false));
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
-        );
-    ASSERT_EQ(0, rootNodes.GetSize());
+    // doesn't return nodes when no variables set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        });
 
-    RulesetVariables rulesetVariables{
-        RulesetVariableEntry("ViewType", "A"),
-        };
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
+    // returns A nodes when `ViewType = "A"`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("ViewType", "A") }), nullptr),
+        {
+        CreateInstanceNodeValidator({ a }),
+        });
 
-    rulesetVariables.SetStringValue("ViewType", "B");
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *b);
+    // returns B nodes when `ViewType = "B"`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("ViewType", "B") }), nullptr),
+        {
+        CreateInstanceNodeValidator({ b }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -531,24 +444,94 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_Returns
     rules->AddPresentationRule(*childRule);
     childRule->AddSpecification(*CreateCustomNodeSpecification("child"));
 
-    // verify nodes
-    RulesetVariables rulesetVariables{
-        RulesetVariableEntry("show_child", true),
-        };
-    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes1.GetSize());
-    EXPECT_STREQ("root", rootNodes1[0]->GetType().c_str());
-    EXPECT_TRUE(rootNodes1[0]->HasChildren());
+    // returns children when `show_child = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_child", true) }), nullptr),
+        {
+        ExpectedHierarchyDef(CreateCustomNodeValidator("root"),
+            {
+            CreateCustomNodeValidator("child")
+            }),
+        });
 
-    rulesetVariables.SetBoolValue("show_child", false);
-    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), rulesetVariables, nullptr)).get(); }
-        );
-    ASSERT_EQ(1, rootNodes2.GetSize());
-    EXPECT_STREQ("root", rootNodes2[0]->GetType().c_str());
-    EXPECT_FALSE(rootNodes2[0]->HasChildren());
+    // doesn't return children when `show_child = false`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_child", false) }), nullptr),
+        {
+        ExpectedHierarchyDef(CreateCustomNodeValidator("root"),
+            {
+            }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_ReturnsCorrectNodesWhenVariablesUsedInHideExpression)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("root", [](auto& spec)
+        {
+        spec.SetHideExpression("GetVariableBoolValue(\"should_hide\")");
+        }));
+
+    // returns the node when no variables set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        CreateCustomNodeValidator("root")
+        });
+
+    // returns the node when `should_hide = false`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("should_hide", false) }), nullptr),
+        {
+        CreateCustomNodeValidator("root")
+        });
+
+    // doesn't return the node when `should_hide = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("should_hide", true) }), nullptr),
+        {
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RulesetVariables_ReturnsCorrectNodesWhenVariablesUsedInChildHierarchyLevelsWithParentLevelHiddenIfNoChildren)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("root", [](auto& spec)
+        {
+        spec.SetHideIfNoChildren(true);
+        }));
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\" ANDALSO GetVariableBoolValue(\"show_child\")", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*childRule);
+    childRule->AddSpecification(*CreateCustomNodeSpecification("child"));
+
+    // returns empty list when no variables set
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr),
+        {
+        });
+
+    // returns empty list node when `show_child = false`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_child", false) }), nullptr),
+        {
+        });
+
+    // return both the root and the child node when `show_child = true`
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("show_child", true) }), nullptr),
+        {
+        ExpectedHierarchyDef(CreateCustomNodeValidator("root"),
+            {
+            CreateCustomNodeValidator("child")
+            }),
+        });
     }

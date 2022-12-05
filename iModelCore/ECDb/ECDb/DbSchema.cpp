@@ -81,7 +81,7 @@ DbTable* DbSchema::AddTable(Utf8StringCR name, DbTable::Type tableType, ECClassI
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::SynchronizeExistingTables()
     {
-    PERFLOG_START("ECDb", "Schema import> Synchronize existing tables");
+    ECDB_PERF_LOG_SCOPE("Schema import> Synchronize existing tables");
 
     std::vector<Utf8String> tableNames;
     CachedStatementPtr stmt = GetCachedStatement("SELECT Name FROM main." TABLE_Table " WHERE Type=" SQLVAL_DbTable_Type_Existing);
@@ -163,7 +163,6 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
             return ERROR;
         }
 
-    PERFLOG_FINISH("ECDb", "Schema import> Synchronize existing tables");
     return SUCCESS;
     }
 
@@ -725,7 +724,7 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
             BeAssert(false);
             return ERROR;
             }
-        
+
         if (BE_SQLITE_DONE != indexColStmt->Step())
             {
             m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
@@ -775,7 +774,7 @@ CachedStatementPtr DbSchema::GetCachedStatement(Utf8CP sql) const { return m_sch
 //---------------------------------------------------------------------------------------
 DbTable const* DbSchema::TableCollection::Get(Utf8StringCR name) const
     {
-    auto it = m_tableMapByName.find(name); 
+    auto it = m_tableMapByName.find(name);
     if (it == m_tableMapByName.end())
         return nullptr;
 
@@ -1438,7 +1437,7 @@ BentleyStatus DbColumn::SetKind(Kind kind)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-//static 
+//static
 bool DbColumn::IsCompatible(DbColumn::Type target, DbColumn::Type source)
     {
     switch (source)
@@ -1508,7 +1507,7 @@ bool DbColumn::IsCompatible(DbColumn::Type target, DbColumn::Type source)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-//static 
+//static
 Utf8CP DbColumn::TypeToSql(DbColumn::Type colType)
     {
     switch (colType)
@@ -1536,7 +1535,7 @@ Utf8CP DbColumn::TypeToSql(DbColumn::Type colType)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-//static 
+//static
 Utf8CP DbColumn::Constraints::CollationToSql(DbColumn::Constraints::Collation collation)
     {
     switch (collation)
@@ -1562,7 +1561,7 @@ Utf8CP DbColumn::Constraints::CollationToSql(DbColumn::Constraints::Collation co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-//static 
+//static
 bool DbColumn::Constraints::TryParseCollationString(Collation& collation, Utf8StringCR str)
     {
     if (str.empty())

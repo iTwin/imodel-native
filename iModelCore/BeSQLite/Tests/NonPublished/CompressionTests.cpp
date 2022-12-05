@@ -151,7 +151,7 @@ public:
     void PrintResults ()
         {
         char buffer [100];
-        sprintf (buffer, "%s level (%d), ", "LZMA2", m_level);
+        snprintf (buffer, sizeof(buffer), "%s level (%d), ", "LZMA2", m_level);
         __PrintResults(buffer);
         }
 
@@ -199,7 +199,7 @@ public:
     void PrintResults ()
         {
         char buffer [100];
-        sprintf (buffer, "%s level (%d), ", "ZIP", m_level);
+        snprintf (buffer, sizeof(buffer), "%s level (%d), ", "ZIP", m_level);
         __PrintResults(buffer);
         }
 

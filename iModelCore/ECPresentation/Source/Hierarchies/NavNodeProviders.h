@@ -314,19 +314,6 @@ enum HasChildrenFlag
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct DataSourceRelatedVariablesUpdater
-    {
-    NavNodesProviderContextCR m_context;
-    DataSourceIdentifier m_dsIdentifier;
-    RulesetVariables m_relatedVariablesBefore;
-
-    DataSourceRelatedVariablesUpdater(NavNodesProviderContextCR context, DataSourceIdentifier);
-    ~DataSourceRelatedVariablesUpdater();
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 struct NodesInitializationState
 {
 private:
@@ -490,6 +477,7 @@ DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledFullNodesLoadContext, IsFullNodesLoadDi
 DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledPostProcessingContext, IsPostProcessingDisabled, SetDisablePostProcessing, bool, true);
 DEFINE_OPTIMIZATION_FLAG_CONTEXT(MaxNodesToLoadContext, GetMaxNodesToLoad, SetMaxNodesToLoad, size_t, 0);
 
+struct DataSourceRelatedVariablesTracker;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -499,13 +487,15 @@ struct CachingNavNodesProviderBase : TBaseProvider
 private:
     mutable HierarchyLevelIdentifier m_hierarchyLevelIdentifier;
     mutable DataSourceIdentifier m_datasourceIdentifier;
+    std::unique_ptr<DataSourceRelatedVariablesTracker> m_variablesTracker;
 
 private:
     HierarchyLevelIdentifier const& GetOrCreateHierarchyLevelIdentifier() const;
     ECPRESENTATION_EXPORT DataSourceIdentifier const& GetOrCreateDataSourceIdentifier(bool* createdNew = nullptr) const;
 
 protected:
-    CachingNavNodesProviderBase(NavNodesProviderContextR context) : TBaseProvider(context) {}
+    ECPRESENTATION_EXPORT CachingNavNodesProviderBase(NavNodesProviderContextR);
+    ECPRESENTATION_EXPORT ~CachingNavNodesProviderBase();
     ECPRESENTATION_EXPORT void UpdateDataSourceDirectNodesCount(DataSourceIdentifier const&, size_t value);
     ECPRESENTATION_EXPORT void UpdateDataSourceHasNodesFlag(DataSourceIdentifier const&, bool value);
     ECPRESENTATION_EXPORT void UpdateDataSourceTotalNodesCount(DataSourceIdentifier const&, size_t totalNodesCount);
@@ -906,9 +896,7 @@ private:
     DataSourceIdentifier m_parentDatasourceIdentifier;
 
 private:
-    QueryBasedNodesProvider(NavNodesProviderContextR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier)
-        : T_Super(context), m_query(&query), m_usedClassIds(usedClassIds), m_offset(0), m_parentDatasourceIdentifier(parentDatasourceIdentifier)
-        {}
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextR, NavigationQuery const&, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier);
     NodeCounts QueryNodeCounts() const;
     BentleyStatus InitializePartialProviders(bvector<PageNodeCounts> const&);
 
