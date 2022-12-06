@@ -28,57 +28,7 @@
 
 namespace IModelJsNative {
 
-// An ObjRefVault is place to store Napi::ObjectReferences. It holds onto the references as long as they
-// are in use. ObjectReferences are stored in "slots" in the vault. Code running on any thread can hold a reference
-// to a slot, so as to keep that slot and its ObjectReference alive. Only code running on the main thread can
-// access the ObjectReference in a slot.
-//
-// Vault operations are guarded by the BeSystemMutex.
-//
-// Details: A slot has its own reference count. A reference to a slot is a claim to keep the slot alive.
-// A reference to a slot can be incremented/decremented by code running on any thread. When the
-// last reference to a slot is released, that means that the slot should release the ObjectReference itself.
-// The last decrement of the slot's can occur on any thread. The actual release of the JS object can
-// happen only on the main thread. Therefore, the release of the slot is handled as a request to release the JS object.
-// This request is noticed and carried out later on the main thread.
-struct ObjRefVault
-{
-  private:
-    struct Slot
-        {
-        uint32_t m_refCount{};
-        Napi::ObjectReference m_objRef;
-
-        Slot() {}
-        Slot(Slot const &) = delete;
-        Slot &operator=(Slot const &) = delete;
-        Slot(Slot &&);
-        Slot& operator=(Slot&&);
-        };
-
-    std::map<Utf8String, Slot> m_slotMap;
-
-  public:
-    void Clear();
-
-#ifdef COMMENT_OUT_DUMP
-    void Dump();
-#endif
-
-    bool IsEmpty() const;
-    void StoreObjectRef(Napi::Object obj, std::string const& id);
-    Utf8String FindIdFromObject(Napi::Object obj);
-    // Return the object in the slot or Undefined of id is empty or invalid
-    Napi::Value GetObjectById_Locked(Napi::Env env, std::string const& id);
-    Napi::Value GetObjectById(Napi::Env env, std::string const& id);
-    uint32_t GetObjectRefCountById(std::string const& id);
-    void ReleaseUnreferencedObjects();
-    void AddRefToObject(std::string const& id);
-    void ReleaseRefToObject(std::string const& id);
-};
-
 static BeThreadLocalStorage* s_currentClientRequestContext;
-static ObjRefVault s_objRefVault;
 static bool s_assertionsEnabled = true;
 static BeMutex s_assertionMutex;
 static Utf8String s_mobileResourcesDir;
@@ -87,7 +37,6 @@ static JsLogger s_jsLogger;
 
 // DON'T change this flag directly. It is managed by BeObjectWrap only.
 bool s_BeObjectWrap_inDestructor = false;
-
 
 template <typename STATUSTYPE>
 static void SaveErrorValue(BeJsValue error, STATUSTYPE errCode, Utf8CP msg) {
@@ -101,257 +50,6 @@ Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {
     retObj["result"] = goodVal;
     return retObj;
 }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ObjRefVault::Slot::Slot(Slot&& r) {
-    m_refCount = std::move(r.m_refCount);
-    m_objRef = std::move(r.m_objRef);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ObjRefVault::Slot& ObjRefVault::Slot::operator=(Slot&& r)
-    {
-    m_refCount = std::move(r.m_refCount);
-    m_objRef = std::move(r.m_objRef);
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ObjRefVault::Clear()
-    {
-    m_slotMap.clear();
-    }
-
-#ifdef COMMENT_OUT_DUMP
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ObjRefVault::Dump()
-    {
-    OutputDebugStringA("----------- ObjRefVault ---------------\n");
-    for (auto const& e : m_slotMap)
-        {
-        Utf8PrintfString s("%s: %d\n", e.first.c_str(), e.second.m_refCount);
-        OutputDebugStringA(s.c_str());
-        }
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ObjRefVault::IsEmpty() const { return m_slotMap.empty(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ObjRefVault::StoreObjectRef(Napi::Object obj, std::string const& id)
-    {
-    BeAssert(JsInterop::IsMainThread());
-
-    BeSystemMutexHolder ___;
-
-    BeAssert(m_slotMap.find(id) == m_slotMap.end());
-
-    auto &slot = m_slotMap[id];
-    slot.m_objRef.Reset(obj, 1); // Slot holds the one and only reference to the JS object.
-    slot.m_refCount = 0;      // The slot itself is initially unreferenced
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ObjRefVault::FindIdFromObject(Napi::Object obj)
-    {
-    Utf8PrintfString id("%" PRIx64, (intptr_t)(napi_value)obj);
-    auto i = m_slotMap.find(id);
-    return (i != m_slotMap.end())? i->first: "";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Napi::Value ObjRefVault::GetObjectById_Locked(Napi::Env env, std::string const& id)
-    {
-    // Caller must hold the BeSystemMutex!
-
-    BeAssert(JsInterop::IsMainThread());
-
-    if (id.empty())
-        return env.Undefined();
-
-    auto slotIt = m_slotMap.find(id);
-    if (slotIt == m_slotMap.end())
-        {
-        return env.Undefined();
-        }
-
-    Slot& slot = slotIt->second;
-    return slot.m_objRef.Value();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Napi::Value ObjRefVault::GetObjectById(Napi::Env env, std::string const& id)
-    {
-    BeSystemMutexHolder ___;
-    return GetObjectById_Locked(env, id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ObjRefVault::GetObjectRefCountById(std::string const& id)
-    {
-    BeSystemMutexHolder ___;
-    if (id.empty())
-        return 0;
-
-    auto slotIt = m_slotMap.find(id);
-    return (slotIt == m_slotMap.end())? 0: slotIt->second.m_refCount;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ObjRefVault::ReleaseUnreferencedObjects()
-    {
-    BeAssert(JsInterop::IsMainThread());
-
-    bvector<Utf8String> unrefd;
-
-    BeSystemMutexHolder ___;
-    for (auto &slot : m_slotMap)
-        {
-        if (slot.second.m_refCount == 0)
-            unrefd.push_back(slot.first);
-        }
-
-    for (auto &slotId : unrefd)
-        {
-        m_slotMap.erase(slotId);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ObjRefVault::AddRefToObject(std::string const& id)
-    {
-    if (id.empty())
-        return;
-
-    BeSystemMutexHolder ___;
-    auto slotIt = m_slotMap.find(id);
-    if (slotIt == m_slotMap.end())
-        {
-        BeAssert(false);
-        return;
-        }
-    slotIt->second.m_refCount++;
-    // DO NOT TRY TO ACCESS slot.m_objRef!!!
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ObjRefVault::ReleaseRefToObject(std::string const& id)
-    {
-    if (id.empty())
-        return;
-
-    BeSystemMutexHolder ___;
-    auto slotIt = m_slotMap.find(id);
-    if (slotIt == m_slotMap.end())
-        {
-        BeAssert(false);
-        return;
-        }
-    if (slotIt->second.m_refCount == 0)
-        {
-        BeAssert(false && "ObjectReferenceClaimCheck refers to slot that is already supposed to be unref'd!!");
-        return;
-        }
-    slotIt->second.m_refCount--;
-    // DO NOT TRY TO ACCESS slot.m_objRef!!!
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck()
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(std::string const& id) : m_id(id)
-    {
-    s_objRefVault.AddRefToObject(m_id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(JsInterop::ObjectReferenceClaimCheck const& rhs) : m_id(rhs.m_id)
-    {
-    s_objRefVault.AddRefToObject(m_id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsInterop::ObjectReferenceClaimCheck&  JsInterop::ObjectReferenceClaimCheck::operator=(JsInterop::ObjectReferenceClaimCheck const& rhs)
-    {
-    if (this == &rhs)
-        return *this;
-    s_objRefVault.ReleaseRefToObject(m_id);
-    m_id = rhs.m_id;
-    s_objRefVault.AddRefToObject(m_id);
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsInterop::ObjectReferenceClaimCheck::operator< (ObjectReferenceClaimCheck const& rhs) const
-    {
-    return m_id < rhs.m_id;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(JsInterop::ObjectReferenceClaimCheck&& rhs) : m_id(rhs.m_id)
-    {
-    // rhs is going away. I take over its reference to the slot. I don't add another ref.
-    rhs.m_id.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsInterop::ObjectReferenceClaimCheck::~ObjectReferenceClaimCheck()
-    {
-    Dispose();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::ObjectReferenceClaimCheck::Dispose()
-    {
-    s_objRefVault.ReleaseRefToObject(m_id);
-    m_id.clear();
-    }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
@@ -3471,7 +3169,6 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
             InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
             InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
             InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
-            InstanceMethod("hasOriginProperty", &NativeECSqlColumnInfo::HasOriginProperty),
             InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
             InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
             InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
@@ -3601,18 +3298,9 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
 
             ECPropertyCP prop = m_colInfo->GetOriginProperty();
             if (prop == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo does not have an origin property.");
+                return Env().Undefined();
 
             return toJsString(Env(), prop->GetName());
-            }
-
-        Napi::Value HasOriginProperty(Napi::CallbackInfo const& info)
-            {
-            if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
-
-            ECPropertyCP prop = m_colInfo->GetOriginProperty();
-            return Napi::Boolean::New(Env(), prop != nullptr);
             }
 
         Napi::Value GetAccessString(Napi::CallbackInfo const& info)
@@ -6143,81 +5831,6 @@ static Napi::Value getCrashReportProperties(Napi::CallbackInfo const& info)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void storeObjectInVault(Napi::CallbackInfo const& info)
-    {
-    if (info.Length() != 2 || !info[0].IsObject() || !info[1].IsString())
-        THROW_JS_TYPE_EXCEPTION("Argument 0 must be an object, and argument 1 must be a string (the ID to be assigned to it)");
-
-    auto obj = info[0].As<Napi::Object>();
-    auto id = info[1].ToString().Utf8Value();
-
-    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined())
-        s_objRefVault.StoreObjectRef(obj, id);
-
-    s_objRefVault.AddRefToObject(id);   // The caller will hold the ref. See dropObjectFromVault
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void addReferenceToObjectInVault(Napi::CallbackInfo const& info)
-    {
-    if (info.Length() != 1 || !info[0].IsString())
-        THROW_JS_TYPE_EXCEPTION("Argument must be a string - the ID of an object in the vault");
-
-    Utf8String id = info[0].ToString().Utf8Value().c_str();
-    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined())
-        THROW_JS_EXCEPTION("ID not found in object vault");
-
-    s_objRefVault.AddRefToObject(id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void dropObjectFromVault(Napi::CallbackInfo const& info)
-    {
-    if (info.Length() != 1 || !info[0].IsString())
-        THROW_JS_TYPE_EXCEPTION("Argument must be a string - the ID of an object in the vault");
-
-    Utf8String id = info[0].ToString().Utf8Value().c_str();
-
-    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined() || s_objRefVault.GetObjectRefCountById(id) == 0)
-        THROW_JS_EXCEPTION("ID not found in object vault");
-
-    s_objRefVault.ReleaseRefToObject(id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Value getObjectFromVault(Napi::CallbackInfo const& info)
-    {
-    if (info.Length() != 1 || !info[0].IsString())
-        THROW_JS_TYPE_EXCEPTION("Argument must be a string - the ID of an object in the vault");
-    auto id = info[0].ToString().Utf8Value();
-    return s_objRefVault.GetObjectById(info.Env(), id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Value getObjectRefCountFromVault(Napi::CallbackInfo const& info)
-    {
-    if (info.Length() != 1 || !info[0].IsString())
-        THROW_JS_TYPE_EXCEPTION("Argument must be a string - the ID of an object in the vault");
-    Utf8String id = info[0].ToString().Utf8Value().c_str();
-
-    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined())
-        THROW_JS_EXCEPTION("ID not found in object vault");
-
-    return Napi::Number::New(info.Env(), (int) s_objRefVault.GetObjectRefCountById(id));
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 extern "C"
@@ -6231,8 +5844,6 @@ extern "C"
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void onNodeExiting(void*) {
     s_jsLogger.OnExit();
-
-    s_objRefVault.Clear();  // Force the vault to release all ObjectReferences, regardless of the refcounts of the slots.
 
     if (nullptr != s_currentClientRequestContext) {
         delete s_currentClientRequestContext;
@@ -6307,21 +5918,16 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Accessor(env, exports, "logger", &getLogger, &setLogger),
         Napi::PropertyDescriptor::Function(env, exports, "addFontWorkspace", &addFontWorkspace),
         Napi::PropertyDescriptor::Function(env, exports, "addGcsWorkspaceDb", &addGcsWorkspaceDb),
-        Napi::PropertyDescriptor::Function(env, exports, "addReferenceToObjectInVault", &addReferenceToObjectInVault),
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "computeSchemaChecksum", &computeSchemaChecksum),
-        Napi::PropertyDescriptor::Function(env, exports, "dropObjectFromVault", &dropObjectFromVault),
         Napi::PropertyDescriptor::Function(env, exports, "enableLocalGcsFiles", &enableLocalGcsFiles),
         Napi::PropertyDescriptor::Function(env, exports, "flushLog", &flushLog),
         Napi::PropertyDescriptor::Function(env, exports, "getCrashReportProperties", &getCrashReportProperties),
-        Napi::PropertyDescriptor::Function(env, exports, "getObjectFromVault", &getObjectFromVault),
-        Napi::PropertyDescriptor::Function(env, exports, "getObjectRefCountFromVault", &getObjectRefCountFromVault),
         Napi::PropertyDescriptor::Function(env, exports, "getTileVersionInfo", &getTileVersionInfo),
         Napi::PropertyDescriptor::Function(env, exports, "queryConcurrency", &queryConcurrency),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
-        Napi::PropertyDescriptor::Function(env, exports, "storeObjectInVault", &storeObjectInVault),
 });
 
     registerCloudSqlite(env, exports);

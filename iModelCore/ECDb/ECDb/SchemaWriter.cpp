@@ -3690,13 +3690,6 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Modifying KindOfQuantity is not supported.",
-                                oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
-                continue;
-                }
-
             if (oldKoq == nullptr || newKoq == nullptr)
                 {
                 BeAssert(oldKoq != nullptr && newKoq != nullptr);
@@ -3704,7 +3697,11 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
                 }
 
             if (SUCCESS != UpdateKindOfQuantity(ctx, change, oldSchema, *oldKoq, *newKoq))
+            {
+                if (ctx.IgnoreIllegalDeletionsAndModifications())   
+                    continue;
                 return ERROR;
+            }
             }
         }
 
@@ -3721,11 +3718,19 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
 
     if (change.Name().IsChanged())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
-                                oldSchema.GetFullSchemaName().c_str(),
-                                oldKoq.GetFullName().c_str(),
-                                oldKoq.GetFullName().c_str(),
-                                newKoq.GetFullName().c_str());
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
+            LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
+                                    oldSchema.GetFullSchemaName().c_str(),
+                                    oldKoq.GetFullName().c_str(),
+                                    oldKoq.GetFullName().c_str(),
+                                    newKoq.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
+                    oldSchema.GetFullSchemaName().c_str(),
+                    oldKoq.GetFullName().c_str(),
+                    oldKoq.GetFullName().c_str(),
+                    newKoq.GetFullName().c_str());
+
         return ERROR;
         }
 
@@ -3753,8 +3758,12 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
         {
         if (change.RelativeError().GetNew().IsNull())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
-                                    oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value());
+            ctx.IgnoreIllegalDeletionsAndModifications() ?
+                LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
+                            oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value()) :
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                    "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
+                        oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value());
             return ERROR;
             }
 
@@ -3780,8 +3789,12 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
 
     if (change.MemberChangesCount() > actualChanges)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
-                                oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str());
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
+            LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
+                        oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
+                    oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str());
         return ERROR;
         }
 
@@ -3796,7 +3809,10 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
     BeAssert(toDeleteCategoryName.IsValid());
     if (!toDeleteCategoryName.IsValid())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist",
+        ctx.IgnoreIllegalDeletionsAndModifications() ? 
+            LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist",
+                                oldSchema.GetFullSchemaName().c_str(), toDeleteCategoryName.Value().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist",
                                 oldSchema.GetFullSchemaName().c_str(), toDeleteCategoryName.Value().c_str());
         return false;
         }
@@ -3809,7 +3825,12 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
                 if (property->GetCategory() != nullptr &&
                     property->GetCategory()->GetName() == toDeleteCategoryName.Value())
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
+                    ctx.IgnoreIllegalDeletionsAndModifications() ? 
+                        LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Cannot delete PropertyCategory which is still referenced by a property, %s.%s.",
+                            oldSchema.GetFullSchemaName().c_str(),
+                            toDeleteCategoryName.Value().c_str(),
+                            property->GetClass().GetFullName(), property->GetName().c_str()) :
+                        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
                         "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Cannot delete PropertyCategory which is still referenced by a property, %s.%s.",
                             oldSchema.GetFullSchemaName().c_str(),
                             toDeleteCategoryName.Value().c_str(),
@@ -3859,15 +3880,13 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Deleting PropertyCategory from an ECSchema is not supported.",
-                            oldSchema.GetFullSchemaName().c_str(), change.Name().GetOld().Value().c_str());
-                continue;
-                }
-
             if (!IsPropertyCategoryDeletionValid(ctx, change, oldSchema, newSchema))
+                {
+                if(ctx.IgnoreIllegalDeletionsAndModifications())
+                    continue;
+                    
                 return ERROR;
+                }
 
             if (!change.Name().GetOld().IsValid())
                 {
@@ -3903,13 +3922,6 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
         if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Modifying PropertyCategory from an ECSchema is not supported.",
-                            oldSchema.GetFullSchemaName().c_str(), change.Name().GetOld().Value().c_str());
-                continue;
-                }
-
             PropertyCategoryCP oldCat = oldSchema.GetPropertyCategoryCP(change.GetChangeName());
             PropertyCategoryCP newCat = newSchema.GetPropertyCategoryCP(change.GetChangeName());
             if (oldCat == nullptr || newCat == nullptr)
@@ -3919,15 +3931,18 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
                 }
 
             if (SUCCESS != UpdatePropertyCategory(ctx, change, oldSchema, *oldCat, *newCat))
+                {
+                if(ctx.IgnoreIllegalDeletionsAndModifications())
+                    {
+                        continue;
+                    }
                 return ERROR;
+                }
             }
         }
 
     return SUCCESS;
     }
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategoryChange& change, ECN::ECSchemaCR oldSchema, ECN::PropertyCategoryCR oldCat, ECN::PropertyCategoryCR newCat)
@@ -3937,7 +3952,13 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
 
     if (change.Name().IsChanged())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s:  Changing the name of a PropertyCategory is not supported. Modified '%s' to '%s'",
+        ctx.IgnoreIllegalDeletionsAndModifications() ? 
+            LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s:  Changing the name of a PropertyCategory is not supported. Modified '%s' to '%s'",
+                                oldSchema.GetFullSchemaName().c_str(),
+                                oldCat.GetFullName().c_str(),
+                                oldCat.GetFullName().c_str(),
+                                newCat.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s:  Changing the name of a PropertyCategory is not supported. Modified '%s' to '%s'",
                                 oldSchema.GetFullSchemaName().c_str(),
                                 oldCat.GetFullName().c_str(),
                                 oldCat.GetFullName().c_str(),
@@ -3977,7 +3998,10 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
 
     if (change.MemberChangesCount() > actualChanges)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Changing properties of PropertyCategory is not supported except for Priority, DisplayLabel and Description.",
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
+            LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Changing properties of PropertyCategory is not supported except for Priority, DisplayLabel and Description.",
+                                oldSchema.GetFullSchemaName().c_str(), oldCat.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Changing properties of PropertyCategory is not supported except for Priority, DisplayLabel and Description.",
                                 oldSchema.GetFullSchemaName().c_str(), oldCat.GetFullName().c_str());
         return ERROR;
         }
