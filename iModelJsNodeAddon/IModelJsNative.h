@@ -696,7 +696,7 @@ template<typename OBJ>
 struct BeObjectWrap : Napi::ObjectWrap<OBJ>
 {
 protected:
-    BeObjectWrap(Napi::CallbackInfo const& info) : Napi::ObjectWrap<OBJ>(info) {}
+    BeObjectWrap(NapiInfoCR info) : Napi::ObjectWrap<OBJ>(info) {}
 
     // Every derived class must call this function on the first line of its destructor
     static void SetInDestructor()
