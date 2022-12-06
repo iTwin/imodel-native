@@ -7,7 +7,7 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.2` |
 | ECSQL   | `1.0.0.0` |
 
-## `11/29/2022`: Add `PRAGMA` support in `ECSQL`
+## `12/06/2022`: Add `PRAGMA` support in `ECSQL`
 + Added support for `PRAGMA` in ECSQL. Syntax is as following
     ```sql
     -- Syntax
@@ -18,7 +18,6 @@ This document including important changes to syntax or file format.
 
     -- Examples
     PRAGMA file_info;
-    PRAGMA version FOR BisCore;
     PRAGMA disqualify_type_filter=TRUE
         FOR BisCore.ExternalSourceAspect;
     ```
@@ -31,8 +30,7 @@ This document including important changes to syntax or file format.
     ```
 
 * `PRAGMA file_info`: Allow to run basic information about file, ecsql, ecdb and sqlite.
-* `PRAGMA version FOR <schema>`: Return version of the EC Schema.
-* `PRAGMA ecdb_version`: Return version of the EC Schema.
+* `PRAGMA ecdb_ver`: Return version of the EC Schema.
 
 * `PRAGMA help`: Display all the pragma supported.
 * Added `ECSQL version` and set it to `1.0.0.0`. In future this version will be incremented as new feature in ECSQL is added or improved.

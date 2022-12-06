@@ -535,7 +535,7 @@ TEST_F(ConcurrentQueryFixture, RestartToken) {
     ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
-        
+
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
     auto req0 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));
@@ -707,17 +707,6 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
     ASSERT_EQ(reader1.GetRow()[0].asInt(), 100);
     ASSERT_EQ(reader1.GetRow()["cOUNT(*)"].asInt(), 100);
 
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ConcurrentQueryFixture, pragma_version_for_ecdbmap) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_test.ecdb"));
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    ECSqlReader reader(mgr, "PRAGMA version FOR ECDbMap");
-    ASSERT_TRUE(reader.Next());
-    ASSERT_STREQ(reader.GetRow()["version"].asCString(), "02.00.00");
 }
 
 //---------------------------------------------------------------------------------------

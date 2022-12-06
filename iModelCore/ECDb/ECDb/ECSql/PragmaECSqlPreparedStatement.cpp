@@ -296,13 +296,13 @@ struct PragmaFileInfo : PragmaManager::GlobalHandler {
         result->FreezeSchemaChanges();
 
         // append rows
-        AppendDbGuid(ecdb, result->AppendRow());
-        AppendProjectId(ecdb, result->AppendRow());
+        // AppendDbGuid(ecdb, result->AppendRow());
+        // AppendProjectId(ecdb, result->AppendRow());
         AppendParentChangeset(ecdb, result->AppendRow());
-        AppendFileType(ecdb, result->AppendRow());
+        // AppendFileType(ecdb, result->AppendRow());
         AppendBriefcaseId(ecdb, result->AppendRow());
-        AppendFileName(ecdb, result->AppendRow());
-        AppendConnectionId(ecdb, result->AppendRow());
+        // AppendFileName(ecdb, result->AppendRow());
+        // AppendConnectionId(ecdb, result->AppendRow());
         AppendECDbProfileVersion(ecdb, result->AppendRow());
         AppendECDbCurrentProfileVersion(ecdb, result->AppendRow());
         AppendECSQLVersion(ecdb, result->AppendRow());
@@ -388,7 +388,7 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void PragmaManager::InitSystemPragmas() {
-    Register(PragmaECSchemaVersion::Create());
+    // Register(PragmaECSchemaVersion::Create());
     Register(PragmaECDbVersion::Create());
     Register(PragmaExplainQuery::Create());
     Register(PragmaFileInfo::Create());

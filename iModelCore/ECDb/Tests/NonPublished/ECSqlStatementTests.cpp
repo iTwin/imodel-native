@@ -1441,23 +1441,11 @@ TEST_F(ECSqlStatementTestFixture, pragma_ecdb_version)
     ASSERT_EQ(SUCCESS, SetupECDb("pragma.ecdb"));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_version"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_ver"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ(stmt.GetValueText(0), m_ecdb.GetECDbProfileVersion().ToString().c_str());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, pragma_schema_version)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("pragma.ecdb"));
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA version(1) FOR ECDbMap"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_STREQ(stmt.GetValueText(0), m_ecdb.Schemas().GetSchema("ECDbMap")->GetSchemaKey().GetVersionString().c_str());
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
