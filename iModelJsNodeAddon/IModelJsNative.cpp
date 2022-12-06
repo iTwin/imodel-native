@@ -3165,7 +3165,6 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
             InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
             InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
             InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
-            InstanceMethod("hasOriginProperty", &NativeECSqlColumnInfo::HasOriginProperty),
             InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
             InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
             InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
@@ -3295,18 +3294,9 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
 
             ECPropertyCP prop = m_colInfo->GetOriginProperty();
             if (prop == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo does not have an origin property.");
+                return Env().Undefined();
 
             return toJsString(Env(), prop->GetName());
-            }
-
-        Napi::Value HasOriginProperty(NapiInfoCR info)
-            {
-            if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
-
-            ECPropertyCP prop = m_colInfo->GetOriginProperty();
-            return Napi::Boolean::New(Env(), prop != nullptr);
             }
 
         Napi::Value GetAccessString(NapiInfoCR info)
