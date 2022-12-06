@@ -677,7 +677,7 @@ export declare namespace IModelJsNative {
     constructor();
     public getAccessString(): string;
     public getPropertyName(): string;
-    public getOriginPropertyName(): string;
+    public getOriginPropertyName(): string | undefined;
     public getRootClassAlias(): string;
     public getRootClassName(): string;
     public getRootClassTableSpace(): string;
@@ -685,7 +685,6 @@ export declare namespace IModelJsNative {
     public isEnum(): boolean;
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
-    public hasOriginProperty(): boolean;
   }
 
   class ECSqlValue {
