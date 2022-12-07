@@ -17,7 +17,6 @@ This document including important changes to syntax or file format.
     path -> path '.' NAME
 
     -- Examples
-    PRAGMA file_info;
     PRAGMA disqualify_type_filter=TRUE
         FOR BisCore.ExternalSourceAspect;
     ```
@@ -29,7 +28,6 @@ This document including important changes to syntax or file format.
         FOR BisCore.ExternalSourceAspect
     ```
 
-* `PRAGMA file_info`: Allow to run basic information about file, ecsql, ecdb and sqlite.
 * `PRAGMA ecdb_ver`: Return version of the EC Schema.
 
 * `PRAGMA help`: Display all the pragma supported.

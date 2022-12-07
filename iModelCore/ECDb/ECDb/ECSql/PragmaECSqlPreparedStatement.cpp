@@ -391,7 +391,7 @@ void PragmaManager::InitSystemPragmas() {
     // Register(PragmaECSchemaVersion::Create());
     Register(PragmaECDbVersion::Create());
     Register(PragmaExplainQuery::Create());
-    Register(PragmaFileInfo::Create());
+    // Register(PragmaFileInfo::Create());
     Register(DisqualifyTypeIndex::Create());
     Register(PragmaHelp::Create(*this));
 }
