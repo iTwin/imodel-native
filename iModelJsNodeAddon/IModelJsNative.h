@@ -696,7 +696,7 @@ template<typename OBJ>
 struct BeObjectWrap : Napi::ObjectWrap<OBJ>
 {
 protected:
-    BeObjectWrap(Napi::CallbackInfo const& info) : Napi::ObjectWrap<OBJ>(info) {}
+    BeObjectWrap(NapiInfoCR info) : Napi::ObjectWrap<OBJ>(info) {}
 
     // Every derived class must call this function on the first line of its destructor
     static void SetInDestructor()
@@ -714,17 +714,5 @@ protected:
 };
 
 DgnDb* extractDgnDbFromNapiValue(Napi::Value);
-
-enum struct ChangeSetKind
-    {
-        NotSpecified      = -1,
-        Regular           = 0,
-        Schema            = 1 << 0, // ChangeSet contains minor schema changes
-        Definition        = 1 << 1,
-        SpatialData       = 1 << 2,
-        SheetsAndDrawings = 1 << 3,
-        ViewsAndModels    = 1 << 4,
-        GlobalProperties  = 1 << 5
-    };
 
 } // namespace IModelJsNative
