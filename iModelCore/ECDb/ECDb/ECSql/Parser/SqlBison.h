@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.7.4.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -134,37 +134,39 @@ extern int SQLyydebug;
     SQL_TOKEN_LIMIT = 335,         /* SQL_TOKEN_LIMIT  */
     SQL_TOKEN_OFFSET = 336,        /* SQL_TOKEN_OFFSET  */
     SQL_TOKEN_ONLY = 337,          /* SQL_TOKEN_ONLY  */
-    SQL_TOKEN_MATCH = 338,         /* SQL_TOKEN_MATCH  */
-    SQL_TOKEN_ECSQLOPTIONS = 339,  /* SQL_TOKEN_ECSQLOPTIONS  */
-    SQL_TOKEN_INTEGER = 340,       /* SQL_TOKEN_INTEGER  */
-    SQL_TOKEN_INT = 341,           /* SQL_TOKEN_INT  */
-    SQL_TOKEN_INT64 = 342,         /* SQL_TOKEN_INT64  */
-    SQL_TOKEN_LONG = 343,          /* SQL_TOKEN_LONG  */
-    SQL_TOKEN_BOOLEAN = 344,       /* SQL_TOKEN_BOOLEAN  */
-    SQL_TOKEN_DOUBLE = 345,        /* SQL_TOKEN_DOUBLE  */
-    SQL_TOKEN_REAL = 346,          /* SQL_TOKEN_REAL  */
-    SQL_TOKEN_FLOAT = 347,         /* SQL_TOKEN_FLOAT  */
-    SQL_TOKEN_STRING = 348,        /* SQL_TOKEN_STRING  */
-    SQL_TOKEN_VARCHAR = 349,       /* SQL_TOKEN_VARCHAR  */
-    SQL_TOKEN_BINARY = 350,        /* SQL_TOKEN_BINARY  */
-    SQL_TOKEN_BLOB = 351,          /* SQL_TOKEN_BLOB  */
-    SQL_TOKEN_DATE = 352,          /* SQL_TOKEN_DATE  */
-    SQL_TOKEN_TIME = 353,          /* SQL_TOKEN_TIME  */
-    SQL_TOKEN_TIMESTAMP = 354,     /* SQL_TOKEN_TIMESTAMP  */
-    SQL_TOKEN_OR = 355,            /* SQL_TOKEN_OR  */
-    SQL_TOKEN_AND = 356,           /* SQL_TOKEN_AND  */
-    SQL_BITWISE_OR = 357,          /* SQL_BITWISE_OR  */
-    SQL_BITWISE_AND = 358,         /* SQL_BITWISE_AND  */
-    SQL_BITWISE_SHIFT_LEFT = 359,  /* SQL_BITWISE_SHIFT_LEFT  */
-    SQL_BITWISE_SHIFT_RIGHT = 360, /* SQL_BITWISE_SHIFT_RIGHT  */
-    SQL_LESSEQ = 361,              /* SQL_LESSEQ  */
-    SQL_GREATEQ = 362,             /* SQL_GREATEQ  */
-    SQL_NOTEQUAL = 363,            /* SQL_NOTEQUAL  */
-    SQL_LESS = 364,                /* SQL_LESS  */
-    SQL_GREAT = 365,               /* SQL_GREAT  */
-    SQL_EQUAL = 366,               /* SQL_EQUAL  */
-    SQL_CONCAT = 367,              /* SQL_CONCAT  */
-    SQL_TOKEN_INVALIDSYMBOL = 368  /* SQL_TOKEN_INVALIDSYMBOL  */
+    SQL_TOKEN_PRAGMA = 338,        /* SQL_TOKEN_PRAGMA  */
+    SQL_TOKEN_FOR = 339,           /* SQL_TOKEN_FOR  */
+    SQL_TOKEN_MATCH = 340,         /* SQL_TOKEN_MATCH  */
+    SQL_TOKEN_ECSQLOPTIONS = 341,  /* SQL_TOKEN_ECSQLOPTIONS  */
+    SQL_TOKEN_INTEGER = 342,       /* SQL_TOKEN_INTEGER  */
+    SQL_TOKEN_INT = 343,           /* SQL_TOKEN_INT  */
+    SQL_TOKEN_INT64 = 344,         /* SQL_TOKEN_INT64  */
+    SQL_TOKEN_LONG = 345,          /* SQL_TOKEN_LONG  */
+    SQL_TOKEN_BOOLEAN = 346,       /* SQL_TOKEN_BOOLEAN  */
+    SQL_TOKEN_DOUBLE = 347,        /* SQL_TOKEN_DOUBLE  */
+    SQL_TOKEN_REAL = 348,          /* SQL_TOKEN_REAL  */
+    SQL_TOKEN_FLOAT = 349,         /* SQL_TOKEN_FLOAT  */
+    SQL_TOKEN_STRING = 350,        /* SQL_TOKEN_STRING  */
+    SQL_TOKEN_VARCHAR = 351,       /* SQL_TOKEN_VARCHAR  */
+    SQL_TOKEN_BINARY = 352,        /* SQL_TOKEN_BINARY  */
+    SQL_TOKEN_BLOB = 353,          /* SQL_TOKEN_BLOB  */
+    SQL_TOKEN_DATE = 354,          /* SQL_TOKEN_DATE  */
+    SQL_TOKEN_TIME = 355,          /* SQL_TOKEN_TIME  */
+    SQL_TOKEN_TIMESTAMP = 356,     /* SQL_TOKEN_TIMESTAMP  */
+    SQL_TOKEN_OR = 357,            /* SQL_TOKEN_OR  */
+    SQL_TOKEN_AND = 358,           /* SQL_TOKEN_AND  */
+    SQL_BITWISE_OR = 359,          /* SQL_BITWISE_OR  */
+    SQL_BITWISE_AND = 360,         /* SQL_BITWISE_AND  */
+    SQL_BITWISE_SHIFT_LEFT = 361,  /* SQL_BITWISE_SHIFT_LEFT  */
+    SQL_BITWISE_SHIFT_RIGHT = 362, /* SQL_BITWISE_SHIFT_RIGHT  */
+    SQL_LESSEQ = 363,              /* SQL_LESSEQ  */
+    SQL_GREATEQ = 364,             /* SQL_GREATEQ  */
+    SQL_NOTEQUAL = 365,            /* SQL_NOTEQUAL  */
+    SQL_LESS = 366,                /* SQL_LESS  */
+    SQL_GREAT = 367,               /* SQL_GREAT  */
+    SQL_EQUAL = 368,               /* SQL_EQUAL  */
+    SQL_CONCAT = 369,              /* SQL_CONCAT  */
+    SQL_TOKEN_INVALIDSYMBOL = 370  /* SQL_TOKEN_INVALIDSYMBOL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -185,6 +187,8 @@ typedef union YYSTYPE YYSTYPE;
 
 
 
+
 int SQLyyparse (connectivity::OSQLParser* context);
+
 
 #endif /* !YY_SQLYY_D_BSW_GIT_NATIVE4_SRC_IMODEL_NATIVE_IMODELCORE_ECDB_SCRIPTS_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */

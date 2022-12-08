@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ClassRefExp : Exp
-    {   
+    {
 protected:
     explicit ClassRefExp (Type type) : Exp (type) {}
 
@@ -55,7 +55,7 @@ struct RangeClassInfo final
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PropertyMatchOptions {
-    private: 
+    private:
         Utf8String m_alias;
         RangeClassInfo m_rangeInfo;
 
@@ -87,7 +87,7 @@ struct PropertyMatchResult {
         bool m_columnInCTE;
 
     public:
-        PropertyMatchResult(): 
+        PropertyMatchResult():
             m_derivedProperty(nullptr),m_propertyMap(nullptr),m_confidence(0),m_columnInCTE(false), m_property(nullptr){}
         PropertyMatchResult(PropertyMatchOptions options, PropertyPath const& originalPath, PropertyPath const& resolvedPath, DerivedPropertyExp const& result, int confidence, bool columnInCTE = false)
             :m_originalPath(originalPath), m_resolvedPath(resolvedPath),m_derivedProperty(&result), m_propertyMap(nullptr), m_options(options), m_confidence(confidence), m_columnInCTE(columnInCTE), m_property(nullptr) {}
@@ -117,30 +117,31 @@ struct PropertyMatchResult {
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct PolymorphicInfo final 
+struct PolymorphicInfo final
     {
-enum class Type 
+enum class Type
     {
     Only,
     All,
     Default = All
     };
-    
+
 private:
     bool m_disqualify;
     Type m_type;
-    
+
 public:
     PolymorphicInfo(): m_disqualify(false), m_type(Type::Default) {}
     PolymorphicInfo(Type type, bool disqualify): m_disqualify(disqualify), m_type(type) {}
     PolymorphicInfo(PolymorphicInfo&&) = default;
     PolymorphicInfo(PolymorphicInfo const&) = default;
     PolymorphicInfo& operator = (PolymorphicInfo&&) = default;
-    PolymorphicInfo& operator = (PolymorphicInfo const&) = default;   
+    PolymorphicInfo& operator = (PolymorphicInfo const&) = default;
     bool IsPolymorphic() const { return m_type != Type::Only; }
     bool IsOnly() const { return !IsPolymorphic(); }
     bool IsDisqualified() const { return m_disqualify; }
     void SetType(Type type) { m_type = type; }
+    void SetDisqualified(bool v) { m_disqualify = v; }
     static bool IsOnlyToken(Utf8StringCR str) { return str.EqualsIAscii("ONLY"); }
     static bool IsAllToken(Utf8StringCR str) { return str.EqualsIAscii("ALL"); }
     static bool TryParseToken(Type& type, Utf8StringCR str);

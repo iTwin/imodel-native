@@ -86,13 +86,13 @@ struct ChangeSetArg final
 //+===============+===============+===============+===============+===============+======
 struct ECSqlConfig {
     struct DisableSqlFunctions {
-        private: 
+        private:
             bvector<Utf8String> m_disabledFuncList;
         public:
             DisableSqlFunctions(){}
             DisableSqlFunctions(const DisableSqlFunctions&)=delete;
             DisableSqlFunctions& operator=(const DisableSqlFunctions&)=delete;
-            void Add(Utf8StringCR functionName) { 
+            void Add(Utf8StringCR functionName) {
                 if (!Exists(functionName)) {
                     m_disabledFuncList.push_back(functionName);
                 }
@@ -254,7 +254,7 @@ protected:
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
-    
+
     //! @return return true if schema EC version requires does not support current profile version and need profile version to be upgraded.
     ECDB_EXPORT bool SchemaRequiresProfileUpgrade(ECN::ECSchemaCR ecSchema) const;
 #endif
@@ -287,6 +287,17 @@ public:
 
     //! Gets the version of the ECDb profile of this file.
     ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
+
+    //! Gets ECSQL version
+    //.@remarks ECSql version description for left to right digit in version string i.e. "Major.Minor.Sub1.Sub2"
+    //  Major: Any breaking change to 'Syntax'. This will cause a 'Prepare()' to fail with InvalidECSql which in previous version prepared successfully.
+    //         e.g. Changing or removing support for existing supported ECSql syntax.
+    //  Minor: Any breaking change to 'Runtime' e.g. Removing support for a previously accessible sql function or change it in a way where it will not
+    //         work as before. In this case 'Prepare()' phase may or may not detect a failure but result are not as expected as it use to in previous version.
+    //         e.g. Remove a sql function or change required argument or format of its return value.
+    //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
+    //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
+    static BeVersion GetECSqlVersion() { return BeVersion(1, 0, 0, 0); }
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 2); }
@@ -398,7 +409,7 @@ public:
     ECDB_EXPORT static BeFileName GetDefaultChangeCachePath(Utf8CP ecdbPath);
 
     //! @}
-    
+
     //! Allow to configure settings for ECSql
     ECDB_EXPORT ECSqlConfig& GetECSqlConfig() const;
 
@@ -424,7 +435,7 @@ public:
 
     //! Unique id for current connection.
     ECDB_EXPORT BeGuid GetId() const;
-    
+
     //! Return all registered function
     ECDB_EXPORT bvector<DbFunction*> GetSqlFunctions() const;
 
