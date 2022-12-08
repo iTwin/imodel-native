@@ -7,6 +7,26 @@
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct Utf8StringVirtualSet final : VirtualSet
+    {
+    private:
+        std::function<bool(Utf8CP)> m_predicate;
+
+        bool _IsInSet(int nVals, DbValue const* values) const override
+            {
+            BeAssert(nVals == 1);
+            return m_predicate(values[0].GetValueText());
+            }
+
+    public:
+        explicit Utf8StringVirtualSet(std::function<bool(Utf8CP)> const& predicate) : VirtualSet(), m_predicate(predicate) {}
+
+        ~Utf8StringVirtualSet() {}
+    };
+
 struct ECSqlStatementFunctionTestFixture : ECDbTestFixture
     {
     //---------------------------------------------------------------------------------------
@@ -736,8 +756,74 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding an id set in parentheses";
     ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding an id set in parentheses";
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    const int perClassRowCount = 10;
+    ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
+    ECSqlStatement statement;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(1023, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet('HELLO', 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(3.3, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(2+?, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(?+?, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT InVirtualSet(?, 1)"));
+    // Bind nothing
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+
+    // Bind NULL value
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind empty VirtualSet IdSet
+    IdSet<BeInt64Id> idSet;
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind non-empty VirtualSet IdSet
+    idSet.insert(BeInt64Id(1));
+    idSet.insert(BeInt64Id(5));
+    idSet.insert(BeInt64Id(10));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(1, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind string VirtualSet
+    Utf8StringVirtualSet stringSet([] (Utf8CP name) { return "tempstring"; });
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, stringSet));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(1, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind bool value;
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindBoolean(1, false));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
     }
 
 
