@@ -108,20 +108,11 @@ describe("SQLite statements", () => {
     Logger.setLevel("test-warn", LogLevel.Warning);
     Logger.setLevel("test-error", LogLevel.Error);
     Logger.setLevel("test-trace", LogLevel.Trace);
-    Logger.setLevel("Diagnostics", LogLevel.Trace); // tests logger namespaces
-
     iModelJsNative.clearLogLevelCache();
     const errorLogStub = sinon.stub(Logger, "logError").callsFake(() => { });
-    const traceLogStub = sinon.stub(Logger, "logTrace").callsFake(() => { });
 
-    let stmt = new iModelJsNative.SqliteStatement();
-
+    const stmt = new iModelJsNative.SqliteStatement();
     try {
-      stmt.prepare(dgndb, "SELECT 1 from be_local");
-      expect(traceLogStub.callCount).equal(2); // enabled via "Diagnostics" namespace
-      stmt.dispose();
-
-      stmt = new iModelJsNative.SqliteStatement();
       const sql = "SELECT 100 from xxx";
       expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
       expect(errorLogStub.callCount).eq(1);
