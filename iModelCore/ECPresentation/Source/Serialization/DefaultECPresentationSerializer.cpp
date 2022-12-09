@@ -4,8 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/DefaultECPresentationSerializer.h>
-#include "../Shared/ValueHelpers.h"
 #include "../Shared/ECSchemaHelper.h"
+#include "../Shared/Queries/PresentationQuery.h"
 
 // Member names of the serialized NavNode JSON object
 #define NAVNODE_NodeId              "NodeId"
@@ -681,6 +681,36 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, ECIns
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, PresentationQueryBase const& presentationQueryBase,
+    rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("Query", rapidjson::Value(presentationQueryBase.ToString().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Bindings", _AsJson(ctx, presentationQueryBase.GetBoundValues(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, BoundQueryValuesList const& boundQueryValuesList,
+    rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetArray();
+    auto boundQueryValueSerializer = DefaultBoundQueryValueSerializer();
+    for (size_t i = 0; i < boundQueryValuesList.size(); ++i)
+        {
+        auto const& value = boundQueryValuesList.at(i);
+        json.PushBack(value->ToJson(boundQueryValueSerializer, &json.GetAllocator()), json.GetAllocator());
+        }
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void DefaultECPresentationSerializer::_NavNodeKeyAsJson(ContextR ctx, NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.SetObject();
@@ -692,6 +722,7 @@ void DefaultECPresentationSerializer::_NavNodeKeyAsJson(ContextR ctx, NavNodeKey
         pathJson.PushBack(rapidjson::Value(pathElement.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
     navNodeKeyBaseJson.AddMember("PathFromRoot", pathJson, navNodeKeyBaseJson.GetAllocator());
+    navNodeKeyBaseJson.AddMember("InstanceKeysSelectQuery", _AsJson(ctx, *navNodeKey.GetInstanceKeysSelectQuery(), &navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -738,7 +769,17 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     {
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
-    return NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    key->SetInstanceKeysSelectQuery(StringGenericQuery::FromJson(json["InstanceKeysSelectQuery"]));
+    return key;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBasePtr DefaultECPresentationSerializer::_GetPresentationQueryBaseFromJson(RapidJsonValueCR json) const
+    {
+    return StringGenericQuery::FromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

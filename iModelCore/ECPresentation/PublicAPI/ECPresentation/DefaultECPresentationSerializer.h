@@ -74,6 +74,11 @@ protected:
     ECPRESENTATION_EXPORT virtual void _AsJson(ContextR, LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
     ECPRESENTATION_EXPORT virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst) const override;
     
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, PresentationQueryBase const&, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual PresentationQueryBasePtr _GetPresentationQueryBaseFromJson(RapidJsonValueCR) const override;
+
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, BoundQueryValuesList const&, rapidjson::Document::AllocatorType*) const override;
+
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, NavNode const& navNode, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType*) const override;
 

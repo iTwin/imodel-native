@@ -3271,8 +3271,10 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     targetExtendedData.AddMergedNodeId(source.GetNodeId());
 
     NavNodeCPtr parent = context.GetVirtualParentNode();
-    target.SetNodeKey(*ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
-        parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys));
+    ECInstancesNodeKeyPtr nodeKey = ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
+        parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys);
+    nodeKey->SetInstanceKeysSelectQuery(target.GetKey()->GetInstanceKeysSelectQuery());
+    target.SetNodeKey(*nodeKey);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
