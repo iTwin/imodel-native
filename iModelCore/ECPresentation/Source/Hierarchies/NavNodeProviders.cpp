@@ -80,36 +80,39 @@ public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_nodeProviders;}
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedVariablesUpdater::DataSourceRelatedVariablesUpdater(NavNodesProviderContextCR context, DataSourceIdentifier id)
-    : m_context(context), m_dsIdentifier(id)
-    {
-    m_relatedVariablesBefore = m_context.GetRelatedRulesetVariables();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedVariablesUpdater::~DataSourceRelatedVariablesUpdater()
-    {
-    if (!m_dsIdentifier.IsValid())
-        return;
-
-    bvector<RulesetVariableEntry> relatedVariablesAfter = m_context.GetRelatedRulesetVariables();
-    if (m_relatedVariablesBefore.Contains(relatedVariablesAfter, false))
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct DataSourceRelatedVariablesTracker
+{
+private:
+    NavNodesProviderContextCR m_context;
+    DataSourceIdentifier const& m_dsIdentifier;
+    RulesetVariables m_relatedVariablesBefore;
+public:
+    DataSourceRelatedVariablesTracker(NavNodesProviderContextCR context, DataSourceIdentifier const& id)
+        : m_context(context), m_dsIdentifier(id)
         {
-        // didn't notice any new variables
-        return;
+        m_relatedVariablesBefore = m_context.GetRelatedRulesetVariables();
         }
+    std::unique_ptr<RulesetVariables> GetChangedVariables()
+        {
+        if (!m_dsIdentifier.IsValid())
+            return nullptr;
 
-    DataSourceInfo info(m_dsIdentifier, relatedVariablesAfter, DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
-    m_context.GetNodesCache().Update(info, DataSourceInfo::PART_Vars);
+        bvector<RulesetVariableEntry> relatedVariablesAfter = m_context.GetRelatedRulesetVariables();
+        if (m_relatedVariablesBefore.Contains(relatedVariablesAfter, false))
+            {
+            // didn't notice any new variables
+            return nullptr;
+            }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Updated ruleset variable dependencies from %s to %s",
-        m_relatedVariablesBefore.GetSerializedInternalJsonObjectString().c_str(), RulesetVariables(relatedVariablesAfter).GetSerializedInternalJsonObjectString().c_str()));
-    }
+        m_relatedVariablesBefore = relatedVariablesAfter;
+        return std::make_unique<RulesetVariables>(relatedVariablesAfter);
+        }
+};
+END_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -260,7 +263,7 @@ INavNodesCacheR NavNodesProviderContext::GetNodesCache() const {return *m_nodesC
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<RulesetVariableEntry> NavNodesProviderContext::GetRelatedRulesetVariables() const
     {
-    bset<Utf8String> ids = RulesDrivenProviderContext::GetRelatedVariablesIds();
+    auto const& ids = RulesDrivenProviderContext::GetRelatedVariablesIds();
     bvector<RulesetVariableEntry> idsWithValues;
     for (Utf8StringCR id : ids)
         idsWithValues.push_back(RulesetVariableEntry(id, GetRulesetVariables().GetJsonValue(id.c_str())));
@@ -475,14 +478,14 @@ static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesProviderContextCR baseContext, bool copyNodesContext)
+static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesProviderContextCR baseContext, bset<Utf8String> const& usedVariableIds, bool copyNodesContext)
     {
     NavNodesProviderContextPtr ctx = NavNodesProviderContext::Create(baseContext);
     ctx->SetProvidersIndexAllocator(baseContext.GetProvidersIndexAllocator());
     ctx->SetMayHaveArtifacts(baseContext.MayHaveArtifacts());
     ctx->SetArtifactsCapturers(baseContext.GetArtifactsCapturers());
     ctx->GetOptimizationFlags().SetParentContainer(&baseContext.GetOptimizationFlags());
-    ctx->SetUsedVariablesListener(baseContext, true);
+    ctx->InitUsedVariablesListener(usedVariableIds, &baseContext.GetUsedVariablesListener());
     ctx->SetRemovalId(baseContext.GetRemovalId());
 
     if (copyNodesContext)
@@ -772,15 +775,12 @@ HasChildrenFlag NodesFinalizer::AnyChildSpecificationReturnsNodes(NavNodeR paren
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Any child of %s specification returns nodes?", DiagnosticsHelpers::CreateNodeIdentifier(parentNode).c_str()));
 
     NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(*m_context, parentNode);
-    NavNodesProviderPtr childrenProvider = m_context->CreateHierarchyLevelProvider(*childrenContext, &parentNode, !m_context->HasPageOffset());
-    HasChildrenFlag result = childrenProvider->HasNodes() ? HASCHILDREN_True : HASCHILDREN_False;
-
     // we consider that this provider depends on a variable if we need the variable to determine
     // if node of this provider has children
-    for (Utf8StringCR id : childrenContext->GetRelatedVariablesIds())
-        m_context->GetUsedVariablesListener().OnVariableUsed(id.c_str());
+    childrenContext->InitUsedVariablesListener({}, &m_context->GetUsedVariablesListener());
 
-    return result;
+    NavNodesProviderPtr childrenProvider = m_context->CreateHierarchyLevelProvider(*childrenContext, &parentNode, !m_context->HasPageOffset());
+    return childrenProvider->HasNodes() ? HASCHILDREN_True : HASCHILDREN_False;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1138,13 +1138,32 @@ DataSourceIdentifier const& CachingNavNodesProviderBase<TProvider>::GetOrCreateD
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TProvider>
+CachingNavNodesProviderBase<TProvider>::CachingNavNodesProviderBase(NavNodesProviderContextR context)
+    : TProvider(context)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TProvider>
+CachingNavNodesProviderBase<TProvider>::~CachingNavNodesProviderBase()
+    {
+    // only here to hide use of `DataSourceRelatedVariablesTracker`
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TProvider>
 void CachingNavNodesProviderBase<TProvider>::OnCreated()
     {
     // call to ensure it's cached if necessary
     bool createdNew = false;
-    GetOrCreateDataSourceIdentifier(&createdNew);
+    auto const& identifier = GetOrCreateDataSourceIdentifier(&createdNew);
     if (createdNew)
         _OnFirstCreate();
+
+    m_variablesTracker = std::make_unique<DataSourceRelatedVariablesTracker>(TProvider::GetContext(), identifier);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1154,8 +1173,18 @@ template<typename TProvider>
 void CachingNavNodesProviderBase<TProvider>::UpdateDataSourceDirectNodesCount(DataSourceIdentifier const& id, size_t value)
     {
     DataSourceInfo info(id);
+    int partsToUpdate = 0;
+
     info.SetDirectNodesCount(value);
-    TProvider::GetContext().GetNodesCache().Update(info, DataSourceInfo::PART_DirectNodesCount);
+    partsToUpdate |= DataSourceInfo::PART_DirectNodesCount;
+
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
+        }
+
+    TProvider::GetContext().GetNodesCache().Update(info, partsToUpdate);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1179,6 +1208,12 @@ void CachingNavNodesProviderBase<TProvider>::UpdateDataSourceHasNodesFlag(DataSo
         info.SetIsInitialized(true);
         info.SetTotalNodesCount((size_t)0);
         partsToUpdate |= DataSourceInfo::PART_IsFinalized | DataSourceInfo::PART_TotalNodesCount;
+        }
+
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
         }
 
     context.GetNodesCache().Update(info, partsToUpdate);
@@ -1207,6 +1242,12 @@ void CachingNavNodesProviderBase<TProvider>::UpdateDataSourceTotalNodesCount(Dat
         partsToUpdate |= DataSourceInfo::PART_IsFinalized;
         }
 
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
+        }
+
     context.GetNodesCache().Update(info, partsToUpdate);
     }
 
@@ -1219,16 +1260,24 @@ void CachingNavNodesProviderBase<TProvider>::UpdateInitializedNodesState(DataSou
     if (SUCCESS != state.GetStatus())
         return;
 
-    if (!state.IsFullyInitialized())
-        return;
-
     NavNodesProviderContextCR context = TProvider::GetContext();
-    if (context.GetNodesCache().FindDataSource(id, TProvider::GetContext().GetRulesetVariables(), DataSourceInfo::PART_IsFinalized).IsInitialized())
-        return;
 
     DataSourceInfo info(id);
-    info.SetIsInitialized(true);
-    context.GetNodesCache().Update(info, DataSourceInfo::PART_IsFinalized);
+    int partsToUpdate = 0;
+
+    if (state.IsFullyInitialized() && !context.GetNodesCache().FindDataSource(id, context.GetRulesetVariables(), DataSourceInfo::PART_IsFinalized).IsInitialized())
+        {
+        info.SetIsInitialized(true);
+        partsToUpdate |= DataSourceInfo::PART_IsFinalized;
+        }
+
+    if (auto changedVars = m_variablesTracker->GetChangedVariables())
+        {
+        info.SetRelatedVariables(*changedVars);
+        partsToUpdate |= DataSourceInfo::PART_Vars;
+        }
+
+    context.GetNodesCache().Update(info, partsToUpdate);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1238,7 +1287,7 @@ NavNodesProviderPtr NavNodesProvider::CreateProvider(NavNodeR node) const
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Create provider for %s", GetName(), DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
 
-    auto nodeContext = CreateContextForSameHierarchyLevel(GetContext(), true);
+    auto nodeContext = CreateContextForSameHierarchyLevel(GetContext(), GetContext().GetRelatedVariablesIds(), true);
     auto childrenProviderContext = CreateContextForChildHierarchyLevel(GetContext(), node);
 
     NavNodeExtendedData extendedData(node);
@@ -1742,7 +1791,7 @@ BentleyStatus QueryBasedNodesProvider::InitializePartialProviders(bvector<PageNo
         pageQuery->From(*m_query->Clone());
         pageQuery->Limit(pageCounts.total, offset);
 
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), true);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), GetContext().GetRelatedVariablesIds(), true);
         RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*nestedContext, *pageQuery, m_usedClassIds, GetIdentifier());
         provider->SetTotalNodesCount(pageCounts.unique);
         AddProvider(*provider);
@@ -1754,6 +1803,13 @@ BentleyStatus QueryBasedNodesProvider::InitializePartialProviders(bvector<PageNo
     }
 
 size_t const QueryBasedNodesProvider::PartialProviderSize = 1000;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier)
+    : T_Super(context), m_query(&query), m_usedClassIds(usedClassIds), m_offset(0), m_parentDatasourceIdentifier(parentDatasourceIdentifier)
+    {}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1896,8 +1952,6 @@ QueryBasedNodesProvider::NodeCounts QueryBasedNodesProvider::QueryNodeCounts() c
         return NodeCounts{ dsInfo.GetTotalNodesCount().Value(), ParsePageNodeCounts(dsInfo.GetCustomJson()["PageCounts"]) };
         }
 
-    DataSourceRelatedVariablesUpdater variablesUpdater(GetContext(), GetIdentifier());
-
     // run a separate query to get the total nodes count (we already know this count
     // won't change during post-processing)
     SetupCustomFunctionsContext fnContext(GetContext(), m_query->GetExtendedData());
@@ -2012,8 +2066,6 @@ static size_t QueryHasNodes(NavNodesProviderContextCR context, NavNodeCP virtual
     {
     auto scope = Diagnostics::Scope::Create("Query has nodes");
 
-    DataSourceRelatedVariablesUpdater variablesUpdater(context, dsIdentifier);
-
     // run a separate query to check if there are any nodes
     SetupCustomFunctionsContext fnContext(context, query.GetExtendedData());
 
@@ -2085,11 +2137,15 @@ QueryBasedSpecificationNodesProvider::QueryBasedSpecificationNodesProvider(NavNo
     : T_Super(context), m_specification(specification)
     {
     GetContextR().SetMayHaveArtifacts(HasNodeArtifactRules(GetContext().GetRulesPreprocessor(), specification));
+
     SpecificationUsedClassesListener usedClasses(GetContextR());
     bvector<NavigationQueryPtr> queries = CreateQueries(m_specification);
+
+    bset<Utf8String> usedVariables = GetContext().GetRelatedVariablesIds();
+
     for (NavigationQueryPtr const& query : queries)
         {
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), true);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), usedVariables, true);
         AddProvider(*QueryBasedNodesProvider::Create(*nestedContext, *query, usedClasses.GetUsedClassIds()));
         }
     }
@@ -2212,11 +2268,12 @@ MultiSpecificationNodesProvider::MultiSpecificationNodesProvider(NavNodesProvide
     : T_Super(baseContext)
     {
     baseContext.SetVirtualParentNode(nullptr);
+    bset<Utf8String> usedVariables = baseContext.GetRelatedVariablesIds();
 
     SpecificationsVisitor visitor;
     for (RootNodeRuleSpecification const& specification : specs)
         {
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), false);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), usedVariables, false);
         nestedContext->SetRootNodeContext(&specification.GetRule());
         visitor.SetContext(*nestedContext);
         specification.GetSpecification().Accept(visitor);
@@ -2231,11 +2288,12 @@ MultiSpecificationNodesProvider::MultiSpecificationNodesProvider(NavNodesProvide
     : T_Super(baseContext)
     {
     baseContext.SetVirtualParentNode(&virtualParent);
+    bset<Utf8String> usedVariables = baseContext.GetRelatedVariablesIds();
 
     SpecificationsVisitor visitor;
     for (ChildNodeRuleSpecification const& specification : specs)
         {
-        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), false);
+        NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), usedVariables, false);
         nestedContext->SetChildNodeContext(&specification.GetRule(), virtualParent);
         visitor.SetContext(*nestedContext);
         specification.GetSpecification().Accept(visitor);
@@ -3074,7 +3132,7 @@ NavNodePtr NodesFinalizingProvider::FinalizeNode(NavNodeR node) const
 NavNodesProviderPtr NodesFinalizingPostProcessor::_PostProcessProvider(NavNodesProviderR processedProvider) const
     {
     processedProvider.GetContext().GetHierarchyLevelLocker().WaitForUnlock();
-    auto context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), true);
+    auto context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), processedProvider.GetContext().GetRelatedVariablesIds(), true);
     return NodesFinalizingProvider::Create(*context, processedProvider);
     }
 
@@ -3292,7 +3350,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     processedProvider.GetContext().GetHierarchyLevelLocker().WaitForUnlock();
 
     // create a context for merged nodes provider
-    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), false);
+    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(processedProvider.GetContext(), processedProvider.GetContext().GetRelatedVariablesIds(), false);
     context->SetProvidersIndexAllocator(*new ParentProviderIndexAllocator(processedProvider.GetContext().GetVirtualParentNode().IsValid() ? processedProvider.GetContext().GetNodesCache().GetNodeIndex(processedProvider.GetContext().GetVirtualParentNode()->GetNodeId()) : bvector<uint64_t>()));
 
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
@@ -3395,7 +3453,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 +---------------+---------------+---------------+---------------+---------------+------*/
 static NavNodesProviderContextPtr CreatePostProcessingProviderContext(NavNodesProviderContextCR baseContext)
     {
-    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(baseContext, true);
+    NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(baseContext, baseContext.GetRelatedVariablesIds(), true);
     context->SetVirtualParentNode(baseContext.GetVirtualParentNode().get());
     return context;
     }

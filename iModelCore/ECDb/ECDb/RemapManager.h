@@ -138,6 +138,7 @@ private:
     
 public:
     BentleyStatus CleanModifiedMappings();
+    BentleyStatus EnsureInvolvedSchemasAreLoaded(bvector<ECN::ECSchemaCP> const& schemasToMap);
     BentleyStatus RestoreAndProcessCleanedPropertyMaps(SchemaImportContext& ctx);
 
 //move data

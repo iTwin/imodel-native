@@ -533,4 +533,33 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, CurrentECSqlVersion)
+    {
+    BeVersion expectedVersion (1, 0, 0, 0);
+    ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
+    {
+    ProfileVersion expectedVersion (4, 0, 0, 2);
+    ASSERT_EQ(ECDb::CurrentECDbProfileVersion(), expectedVersion);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
+    ProfileVersion expectedVersion (4, 0, 0, 2);
+    ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
+    }
+
+
 END_ECDBUNITTESTS_NAMESPACE

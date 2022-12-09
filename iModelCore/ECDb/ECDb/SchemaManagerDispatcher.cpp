@@ -977,11 +977,51 @@ VirtualSchemaManager const& MainSchemaManager::GetVirtualSchemaManager() const {
     return m_vsm;
 }
 
+#ifndef NDEBUG
+void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> const& schemas, Utf8CP suffix)
+    {
+    BeFileName directory(parentDirectory);
+    uint64_t ticks = BeTimeUtilities::QueryMillisecondsCounter();
+    directory.AppendUtf8(Utf8PrintfString("%" PRIu64 "_%s\\", ticks, suffix).c_str());
+	BeFileName::CreateNewDirectory(directory.c_str()); // create the directory
+    BeFileName::EmptyDirectory(directory.c_str()); // clear the directory
+    for (auto schema: schemas)
+        {
+        if(schema == nullptr)
+            continue;
+        BeFileName fileName(directory);
+        fileName.AppendUtf8(schema->GetName().c_str());
+        fileName.append(L".ecschema.xml");
+        schema->WriteToXmlFile(fileName.c_str());
+        }
+    };
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
+    #ifndef NDEBUG
+    /*
+    In Debug builds, the environment variable can be set to a directory path to
+    dump existing and incoming schemas to for every ImportSchemas call.
+    */
+    Utf8CP envVarName = "ECDB_SCHEMAIMPORT_DUMP_TO";
+    size_t requiredSize;
+    if (getenv_s(&requiredSize, NULL, 0, envVarName) == 0 && requiredSize != 0)
+        {
+        BeFileName dumpSchemaDir;
+        std::vector<char> chars(requiredSize);
+        if (getenv_s(&requiredSize, chars.data(), requiredSize, envVarName) == 0)
+            {
+            dumpSchemaDir.AssignUtf8(chars.data());
+            DumpSchemasToFile(dumpSchemaDir, m_ecdb.Schemas().GetSchemas(true), "existing");
+            DumpSchemasToFile(dumpSchemaDir, schemas, "incoming");
+            }
+        }
+    #endif
+
     if (!GetECDb().GetImpl().GetIdFactory().Reset())
         {
         LOG.error("Failed to import ECSchemas: Failed to create id factory.");
@@ -1047,7 +1087,12 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         return ERROR;
         }
 
-    return MapSchemas(ctx, schemasToMap);
+    if (SUCCESS != MapSchemas(ctx, schemasToMap))
+        {
+        LOG.debug("MainSchemaManager::ImportSchemas - failed to MapSchemas");
+        return ERROR;
+        }
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1066,6 +1111,10 @@ BentleyStatus MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<EC
         return ERROR;
         }
     m_lightweightCache.Clear();
+
+    //necessary so .DerivedClasses() knows all leaf nodes that need mapping, even if they are not inside "schemas"
+    if(SUCCESS != ctx.RemapManager().EnsureInvolvedSchemasAreLoaded(schemas))
+        return ERROR;
 
     if (SUCCESS != DoMapSchemas(ctx, schemas))
         return ERROR;

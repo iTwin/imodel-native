@@ -3,7 +3,7 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)imodel02/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+%include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 # Symlink the test files to be packaged to the build context, where
 # the respective part will pick up for packaging

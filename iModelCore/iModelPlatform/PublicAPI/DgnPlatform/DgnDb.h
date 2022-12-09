@@ -281,7 +281,7 @@ public:
     DGNPLATFORM_EXPORT void CallJsHandlerMethod(DgnClassId classId, Utf8CP methodName, Napi::Object arg);
     static void CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args);
     [[noreturn]] void ThrowException(Utf8CP message, int errNum);
-
+    BeSQLite::DbResult DisqualifyTypeIndexForBisCoreExternalSourceAspect();
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetGeometricModelUpdateStatement();
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetModelLastModUpdateStatement();
 

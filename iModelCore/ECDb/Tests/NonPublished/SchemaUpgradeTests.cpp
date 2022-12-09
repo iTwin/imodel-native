@@ -10712,6 +10712,96 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+            <KindOfQuantity typeName="KoQ1" displayLabel="KoQ1" relativeError=".5" persistenceUnit="u:CM" />
+        </ECSchema>)schema")));
+
+    auto modifiedSchemaItem = SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+        </ECSchema>)schema");
+
+    auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";   
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
+    ASSERT_TRUE(koq != nullptr) << "KindOfQuantity 'KoQ1' should still exist";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, KoQModificationWithDoNotFailFlag)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+            <KindOfQuantity typeName="KoQ1" persistenceUnit="u:CM" relativeError=".5" displayLabel="KoQ1" />
+        </ECSchema>)schema")));
+
+    auto modifiedSchemaItem = SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+            <KindOfQuantity typeName="KoQ1" persistenceUnit="u:CM" relativeError=".5" displayLabel="New KoQ1 label" />
+        </ECSchema>)schema");
+
+    auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";   
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
+    ASSERT_TRUE(koq != nullptr) << "KoQ1";
+    EXPECT_STRCASEEQ("New KoQ1 label", koq->GetDisplayLabel().c_str()) << "Display label should be modified";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, IllegalKoQModificationWithDoNotFailFlag)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+            <KindOfQuantity typeName="KoQ1" description="KoQ1" relativeError=".5" persistenceUnit="u:CM" />
+        </ECSchema>)schema")));
+
+    auto modifiedSchemaItem = SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+            <KindOfQuantity typeName="KoQ1" description="KoQ1" relativeError=".5" persistenceUnit="u:M" />
+        </ECSchema>)schema");
+                                    
+
+    auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";   
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
+    ASSERT_TRUE(koq != nullptr) << "KoQ1";
+    EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str()) << "PersistenceUnit should no be modified";
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>

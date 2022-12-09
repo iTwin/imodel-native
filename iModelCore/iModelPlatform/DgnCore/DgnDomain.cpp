@@ -726,6 +726,9 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         return SchemaStatus::SchemaImportFailed;
     }
 
+    if (dgndb.DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
+        return SchemaStatus::SchemaImportFailed;
+
     return SchemaStatus::Success;
 }
 
