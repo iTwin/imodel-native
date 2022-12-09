@@ -89,6 +89,8 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/InsertStatementExp.h \
                 $(baseDir)ECSql/UpdateStatementExp.h \
                 $(baseDir)ECSql/DeleteStatementExp.h \
+                $(baseDir)ECSql/PragmaStatementExp.h \
+                $(baseDir)ECSql/PragmaECSqlPreparedStatement.h \
                 $(baseDir)ECSql/OptionsExp.h \
                 $(baseDir)ECSql/ExpHelper.h \
                 $(baseDir)ECSql/ECSqlTypeInfo.h \
@@ -266,6 +268,8 @@ $(o)InsertStatementExp$(oext):                                $(baseDir)ECSql/In
 $(o)UpdateStatementExp$(oext):                                $(baseDir)ECSql/UpdateStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DeleteStatementExp$(oext):                                $(baseDir)ECSql/DeleteStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)PragmaECSqlPreparedStatement$(oext):                      $(baseDir)ECSql/PragmaECSqlPreparedStatement.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)OptionsExp$(oext):                                        $(baseDir)ECSql/OptionsExp.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 

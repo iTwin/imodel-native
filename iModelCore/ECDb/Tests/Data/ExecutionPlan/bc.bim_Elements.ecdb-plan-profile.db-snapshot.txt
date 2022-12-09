@@ -40,6 +40,11 @@ SEARCH C USING INTEGER PRIMARY KEY (rowid=?)
 SEARCH T USING INTEGER PRIMARY KEY (rowid=?)
 SEARCH A USING INTEGER PRIMARY KEY (rowid=?)
 USE TEMP B-TREE FOR ORDER BY
+MULTI-INDEX OR
+INDEX 1
+SEARCH main.ec_Schema USING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
+INDEX 2
+SEARCH main.ec_Schema USING INDEX sqlite_autoindex_ec_Schema_2 (Alias=?)
 SEARCH main.ec_ClassHasBaseClasses USING INDEX ix_ec_ClassHasBaseClasses_BaseClassId (BaseClassId=?)
 SEARCH s USING COVERING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
 SEARCH ca USING COVERING INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_ClassId (ContainerId=?)

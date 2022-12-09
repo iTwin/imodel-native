@@ -23,8 +23,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp)
     {
-    // Turn a polymorphic query into a non-polymorphic query if the class is sealed or has no subclasses.
-    // This will speed up the query
+    if (!polymorphicQuery.IsDisqualified()) {
+        // Note: Following need to be cached statement
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success == stmt.Prepare(prepareContext.GetECDb(),
+            SqlPrintfString("PRAGMA disqualify_type_index FOR  %s", classMap.GetClass().GetFullName()))) {
+            if (stmt.Step() == BE_SQLITE_ROW) {
+                if (stmt.GetValueBoolean(0)){
+                    LOG.debugv("ECSql Prepare: Applying 'disqualify_type_index' flag to %s", classMap.GetClass().GetFullName());
+                    polymorphicQuery.SetDisqualified(true);
+                }
+            }
+        }
+    }
+
     if (polymorphicQuery.IsPolymorphic())
         {
         if (classMap.GetClass().GetClassModifier() == ECClassModifier::Sealed)
