@@ -116,6 +116,8 @@ $(o)UiStateProvider$(oext) : $(presentationDir)UiStateProvider.cpp $(presentatio
 
 $(o)DgnDbWorker$(oext) : $(baseDir)DgnDbWorker.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
 
+$(o)ElementMesh$(oext) : $(baseDir)ElementMesh.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
+
 $(o)TextureImageWorker$(oext) : $(baseDir)TextureImageWorker.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
 
 $(o)SchemaUtil$(oext) : $(baseDir)SchemaUtil.cpp $(baseDir)SchemaUtil.h ${MultiCompileDepends}

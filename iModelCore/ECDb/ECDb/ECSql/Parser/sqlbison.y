@@ -132,6 +132,9 @@ using namespace connectivity;
 // LIMIT and OFFSET
 %token <pParseNode> SQL_TOKEN_LIMIT SQL_TOKEN_OFFSET SQL_TOKEN_ONLY
 
+// PRAGMA ... FOR
+%token <pParseNode> SQL_TOKEN_PRAGMA SQL_TOKEN_FOR
+
 //non-standard
 %token <pParseNode> SQL_TOKEN_MATCH SQL_TOKEN_ECSQLOPTIONS
 
@@ -211,6 +214,7 @@ using namespace connectivity;
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
 %type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
+%type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
 %%
 
 /* Parse Tree an OSQLParser zurueckliefern
@@ -218,15 +222,92 @@ using namespace connectivity;
  *
  */
 sql_single_statement:
-        sql
-        { context->setParseTree( $1 ); }
-    |    sql ';'
-        { context->setParseTree( $1 ); }
+        sql         { context->setParseTree( $1 ); }
+    |   sql    ';'  { context->setParseTree( $1 ); }
+    |   pragma      { context->setParseTree( $1 ); }
+    |   pragma ';'  { context->setParseTree( $1 ); }
     ;
 
 sql:
         manipulative_statement
     ;
+
+/* PRAGMA NAME[[= val]|[(val)]] [FOR path]
+ */
+pragma:
+    SQL_TOKEN_PRAGMA SQL_TOKEN_NAME opt_pragma_set opt_pragma_for
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($1);
+        $$->append($2);
+        $$->append($3);
+        $$->append($4);
+    }
+    ;
+
+opt_pragma_for:
+    {
+        $$ = SQL_NEW_RULE;
+    }
+    | SQL_TOKEN_FOR pragma_path
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+opt_pragma_set:
+    {
+        $$ = SQL_NEW_RULE;
+    }
+    | opt_pragma_set_val
+    | opt_pragma_func
+    ;
+
+opt_pragma_set_val:
+    SQL_EQUAL pragma_value
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+opt_pragma_func:
+    '(' pragma_value ')'
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+pragma_value:
+        SQL_TOKEN_INTNUM
+    |   SQL_TOKEN_APPROXNUM
+    |   SQL_TOKEN_NAME
+    |   SQL_TOKEN_STRING
+    |   SQL_TOKEN_TRUE
+    |   SQL_TOKEN_FALSE
+    |   SQL_TOKEN_NULL
+    ;
+
+pragma_path:
+        SQL_TOKEN_NAME
+            {
+            $$ = SQL_NEW_DOTLISTRULE;
+            $$->append($1);
+            }
+    |   pragma_path '.' SQL_TOKEN_NAME %prec '.'
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    |   pragma_path ':' SQL_TOKEN_NAME %prec ':'
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    ;
+
 /*
  * CTE query support
  */
@@ -1179,7 +1260,7 @@ literal:
     |   SQL_TOKEN_REAL_NUM
     |   SQL_TOKEN_INTNUM
     |   SQL_TOKEN_APPROXNUM
-    |    SQL_TOKEN_ACCESS_DATE
+    |   SQL_TOKEN_ACCESS_DATE
 /*    rules for predicate check */
     |    literal SQL_TOKEN_STRING
         {

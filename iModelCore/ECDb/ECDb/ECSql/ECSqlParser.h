@@ -8,6 +8,7 @@
 #include "InsertStatementExp.h"
 #include "UpdateStatementExp.h"
 #include "DeleteStatementExp.h"
+#include "PragmaStatementExp.h"
 #include "CommonTableExp.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -72,7 +73,7 @@ private:
     std::vector<Utf8String> m_attachedTableSpaceCache;
     bool m_isAttachedTableSpaceCacheSetup = false;
 
-    std::vector<Utf8String> const& GetAttachedTableSpaces() 
+    std::vector<Utf8String> const& GetAttachedTableSpaces()
         {
         if (!m_isAttachedTableSpaceCacheSetup)
             {
@@ -105,7 +106,7 @@ public:
     };
 
 //=======================================================================================
-//!The name convention here is different as parse_<parser_rule>() style naming is used 
+//!The name convention here is different as parse_<parser_rule>() style naming is used
 //! so that it easy to lookup rule corresponding to the function that parsing it.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -131,12 +132,13 @@ private:
 
 
     mutable std::unique_ptr<ECSqlParseContext> m_context;
-    
+
     //root nodes
     BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseSelectStatement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseUpdateStatementSearched(std::unique_ptr<UpdateStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParsePragmaStatement(std::unique_ptr<PragmaStatementExp>&, connectivity::OSQLParseNode const&) const;
 
     //Common expressions
     BentleyStatus ParseAllOrDistinctToken(SqlSetQuantifier&, connectivity::OSQLParseNode const*) const;
@@ -199,7 +201,7 @@ private:
     BentleyStatus ParseNotToken(bool& isNot, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNumValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseTermAddSub(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    
+
     BentleyStatus ParseOptColumnRefCommalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseOptECSqlOptionsClause(std::unique_ptr<OptionsExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseOrderByClause(std::unique_ptr<OrderByExp>&, connectivity::OSQLParseNode const*) const;

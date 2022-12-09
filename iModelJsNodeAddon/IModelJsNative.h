@@ -327,6 +327,12 @@ inline static Napi::Array requireArray(Napi::Object const& obj, Utf8CP name) {
     return member.As<Napi::Array>();
 }
 
+enum class ProcessPolyfaceResult {
+  Empty, // polyface had no triangles
+  Bad, // polyface contains bad data that could not be fixed up
+  Ok, // polyface was processed
+};
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -461,7 +467,7 @@ private:
     static void GetRowAsJson(BeJsValue json, BeSQLite::EC::ECSqlStatement &);
     static void RegisterOptionalDomains();
     static void InitializeSolidKernel();
-    static void AddSchemaSearchPaths(ECSchemaReadContextPtr schemaContext);
+    static void AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext);
 public:
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
     static void GetECValuesCollectionAsJson(BeJsValue json, ECN::ECValuesCollectionCR);
@@ -481,8 +487,16 @@ public:
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps);
     static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
+
+    // Used by ExportGraphics, ExportPartGraphics, and GenerateElementMeshes.
+    // Checks for common "bad" polyfaces, fixing them up if possible.
+    // If bad or empty, returns status without processing.
+    // Otherwise, fixes up the input polyface if applicable, passes it to supplied function, and returns Ok.
+    static ProcessPolyfaceResult ProcessPolyface(PolyfaceQueryCR, bool wantParamsAndNormals, std::function<void(PolyfaceQueryCR)>);
     static DgnDbStatus ExportGraphics(DgnDbR db, Napi::Object const& exportProps);
     static DgnDbStatus ExportPartGraphics(DgnDbR db, Napi::Object const& exportProps);
+    static Napi::Value GenerateElementMeshes(DgnDbR, Napi::Object const&);
+
     static DgnDbStatus ProcessGeometryStream(DgnDbR db, Napi::Object const& requestProps);
     static DgnDbStatus CreateBRepGeometry(DgnDbR db, Napi::Object const& createProps);
     static Napi::String InsertLinkTableRelationship(DgnDbR db, Napi::Object props);
@@ -682,7 +696,7 @@ template<typename OBJ>
 struct BeObjectWrap : Napi::ObjectWrap<OBJ>
 {
 protected:
-    BeObjectWrap(Napi::CallbackInfo const& info) : Napi::ObjectWrap<OBJ>(info) {}
+    BeObjectWrap(NapiInfoCR info) : Napi::ObjectWrap<OBJ>(info) {}
 
     // Every derived class must call this function on the first line of its destructor
     static void SetInDestructor()
@@ -700,17 +714,5 @@ protected:
 };
 
 DgnDb* extractDgnDbFromNapiValue(Napi::Value);
-
-enum struct ChangeSetKind
-    {
-        NotSpecified      = -1,
-        Regular           = 0,
-        Schema            = 1 << 0, // ChangeSet contains minor schema changes
-        Definition        = 1 << 1,
-        SpatialData       = 1 << 2,
-        SheetsAndDrawings = 1 << 3,
-        ViewsAndModels    = 1 << 4,
-        GlobalProperties  = 1 << 5
-    };
 
 } // namespace IModelJsNative

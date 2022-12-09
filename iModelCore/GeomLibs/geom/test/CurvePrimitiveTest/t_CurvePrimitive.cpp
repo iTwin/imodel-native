@@ -463,7 +463,7 @@ void ComparePrincipalMoments
     )
     {
     char message[1024];
-    sprintf (message, "MomentComparison (dim %d) (scale %g)", domainDimension, appliedScale);
+    snprintf (message, sizeof(message), "MomentComparison (dim %d) (scale %g)", domainDimension, appliedScale);
     Check::StartScope ("Compare moments");
     double q0, q1;
     DVec3d centroid0, centroid1;

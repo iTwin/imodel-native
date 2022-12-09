@@ -2115,6 +2115,12 @@ void NodesCache::_Cache(DataSourceInfo& info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::_Update(DataSourceInfo const& info, int partsToUpdate)
     {
+    if (0 == partsToUpdate)
+        {
+        // early return if nothing to update
+        return;
+        }
+
     SavePointWithMutexHolder savepoint(m_mutex, m_ensureThreadSafety, m_db, "UpdateDataSource", BeSQLiteTxnMode::Immediate);
 
     if (0 != ((DataSourceInfo::PARTS_All & ~DataSourceInfo::PART_RelatedClasses) & partsToUpdate))
