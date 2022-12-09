@@ -4,14 +4,14 @@ name: imodel-native-internal-$(Date:yyyy.MM.dd)$(Rev:.r)
 trigger: none
 
 pr:
+  autoCancel: true
   drafts: false
   branches:
     include:
-      - master
-      - release/*
+      - main
+  paths:
     exclude:
-      - release/2*
-      - release/1*
+      - build/NodeAddon_release.yml
 
 resources:
   repositories:
