@@ -122,7 +122,7 @@ describe("SQLite statements", () => {
       stmt.dispose();
 
       stmt = new iModelJsNative.SqliteStatement();
-        const sql = "SELECT 100 from xxx";
+      const sql = "SELECT 100 from xxx";
       expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
       expect(errorLogStub.callCount).eq(1);
 
