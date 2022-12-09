@@ -23,7 +23,7 @@ resources:
     - repository: imodeljs-build-pipeline-scripts
       type: git
       name: iModelTechnologies/imodeljs-build-pipeline-scripts
-      ref: Edit-install-addon-template
+      ref: nick/use-python
     - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
