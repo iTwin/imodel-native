@@ -5248,7 +5248,7 @@ TEST_F(HierarchyUpdateTests, UpdateFilteredChildHierarchyLevel)
             }),
         });
 
-    // expect 2 update records - the hierarchy levels gets reporte even when they don't change (we don't want to compare individual nodes)
+    // expect 2 update records - the hierarchy levels gets reported even when they don't change (we don't want to compare individual nodes)
     EXPECT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
