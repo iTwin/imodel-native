@@ -1615,7 +1615,7 @@ void testSweptLinestrings (size_t numContour, double z0, double zStep, bool capp
 
     builder->AddRuledBetweenCorrespondingCurves (contours, capped);
     char message[2048];
-    sprintf (message, "(Linestring (contours %d) (z0 %g) (zStep %g) (capped %d) (numPerFace %d)\n",
+    snprintf (message, sizeof(message), "(Linestring (contours %d) (z0 %g) (zStep %g) (capped %d) (numPerFace %d)\n",
                 (int)numContour, z0, zStep, capped ? 1 : 0, (int)numPerFace);
     PolyfaceHeaderR mesh = builder->GetClientMeshR ();
 
@@ -3979,7 +3979,7 @@ RotMatrix Frame1 ()
             Check::SaveTransformed (builder->GetClientMeshR ());
             if (s_clearMode == 1)
                 {
-                sprintf (title, "Polyface.FilledDiskTriangles%d", counter);
+                snprintf (title, sizeof(title), "Polyface.FilledDiskTriangles%d", counter);
                 Check::ClearGeometry (title);
                 }
 
@@ -3989,7 +3989,7 @@ RotMatrix Frame1 ()
             Check::SaveTransformed (builderB->GetClientMeshR ());
             if (s_clearMode == 1)
                 {
-                sprintf (title, "Polyface.FilledDisk%d", counter);
+                snprintf (title, sizeof(title), "Polyface.FilledDisk%d", counter);
                 Check::ClearGeometry (title);
                 }
             }

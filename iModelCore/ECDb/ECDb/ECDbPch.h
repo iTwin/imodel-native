@@ -81,6 +81,7 @@
 #include "ECSql/InsertStatementExp.h"
 #include "ECSql/UpdateStatementExp.h"
 #include "ECSql/DeleteStatementExp.h"
+#include "ECSql/PragmaStatementExp.h"
 #include "ECSql/OptionsExp.h"
 #include "ECSql/ExpHelper.h"
 #include "ECSql/ECSqlTypeInfo.h"
@@ -112,6 +113,9 @@
 #include "ECSql/PrimitiveECSqlBinder.h"
 #include "ECSql/ArrayECSqlBinder.h"
 #include "ECSql/StructECSqlBinder.h"
+
+#include "ECSql/PragmaStatementExp.h"
+#include "ECSql/PragmaECSqlPreparedStatement.h"
 
 #include "ECSql/ECSqlStatementNoopImpls.h"
 

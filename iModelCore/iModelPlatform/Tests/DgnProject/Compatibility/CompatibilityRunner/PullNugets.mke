@@ -7,7 +7,7 @@
 # Set up all the standard stuff.
 #----------------------------------------------------------
 %include  mdl.mki
-%include $(SrcRoot)imodel02/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+%include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 #----------------------------------------------------------
 # Pull the test runner and test file nugets from server and copy them to IMS_NUGETS_DIR (out/iModelEvolutionTests)

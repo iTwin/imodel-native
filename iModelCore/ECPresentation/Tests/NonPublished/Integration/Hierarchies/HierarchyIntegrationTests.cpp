@@ -5887,6 +5887,51 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_ClassGroup_GroupsDerivedInstancesByBaseClassWhenThereAreInstancesOfDifferentDerivedClass, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_GroupsDerivedInstancesByBaseClassWhenThereAreInstancesOfDifferentDerivedClass)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRuleP rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classB->GetFullName(), true));
+    rules->AddPresentationRule(*rule);
+
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    groupingRule->AddGroup(*new ClassGroup("", true, "", ""));
+    rules->AddPresentationRule(*groupingRule);
+
+    // validate hierarchy
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr);
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classA, true, { instanceB }),
+            {
+            CreateInstanceNodeValidator({ instanceB }),
+            }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(Grouping_ClassGroup_DoesNotCreateGroupForSingleItem, R"*(
     <ECEntityClass typeName="Base" />
     <ECEntityClass typeName="Derived">
@@ -13883,7 +13928,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreateChildGroupingNodeW
         [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get();}
     );
     ASSERT_EQ(1, groupingNodesA.GetSize());
-    VerifyClassGroupingNode(*groupingNodesA[0], { a }, classA, true, false);
+    VerifyClassGroupingNode(*groupingNodesA[0], { a }, classA, true);
 
     DataContainer<NavNodeCPtr> instanceNodesA = RulesEngineTestHelpers::GetValidatedNodes(
         [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA[0].get()), pageOptions)).get();},
@@ -13904,7 +13949,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreateChildGroupingNodeW
         [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), instanceNodesB[0].get())).get(); }
     );
     ASSERT_EQ(1, groupingNodesA2.GetSize());
-    VerifyClassGroupingNode(*groupingNodesA2[0], { a }, classA, true, false);
+    VerifyClassGroupingNode(*groupingNodesA2[0], { a }, classA, true);
 
     DataContainer<NavNodeCPtr> noInstanceNodesA = RulesEngineTestHelpers::GetValidatedNodes(
         [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA2[0].get()), pageOptions)).get(); },

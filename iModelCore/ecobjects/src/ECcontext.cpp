@@ -162,6 +162,16 @@ void ECSchemaReadContext::AddSchemaPath(WCharCP path)
     m_ownedLocators.push_back(locator);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSchemaReadContext::AddFinalSchemaPaths(bvector<WString> const& searchPaths)
+    {
+    auto locater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths, m_includeFilesWithNoVerExt);
+    m_locaters.push_back(locater.get());
+    m_ownedLocators.push_back(locater);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

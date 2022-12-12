@@ -89,27 +89,27 @@ ECSqlStatementCache::ECSqlStatementCache(uint32_t maxSize, Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logPrepareErrors) const
+CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logPrepareErrors, ECSqlStatus* outPrepareStatus) const
     {
     CachedECSqlStatementPtr stmt;
-    GetPreparedStatement(stmt, ecdb, nullptr, token, ecsql, logPrepareErrors);
+    GetPreparedStatement(stmt, ecdb, nullptr, token, ecsql, logPrepareErrors, outPrepareStatus);
     return stmt;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(SchemaManagerCR schemaManager, DbCR datasource, Utf8CP ecsql, bool logPrepareErrors) const
+CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(SchemaManagerCR schemaManager, DbCR datasource, Utf8CP ecsql, bool logPrepareErrors, ECSqlStatus* outPrepareStatus) const
     {
     CachedECSqlStatementPtr stmt;
-    GetPreparedStatement(stmt, schemaManager.GetDispatcher().Main().GetECDb(), &datasource, nullptr, ecsql, logPrepareErrors);
+    GetPreparedStatement(stmt, schemaManager.GetDispatcher().Main().GetECDb(), &datasource, nullptr, ecsql, logPrepareErrors, outPrepareStatus);
     return stmt;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql, bool logPrepareErrors) const
+void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql, bool logPrepareErrors, ECSqlStatus* outPrepareStatus) const
     {
     BeMutexHolder _v_v(m_mutex);
 
@@ -119,17 +119,22 @@ void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, EC
 
     CachedECSqlStatementPtr droppedStatement = AddStatement(stmt, ecdb, datasource, token, ecsql);
 
+    ECSqlStatus status;
     if (datasource == nullptr)
         {
-        if (ECSqlStatus::Success != stmt->Prepare(ecdb, ecsql, token, logPrepareErrors))
-            stmt = nullptr;
+        status = stmt->Prepare(ecdb, ecsql, token, logPrepareErrors);
         }
     else
         {
         BeAssert(token == nullptr);
-        if (ECSqlStatus::Success != stmt->Prepare(ecdb.Schemas(), *datasource, ecsql, logPrepareErrors))
-            stmt = nullptr;
+        status = stmt->Prepare(ecdb.Schemas(), *datasource, ecsql, logPrepareErrors);
         }
+
+    if (ECSqlStatus::Success != status)
+        stmt = nullptr;
+
+    if (nullptr != outPrepareStatus)
+        *outPrepareStatus = status;
 
     _v_v.unlock();
     droppedStatement = nullptr;

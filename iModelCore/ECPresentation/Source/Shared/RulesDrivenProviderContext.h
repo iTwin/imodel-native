@@ -78,8 +78,8 @@ public:
     NavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     RulesetVariables const& GetRulesetVariables() const {return *m_rulesetVariables;}
     ECPRESENTATION_EXPORT IUsedRulesetVariablesListener& GetUsedVariablesListener() const;
-    ECPRESENTATION_EXPORT void SetUsedVariablesListener(RulesDrivenProviderContextCR other, bool makeCopy);
-    bset<Utf8String> GetRelatedVariablesIds() const;
+    ECPRESENTATION_EXPORT void InitUsedVariablesListener(bset<Utf8String> const& parentVariables, IUsedRulesetVariablesListener* parentListener);
+    bset<Utf8String> const& GetRelatedVariablesIds() const;
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}
     ECPRESENTATION_EXPORT IRulesPreprocessorR GetRulesPreprocessor() const;
