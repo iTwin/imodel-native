@@ -200,7 +200,37 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
         }
 
     m_geoLocation.Load();
+
+
+    if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
+
     return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::DisqualifyTypeIndexForBisCoreExternalSourceAspect()
+    {
+    if (Schemas().FindClass("BisCore.ExternalSourceAspect") != nullptr)
+        {
+        /*
+        * BisCore.ExternalSourceAspect pollutes SQLite stats for index 'ix_bis_ElementMultiAspect_ecclassid' more than 97% of
+        * rows in bis_ElementMultiAspect is of type BisCore.ExternalSourceAspect. Use this index for querying BisCore.ExternalSourceAspect
+        * cause loop over all the rows for BisCore.ExternalSourceAspect causes the query to slow down severely.
+        * Long term fix for this is to move BisCore.ExternalSourceAspect in its table.
+        * ECSQL PRAGMA disqualify_type_index let us disqualify 'ix_bis_ElementMultiAspect_ecclassid' globally but this setting is not persisted
+        * and therefore it has to be executed when the connection is opened.
+        */
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(*this, "PRAGMA disqualify_type_index=TRUE FOR BisCore.ExternalSourceAspect"))
+            {
+            LOG.error("Failed to execute 'PRAGMA disqualify_type_index=TRUE FOR BisCore.ExternalSourceAspect'.");
+            return BE_SQLITE_ERROR;
+            }
+        }
+        return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
@@ -235,7 +265,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         if (DbResult::BE_SQLITE_OK != rc)
             return rc;
 
-        // Initialize schemas again as profile version might be updated and ECDb can store additional information like original EcXML version
+        // Initialize schemas again as the profile version might be updated and ECDb can store additional information like the original EcXML version
         schemasToImport.clear();
         domainsToImport.clear();
         status = Domains().InitializeSchemas(schemaUpgradeOptions, &schemasToImport, &domainsToImport);

@@ -10,6 +10,7 @@
 #include "ECSqlField.h"
 #include "DynamicSelectClauseECClass.h"
 
+USING_NAMESPACE_BENTLEY_EC;
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -39,7 +40,7 @@ struct IECSqlPreparedStatement
         virtual ECSqlStatus _Reset() = 0;
         virtual ECSqlStatus _ClearBindings() = 0;
         virtual Utf8CP _GetNativeSql() const = 0;
- 
+
     protected:
         IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt), m_dataSourceDb(nullptr) {}
         void SetDataSourceDb(Db const& db) { m_dataSourceDb = &db; }
@@ -66,7 +67,7 @@ struct IECSqlPreparedStatement
     };
 
 //=======================================================================================
-//! IECSqlPreparedStatement for ECSQL that only requires a single SQLite statement to 
+//! IECSqlPreparedStatement for ECSQL that only requires a single SQLite statement to
 //! be executed
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -163,7 +164,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 IECSqlBinder& _AddArrayElement() override;
 
                 void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
-            
+
             public:
                 ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder() {}
 
@@ -332,7 +333,7 @@ private:
                     UserProvidedOtherExp
                     };
 
-                struct UpdateHook final 
+                struct UpdateHook final
                     {
                     private:
                         struct Callback final : DataUpdateCallback
@@ -385,11 +386,11 @@ private:
 
                 void Initialize(int &idPropNameExpIx, PrepareInfo const&);
 
-                void SetUserProvidedParameterBinder(ProxyECInstanceIdECSqlBinder& idBinder) 
-                    { 
+                void SetUserProvidedParameterBinder(ProxyECInstanceIdECSqlBinder& idBinder)
+                    {
                     BeAssert(m_mode == Mode::UserProvidedParameterExp && "Must only be used with mode Mode::UserProvidedParameterExp");
-                    BeAssert(m_idProxyBinder == nullptr && "Must not be called twice"); 
-                    m_idProxyBinder = &idBinder; 
+                    BeAssert(m_idProxyBinder == nullptr && "Must not be called twice");
+                    m_idProxyBinder = &idBinder;
                     }
 
                 ECN::ECClassId GetClassId() const { return m_classId; }
@@ -401,7 +402,7 @@ private:
                 Mode GetMode() const { return m_mode; }
             };
 
-    
+
 
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
 
@@ -443,7 +444,7 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
             PrepareInfo& operator=(PrepareInfo const&) = delete;
 
         public:
-            PrepareInfo(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp) 
+            PrepareInfo(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
                 : m_ctx(ctx), m_exp(exp), m_classNameExp(*exp.GetClassNameExp()), m_assignmentListExp(*exp.GetAssignmentListExp()), m_whereExp(exp.GetWhereClauseExp()), m_optionsExp(exp.GetOptionsClauseExp()),
                 m_ecsqlRenderContext(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter) {}
 

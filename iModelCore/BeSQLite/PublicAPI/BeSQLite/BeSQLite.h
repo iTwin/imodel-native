@@ -389,6 +389,12 @@ struct ProfileVersion : BeVersion
 public:
     ProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : BeVersion(major, minor, sub1, sub2) {}
     explicit ProfileVersion(Utf8CP json) {FromJson(json);}
+    bool operator==(BeVersionCR rhs) const { return CompareTo(rhs) == 0; }
+    bool operator!=(BeVersionCR rhs) const { return CompareTo(rhs) != 0; }
+    bool operator<(BeVersionCR rhs) const { return CompareTo(rhs) < 0; }
+    bool operator<=(BeVersionCR rhs) const { return CompareTo(rhs) <= 0; }
+    bool operator>(BeVersionCR rhs) const { return CompareTo(rhs) > 0; }
+    bool operator>=(BeVersionCR rhs) const { return CompareTo(rhs) >= 0; }
     BE_SQLITE_EXPORT Utf8String ToJson() const;
     BE_SQLITE_EXPORT void FromJson(Utf8CP);
 };

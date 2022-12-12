@@ -361,31 +361,6 @@ struct JsInterop {
         bool m_needsVectorExceptionHandler;
         };
 
-    // An indirect reference to an ObjectReference. Keeps the ObjectReference alive. Can be redeemed.
-    //  only on the main thread. Can be copied on other threads.
-    struct ObjectReferenceClaimCheck
-        {
-        private:
-        friend struct JsInterop;
-
-        Utf8String m_id;
-
-        explicit ObjectReferenceClaimCheck(std::string const&);
-
-        public:
-        ObjectReferenceClaimCheck();
-        ~ObjectReferenceClaimCheck();
-        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck const&);
-        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck&&);
-        ObjectReferenceClaimCheck& operator=(ObjectReferenceClaimCheck const&);
-
-        bool operator<(ObjectReferenceClaimCheck const&) const;
-
-        Utf8StringCR GetId() const {return m_id;}
-
-        void Dispose();
-        };
-
     BE_JSON_NAME(accessName)
     BE_JSON_NAME(accessToken)
     BE_JSON_NAME(alias)
@@ -696,7 +671,7 @@ template<typename OBJ>
 struct BeObjectWrap : Napi::ObjectWrap<OBJ>
 {
 protected:
-    BeObjectWrap(Napi::CallbackInfo const& info) : Napi::ObjectWrap<OBJ>(info) {}
+    BeObjectWrap(NapiInfoCR info) : Napi::ObjectWrap<OBJ>(info) {}
 
     // Every derived class must call this function on the first line of its destructor
     static void SetInDestructor()
@@ -714,17 +689,5 @@ protected:
 };
 
 DgnDb* extractDgnDbFromNapiValue(Napi::Value);
-
-enum struct ChangeSetKind
-    {
-        NotSpecified      = -1,
-        Regular           = 0,
-        Schema            = 1 << 0, // ChangeSet contains minor schema changes
-        Definition        = 1 << 1,
-        SpatialData       = 1 << 2,
-        SheetsAndDrawings = 1 << 3,
-        ViewsAndModels    = 1 << 4,
-        GlobalProperties  = 1 << 5
-    };
 
 } // namespace IModelJsNative
