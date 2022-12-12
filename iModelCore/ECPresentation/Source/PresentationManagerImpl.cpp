@@ -694,7 +694,6 @@ protected:
         cache->OnRulesetUsed(*ruleset);
         std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>(variables);
         rulesetVariables->Merge(settings);
-        cache->OnRulesetVariablesUsed(*rulesetVariables, rulesetId);
 
         // set up the nodes provider context
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, TargetTree_MainTree, parentNode,
@@ -1338,7 +1337,6 @@ ContentProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateContentPro
     if (nullptr == nodesCache)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Failed to find the hierarchy cache for given connection: '%s'. Returning NULL.", connection.GetId().c_str()));
     nodesCache->OnRulesetUsed(*ruleset); // make sure latest ruleset version is used in cache
-    nodesCache->OnRulesetVariablesUsed(*variables, ruleset->GetRuleSetId());
 
     // get caches
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
@@ -1426,7 +1424,6 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
 
     RulesetVariables rulesetVariables(params.GetRulesetVariables());
     rulesetVariables.Merge(settings);
-    nodesCache->OnRulesetVariablesUsed(rulesetVariables, ruleset->GetRuleSetId());
 
     // get connection-related caches
     RelatedPathsCache& relatedPathsCache = m_ecdbCaches->GetRelatedPathsCache(params.GetConnection());

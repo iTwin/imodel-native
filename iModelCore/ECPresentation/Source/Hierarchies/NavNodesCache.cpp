@@ -2427,8 +2427,7 @@ BeGuid NodesCache::GetNodeDataSourceId(BeGuidCR nodeId, RulesetVariables const& 
         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
         "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
-        "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId] "
-        " WHERE [n].[Id] = ? "
+        " WHERE [dsn].[NodeId] = ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
         "       AND [ds].[InstanceFilter] = ? ";
 

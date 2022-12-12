@@ -200,14 +200,11 @@ struct INavNodesCache : IHierarchyCache, INavNodeLocater
 {
 protected:
     virtual void _OnRulesetUsed(PresentationRuleSetCR) {}
-    virtual void _OnRulesetVariablesUsed(RulesetVariables const&, Utf8StringCR) {}
     virtual bool _IsHierarchyLevelLocked(CombinedHierarchyLevelIdentifier const&) const = 0;
     virtual std::shared_ptr<IHierarchyLevelLocker> _CreateHierarchyLevelLocker(CombinedHierarchyLevelIdentifier const&) = 0;
 
 public:
     void OnRulesetUsed(PresentationRuleSetCR ruleset) {_OnRulesetUsed(ruleset);}
-    void OnRulesetVariablesUsed(RulesetVariables const& variables, Utf8StringCR rulesetId) {_OnRulesetVariablesUsed(variables, rulesetId);}
-
     bool IsHierarchyLevelLocked(CombinedHierarchyLevelIdentifier const& identifier) const {return _IsHierarchyLevelLocked(identifier);}
     ECPRESENTATION_EXPORT std::shared_ptr<IHierarchyLevelLocker> CreateHierarchyLevelLocker(CombinedHierarchyLevelIdentifier const& identifier, bool lock = false);
 };

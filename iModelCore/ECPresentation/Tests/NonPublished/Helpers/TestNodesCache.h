@@ -380,7 +380,6 @@ protected:
     IHierarchyCache::SavepointPtr _CreateSavepoint(bool) override {return new Savepoint(*this);}
 
     void _OnRulesetUsed(PresentationRuleSetCR) override {}
-    void _OnRulesetVariablesUsed(RulesetVariables const&, Utf8StringCR) override {}
 
     std::shared_ptr<IHierarchyLevelLocker> _CreateHierarchyLevelLocker(CombinedHierarchyLevelIdentifier const& identifier) override {return nullptr;}
 

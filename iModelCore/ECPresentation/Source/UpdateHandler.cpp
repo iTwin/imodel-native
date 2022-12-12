@@ -714,11 +714,7 @@ private:
         if (identifier.GetParentNodeKey().IsNull())
             return nullptr;
 
-        auto cachedParentNode = m_nodesCache->LocateNode(m_connection, identifier.GetHierarchyLevelIdentifier().GetRulesetId(), *identifier.GetParentNodeKey());
-        if (cachedParentNode.IsNull())
-            return nullptr;
-
-        return cachedParentNode;
+        return m_nodesCache->LocateNode(m_connection, identifier.GetHierarchyLevelIdentifier().GetRulesetId(), *identifier.GetParentNodeKey());
         }
 
     /*---------------------------------------------------------------------------------**//**
