@@ -770,7 +770,7 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::FromJson(json["InstanceKeysSelectQuery"]));
+    key->SetInstanceKeysSelectQuery(GetPresentationQueryBaseFromJson(json["InstanceKeysSelectQuery"]));
     return key;
     }
 
@@ -779,7 +779,13 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBasePtr DefaultECPresentationSerializer::_GetPresentationQueryBaseFromJson(RapidJsonValueCR json) const
     {
-    return StringGenericQuery::FromJson(json);
+    RapidJsonValueCR queryJSON = json["instanceKeysSelectQuery"];
+    Utf8String queryString = queryJSON["query"].GetString();
+
+    BoundQueryValuesList bindings;
+    DefaultBoundQueryValueSerializer serializer;
+    bindings.FromJson(serializer, queryJSON["bindings"]);
+    return StringPresentationQuery::Create(queryString, bindings);
     }
 
 /*---------------------------------------------------------------------------------**//**

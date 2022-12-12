@@ -2,6 +2,8 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+#include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/PresentationQuery.h>
 #include "ECPresentationSerializer.h"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -849,7 +851,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR, ECInstan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationSerializer::_NavNodeKeyAsJson(ContextR, NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
+void IModelJsECPresentationSerializer::_NavNodeKeyAsJson(ContextR ctx, NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.SetObject();
     navNodeKeyBaseJson.AddMember("version", 2, navNodeKeyBaseJson.GetAllocator());
@@ -860,7 +862,7 @@ void IModelJsECPresentationSerializer::_NavNodeKeyAsJson(ContextR, NavNodeKey co
         pathJson.PushBack(rapidjson::Value(partialHash.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
     navNodeKeyBaseJson.AddMember("pathFromRoot", pathJson, navNodeKeyBaseJson.GetAllocator());
-    navNodeKeyBaseJson.AddMember("instanceKeysSelectQuery", navNodeKey.GetInstanceKeysSelectQuery(), navNodeKeyBaseJson.GetAllocator());
+    navNodeKeyBaseJson.AddMember("instanceKeysSelectQuery", _AsJson(ctx, *navNodeKey.GetInstanceKeysSelectQuery(), &navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -908,7 +910,10 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnecti
 NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsConst json) const
     {
     Utf8CP type = json["type"].asCString();
-    return NavNodeKey::Create(type, "", ParseNodeKeyHashPath(json["pathFromRoot"]));
+    PresentationQueryBasePtr query = _GetPresentationQueryBaseFromJson(json);
+    NavNodeKeyPtr key = NavNodeKey::Create(type, "", ParseNodeKeyHashPath(json["pathFromRoot"]));
+    key->SetInstanceKeysSelectQuery(_GetPresentationQueryBaseFromJson(json));
+    return key;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -957,7 +962,9 @@ ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingN
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
     ECClassCP ecClass = GetClassFromFullName(connection, json["className"]);
-    return ECClassGroupingNodeKey::Create(*ecClass, false, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
+    ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*ecClass, false, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
+    key->SetInstanceKeysSelectQuery(_GetPresentationQueryBaseFromJson(json));
+    return key;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -989,7 +996,9 @@ ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGro
         groupingValues.Parse(json["groupingValues"].ToJsonString().c_str());
     else
         groupingValues.SetArray();
-    return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, groupingValues, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
+    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, groupingValues, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
+    key->SetInstanceKeysSelectQuery(_GetPresentationQueryBaseFromJson(json));
+    return key;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1008,7 +1017,9 @@ LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeK
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
     Utf8CP label = json["label"].asCString();
-    return LabelGroupingNodeKey::Create(label, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
+    LabelGroupingNodeKeyPtr key = LabelGroupingNodeKey::Create(label, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
+    key->SetInstanceKeysSelectQuery(_GetPresentationQueryBaseFromJson(json));
+    return key;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1119,6 +1130,364 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Node
 
     return json;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetECValueTypeName(PrimitiveType type)
+    {
+    switch (type)
+        {
+        case PRIMITIVETYPE_Binary:
+            return "binary";
+        case PRIMITIVETYPE_Boolean:
+            return "boolean";
+        case PRIMITIVETYPE_DateTime:
+            return "dateTime";
+        case PRIMITIVETYPE_Double:
+            return "double";
+        case PRIMITIVETYPE_Integer:
+            return "int";
+        case PRIMITIVETYPE_Long:
+            return "long";
+        case PRIMITIVETYPE_Point2d:
+            return "point2d";
+        case PRIMITIVETYPE_Point3d:
+            return "point3d";
+        case PRIMITIVETYPE_String:
+            return "string";
+        default:
+            return "";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static PrimitiveType ParsePrimitiveType(Utf8String const& typeName)
+{
+    if (typeName.Equals("binary"))
+        return PRIMITIVETYPE_Binary;
+    else if (typeName.Equals("boolean"))
+        return PRIMITIVETYPE_Boolean;
+    else if (typeName.Equals("dateTime"))
+        return PRIMITIVETYPE_DateTime;
+    else if (typeName.Equals("double"))
+        return PRIMITIVETYPE_Double;
+    else if (typeName.Equals("int"))
+        return PRIMITIVETYPE_Integer;
+    else if (typeName.Equals("long"))
+        return PRIMITIVETYPE_Long;
+    else if (typeName.Equals("point2d"))
+        return PRIMITIVETYPE_Point2d;
+    else if (typeName.Equals("point3d"))
+        return PRIMITIVETYPE_Point3d;
+    else if (typeName.Equals("string"))
+        return PRIMITIVETYPE_String;
+    return 0;
+}
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document GetPoint2dJson(DPoint2dCR pt, rapidjson::MemoryPoolAllocator<>* allocator)
+    {
+    rapidjson::Document doc(allocator);
+    doc.SetObject();
+    doc.AddMember("x", pt.x, doc.GetAllocator());
+    doc.AddMember("y", pt.y, doc.GetAllocator());
+    return doc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document GetPoint3dJson(DPoint3dCR pt, rapidjson::MemoryPoolAllocator<>* allocator)
+    {
+    rapidjson::Document doc(allocator);
+    doc.SetObject();
+    doc.AddMember("x", pt.x, doc.GetAllocator());
+    doc.AddMember("y", pt.y, doc.GetAllocator());
+    doc.AddMember("z", pt.z, doc.GetAllocator());
+    return doc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document GetJsonFromECValue(ECValueCR ecValue, rapidjson::MemoryPoolAllocator<>* allocator)
+    {
+    rapidjson::Document doc(allocator);
+    if (ecValue.IsUninitialized() || ecValue.IsNull())
+        return doc;
+
+    if (ecValue.IsNavigation())
+    {
+        doc.SetString(ecValue.GetNavigationInfo().GetId<BeInt64Id>().ToHexStr().c_str(), doc.GetAllocator());
+        return doc;
+    }
+    switch (ecValue.GetPrimitiveType())
+    {
+    case PRIMITIVETYPE_Boolean:
+        doc.SetBool(ecValue.GetBoolean());
+        return doc;
+    case PRIMITIVETYPE_Binary:
+        return doc;
+    case PRIMITIVETYPE_DateTime:
+        doc.SetString(ecValue.GetDateTime().ToString().c_str(), doc.GetAllocator());
+        return doc;
+    case PRIMITIVETYPE_Double:
+        doc.SetDouble(ecValue.GetDouble());
+        return doc;
+    case PRIMITIVETYPE_Integer:
+        doc.SetInt(ecValue.GetInteger());
+        return doc;
+    case PRIMITIVETYPE_Long:
+        doc.SetString(BeInt64Id(ecValue.GetLong()).ToHexStr().c_str(), doc.GetAllocator());
+        return doc;
+    case PRIMITIVETYPE_String:
+        doc.SetString(ecValue.GetUtf8CP(), doc.GetAllocator());
+        return doc;
+    case PRIMITIVETYPE_Point2d:
+        return GetPoint2dJson(ecValue.GetPoint2d(), allocator);
+    case PRIMITIVETYPE_Point3d:
+        return GetPoint3dJson(ecValue.GetPoint3d(), allocator);
+    }
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)ecValue.GetPrimitiveType()));
+    return doc;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d GetPoint2dFromJson(RapidJsonValueCR json)
+    {
+    if (json.IsNull() || !json.IsObject())
+        return DPoint2d();
+    return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d GetPoint3dFromJson(RapidJsonValueCR json)
+    {
+    if (json.IsNull() || !json.IsObject())
+        return DPoint3d();
+    return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue GetECValueFromJson(PrimitiveType type, RapidJsonValueCR json)
+    {
+    ECValue value;
+    if (json.IsNull())
+    {
+        value.SetIsNull(true);
+        return value;
+    }
+
+    switch (type)
+    {
+    case PRIMITIVETYPE_Boolean:
+        value.SetBoolean(json.GetBool());
+        break;
+    case PRIMITIVETYPE_Binary:
+        break;
+    case PRIMITIVETYPE_DateTime:
+    {
+        DateTime dt;
+        if (json.IsDouble())
+            DateTime::FromJulianDay(dt, json.GetDouble(), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+        else
+            DateTime::FromString(dt, json.GetString());
+        value.SetDateTime(dt);
+        break;
+    }
+    case PRIMITIVETYPE_Double:
+        value.SetDouble(json.GetDouble());
+        break;
+    case PRIMITIVETYPE_Integer:
+        value.SetInteger(json.GetInt());
+        break;
+    case PRIMITIVETYPE_Long:
+        if (json.IsString())
+            value.SetLong(BeInt64Id::FromString(json.GetString()).GetValueUnchecked());
+        else
+            value.SetLong(json.GetInt64());
+        break;
+    case PRIMITIVETYPE_String:
+        value.SetUtf8CP(json.GetString());
+        break;
+    case PRIMITIVETYPE_Point2d:
+        value.SetPoint2d(GetPoint2dFromJson(json));
+        break;
+    case PRIMITIVETYPE_Point3d:
+        value.SetPoint3d(GetPoint3dFromJson(json));
+        break;
+    default:
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
+    }
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, BoundQueryValuesList const& boundQueryValuesList, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetArray();
+    auto boundQueryValueSerializer = IModelJsBoundQueryValueSerializer();
+    for (size_t i = 0; i < boundQueryValuesList.size(); ++i)
+    {
+        auto const& value = boundQueryValuesList.at(i);
+        json.PushBack(value->ToJson(boundQueryValueSerializer, &json.GetAllocator()), json.GetAllocator());
+    }
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, PresentationQueryBase const& presentationQueryBase, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("query", rapidjson::Value(presentationQueryBase.ToString().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("bindings", _AsJson(ctx, presentationQueryBase.GetBoundValues(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryECValue const& boundQueryECValue, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", "ECValue", json.GetAllocator());
+    json.AddMember("valueType", rapidjson::Value(GetECValueTypeName(boundQueryECValue.GetValue().GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", GetJsonFromECValue(boundQueryECValue.GetValue(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryId const& boundQueryId, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", "Id", json.GetAllocator());
+    json.AddMember("value", rapidjson::Value(boundQueryId.GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryIdSet const& boundQueryIdSet, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", "IdSet", json.GetAllocator());
+    rapidjson::Value idsJson;
+    idsJson.SetArray();
+    for (auto const& id : boundQueryIdSet.GetSet())
+        idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", idsJson, json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundECValueSet const& boundECValueSet, rapidjson::Document::AllocatorType* allocator) const
+    {
+    auto const& values = static_cast<ECValueVirtualSet const*>(boundECValueSet.GetSet().get())->GetValues();
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", "ValueSet", json.GetAllocator());
+    json.AddMember("valueType", rapidjson::Value(values.empty() ? 0 : GetECValueTypeName((*values.begin()).GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
+    rapidjson::Value valuesJson;
+    valuesJson.SetArray();
+    for (auto const& value : values)
+        valuesJson.PushBack(GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", valuesJson, json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundRapidJsonValueSet const& boundRapidJsonValueSet, rapidjson::Document::AllocatorType* allocator) const
+    {
+    auto const& set = static_cast<RapidJsonValueSet const&>(*boundRapidJsonValueSet.GetSet());
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", "ValueSet", json.GetAllocator());
+    json.AddMember("valueType", rapidjson::Value(GetECValueTypeName(set.GetValuesType()).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", rapidjson::Value(set.GetValuesJson(), json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(RapidJsonValueCR const& json)
+{
+    if (!json.IsObject() || !json.HasMember("type"))
+        return nullptr;
+
+    Utf8CP type = json["type"].GetString();
+    if (0 == strcmp("ECValue", type))
+    {
+        auto type = ParsePrimitiveType(json["valueType"].GetString());
+        if (type == 0)
+            return nullptr;
+        ECValue value = GetECValueFromJson(type, json["value"]);
+        return std::make_unique<BoundQueryECValue>(std::move(value));
+    }
+    if (0 == strcmp("ValueSet", type))
+    {
+        Utf8String valueType = json["valueType"].GetString();
+        if (valueType.empty())
+            return std::make_unique<BoundECValueSet>(bvector<ECValue>());
+        return std::make_unique<BoundRapidJsonValueSet>(json["value"], GetECValuePrimitiveType(valueType));
+    }
+    if (0 == strcmp("Id", type))
+    {
+        return std::make_unique<BoundQueryId>(json["value"].GetString());
+    }
+    if (0 == strcmp("IdSet", type))
+    {
+        RapidJsonValueCR idsJson = json["value"];
+        bvector<BeInt64Id> ids;
+        for (rapidjson::SizeType i = 0; i < idsJson.Size(); ++i)
+            ids.push_back(BeInt64Id::FromString(idsJson[i].GetString()));
+        return std::make_unique<BoundQueryIdSet>(ids);
+    }
+    return nullptr;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBasePtr IModelJsECPresentationSerializer::_GetPresentationQueryBaseFromJson(RapidJsonValueCR json) const
+{
+    RapidJsonValueCR queryJSON = json["instanceKeysSelectQuery"];
+    Utf8String queryString = queryJSON["query"].GetString();
+
+    BoundQueryValuesList bindings;
+    //auto serializer = IModelJsBoundQueryValueSerializer();
+    //IModelJsBoundQueryValueSerializer& thing = serializer;
+    bindings.FromJson(IModelJsBoundQueryValueSerializer(), queryJSON["bindings"]);
+    return StringPresentationQuery::Create(queryString, bindings);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
