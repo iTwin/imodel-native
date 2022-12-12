@@ -107,6 +107,7 @@
 
 #include "ECSql/ECSqlBinder.h"
 #include "ECSql/IdECSqlBinder.h"
+#include "ECSql/IdSetBinder.h"
 #include "ECSql/NavigationPropertyECSqlBinder.h"
 #include "ECSql/PointECSqlBinder.h"
 #include "ECSql/PrimitiveECSqlBinder.h"

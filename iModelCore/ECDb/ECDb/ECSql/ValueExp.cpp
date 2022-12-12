@@ -812,7 +812,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         ValueExp* argExp = GetChildP<ValueExp>(0);
         ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
-        if (typeKind != ECSqlTypeInfo::Kind::Unset)
+        if (typeKind != ECSqlTypeInfo::Kind::Unset && !argExp->GetTypeInfo().IsNull())
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function '%s' can only be called with unset argument type. First argument is not unset.",
                                           m_functionName.c_str());
