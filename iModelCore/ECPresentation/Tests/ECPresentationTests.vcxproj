@@ -25,6 +25,7 @@
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesWithRulesetVariablesTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_InstanceFiltering.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\PagingTests.cpp" />
     <ClCompile Include="NonPublished\Integration\PresentationManagerIntegrationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\TaskDiagnosticsTests.cpp" />

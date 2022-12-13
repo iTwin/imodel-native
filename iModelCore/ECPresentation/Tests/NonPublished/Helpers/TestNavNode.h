@@ -61,38 +61,38 @@ public:
         }
     NavNodePtr CreateECClassGroupingNode(NavNodeKeyCP parentKey, ECClassCR ecClass, bool isPolymorphic, Utf8CP label, uint64_t groupedInstancesCount) const
         {
-        NavNodePtr node = NavNodesFactory::CreateECClassGroupingNode(m_connection, m_specificationIdentifier, parentKey, ecClass, isPolymorphic, *LabelDefinition::Create(label), groupedInstancesCount);
+        NavNodePtr node = NavNodesFactory::CreateECClassGroupingNode(m_connection, m_specificationIdentifier, parentKey, ecClass, isPolymorphic, *LabelDefinition::Create(label), groupedInstancesCount, nullptr);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     NavNodePtr CreateECRelationshipGroupingNode(NavNodeKeyCP parentKey, ECRelationshipClassCR ecRel, Utf8CP label, uint64_t groupedInstancesCount) const
         {
-        NavNodePtr node = NavNodesFactory::CreateECRelationshipGroupingNode(m_connection, m_specificationIdentifier, parentKey, ecRel, *LabelDefinition::Create(label), groupedInstancesCount);
+        NavNodePtr node = NavNodesFactory::CreateECRelationshipGroupingNode(m_connection, m_specificationIdentifier, parentKey, ecRel, *LabelDefinition::Create(label), groupedInstancesCount, nullptr);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     NavNodePtr CreateECPropertyGroupingNode(NavNodeKeyCP parentKey, ECClassCR ecClass, ECPropertyCR ecProp, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, uint64_t groupedInstancesCount) const
         {
-        NavNodePtr node = NavNodesFactory::CreateECPropertyGroupingNode(m_connection, m_specificationIdentifier, parentKey, ecClass, ecProp, *LabelDefinition::Create(label), imageId, groupingValue, isRangeGrouping, groupedInstancesCount);
+        NavNodePtr node = NavNodesFactory::CreateECPropertyGroupingNode(m_connection, m_specificationIdentifier, parentKey, ecClass, ecProp, *LabelDefinition::Create(label), imageId, groupingValue, isRangeGrouping, groupedInstancesCount, nullptr);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     NavNodePtr CreateECPropertyGroupingNode(NavNodeKeyCP parentKey, ECClassCR ecClass, ECPropertyCR ecProp, Utf8CP label, Utf8CP imageId, bvector<ECValue> const& groupingValues, bool isRangeGrouping, uint64_t groupedInstancesCount) const;
     NavNodePtr CreateDisplayLabelGroupingNode(NavNodeKeyCP parentKey, Utf8CP label, uint64_t groupedInstancesCount) const
         {
-        NavNodePtr node = NavNodesFactory::CreateDisplayLabelGroupingNode(m_connection, m_specificationIdentifier, parentKey, *LabelDefinition::Create(label), groupedInstancesCount);
+        NavNodePtr node = NavNodesFactory::CreateDisplayLabelGroupingNode(m_connection, m_specificationIdentifier, parentKey, *LabelDefinition::Create(label), groupedInstancesCount, nullptr);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     NavNodePtr CreateDisplayLabelGroupingNode(NavNodeKeyCP parentKey, Utf8CP label, uint64_t groupedInstancesCount, bvector<ECInstanceKey> groupedInstanceKeys) const
         {
-        NavNodePtr node = NavNodesFactory::CreateDisplayLabelGroupingNode(m_connection, m_specificationIdentifier, parentKey, *LabelDefinition::Create(label), groupedInstancesCount, std::make_unique<bvector<ECInstanceKey>>(groupedInstanceKeys));
+        NavNodePtr node = NavNodesFactory::CreateDisplayLabelGroupingNode(m_connection, m_specificationIdentifier, parentKey, *LabelDefinition::Create(label), groupedInstancesCount, nullptr, std::make_unique<bvector<ECInstanceKey>>(groupedInstanceKeys));
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     NavNodePtr CreateCustomNode(NavNodeKeyCP parentKey, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
         {
-        NavNodePtr node = NavNodesFactory::CreateCustomNode(m_connection, m_specificationIdentifier, parentKey, *LabelDefinition::Create(label), description, imageId, type);
+        NavNodePtr node = NavNodesFactory::CreateCustomNode(m_connection, m_specificationIdentifier, parentKey, *LabelDefinition::Create(label), description, imageId, type, nullptr);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }

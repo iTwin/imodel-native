@@ -186,7 +186,6 @@ public:
     static GroupSpecificationCP GetActiveGroupingSpecification(GroupingRuleCR, IJsonLocalState const*);
 
     static QueryClauseAndBindings CreatePropertyGroupFilteringClause(ECPropertyCR ecProperty, Utf8StringCR propertyValueSelector, PropertyGroupCR groupingSpecification, RapidJsonValueCR groupingValues);
-    static QueryClauseAndBindings CreatePropertyGroupFilteringClause(ECPropertyCR ecProperty, Utf8StringCR propertyValueSelector, PropertyGroupCR groupingSpecification, NavNodeCR filteringNode);
 
     static void CollectRelatedClassPathAliases(bset<Utf8String>& aliases, bvector<RelatedClass> const& classes);
     static void CollectRelatedClassPathAliases(bset<Utf8String>& aliases, bvector<RelatedClassPath> const& relatedPaths);

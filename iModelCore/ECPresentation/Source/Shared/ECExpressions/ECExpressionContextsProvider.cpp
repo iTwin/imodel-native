@@ -453,24 +453,23 @@ private:
     Utf8String m_rulesetId;
     INavNodeLocaterCP m_locater;
     NavNodeKeyCP m_key;
-    RulesetVariables const& m_variables;
     SymbolExpressionContextPtr m_context;
     INodeLabelCalculator const& m_nodeLabelCalculator;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key, RulesetVariables const& variables, INodeLabelCalculator const& nodeLabelCalculator)
-        : m_rootContext(rootContext), m_connection(connection), m_rulesetId(rulesetId), m_locater(locater), m_key(key), m_context(nullptr), m_variables(variables), m_nodeLabelCalculator(nodeLabelCalculator)
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key, INodeLabelCalculator const& nodeLabelCalculator)
+        : m_rootContext(rootContext), m_connection(connection), m_rulesetId(rulesetId), m_locater(locater), m_key(key), m_context(nullptr), m_nodeLabelCalculator(nodeLabelCalculator)
         {}
 public:
     static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection,
-        Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key, RulesetVariables const& variables, INodeLabelCalculator const& nodeLabelCalculator)
+        Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key,  INodeLabelCalculator const& nodeLabelCalculator)
         {
-        return new NodeContextEvaluator(rootContext, connection, rulesetId, locater, key, variables, nodeLabelCalculator);
+        return new NodeContextEvaluator(rootContext, connection, rulesetId, locater, key, nodeLabelCalculator);
         }
     virtual ExpressionContextPtr _GetContext() override
         {
         if (m_context.IsValid())
             return m_context;
 
-        NavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_rulesetId, *m_key, m_variables) : nullptr;
+        NavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_rulesetId, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstancesNodeKey const* instancesNodeKey = m_key->AsECInstanceNodeKey();
@@ -875,7 +874,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
 
     // SelectedNode
     rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(), params.GetRulesetId(),
-    params.GetNodeLocater(), params.GetSelectedNodeKey(), params.GetRulesetVariables(), params.GetNodeLabelCalculator())));
+        params.GetNodeLocater(), params.GetSelectedNodeKey(), params.GetNodeLabelCalculator())));
 
     // Content-specific
     rootCtx->GetSymbolsContext().AddSymbol(*ValueSymbol::Create("ContentDisplayType", ECValue(params.GetContentDisplayType().c_str())));

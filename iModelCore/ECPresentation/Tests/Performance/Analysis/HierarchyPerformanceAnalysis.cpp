@@ -92,7 +92,7 @@ static void LogDepthLimitReachCount(PresentationManagerTestsHelper::HierarchyDep
     int count = depthLimiter.GetDepthLimitReachCount();
     if (count == 0)
         return;
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Depth limit reach count - %d", count);
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Depth limit reach count - %d", count);
     depthLimiter.ResetDepthLimitReachCount();
     }
 
@@ -112,7 +112,7 @@ TEST_F(HierarchyPerformanceAnalysis, Run)
         createFullHierarchyTime.Stop();
         reporter.Record(REPORT_FIELD_TimeToLoadAllHierarchy, createFullHierarchyTime.GetElapsed().ToSeconds());
         reporter.Record(REPORT_FIELD_TotalNodesCount, Json::Value((uint64_t)totalNodesCount));
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Loaded all hierarchy with %" PRIu64 " nodes in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
         LogDepthLimitReachCount(depthLimiter);
 
         // Reset presentation manager so we don't have anything cached
@@ -129,7 +129,7 @@ TEST_F(HierarchyPerformanceAnalysis, Run)
         createFullHierarchyTime.Stop();
         metricsColdCache.ReportTotalTime(createFullHierarchyTime.GetElapsed());
         metricsColdCache.Save(reporter);
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with cold cache in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with cold cache in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
         LogDepthLimitReachCount(depthLimiter);
 
         // now load all hierarchy in pages again (warm cache)
@@ -143,7 +143,7 @@ TEST_F(HierarchyPerformanceAnalysis, Run)
         createFullHierarchyTime.Stop();
         metricsWarmCache.ReportTotalTime(createFullHierarchyTime.GetElapsed());
         metricsWarmCache.Save(reporter);
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with warm cache in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with warm cache in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
         LogDepthLimitReachCount(depthLimiter);
         });
     }

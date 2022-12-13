@@ -286,9 +286,9 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, std:
             // first, look for label override
             NavNodePtr thisNode;
             if (ecClass->IsRelationshipClass())
-                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetConnection(), "", nullptr, *ecClass->GetRelationshipClassCP(), *LabelDefinition::Create(), args[1].GetValueInt64());
+                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetConnection(), "", nullptr, *ecClass->GetRelationshipClassCP(), *LabelDefinition::Create(), args[1].GetValueInt64(), nullptr);
             else
-                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetConnection(), "", nullptr, *ecClass, false, *LabelDefinition::Create(), args[1].GetValueInt64());
+                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetConnection(), "", nullptr, *ecClass, false, *LabelDefinition::Create(), args[1].GetValueInt64(), nullptr);
 
             ProcessLabelOverride(labelDefinition, GetContext(), *thisNode);
 
@@ -500,7 +500,7 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
 
             // first, look for label override
             NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection(), "", nullptr,
-                *ecClass, *ecProperty, *LabelDefinition::Create(), nullptr, rapidjson::Value(rapidjson::kArrayType), false, groupedInstancesCount);
+                *ecClass, *ecProperty, *LabelDefinition::Create(), nullptr, rapidjson::Value(rapidjson::kArrayType), false, groupedInstancesCount, nullptr);
 
             ProcessLabelOverride(labelDefinition, GetContext(), *thisNode);
 

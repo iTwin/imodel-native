@@ -206,10 +206,12 @@ protected:
         std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys;
         if (groupedInstancesCount <= MAX_LABEL_GROUPED_INSTANCE_KEYS)
             groupedInstanceKeys = std::make_unique<bvector<ECInstanceKey>>(ParseInstanceKeys(statement, GetContract(), Contract::GroupedInstanceKeysFieldName));
-        NavNodePtr node = GetFactory().CreateDisplayLabelGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *labelDefinition, groupedInstancesCount, std::move(groupedInstanceKeys));
+        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(*labelDefinition);
+        NavNodePtr node = GetFactory().CreateDisplayLabelGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *labelDefinition,
+            groupedInstancesCount, instanceKeysSelectQuery.get(), std::move(groupedInstanceKeys));
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(GetContract().CreateInstanceKeysSelectQuery(*labelDefinition));
+            node->SetInstanceKeysSelectQuery(instanceKeysSelectQuery);
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif
@@ -246,10 +248,12 @@ protected:
         bool isPolymorphic = statement.GetValueBoolean(GetContract().GetIndex(Contract::IsClassPolymorphicFieldName));
         Utf8CP specificationIdentifier = statement.GetValueText(GetContract().GetIndex(Contract::SpecificationIdentifierFieldName));
         uint64_t groupedInstancesCount = statement.GetValueUInt64(GetContract().GetIndex(Contract::GroupedInstancesCountFieldName));
-        NavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *ecClass, isPolymorphic, *LabelDefinition::FromString(displayLabel), groupedInstancesCount);
+        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(*ecClass, isPolymorphic);
+        NavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *ecClass, isPolymorphic, *LabelDefinition::FromString(displayLabel),
+            groupedInstancesCount, instanceKeysSelectQuery.get());
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(GetContract().CreateInstanceKeysSelectQuery(*ecClass, isPolymorphic));
+            node->SetInstanceKeysSelectQuery(instanceKeysSelectQuery);
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif
@@ -305,10 +309,12 @@ protected:
         Utf8CP imageId = statement.GetValueText(GetContract().GetIndex(Contract::ImageIdFieldName));
         Utf8CP specificationIdentifier = statement.GetValueText(GetContract().GetIndex(Contract::SpecificationIdentifierFieldName));
         uint64_t groupedInstancesCount = statement.GetValueUInt64(GetContract().GetIndex(Contract::GroupedInstancesCountFieldName));
-        NavNodePtr node = GetFactory().CreateECPropertyGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *ecClass, *ecProperty, *LabelDefinition::FromString(displayLabel), imageId, groupingValues, isRangeGroupingNode, groupedInstancesCount);
+        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(groupingValues);
+        NavNodePtr node = GetFactory().CreateECPropertyGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *ecClass, *ecProperty, *LabelDefinition::FromString(displayLabel), imageId, groupingValues, isRangeGroupingNode,
+            groupedInstancesCount, instanceKeysSelectQuery.get());
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(GetContract().CreateInstanceKeysSelectQuery(*node));
+            node->SetInstanceKeysSelectQuery(instanceKeysSelectQuery);
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif

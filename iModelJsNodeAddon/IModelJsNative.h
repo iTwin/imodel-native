@@ -361,31 +361,6 @@ struct JsInterop {
         bool m_needsVectorExceptionHandler;
         };
 
-    // An indirect reference to an ObjectReference. Keeps the ObjectReference alive. Can be redeemed.
-    //  only on the main thread. Can be copied on other threads.
-    struct ObjectReferenceClaimCheck
-        {
-        private:
-        friend struct JsInterop;
-
-        Utf8String m_id;
-
-        explicit ObjectReferenceClaimCheck(std::string const&);
-
-        public:
-        ObjectReferenceClaimCheck();
-        ~ObjectReferenceClaimCheck();
-        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck const&);
-        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck&&);
-        ObjectReferenceClaimCheck& operator=(ObjectReferenceClaimCheck const&);
-
-        bool operator<(ObjectReferenceClaimCheck const&) const;
-
-        Utf8StringCR GetId() const {return m_id;}
-
-        void Dispose();
-        };
-
     BE_JSON_NAME(accessName)
     BE_JSON_NAME(accessToken)
     BE_JSON_NAME(alias)

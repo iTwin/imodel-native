@@ -95,8 +95,6 @@ public:
     void SetTaskStartCallback(std::function<void()> cb) {m_taskStartCallback = cb;}
 };
 typedef WithAsyncTaskParams<HierarchyRequestParams> AsyncHierarchyRequestParams;
-typedef WithAsyncTaskParams<NodeByKeyRequestParams> AsyncNodeByKeyRequestParams;
-typedef WithAsyncTaskParams<NodeParentRequestParams> AsyncNodeParentRequestParams;
 typedef WithAsyncTaskParams<NodePathFromInstanceKeyPathRequestParams> AsyncNodePathFromInstanceKeyPathRequestParams;
 typedef WithAsyncTaskParams<NodePathsFromInstanceKeyPathsRequestParams> AsyncNodePathsFromInstanceKeyPathsRequestParams;
 typedef WithAsyncTaskParams<NodePathsFromFilterTextRequestParams> AsyncNodePathsFromFilterTextRequestParams;
@@ -313,7 +311,7 @@ private:
     ECPresentationTasksManager* m_tasksManager;
 
 private:
-    Utf8CP GetConnectionId(ECDbCR) const;
+    IConnectionCR GetConnection(ECDbCR) const;
     IConnectionCR GetConnection(Utf8CP) const;
 
 public:
@@ -359,12 +357,6 @@ public:
 
     //! Retrieves the number of root nodes.
     ECPRESENTATION_EXPORT folly::Future<NodesCountResponse> GetNodesCount(AsyncHierarchyRequestParams const&);
-
-    //! Retrieves the parent node of the specified node.
-    ECPRESENTATION_EXPORT folly::Future<NodeResponse> GetParent(AsyncNodeParentRequestParams const&);
-
-    //! Retrieves the node with the specified node key.
-    ECPRESENTATION_EXPORT folly::Future<NodeResponse> GetNode(AsyncNodeByKeyRequestParams const&);
 
     //! Returns node paths from the provided node key paths.
     ECPRESENTATION_EXPORT folly::Future<NodePathsResponse> GetNodePaths(AsyncNodePathsFromInstanceKeyPathsRequestParams const&);
