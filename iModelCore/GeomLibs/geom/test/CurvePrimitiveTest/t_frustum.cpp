@@ -253,7 +253,7 @@ TEST(ConvexHull, PolarCircles)
             Check::Shift(20, 0, 0);
             }
         char filename[1024];
-        sprintf(filename, "ConvexHull.PolarCircles%d", i);
+        snprintf(filename, sizeof(filename), "ConvexHull.PolarCircles%d", i);
         Check::ClearGeometry(filename);
         }
     }

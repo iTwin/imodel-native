@@ -14,7 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueDataSource const& issueReporter, bvector<ECN::ECSchemaCP> const& schemas)
     {
-    PERFLOG_START("ECDb", "Schema Validation");
+    ECDB_PERF_LOG_SCOPE("Schema Validation");
+
     bool valid = true;
 
     NoUnitsInEC31SchemaRule noUnitsInEC31SchemaRule;
@@ -50,7 +51,6 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueDataSource 
             }
         }
 
-    PERFLOG_FINISH("ECDb", "Schema Validation");
     return valid;
     }
 
@@ -99,7 +99,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
                 //in legacy mode we log all issues as warning, so do not return on first issue
                 LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
                              ecClass.GetFullName());
-                continue; 
+                continue;
                 }
 
             issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECClass '%s' has invalid base class: An abstract class must not have a non-abstract base class.",

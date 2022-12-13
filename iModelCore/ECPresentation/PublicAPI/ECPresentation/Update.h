@@ -182,13 +182,14 @@ struct HierarchyUpdateRecord
 private:
     Utf8String m_dbFileName;
     Utf8String m_rulesetId;
+    Utf8String m_instanceFilter;
     NavNodeCPtr m_parentNode;
     size_t m_nodesCount;
     bvector<ExpandedNode> m_expandedNodes;
 
 public:
-    HierarchyUpdateRecord(Utf8String rulesetId, Utf8String ecdbFileName, NavNodeCP parentNode, size_t nodesCount, bvector<ExpandedNode> expandedNodes = bvector<ExpandedNode>())
-        : m_rulesetId(std::move(rulesetId)), m_dbFileName(std::move(ecdbFileName)), m_parentNode(parentNode), m_nodesCount(nodesCount), m_expandedNodes(std::move(expandedNodes))
+    HierarchyUpdateRecord(Utf8String rulesetId, Utf8String ecdbFileName, NavNodeCP parentNode, Utf8String instanceFilter, size_t nodesCount, bvector<ExpandedNode> expandedNodes = bvector<ExpandedNode>())
+        : m_rulesetId(std::move(rulesetId)), m_dbFileName(std::move(ecdbFileName)), m_parentNode(parentNode), m_instanceFilter(instanceFilter), m_nodesCount(nodesCount), m_expandedNodes(expandedNodes)
         {}
 
     //! Get ID of the ruleset that was used to produce the hierarchy
@@ -199,6 +200,9 @@ public:
 
     //! Get parent node of updated hierarchy part
     NavNodeCPtr GetParentNode() const {return m_parentNode;}
+
+    //! Get instance filter that was applied for this hierarchy level
+    Utf8StringCR GetInstanceFilter() const { return m_instanceFilter; }
 
     //! Get nodes count in hierarchy level after update
     size_t GetNodesCount() const {return m_nodesCount;}

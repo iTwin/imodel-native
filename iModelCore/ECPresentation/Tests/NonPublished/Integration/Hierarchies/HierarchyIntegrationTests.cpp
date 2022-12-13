@@ -42,8 +42,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_NotGro
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // expect two nodes
@@ -82,8 +82,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 class grouping nodes
@@ -97,7 +97,6 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
         );
     ASSERT_EQ(1, classANodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, classANodes[0]->GetType().c_str());
-    ASSERT_EQ(nodes[0]->GetNodeId(), classANodes[0]->GetParentNodeId());
     VerifyNodeInstance(*classANodes[0], *instanceA);
 
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[1]->GetType().c_str());
@@ -108,7 +107,6 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
         );
     ASSERT_EQ(1, classBNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, classBNodes[0]->GetType().c_str());
-    ASSERT_EQ(nodes[1]->GetNodeId(), classBNodes[0]->GetParentNodeId());
     VerifyNodeInstance(*classBNodes[0], *instanceB);
     }
 
@@ -135,8 +133,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_AlwaysR
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -174,8 +172,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_DoNotSo
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -213,8 +211,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -250,8 +248,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -288,8 +286,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideNod
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -334,8 +332,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ParentIdSpecifiedUsingHe
 
     // request for root nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
     );
 
     // make sure we have one root node
@@ -379,8 +377,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ECInstanceIdSpecifiedUsi
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
     );
 
     // make sure we get correct node
@@ -413,8 +411,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideExp
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -446,8 +444,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideExp
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -480,8 +478,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -524,8 +522,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -583,8 +581,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     // request for nodes
     DataContainer<NavNodeCPtr> labelGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 label grouping nodes
@@ -649,8 +647,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RemovesLabelGroupingNod
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have one instance node and one display label grouping node
@@ -690,8 +688,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AlwaysReturnsResultsFla
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure the parent node has the "always returns results" flag
@@ -730,8 +728,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure the node was hidden
@@ -771,8 +769,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure the node was not hidden
@@ -802,8 +800,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Ignore
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure the node was not hidden
@@ -843,8 +841,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Re
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we get instance A, not instance B
@@ -885,8 +883,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Re
 
     // request for root nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // expect 1 B node
@@ -947,8 +945,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Wit
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(nullptr != rootNodes[0]->GetKey()->AsECClassGroupingNodeKey());
@@ -978,8 +976,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_Type_Label_D
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1010,8 +1008,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -1033,8 +1031,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -1056,8 +1054,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -1079,8 +1077,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -1102,8 +1100,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideExpressi
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -1125,8 +1123,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideExpressi
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -1155,11 +1153,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_AlwaysReturn
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    ASSERT_EQ(1, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr))));
+    ASSERT_EQ(1, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()))));
 
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, nodes.GetSize());
 
@@ -1200,8 +1198,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_ReturnsCorre
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1239,8 +1237,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_ReturnNodesO
 
     // make sure we have 1 T_ROOT node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("T_ROOT", rootNodes[0]->GetType().c_str());
@@ -1280,12 +1278,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_CustomizesLa
     rules->AddPresentationRule(*new LabelOverride("ThisNode.Type = \"root\"", 1, "\"custom label\"", ""));
 
     // first, request the count
-    EXPECT_EQ(1, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr))));
+    EXPECT_EQ(1, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()))));
 
     // then verify the label is customized
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("root", rootNodes[0]->GetType().c_str());
@@ -1315,8 +1313,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1355,8 +1353,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1389,8 +1387,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -1426,8 +1424,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1460,8 +1458,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecific
 
     // request for nodes
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 class grouping nodes
@@ -1496,8 +1494,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1539,8 +1537,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -1600,8 +1598,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> labelGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 label grouping nodes
@@ -1666,8 +1664,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 class grouping nodes
@@ -1738,8 +1736,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 class grouping nodes
@@ -1806,8 +1804,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -1851,8 +1849,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -1888,8 +1886,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1922,8 +1920,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -1963,8 +1961,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -2017,8 +2015,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -2077,8 +2075,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 B node
@@ -2144,8 +2142,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
      // make sure we have 1 A node
@@ -2206,8 +2204,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A node
@@ -2270,8 +2268,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A node
@@ -2328,8 +2326,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInsta
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A node
@@ -2394,7 +2392,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     rules->AddPresentationRule(*rootRule);
 
     // verify
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     ASSERT_EQ(2, rootNodes.GetSize());
     VerifyNodeInstances(*rootNodes[0], { a });
@@ -2460,8 +2458,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Gro
 
     // verify
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a);
@@ -2559,8 +2557,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request & validate
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(3, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *b);
@@ -2656,8 +2654,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
 
     // request & validate
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(3, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *b);
@@ -2741,8 +2739,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classBNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 B node
@@ -2822,8 +2820,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classBNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 B node
@@ -2909,8 +2907,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classBNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 B node
@@ -2979,8 +2977,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
     // validate
 
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3044,8 +3042,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
     // validate
 
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3114,8 +3112,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
     // validate
 
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3198,8 +3196,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
     // validate
 
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3294,8 +3292,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
     // validate
 
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3387,8 +3385,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
     // validate
 
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3476,8 +3474,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
     // validate
 
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3549,8 +3547,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
      // make sure we have 1 A node
@@ -3626,8 +3624,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
      // make sure we have 1 A root node
@@ -3712,8 +3710,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A root node
@@ -3792,8 +3790,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Ret
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A root node
@@ -3865,8 +3863,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 B node
@@ -3929,8 +3927,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
@@ -4004,8 +4002,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classBNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 B node
@@ -4113,8 +4111,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> classBNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 B node
@@ -4240,8 +4238,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -4324,8 +4322,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *model);
@@ -4410,8 +4408,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *model);
@@ -4454,8 +4452,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
 
     // request for nodes
     DataContainer<NavNodeCPtr> classANodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 instance node
@@ -4494,8 +4492,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 0 nodes
@@ -4525,8 +4523,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 class grouping node
@@ -4557,8 +4555,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 instance node
@@ -4602,8 +4600,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -4661,8 +4659,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 label grouping nodes
@@ -4717,8 +4715,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Do
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -4753,8 +4751,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ImageIdOverride)
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node with overriden ImageId
@@ -4806,8 +4804,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, UsesRelatedInstanceInIma
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node with overriden ImageId
@@ -4835,8 +4833,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride)
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node with overrided Label & Description
@@ -4878,8 +4876,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // verify there're two grouping nodes with correct labels
@@ -4929,8 +4927,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // verify there're three grouping nodes with correct labels
@@ -4982,8 +4980,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // verify there're three grouping nodes with correct labels
@@ -5014,8 +5012,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, StyleOverride)
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node with overrided BackColor, ForeColor & FontStyle
@@ -5062,8 +5060,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesDefault
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -5100,8 +5098,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_WithoutProp
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node
@@ -5156,8 +5154,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInverse
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -5219,8 +5217,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_DoesNotUseI
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );;
 
     // make sure we have 2 nodes
@@ -5269,8 +5267,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 3 nodes sorted ascending
@@ -5312,8 +5310,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 3 nodes sorted ascending
@@ -5355,8 +5353,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 node sorted descending
@@ -5398,8 +5396,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Hierarchy_SortingRule_Do
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 3 unsorted nodes
@@ -5447,8 +5445,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DisableDeriv
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     ASSERT_EQ(6, nodes.GetSize());
@@ -5496,8 +5494,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DisableSorti
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     ASSERT_EQ(6, nodes.GetSize());
@@ -5547,8 +5545,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 4 sorted ascending nodes
@@ -5614,8 +5612,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByTwo
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 3 nodes sorted ascending by IntProperty & descending by DoubleProperty
@@ -5666,8 +5664,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByEnu
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes sorted correctly by enum display value
@@ -5709,8 +5707,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortsLargeNumbersOfNodes
 
     //make sure we have all nodes in correct order
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(instancesCount, rootNodes.GetSize());
     for (size_t i = 0; i < instancesCount; ++i)
@@ -5753,8 +5751,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 class grouping node
@@ -5810,13 +5808,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 3 nodes: 1 class grouping node and 2 instance nodes
     ASSERT_EQ(3, nodes.GetSize());
-    VerifyClassGroupingNode(*nodes[0], { instanceB }, classB, true);
+    VerifyClassGroupingNode(*nodes[0], "", { instanceB }, classB, true);
     VerifyNodeInstance(*nodes[1], *instanceA);
     VerifyNodeInstance(*nodes[2], *instanceC);
 
@@ -5865,13 +5863,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 3 nodes: 1 class grouping node and 2 instance nodes
     ASSERT_EQ(3, nodes.GetSize());
-    VerifyClassGroupingNode(*nodes[0], { instanceB }, classA, true);
+    VerifyClassGroupingNode(*nodes[0], "", { instanceB }, classA, true);
     VerifyNodeInstance(*nodes[1], *instanceA);
     VerifyNodeInstance(*nodes[2], *instanceC);
 
@@ -5882,6 +5880,51 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
         );
     ASSERT_EQ(1, bNodes.GetSize());
     VerifyNodeInstance(*bNodes[0], *instanceB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_ClassGroup_GroupsDerivedInstancesByBaseClassWhenThereAreInstancesOfDifferentDerivedClass, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_GroupsDerivedInstancesByBaseClassWhenThereAreInstancesOfDifferentDerivedClass)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRuleP rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classB->GetFullName(), true));
+    rules->AddPresentationRule(*rule);
+
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    groupingRule->AddGroup(*new ClassGroup("", true, "", ""));
+    rules->AddPresentationRule(*groupingRule);
+
+    // validate hierarchy
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classA, true, { instanceB }),
+            {
+            CreateInstanceNodeValidator({ instanceB }),
+            }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5916,8 +5959,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 Derived node
@@ -5958,8 +6001,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 class grouping node
@@ -6020,14 +6063,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 class grouping nodes - A and B
     ASSERT_EQ(2, nodes.GetSize());
-    VerifyClassGroupingNode(*nodes[0], { instanceC }, classA, true);
-    VerifyClassGroupingNode(*nodes[1], { instanceC }, classB, true);
+    VerifyClassGroupingNode(*nodes[0], "", { instanceC }, classA, true);
+    VerifyClassGroupingNode(*nodes[1], "", { instanceC }, classB, true);
 
     // make sure the class grouping nodes have correct children
     DataContainer<NavNodeCPtr> aNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -6074,8 +6117,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A node
@@ -6112,13 +6155,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], { instance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance }, { ECValue() });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6150,13 +6193,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 instance property grouping node with changed ImageId
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], { instance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance }, { ECValue() });
     EXPECT_STREQ("changedImageId", nodes[0]->GetImageId().c_str());
     }
 
@@ -6194,13 +6237,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], { baseInstance, derivedInstance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], "", { baseInstance, derivedInstance }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6245,13 +6288,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], { instance1, instance2 }, { ECValue(), ECValue("") });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance1, instance2 }, { ECValue(), ECValue("") });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6326,13 +6369,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], { classBInstance, classCInstance }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*classAInstance).GetId()) });
+    VerifyPropertyGroupingNode(*nodes[0], "", { classBInstance, classCInstance }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*classAInstance).GetId()) });
     ASSERT_STREQ("InstanceA", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6341,7 +6384,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nodes[0].get())).get(); }
         );
     ASSERT_EQ(2, bChildren.GetSize());
-    VerifyPropertyGroupingNode(*bChildren[0], { classCInstance }, { ECValue() });
+    VerifyPropertyGroupingNode(*bChildren[0], "", { classCInstance }, { ECValue() });
     VerifyNodeInstance(*bChildren[1], *classBInstance);
 
     // make sure the property grouping node has 1 child
@@ -6383,13 +6426,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], { instance1, instance2 }, { ECValue("My Value") });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance1, instance2 }, { ECValue("My Value") });
     ASSERT_STREQ("My Value", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6439,17 +6482,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 property grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], { instance1 }, { ECValue(3) });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance1 }, { ECValue(3) });
     ASSERT_STREQ("A", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], { instance2 }, { ECValue(1) });
+    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue(1) });
     ASSERT_STREQ("Z", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6487,17 +6530,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 property grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], { instance1 }, { ECValue("Three") });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance1 }, { ECValue("Three") });
     ASSERT_STREQ("1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], { instance2 }, { ECValue("One") });
+    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue("One") });
     ASSERT_STREQ("3", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6547,13 +6590,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], { instance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6603,8 +6646,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // expect 1 A node
@@ -6617,7 +6660,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], { instanceB }, { ECValue(5) });
+    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue(5) });
     ASSERT_STREQ("5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6691,8 +6734,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // expect 1 ClassS node
@@ -6707,7 +6750,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // expect 1 child property grouping node with label of instanceC
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], { instanceB }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceC).GetId()) });
+    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceC).GetId()) });
     EXPECT_STREQ("Label 3", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // request for grandchildren
@@ -6780,8 +6823,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // expect 1 A node
@@ -6796,7 +6839,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // expect 1 child property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], { instanceC }, { ECValue(5) });
+    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceC }, { ECValue(5) });
     ASSERT_STREQ("5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6863,8 +6906,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // expect 1 A node
@@ -6877,7 +6920,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes1.GetSize());
-    VerifyPropertyGroupingNode(*childNodes1[0], { instanceC, instanceD }, { ECValue(5) });
+    VerifyPropertyGroupingNode(*childNodes1[0], "", { instanceC, instanceD }, { ECValue(5) });
     ASSERT_STREQ("5", childNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 child instance nodes under the grouping node
@@ -6927,26 +6970,26 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // Act
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // Assert
     ASSERT_EQ(5, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], { instance3 }, { ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[2], "", { instance3 }, { ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], { instance1 }, { ECValue(-0.1) });
+    VerifyPropertyGroupingNode(*nodes[3], "", { instance1 }, { ECValue(-0.1) });
     EXPECT_STREQ("-0.10", nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[4], { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[4], "", { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[4]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6984,25 +7027,25 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     ASSERT_EQ(5, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], { instance3 }, { ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[1], "", { instance3 }, { ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], { instance1 }, { ECValue(-0.1) });
+    VerifyPropertyGroupingNode(*nodes[2], "", { instance1 }, { ECValue(-0.1) });
     EXPECT_STREQ("-0.10", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[3], "", { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[4], { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[4], "", { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[4]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -7040,22 +7083,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     ASSERT_EQ(4, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[1], "", { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[2], "", { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[3], "", { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -7093,22 +7136,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     ASSERT_EQ(4, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], "", { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[2], "", { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[3], "", { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -7136,8 +7179,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_R
     m_locater->AddRuleSet(*rules);
 
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(0, nodes.GetSize());
     }
@@ -7179,8 +7222,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 3 instance nodes, one of them is merged
@@ -7226,8 +7269,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_InstanceLabelOv
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 A instance node
@@ -7287,8 +7330,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstances(*rootNodes[0], {a1, a2});
@@ -7356,8 +7399,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstances(*rootNodes[0], {a1, a2});
@@ -7492,8 +7535,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(6, rootNodes.GetSize());
 
@@ -7595,8 +7638,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(4, rootNodes.GetSize());
     EXPECT_STREQ("m", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -7680,8 +7723,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(4, rootNodes.GetSize());
     EXPECT_STREQ("b1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -7729,8 +7772,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
@@ -7779,8 +7822,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstances(*rootNodes[0], {a});
@@ -7862,8 +7905,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("T_ROOT", rootNodes[0]->GetType().c_str());
@@ -7921,8 +7964,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("a", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -7964,13 +8007,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(7) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(7) }
     EXPECT_STREQ(CommonStrings::RULESENGINE_OTHER, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8016,13 +8059,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8068,13 +8111,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4.5) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4.5) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8120,13 +8163,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue((int64_t)4) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue((int64_t)4) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8172,13 +8215,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(DateTime(2017, 5, 30)) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(DateTime(2017, 5, 30)) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8242,8 +8285,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // expect 1 instanceB node
@@ -8258,7 +8301,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*childNodes[0], { instanceA }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
+    VerifyPropertyRangeGroupingNode(*childNodes[0], "", { instanceA }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
     EXPECT_STREQ("1 - 5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // request grandchildren
@@ -8303,8 +8346,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 class grouping node
@@ -8366,8 +8409,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnECInstanceNodesOfT
 
     // make sure we have 1 A root node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
@@ -8467,11 +8510,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingWorksCorrectlyWi
 
     // make sure we have 1 property grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instanceB }, { ECValue() });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instanceB }, { ECValue() });
 
     // the node should have 1 B child node
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -8511,8 +8554,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomizesNodesWhenCusto
 
     // make sure we have 1 node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), primaryRules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), primaryRules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), primaryRules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), primaryRules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *instance);
@@ -8548,7 +8591,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, PolymorphicallyCustomize
     rules->AddPresentationRule(*rootRule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, nodes.GetSize());
 
     VerifyNodeInstance(*nodes[0], *b);
@@ -8589,7 +8632,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, PolymorphicallyCustomize
     rules->AddPresentationRule(*rootRule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, nodes.GetSize());
 
     VerifyNodeInstance(*nodes[0], *a);
@@ -8636,7 +8679,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, PolymorphicallyCustomize
     rules->AddPresentationRule(*rootRule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, nodes.GetSize());
 
     VerifyNodeInstance(*nodes[0], *a);
@@ -8684,7 +8727,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, PolymorphicallyCustomize
     rules->AddPresentationRule(*rootRule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, nodes.GetSize());
 
     VerifyNodeInstance(*nodes[0], *a);
@@ -8771,8 +8814,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
 
     // make sure we have 1 instanceA
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("InstanceA", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -8783,7 +8826,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], { instanceB }, { ECValue() });
+    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue() });
 
     // the child node should have 1 B child node
     DataContainer<NavNodeCPtr> grandChildNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -8855,11 +8898,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingNodesByMultiStep
 
     // make sure we have 1 A instance
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { a }, { ECValue("test") });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { a }, { ECValue("test") });
     EXPECT_STREQ("test", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // the child node should have 1 B child node
@@ -8947,8 +8990,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
 
     // make sure we have 1 instanceA
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *instanceA);
@@ -8959,7 +9002,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], { instanceB }, { ECValue() });
+    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue() });
 
     // the child node should have 1 B child node
     DataContainer<NavNodeCPtr> grandChildNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -9014,8 +9057,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, UsingRelatedInstanceOfTh
 
     // make sure we have 2 instances of ClassB
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *b1);
@@ -9056,8 +9099,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildNodesWhenTh
 
     // make sure we have 2 nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ("TestValue", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -9086,8 +9129,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildrenUsingAll
 
     // make sure we have 1 root node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("a", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -9119,8 +9162,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AutoExpandSetsShouldAuto
 
     // make sure we have 1 root node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->ShouldAutoExpand());
@@ -9172,8 +9215,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 
     // make sure we have 1 root node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -9231,8 +9274,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 
     // make sure we have 1 root node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -9291,8 +9334,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 
     // make sure we have 1 root node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -9356,8 +9399,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // make sure we have 1 root node
     DataContainer<NavNodeCPtr> aNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, aNodes.GetSize());
     VerifyNodeInstance(*aNodes[0], *a);
@@ -9462,8 +9505,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Fil
 
     // make sure we have 1 root node
     DataContainer<NavNodeCPtr> aNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, aNodes.GetSize());
     VerifyNodeInstance(*aNodes[0], *a);
@@ -9601,8 +9644,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByHiddenGran
 
     // make sure we have 1 S root node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *s);
@@ -9661,11 +9704,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(2.) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(2.) });
     EXPECT_STREQ("2.00", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -9713,11 +9756,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(2.5) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(2.5) });
     EXPECT_STREQ("2.50", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -9769,11 +9812,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2, instance3 }, { ECValue(0.00546), ECValue(0.00798), ECValue(0.00899) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2, instance3 }, { ECValue(0.00546), ECValue(0.00798), ECValue(0.00899) });
     EXPECT_STREQ("0.01", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 3 children nodes
@@ -9822,15 +9865,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 2 grouping nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance2 }, { ECValue(2.504f) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance2 }, { ECValue(2.504f) });
     EXPECT_STREQ("2.50", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], { instance1 }, { ECValue(2.505f) });
+    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance1 }, { ECValue(2.505f) });
     EXPECT_STREQ("2.51", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -9885,11 +9928,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(2.59999999) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(2.59999999) });
     EXPECT_STREQ("2.60", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -9937,15 +9980,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 2 grouping nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance2 }, { ECValue(2.594) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance2 }, { ECValue(2.594) });
     EXPECT_STREQ("2.59", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], { instance1 }, { ECValue(2.595) });
+    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance1 }, { ECValue(2.595) });
     EXPECT_STREQ("2.60", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -9995,11 +10038,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10042,11 +10085,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(DPoint3d::From(1.121, 1.121, 1.121)), ECValue(DPoint3d::From(1.122, 1.122, 1.122)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.121, 1.121, 1.121)), ECValue(DPoint3d::From(1.122, 1.122, 1.122)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10089,15 +10132,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1 }, { ECValue(DPoint3d::From(1.11, 1.11, 1.11)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.11, 1.11, 1.11)) });
     EXPECT_STREQ("X: 1.11 Y: 1.11 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10147,15 +10190,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1 }, { ECValue(DPoint3d::From(1.11, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.11, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.11 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10205,15 +10248,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1 }, { ECValue(DPoint3d::From(1.12, 1.11, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.12, 1.11, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.11 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10263,15 +10306,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.11)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.11)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10321,11 +10364,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(DPoint3d::From(1.119, 1.12, 1.12)), ECValue(DPoint3d::From(1.124, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.119, 1.12, 1.12)), ECValue(DPoint3d::From(1.124, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10368,11 +10411,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.119, 1.12)), ECValue(DPoint3d::From(1.12, 1.124, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.119, 1.12)), ECValue(DPoint3d::From(1.12, 1.124, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10415,11 +10458,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.119)), ECValue(DPoint3d::From(1.12, 1.12, 1.124)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.119)), ECValue(DPoint3d::From(1.12, 1.12, 1.124)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10468,12 +10511,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], { instance1, instance2 }, { ECValue(DateTime(2019, 11, 28)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DateTime(2019, 11, 28)) });
     EXPECT_STREQ("2019-11-28T00:00:00.000Z", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("dateTime", rootNodes[0]->GetLabelDefinition().GetTypeName().c_str());
 
@@ -10801,7 +10844,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, FindsNodesInPartiallyIni
     rules->AddPresentationRule(*rootRule);
 
     // partially initialize the root hierarchy level
-    DataContainer<NavNodeCPtr> nodes = GetValidatedResponse(m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 5))));
+    DataContainer<NavNodeCPtr> nodes = GetValidatedResponse(m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 5))));
     ASSERT_EQ(5, nodes.GetSize());
 
     // request for filtered nodes paths from the uninitialized part
@@ -10839,15 +10882,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, FilteringPartiallyInitia
     rules->AddPresentationRule(*rootRule);
 
     // partially initialize the root hierarchy level
-    DataContainer<NavNodeCPtr> nodes = GetValidatedResponse(m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 5))));
+    DataContainer<NavNodeCPtr> nodes = GetValidatedResponse(m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 5))));
     ASSERT_EQ(5, nodes.GetSize());
 
     // request for filtered nodes paths from the uninitialized part
     bvector<NodesPathElement> filteredNodes = GetValidatedResponse(m_manager->GetNodePaths(AsyncNodePathsFromFilterTextRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "1000")));
 
-    // ensure we can successfully get the first node
-    NavNodeCPtr node = GetValidatedResponse(m_manager->GetNode(AsyncNodeByKeyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), *nodes[0]->GetKey())));
-    EXPECT_TRUE(node.IsValid());
+    // ensure total nodes count (from cache) is as expected
+    EXPECT_EQ(1001, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()))));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10879,8 +10921,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ov
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 2 nodes
@@ -10922,8 +10964,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Fi
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
 
     // make sure we have 1 nodes
@@ -10994,8 +11036,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Cr
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ("C1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11033,8 +11075,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ap
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, nodes.GetSize());
 
@@ -11077,8 +11119,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Re
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ("2", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11115,8 +11157,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Re
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11165,8 +11207,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ge
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ("B", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11218,8 +11260,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ge
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11331,8 +11373,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ha
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(6, rootNodes.GetSize());
 
@@ -11431,8 +11473,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ha
 
     // request for nodes
     DataContainer<NavNodeCPtr> modelNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, modelNodes.GetSize());
 
@@ -11495,8 +11537,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11560,8 +11602,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11614,8 +11656,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ("ClassC_CodeValue", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11663,8 +11705,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11728,8 +11770,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreatesValidHierarchyWhe
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11804,8 +11846,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Sor
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(4, rootNodes.GetSize());
     EXPECT_STREQ("1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -11864,8 +11906,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
@@ -11942,8 +11984,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataU
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a);
@@ -12036,8 +12078,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *subject1);
@@ -12124,8 +12166,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(0, rootNodes.GetSize());
     }
@@ -12208,8 +12250,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *subject1);
@@ -12279,8 +12321,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideExpressionWithChildr
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
     );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *model1);
@@ -12324,8 +12366,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CorrectHasChildrenFlagWh
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -12385,8 +12427,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(3, rootNodes.GetSize());
 
@@ -12474,8 +12516,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(3, rootNodes.GetSize());
 
@@ -12562,8 +12604,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(3, rootNodes.GetSize());
 
@@ -12636,8 +12678,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_TRUE(nullptr != rootNodes[0]->GetKey()->AsECClassGroupingNodeKey());
@@ -12725,8 +12767,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a);
@@ -12801,8 +12843,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_Grouping_Clas
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a);
@@ -12856,8 +12898,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Da
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -12894,8 +12936,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride_OverrideWi
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -12952,8 +12994,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Doe
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *b);
@@ -13022,8 +13064,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Cre
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -13122,8 +13164,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_Cre
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -13188,8 +13230,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortsCombinedHierarchyLe
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(3, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *b11);
@@ -13238,8 +13280,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SuppressesInfiniteHierar
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
     );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a);
@@ -13306,8 +13348,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsSimilarNode11Time
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a);
@@ -13379,8 +13421,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllowsMultipleGroupingNo
     // request for nodes
 
     auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a1);
@@ -13458,8 +13500,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, PreventsMultipleGrouping
     // request for nodes
 
     auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a1);
@@ -13537,8 +13579,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetNodesWithMultipleVirt
 
     // request for nodes
     auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *a);
@@ -13578,8 +13620,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFilter_AppliesIn
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *instanceA1);
@@ -13629,8 +13671,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFilter_AppliesIn
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *instanceA2);
@@ -13677,8 +13719,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotDuplicateNodesWhe
 
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(2, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *instanceA1);
@@ -13740,8 +13782,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, FiltersNodesWithHasRelat
 
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(3, nodes.GetSize());
     VerifyNodeInstance(*nodes[0], *ab);
@@ -13772,8 +13814,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request root nodes without variables
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     EXPECT_EQ(0, rootNodes.GetSize());
 
@@ -13782,8 +13824,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     variables.SetIntValues("ids", { (int64_t)BeInt64Id::FromString(a2->GetInstanceId().c_str()).GetValueUnchecked() });
 
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), variables, nullptr), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), variables, nullptr)).get(); }
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), variables), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), variables)).get(); }
         );
     EXPECT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstances(*rootNodes[0], { a2 });
@@ -13828,8 +13870,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreatesCurrectHierarchyL
 
     // request root nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get(); },
-        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); }
+        [&](PageOptionsCR pageOptions) { return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&]() { return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
     );
     ASSERT_EQ(5, nodes.GetSize());
     for (int i = 0; i < 5; ++i)
@@ -13879,11 +13921,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreateChildGroupingNodeW
 
     // verify the hierarchy
     DataContainer<NavNodeCPtr> groupingNodesA = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), pageOptions)).get();},
-        [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get();}
+        [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get();},
+        [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get();}
     );
     ASSERT_EQ(1, groupingNodesA.GetSize());
-    VerifyClassGroupingNode(*groupingNodesA[0], { a }, classA, true, false);
+    VerifyClassGroupingNode(*groupingNodesA[0], "", { a }, classA, true);
 
     DataContainer<NavNodeCPtr> instanceNodesA = RulesEngineTestHelpers::GetValidatedNodes(
         [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA[0].get()), pageOptions)).get();},
@@ -13904,7 +13946,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreateChildGroupingNodeW
         [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), instanceNodesB[0].get())).get(); }
     );
     ASSERT_EQ(1, groupingNodesA2.GetSize());
-    VerifyClassGroupingNode(*groupingNodesA2[0], { a }, classA, true, false);
+    VerifyClassGroupingNode(*groupingNodesA2[0], "", { a }, classA, true);
 
     DataContainer<NavNodeCPtr> noInstanceNodesA = RulesEngineTestHelpers::GetValidatedNodes(
         [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA2[0].get()), pageOptions)).get(); },
@@ -13960,7 +14002,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     // verify
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get();
+        return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get();
         });
 
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -13997,7 +14039,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, OrdersNodeWithNotSpecifi
     // verify
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get();
+        return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get();
         });
     ASSERT_EQ(2, rootNodes.GetSize());
     // node with Unspecified label last
@@ -14035,7 +14077,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, OrdersMultipleNodesWithN
     // verify
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)).get();
+        return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get();
         });
     ASSERT_EQ(4, rootNodes.GetSize());
     // node with Unspecified label last

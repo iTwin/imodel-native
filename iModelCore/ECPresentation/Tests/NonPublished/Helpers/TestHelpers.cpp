@@ -739,16 +739,30 @@ static void VerifyInstanceKeysMatch(bvector<RefCountedPtr<IECInstance const>> co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR connection, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
+void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR db, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
     {
-    auto nodeInstanceKeys = ReadNodeInstanceKeys(connection, static_cast<NavNodeCR>(node));
+    auto nodeInstanceKeys = ReadNodeInstanceKeys(db, static_cast<NavNodeCR>(node));
     VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
 
     if (node.GetKey()->AsECInstanceNodeKey())
+        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesEngineTestHelpers::ValidateNodeInstances(INodeInstanceKeysProvider const& instanceKeysProvider, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
+    {
+    bset<ECInstanceKey> nodeInstanceKeys;
+    instanceKeysProvider.IterateInstanceKeys(node, [&nodeInstanceKeys](ECInstanceKeyCR k)
         {
-        auto nodeKeyInstanceKeys = GetECInstanceNodeKeys(node);
-        VerifyInstanceKeysMatch(instances, nodeKeyInstanceKeys);
-        }
+        nodeInstanceKeys.insert(k);
+        return true;
+        });
+    VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
+
+    if (node.GetKey()->AsECInstanceNodeKey())
+        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -812,20 +826,18 @@ ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR de
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, NavNodeR node)
+void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, NavNodeR node, BeGuidCR parentNodeId)
     {
     NavNodeExtendedData extendedData(node);
+    extendedData.AddVirtualParentId(parentNodeId);
     auto virtualParentIds = extendedData.GetVirtualParentIds();
     Utf8String rulesetId = extendedData.HasRulesetId() ? extendedData.GetRulesetId() : "";
-    HierarchyLevelIdentifier hlInfo = cache.FindHierarchyLevel(extendedData.GetConnectionId(),
-        rulesetId.c_str(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid(), BeGuid());
+    HierarchyLevelIdentifier hlInfo(extendedData.GetConnectionId(), rulesetId.c_str(),
+        parentNodeId, !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid());
+    hlInfo.SetId(cache.FindHierarchyLevelId(extendedData.GetConnectionId(), rulesetId.c_str(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid(), BeGuid()));
     if (!hlInfo.IsValid())
-        {
-        hlInfo = HierarchyLevelIdentifier(extendedData.GetConnectionId(), rulesetId.c_str(),
-            node.GetParentNodeId(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid());
         cache.Cache(hlInfo);
-        }
-    DataSourceIdentifier identifier(hlInfo.GetId(), {0});
+    DataSourceIdentifier identifier(hlInfo.GetId(), {0}, "");
     DataSourceInfo dsInfo = cache.FindDataSource(identifier, RulesetVariables());
     if (!dsInfo.GetIdentifier().IsValid())
         {

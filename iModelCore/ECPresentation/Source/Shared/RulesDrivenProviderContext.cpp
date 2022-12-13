@@ -28,8 +28,7 @@ protected:
             m_parent->OnVariableUsed(variableId);
         }
 public:
-    UsedRulesetVariablesListener() : m_parent(nullptr) {}
-    UsedRulesetVariablesListener(UsedRulesetVariablesListener const& other) : m_variableIds(other.m_variableIds), m_parent(nullptr) {}
+    UsedRulesetVariablesListener(bset<Utf8String> variableIds = {}) : m_parent(nullptr), m_variableIds(variableIds) {}
     bset<Utf8String> const& GetVariableIds() const {BeMutexHolder lock(m_mutex); return m_variableIds;}
     void SetParent(IUsedRulesetVariablesListener* parent) {m_parent = parent;}
 };
@@ -152,7 +151,8 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR rul
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContextCR other)
     : m_ruleset(other.m_ruleset), m_rulesetVariables(std::make_unique<RulesetVariables>(*other.m_rulesetVariables)), m_relatedPathsCache(other.m_relatedPathsCache),
-    m_ecexpressionsCache(other.m_ecexpressionsCache), m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken)
+    m_ecexpressionsCache(other.m_ecexpressionsCache), m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken),
+    m_usedVariablesListener(other.m_usedVariablesListener)
     {
     Init();
 
@@ -234,25 +234,22 @@ IUsedRulesetVariablesListener& RulesDrivenProviderContext::GetUsedVariablesListe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::SetUsedVariablesListener(RulesDrivenProviderContextCR other, bool makeCopy)
+void RulesDrivenProviderContext::InitUsedVariablesListener(bset<Utf8String> const& parentVariables, IUsedRulesetVariablesListener* parentListener)
     {
-    if (makeCopy && other.m_usedVariablesListener.IsValid())
-        {
-        m_usedVariablesListener = new UsedRulesetVariablesListener(*other.m_usedVariablesListener);
-        m_usedVariablesListener->SetParent(other.m_usedVariablesListener.get());
-        return;
-        }
-
-    m_usedVariablesListener = other.m_usedVariablesListener;
+    m_usedVariablesListener = new UsedRulesetVariablesListener(parentVariables);
+    m_usedVariablesListener->SetParent(parentListener);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<Utf8String> RulesDrivenProviderContext::GetRelatedVariablesIds() const
+bset<Utf8String> const& RulesDrivenProviderContext::GetRelatedVariablesIds() const
     {
     if (m_usedVariablesListener.IsNull())
-        return bset<Utf8String>();
+        {
+        static bset<Utf8String> const s_empty;
+        return s_empty;
+        }
     return m_usedVariablesListener->GetVariableIds();
     }
 

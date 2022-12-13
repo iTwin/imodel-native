@@ -7,6 +7,23 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+PragmaManager& ECDb::Impl::GetPragmaManager() const
+    {
+    if (m_pragmaProcessor == nullptr)
+        {
+        m_pragmaProcessor = std::make_unique<PragmaManager>(m_ecdb);
+        }
+    return *m_pragmaProcessor;
+    }
+
+ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
+    {
+    m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
+    // set default logger
+    IssueDataSource::AppendLogSink(m_issueReporter, "ECDb");
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
@@ -35,7 +52,7 @@ std::unique_ptr<IdFactory::IdSequence> IdFactory::IdSequence::Create(ECDbCR db, 
     }
     LOG.debugv("Unable initialize sequence for '%s' not supported in current profile.", tableName);
     return std::make_unique<IdSequence>(0, false);
-} 
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -82,10 +99,10 @@ bool IdFactory::IsValid() const {
     const bool valid =
         m_classIdSeq != nullptr &&
         m_classHasBaseClassesIdSeq != nullptr &&
-        m_columnIdSeq != nullptr && 
+        m_columnIdSeq != nullptr &&
         m_customAttributeIdSeq != nullptr &&
         m_enumerationIdSeq != nullptr &&
-        m_formatIdSeq != nullptr && 
+        m_formatIdSeq != nullptr &&
         m_formatCompositeUnitIdSeq != nullptr &&
         m_indexIdSeq != nullptr &&
         m_indexColumnIdSeq != nullptr &&
@@ -94,7 +111,7 @@ bool IdFactory::IsValid() const {
         m_propertyIdSeq != nullptr &&
         m_propertyCategoryIdSeq != nullptr &&
         m_propertyMapSeq != nullptr &&
-        m_propertyPathIdSeq != nullptr && 
+        m_propertyPathIdSeq != nullptr &&
         m_relationshipConstraintIdSeq != nullptr &&
         m_relationshipConstraintClassIdSeq != nullptr &&
         m_schemaIdSeq != nullptr &&
@@ -250,7 +267,7 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
                    briefcaseId.GetValue());
         return ERROR;
         }
-    
+
     return SUCCESS;
     }
 
@@ -377,7 +394,7 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
 void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
-    
+
     // this event allows consuming code to free anything that relies on the ECDb cache (like ECSchemas, ECSqlStatements etc)
     for (auto listener : m_ecdbCacheClearListeners)
         listener->_OnBeforeClearECDbCache();
@@ -665,7 +682,7 @@ DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAs
     {
     if (s_isInitialized)
         return BE_SQLITE_OK;
-    
+
     const DbResult stat = BeSQLiteLib::Initialize(ecdbTempDir, logSqliteErrors);
     if (stat != BE_SQLITE_OK)
         return stat;

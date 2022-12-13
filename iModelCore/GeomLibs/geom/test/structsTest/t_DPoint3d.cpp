@@ -1030,7 +1030,7 @@ void CollectGFormat (bvector<Utf8String> &strings)
         for (auto x : values)
             {
             double y = x * s;
-            sprintf (buffer, "| %.17g  | %g | %.8g|", y, y, y);
+            snprintf (buffer, sizeof(buffer), "| %.17g  | %g | %.8g|", y, y, y);
             strings.push_back (Utf8String(buffer));
             }
 //        printf ("| Scale Factor 1.0/%.17g | | |\n", s);
@@ -1038,7 +1038,7 @@ void CollectGFormat (bvector<Utf8String> &strings)
         for (auto x : values)
             {
             double y = x / s;
-            sprintf (buffer, "| %.17g  | %g | %.8g|", y, y, y);
+            snprintf (buffer, sizeof(buffer), "| %.17g  | %g | %.8g|", y, y, y);
             strings.push_back (Utf8String(buffer));
             }
         }
