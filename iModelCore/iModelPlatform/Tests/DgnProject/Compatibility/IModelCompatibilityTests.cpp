@@ -25,6 +25,18 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
             CompatibilityTestFixture::SetUp();
             ASSERT_EQ(SUCCESS, TestIModelCreation::Run());
             }
+
+        void TearDown() override
+            {
+            ASSERT_EQ(TestIModelCreator::UnregisterDomainsForTest(), SUCCESS);
+            }
+
+        static bool SetupDomainsInCurrentTestFile(const TestFile& testFile)
+            {
+            if (testFile.GetInitialDgnDbVersion().CompareTo(DgnDbProfile::Get().GetExpectedVersion()) == 0 && DgnDbProfile::Get().IsFileCreatedForCurrentTestRun(testFile))
+                return (TestIModelCreator::RegisterDomainsForTest() == SUCCESS);
+            return (TestIModelCreator::UnregisterDomainsForTest() == SUCCESS);
+            }
     };
 
 //---------------------------------------------------------------------------------------
@@ -36,6 +48,7 @@ TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfAllPulledTestFiles())
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -346,6 +359,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enums)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31ENUMS))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -405,6 +419,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradingEC31EnumsToEC32AfterProfileUpgra
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32ENUMS_PROFILEUPGRADED))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -447,6 +462,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32ENUMS))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -612,6 +628,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ThreadPitchKindOfQuantities)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31THREADPITCHKOQS))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -757,6 +774,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32KOQS))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -907,6 +925,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32Units)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32UNITS))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1269,6 +1288,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enum_SchemaUpgrade)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31ENUMS_SCHEMAUPGRADE))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1362,6 +1382,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31Koqs_SchemaUpgrade)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31KOQS_SCHEMAUPGRADE))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1448,6 +1469,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Enums)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31ENUMS_SCHEMAUPGRADE))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1538,6 +1560,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Koqs)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31KOQS_SCHEMAUPGRADE))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1613,6 +1636,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Enums)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1700,6 +1724,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32KOQS_SCHEMAUPGRADE))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1814,6 +1839,7 @@ TEST_F(IModelCompatibilityTestFixture, OpenDomainIModel)
     ASSERT_EQ(SUCCESS, IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 0), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_TESTDOMAIN))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1843,6 +1869,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
     ASSERT_EQ(SUCCESS, IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 1), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_TESTDOMAIN))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
@@ -1910,6 +1937,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
     ASSERT_EQ(SUCCESS, IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 2), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_TESTDOMAIN))
         {
+        ASSERT_TRUE(SetupDomainsInCurrentTestFile(testFile));
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
             TestIModel& testDb = *testDbPtr;
