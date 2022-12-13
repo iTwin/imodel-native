@@ -218,6 +218,8 @@ struct Exp
             CommonTableBlockName,
             CommonTablePropertyName,
             TableValuedFunction,
+            ExtractProperty,
+            ExtractInstance,
             };
 
         struct Collection final

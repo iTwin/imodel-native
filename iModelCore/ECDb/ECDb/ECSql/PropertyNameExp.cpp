@@ -652,4 +652,45 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
 
     return ToNativeSql(snippets, selectAll);
     }
+
+//=========================================================================================
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+InstanceValueExp::InstanceValueExp(Type type, PropertyPath instancePath): ValueExp(type), m_instancePath(instancePath) {
+    BeAssert(InstanceValueExp::IsValidSourcePath(instancePath) && "InstancePath is not valid");
+    auto alias = InstanceValueExp::GetInstanceAlias(instancePath);
+    bool hasAlias = !Utf8String::IsNullOrEmpty(alias);
+    PropertyPath classIdPath;       
+    if (hasAlias){
+        classIdPath.Push(alias);
+    }
+    classIdPath.Push(ECDBSYS_PROP_ECClassId);
+    m_classIdExpIdx = AddChild(std::make_unique<PropertyNameExp>(std::move(classIdPath)));
+
+    PropertyPath instIdPath;
+    if (hasAlias) {
+        instIdPath.Push(alias);
+    }
+    instIdPath.Push(ECDBSYS_PROP_ECInstanceId);
+    m_instIdExpIdx = AddChild(std::make_unique<PropertyNameExp>(std::move(instIdPath)));
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool InstanceValueExp::IsValidSourcePath(PropertyPath const& path) {
+    if (path.Size() == 0 || path.Size() > 2) {
+        return false;
+    }
+    return path.Last().GetName().Equals("$");
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8CP InstanceValueExp::GetInstanceAlias(PropertyPath const& path) {
+    BeAssert(InstanceValueExp::IsValidSourcePath(path) && "SourcePath is not valid");
+    return path.Size() == 2 ? path.First().GetName().c_str() : nullptr;
+} 
 END_BENTLEY_SQLITE_EC_NAMESPACE

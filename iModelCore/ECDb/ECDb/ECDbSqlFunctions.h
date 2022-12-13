@@ -17,6 +17,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
+
+#define SQLFUNC_ExtractInst "extract_inst"
+#define SQLFUNC_ExtractProp "extract_prop"
+#define SQLFUNC_PropExists "prop_exists"
+
+#define SQLFUNC_MakeInstanceKey "make_instance_key"
+#define SQLFUNC_GetClassId "get_class_id"
+#define SQLFUNC_GetInstanceId "get_instance_id"
 //=======================================================================================
 //! S ClassName(I)
 // @bsiclass
@@ -174,5 +182,84 @@ struct ChangedValueSqlFunction final : ScalarFunction
 
         void ClearCache() { m_statementCache.Empty(); }
     };
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ExtractInstFunc final : ScalarFunction {
+    private:
+        ECDbCR m_ecdb;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
+    public:
+        explicit ExtractInstFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractInst, 2, DbValueType::TextVal), m_ecdb(ecdb) {}
+        ~ExtractInstFunc() {}
+        static std::unique_ptr<ExtractInstFunc> Create(ECDbCR);
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ExtractPropFunc final : ScalarFunction {
+    private:
+        ECDbCR m_ecdb;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        explicit ExtractPropFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractProp, 3, DbValueType::TextVal), m_ecdb(ecdb) {}
+        ~ExtractPropFunc() {}
+         static std::unique_ptr<ExtractPropFunc> Create(ECDbCR);
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct PropExistsFunc final : ScalarFunction , ECDb::IECDbCacheClearListener {
+    private:
+        ECDbCR m_ecdb;
+        InMemoryPropertyExistMap m_propMap;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+        void _OnBeforeClearECDbCache() override {}
+        void _OnAfterClearECDbCache() override { m_propMap.Build(m_ecdb, true); }
+    public:
+        explicit PropExistsFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_PropExists, 2, DbValueType::IntegerVal), m_ecdb(ecdb) {
+            const_cast<ECDbR>(m_ecdb).AddECDbCacheClearListener(*this);
+            m_propMap.Build(m_ecdb, true);
+        }
+        ~PropExistsFunc() { const_cast<ECDbR>(m_ecdb).RemoveECDbCacheClearListener(*this); }
+        static std::unique_ptr<PropExistsFunc> Create(ECDbCR);
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct MakeInstanceKeyFunc final : ScalarFunction {
+    private:
+
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+    public:
+        explicit MakeInstanceKeyFunc() : ScalarFunction(SQLFUNC_MakeInstanceKey, 2, DbValueType::BlobVal) {}
+        ~MakeInstanceKeyFunc() {}
+        static MakeInstanceKeyFunc& GetSingleton();
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct GetInstanceIdFunc final : ScalarFunction {
+    private:
+
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+    public:
+        explicit GetInstanceIdFunc() : ScalarFunction(SQLFUNC_GetInstanceId, 1, DbValueType::IntegerVal) {}
+        ~GetInstanceIdFunc() {}
+        static GetInstanceIdFunc& GetSingleton();
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct GetClassIdFunc final : ScalarFunction {
+    private:
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+    public:
+        explicit GetClassIdFunc() : ScalarFunction(SQLFUNC_GetClassId, 1, DbValueType::IntegerVal) {}
+        ~GetClassIdFunc() {}
+        static GetClassIdFunc& GetSingleton();
+};
 END_BENTLEY_SQLITE_EC_NAMESPACE

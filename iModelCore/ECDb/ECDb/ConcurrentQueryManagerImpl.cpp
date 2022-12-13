@@ -1029,7 +1029,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     while (rc == BE_SQLITE_ROW) {
         auto& rowsDoc = cachedAdaptor.ClearAndGetCachedXmlDocument();
         BeJsValue rows(rowsDoc);
-        if (adaptor.RenderRow(rows, stmt) != SUCCESS) {
+        if (adaptor.RenderRow(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
             return;
         } else {
@@ -1975,7 +1975,7 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
     if (m_ignorePriority != rhs.GetIgnorePriority())
         return false;
     if (m_ignoreDelay != rhs.GetIgnoreDelay())
-        return false;        
+        return false;
     return true;
 }
 
@@ -2048,7 +2048,7 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (val.isBoolMember(Config::JIgnoreDelay)) {
         const auto ignoreDelay = val[Config::JIgnoreDelay].asBool(defaultConfig.GetIgnoreDelay());
         config.SetIgnoreDelay(ignoreDelay);
-    }    
+    }
     if (val.isObjectMember(Config::JQuota)) {
         auto quota = defaultConfig.GetQuota();
         quota = QueryQuota::FromJs(val[Config::JQuota]);
@@ -2084,23 +2084,48 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, ECSqlStatement const& stmt) const {
-    rowJson.SetEmptyArray();
-    const int count = stmt.GetColumnCount();
-    int consecutiveNulls = 0;
-    for (int columnIndex = 0; columnIndex < count; columnIndex++) {
-        IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
-        if (ecsqlValue.IsNull()) {
-            ++consecutiveNulls;
-            continue;
-        }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray) const {
+    if (asArray) {
+        rowJson.SetEmptyArray();
+        const int count = stmt.GetColumnCount();
+        int consecutiveNulls = 0;
+        for (int columnIndex = 0; columnIndex < count; columnIndex++) {
+            IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
+            if (ecsqlValue.IsNull()) {
+                ++consecutiveNulls;
+                continue;
+            }
 
-        while (consecutiveNulls > 0) {
-            rowJson.appendValue().SetNull();
-            --consecutiveNulls;
+            while (consecutiveNulls > 0) {
+                rowJson.appendValue().SetNull();
+                --consecutiveNulls;
+            }
+            if (SUCCESS != RenderRootProperty(rowJson.appendValue(), ecsqlValue))
+                return ERROR;
         }
-        if (SUCCESS != RenderRootProperty(rowJson.appendValue(), ecsqlValue))
-            return ERROR;
+    } else {
+        rowJson.SetEmptyObject();
+        const int count = stmt.GetColumnCount();
+        for (int columnIndex = 0; columnIndex < count; columnIndex++) {
+            IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
+            if (ecsqlValue.IsNull()) {
+                continue;
+            }
+
+            auto memberProp = ecsqlValue.GetColumnInfo().GetProperty();
+            if (m_useJsName) {
+                Utf8String memberName = memberProp->GetName();
+                ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
+                    return ERROR;
+            } else {
+                if (SUCCESS != RenderRootProperty(rowJson[memberProp->GetName()], ecsqlValue))
+                    return ERROR;
+            }
+        }
     }
     return SUCCESS;
 }
@@ -2164,7 +2189,7 @@ BentleyStatus QueryJsonAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlVal
         return SUCCESS;
     }
     if (propType == ECN::PRIMITIVETYPE_Integer) {
-        out = std::trunc(in.GetDouble());
+        out = in.GetInt64();
         return SUCCESS;
     }
     if (propType == ECN::PRIMITIVETYPE_Boolean) {

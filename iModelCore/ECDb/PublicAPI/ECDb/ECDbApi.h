@@ -16,3 +16,5 @@
 
 #include <ECDb/ECDbExpressionSymbolContext.h>
 #include <ECDb/ConcurrentQueryManager.h>
+
+#include <ECDb/InstanceReader.h>

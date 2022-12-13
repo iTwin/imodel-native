@@ -5,8 +5,246 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//=======================================================================================
-ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, DbValueType::TextVal), m_db(&db) 
+//============================[MakeInstanceKeyFunc]======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void MakeInstanceKeyFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs == 2) {
+        auto const& classIdVal = args[0];
+        auto const& instanceIdVal = args[1];
+        if (classIdVal.GetValueType() == DbValueType::IntegerVal &&
+                instanceIdVal.GetValueType() == DbValueType::IntegerVal) {
+            const ECInstanceKey key(
+                classIdVal.GetValueId<ECN::ECClassId>(),
+                instanceIdVal.GetValueId<ECInstanceId>());
+            ctx.SetResultBlob(&key, sizeof(key));
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+MakeInstanceKeyFunc& MakeInstanceKeyFunc::GetSingleton() {
+    static MakeInstanceKeyFunc s_singleton;
+    return s_singleton;
+}
+
+//================================[GetClassIdFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void GetClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs == 1) {
+        auto const& instanceKeyVal = args[0];
+        if (instanceKeyVal.GetValueType() == DbValueType::BlobVal &&
+            instanceKeyVal.GetValueBytes() == sizeof(ECInstanceKey)) {
+            const auto id = reinterpret_cast<ECInstanceKey const*>(instanceKeyVal.GetValueBlob())->GetClassId();
+            ctx.SetResultInt64(static_cast<int64_t>(id.GetValueUnchecked()));
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+GetClassIdFunc& GetClassIdFunc::GetSingleton() {
+    static GetClassIdFunc s_singleton;
+    return s_singleton;
+}
+
+//=============================[GetInstanceIdFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void GetInstanceIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs == 1) {
+        auto const& instanceKeyVal = args[0];
+        if (instanceKeyVal.GetValueType() == DbValueType::BlobVal &&
+            instanceKeyVal.GetValueBytes() == sizeof(ECInstanceKey)) {
+            const auto id = reinterpret_cast<ECInstanceKey const*>(instanceKeyVal.GetValueBlob())->GetInstanceId();
+            ctx.SetResultInt64(static_cast<int64_t>(id.GetValueUnchecked()));
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+GetInstanceIdFunc& GetInstanceIdFunc::GetSingleton() {
+    static GetInstanceIdFunc s_singleton;
+    return s_singleton;
+}
+
+//================================[PropExistsFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<PropExistsFunc> PropExistsFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<PropExistsFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropExistsFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 2) {
+        ctx.SetResultError("prop_exists(I,S]) expect two args");
+        return;
+    }
+
+    DbValue const& classIdVal = args[0];
+    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    DbValue const& propVal = args[1];
+    if (propVal.IsNull() || propVal.GetValueType() != DbValueType::TextVal )
+        return;
+
+    ECN::ECClassId classId(classIdVal.GetValueUInt64());
+    ctx.SetResultInt(m_propMap.Exist(classId, propVal.GetValueText()) ? 1 : 0);
+}
+
+//===============================[ExtractPropFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<ExtractPropFunc> ExtractPropFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<ExtractPropFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 3) {
+        ctx.SetResultError("extract_prop(I,I,S]) expect three args");
+        return;
+    }
+
+    DbValue const& classIdVal = args[0];
+    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    DbValue const& instanceIdVal = args[1];
+    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    DbValue const& accessStringVal = args[2];
+    if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
+        return;
+
+
+    ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
+    ECN::ECClassId classId(classIdVal.GetValueUInt64());
+
+    m_ecdb.GetInstanceReader().Seek(
+        InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
+        [&](InstanceReader::IRowContext const& row){
+        auto& val = row.GetValue(0);
+        if (val.IsNull()) {
+            return;
+        }
+        auto& ci = val.GetColumnInfo();
+        if (ci.GetDataType().IsPrimitive()){
+            const auto type = ci.GetDataType().GetPrimitiveType();
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Binary) {
+                int blobSize = 0;
+                auto blob = val.GetBlob(&blobSize);
+                ctx.SetResultBlob(blob, blobSize);
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Boolean) {
+                ctx.SetResultInt(val.GetBoolean()?1:0);
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_DateTime) {
+                double jdt;
+                val.GetDateTime().ToJulianDay(jdt);
+                ctx.SetResultDouble(jdt);
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Double) {
+                ctx.SetResultDouble(val.GetDouble());
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Integer ||
+                type == ECN::PrimitiveType::PRIMITIVETYPE_Long) {
+                ctx.SetResultInt64(val.GetInt64());
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_String) {
+                ctx.SetResultText(val.GetText(), (int)strlen(val.GetText()), Context::CopyData::Yes );
+                return;
+            }
+        }
+        const auto json = row.GetJson().Stringify();
+        ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
+    });
+}
+
+//==================================[ExtractInstFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<ExtractInstFunc> ExtractInstFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<ExtractInstFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs < 2 || nArgs > 3) {
+        ctx.SetResultError("extract_inst(I,I]) expect two args");
+        return;
+    }
+
+    DbValue const& classIdVal = args[0];
+    if (classIdVal.IsNull())
+        return;
+
+
+    DbValue const& instanceIdVal = args[1];
+    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    InstanceReader::JsonParams opts;
+    if (nArgs == 3) {
+        DbValue const& optsVal = args[2];
+        if (optsVal.IsNull() || optsVal.GetValueType() != DbValueType::TextVal){
+            return;
+        }
+    }
+
+    auto setResult = [&](InstanceReader::IRowContext const& row){
+        const auto json = row.GetJson().Stringify();
+        ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
+    };
+
+    ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
+    if (classIdVal.GetValueType() == DbValueType::IntegerVal) {
+        ECN::ECClassId classId(classIdVal.GetValueUInt64());
+        m_ecdb.GetInstanceReader().Seek(
+            InstanceReader::Position(instanceId,classId, nullptr),
+            setResult);
+        return;
+    }
+
+    if (classIdVal.GetValueType() == DbValueType::TextVal) {
+        m_ecdb.GetInstanceReader().Seek(
+            InstanceReader::Position(instanceId, classIdVal.GetValueText(), nullptr),
+            setResult);
+
+    }
+}
+
+//=================================[ClassNameFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, DbValueType::TextVal), m_db(&db)
     {
     m_options["s:c"] = FormatOptions::s_semicolon_c;
     m_options["a:c"] = FormatOptions::a_semicolon_c;

@@ -5,7 +5,44 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.2` |
-| ECSQL   | `1.0.0.0` |
+| ECSQL   | `1.0.1.1` |
+
+## `12/13/2022`: Add support for runtime instance and property accessor in ECSQL (beta)
+
+Following has been added or modified tos support extraction of instance and property from current row.
+
+* ECSql version change to `1.0.1.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
+* Following new functions added and should not be called directly but rather use syntax as the implementation might change.
+    1. `EXTRACT_INST(ECClassId, ECInstanceId)` - returns JSON string of instance or NULL.
+    2. `EXTRACT_PROP(ECClassId, ECInstanceId, AccessString)` - returns typed primitive value for single value properties or return JSON for composite or NULL if not found or value is NULL.
+    3. `PROP_EXISTS(ECClassId,AccessString)` - Can be used by user directly. As there is no syntax for this at the moment.
+* New syntax added and should be used to access respective functionality.
+    1. `$` represent current instance and returned a json.
+    2. `$-><AccessString>` cause a property to be dynamically extracted from select instance, more efficient `json_extract()`
+
+### Access current instance
+
+This allow render a complete instance from current row into ECSQL-JSON.
+
+```sql
+    -- $' return complete instance for current row with all properties.
+    -- It call EXTRACT_INST() to read the instance.
+    SELECT $ FROM bis.Element
+```
+
+### Accessing a property within current instance
+
+This allow a arbitrary property that may exist anywhere in derive hierarchy to be extracted and returned. It has following syntax.
+For primitive types that has single value, following will return typed value while any composite value is returned as JSON.
+
+> Syntax: `$-><access-string>`
+
+```sql
+    -- return given properties for rows for which it exists or return null.
+    SELECT $->PropertyThatMayOrMayNotExists FROM bis.Element
+```
+
+
 
 ## `12/06/2022`: Add `PRAGMA` support in `ECSQL`
 + Added support for `PRAGMA` in ECSQL. Syntax is as following
