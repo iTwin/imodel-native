@@ -410,6 +410,18 @@ ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& lo
     return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
     }
 
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static BeJsConst ToBeJsConst(rapidjson::Value const& value)
+    {
+    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
+    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
+    // a read-write `BeJsValue` for all the operations.
+    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
+    return BeJsConst(value, s_staticRapidJsonAllocator);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -619,7 +631,7 @@ static ParseResult<RulesetVariables> ParseRulesetVariablesFromJson(RapidJsonValu
     if (!json[attributeName].IsArray())
         return CreateParseError<RulesetVariables>(Utf8PrintfString("Expected `%s` to be an array", attributeName));
 
-    return CreateParseResult(IModelJsECPresentationSerializer::GetRulesetVariablesFromJson(json[attributeName]));
+    return CreateParseResult(IModelJsECPresentationSerializer::GetRulesetVariablesFromJson(ToBeJsConst(json[attributeName])));
     }
 
 #define PRESENTATION_JSON_ATTRIBUTE_RulesetParams_RulesetId         "rulesetId"
@@ -657,7 +669,7 @@ static ParseResult<ECClassInstanceKey> ParseECInstanceKeyFromJson(IConnectionCR 
     if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName) || !json[PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName].IsString())
         return CreateParseError<ECClassInstanceKey>(Utf8PrintfString("Expected `%s." PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName "` to be a string", attributeName));
 
-    ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(connection, json[PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName]);
+    ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(connection, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName]));
     if (!ecClass)
         return CreateParseError<ECClassInstanceKey>(Utf8PrintfString("`%s." PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName "` specifies an invalid class", attributeName));
 
@@ -694,6 +706,21 @@ static WithAsyncTaskParams<TBaseParams> CreateAsyncParams(TBaseParams baseParams
     return params;
     }
 
+#define PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter "instanceFilter"
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ParseResult<Utf8String> ParseHierarchyLevelInstanceFilterFromJson(RapidJsonValueCR json)
+    {
+    if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter))
+        return CreateParseResult<Utf8String>("");
+
+    if (!json[PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter].IsString())
+        return CreateParseError<Utf8String>("Expected `" PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter "` to be a string");
+
+    return CreateParseResult<Utf8String>(json[PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter].GetString());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -703,7 +730,13 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPre
     if (rulesetParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, rulesetParams.GetError());
 
-    auto params = HierarchyRequestParams(rulesetParams.GetValue(), nullptr);
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
+
+    auto params = HierarchyRequestParams(rulesetParams.GetValue());
+    params.SetInstanceFilter(instanceFilterParam.GetValue());
+
     return manager.GetNodesCount(CreateAsyncParams(params, db, paramsJson)).then([](NodesCountResponse response)
         {
         return ECPresentationResult(rapidjson::Value((int64_t)*response), true);
@@ -719,11 +752,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
     if (rulesetParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, rulesetParams.GetError());
 
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
+
     auto pageParams = ParsePageOptionsFromJson(paramsJson);
     if (pageParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, pageParams.GetError());
 
-    auto params = HierarchyRequestParams(rulesetParams.GetValue(), nullptr);
+    auto params = HierarchyRequestParams(rulesetParams.GetValue());
+    params.SetInstanceFilter(instanceFilterParam.GetValue());
+
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse response)
             {
@@ -744,7 +783,7 @@ static ParseResult<NavNodeKeyCPtr> ParseParentNodeKeyFromJson(IConnectionCR conn
     if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey) || !json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey].IsObject())
         return CreateParseError<NavNodeKeyCPtr>("Expected `" PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "` to be a string");
 
-    NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey]);
+    NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey]));
     if (key.IsNull())
         return CreateParseError<NavNodeKeyCPtr>("`" PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "` contains invalid value");
 
@@ -768,23 +807,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
     if (parentKeyParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
 
-    auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
-    return manager.GetNode(CreateAsyncParams(NodeByKeyRequestParams(rulesetParams.GetValue(), *parentKeyParams.GetValue()), connection->GetECDb(), paramsJson))
-        .then([&manager, &db, rulesetParams = rulesetParams.GetValue(), diagnostics](NodeResponse parentNodeResponse) -> folly::Future<ECPresentationResult>
+    auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
+    params.SetInstanceFilter(instanceFilterParam.GetValue());
+
+    return manager.GetNodesCount(CreateAsyncParams(params, connection->GetECDb(), paramsJson))
+        .then([](NodesCountResponse nodesCountResponse)
             {
-            auto scope = diagnostics->Hold();
-
-            auto const& parentNode = *parentNodeResponse;
-            if (parentNode.IsNull())
-                return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
-
-            auto params = HierarchyRequestParams(rulesetParams, parentNode.get());
-            return manager.GetNodesCount(CreateAsyncParams(params, db))
-                .then([](NodesCountResponse childrenCountResponse)
-                    {
-                    return ECPresentationResult(rapidjson::Value((int64_t)*childrenCountResponse), true);
-                    });
+            return ECPresentationResult(rapidjson::Value((int64_t)*nodesCountResponse), true);
             });
     }
 
@@ -809,27 +842,21 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     if (parentKeyParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
 
-    auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
-    return manager.GetNode(CreateAsyncParams(NodeByKeyRequestParams(rulesetParams.GetValue(), *parentKeyParams.GetValue()), connection->GetECDb(), paramsJson))
-        .then([&manager, &db, rulesetParams = rulesetParams.GetValue(), pageParams = pageParams.GetValue(), diagnostics](NodeResponse parentNodeResponse) -> folly::Future<ECPresentationResult>
+    auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
+    params.SetInstanceFilter(instanceFilterParam.GetValue());
+
+    return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
+        .then([](NodesResponse nodesResponse)
             {
-            auto scope = diagnostics->Hold();
-
-            auto const& parentNode = *parentNodeResponse;
-            if (parentNode.IsNull())
-                return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
-
-            auto params = HierarchyRequestParams(rulesetParams, parentNode.get());
-            return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db), pageParams))
-                .then([](NodesResponse childNodesResponse)
-                    {
-                    rapidjson::Document json;
-                    json.SetArray();
-                    for (NavNodeCPtr const& node : *childNodesResponse)
-                        PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
-                    return ECPresentationResult(std::move(json), true);
-                    });
+            rapidjson::Document json;
+            json.SetArray();
+            for (NavNodeCPtr const& node : *nodesResponse)
+                PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
+            return ECPresentationResult(std::move(json), true);
             });
     }
 
@@ -1113,7 +1140,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSources(ECPre
     RapidJsonValueCR requestedClassesJson = paramsJson[PRESENTATION_JSON_ATTRIBUTE_Classes];
     for (rapidjson::SizeType i = 0; i < requestedClassesJson.Size(); ++i)
         {
-        ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, requestedClassesJson[i]);
+        ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, ToBeJsConst(requestedClassesJson[i]));
         if (ecClass == nullptr)
             return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString(PRESENTATION_JSON_ATTRIBUTE_Classes "[%" PRIu64 "].className", (uint64_t)i));
 
@@ -1179,7 +1206,7 @@ static ParseResult<Nullable<int>> ParseContentFlagsFromJson(RapidJsonValueCR par
 static ParseResult<KeySetPtr> ParseKeysFromJson(IConnectionCR connection, RapidJsonValueCR paramsJson)
     {
     auto keys = paramsJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_Keys)
-        ? IModelJsECPresentationSerializer::GetKeySetFromJson(connection, paramsJson[PRESENTATION_JSON_ATTRIBUTE_Keys])
+        ? IModelJsECPresentationSerializer::GetKeySetFromJson(connection, ToBeJsConst(paramsJson[PRESENTATION_JSON_ATTRIBUTE_Keys]))
         : KeySet::Create();
     return CreateParseResult(keys);
     }
@@ -1217,7 +1244,7 @@ static ParseResult<bvector<RelatedClassPath>> ParseInstanceFilterRelatedInstance
     if (!instancesJson.IsArray())
          return CreateParseError<bvector<RelatedClassPath>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances "` to be an array");
 
-    bvector<RelatedClassPath> instances; 
+    bvector<RelatedClassPath> instances;
     for (rapidjson::SizeType i = 0; i < instancesJson.Size(); ++i)
         {
         RapidJsonValueCR instanceDef = instancesJson[i];
@@ -1284,9 +1311,9 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> fieldsDilterExpression, Nullable<TSortingParams> sortParams, 
+    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> fieldsDilterExpression, Nullable<TSortingParams> sortParams,
         TFieldsSelector fieldsSelector, std::shared_ptr<InstanceFilterDefinition> instanceFilter)
-        : m_displayType(displayType), m_contentFlags(contentFlags), m_fieldsFilterExpression(fieldsDilterExpression), m_sortParams(sortParams), 
+        : m_displayType(displayType), m_contentFlags(contentFlags), m_fieldsFilterExpression(fieldsDilterExpression), m_sortParams(sortParams),
         m_fieldsSelector(fieldsSelector), m_instanceFilter(instanceFilter)
         {}
 
@@ -1302,7 +1329,7 @@ private:
 
             return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression].GetString()));
             }
-                                                                                                                                      
+
         // deprecated property
         if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression))
             {

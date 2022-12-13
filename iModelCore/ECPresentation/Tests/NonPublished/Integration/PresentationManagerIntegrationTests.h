@@ -16,12 +16,16 @@ template<typename TNode = NavNodeCPtr>
 struct HierarchyDef
     {
     TNode node;
+    Nullable<bool> nodeHasChildren;
     bvector<HierarchyDef<TNode>> children;
     HierarchyDef(TNode n)
-        : node(n)
+        : node(n), nodeHasChildren(false)
         {}
     HierarchyDef(TNode n, bvector<HierarchyDef<TNode>> c)
-        : node(n), children(c)
+        : node(n), children(c), nodeHasChildren(!c.empty())
+        {}
+    HierarchyDef(TNode n, bool hasChildren, bvector<HierarchyDef<TNode>> c)
+        : node(n), children(c), nodeHasChildren(hasChildren)
         {}
     };
 typedef HierarchyDef<std::function<void(NavNodeCR, HierarchyRequestParams const&)>> ExpectedHierarchyDef;
@@ -63,12 +67,12 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
 
     Utf8String GetDefaultDisplayLabel(IECInstanceCR instance);
 
-    void VerifyNodeInstance(NavNodeCR node, IECInstanceCR instance) { VerifyNodeInstances(node, { &instance }); }
-    void VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
-    void VerifyPropertyGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues);
-    void VerifyPropertyRangeGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
-    void VerifyClassGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass = nullptr, bool isPolymorphicGrouping = false);
-    void VerifyLabelGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
+    void VerifyNodeInstance(NavNodeCR node, IECInstanceCR instance, Utf8StringCR instanceFilter = "") { VerifyNodeInstances(node, { &instance }, instanceFilter); }
+    void VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances, Utf8StringCR instanceFilter = "");
+    void VerifyPropertyGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues);
+    void VerifyPropertyRangeGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
+    void VerifyClassGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass = nullptr, bool isPolymorphicGrouping = false);
+    void VerifyLabelGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
     void VerifyCustomNode(NavNodeCR node, Utf8StringCR type, Nullable<Utf8String> const& label);
 
     bvector<HierarchyDef<>> ValidateHierarchy(AsyncHierarchyRequestParams params, std::function<void(AsyncHierarchyRequestParams&)> const& configureParams, bvector<ExpectedHierarchyDef> const& expectedHierarchy);

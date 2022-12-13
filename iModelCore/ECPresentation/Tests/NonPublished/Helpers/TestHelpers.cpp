@@ -826,20 +826,18 @@ ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR de
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, NavNodeR node)
+void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, NavNodeR node, BeGuidCR parentNodeId)
     {
     NavNodeExtendedData extendedData(node);
+    extendedData.AddVirtualParentId(parentNodeId);
     auto virtualParentIds = extendedData.GetVirtualParentIds();
     Utf8String rulesetId = extendedData.HasRulesetId() ? extendedData.GetRulesetId() : "";
-    HierarchyLevelIdentifier hlInfo = cache.FindHierarchyLevel(extendedData.GetConnectionId(),
-        rulesetId.c_str(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid(), BeGuid());
+    HierarchyLevelIdentifier hlInfo(extendedData.GetConnectionId(), rulesetId.c_str(),
+        parentNodeId, !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid());
+    hlInfo.SetId(cache.FindHierarchyLevelId(extendedData.GetConnectionId(), rulesetId.c_str(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid(), BeGuid()));
     if (!hlInfo.IsValid())
-        {
-        hlInfo = HierarchyLevelIdentifier(extendedData.GetConnectionId(), rulesetId.c_str(),
-            node.GetParentNodeId(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid());
         cache.Cache(hlInfo);
-        }
-    DataSourceIdentifier identifier(hlInfo.GetId(), {0});
+    DataSourceIdentifier identifier(hlInfo.GetId(), {0}, "");
     DataSourceInfo dsInfo = cache.FindDataSource(identifier, RulesetVariables());
     if (!dsInfo.GetIdentifier().IsValid())
         {

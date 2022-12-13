@@ -219,7 +219,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeChangesWhenInstanceFil
     rhs->AddPresentationRule(*rhsChildRule);
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables())));
 
     // compare
     m_manager->CompareHierarchies(AsyncHierarchyCompareRequestParams::Create(s_project->GetECDb(), m_changeRecordsHandler,
@@ -272,7 +272,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsClassGroupingNodeChangesWhenThe
     rhs->AddPresentationRule(*rhsRule);
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables())));
 
     // compare
     m_manager->CompareHierarchies(AsyncHierarchyCompareRequestParams::Create(s_project->GetECDb(), m_changeRecordsHandler,
@@ -321,7 +321,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsLabelGroupingNodeChangesWhenThe
         instance.SetValue("PropA", ECValue("A"));
         instance.SetValue("PropB", ECValue("B"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance)
+    auto element3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance)
         {
         instance.SetValue("PropA", ECValue("C"));
         instance.SetValue("PropB", ECValue("C"));
@@ -352,7 +352,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsLabelGroupingNodeChangesWhenThe
         bvector<NavNodeKeyCPtr>())).wait();
 
     // verify
-    ASSERT_EQ(2, m_changeRecordsHandler->GetRecords().size());
+    ASSERT_EQ(3, m_changeRecordsHandler->GetRecords().size());
     size_t recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Delete, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
@@ -364,6 +364,10 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsLabelGroupingNodeChangesWhenThe
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
     EXPECT_TRUE(m_changeRecordsHandler->GetRecords()[recordIndex].GetNode()->GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode));
     EXPECT_STREQ("B", m_changeRecordsHandler->GetRecords()[recordIndex].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
+    ++recordIndex;
+
+    EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
+    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -529,7 +533,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeUpdatesOnExpandedNodeW
     rhs->AddPresentationRule(*grandChildRule2);
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables())));
 
     // compare
     m_manager->CompareHierarchies(AsyncHierarchyCompareRequestParams::Create(s_project->GetECDb(), m_changeRecordsHandler,
@@ -595,7 +599,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeUpdatesAndGrandchildre
     rhs->AddPresentationRule(*grandChildRule2);
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables())));
     auto childNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())));
 
     // compare
@@ -927,7 +931,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsChangesOnlyForChildNod
     RulesetVariables variablesShowTrue({RulesetVariableEntry("show", true)});
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), ruleset->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), ruleset->GetRuleSetId(), RulesetVariables())));
     auto childNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), ruleset->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())));
 
     // compare no variables VS 'show=true' with no expanded nodes
@@ -1005,7 +1009,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsChangesOnlyForChildNod
     RulesetVariables variablesShowTrue({ RulesetVariableEntry("show", true) });
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), ruleset->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), ruleset->GetRuleSetId(), RulesetVariables())));
     auto childNodes1 = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), ruleset->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())));
     auto childNodes2 = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), ruleset->GetRuleSetId(), RulesetVariables(), rootNodes[1].get())));
 
@@ -1068,7 +1072,7 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
     rhs->AddPresentationRule(*childRule2);
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // compare
@@ -1149,7 +1153,7 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
     rhs->AddPresentationRule(*new ChildNodeRule(*childRule2));
 
     // get the nodes
-    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables(), nullptr)));
+    auto rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), lhs->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // compare
