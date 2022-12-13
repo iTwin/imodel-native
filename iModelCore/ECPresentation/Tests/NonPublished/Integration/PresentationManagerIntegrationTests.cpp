@@ -193,38 +193,38 @@ void PresentationManagerIntegrationTests::SetUpDefaultLabelRule(PresentationRule
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& expectedInstances)
+void PresentationManagerIntegrationTests::VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& expectedInstances, Utf8StringCR instanceFilter)
     {
     auto connection = m_manager->GetConnections().GetConnection(_GetProject());
-    auto instanceKeysProvider = m_manager->GetImpl().CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams::Create(*connection, nullptr, NavNodeExtendedData(node).GetRulesetId(), RulesetVariables()));
+    auto instanceKeysProvider = m_manager->GetImpl().CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams::Create(*connection, nullptr, NavNodeExtendedData(node).GetRulesetId(), RulesetVariables(), instanceFilter));
     RulesEngineTestHelpers::ValidateNodeInstances(*instanceKeysProvider, node, expectedInstances);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyPropertyGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues)
+void PresentationManagerIntegrationTests::VerifyPropertyGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues)
     {
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsECPropertyGroupingNodeKey());
     RulesEngineTestHelpers::ValidateNodeGroupedValues(node, groupedValues);
-    VerifyNodeInstances(node, groupedInstances);
+    VerifyNodeInstances(node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyPropertyRangeGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
+void PresentationManagerIntegrationTests::VerifyPropertyRangeGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
     {
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsECPropertyGroupingNodeKey());
-    VerifyNodeInstances(node, groupedInstances);
+    VerifyNodeInstances(node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyClassGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass, bool isPolymorphicGrouping)
+void PresentationManagerIntegrationTests::VerifyClassGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass, bool isPolymorphicGrouping)
     {
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsECClassGroupingNodeKey());
@@ -233,17 +233,17 @@ void PresentationManagerIntegrationTests::VerifyClassGroupingNode(NavNodeCR node
         EXPECT_EQ(groupingClass, &node.GetKey()->AsECClassGroupingNodeKey()->GetECClass());
         EXPECT_EQ(isPolymorphicGrouping, node.GetKey()->AsECClassGroupingNodeKey()->IsPolymorphic());
         }
-    VerifyNodeInstances(node, groupedInstances);
+    VerifyNodeInstances(node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyLabelGroupingNode(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
+void PresentationManagerIntegrationTests::VerifyLabelGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
     {
     ASSERT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsLabelGroupingNodeKey());
-    VerifyNodeInstances(node, groupedInstances);
+    VerifyNodeInstances(node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,12 +263,14 @@ bvector<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(A
     {
     if (configureParams)
         configureParams(params);
-    bvector<HierarchyDef<>> h;
+
     auto nodes = RulesEngineTestHelpers::GetValidatedNodes(
         [&](PageOptions pageOptions) { return m_manager->GetNodes(MakePaged(params, pageOptions)).get(); },
         [&]() { return m_manager->GetNodesCount(params).get(); }
     );
     EXPECT_EQ(expectedHierarchy.size(), nodes.GetSize());
+
+    bvector<HierarchyDef<>> h;
     for (size_t i = 0; i < expectedHierarchy.size() && i < nodes.GetSize(); ++i)
         {
         NavNodeCPtr actualNode = nodes[i];
@@ -278,11 +280,18 @@ bvector<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(A
         if (expectation.node)
             expectation.node(*actualNode, params);
 
-        bool expectChildren = expectation.children.size() > 0;
-        EXPECT_EQ(expectChildren, actualNode->HasChildren());
+        EXPECT_EQ(expectation.nodeHasChildren, actualNode->HasChildren());
 
         AsyncHierarchyRequestParams childParams(params);
-        childParams.SetParentNode(actualNode.get());
+        // intentionally set parent as a node key rather than the node itself to replicate
+        // the way child nodes are generally requested by API consumers
+        childParams.SetParentNodeKey(actualNode->GetKey().get());
+        if (!actualNode->GetKey()->AsGroupingNodeKey())
+            {
+            // we want to keep instance filter for grouping nodes and remove it for all others
+            childParams.SetInstanceFilter("");
+            }
+
         h.back().children = ValidateHierarchy(childParams, configureParams, expectation.children);
         }
     return h;
@@ -314,7 +323,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, &ecClass, isPolymorphic, expectedInstances](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
-        VerifyClassGroupingNode(n, expectedInstances, &ecClass, isPolymorphic);
+        VerifyClassGroupingNode(n, requestParams.GetInstanceFilter(), expectedInstances, &ecClass, isPolymorphic);
         };
     }
 
@@ -325,7 +334,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, label, expectedInstances](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
-        VerifyLabelGroupingNode(n, expectedInstances);
+        VerifyLabelGroupingNode(n, requestParams.GetInstanceFilter(), expectedInstances);
         EXPECT_STREQ(label.c_str(), n.GetLabelDefinition().GetDisplayValue().c_str());
         };
     }
@@ -337,7 +346,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, expectedInstances, groupedValues](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
-        VerifyPropertyGroupingNode(n, expectedInstances, groupedValues);
+        VerifyPropertyGroupingNode(n, requestParams.GetInstanceFilter(), expectedInstances, groupedValues);
         };
     }
 

@@ -361,7 +361,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsDerivedClassInsta
         ComplexNavigationQueryPtr nestedB = ComplexNavigationQuery::Create();
         nestedB->SelectContract(*contract, "this");
         nestedB->From(selectClassB);
-        
+
         ComplexNavigationQueryPtr nestedC = ComplexNavigationQuery::Create();
         nestedC->SelectContract(*contract, "this");
         nestedC->From(*classC, true, "this");
@@ -1720,8 +1720,7 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, DirectClassNodeChildrenQu
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *classGroupingNode);
     ASSERT_EQ(1, queries.size());
@@ -1762,12 +1761,10 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, FirstLevelPropertyGroupin
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode, classGroupingNode->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode);
     ASSERT_EQ(1, queries.size());
@@ -1812,16 +1809,13 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, SecondLevelPropertyGroupi
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode1 = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1, classGroupingNode->GetNodeId());
 
     auto propertyGroupingNode2 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode1->GetKey().get(), *classB, *classB->GetPropertyP("PropB"), "test2", "", { ECValue("TestGroupingDescription") }, false, {});
-    propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2, propertyGroupingNode1->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode2);
     ASSERT_EQ(1, queries.size());
@@ -1870,20 +1864,16 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, ThirdLevelPropertyGroupin
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode1 = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1, classGroupingNode->GetNodeId());
 
     auto propertyGroupingNode2 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode1->GetKey().get(), *classB, *classB->GetPropertyP("PropB"), "test2", "", { ECValue("TestGroupingDescription") }, false, {});
-    propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2, propertyGroupingNode1->GetNodeId());
 
     auto propertyGroupingNode3 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode2->GetKey().get(), *classC, *classC->GetPropertyP("PropC"), "test3", "", { ECValue(99) }, false, {});
-    propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3, propertyGroupingNode2->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode3);
     ASSERT_EQ(1, queries.size());
@@ -1939,25 +1929,20 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, LabelGroupingNodeChildren
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode1 = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1, classGroupingNode->GetNodeId());
 
     auto propertyGroupingNode2 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode1->GetKey().get(), *classB, *classB->GetPropertyP("PropB"), "test2", "", { ECValue("TestGroupingDescription") }, false, {});
-    propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2, propertyGroupingNode1->GetNodeId());
 
     auto propertyGroupingNode3 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode2->GetKey().get(), *classC, *classC->GetPropertyP("PropC"), "test3", "", { ECValue(99) }, false, {});
-    propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3, propertyGroupingNode2->GetNodeId());
 
     NavNodePtr labelGroupingNode = nodesFactory.CreateDisplayLabelGroupingNode(propertyGroupingNode3->GetKey().get(), "test", 1);
-    labelGroupingNode->SetParentNode(*propertyGroupingNode3);
     labelGroupingNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode, propertyGroupingNode3->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());

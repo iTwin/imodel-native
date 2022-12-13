@@ -969,17 +969,24 @@ Utf8PrintfString Utf8PrintfString::CreateFromVaList(Utf8CP format, va_list args)
     {
     Utf8PrintfString str;
 
+    // must make this copy before starting to use `args` and its state is modified
+    va_list argsCopy;
+    va_copy(argsCopy, args);
+
     auto result = BeUtf8StringSprintf(str, format, args);
     if (result < 0)
+        {
+        va_end(argsCopy);
         return str;
-
-    if (result > (int)str.size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
-        {                // Note that we have to re-create 'args' in order make a second attempt.
-        result = BeUtf8StringSprintf(str, format, args, result);
-        if (result < 0)
-            return str;
         }
 
+    if (result > (int)str.size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
+        {
+        // note that 'argsCopy' is used to make the second attempt
+        result = BeUtf8StringSprintf(str, format, argsCopy, result);
+        }
+
+    va_end(argsCopy);
     return str;
     }
 
@@ -1515,7 +1522,7 @@ template<typename C, typename S> static void parseArguments(bvector<S>& subStrin
 
     // Determine the space needed for argc/argv
     parseIntoArgcArgv<C>(inString, nullptr, nullptr, &argc, &numchars, allDelimiters);
-    
+
     IndexedScopedArray<C*, 32*sizeof(C*)> argv(argc+1);
     IndexedScopedArray<C> argStrings(numchars+1);
 

@@ -360,8 +360,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass_Childr
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, 0, GetECSchema()->GetName());
 
     auto groupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(rootInstanceNode->GetKey().get(), *classC, false, "MyLabel", {});
-    groupingNode->SetParentNode(*rootInstanceNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *groupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *groupingNode, rootInstanceNode->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *groupingNode);
     ASSERT_EQ(1, queries.size());
@@ -506,9 +505,8 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel_Childr
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, true, 0, GetECSchema()->GetName());
 
     auto groupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateDisplayLabelGroupingNode(rootInstanceNode->GetKey().get(), "MyLabel", 1);
-    groupingNode->SetParentNode(*rootInstanceNode);
     groupingNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *groupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *groupingNode, rootInstanceNode->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *groupingNode);
     ASSERT_EQ(1, queries.size());
@@ -585,8 +583,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, true, 0, GetECSchema()->GetName());
 
     auto groupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(rootInstanceNode->GetKey().get(), *classC, false, "MyLabel", {});
-    groupingNode->SetParentNode(*rootInstanceNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *groupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *groupingNode, rootInstanceNode->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *groupingNode);
     ASSERT_EQ(1, queries.size());
@@ -648,13 +645,11 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, true, 0, GetECSchema()->GetName());
 
     auto classGroupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(rootInstanceNode->GetKey().get(), *classC, false, "Class Grouping Node", {});
-    classGroupingNode->SetParentNode(*rootInstanceNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, rootInstanceNode->GetNodeId());
 
     auto labelGroupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateDisplayLabelGroupingNode(classGroupingNode->GetKey().get(), "Label Grouping Node", 1);
-    labelGroupingNode->SetParentNode(*classGroupingNode);
     labelGroupingNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode, classGroupingNode->GetNodeId());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());

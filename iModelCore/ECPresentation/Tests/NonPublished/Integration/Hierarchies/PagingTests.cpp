@@ -35,7 +35,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(2))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(2))).get();
         });
 
     // expect 3 nodes: C, D, E
@@ -75,7 +75,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(2))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(2))).get();
         });
 
     // expect 3 nodes: C, D, E
@@ -115,7 +115,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkippingMoreThan
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(5))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(5))).get();
         });
 
     // expect 0 nodes
@@ -152,7 +152,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecified
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 2))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 2))).get();
         });
 
     // expect 2 nodes: A, B
@@ -194,7 +194,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecifiedN
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 3))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 3))).get();
         });
 
     // expect 3 nodes: A, B, C
@@ -231,7 +231,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 5))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 5))).get();
         });
 
     // expect 2 nodes: A, B
@@ -270,7 +270,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsS
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(1, 3))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1, 3))).get();
         });
 
     // expect 3 nodes: B, C, D
@@ -311,7 +311,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsSp
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(1, 3))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1, 3))).get();
         });
 
     // expect 3 nodes: B, C, D
@@ -353,7 +353,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsSp
     // request for nodes
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(3, 1))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(3, 1))).get();
         });
 
     // expect 1 node: D
@@ -397,7 +397,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetsAllResultsWhenNumber
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodesPage1 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 500))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 500))).get();
         });
     ASSERT_EQ(500, rootNodesPage1.GetSize());
     for (size_t i = 0; i < 500; ++i)
@@ -405,7 +405,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetsAllResultsWhenNumber
 
     DataContainer<NavNodeCPtr> rootNodesPage2 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(500, 500))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(500, 500))).get();
         });
     ASSERT_EQ(500, rootNodesPage2.GetSize());
     for (size_t i = 0; i < 500; ++i)
@@ -413,7 +413,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetsAllResultsWhenNumber
 
     DataContainer<NavNodeCPtr> rootNodesPage3 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(1000, 500))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1000, 500))).get();
         });
     ASSERT_EQ(1, rootNodesPage3.GetSize());
     VerifyNodeInstance(*rootNodesPage3[0], *instances[1000]);
@@ -464,11 +464,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsAllNodesWhenSkipp
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    EXPECT_EQ(2001, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr))));
+    EXPECT_EQ(2001, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()))));
 
     DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 1000))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 1000))).get();
         });
     EXPECT_EQ(1000, rootNodes1.GetSize());
     VerifyNodeInstance(*rootNodes1[0], *instanceA0);
@@ -477,7 +477,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsAllNodesWhenSkipp
 
     DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(1000, 1000))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1000, 1000))).get();
         });
     EXPECT_EQ(1000, rootNodes2.GetSize());
     for (size_t i = 0; i < 1000; ++i)
@@ -485,7 +485,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsAllNodesWhenSkipp
 
     DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(2000, 1000))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(2000, 1000))).get();
         });
     EXPECT_EQ(1, rootNodes3.GetSize());
     VerifyNodeInstance(*rootNodes3[0], *aInstances[1999]);
@@ -571,7 +571,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsNodesFromD
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(1, 2))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1, 2))).get();
         });
     EXPECT_EQ(2, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *instanceB02);
@@ -655,7 +655,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsNodesFromD
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(1, 2))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1, 2))).get();
         });
     EXPECT_EQ(2, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *instanceB02);
@@ -688,7 +688,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsCorrectNod
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(1500, 1000))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1500, 1000))).get();
         });
     EXPECT_EQ(500, rootNodes.GetSize());
     for (size_t i = 0; i < 500; ++i)
@@ -722,11 +722,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsCorrectNodesCount
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
-        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr), PageOptions(0, 20))).get();
+        return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 20))).get();
         });
     EXPECT_EQ(20, rootNodes.GetSize());
     for (size_t i = 0; i < 20; ++i)
         VerifyNodeInstance(*rootNodes[i], *aInstances[i]);
 
-    ASSERT_EQ(numberOfNodes, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr))));
+    ASSERT_EQ(numberOfNodes, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()))));
     }

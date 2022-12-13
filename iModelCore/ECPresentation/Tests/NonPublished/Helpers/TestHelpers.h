@@ -120,7 +120,7 @@ struct RulesEngineTestHelpers
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ContentDescriptor::Field&);
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ECN::ECClassCR, ContentDescriptor::Property, IPropertyCategorySupplierR);
 
-    static void CacheNode(IHierarchyCacheR cache, NavNodeR node);
+    static void CacheNode(IHierarchyCacheR cache, NavNodeR node, BeGuidCR parentNodeId = BeGuid());
 
     static void ImportSchema(ECDbR, std::function<void(ECSchemaR)> const& schemaBuilder);
     static bvector<ECEntityClassP> CreateNDerivedClasses(ECSchemaR schema, ECEntityClassCR baseClass, int numberOfChildClasses);
@@ -232,7 +232,7 @@ private:
     bmap<NavNodeKeyCP, NavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
 
 protected:
-    NavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR key, RulesetVariables const&) const override
+    NavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodes.find(&key);
         if (m_nodes.end() != iter)
