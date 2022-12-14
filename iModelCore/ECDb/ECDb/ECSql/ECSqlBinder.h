@@ -94,6 +94,7 @@ struct ECSqlBinder : IECSqlBinder
     };
 
 struct IdECSqlBinder;
+struct IdSetBinder;
 
 //=======================================================================================
 //! @bsiclass
@@ -111,6 +112,7 @@ struct ECSqlBinderFactory final
         static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlBinder::SqlParamNameGenerator& gen) { return CreateBinder(ctx, ECSqlTypeInfo(propMap), gen); }
 
         static std::unique_ptr<IdECSqlBinder> CreateIdBinder(ECSqlPrepareContext&, PropertyMap const&, ECSqlSystemPropertyInfo const&, ECSqlBinder::SqlParamNameGenerator&);
+        static std::unique_ptr<IdSetBinder> CreateIdSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
 
     };
 

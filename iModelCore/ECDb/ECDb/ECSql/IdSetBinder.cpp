@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 IdSetBinder::IdSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, 0, false, false)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ ECSqlStatus IdSetBinder::_BindNull()
 ECSqlStatus IdSetBinder::_BindBoolean(bool value)
     {
     LOG.error("Type mismatch. Cannot bind Boolean value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindBoolean(value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ ECSqlStatus IdSetBinder::_BindBoolean(bool value)
 ECSqlStatus IdSetBinder::_BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     LOG.error("Type mismatch. Cannot bind Blob value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindBlob(value, binarySize, makeCopy);
     }
 
 //---------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ ECSqlStatus IdSetBinder::_BindBlob(const void* value, int binarySize, IECSqlBind
 ECSqlStatus IdSetBinder::_BindZeroBlob(int blobSize)
     {
     LOG.error("Type mismatch. Cannot bind ZeroBlob value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindZeroBlob(blobSize);
     }
 
 //---------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ ECSqlStatus IdSetBinder::_BindZeroBlob(int blobSize)
 ECSqlStatus IdSetBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
     {
     LOG.error("Type mismatch. Cannot bind DateTime value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindDateTime(julianDayMsec, metadata);
     }
 
 //---------------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ ECSqlStatus IdSetBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info co
 ECSqlStatus IdSetBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
     LOG.error("Type mismatch. Cannot bind DateTime value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindDateTime(julianDay, metadata);
     }
 
 
@@ -79,7 +79,7 @@ ECSqlStatus IdSetBinder::_BindDateTime(double julianDay, DateTime::Info const& m
 ECSqlStatus IdSetBinder::_BindDouble(double value)
     {
     LOG.error("Type mismatch. Cannot bind Double value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindDouble(value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ ECSqlStatus IdSetBinder::_BindDouble(double value)
 ECSqlStatus IdSetBinder::_BindInt(int value)
     {
     LOG.error("Type mismatch. Cannot bind Int value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindInt(value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -96,8 +96,11 @@ ECSqlStatus IdSetBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdSetBinder::_BindInt64(int64_t value)
     {
-    LOG.error("Type mismatch. Cannot bind Int64 value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), value);
+    if (sqliteStat != BE_SQLITE_OK)
+        return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind Int64 value %" PRIi64 " to Id parameter.", value).c_str());
+
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -106,7 +109,7 @@ ECSqlStatus IdSetBinder::_BindInt64(int64_t value)
 ECSqlStatus IdSetBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     LOG.error("Type mismatch. Cannot bind Text value to IdSet parameter.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindText(value, makeCopy, byteCount);
     }
 
 
@@ -116,7 +119,7 @@ ECSqlStatus IdSetBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy
 ECSqlStatus IdSetBinder::_BindPoint2d(DPoint2dCR value)
     {
     LOG.error("Type mismatch. Point2d value can only be bound to parameter of same type.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindPoint2d(value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -125,7 +128,7 @@ ECSqlStatus IdSetBinder::_BindPoint2d(DPoint2dCR value)
 ECSqlStatus IdSetBinder::_BindPoint3d(DPoint3dCR value)
     {
     LOG.error("Type mismatch. Point3d value can only be bound to parameter of same type.");
-    return ECSqlStatus::Error;
+    return NoopECSqlBinder::Get().BindPoint3d(value);
     }
 
 

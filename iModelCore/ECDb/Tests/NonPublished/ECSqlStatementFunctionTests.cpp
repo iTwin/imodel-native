@@ -764,8 +764,6 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
 TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-    const int perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(1023, 1);")) << "First parameter should not be Primitive type";
@@ -793,66 +791,80 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
     statement.ClearBindings();
 
     // Bind Boolean value;
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindBoolean(1, false));
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindBoolean(1, false));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
     statement.Reset();
     statement.ClearBindings();
 
     // Bind Double value
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindDouble(1, 1.2));
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindDouble(1, 1.2));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
     statement.Reset();
     statement.ClearBindings();
 
     // Bind Int value
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 15));
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, 15));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
     statement.Reset();
     statement.ClearBindings();
 
-    // Bind Int64 value
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, 15));
-    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(0, statement.GetValueInt(0));
-    statement.Reset();
-    statement.ClearBindings();
+    // // Bind Int64 value
+    // ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, 15));
+    // ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    // ASSERT_EQ(0, statement.GetValueInt(0));
+    // statement.Reset();
+    // statement.ClearBindings();
 
     // Bind Point2d value
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindPoint2d(1, DPoint2d::From(2, 3)));
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindPoint2d(1, DPoint2d::From(2, 3)));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
     statement.Reset();
     statement.ClearBindings();
 
     // Bind Point3d value
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindPoint3d(1, DPoint3d::From(2, 3, 4)));
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindPoint3d(1, DPoint3d::From(2, 3, 4)));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
     statement.Reset();
     statement.ClearBindings();
 
     // Bind Text value
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, "str", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindText(1, "str", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind empty IdSet
+    IdSet<BeInt64Id> idSet;
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindIdSet(1, idSet));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
     statement.Reset();
     statement.ClearBindings();
 
     // Bind empty VirtualSet IdSet
-    IdSet<BeInt64Id> idSet;
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
     statement.Reset();
     statement.ClearBindings();
 
-    // Bind non-empty VirtualSet IdSet
+    // Bind non-empty IdSet
     idSet.insert(BeInt64Id(1));
     idSet.insert(BeInt64Id(5));
     idSet.insert(BeInt64Id(10));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindIdSet(1, idSet));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(1, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind non-empty VirtualSet IdSet
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(1, statement.GetValueInt(0));
