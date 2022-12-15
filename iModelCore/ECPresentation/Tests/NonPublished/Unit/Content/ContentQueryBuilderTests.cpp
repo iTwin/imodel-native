@@ -31,11 +31,11 @@ void ContentQueryBuilderTests::SetUp()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentQueryBuilderTests::ValidateContentQuerySet(ContentQuerySet const& querySet)
+void ContentQueryBuilderTests::ValidateContentQuerySet(QuerySet const& querySet)
     {
     for (size_t i = 0; i < querySet.GetQueries().size(); ++i)
         {
-        Utf8String queryStr = querySet.GetQueries().at(i)->ToString();
+        Utf8String queryStr = querySet.GetQueries().at(i)->GetQuery()->GetQueryString();
         PrepareQuery(queryStr, Utf8PrintfString("%s[%d]", BeTest::GetNameOfCurrentTest(), i));
         }
     }
@@ -43,9 +43,9 @@ void ContentQueryBuilderTests::ValidateContentQuerySet(ContentQuerySet const& qu
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQuerySet ContentQueryBuilderTests::PrepareContentQuerySet(std::function<ContentQuerySet()> querySetFactory)
+QuerySet ContentQueryBuilderTests::PrepareContentQuerySet(std::function<QuerySet()> querySetFactory)
     {
-    ContentQuerySet querySet = querySetFactory();
+    QuerySet querySet = querySetFactory();
     ValidateContentQuerySet(querySet);
     return querySet;
     }
@@ -53,10 +53,10 @@ ContentQuerySet ContentQueryBuilderTests::PrepareContentQuerySet(std::function<C
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQuerySet ContentQueryBuilderTests::PrepareContentQuerySet(std::function<ContentQueryPtr()> queryFactory)
+QuerySet ContentQueryBuilderTests::PrepareContentQuerySet(std::function<PresentationQueryBuilderPtr()> queryFactory)
     {
-    ContentQueryPtr query = queryFactory();
-    ContentQuerySet querySet = ContentQuerySet({ query });
+    auto query = queryFactory();
+    QuerySet querySet = QuerySet({ query });
     ValidateContentQuerySet(querySet);
     return querySet;
     }
@@ -64,20 +64,20 @@ ContentQuerySet ContentQueryBuilderTests::PrepareContentQuerySet(std::function<C
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentQueryBuilderTests::ValidateQueries(ContentQuerySet const& actual, ContentQuerySet const& expected)
+void ContentQueryBuilderTests::ValidateQueries(QuerySet const& actual, QuerySet const& expected)
     {
     EXPECT_TRUE(expected.Equals(actual))
         << "Expected: " << expected.ToString() << "\r\n"
         << "Actual:   " << actual.ToString();
     EXPECT_TRUE(AreDescriptorsEqual(expected, actual))
-        << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected.GetContract()->GetDescriptor().AsJson()) << "\r\n"
-        << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(actual.GetContract()->GetDescriptor().AsJson());
+        << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected.GetContract()->AsContentQueryContract()->GetDescriptor().AsJson()) << "\r\n"
+        << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(actual.GetContract()->AsContentQueryContract()->GetDescriptor().AsJson());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentQueryBuilderTests::ValidateQueries(ContentQuerySet const& actual, std::function<ContentQueryPtr()> expectedSetFactory)
+void ContentQueryBuilderTests::ValidateQueries(QuerySet const& actual, std::function<PresentationQueryBuilderPtr()> expectedSetFactory)
     {
     auto expectedSet = PrepareContentQuerySet(expectedSetFactory);
     ValidateQueries(actual, expectedSet);
@@ -86,7 +86,7 @@ void ContentQueryBuilderTests::ValidateQueries(ContentQuerySet const& actual, st
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentQueryBuilderTests::ValidateQueries(ContentQuerySet const& actual, std::function<ContentQuerySet()> expectedSetFactory)
+void ContentQueryBuilderTests::ValidateQueries(QuerySet const& actual, std::function<QuerySet()> expectedSetFactory)
     {
     auto expectedSet = PrepareContentQuerySet(expectedSetFactory);
     ValidateQueries(actual, expectedSet);
@@ -95,10 +95,10 @@ void ContentQueryBuilderTests::ValidateQueries(ContentQuerySet const& actual, st
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentQueryBuilderTests::AreDescriptorsEqual(ContentQuerySet const& lhs, ContentQuerySet const& rhs)
+bool ContentQueryBuilderTests::AreDescriptorsEqual(QuerySet const& lhs, QuerySet const& rhs)
     {
-    auto const& lhsDescriptor = lhs.GetContract()->GetDescriptor();
-    auto const& rhsDescriptor = rhs.GetContract()->GetDescriptor();
+    auto const& lhsDescriptor = lhs.GetContract()->AsContentQueryContract()->GetDescriptor();
+    auto const& rhsDescriptor = rhs.GetContract()->AsContentQueryContract()->GetDescriptor();
     return ContentHelpers::AreDescriptorsEqual(lhsDescriptor, rhsDescriptor, RulesetCompareOption::ById);
     }
 
@@ -323,18 +323,18 @@ TEST_F (ContentQueryBuilderTests, FieldNamesDontCollideWhenSelectingInstanceAndR
             }, RelationshipMeaning::SameInstance));
         AddField(*descriptor, *CreatePropertiesField(rootCategory, CreateProperty("this", *classB, *classB->GetPropertyP("Prop")), FIELD_NAME_C(classB, "Prop", 2)));
 
-        ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
         q1->SelectContract(*CreateQueryContract(1, *descriptor, classA, *q1), "this");
         q1->From(*classA, false, "this");
         q1->Join(aTob);
         q1->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId::FromString(a->GetInstanceId().c_str()))});
 
-        ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr q2 = ComplexQueryBuilder::Create();
         q2->SelectContract(*CreateQueryContract(2, *descriptor, classB, *q2), "this");
         q2->From(*classB, false, "this");
         q2->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId::FromString(b->GetInstanceId().c_str()))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({q1, q2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -423,19 +423,19 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop")), FIELD_NAME_C(classB, "Prop", 2)),
             }));
 
-        ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
         q1->SelectContract(*CreateQueryContract(1, *descriptor, classA, *q1), "this");
         q1->From(*classA, false, "this");
         q1->Join(aTob);
         q1->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId::FromString(a->GetInstanceId().c_str()))});
 
-        ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr q2 = ComplexQueryBuilder::Create();
         q2->SelectContract(*CreateQueryContract(2, *descriptor, classC, *q2), "this");
         q2->From(*classC, false, "this");
         q2->Join(cTob);
         q2->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId::FromString(c->GetInstanceId().c_str()))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({q1, q2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -497,7 +497,7 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedPropertiesSpecificationFromConte
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop"))),
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Join(aTob);
@@ -580,7 +580,7 @@ TEST_F (ContentQueryBuilderTests, DoesntApplyRelatedPropertiesSpecificationFromC
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB"))),
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Join(aTob);
@@ -643,7 +643,7 @@ TEST_F (ContentQueryBuilderTests, CreatesContentFieldsForXToManyRelatedInstanceP
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop")))
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Join(aTob);
@@ -736,7 +736,7 @@ TEST_F (ContentQueryBuilderTests, CreatesNestedContentFieldsForXToManyRelatedIns
                 })
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Join(aTob);
@@ -830,7 +830,7 @@ TEST_F(ContentQueryBuilderTests, CreatesNestedContentFieldsForXToManySameInstanc
                 })
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Join(aTob);
@@ -871,7 +871,7 @@ TEST_F (ContentQueryBuilderTests, SetsShowImagesFlag)
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
         descriptor->AddContentFlag(ContentFlags::ShowImages);
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
@@ -913,13 +913,13 @@ TEST_F (ContentQueryBuilderTests, SetsShowLabelsFlagForGridContentType)
         descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        ComplexContentQueryPtr nested = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*CreateQueryContract(1, *descriptor, classA, *nested, CreateDisplayLabelField(selectClass)), "this");
         nested->From(selectClass);
         nested->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
 
 #ifdef WIP_SORTING_GRID_CONTENT
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectAll();
         query->From(*nested);
         query->OrderBy(Utf8PrintfString(FUNCTION_NAME_GetSortingValue "(%s), %s", ContentQueryContract::DisplayLabelFieldName, ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -959,7 +959,7 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndKeysOnlyFlagForGraphicsContentT
         descriptor->AddContentFlag(ContentFlags::NoFields);
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
@@ -997,13 +997,13 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndShowLabelsFlagsForListContentTy
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        ComplexContentQueryPtr nested = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*CreateQueryContract(1, *descriptor, classA, *nested, CreateDisplayLabelField(selectClass)), "this");
         nested->From(selectClass);
         nested->Where("[this].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
 
 #ifdef WIP_SORTING_GRID_CONTENT
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectAll();
         query->From(*nested);
         query->OrderBy(Utf8PrintfString(FUNCTION_NAME_GetSortingValue "(%s), %s", ContentQueryContract::DisplayLabelFieldName, ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -1059,7 +1059,7 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedInstanceSpecificationForTheSameX
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, nullptr, { {aTob1}, {aTob2} }), "this");
         query->From(*classA, false, "this");
         query->Join(aTob1);
@@ -1152,7 +1152,7 @@ TEST_F (ContentQueryBuilderTests, JoinsRelationshipsThatHaveOnlyOneTarget)
             CreatePropertiesField(CreateCategory(*classC), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC"))),
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Join(aToc);

@@ -10,7 +10,6 @@
 #include "../Shared/Queries/QueryBuilderHelpers.h"
 #include "../Shared/ECSchemaHelper.h"
 #include "../Shared/ECExpressions/ECExpressionContextsProvider.h"
-#include "ContentQuery.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
