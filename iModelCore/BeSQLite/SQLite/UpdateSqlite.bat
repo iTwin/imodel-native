@@ -8,13 +8,18 @@ rem +---------------------------------------------------------------------------
 rem This script will update the SQLite source from a fossil branch, and then create the amalgamation `sqlite.c` source file.
 rem @note that it requires cygwin be installed
 
-set besqlite_root=%SrcRoot%imodel02\iModelCore\BeSQLite\SQLite\
-set sqlite_root=%appdata%\sqlite-src
-set fossil_db=sqlite.fossil
-set build_dir=out
+set SqliteTag=itwin-sqlite-v3.40.0-r0
+set besqlite_root=%SrcRoot%imodel-native\iModelCore\BeSQLite\SQLite\
+set sqlite_root=%appdata%\itwin-sqlite
+set build_dir=outdir
 set target=sqlite3.c
 
-@if "%SqliteBranch%." == "." set SqliteBranch=trunk
+if  not exist %CYGWIN_BIN% (
+  echo "*** CYGWIN_BIN variable must be set ***"
+  popd
+  exit /b %errorlevel%
+)
+
 
 rem create folder in appdata if it does not already exist.
 if not exist %sqlite_root% md %sqlite_root%
@@ -22,23 +27,25 @@ if not exist %sqlite_root% md %sqlite_root%
 rem save current folder
 pushd .
 cd /D %sqlite_root%
+rem configure and build sqlite
+if exist %build_dir% rmdir /s/q %build_dir%
 
 rem download or update sqlite source to appdata
-if exist %sqlite_root%\%fossil_db% (
-    fossil update %SqliteBranch%
-) else (
-    fossil clone https://www.sqlite.org/src %fossil_db%
-    fossil open %fossil_db%
-    fossil update %SqliteBranch%
+if not exist %sqlite_root%\configure (
+    git clone https://github.com/iTwin/sqlite.git .
 )
+
+git pull
+git switch %SqliteTag% --detach
+
 if %errorlevel% neq 0 (
-  echo "*** Unable to clone or update sqlite source code ***"
+  echo "*** Unable to chekcout or pull sqlite source code ***"
   popd
   exit /b %errorlevel%
 )
 
-rem configure and build sqlite
-if exist %build_dir% rmdir /s/q %build_dir%
+SET PATH=%CYGWIN_BIN%;%PATH%
+
 mkdir %build_dir%
 cd %build_dir%
 sh ..\configure
