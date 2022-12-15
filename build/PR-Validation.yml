@@ -18,7 +18,6 @@ resources:
     - repository: iTwinjs-core
       type: github
       name: iTwin/itwinjs-core
-      ref: imodel02-PR-validation #temp ref until merge
       endpoint: iTwin
     - repository: imodeljs-build-pipeline-scripts
       type: git
