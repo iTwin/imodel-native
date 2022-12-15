@@ -105,7 +105,7 @@ void CloudCache::ReadGuid() {
  * @param name the name of this vfs
  * @param rootDir the directory to use for caching cloud containers
  */
-CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize, int64_t nRequest, int64_t httpTimeout, bool curlDiagnostics) {
+CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize, int nRequest, int httpTimeout, bool curlDiagnostics) {
     m_name = name;
     m_rootDir = rootDir;
     auto stat = CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_create(m_rootDir.c_str(), m_name.c_str(), &m_vfs, msg); }, "create CloudCache");
