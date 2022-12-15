@@ -28,6 +28,25 @@ BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required 
     return SUCCESS;
     }
 
+BentleyStatus DgnDomains::UnRegisterDomain(const DgnDomain& domain) {
+    // Validate supplied domain
+    if (!domain.ValidateSchemaPathname())
+        return ERROR;
+        
+    // Remove domain from the domains list
+    auto& domains = T_HOST.RegisteredDomains();
+    domains.erase(std::remove_if(domains.begin(), domains.end(), [&domain](const DgnDomain* currentDomain) {
+        return domain.m_domainName.EqualsI(currentDomain->GetDomainName());
+    }), domains.end());
+
+    // Make sure domain has been removed from the list
+    for (const auto currentDomain : domains)
+        if (domain.m_domainName.EqualsI(currentDomain->GetDomainName()))
+            return ERROR;
+            
+    return SUCCESS;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
