@@ -51,7 +51,7 @@ struct CloudCache {
     Utf8String m_name;
     std::vector<CloudContainer*> m_containers;
 
-    BE_SQLITE_EXPORT CloudResult InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize = 0, int64_t nRequest = 0, bool verboseCurlLog = false);
+    BE_SQLITE_EXPORT CloudResult InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize = 0, int64_t nRequest = 0, int64_t httpTimeout = 0, bool verboseCurlLog = false);
     BE_SQLITE_EXPORT void SetLogMask(int logMask);
     BE_SQLITE_EXPORT Utf8String GetDatabaseHash(CloudContainer& container, Utf8StringCR dbName);
     BE_SQLITE_EXPORT int GetNumCleanupBlocks(CloudContainer& container);
@@ -147,7 +147,7 @@ public:
 
     virtual ~CloudUtil() { Close(); }
     BE_SQLITE_EXPORT void Close();
-    BE_SQLITE_EXPORT CloudResult Init(CloudContainer const& container, int logLevel = 0, int nRequests = 0);
+    BE_SQLITE_EXPORT CloudResult Init(CloudContainer const& container, int logLevel = 0, int nRequests = 0, int httpTimeout = 0);
     BE_SQLITE_EXPORT CloudResult InitializeContainer(int nameSize = 0, int blockSize = 0);
     BE_SQLITE_EXPORT CloudResult CleanDeletedBlocks(int deleteTime = 0);
     BE_SQLITE_EXPORT CloudResult UploadDatabase(Utf8StringCR localFileName, Utf8StringCR dbName);
