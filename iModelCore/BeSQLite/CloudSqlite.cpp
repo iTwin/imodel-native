@@ -15,7 +15,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 // default for "nRequests" to SQLite apis (number of simultaneous HTTP connections). 6 is the maximum from Chrome.
 static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
-static const int DEFAULT_HTTP_TIMEOUT = 60; // 60 seconds 
+// default for "httpTimeout" to SQLite apis (time in seconds to wait without a response before considering an http request as timed out).
+static const int DEFAULT_HTTP_TIMEOUT = 60; 
 
 Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP container) {
     if (nullptr == container)
