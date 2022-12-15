@@ -22,8 +22,6 @@ $(o)ContentItemBuilder$(oext):              $(SourceDirectory)Content/ContentIte
 
 $(o)ContentProviders$(oext):                $(SourceDirectory)Content/ContentProviders.cpp $(ECPresentationDependencies)
 
-$(o)ContentQuery$(oext):                    $(SourceDirectory)Content/ContentQuery.cpp $(ECPresentationDependencies)
-
 $(o)ContentQueryBuilder$(oext):             $(SourceDirectory)Content/ContentQueryBuilder.cpp $(ECPresentationDependencies)
 
 $(o)ContentQueryContracts$(oext):           $(SourceDirectory)Content/ContentQueryContracts.cpp $(ECPresentationDependencies)

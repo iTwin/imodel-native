@@ -100,7 +100,7 @@ SpecificationContentProvider::SpecificationContentProvider(SpecificationContentP
     {
     m_descriptor = other.m_descriptor;
     if (other.m_queries)
-        m_queries = std::make_unique<ContentQuerySet>(*other.m_queries);
+        m_queries = std::make_unique<QuerySet>(*other.m_queries);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,7 +487,7 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
             (uint64_t)item.GetKeys().size(), item.GetClass()->GetFullName()));
 
         uint64_t contractId = ContentSetItemExtendedData(item).GetContractId();
-        ContentQueryContract const* contract = _GetContentQuerySet().GetContract(contractId);
+        ContentQueryContract const* contract = ContentQueryContractsFilter(_GetContentQuerySet()).GetContract(contractId);
         if (nullptr == contract)
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Contract is NULL");
 
@@ -791,7 +791,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+--*/
-    ContentQuerySet const& GetQuerySet() {return m_queryBuilder->GetQuerySet();}
+    QuerySet const& GetQuerySet() {return m_queryBuilder->GetQuerySet();}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -907,13 +907,13 @@ ContentDescriptorCP SpecificationContentProvider::_GetContentDescriptor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQuerySet const& SpecificationContentProvider::_GetContentQuerySet() const
+QuerySet const& SpecificationContentProvider::_GetContentQuerySet() const
     {
     BeMutexHolder lock(GetMutex());
     if (m_queries == nullptr)
         {
         auto scope = Diagnostics::Scope::Create("Create content queries");
-        m_queries = std::make_unique<ContentQuerySet>();
+        m_queries = std::make_unique<QuerySet>();
         ContentDescriptorCP descriptor = GetContentDescriptor();
         if (nullptr == descriptor)
             {
@@ -932,7 +932,7 @@ ContentQuerySet const& SpecificationContentProvider::_GetContentQuerySet() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericQuerySet SpecificationContentProvider::_GetCountQuerySet() const
+QuerySet SpecificationContentProvider::_GetCountQuerySet() const
     {
     auto scope = Diagnostics::Scope::Create("Create content set size queries");
 
@@ -948,7 +948,7 @@ GenericQuerySet SpecificationContentProvider::_GetCountQuerySet() const
 
     QueryBuilder builder(GetContext(), *countDescriptor, false, true);
     VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
-    GenericQuerySet querySet(ContainerHelpers::TransformContainer<bvector<GenericQueryPtr>>(builder.GetQuerySet().GetQueries(), [&](auto const& keysQuery)
+    QuerySet querySet(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(builder.GetQuerySet().GetQueries(), [&](auto const& keysQuery)
         {
         Utf8CP groupingFieldName = ContentQueryContract::ECInstanceKeysFieldName;
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
@@ -956,10 +956,10 @@ GenericQuerySet SpecificationContentProvider::_GetCountQuerySet() const
             groupingFieldName = countDescriptor->GetDistinctField()->GetUniqueName().c_str();
 #endif
         RefCountedPtr<CountQueryContract> contract = CountQueryContract::Create(groupingFieldName);
-        ComplexGenericQueryPtr countQuery = ComplexGenericQuery::Create();
+        auto countQuery = ComplexQueryBuilder::Create();
         countQuery->SelectContract(*contract);
         countQuery->GroupByContract(*contract);
-        countQuery->From(*StringGenericQuery::Create(keysQuery->ToString(), keysQuery->GetBoundValues()));
+        countQuery->From(*keysQuery->GetQuery());
         return countQuery;
         }));
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
@@ -1043,15 +1043,15 @@ bvector<DisplayValueGroupCPtr> SpecificationContentProvider::CreateDistinctValue
             {
             PresentationQueryContractSimpleField::Create(field.GetUniqueName().c_str(), field.GetUniqueName().c_str())
             });
-        ComplexGenericQueryPtr distinctValuesQuery = ComplexGenericQuery::Create();
+        auto distinctValuesQuery = ComplexQueryBuilder::Create();
         distinctValuesQuery->SelectContract(*contract, "values");
-        distinctValuesQuery->From(*StringGenericQuery::Create(contentQuery->ToString(), contentQuery->GetBoundValues()), "values");
+        distinctValuesQuery->From(*contentQuery->GetQuery(), "values");
         distinctValuesQuery->GroupByContract(*contract);
 
         auto queryScope = Diagnostics::Scope::Create("Accumulate query results");
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", distinctValuesQuery->ToString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", distinctValuesQuery->GetQuery()->GetQueryString().c_str()));
 
-        QueryExecutorHelper::ExecuteQuery(GetContext().GetConnection(), *distinctValuesQuery,
+        QueryExecutorHelper::ExecuteQuery(GetContext().GetConnection(), *distinctValuesQuery->GetQuery(),
             distinctValuesAccumulator, GetContext().GetCancelationToken());
         }
 
@@ -1146,8 +1146,9 @@ void ContentProvider::Initialize()
         }
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
 
-    ContentDescriptorCR descriptor = querySet.GetContract()->GetDescriptor();
-    ContentReader contentReader(GetContext().GetConnection().GetECDb().Schemas(), querySet);
+    ContentQueryContractsFilter contracts(querySet);
+    ContentDescriptorCR descriptor = contracts.GetContract()->GetDescriptor();
+    ContentReader contentReader(GetContext().GetConnection().GetECDb().Schemas(), contracts);
     if (GetContext().IsPropertyFormattingContext())
         {
         contentReader.SetPropertyFormatter(GetContext().GetECPropertyFormatter());
@@ -1168,9 +1169,9 @@ void ContentProvider::Initialize()
     for (auto const& query : querySet.GetQueries())
         {
         auto queryScope = Diagnostics::Scope::Create("Execute query");
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", query->ToString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", query->GetQuery()->GetQueryString().c_str()));
 
-        executor.SetQuery(*query);
+        executor.SetQuery(*query->GetQuery());
         ContentSetItemPtr item;
         while (QueryExecutorStatus::Row == executor.ReadNext(item, contentReader) && (GetPageOptions().GetPageSize() == 0 || records.size() < GetPageOptions().GetPageSize()))
             {
@@ -1244,8 +1245,8 @@ size_t ContentProvider::GetFullContentSetSize() const
                     continue;
 
                 auto queryScope = Diagnostics::Scope::Create("Execute count query");
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", query->ToString().c_str()));
-                fullSize += (size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *query);
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", query->GetQuery()->GetQueryString().c_str()));
+                fullSize += (size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *query->GetQuery());
                 }
             m_fullContentSetSize = std::make_unique<size_t>(fullSize);
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Total content set size: %" PRIu64, (uint64_t)*m_fullContentSetSize));
@@ -1322,14 +1323,14 @@ void NestedContentProvider::_OnDescriptorChanged()
 ContentDescriptorCP NestedContentProvider::_GetContentDescriptor() const
     {
     auto const& querySet = _GetContentQuerySet();
-    auto const& contract = querySet.GetContract();
+    auto const& contract = ContentQueryContractsFilter(querySet).GetContract();
     return contract ? &contract->GetDescriptor() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
+QuerySet const& NestedContentProvider::_GetContentQuerySet() const
     {
     BeMutexHolder lock(GetMutex());
     auto scope = Diagnostics::Scope::Create("Create content queries");
@@ -1340,7 +1341,7 @@ ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
             GetContext().GetRulesPreprocessor(), GetContext().GetRuleset(), GetContext().GetRulesetVariables(), GetContext().GetECExpressionsCache(), &GetContext().GetUsedVariablesListener(),
             GetContext().GetCategorySupplier(), false, false, formatter, GetContext().GetLocalState());
         ContentQueryBuilder queryBuilder(params);
-        m_unfilteredQueries = std::make_unique<ContentQuerySet>(queryBuilder.CreateQuerySet(m_field));
+        m_unfilteredQueries = std::make_unique<QuerySet>(queryBuilder.CreateQuerySet(m_field));
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " unfiltered queries", (uint64_t)m_unfilteredQueries->GetQueries().size()));
         }
     if (m_queries == nullptr)
@@ -1351,9 +1352,9 @@ ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
             Utf8String idSelector = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]");
             bvector<ECInstanceId> ids = ContainerHelpers::TransformContainer<bvector<ECInstanceId>>(m_primaryInstanceKeys, [](ECClassInstanceKeyCR key){return key.GetId();});
             ValuesFilteringHelper idsFilteringHelper(ids);
-            m_queries = std::make_unique<ContentQuerySet>(ContainerHelpers::TransformContainer<bvector<ContentQueryPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
+            m_queries = std::make_unique<QuerySet>(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
                 {
-                ContentQueryPtr query = unfilteredQuery->Clone();
+                auto query = unfilteredQuery->Clone();
                 QueryBuilderHelpers::Where(query, idsFilteringHelper.CreateWhereClause(idSelector.c_str()).c_str(), idsFilteringHelper.CreateBoundValues());
                 return query;
                 }));
@@ -1364,9 +1365,9 @@ ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
             BoundQueryValuesList bindings({ std::make_shared<BoundQueryId>(m_primaryInstanceKeys[0].GetId()) });
             Utf8CP idFieldAlias = (nullptr != m_field.AsRelatedContentField()) ? m_field.AsRelatedContentField()->GetSelectClassAlias() : m_field.GetContentClassAlias().c_str();
             Utf8String whereClause = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId] = ? ");
-            m_queries = std::make_unique<ContentQuerySet>(ContainerHelpers::TransformContainer<bvector<ContentQueryPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
+            m_queries = std::make_unique<QuerySet>(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
                 {
-                ContentQueryPtr query = unfilteredQuery->Clone();
+                auto query = unfilteredQuery->Clone();
                 QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);
                 return query;
                 }));
@@ -1379,17 +1380,17 @@ ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericQuerySet NestedContentProvider::_GetCountQuerySet() const
+QuerySet NestedContentProvider::_GetCountQuerySet() const
     {
     auto scope = Diagnostics::Scope::Create("Create content set size queries");
     auto const& contentQueries = _GetContentQuerySet();
-    GenericQuerySet querySet(ContainerHelpers::TransformContainer<bvector<GenericQueryPtr>>(contentQueries.GetQueries(), [](auto const& contentQuery)
+    QuerySet querySet(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(contentQueries.GetQueries(), [](auto const& contentQuery)
         {
         RefCountedPtr<CountQueryContract> contract = CountQueryContract::Create();
-        ComplexGenericQueryPtr countQuery = ComplexGenericQuery::Create();
+        auto countQuery = ComplexQueryBuilder::Create();
         countQuery->SelectContract(*contract);
         countQuery->GroupByContract(*contract);
-        countQuery->From(*StringGenericQuery::Create(contentQuery->ToString(), contentQuery->GetBoundValues()));
+        countQuery->From(*contentQuery->GetQuery());
         return countQuery;
         }));
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));

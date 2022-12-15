@@ -27,6 +27,7 @@ protected:
     NavigationQueryContract(Utf8String specificationIdentifier)
         : m_specificationIdentifier(specificationIdentifier)
         {}
+    NavigationQueryContract const* _AsNavigationQueryContract() const override {return this;}
     virtual NavigationQueryResultType _GetResultType() const = 0;
     virtual RefCountedPtr<NavigationQueryContract> _Clone() const = 0;
     ECPRESENTATION_EXPORT virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
@@ -159,10 +160,10 @@ private:
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecClassIdField;
     RefCountedPtr<PresentationQueryContractFunctionField> m_displayLabelField;
     PresentationQueryContractFieldPtr m_groupedInstancesCountField;
-    NavigationQueryCPtr m_instanceKeysSelectQueryBase;
+    PresentationQueryBuilderCPtr m_instanceKeysSelectQueryBase;
 
 private:
-    ECPRESENTATION_EXPORT ECClassGroupingNodesQueryContract(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase,
+    ECPRESENTATION_EXPORT ECClassGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase,
         ECClassId customClassId, bool isPolymorphic);
 
 protected:
@@ -172,16 +173,16 @@ protected:
     ECPRESENTATION_EXPORT void _SetECClassIdFieldName(Utf8CP name) override;
 
 public:
-    static RefCountedPtr<ECClassGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase)
+    static RefCountedPtr<ECClassGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase)
         {
         return new ECClassGroupingNodesQueryContract(specificationIdentifier, instanceKeysSelectQueryBase, ECClassId(), false);
         }
-    static RefCountedPtr<ECClassGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase, ECClassId customClassId, bool isPolymorphic)
+    static RefCountedPtr<ECClassGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase, ECClassId customClassId, bool isPolymorphic)
         {
         return new ECClassGroupingNodesQueryContract(specificationIdentifier, instanceKeysSelectQueryBase, customClassId, isPolymorphic);
         }
-    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery(ECClassCR, bool isPolymorphic) const;
+    ECPRESENTATION_EXPORT PresentationQueryBuilderPtr CreateInstanceKeysSelectQuery() const;
+    ECPRESENTATION_EXPORT PresentationQueryBuilderPtr CreateInstanceKeysSelectQuery(ECClassCR, bool isPolymorphic) const;
 };
 
 /*=================================================================================**//**
@@ -229,10 +230,10 @@ private:
     PresentationQueryContractFieldPtr m_displayLabelField;
     PresentationQueryContractFieldPtr m_groupedInstancesCountField;
     RefCountedPtr<PresentationQueryContractFunctionField> m_groupedInstanceKeysField;
-    NavigationQueryCPtr m_instanceKeysSelectQueryBase;
+    PresentationQueryBuilderCPtr m_instanceKeysSelectQueryBase;
 
 private:
-    ECPRESENTATION_EXPORT DisplayLabelGroupingNodesQueryContract(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase,
+    ECPRESENTATION_EXPORT DisplayLabelGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase,
         ECClassCP, PresentationQueryContractFieldPtr displayLabelField);
 
 protected:
@@ -243,13 +244,13 @@ protected:
     ECPRESENTATION_EXPORT void _SetECInstanceIdFieldName(Utf8CP name) override;
 
 public:
-    static RefCountedPtr<DisplayLabelGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase,
+    static RefCountedPtr<DisplayLabelGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase,
         ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField)
         {
         return new DisplayLabelGroupingNodesQueryContract(specificationIdentifier, instanceKeysSelectQueryBase, ecClass, displayLabelField);
         }
-    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery(LabelDefinitionCR label) const;
+    ECPRESENTATION_EXPORT PresentationQueryBuilderPtr CreateInstanceKeysSelectQuery() const;
+    ECPRESENTATION_EXPORT PresentationQueryBuilderPtr CreateInstanceKeysSelectQuery(LabelDefinitionCR label) const;
 };
 
 /*=================================================================================**//**
@@ -308,10 +309,10 @@ private:
     PresentationQueryContractFieldPtr m_isRangeField;
     PresentationQueryContractFieldPtr m_groupedInstancesCountField;
     Utf8String m_groupingPropertyClassAlias;
-    NavigationQueryCPtr m_instanceKeysSelectQueryBase;
+    PresentationQueryBuilderCPtr m_instanceKeysSelectQueryBase;
 
 private:
-    ECPRESENTATION_EXPORT ECPropertyGroupingNodesQueryContract(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase,
+    ECPRESENTATION_EXPORT ECPropertyGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase,
         SelectClass<ECClass> const&, ECPropertyCR, PropertyGroupCR, SelectClass<ECClass> const*);
     static PresentationQueryContractFieldPtr CreateImageIdField(PropertyGroupCR, PresentationQueryContractFieldCR propertyDisplayValueField);
     static PresentationQueryContractFieldPtr CreatePropertyDisplayValueField(ECPropertyCR, Utf8StringCR propertyClassAlias, Utf8StringCR foreignKeyClassAlias, PresentationQueryContractFieldCR ecClassIdField, PresentationQueryContractFieldCR ecInstanceIdField);
@@ -327,15 +328,15 @@ protected:
     ECPRESENTATION_EXPORT void _SetECInstanceIdFieldName(Utf8CP name) override;
 
 public:
-    static RefCountedPtr<ECPropertyGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase,
+    static RefCountedPtr<ECPropertyGroupingNodesQueryContract> Create(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase,
         SelectClass<ECClass> const& propertySelectClass, ECPropertyCR prop, PropertyGroupCR spec, SelectClass<ECClass> const* foreignKeyClass)
         {
         return new ECPropertyGroupingNodesQueryContract(specificationIdentifier, instanceKeysSelectQueryBase, propertySelectClass, prop, spec, foreignKeyClass);
         }
     ECPropertyCR GetProperty() const {return m_property;}
     Utf8StringCR GetGroupingPropertyClassAlias() const {return m_groupingPropertyClassAlias;}
-    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT NavigationQueryPtr CreateInstanceKeysSelectQuery(RapidJsonValueCR groupingValuesJson) const;
+    ECPRESENTATION_EXPORT PresentationQueryBuilderPtr CreateInstanceKeysSelectQuery() const;
+    ECPRESENTATION_EXPORT PresentationQueryBuilderPtr CreateInstanceKeysSelectQuery(RapidJsonValueCR groupingValuesJson) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

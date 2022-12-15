@@ -56,7 +56,6 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_GetFormattedValue             "GetFormattedValue"
 
 struct NavNodesFactory;
-struct NavigationQuery;
 struct ScalarFunction;
 struct AggregateFunction;
 struct CustomFunctionsContext;

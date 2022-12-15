@@ -63,7 +63,7 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Iterate node instance keys");
 
-        if (node.GetInstanceKeysSelectQuery().IsNull())
+        if (node.GetInstanceKeysSelectQuery() == nullptr)
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
             return;
@@ -71,17 +71,17 @@ protected:
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();
         CachedECSqlStatementPtr statement = m_context->GetConnection().GetStatementCache().GetPreparedStatement(m_context->GetConnection().GetECDb().Schemas(),
-            m_context->GetConnection().GetDb(), node.GetInstanceKeysSelectQuery()->ToString().c_str());
+            m_context->GetConnection().GetDb(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str());
         if (statement.IsNull())
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
             }
 
         if (SUCCESS != node.GetInstanceKeysSelectQuery()->BindValues(*statement))
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind values for instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
             }
 
         while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement))
@@ -99,30 +99,30 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Checking if node contains given instance key");
 
-        if (node.GetInstanceKeysSelectQuery().IsNull())
+        if (node.GetInstanceKeysSelectQuery() == nullptr)
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
             return false;
             }
 
-        ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+        auto query = ComplexQueryBuilder::Create();
         query->SelectAll();
-        query->From(*StringGenericQuery::Create(*node.GetInstanceKeysSelectQuery()), "keys");
+        query->From(*node.GetInstanceKeysSelectQuery(), "keys");
         query->Where("[keys].[ECClassId] = ? AND [keys].[ECInstanceId] = ?", { std::make_shared<BoundQueryId>(instanceKey.GetClassId()), std::make_shared<BoundQueryId>(instanceKey.GetInstanceId()) });
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();
         CachedECSqlStatementPtr statement = m_context->GetConnection().GetStatementCache().GetPreparedStatement(m_context->GetConnection().GetECDb().Schemas(),
-            m_context->GetConnection().GetDb(), query->ToString().c_str());
+            m_context->GetConnection().GetDb(), query->GetQuery()->GetQueryString().c_str());
         if (statement.IsNull())
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare instance keys check query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), query->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), query->GetQuery()->GetQueryString().c_str()));
             }
 
-        if (SUCCESS != query->BindValues(*statement))
+        if (SUCCESS != query->GetQuery()->BindValues(*statement))
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind values for instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), query->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), query->GetQuery()->GetQueryString().c_str()));
             }
 
         return BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement);

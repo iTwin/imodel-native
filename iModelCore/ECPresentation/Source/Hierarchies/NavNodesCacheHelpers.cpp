@@ -264,7 +264,7 @@ NavNodePtr NodesCacheHelpers::CreateNodeFromStatement(Statement& stmt, NavNodesF
     if (!stmt.IsColumnNull(3))
         {
         json.Parse(stmt.GetValueText(3));
-        node->SetInstanceKeysSelectQuery(StringGenericQuery::FromJson(json));
+        node->SetInstanceKeysSelectQuery(PresentationQuery::FromJson(json));
         }
 
     NavNodeExtendedData extendedData(*node);
