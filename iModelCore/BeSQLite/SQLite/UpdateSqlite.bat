@@ -8,11 +8,11 @@ rem +---------------------------------------------------------------------------
 rem This script will update the SQLite source from a fossil branch, and then create the amalgamation `sqlite.c` source file.
 rem @note that it requires cygwin be installed
 
-set SqliteTag=itwin-sqlite-v3.40.0-r0
-set besqlite_root=%SrcRoot%imodel-native\iModelCore\BeSQLite\SQLite\
+set sqlite_tag=itwin-sqlite-v3.40.0-r0
+set imodel_native_sqlite=%SrcRoot%imodel-native\iModelCore\BeSQLite\SQLite\
 set sqlite_root=%appdata%\itwin-sqlite
 set build_dir=outdir
-set target=sqlite3.c
+set make_target=sqlite3.c
 
 if  not exist %CYGWIN_BIN% (
   echo "*** CYGWIN_BIN variable must be set ***"
@@ -35,11 +35,19 @@ if not exist %sqlite_root%\configure (
     git clone https://github.com/iTwin/sqlite.git .
 )
 
+git checkout master -f
 git pull
-git switch %SqliteTag% --detach
 
 if %errorlevel% neq 0 (
-  echo "*** Unable to chekcout or pull sqlite source code ***"
+  echo "*** Failed to pull from iTwin/sqlite ***""
+  popd
+  exit /b %errorlevel%
+)
+
+git switch %sqlite_tag% --detach
+
+if %errorlevel% neq 0 (
+  echo "*** Failed to switch source to tag: %sqlite_tag% ***""
   popd
   exit /b %errorlevel%
 )
@@ -52,12 +60,14 @@ sh ..\configure
 if %errorlevel% neq 0 (
   rmdir /s/q %build_dir%
   echo "*** Failed to configure sqlite source code ***"
+  echo "If source fail due EOL make sure you have following setting"
+  echo "      > git config --global core.autocrlf input"
   popd
   exit /b %errorlevel%
 )
 
 rem Build the target
-make %target%
+make %make_target%
 if %errorlevel% neq 0 (
   rmdir /s/q %build_dir%
   echo "*** Failed to build sqlite source code ***"
@@ -66,9 +76,9 @@ if %errorlevel% neq 0 (
 )
 rem Copy to bentley source tree
 
-copy %target% %besqlite_root%
-copy sqlite3.h %besqlite_root%
-copy shell.c %besqlite_root%
+copy %make_target% %imodel_native_sqlite%
+copy sqlite3.h %imodel_native_sqlite%
+copy shell.c %imodel_native_sqlite%
 
 popd
 
