@@ -85,11 +85,10 @@ bool PropertyExists::Exists(ECN::ECClassId classId, Utf8CP accessString) const {
         if (it != m_propMap.end()) {
             it->second.insert(classId);
         } else {
-            m_propMap.insert(
-                std::make_pair(
-                    m_props.emplace_back(std::make_unique<std::string>(accessString)).get()->c_str(),
-                    std::set<ECN::ECClassId>())
-            ).first->second.insert(classId);
+            m_props.push_back(std::make_unique<std::string>(accessString));
+            const auto cachedAccessStr = m_props.back().get()->c_str();
+            m_propMap.insert(std::make_pair(cachedAccessStr, std::set<ECN::ECClassId>()))
+                .first->second.insert(classId);
         }
     }
     const auto it = m_propMap.find(accessString);
