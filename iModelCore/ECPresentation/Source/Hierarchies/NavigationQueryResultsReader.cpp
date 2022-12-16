@@ -19,7 +19,7 @@ static GroupedInstanceKeysList ParseInstanceKeys(ECSqlStatementCR stmt, Navigati
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static GenericQueryPtr CreateInstanceKeysQuery(bvector<ECInstanceKey> const& keys)
+static std::unique_ptr<PresentationQuery> CreateInstanceKeysQuery(bvector<ECInstanceKey> const& keys)
     {
     Utf8String query;
     BoundQueryValuesList bindings;
@@ -31,7 +31,7 @@ static GenericQueryPtr CreateInstanceKeysQuery(bvector<ECInstanceKey> const& key
         bindings.push_back(std::make_unique<BoundQueryId>(keys[i].GetClassId()));
         bindings.push_back(std::make_unique<BoundQueryId>(keys[i].GetInstanceId()));
         }
-    return StringGenericQuery::Create(query, bindings);
+    return std::make_unique<PresentationQuery>(query, bindings);
     }
 
 /*=================================================================================**//**
@@ -206,12 +206,12 @@ protected:
         std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys;
         if (groupedInstancesCount <= MAX_LABEL_GROUPED_INSTANCE_KEYS)
             groupedInstanceKeys = std::make_unique<bvector<ECInstanceKey>>(ParseInstanceKeys(statement, GetContract(), Contract::GroupedInstanceKeysFieldName));
-        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(*labelDefinition);
+        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(*labelDefinition)->CreateQuery();
         NavNodePtr node = GetFactory().CreateDisplayLabelGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *labelDefinition,
             groupedInstancesCount, instanceKeysSelectQuery.get(), std::move(groupedInstanceKeys));
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(instanceKeysSelectQuery);
+            node->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif
@@ -248,12 +248,12 @@ protected:
         bool isPolymorphic = statement.GetValueBoolean(GetContract().GetIndex(Contract::IsClassPolymorphicFieldName));
         Utf8CP specificationIdentifier = statement.GetValueText(GetContract().GetIndex(Contract::SpecificationIdentifierFieldName));
         uint64_t groupedInstancesCount = statement.GetValueUInt64(GetContract().GetIndex(Contract::GroupedInstancesCountFieldName));
-        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(*ecClass, isPolymorphic);
+        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(*ecClass, isPolymorphic)->CreateQuery();
         NavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *ecClass, isPolymorphic, *LabelDefinition::FromString(displayLabel),
             groupedInstancesCount, instanceKeysSelectQuery.get());
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(instanceKeysSelectQuery);
+            node->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif
@@ -309,12 +309,12 @@ protected:
         Utf8CP imageId = statement.GetValueText(GetContract().GetIndex(Contract::ImageIdFieldName));
         Utf8CP specificationIdentifier = statement.GetValueText(GetContract().GetIndex(Contract::SpecificationIdentifierFieldName));
         uint64_t groupedInstancesCount = statement.GetValueUInt64(GetContract().GetIndex(Contract::GroupedInstancesCountFieldName));
-        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(groupingValues);
+        auto instanceKeysSelectQuery = GetContract().CreateInstanceKeysSelectQuery(groupingValues)->CreateQuery();
         NavNodePtr node = GetFactory().CreateECPropertyGroupingNode(GetConnection(), specificationIdentifier, GetParentKey(), *ecClass, *ecProperty, *LabelDefinition::FromString(displayLabel), imageId, groupingValues, isRangeGroupingNode,
             groupedInstancesCount, instanceKeysSelectQuery.get());
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(instanceKeysSelectQuery);
+            node->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif
@@ -350,8 +350,7 @@ std::unique_ptr<IQueryResultReader<NavNodePtr>> NavNodesReader::Create(NavNodesF
                 return std::make_unique<MergingMultiECInstanceNodeReader>(factory, contract, connection, extendedData, parentKey);
             return std::make_unique<MultiECInstanceNodeReader>(factory, contract, connection, extendedData, parentKey);
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, Utf8PrintfString("Unhandled navigation query result type: %d", (int)resultType));
-    return nullptr;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Unhandled navigation query result type: %d", (int)resultType));
     }
 
 /*---------------------------------------------------------------------------------**//**

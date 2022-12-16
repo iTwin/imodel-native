@@ -68,14 +68,6 @@ public:
     std::unordered_set<ECClassCP> const& GetSelectInstanceClasses() const {return m_selectInstanceClasses;}
     };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE NavigationQuery : PresentationQuery<NavigationQuery, NavigationQueryContract, NavigationQueryResultParameters> {};
-DEFINE_QUERY_TYPEDEFS(NavigationQuery)
-INSTANTIATE_QUERY_SUBCLASS(NavigationQuery, extern, EXPORT_VTABLE_ATTRIBUTE)
-typedef QuerySet<NavigationQuery> NavigationQuerySet;
-
 #define NAVIGATIONQUERY_EXTENDEDDATA_Ranges     "Ranges"
 /*=================================================================================**//**
 * @bsiclass
@@ -83,8 +75,8 @@ typedef QuerySet<NavigationQuery> NavigationQuerySet;
 struct NavigationQueryExtendedData : RapidJsonAccessor
     {
     NavigationQueryExtendedData(RapidJsonValueCR data) : RapidJsonAccessor(data) {}
-    NavigationQueryExtendedData(NavigationQuery& query) : RapidJsonAccessor(query) {}
-    NavigationQueryExtendedData(NavigationQuery const& query) : RapidJsonAccessor(query) {}
+    NavigationQueryExtendedData(PresentationQueryBuilder& query) : RapidJsonAccessor(query) {}
+    NavigationQueryExtendedData(PresentationQueryBuilder const& query) : RapidJsonAccessor(query) {}
 
     bool HasRangesData() const {return GetJson().HasMember(NAVIGATIONQUERY_EXTENDEDDATA_Ranges);}
     int GetRangeIndex(BeSQLite::DbValue const&) const;

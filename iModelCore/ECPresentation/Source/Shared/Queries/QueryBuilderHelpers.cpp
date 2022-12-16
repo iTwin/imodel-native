@@ -6,7 +6,6 @@
 #include <ECPresentation/ECPresentationManager.h>
 #include <ECPresentation/LabelDefinition.h>
 #include "../ECExpressions/ECExpressionContextsProvider.h"
-#include "../../Content/ContentQuery.h"
 #include "../../Hierarchies/NavigationQuery.h"
 #include "QueryBuilderHelpers.h"
 #include "QueryExecutor.h"
@@ -15,169 +14,134 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::AddToUnionSet(QuerySet<T>& set, T& query)
+void QueryBuilderHelpers::AddToUnionSet(QuerySet& set, PresentationQueryBuilder& query)
     {
     for (auto queryIter = set.GetQueries().begin(); queryIter != set.GetQueries().end(); ++queryIter)
         {
         if (GetOrderByClause(**queryIter) != GetOrderByClause(query))
             continue;
 
-        if ((*queryIter)->AsUnionQuery() && (*queryIter)->AsUnionQuery()->GetQueries().size() < MAX_COMPOUND_STATEMENTS_COUNT)
+        if ((*queryIter)->AsUnionQueryBuilder() && (*queryIter)->AsUnionQueryBuilder()->GetQueries().size() < MAX_COMPOUND_STATEMENTS_COUNT)
             {
-            (*queryIter)->AsUnionQuery()->AddQuery(query);
+            (*queryIter)->AsUnionQueryBuilder()->AddQuery(query);
             return;
             }
-        if (!(*queryIter)->AsUnionQuery())
+        if (!(*queryIter)->AsUnionQueryBuilder())
             {
-            *queryIter = UnionPresentationQuery<T>::Create({ *queryIter, &query });
+            *queryIter = UnionQueryBuilder::Create({ *queryIter, &query });
             return;
             }
         }
     set.GetQueries().push_back(&query);
     }
-template void QueryBuilderHelpers::AddToUnionSet<ContentQuery>(ContentQuerySet&, ContentQuery&);
-template void QueryBuilderHelpers::AddToUnionSet<GenericQuery>(GenericQuerySet&, GenericQuery&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::SetOrUnion(RefCountedPtr<T>& target, T& source)
+void QueryBuilderHelpers::SetOrUnion(RefCountedPtr<PresentationQueryBuilder>& target, PresentationQueryBuilder& source)
     {
     if (target.IsNull())
         target = &source;
-    else if (target->AsUnionQuery())
-        target->AsUnionQuery()->AddQuery(source);
+    else if (target->AsUnionQueryBuilder())
+        target->AsUnionQueryBuilder()->AddQuery(source);
     else
-        target = UnionPresentationQuery<T>::Create({target, &source});
+        target = UnionQueryBuilder::Create({target, &source});
     }
-template void QueryBuilderHelpers::SetOrUnion<ContentQuery>(ContentQueryPtr&, ContentQuery&);
-template void QueryBuilderHelpers::SetOrUnion<NavigationQuery>(NavigationQueryPtr&, NavigationQuery&);
-template void QueryBuilderHelpers::SetOrUnion<GenericQuery>(GenericQueryPtr&, GenericQuery&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::Where(RefCountedPtr<T>& query, QueryClauseAndBindings clause)
+void QueryBuilderHelpers::Where(RefCountedPtr<PresentationQueryBuilder>& query, QueryClauseAndBindings clause)
     {
     if (clause.GetClause().empty())
         return;
 
-    if (nullptr != query->AsComplexQuery())
+    if (nullptr != query->AsComplexQueryBuilder())
         {
-        query->AsComplexQuery()->Where(clause);
+        query->AsComplexQueryBuilder()->Where(clause);
         return;
         }
 
-    RefCountedPtr<ComplexPresentationQuery<T>> wrapper = ComplexPresentationQuery<T>::Create();
+    RefCountedPtr<ComplexQueryBuilder> wrapper = ComplexQueryBuilder::Create();
     wrapper->SelectAll();
     wrapper->From(*query);
     wrapper->Where(clause);
     query = wrapper;
     }
-template void QueryBuilderHelpers::Where<ContentQuery>(ContentQueryPtr&, QueryClauseAndBindings);
-template void QueryBuilderHelpers::Where<NavigationQuery>(NavigationQueryPtr&, QueryClauseAndBindings);
-template void QueryBuilderHelpers::Where<GenericQuery>(GenericQueryPtr&, QueryClauseAndBindings);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::Where(RefCountedPtr<T>& query, Utf8CP clause, BoundQueryValuesListCR bindings)
+void QueryBuilderHelpers::Where(RefCountedPtr<PresentationQueryBuilder>& query, Utf8CP clause, BoundQueryValuesListCR bindings)
     {
     Where(query, QueryClauseAndBindings(clause, bindings));
     }
-template void QueryBuilderHelpers::Where<ContentQuery>(ContentQueryPtr&, Utf8CP, BoundQueryValuesListCR);
-template void QueryBuilderHelpers::Where<NavigationQuery>(NavigationQueryPtr&, Utf8CP, BoundQueryValuesListCR);
-template void QueryBuilderHelpers::Where<GenericQuery>(GenericQueryPtr&, Utf8CP, BoundQueryValuesListCR);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::Order(T& query, Utf8CP clause)
+void QueryBuilderHelpers::Order(PresentationQueryBuilder& query, Utf8CP clause)
     {
-    if (nullptr != query.AsComplexQuery())
-        query.AsComplexQuery()->OrderBy(clause);
-    else if (nullptr != query.AsUnionQuery())
-        query.AsUnionQuery()->OrderBy(clause);
-    else if (nullptr != query.AsExceptQuery())
-        query.AsExceptQuery()->OrderBy(clause);
+    if (nullptr != query.AsComplexQueryBuilder())
+        query.AsComplexQueryBuilder()->OrderBy(clause);
+    else if (nullptr != query.AsUnionQueryBuilder())
+        query.AsUnionQueryBuilder()->OrderBy(clause);
+    else if (nullptr != query.AsExceptQueryBuilder())
+        query.AsExceptQueryBuilder()->OrderBy(clause);
     else
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, "Unexpected query type");
     }
-template void QueryBuilderHelpers::Order<ContentQuery>(ContentQuery&, Utf8CP);
-template void QueryBuilderHelpers::Order<NavigationQuery>(NavigationQuery&, Utf8CP);
-template void QueryBuilderHelpers::Order<GenericQuery>(GenericQuery&, Utf8CP);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::RemoveOrdering(T& query)
+void QueryBuilderHelpers::RemoveOrdering(PresentationQueryBuilder& query)
     {
-    if (query.AsComplexQuery() || query.AsUnionQuery() || query.AsExceptQuery())
+    if (query.AsComplexQueryBuilder() || query.AsUnionQueryBuilder() || query.AsExceptQueryBuilder())
         Order(query, "");
-    if (query.AsComplexQuery() && query.AsComplexQuery()->GetNestedQuery())
-        RemoveOrdering(*query.AsComplexQuery()->GetNestedQuery());
+    if (query.AsComplexQueryBuilder() && query.AsComplexQueryBuilder()->GetNestedQuery())
+        RemoveOrdering(*query.AsComplexQueryBuilder()->GetNestedQuery());
     }
-template void QueryBuilderHelpers::RemoveOrdering<ContentQuery>(ContentQuery&);
-template void QueryBuilderHelpers::RemoveOrdering<NavigationQuery>(NavigationQuery&);
-template void QueryBuilderHelpers::RemoveOrdering<GenericQuery>(GenericQuery&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-Utf8String QueryBuilderHelpers::GetOrderByClause(T const& query)
+Utf8String QueryBuilderHelpers::GetOrderByClause(PresentationQueryBuilder const& query)
     {
-    if (nullptr != query.AsComplexQuery())
-        return query.AsComplexQuery()->GetClause(CLAUSE_OrderBy);
-    if (nullptr != query.AsUnionQuery())
-        return query.AsUnionQuery()->GetOrderByClause();
-    if (nullptr != query.AsExceptQuery())
-        return query.AsExceptQuery()->GetOrderByClause();
+    if (nullptr != query.AsComplexQueryBuilder())
+        return query.AsComplexQueryBuilder()->GetClause(CLAUSE_OrderBy);
+    if (nullptr != query.AsUnionQueryBuilder())
+        return query.AsUnionQueryBuilder()->GetOrderByClause();
+    if (nullptr != query.AsExceptQueryBuilder())
+        return query.AsExceptQueryBuilder()->GetOrderByClause();
     return "";
     }
-template Utf8String QueryBuilderHelpers::GetOrderByClause<ContentQuery>(ContentQuery const&);
-template Utf8String QueryBuilderHelpers::GetOrderByClause<NavigationQuery>(NavigationQuery const&);
-template Utf8String QueryBuilderHelpers::GetOrderByClause<GenericQuery>(GenericQuery const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::Limit(T& query, uint64_t limit, uint64_t offset)
+void QueryBuilderHelpers::Limit(PresentationQueryBuilder& query, uint64_t limit, uint64_t offset)
     {
-    if (nullptr != query.AsComplexQuery())
-        query.AsComplexQuery()->Limit(limit, offset);
-    else if (nullptr != query.AsUnionQuery())
-        query.AsUnionQuery()->Limit(limit, offset);
-    else if (nullptr != query.AsExceptQuery())
-        query.AsExceptQuery()->Limit(limit, offset);
+    if (nullptr != query.AsComplexQueryBuilder())
+        query.AsComplexQueryBuilder()->Limit(limit, offset);
+    else if (nullptr != query.AsUnionQueryBuilder())
+        query.AsUnionQueryBuilder()->Limit(limit, offset);
+    else if (nullptr != query.AsExceptQueryBuilder())
+        query.AsExceptQueryBuilder()->Limit(limit, offset);
     else
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, "Unexpected query type");
     }
-template void QueryBuilderHelpers::Limit<ContentQuery>(ContentQuery&, uint64_t, uint64_t);
-template void QueryBuilderHelpers::Limit<NavigationQuery>(NavigationQuery&, uint64_t, uint64_t);
-template void QueryBuilderHelpers::Limit<GenericQuery>(GenericQuery&, uint64_t, uint64_t);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-RefCountedPtr<ComplexPresentationQuery<T>> QueryBuilderHelpers::CreateNestedQuery(T& innerQuery)
+RefCountedPtr<ComplexQueryBuilder> QueryBuilderHelpers::CreateNestedQuery(PresentationQueryBuilder& innerQuery)
     {
-    RefCountedPtr<ComplexPresentationQuery<T>> query = ComplexPresentationQuery<T>::Create();
+    RefCountedPtr<ComplexQueryBuilder> query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(innerQuery);
     return query;
     }
-template ComplexContentQueryPtr QueryBuilderHelpers::CreateNestedQuery<ContentQuery>(ContentQuery&);
-template ComplexNavigationQueryPtr QueryBuilderHelpers::CreateNestedQuery<NavigationQuery>(NavigationQuery&);
-template ComplexGenericQueryPtr QueryBuilderHelpers::CreateNestedQuery<GenericQuery>(GenericQuery&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -256,69 +220,57 @@ bool CheckQueryForAliases(Utf8CP queryString, bvector<Utf8String> const& aliases
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8String> const& aliases)
+bool QueryBuilderHelpers::NeedsNestingToUseAlias(PresentationQueryBuilder const& query, bvector<Utf8String> const& aliases)
     {
     if (aliases.empty())
         return false;
 
-    if (nullptr != query.AsStringQuery())
+    if (nullptr != query.AsStringQueryBuilder())
         return true;
 
-    if (nullptr != query.AsUnionQuery())
+    if (nullptr != query.AsUnionQueryBuilder())
         {
-        UnionPresentationQuery<T> const& unionQuery = *query.AsUnionQuery();
-        for (RefCountedPtr<T> const& q : unionQuery.GetQueries())
+        UnionQueryBuilder const& unionQuery = *query.AsUnionQueryBuilder();
+        for (auto const& q : unionQuery.GetQueries())
             {
             if (NeedsNestingToUseAlias(*q, aliases))
                 return true;
             }
         }
 
-    if (nullptr != query.AsExceptQuery())
+    if (nullptr != query.AsExceptQueryBuilder())
         {
-        ExceptPresentationQuery<T> const& exceptQuery = *query.AsExceptQuery();
+        ExceptQueryBuilder const& exceptQuery = *query.AsExceptQueryBuilder();
         if (NeedsNestingToUseAlias(*exceptQuery.GetBase(), aliases) || NeedsNestingToUseAlias(*exceptQuery.GetExcept(), aliases))
             return true;
         }
 
-    if (nullptr != query.AsComplexQuery() && CheckQueryForAliases(query.AsComplexQuery()->GetClause(CLAUSE_Select).c_str(), aliases))
+    if (nullptr != query.AsComplexQueryBuilder() && CheckQueryForAliases(query.AsComplexQueryBuilder()->GetClause(CLAUSE_Select).c_str(), aliases))
         return true;
 
     return false;
     }
-template bool QueryBuilderHelpers::NeedsNestingToUseAlias<ContentQuery>(ContentQuery const&, bvector<Utf8String> const&);
-template bool QueryBuilderHelpers::NeedsNestingToUseAlias<NavigationQuery>(NavigationQuery const&, bvector<Utf8String> const&);
-template bool QueryBuilderHelpers::NeedsNestingToUseAlias<GenericQuery>(GenericQuery const&, bvector<Utf8String> const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-RefCountedPtr<T> QueryBuilderHelpers::CreateNestedQueryIfNecessary(T& query, bvector<Utf8String> const& aliases)
+RefCountedPtr<PresentationQueryBuilder> QueryBuilderHelpers::CreateNestedQueryIfNecessary(PresentationQueryBuilder& query, bvector<Utf8String> const& aliases)
     {
-    if (NeedsNestingToUseAlias(query, aliases) || nullptr != query.AsStringQuery())
+    if (NeedsNestingToUseAlias(query, aliases) || nullptr != query.AsStringQueryBuilder())
         return CreateNestedQuery(query);
     return &query;
     }
-template ContentQueryPtr QueryBuilderHelpers::CreateNestedQueryIfNecessary<ContentQuery>(ContentQuery&, bvector<Utf8String> const&);
-template NavigationQueryPtr QueryBuilderHelpers::CreateNestedQueryIfNecessary<NavigationQuery>(NavigationQuery&, bvector<Utf8String> const&);
-template GenericQueryPtr QueryBuilderHelpers::CreateNestedQueryIfNecessary<GenericQuery>(GenericQuery&, bvector<Utf8String> const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-RefCountedPtr<ComplexPresentationQuery<T>> QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary(T& query, bvector<Utf8String> const& aliases)
+RefCountedPtr<ComplexQueryBuilder> QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary(PresentationQueryBuilder& query, bvector<Utf8String> const& aliases)
     {
-    RefCountedPtr<T> q = CreateNestedQueryIfNecessary(query, aliases);
-    if (nullptr == q->AsComplexQuery())
+    RefCountedPtr<PresentationQueryBuilder> q = CreateNestedQueryIfNecessary(query, aliases);
+    if (nullptr == q->AsComplexQueryBuilder())
         return CreateNestedQuery(query);
-    return q->AsComplexQuery();
+    return q->AsComplexQueryBuilder();
     }
-template ComplexContentQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<ContentQuery>(ContentQuery&, bvector<Utf8String> const&);
-template ComplexNavigationQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<NavigationQuery>(NavigationQuery&, bvector<Utf8String> const&);
-template ComplexGenericQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<GenericQuery>(GenericQuery&, bvector<Utf8String> const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -631,8 +583,7 @@ static void AssignMissingAliases(bvector<RelatedClassPath>& relatedPaths)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static void ApplyInstanceFilterDefinition(ComplexPresentationQuery<T>& query, SelectClassWithExcludes<ECClass> const& selectClass, InstanceFilterDefinition const& filter,
+static void ApplyInstanceFilterDefinition(ComplexQueryBuilder& query, SelectClassWithExcludes<ECClass> const& selectClass, InstanceFilterDefinition const& filter,
     QueryClauseAndBindings const& expressionClause)
     {
     bool needToFilterClass = filter.GetSelectClass() ? !selectClass.GetClass().Is(filter.GetSelectClass()) : false;
@@ -647,7 +598,7 @@ static void ApplyInstanceFilterDefinition(ComplexPresentationQuery<T>& query, Se
     if (needToFilterClass)
         filterSelectClass.SetClass(*filter.GetSelectClass());
 
-    ComplexGenericQueryPtr filterQuery = ComplexGenericQuery::Create();
+    auto filterQuery = ComplexQueryBuilder::Create();
     filterQuery->SelectContract(*SimpleQueryContract::Create({ *PresentationQueryContractSimpleField::Create(nullptr, "[this].[ECInstanceId]") }));
     filterQuery->From(filterSelectClass);
 
@@ -661,16 +612,15 @@ static void ApplyInstanceFilterDefinition(ComplexPresentationQuery<T>& query, Se
     Utf8String whereClause;
     if (needToFilterClass)
         whereClause.append("[").append(selectClass.GetAlias()).append("].[ECClassId] IS (").append(filter.GetSelectClass()->GetFullName()).append(") AND ");
-    whereClause.append("[").append(selectClass.GetAlias()).append("].[ECInstanceId] IN (").append(filterQuery->ToString()).append(")");
+    whereClause.append("[").append(selectClass.GetAlias()).append("].[ECInstanceId] IN (").append(filterQuery->GetQuery()->GetQueryString()).append(")");
 
-    query.Where(QueryClauseAndBindings(whereClause, filterQuery->GetBoundValues()));
+    query.Where(QueryClauseAndBindings(whereClause, filterQuery->GetQuery()->GetBindings()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params)
+void QueryBuilderHelpers::ApplyInstanceFilter(ComplexQueryBuilder& query, InstanceFilteringParams const& params)
     {
     if (params.GetInputFilter())
         {
@@ -697,18 +647,16 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
         ApplyInstanceFilterDefinition(query, params.GetSelectClass(), *params.GetInstanceFilterDefinition(), expressionClause);
         }
     }
-template void QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&);
-template void QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBuilderHelpers::ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts)
+void QueryBuilderHelpers::ApplyPagingOptions(RefCountedPtr<PresentationQueryBuilder>& query, PageOptionsCR opts)
     {
     if (0 == opts.GetPageSize() && 0 == opts.GetPageStart())
         return;
 
-    QueryBuilderHelpers::Limit<ContentQuery>(*query, opts.GetPageSize(), opts.GetPageStart());
+    QueryBuilderHelpers::Limit(*query, opts.GetPageSize(), opts.GetPageStart());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -745,7 +693,7 @@ private:
         bvector<RelatedClassPath> noRelatedInstances;
         ECSchemaHelper::RelationshipPathsRequestParams params(m_selectClass, pathSpecs, nullptr, noRelatedInstances, counter, false);
         auto result = m_schemaHelper.GetRelationshipPaths(params);
-        GenericQueryPtr query;
+        RefCountedPtr<PresentationQueryBuilder> query;
         for (auto& path : result.GetPaths(0))
             {
             if (path.m_path.empty())
@@ -768,19 +716,19 @@ private:
 
             auto valueSelectField = valueSelectFieldFactory(*targetECClassIdField, *targetECInstanceIdField, targetClass.GetClass(), targetClassAlias);
             auto contract = SimpleQueryContract::Create({ valueSelectField });
-            ComplexGenericQueryPtr pathQuery = ComplexGenericQuery::Create();
+            auto pathQuery = ComplexQueryBuilder::Create();
             pathQuery->SelectContract(*contract, targetClassAlias.c_str())
                 .From(selectClass)
                 .Join(path.m_path)
                 .Where(Utf8PrintfString("[%s].[ECInstanceId] = %s", selectClass.GetAlias().c_str(), m_ecInstanceIdField->GetSelectClause(m_selectClass.GetAlias().c_str()).GetClause().c_str()).c_str(), {});
-            QueryBuilderHelpers::SetOrUnion<GenericQuery>(query, *pathQuery);
+            QueryBuilderHelpers::SetOrUnion(query, *pathQuery);
             }
         if (query.IsValid())
             {
             // ECSQL parser fails if we use binding here (Affan notified)
             // QueryBuilderHelpers::Limit<GenericQuery>(*query, 1);
-            Utf8String queryStr = Utf8String(query->ToString()).append(" LIMIT 1");
-            return PresentationQueryContractSimpleField::Create("/RelatedPropertyValue/", QueryClauseAndBindings(queryStr, query->GetBoundValues()), false);
+            Utf8String queryStr = Utf8String(query->GetQuery()->GetQueryString()).append(" LIMIT 1");
+            return PresentationQueryContractSimpleField::Create("/RelatedPropertyValue/", QueryClauseAndBindings(queryStr, query->GetQuery()->GetBindings()), false);
             }
         return nullptr;
         }

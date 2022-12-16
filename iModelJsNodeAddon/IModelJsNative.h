@@ -395,6 +395,7 @@ struct JsInterop {
     BE_JSON_NAME(forceUseId)
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
+    BE_JSON_NAME(httpTimeout)
     BE_JSON_NAME(id)
     BE_JSON_NAME(index)
     BE_JSON_NAME(localFileName)
