@@ -13,8 +13,24 @@ schedules:
   displayName: Nightly run
   branches:
     include:
-    - OpenSourceFork
+    - main
   always: true
+
+resources:
+  repositories:
+    - repository: imodel-native
+      type: github
+      name: iTwin/imodel-native
+      endpoint: imodel-native
+    - repository: imodel-native-internal
+      type: github
+      name: iTwin/imodel-native-internal
+      endpoint: imodel-native-internal
+
+extends:
+  template: /build/templates/prebuild.yml@imodel-native-internal
+  parameters:
+    otherRepo: imodel-native-internal
 
 jobs:
   - job:
@@ -29,11 +45,9 @@ jobs:
       PY_EXE: python
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
       BB_OUT_ROOT: $(Build.BinariesDirectory)
-      BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
+      BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
 
     steps:
-    - template: ../../../../build/templates/prebuild.yml
-
     - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
       displayName: Pull
       env:
@@ -61,11 +75,9 @@ jobs:
       PY_EXE: python3
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
       BB_OUT_ROOT: $(Build.BinariesDirectory)
-      BB_ARGS: -a LinuxX64 -s iModelJsNodeAddon.Dev -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
+      BB_ARGS: -a LinuxX64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
 
     steps:
-    - template: ../../../../build/templates/prebuild.yml
-
     - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
       displayName: Pull
       env:
