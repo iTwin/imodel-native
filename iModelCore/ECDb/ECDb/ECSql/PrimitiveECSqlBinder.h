@@ -14,10 +14,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PrimitiveECSqlBinder final : public ECSqlBinder
     {
 private:
-    IdSet<BeInt64Id> m_virtualCopy;
+    VirtualSet* m_virtualSet = nullptr;
 
     ECSqlStatus CanBind(ECN::PrimitiveType requestedType) const;
-    void _OnClearBindings() override { m_virtualCopy.clear(); }
+    void _OnClearBindings() override
+        {
+        if (m_virtualSet)
+            {
+            delete m_virtualSet;
+            m_virtualSet = nullptr;
+            }
+        }
 
     ECSqlStatus _BindNull() override;
     ECSqlStatus _BindBoolean(bool value) override;
@@ -47,7 +54,7 @@ private:
 
 public:
     PrimitiveECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen) : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false) {}
-    ~PrimitiveECSqlBinder() {}
+    ~PrimitiveECSqlBinder() { OnClearBindings(); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

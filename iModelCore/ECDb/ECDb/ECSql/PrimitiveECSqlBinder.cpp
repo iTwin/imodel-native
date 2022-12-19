@@ -263,8 +263,9 @@ IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
     {
-    m_virtualCopy = idSet;
-    return _BindInt64((int64_t) &m_virtualCopy);
+    OnClearBindings();
+    m_virtualSet = new IdSet<BeInt64Id>(idSet);
+    return BindVirtualSet(m_virtualSet);
     }
 
 //---------------------------------------------------------------------------------------

@@ -812,7 +812,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
     statement.ClearBindings();
 
     // // Bind Int64 value
-    // ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, 15));
+    // ASSERT_EQ(ECSqlStatus::Error, statement.BindInt64(1, 15));
     // ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     // ASSERT_EQ(0, statement.GetValueInt(0));
     // statement.Reset();

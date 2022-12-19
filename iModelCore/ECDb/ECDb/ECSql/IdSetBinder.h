@@ -14,11 +14,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct IdSetBinder final : public ECSqlBinder
     {
     private:
-        IdSet<BeInt64Id> m_virtualCopy;
+        VirtualSet* m_virtualSet = nullptr;
 
-        void _OnClearBindings() override { m_virtualCopy.clear(); }
+        void _OnClearBindings() override
+            {
+            if (m_virtualSet)
+                {
+                delete m_virtualSet;
+                m_virtualSet = nullptr;
+                }
+            }
 
-        int GetSqlParameterIndex() const 
+        int GetSqlParameterIndex() const
             { 
             BeAssert(GetMappedSqlParameterNames().size() == 1); 
             BeAssert(!GetMappedSqlParameterNames()[0].empty());
@@ -46,7 +53,7 @@ struct IdSetBinder final : public ECSqlBinder
 
     public:
         IdSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
-        ~IdSetBinder() {}
+        ~IdSetBinder() { OnClearBindings(); };
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

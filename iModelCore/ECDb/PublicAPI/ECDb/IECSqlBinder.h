@@ -184,6 +184,13 @@ public:
     //! @return ECSqlStatus::Success or error codes
     //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
     ECSqlStatus BindVirtualSet(VirtualSet const& virtualSet) { return BindInt64((int64_t) &virtualSet); }
+    
+    //! Binds a VirtualSet to the SQL function @b InVirtualSet.
+    //! The parameter must be the first parameter in the InVirtualSet function.
+    //! @param[in] virtualSet to bind
+    //! @return ECSqlStatus::Success or error codes
+    //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
+    ECSqlStatus BindVirtualSet(VirtualSet* pVirtualSet) { return BindInt64((int64_t) pVirtualSet); }
 
     //! Binds an IdSet to the SQL function @b InVirtualSet while holding it in memory.
     //! The parameter must be the first parameter in the InVirtualSet function.

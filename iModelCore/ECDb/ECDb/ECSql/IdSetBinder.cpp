@@ -164,8 +164,9 @@ IECSqlBinder& IdSetBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdSetBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
     {
-    m_virtualCopy = idSet;
-    return _BindInt64((int64_t) &m_virtualCopy);
+    OnClearBindings();
+    m_virtualSet = new IdSet<BeInt64Id>(idSet);
+    return BindVirtualSet(m_virtualSet);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -24,9 +24,16 @@ private:
         BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
         return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
         }
-    IdSet<BeInt64Id> m_virtualCopy;
+    VirtualSet* m_virtualSet = nullptr;
 
-    void _OnClearBindings() override { m_virtualCopy.clear(); }
+    void _OnClearBindings() override
+        {
+        if (m_virtualSet)
+            {
+            delete m_virtualSet;
+            m_virtualSet = nullptr;
+            }
+        }
 
 public:
     ECSqlStatus _BindNull() override;
@@ -50,7 +57,7 @@ public:
 
     public:
         IdECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, bool isNoop, SqlParamNameGenerator&);
-        ~IdECSqlBinder() {}
+        ~IdECSqlBinder() { OnClearBindings(); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
