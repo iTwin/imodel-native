@@ -21,7 +21,7 @@ resources:
     - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
-      endpoint: imodel-native-internal
+      endpoint: github.com_imodel-native
 
 # extends:
 #   template: /build/templates/prebuild.yml@imodel-native-internal
