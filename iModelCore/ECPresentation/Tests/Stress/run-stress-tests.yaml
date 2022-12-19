@@ -18,19 +18,15 @@ schedules:
 
 resources:
   repositories:
-    - repository: imodel-native
-      type: github
-      name: iTwin/imodel-native
-      endpoint: imodel-native
     - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
       endpoint: imodel-native-internal
 
-extends:
-  template: /build/templates/prebuild.yml@imodel-native-internal
-  parameters:
-    otherRepo: imodel-native-internal
+# extends:
+#   template: /build/templates/prebuild.yml@imodel-native-internal
+#   parameters:
+#     otherRepo: imodel-native-internal
 
 jobs:
   - job:
@@ -48,6 +44,13 @@ jobs:
       BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
 
     steps:
+    - checkout: self
+    - checkout: imodel-native-internal
+
+    - template: /build/templates/prebuild.yml@imodel-native-internal
+      parameters:
+        otherRepo: imodel-native-internal
+
     - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
       displayName: Pull
       env:
@@ -78,6 +81,13 @@ jobs:
       BB_ARGS: -a LinuxX64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
 
     steps:
+    - checkout: self
+    - checkout: imodel-native-internal
+
+    - template: /build/templates/prebuild.yml@imodel-native-internal
+      parameters:
+        otherRepo: imodel-native-internal
+
     - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
       displayName: Pull
       env:
