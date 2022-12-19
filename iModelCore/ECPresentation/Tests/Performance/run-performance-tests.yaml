@@ -75,7 +75,7 @@ stages:
           name: iModelTech Performance Tests
           demands:
           - Agent.OS -equals Windows_NT
-          - SSD_MODEL -equals Samsung 850 EVO
+          - Agent.Name -in (PerfMinion01A, PerfMinion02A)
           - Cmd
 
         variables:
