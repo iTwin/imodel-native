@@ -148,29 +148,29 @@ private:
     QueryBuilderHelpers() {}
 
 public:
-    template<typename T> static Utf8String GetOrderByClause(T const& query);
-    template<typename T> static void AddToUnionSet(QuerySet<T>& set, T& query);
-    template<typename T> static void SetOrUnion(RefCountedPtr<T>& target, T& source);
-    template<typename T> static void Where(RefCountedPtr<T>& query, Utf8CP clause, BoundQueryValuesListCR bindings);
-    template<typename T> static void Where(RefCountedPtr<T>& query, QueryClauseAndBindings);
-    template<typename T> static void Order(T& query, Utf8CP clause);
-    template<typename T> static void RemoveOrdering(T& query);
-    template<typename T> static void Limit(T& query, uint64_t limit, uint64_t offset = 0);
+    static Utf8String GetOrderByClause(PresentationQueryBuilder const& query);
+    static void AddToUnionSet(QuerySet& set, PresentationQueryBuilder& query);
+    static void SetOrUnion(RefCountedPtr<PresentationQueryBuilder>& target, PresentationQueryBuilder& source);
+    static void Where(RefCountedPtr<PresentationQueryBuilder>& query, Utf8CP clause, BoundQueryValuesListCR bindings);
+    static void Where(RefCountedPtr<PresentationQueryBuilder>& query, QueryClauseAndBindings);
+    static void Order(PresentationQueryBuilder& query, Utf8CP clause);
+    static void RemoveOrdering(PresentationQueryBuilder& query);
+    static void Limit(PresentationQueryBuilder& query, uint64_t limit, uint64_t offset = 0);
 
-    template<typename T> static RefCountedPtr<ComplexPresentationQuery<T>> CreateNestedQuery(T& innerQuery);
-    template<typename T> static bool NeedsNestingToUseAlias(T const& query, bvector<Utf8String> const& aliases);
-    template<typename T> static RefCountedPtr<T> CreateNestedQueryIfNecessary(T& query, bvector<Utf8String> const& aliases);
-    template<typename T> static RefCountedPtr<ComplexPresentationQuery<T>> CreateComplexNestedQueryIfNecessary(T& query, bvector<Utf8String> const& aliases);
+    static RefCountedPtr<ComplexQueryBuilder> CreateNestedQuery(PresentationQueryBuilder& innerQuery);
+    static bool NeedsNestingToUseAlias(PresentationQueryBuilder const& query, bvector<Utf8String> const& aliases);
+    static RefCountedPtr<PresentationQueryBuilder> CreateNestedQueryIfNecessary(PresentationQueryBuilder& query, bvector<Utf8String> const& aliases);
+    static RefCountedPtr<ComplexQueryBuilder> CreateComplexNestedQueryIfNecessary(PresentationQueryBuilder& query, bvector<Utf8String> const& aliases);
 
     static std::unique_ptr<InputFilteringParams> CreateInputFilter(IConnectionCR, SelectClassInfo const&, RecursiveQueryInfo const*, IParsedInput const&);
-    template<typename T> static void ApplyInstanceFilter(ComplexPresentationQuery<T>&, InstanceFilteringParams const&);
+    static void ApplyInstanceFilter(ComplexQueryBuilder&, InstanceFilteringParams const&);
 
     static bvector<SelectClassSplitResult> ProcessSelectClassesBasedOnCustomizationRules(bvector<SelectClassWithExcludes<ECClass>> const& selectClasses,
         bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR schemas);
     static bvector<RelatedClassPath> ProcessRelationshipPathsBasedOnCustomizationRules(bvector<RelatedClassPath> const& relationshipPaths,
         bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR);
 
-    static void ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts);
+    static void ApplyPagingOptions(RefCountedPtr<PresentationQueryBuilder>& query, PageOptionsCR opts);
     static void Aggregate(ContentDescriptorPtr& aggregateDescriptor, ContentDescriptorR inputDescriptor);
 
     static bmap<ECClassCP, bvector<InstanceLabelOverride const*>> GetLabelOverrideValuesMap(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP>);

@@ -562,7 +562,7 @@ static void FilterSimpleContentSources(bvector<ContentSource>& filteredSources, 
     bvector<ECInstanceId> const& inputIds = specificationInput.GetInstanceIds(*firstContentSource.GetPathFromInputToSelectClass().front().GetSourceClass());
     Utf8String relationshipJoinTarget = pathPrefix.empty() ? "related" : pathPrefix.back().GetTargetClass().GetAlias();
 
-    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    auto query = ComplexQueryBuilder::Create();
     query->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ClassId",
         Utf8PrintfString("[relationship].[%sECClassId]", isForward ? "Target" : "Source").c_str(), false)));
     query->From(SelectClass<ECClass>(*firstContentSource.GetPathFromInputToSelectClass().front().GetSourceClass(), "related", false));
@@ -574,11 +574,11 @@ static void FilterSimpleContentSources(bvector<ContentSource>& filteredSources, 
     query->Where(ValuesFilteringHelper(targetClassIds).Create(Utf8PrintfString("[relationship].[%sECClassId]", isForward ? "Target" : "Source").c_str(), false));
 
     CachedECSqlStatementPtr stmt = context.GetConnection().GetStatementCache().GetPreparedStatement(context.GetConnection().GetECDb().Schemas(),
-        context.GetConnection().GetDb(), query->ToString().c_str());
+        context.GetConnection().GetDb(), query->GetQuery()->GetQueryString().c_str());
     if (stmt.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare simple data sources query");
 
-    query->BindValues(*stmt);
+    query->GetQuery()->BindValues(*stmt);
 
     bset<ECClassId> filteredTargetClassIds;
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*stmt))
@@ -598,16 +598,16 @@ static void FilterSimpleContentSources(bvector<ContentSource>& filteredSources, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<size_t> ExecuteAndResetInstanceFilteringQuery(GenericQueryPtr& query, IConnectionCR connection)
+static bvector<size_t> ExecuteAndResetInstanceFilteringQuery(PresentationQueryBuilderPtr& query, IConnectionCR connection)
     {
     CachedECSqlStatementPtr stmt = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(),
-        connection.GetDb(), query->ToString().c_str());
+        connection.GetDb(), query->GetQuery()->GetQueryString().c_str());
     if (stmt.IsNull())
         {
         query = nullptr;
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare instance filter query");
         }
-    query->BindValues(*stmt);
+    query->GetQuery()->BindValues(*stmt);
 
     bvector<size_t> indexes;
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*stmt))
@@ -623,7 +623,7 @@ static bvector<size_t> ExecuteAndResetInstanceFilteringQuery(GenericQueryPtr& qu
 static void FilterComplexContentSources(bvector<ContentSource>& filteredSources, bvector<ContentSource const*> const& complexContentSources, IParsedInput const& specificationInput,
     Utf8StringCR instanceFilter, ContentSpecificationsHandler::Context& context)
     {
-    GenericQueryPtr query;
+    PresentationQueryBuilderPtr query;
     uint64_t unionSize = 0;
     for (size_t i = 0; i < complexContentSources.size(); ++i)
         {
@@ -641,7 +641,7 @@ static void FilterComplexContentSources(bvector<ContentSource>& filteredSources,
         InstanceFilteringParams filteringParams(context.GetSchemaHelper().GetECExpressionsCache(), filteringExpressionContext.get(),
             instanceFilter.c_str(), inputFilter.get());
 
-        ComplexGenericQueryPtr q = ComplexGenericQuery::Create();
+        auto q = ComplexQueryBuilder::Create();
         q->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("Index", std::to_string(i).c_str(), false)));
         q->From(source.GetSelectClass());
         QueryBuilderHelpers::ApplyInstanceFilter(*q, filteringParams);
@@ -649,7 +649,7 @@ static void FilterComplexContentSources(bvector<ContentSource>& filteredSources,
             q->Join(relatedInstancePath);
         q->Limit(1);
 
-        QueryBuilderHelpers::SetOrUnion<GenericQuery>(query, ComplexGenericQuery::Create()->SelectAll().From(*q));
+        QueryBuilderHelpers::SetOrUnion(query, ComplexQueryBuilder::Create()->SelectAll().From(*q));
         ++unionSize;
 
         if ((unionSize % 500) == 499)
@@ -1040,7 +1040,7 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
     size_t iterationsCount = inputSelectClasses.size() / MAX_COMPOUND_STATEMENTS_COUNT + 1;
     for (size_t iteration = 0; iteration < iterationsCount; ++iteration)
         {
-        UnionGenericQueryPtr unionQuery = UnionGenericQuery::Create({});
+        auto unionQuery = UnionQueryBuilder::Create({});
         size_t offset = iteration * MAX_COMPOUND_STATEMENTS_COUNT;
         size_t end = offset + MAX_COMPOUND_STATEMENTS_COUNT;
         if (end > inputSelectClasses.size())
@@ -1049,7 +1049,7 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
             {
             SelectClassWithExcludes<ECClass> const& selectClass = inputSelectClasses[i];
 
-            ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+            auto query = ComplexQueryBuilder::Create();
             auto contract = SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId"));
             query->SelectContract(*contract);
             query->From(selectClass);
@@ -1064,11 +1064,11 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
             }
 
         CachedECSqlStatementPtr statement = context.GetConnection().GetStatementCache().GetPreparedStatement(
-            context.GetConnection().GetECDb().Schemas(), context.GetConnection().GetDb(), unionQuery->ToString().c_str());
+            context.GetConnection().GetECDb().Schemas(), context.GetConnection().GetDb(), unionQuery->GetQuery()->GetQueryString().c_str());
         if (statement.IsNull())
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare actual classes with instances query");
 
-        unionQuery->BindValues(*statement);
+        unionQuery->GetQuery()->BindValues(*statement);
 
         while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement))
             {

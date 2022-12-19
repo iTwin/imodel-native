@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericQueryPtr CreateInstanceLabelQuery(ECSchemaHelper const& schemaHelper, ECClassInstanceKeyCR key,
+std::unique_ptr<PresentationQuery> CreateInstanceLabelQuery(ECSchemaHelper const& schemaHelper, ECClassInstanceKeyCR key,
     bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, bvector<ECInstanceKey> const& prevLabelRequestsStack)
     {
     bvector<ECInstanceKey> labelRequestsStack(prevLabelRequestsStack);
@@ -20,11 +20,11 @@ GenericQueryPtr CreateInstanceLabelQuery(ECSchemaHelper const& schemaHelper, ECC
     auto labelField = QueryBuilderHelpers::CreateDisplayLabelField("/DisplayLabel/", schemaHelper, selectClass,
         nullptr, nullptr, bvector<RelatedClassPath>(), labelOverrideValueSpecs, labelRequestsStack);
     RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create({ labelField });
-    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    auto query = ComplexQueryBuilder::Create();
     query->SelectContract(*contract, selectClass.GetAlias().c_str());
     query->From(selectClass);
     query->Where("[this].[ECInstanceId] = ?", { std::make_shared<BoundQueryId>(key.GetId()) });
-    return query;
+    return query->CreateQuery();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -34,7 +34,7 @@ LabelDefinitionPtr NodeLabelCalculator::_GetNodeLabel(ECClassInstanceKeyCR key, 
     {
     auto instanceLabelOverridesValuesMap = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_schemaHelper, m_rulesPreprocessor.GetInstanceLabelOverrides());
     auto labelOverrideSpecs = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverridesValuesMap, *key.GetClass());
-    GenericQueryPtr labelQuery = CreateInstanceLabelQuery(m_schemaHelper, key, labelOverrideSpecs, prevLabelRequestsStack);
+    auto labelQuery = CreateInstanceLabelQuery(m_schemaHelper, key, labelOverrideSpecs, prevLabelRequestsStack);
     Utf8String label = QueryExecutorHelper::ReadText(m_schemaHelper.GetConnection(), *labelQuery);
     return LabelDefinition::FromString(label.c_str());
     }

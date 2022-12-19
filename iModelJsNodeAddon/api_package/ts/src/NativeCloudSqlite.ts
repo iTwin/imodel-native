@@ -90,6 +90,8 @@ export namespace NativeCloudSqlite {
   export interface CloudHttpProps {
     /** The number of simultaneous HTTP requests.  Default is 6. */
     nRequests?: number;
+    /** The time in seconds to wait without a response before considering a http request as timed out. Default is 60 seconds. */
+    httpTimeout?: number;
   }
 
   export interface PrefetchProps extends CloudHttpProps {

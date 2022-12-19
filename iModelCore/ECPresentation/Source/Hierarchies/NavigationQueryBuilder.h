@@ -58,18 +58,18 @@ private:
     RelatedPathsCache* m_relatedPathsCache;
 
 private:
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
 
 public:
     ECPRESENTATION_EXPORT NavigationQueryBuilder(NavigationQueryBuilderParameters params);
     ECPRESENTATION_EXPORT ~NavigationQueryBuilder();
     NavigationQueryBuilderParameters const& GetParameters() const {return m_params;}
     NavigationQueryBuilderParameters& GetParameters() {return m_params;}
-    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(RootNodeRuleCR, ChildNodeSpecificationCR) const;
-    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(ChildNodeRuleCR, ChildNodeSpecificationCR, NavNodeCR) const;
+    ECPRESENTATION_EXPORT bvector<PresentationQueryBuilderPtr> GetQueries(RootNodeRuleCR, ChildNodeSpecificationCR) const;
+    ECPRESENTATION_EXPORT bvector<PresentationQueryBuilderPtr> GetQueries(ChildNodeRuleCR, ChildNodeSpecificationCR, NavNodeCR) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

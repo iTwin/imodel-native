@@ -5,7 +5,7 @@
 #include "QueryExecutorHelperTests.h"
 
 std::unique_ptr<ECDbTestProject> QueryExecutorHelperTests::s_project;
-GenericQueryPtr QueryExecutorHelperTests::s_query;
+std::unique_ptr<PresentationQuery> QueryExecutorHelperTests::s_query;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -14,7 +14,7 @@ void QueryExecutorHelperTests::SetUpTestCase()
     {
     s_project = std::make_unique<ECDbTestProject>();
     s_project->Create("QueryExecutorHelperTests", "RulesEngineTest.01.00.ecschema.xml");
-    s_query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", {});
+    s_query = std::make_unique<PresentationQuery>("SELECT ECInstanceId FROM [RET].[Widget]");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -145,7 +145,7 @@ TEST_F(QueryExecutorHelperTests, ExecuteQuery_CancellationTriggeredImmediately_D
 TEST_F(QueryExecutorHelperTests, ExecuteQuery_ThrowsWhenStatementFailsToPrepare)
     {
     // create an invalid query
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT a FROM b", BoundQueryValuesList());
+    auto query = std::make_unique<PresentationQuery>("SELECT a FROM b", BoundQueryValuesList());
 
     // create an accumulator (we don't expect it to be called)
     TestQueryResultAccumulator accumulator(QueryResultAccumulatorStatus::Continue);
