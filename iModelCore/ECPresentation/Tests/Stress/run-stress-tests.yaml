@@ -23,11 +23,6 @@ resources:
       name: iTwin/imodel-native-internal
       endpoint: github.com_imodel-native
 
-# extends:
-#   template: /build/templates/prebuild.yml@imodel-native-internal
-#   parameters:
-#     otherRepo: imodel-native-internal
-
 jobs:
   - job:
     displayName: Pull, Build & Run on Windows
