@@ -36,7 +36,6 @@ stages:
           demands:
           - Agent.OS -equals Windows_NT
           - Cmd
-          - python3
 
         variables:
           PY_EXE: python3
