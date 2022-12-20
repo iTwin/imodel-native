@@ -164,9 +164,20 @@ IECSqlBinder& IdSetBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdSetBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
     {
-    OnClearBindings();
-    m_virtualSet = new IdSet<BeInt64Id>(idSet);
-    return BindVirtualSet(m_virtualSet);
+    m_pVirtualSet = std::make_shared<IdSet<BeInt64Id>>(idSet);
+    return BindVirtualSet(m_pVirtualSet);
+    }
+
+// --------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlStatus IdSetBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> pVirtualSet)
+    {
+    const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), (int64_t) pVirtualSet.get());
+    if (sqliteStat != BE_SQLITE_OK)
+        return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind Int64 value %" PRIi64 " to Id parameter.", pVirtualSet.get()).c_str());
+
+    return ECSqlStatus::Success;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -263,9 +263,17 @@ IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
     {
-    OnClearBindings();
-    m_virtualSet = new IdSet<BeInt64Id>(idSet);
-    return BindVirtualSet(m_virtualSet);
+    m_pVirtualSet = std::make_shared<IdSet<BeInt64Id>>(idSet);
+    return BindVirtualSet(m_pVirtualSet);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlStatus PrimitiveECSqlBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
+    {
+    LOG.error("Type mismatch. Cannot bind virtual set to primitive parameter.");
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------

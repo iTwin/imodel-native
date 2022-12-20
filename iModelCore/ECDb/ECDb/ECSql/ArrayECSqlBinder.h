@@ -58,6 +58,7 @@ private:
             ECSqlStatus _BindPoint3d(DPoint3dCR) override;
             ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
             ECSqlStatus _BindIdSet(IdSet<BeInt64Id> const& idSet) override { return ECSqlStatus::Error; }
+            ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> pVirtualSet) override { return ECSqlStatus::Error; }
 
             IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
             IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
@@ -87,6 +88,7 @@ private:
     ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_rootBinder->BindPoint3d(value); }
     ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override { return m_rootBinder->BindText(stringValue, makeCopy, byteCount); }
     ECSqlStatus _BindIdSet(IdSet<BeInt64Id> const& idSet) override { return ECSqlStatus::Error; }
+    ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> pVirtualSet) override { return ECSqlStatus::Error; }
 
     IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override { return m_rootBinder->operator[](structMemberPropertyName); }
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return m_rootBinder->operator[](structMemberPropertyId); }

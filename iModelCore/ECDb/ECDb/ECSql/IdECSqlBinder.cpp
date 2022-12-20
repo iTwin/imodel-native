@@ -165,9 +165,17 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
     {
-    OnClearBindings();
-    m_virtualSet = new IdSet<BeInt64Id>(idSet);
-    return BindVirtualSet(m_virtualSet);
+    m_pVirtualSet = std::make_shared<IdSet<BeInt64Id>>(idSet);
+    return BindVirtualSet(m_pVirtualSet);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlStatus IdECSqlBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> pVirtualSet)
+    {
+    m_pVirtualSet = pVirtualSet;
+    return BindVirtualSet(pVirtualSet);
     }
 
 //---------------------------------------------------------------------------------------

@@ -51,6 +51,7 @@ private:
     virtual ECSqlStatus _BindPoint3d(DPoint3dCR) = 0;
     virtual ECSqlStatus _BindText(Utf8CP, IECSqlBinder::MakeCopy, int byteCount) = 0;
     virtual ECSqlStatus _BindIdSet(IdSet<BeInt64Id> const&) = 0;
+    virtual ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet>) = 0;
 
     virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) = 0;
     virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
@@ -184,6 +185,13 @@ public:
     //! @return ECSqlStatus::Success or error codes
     //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
     ECSqlStatus BindVirtualSet(VirtualSet const& virtualSet) { return BindInt64((int64_t) &virtualSet); }
+    
+    //! Binds a VirtualSet to the SQL function @b InVirtualSet.
+    //! The parameter must be the first parameter in the InVirtualSet function.
+    //! @param[in] shared pointer to virtualSet to bind
+    //! @return ECSqlStatus::Success or error codes
+    //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
+    ECSqlStatus BindVirtualSet(std::shared_ptr<VirtualSet>& pVirtualSet) { return BindInt64((int64_t) pVirtualSet.get()); }
     
     //! Binds a VirtualSet to the SQL function @b InVirtualSet.
     //! The parameter must be the first parameter in the InVirtualSet function.

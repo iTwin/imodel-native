@@ -157,6 +157,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
                 ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
                 ECSqlStatus _BindIdSet(IdSet<BeInt64Id> const& idSet) override { return ECSqlStatus::Error; }
+                ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> pVirtualSet) override { return ECSqlStatus::Error; }
 
                 IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
                 IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
@@ -198,6 +199,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
                 ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
                 ECSqlStatus _BindIdSet(IdSet<BeInt64Id> const& idSet) override { return ECSqlStatus::Error; }
+                ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> pVirtualSet) override { return ECSqlStatus::Error; }
                 IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
                 IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
                 IECSqlBinder& _AddArrayElement() override;
