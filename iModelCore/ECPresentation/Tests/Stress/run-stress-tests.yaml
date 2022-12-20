@@ -33,7 +33,7 @@ jobs:
       - Agent.OS -equals Windows_NT
 
     variables:
-      PY_EXE: python
+      PY_EXE: py -3
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
       BB_OUT_ROOT: $(Build.BinariesDirectory)
       BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
@@ -70,7 +70,7 @@ jobs:
       - Agent.OS -equals Linux
 
     variables:
-      PY_EXE: python3
+      PY_EXE: py -3
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
       BB_OUT_ROOT: $(Build.BinariesDirectory)
       BB_ARGS: -a LinuxX64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
