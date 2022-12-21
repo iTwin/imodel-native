@@ -380,6 +380,7 @@ export declare namespace IModelJsNative {
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     enableWalMode(yesNo?: boolean): void;
     performCheckpoint(mode?: WalCheckpointMode): void;
+    setAutoCheckpointThreshold(frames: number): void;
   }
 
   /** The result of DgnDb.inlineGeometryParts.
@@ -591,6 +592,7 @@ export declare namespace IModelJsNative {
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
 
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
@@ -802,6 +804,7 @@ export declare namespace IModelJsNative {
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
   }
 
   class SqliteStatement implements IDisposable {

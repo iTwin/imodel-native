@@ -341,6 +341,13 @@ struct SQLiteOps {
             JsInterop::throwSqlResult("error changing WAL mode", db.GetDbFileName(), status);
     }
 
+    void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info)  {
+        Db& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_INTEGER(0, frames);
+        auto status = db.SetAutoCheckpointThreshold(frames);
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error setting autocheckpoint threshold", db.GetDbFileName(), status);
+    }
     void PerformCheckpoint(Napi::CallbackInfo const& info)  {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
@@ -642,6 +649,7 @@ public:
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &SQLiteDb::PerformCheckpoint),
+            InstanceMethod("setAutoCheckpointThreshold", &SQLiteDb::SetAutoCheckpointThreshold),
         });
 
         exports.Set("SQLiteDb", t);
@@ -2404,6 +2412,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
+            InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });

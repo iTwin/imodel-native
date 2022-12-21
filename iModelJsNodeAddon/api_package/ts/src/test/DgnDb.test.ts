@@ -175,6 +175,7 @@ describe("basic tests", () => {
     withWal.createIModel(tempDbName, {rootSubject: {name: "wal"}});
     withWal.enableWalMode();
     withWal.performCheckpoint();
+    withWal.setAutoCheckpointThreshold(2000);
     withWal.closeIModel();
   });
 
