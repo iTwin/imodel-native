@@ -333,7 +333,7 @@ struct SQLiteOps {
             JsInterop::throwSqlResult("error vacuuming", db.GetDbFileName(), status);
     }
 
-    void EnableWalMode(Napi::CallbackInfo const& info)  {
+    void EnableWalMode(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
         auto status = db.EnableWalMode(yesNo);
@@ -341,14 +341,14 @@ struct SQLiteOps {
             JsInterop::throwSqlResult("error changing WAL mode", db.GetDbFileName(), status);
     }
 
-    void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info)  {
+    void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, frames);
         auto status = db.SetAutoCheckpointThreshold(frames);
         if (status != BE_SQLITE_OK)
-            JsInterop::throwSqlResult("error setting autocheckpoint threshold", db.GetDbFileName(), status);
+            JsInterop::throwSqlResult("error setting autoCheckpoint threshold", db.GetDbFileName(), status);
     }
-    void PerformCheckpoint(Napi::CallbackInfo const& info)  {
+    void PerformCheckpoint(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
         DbResult status = db.PerformCheckpoint((WalCheckpointMode)mode);
