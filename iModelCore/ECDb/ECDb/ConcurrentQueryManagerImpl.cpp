@@ -1871,7 +1871,7 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
                 std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
-                st = stmt.BindIdSet(index, idSet);
+                st = stmt.BindVirtualSet(index, idSet);
                 break;
             }
             case ECSqlParam::Type::Integer:

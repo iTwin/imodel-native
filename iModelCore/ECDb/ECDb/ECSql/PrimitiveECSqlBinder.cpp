@@ -258,14 +258,6 @@ IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
     return NoopECSqlBinder::Get();
     }
 
-// --------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlBinder::_BindIdSet(std::shared_ptr<VirtualSet> virtualSet)
-    {
-    return _BindVirtualSet(virtualSet);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

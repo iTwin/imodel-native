@@ -192,15 +192,15 @@ void DefinitionElementUsageInfo::QueryUsage()
         }
     else if (!m_subCategoryIds.empty())
         {
-        BeSQLite::IdSet<BeInt64Id> categoriesToScan;
+        std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScan = std::make_shared<BeSQLite::IdSet<BeInt64Id>>();
         for (DgnSubCategoryId subCategoryId : m_subCategoryIds)
             {
             DgnSubCategoryCPtr subCategory = m_db.Elements().Get<DgnSubCategory>(subCategoryId);
             if (subCategory.IsValid())
-                categoriesToScan.insert(subCategory->GetCategoryId());
+                categoriesToScan->insert(subCategory->GetCategoryId());
             }
 
-        ScanGeometryStreams(&categoriesToScan);
+        ScanGeometryStreams(categoriesToScan);
         }
 
     if (!m_geometryPartIds.empty())
@@ -300,7 +300,7 @@ bool DefinitionElementUsageInfo::IsViewDefinitionUsed(DgnViewId viewDefinitionId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefinitionElementUsageInfo::ScanGeometryStreams(const BeSQLite::IdSet<BeInt64Id>* categoriesToScan)
+void DefinitionElementUsageInfo::ScanGeometryStreams(std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScan)
     {
     ScanGeometricElement3ds(categoriesToScan);
     ScanGeometricElement2ds(categoriesToScan);
@@ -310,7 +310,7 @@ void DefinitionElementUsageInfo::ScanGeometryStreams(const BeSQLite::IdSet<BeInt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefinitionElementUsageInfo::ScanGeometricElement3ds(const BeSQLite::IdSet<BeInt64Id>* categoriesToScan)
+void DefinitionElementUsageInfo::ScanGeometricElement3ds(std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScan)
     {
     Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE GeometryStream IS NOT NULL";
     if (nullptr != categoriesToScan)
@@ -319,8 +319,7 @@ void DefinitionElementUsageInfo::ScanGeometricElement3ds(const BeSQLite::IdSet<B
     CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     if (nullptr != categoriesToScan)
         {
-        std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScanShared = std::make_shared<BeSQLite::IdSet<BeInt64Id>>(*categoriesToScan);
-        statement->BindIdSet(1, categoriesToScanShared);
+        statement->BindVirtualSet(1, categoriesToScan);
         }
 
     while (BE_SQLITE_ROW == statement->Step())
@@ -333,7 +332,7 @@ void DefinitionElementUsageInfo::ScanGeometricElement3ds(const BeSQLite::IdSet<B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefinitionElementUsageInfo::ScanGeometricElement2ds(const BeSQLite::IdSet<BeInt64Id>* categoriesToScan)
+void DefinitionElementUsageInfo::ScanGeometricElement2ds(std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScan)
     {
     Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE GeometryStream IS NOT NULL";
     if (nullptr != categoriesToScan)
@@ -342,8 +341,7 @@ void DefinitionElementUsageInfo::ScanGeometricElement2ds(const BeSQLite::IdSet<B
     CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     if (nullptr != categoriesToScan)
         {
-        std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScanShared = std::make_shared<BeSQLite::IdSet<BeInt64Id>>(*categoriesToScan);
-        statement->BindIdSet(1, categoriesToScanShared);
+        statement->BindVirtualSet(1, categoriesToScan);
         }
 
     while (BE_SQLITE_ROW == statement->Step())

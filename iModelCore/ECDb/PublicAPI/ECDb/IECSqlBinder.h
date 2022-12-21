@@ -50,7 +50,6 @@ private:
     virtual ECSqlStatus _BindPoint2d(DPoint2dCR) = 0;
     virtual ECSqlStatus _BindPoint3d(DPoint3dCR) = 0;
     virtual ECSqlStatus _BindText(Utf8CP, IECSqlBinder::MakeCopy, int byteCount) = 0;
-    virtual ECSqlStatus _BindIdSet(std::shared_ptr<VirtualSet>) = 0;
     virtual ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet>) = 0;
 
     virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) = 0;
@@ -184,13 +183,7 @@ public:
     //! @param[in] shared pointer to virtualSet to bind
     //! @return ECSqlStatus::Success or error codes
     //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
-    ECSqlStatus BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) { return BindInt64((int64_t) virtualSet.get()); }
-
-    //! Binds an IdSet to the SQL function @b InVirtualSet while holding it in memory.
-    //! The parameter must be the first parameter in the InVirtualSet function.
-    //! @param[in] shared pointer to virtualSet to bind
-    //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindIdSet(std::shared_ptr<VirtualSet> virtualSet);
+    ECDB_EXPORT ECSqlStatus BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet);
 
     //! Gets a binder for the specified struct member property
     //! @param[in] structMemberPropertyName Property name of the struct member to bind the value to

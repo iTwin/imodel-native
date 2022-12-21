@@ -32,7 +32,6 @@ struct NoopECSqlBinder final : public IECSqlBinder
         ECSqlStatus _BindPoint2d(DPoint2dCR value) override { return m_errorStatus; }
         ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_errorStatus; }
         ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy, int byteCount) override { return m_errorStatus; }
-        ECSqlStatus _BindIdSet(std::shared_ptr<VirtualSet> virtualSet) override { return m_errorStatus; }
         ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override { return m_errorStatus; }
 
         IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override { return *this; }

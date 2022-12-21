@@ -34,7 +34,6 @@ struct PointECSqlBinder final : public ECSqlBinder
         ECSqlStatus _BindPoint2d(DPoint2dCR) override;
         ECSqlStatus _BindPoint3d(DPoint3dCR) override;
         ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
-        ECSqlStatus _BindIdSet(std::shared_ptr<VirtualSet> virtualSet) override { return ECSqlStatus::Error; }
         ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override { return ECSqlStatus::Error; }
 
         IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;

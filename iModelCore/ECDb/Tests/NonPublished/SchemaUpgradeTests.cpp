@@ -532,7 +532,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema) {
         Utf8String className = m_ecdb.Schemas().GetClass(baseClassId)->GetFullName();
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s WHERE InVirtualSet(?, ECInstanceId)", className.c_str())));
-        stmt.BindIdSet(1, idToDelete);
+        stmt.BindVirtualSet(1, idToDelete);
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         ASSERT_EQ(m_ecdb.GetModifiedRowCount(), idToDelete->size());
     }
@@ -553,7 +553,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema) {
         Utf8String className = m_ecdb.Schemas().GetClass(baseClassId)->GetFullName();
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s WHERE InVirtualSet(?, ECInstanceId)", className.c_str())));
-        stmt.BindIdSet(1, idToDelete);
+        stmt.BindVirtualSet(1, idToDelete);
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         ASSERT_EQ(m_ecdb.GetModifiedRowCount(), idToDelete->size());
           m_ecdb.SaveChanges();

@@ -24,9 +24,6 @@ private:
         BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
         return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
         }
-    std::shared_ptr<VirtualSet> m_virtualSet;
-
-    void _OnClearBindings() override { m_virtualSet.reset(); }
 
 public:
     ECSqlStatus _BindNull() override;
@@ -41,7 +38,6 @@ public:
     ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
     ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
     ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
-    ECSqlStatus _BindIdSet(std::shared_ptr<VirtualSet> virtualSet) override;
     ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override;
 
     IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;

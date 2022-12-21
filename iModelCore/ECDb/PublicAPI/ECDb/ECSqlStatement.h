@@ -241,13 +241,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
         ECSqlStatus BindVirtualSet(int parameterIndex, std::shared_ptr<VirtualSet> virtualSet) { return GetBinder(parameterIndex).BindVirtualSet(virtualSet); }
 
-        //! Binds an IdSet to the SQL function @b InVirtualSet.
-        //! The parameter must be the first parameter in the InVirtualSet function.
-        //! @param[in] parameterIndex Parameter index
-        //! @param[in] idSet to bind
-        //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus BindIdSet(int parameterIndex, std::shared_ptr<VirtualSet> virtualSet) { return GetBinder(parameterIndex).BindIdSet(virtualSet); }
-
         //! Gets a binder to bind a value to the parameter at the specified index.
         //! @param[in] parameterIndex Parameter index
         //! @remarks In case of error, e.g. if the parameter index is out of bounds

@@ -296,9 +296,9 @@ private:
     DefinitionElementUsageInfo(DgnDbR db) : m_db(db) {}
     void Initialize(BeSQLite::IdSet<DgnElementId> const&);
     void QueryUsage();
-    void ScanGeometryStreams(const BeSQLite::IdSet<BeInt64Id>* categoriesToScan=nullptr);
-    void ScanGeometricElement3ds(const BeSQLite::IdSet<BeInt64Id>* categoriesToScan);
-    void ScanGeometricElement2ds(const BeSQLite::IdSet<BeInt64Id>* categoriesToScan);
+    void ScanGeometryStreams(std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScan=nullptr);
+    void ScanGeometricElement3ds(std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScan);
+    void ScanGeometricElement2ds(std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScan);
     void ScanGeometricElement(DgnElementId);
     void ScanGeometryParts();
     void ScanGeometryStream(GeometryStreamCR);

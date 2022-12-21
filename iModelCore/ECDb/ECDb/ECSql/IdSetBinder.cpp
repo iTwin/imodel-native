@@ -96,11 +96,8 @@ ECSqlStatus IdSetBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdSetBinder::_BindInt64(int64_t value)
     {
-    const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), value);
-    if (sqliteStat != BE_SQLITE_OK)
-        return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind Int64 value %" PRIi64 " to Id parameter.", value).c_str());
-
-    return ECSqlStatus::Success;
+    LOG.error("Type mismatch. Cannot bind Int64 value to IdSet parameter.");
+    return NoopECSqlBinder::Get().BindInt64(value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -157,14 +154,6 @@ IECSqlBinder& IdSetBinder::_AddArrayElement()
     {
     LOG.error("Type mismatch. Cannot bind ECStruct to IdSet parameter.");
     return NoopECSqlBinder::Get();
-    }
-
-// --------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-ECSqlStatus IdSetBinder::_BindIdSet(std::shared_ptr<VirtualSet> virtualSet)
-    {
-    return _BindVirtualSet(virtualSet);
     }
 
 // --------------------------------------------------------------------------------------

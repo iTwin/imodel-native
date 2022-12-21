@@ -726,7 +726,7 @@ RelationshipCacheEntry ChunkRelationshipQueryHelper::GetCurrentRelatedInstances(
 
     Utf8PrintfString ecsql("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM %s WHERE InVirtualSet(?, %s)", path.m_relationshipClassName.c_str(), whereSourceId.c_str());
     CachedECSqlStatementPtr stmt = GetCachedStatement(db, ecsql);
-    stmt->BindIdSet(1, ids);
+    stmt->BindVirtualSet(1, ids);
 
     RelationshipCacheEntry entry;
     while (stmt->Step() == DbResult::BE_SQLITE_ROW)

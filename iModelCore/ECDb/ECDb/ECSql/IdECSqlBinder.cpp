@@ -163,18 +163,10 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IdECSqlBinder::_BindIdSet(std::shared_ptr<VirtualSet> virtualSet)
-    {
-    return _BindVirtualSet(virtualSet);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    m_virtualSet = virtualSet;
-    return BindVirtualSet(m_virtualSet);
+    LOG.error("Type mismatch. Cannot bind virtual set value to Id parameter.");
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
