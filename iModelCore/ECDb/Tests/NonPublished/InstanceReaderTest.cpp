@@ -77,9 +77,31 @@ TEST_F(InstanceReaderFixture, instance_reader) {
         ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
             EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
-       
-        
         //printf("%s\n", reader.ToJsonString(InstanceReader::JsonParams().SetIndent(true)).c_str());
+    }
+    if ("use syntax to get full instance") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId, $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'"));
+        const auto expectedSQL = "SELECT [ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'";
+        EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
+        if(stmt.Step() == BE_SQLITE_ROW) {
+            BeJsDocument inst;
+            inst.Parse(stmt.GetValueText(2));
+            EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), inst.Stringify(StringifyFormat::Indented).c_str());
+
+        }
+    }
+    if ("use syntax to get full instance using alias") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT m.ECClassId, m.ECInstanceId, m.$ FROM meta.ECClassDef m WHERE m.Description='Relates the property to its PropertyCategory.'"));
+        const auto expectedSQL = "SELECT [m].[ECClassId],[m].[ECInstanceId],extract_inst([m].[ECClassId],[m].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [m] WHERE [m].[Description]='Relates the property to its PropertyCategory.'";
+        EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
+        if(stmt.Step() == BE_SQLITE_ROW) {
+            BeJsDocument inst;
+            inst.Parse(stmt.GetValueText(2));
+            EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), inst.Stringify(StringifyFormat::Indented).c_str());
+
+        }
     }
 }
 //---------------------------------------------------------------------------------------
@@ -103,14 +125,14 @@ TEST_F(InstanceReaderFixture, extract_prop) {
                                 <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                                     <DateTimeKind>Utc</DateTimeKind>
                                 </DateTimeInfo>
-                            </ECCustomAttributes>                       
+                            </ECCustomAttributes>
                         </ECProperty>
                         <ECProperty propertyName="b"    typeName="boolean" />
                     </ECEntityClass>
                </ECSchema>)xml")));
     m_ecdb.SaveChanges();
 
-    // sample primitive type    
+    // sample primitive type
     const bool kB = true;
     const DateTime kDt = DateTime::GetCurrentTimeUtc();
     const double kD = 3.13;
@@ -119,7 +141,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     const int kBiLen = 10;
     const int kI = 0x3432;
     const int64_t kL = 0xfefefefefefefefe;
-    const uint8_t kBi[kBiLen] = {0x71, 0xdd, 0x83, 0x7d, 0x0b, 0xf2, 0x50, 0x01, 0x0a, 0xe1}; 
+    const uint8_t kBi[kBiLen] = {0x71, 0xdd, 0x83, 0x7d, 0x0b, 0xf2, 0x50, 0x01, 0x0a, 0xe1};
     const char* kText = "Hello, World";
 
     if ("insert a row with primitive value") {
@@ -153,7 +175,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
         "   EXTRACT_PROP(ecClassId, ecInstanceId, 'dt' ),"
         "   EXTRACT_PROP(ecClassId, ecInstanceId, 'b'  ) "
         "FROM ts.P                                     ";
-    
+
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
@@ -168,6 +190,25 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     ASSERT_EQ(stmt.GetValueInt64(i++), kL);
     ASSERT_TRUE(stmt.GetValueDateTime (i++).Equals(kDt, true));
     ASSERT_EQ(stmt.GetValueBoolean(i++), kB);
+
+    if ("use syntax to extract property") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->s, $->i, $->d, $->p2d, $->p3d, $->bi, $->l, $->dt, $->b FROM ts.P"));
+        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b') FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
+        EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
+        if(stmt.Step() == BE_SQLITE_ROW) {
+            int i = 0;
+            ASSERT_STRCASEEQ(stmt.GetValueText(i++), kText);
+            ASSERT_EQ(stmt.GetValueInt(i++), kI);
+            ASSERT_EQ(stmt.GetValueDouble(i++), kD);
+            ASSERT_STRCASEEQ(stmt.GetValueText(i++), "{\"X\":2.0,\"Y\":4.0}"); // return as json
+            ASSERT_STRCASEEQ(stmt.GetValueText(i++), "{\"X\":4.0,\"Y\":5.0,\"Z\":6.0}"); // return as json
+            ASSERT_EQ(memcmp(stmt.GetValueBlob(i++), &kBi[0], kBiLen), 0);
+            ASSERT_EQ(stmt.GetValueInt64(i++), kL);
+            ASSERT_TRUE(stmt.GetValueDateTime (i++).Equals(kDt, true));
+            ASSERT_EQ(stmt.GetValueBoolean(i++), kB);
+        }
+    }
 
 }
 
@@ -200,19 +241,19 @@ TEST_F(InstanceReaderFixture, prop_exists) {
         const auto sql =
             "SELECT "
             "   PROP_EXISTS(ec_classid('ts.Base'), 'ECClassId'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECInstanceId')," 
+            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECInstanceId'),"
             "   PROP_EXISTS(ec_classid('ts.Base'), 'Prop1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.base'), 'Prop2'       )," 
+            "   PROP_EXISTS(ec_classId('ts.base'), 'Prop2'       ),"
             "   PROP_EXISTS(ec_classid('ts.Base'), 'SubProp1'    ),"
             "   PROP_EXISTS(ec_classid('ts.Base'), 'SubProp2'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECClassId'   )," 
+            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECClassId'   ),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECInstanceId'),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'Prop1'       ),"
             "   PROP_EXISTS(ec_classId('ts.Sub'),  'Prop2'       ),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'SubProp1'    ),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'SubProp2'    )";
 
-        ECSqlStatement stmt;   
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
 
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
@@ -236,19 +277,19 @@ TEST_F(InstanceReaderFixture, prop_exists) {
         const auto sql =
             "SELECT "
             "   PROP_EXISTS(ec_classid('ts.Base'), 'ECCLASSID'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECINSTANCEID')," 
+            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECINSTANCEID'),"
             "   PROP_EXISTS(ec_classid('ts.Base'), 'PROP1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.base'), 'PROP2'       )," 
+            "   PROP_EXISTS(ec_classId('ts.base'), 'PROP2'       ),"
             "   PROP_EXISTS(ec_classid('ts.Base'), 'SUBPROP1'    ),"
             "   PROP_EXISTS(ec_classid('ts.Base'), 'SUBPROP2'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECCLASSID'   )," 
+            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECCLASSID'   ),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECINSTANCEID'),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'PROP1'       ),"
             "   PROP_EXISTS(ec_classId('ts.Sub'),  'PROP2'       ),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'SUBPROP1'    ),"
             "   PROP_EXISTS(ec_classid('ts.Sub'),  'SUBPROP2'    )";
-            
-        ECSqlStatement stmt;   
+
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
