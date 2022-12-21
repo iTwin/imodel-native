@@ -2940,6 +2940,25 @@ DbResult Db::OpenSecondaryConnection(Db& newConnection, OpenParams params) const
     return newConnection.OpenBeSQLiteDb(GetDbFileName(), params);
     }
 
+/**
+ * perform a checkpoint operation if this database is in WAL mode.
+ */
+DbResult Db::Checkpoint(WalCheckpointMode mode, int* pnLog, int* pnCkpt) {
+    return (DbResult) sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
+}
+
+/**
+ * Set the auto checkpoint threshold
+ */
+DbResult Db::SetAutoCheckpointThreshold(int frames) {
+    return (DbResult) sqlite3_wal_autocheckpoint(GetSqlDb(), frames);
+}
+
+/** Turn on or off WAL journal mode */
+DbResult Db::EnableWalMode(bool yesNo) {
+    Utf8String sql = "pragma journal_mode=" + yesNo ? "WAL" : "DELETE";
+    return TryExecuteSql(sql.c_str());
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

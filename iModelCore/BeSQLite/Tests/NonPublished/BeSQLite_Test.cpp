@@ -305,6 +305,95 @@ struct BeSQliteTestFixture : public ::testing::Test
             }
     };
 
+ struct DisableAsserts {
+    DisableAsserts() {BeTest::SetFailOnAssert(false);}
+   ~DisableAsserts() {BeTest::SetFailOnAssert(true);}
+ };
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             1/20
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, WAL_basic_test) {
+    DisableAsserts _notused;
+    auto getFileSize = [](Utf8CP file) {
+        struct stat buf;
+        EXPECT_EQ(0, stat(file, &buf));
+        return buf.st_size;
+    };
+    Utf8String dbFileName;
+    if ("db"){
+        auto db1 = Create("first.db");
+        ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table test(i)"));
+        ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(1024))"));
+        dbFileName = db1->GetDbFileName();
+        ASSERT_EQ(BE_SQLITE_OK, db1->SaveChanges());
+
+        Utf8String curMode;
+        ASSERT_EQ(BE_SQLITE_OK, Db::TryGetJournalingMode(curMode, dbFileName.c_str()));
+        ASSERT_STREQ("delete", curMode.c_str());
+
+        ASSERT_EQ(BE_SQLITE_OK, Db::TrySetJournalingMode(dbFileName.c_str(), "wal"));
+        db1->CloseDb();
+
+        // set journal mode to WAL
+        ASSERT_EQ(BE_SQLITE_OK, Db::TrySetJournalingMode(dbFileName.c_str(), "wal"));
+        ASSERT_EQ(BE_SQLITE_OK, Db::TryGetJournalingMode(curMode, dbFileName.c_str()));
+        ASSERT_STREQ("wal", curMode.c_str());
+
+        // insert many rows to force auto checkpoint
+        db1 = Open("first.db", Db::OpenMode::ReadWrite);
+        for (int i=0;i< 5000;i++) {
+            ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(1024))"));
+        }
+
+        // open a reader from read/write connection. SaveChanges() will not do auto checkpoint because
+        // there is a reader from the same connection which writing to file.
+        auto stmt = db1->GetCachedStatement("select * from test");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_EQ(BE_SQLITE_OK, db1->SaveChanges());
+
+        // open a readonly second connection just to lock the WAL file from being checkpointed.
+        auto db2 = Open("first.db", Db::OpenMode::Readonly);
+        auto stmt2 = db2->GetCachedStatement("select * from test");
+         for (int i=0;i< 3000;i++) {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt2->Step());
+         }
+
+        // wal file must have grown larger after new inserted rows.
+        Utf8String walFile = dbFileName + Utf8String("-wal");
+        auto  walFileSize = getFileSize(walFile.c_str());
+        ASSERT_EQ(6892792, walFileSize);
+
+        // main db size should small as the all the above data was written in wal file.
+        auto dbSize = getFileSize(dbFileName.c_str());
+        ASSERT_EQ(36864, dbSize);
+
+        // auto checkpoint will not happen as there is active reader db1
+        stmt = nullptr;
+        db1->CloseDb();
+
+        // closing reader later will ensure WAL file is not checkpointed
+        stmt2 = nullptr;
+        db2->CloseDb();
+    }
+    auto dbSize = getFileSize(dbFileName.c_str());
+    ASSERT_EQ(36864, dbSize);
+
+    // Perform a explicit checkpoint by open file readonly and calling checkpoint.
+    // This will only work if there is no active readers that need WAL file.
+    int pnLog, pnCkpt;
+    ASSERT_EQ(BE_SQLITE_OK, Db::TryCheckpoint(dbFileName.c_str(), WalCheckpointMode::Truncate, &pnLog, &pnCkpt));
+    ASSERT_EQ(0, pnLog);
+    ASSERT_EQ(0, pnCkpt);
+
+    // After checkpoint the main db file must have grow larger and WAL file truncated to zero length.
+    dbSize = getFileSize(dbFileName.c_str());
+    ASSERT_EQ(6881280, dbSize);
+
+    Utf8String walFile = dbFileName + Utf8String("-wal");
+    auto  walFileSize = getFileSize(walFile.c_str());
+    ASSERT_EQ(0, walFileSize);
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -546,7 +635,7 @@ TEST_F(BeSQliteTestFixture, Trace)
     auto cancel_row = db1->GetTraceRowEvent().AddListener([&](TraceContext const& ctx) { nRow++; });
     auto cancel_close = db1->GetTraceCloseEvent().AddListener([&](SqlDbP, Utf8CP) { nClose++; });
     db1->ConfigTraceEvents(DbTrace::Profile| DbTrace::Stmt | DbTrace::Row | DbTrace::Close, true);
-    
+
     db1->ExecuteSql("create table test(Id integer primary key, c0);");
     Statement stmt;
     stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
@@ -563,7 +652,7 @@ TEST_F(BeSQliteTestFixture, Trace)
     ASSERT_EQ(nStmt, 3);
     ASSERT_EQ(nProfile, 3);
     ASSERT_EQ(nRow, 1);
-    
+
     db1->SaveChanges();
     db1->CloseDb();
 
@@ -635,7 +724,7 @@ TEST_F(BeSQliteTestFixture, ReadonlyNoCommit)
 TEST_F(BeSQliteTestFixture, SerializeMainDb)
     {
     auto db = Create("first.db");
-    
+
     db->ExecuteSql("create table test1(Id integer primary key, c0);");
     auto snapshot0 = db->Serialize();
     ASSERT_EQ(snapshot0.Size(), 36864);
@@ -666,7 +755,7 @@ TEST_F(BeSQliteTestFixture, SerializeMainDb)
 TEST_F(BeSQliteTestFixture, SerializeTempDb)
     {
     auto db = Create("first.db");
-    
+
     db->ExecuteSql("create table temp.test(Id integer primary key, c0);");
     db->ExecuteSql("create table test(Id integer primary key, c0);");
 
