@@ -287,7 +287,8 @@ struct SuspendDefaultTxn {
     Savepoint* m_savepoint = nullptr;
     SuspendDefaultTxn(Db& db) {
         if (db.GetCurrentSavepointDepth() > 1)
-            throw new std::runtime_error("action illegal from within nested transaction");
+            return; // let operation fail
+
         m_savepoint = db.GetSavepoint(0);
         if (m_savepoint)
             m_savepoint->Commit();
