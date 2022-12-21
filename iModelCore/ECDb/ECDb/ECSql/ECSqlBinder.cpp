@@ -77,7 +77,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         {
         if (FunctionCallExp const* parentExp = exp->GetAsCP<FunctionCallExp>()) {
             if (parentExp->GetFunctionName().EqualsI("InVirtualSet") && parentExp->GetChildren()[0] == &parameterExp)
-                return CreateIdSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+                return CreateVirtualSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
             }
         }
 
@@ -152,11 +152,11 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareCo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::unique_ptr<IdSetBinder> ECSqlBinderFactory::CreateIdSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
+std::unique_ptr<VirtualSetBinder> ECSqlBinderFactory::CreateVirtualSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
     {
     ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
     BeAssert(typeKind != ECSqlTypeInfo::Kind::Unset);
-    return std::unique_ptr<IdSetBinder>(new IdSetBinder(ctx, typeInfo, paramNameGen));
+    return std::unique_ptr<VirtualSetBinder>(new VirtualSetBinder(ctx, typeInfo, paramNameGen));
     }
 
 //---------------------------------------------------------------------------------------

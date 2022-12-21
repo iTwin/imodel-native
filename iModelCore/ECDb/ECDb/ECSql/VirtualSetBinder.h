@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct IdSetBinder final : public ECSqlBinder
+struct VirtualSetBinder final : public ECSqlBinder
     {
     private:
         std::shared_ptr<VirtualSet> m_virtualSet;
@@ -45,8 +45,8 @@ struct IdSetBinder final : public ECSqlBinder
         IECSqlBinder& _AddArrayElement() override;
 
     public:
-        IdSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
-        ~IdSetBinder() { OnClearBindings(); };
+        VirtualSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
+        ~VirtualSetBinder() { OnClearBindings(); };
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

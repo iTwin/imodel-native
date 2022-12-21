@@ -112,7 +112,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ArrayECSqlBinder.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlBinder.h \
                 $(baseDir)ECSql/IdECSqlBinder.h \
-                $(baseDir)ECSql/IdSetBinder.h \
+                $(baseDir)ECSql/VirtualSetBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
                 $(baseDir)ECSql/ECSqlField.h \
                 $(baseDir)ECSql/PointECSqlField.h \
@@ -342,7 +342,7 @@ $(o)NavigationPropertyECSqlBinder$(oext):                     $(baseDir)ECSql/Na
 
 $(o)IdECSqlBinder$(oext):                                     $(baseDir)ECSql/IdECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)IdSetBinder$(oext):                                       $(baseDir)ECSql/IdSetBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)VirtualSetBinder$(oext):                                       $(baseDir)ECSql/VirtualSetBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
