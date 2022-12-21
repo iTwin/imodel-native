@@ -279,6 +279,25 @@ SQLiteTraceScope::~SQLiteTraceScope() {
 
 END_BENTLEY_SQLITE_NAMESPACE
 
+/**
+ * Used by operations that require there be no active transaction. If there is an active
+ * default transaction, this class commits it in the ctor and restarts it in the dtor.
+ */
+struct SuspendDefaultTxn {
+    Savepoint* m_savepoint = nullptr;
+    SuspendDefaultTxn(Db& db) {
+        if (db.GetCurrentSavepointDepth() > 1)
+            throw new std::runtime_error("action illegal from within nested transaction");
+        m_savepoint = db.GetSavepoint(0);
+        if (m_savepoint)
+            m_savepoint->Commit();
+    }
+    ~SuspendDefaultTxn() {
+        if (m_savepoint)
+            m_savepoint->Begin();
+    }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2941,20 +2960,9 @@ DbResult Db::OpenSecondaryConnection(Db& newConnection, OpenParams params) const
     }
 
 /** Perform a checkpoint operation if this database is in WAL mode. */
-DbResult Db::Checkpoint(WalCheckpointMode mode, int* pnLog, int* pnCkpt) {
-    auto savepoint = GetSavepoint(0);
-    if (savepoint)
-        savepoint->Commit();
-
-    auto result = (DbResult) sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
-    if (result != BE_SQLITE_OK) {
-        auto msg =  GetLastError(nullptr);
-        printf("err=%s", msg.c_str());
-    }
-
-    if (savepoint)
-        savepoint->Begin();
-    return result;
+DbResult Db::PerformCheckpoint(WalCheckpointMode mode, int* pnLog, int* pnCkpt) {
+    SuspendDefaultTxn noDefaultTxn(*this); // no transactions may be active to perform a checkpoint
+    return (DbResult) sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
 }
 
 /** Set the auto checkpoint threshold */
@@ -2964,20 +2972,16 @@ DbResult Db::SetAutoCheckpointThreshold(int frames) {
 
 /** Turn on or off WAL journal mode */
 DbResult Db::EnableWalMode(bool yesNo) {
-    auto savepoint = GetSavepoint(0);
-    if (savepoint)
-        savepoint->Commit();
-
-    auto sql = Utf8String("pragma journal_mode=");
-    sql += yesNo ? "WAL" : "DELETE";
-    auto result = TryExecuteSql(sql.c_str());
-    if (result != BE_SQLITE_OK) {
-        auto msg =  GetLastError(nullptr);
-        printf("err=%s", msg.c_str());
-    }
-    if (savepoint)
-        savepoint->Begin();
-    return result;
+    SuspendDefaultTxn noDefaultTxn(*this);
+    auto modeStr = yesNo ? "wal" : "delete";
+    auto sql = Utf8String("pragma journal_mode=").append(modeStr);
+    Statement stmt;
+    stmt.Prepare(*this, sql.c_str());
+    auto rc = stmt.Step();
+    if (rc != BE_SQLITE_ROW)
+        return rc;
+    auto mode = stmt.GetValueText(0);
+    return 0 == strncmp(modeStr, mode, strlen(modeStr)) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------
@@ -6097,14 +6101,7 @@ DbResult Db::CheckDbIntegrity(BeFileNameCR dbFileName)
 
 /** vacuum this database. */
 DbResult Db::Vacuum(int newPageSizeInBytes) {
-    if (GetCurrentSavepointDepth() > 1) {
-        LOG.error("Cannot VACUUM from within nested transaction");
-        return BE_SQLITE_ERROR;
-    }
-    auto savepoint = GetSavepoint(0);
-    if (savepoint)
-        savepoint->Commit();
-
+    SuspendDefaultTxn noDefault(*this);
     if (newPageSizeInBytes > 0) {
         if (newPageSizeInBytes % 2 != 0 && newPageSizeInBytes < 512 && newPageSizeInBytes > 64 * 1024)
             return BE_SQLITE_ERROR;
@@ -6113,29 +6110,13 @@ DbResult Db::Vacuum(int newPageSizeInBytes) {
             return rc;
     }
 
-    auto rc = TryExecuteSql("vacuum");
-
-    if (savepoint)
-        savepoint->Begin();
-
-    return rc;
+    return TryExecuteSql("vacuum");
 }
 
 /** vacuum this database into a different destination file. */
 DbResult Db::VacuumInto(Utf8CP newFileName) {
-    if (GetCurrentSavepointDepth() > 1) {
-        LOG.error("Cannot VACUUM from within nested transaction");
-        return BE_SQLITE_ERROR;
-    }
-    auto savepoint = GetSavepoint(0);
-    if (savepoint)
-        savepoint->Commit();
-
-    auto rc = TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
-    if (savepoint)
-        savepoint->Begin();
-
-    return rc;
+    SuspendDefaultTxn noDefault(*this);
+    return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
 }
 
 /**

@@ -3203,7 +3203,7 @@ public:
     BE_SQLITE_EXPORT DbResult EnableWalMode(bool yesNo);
 
     // perform a checkpoint operation if this database is in WAL mode
-    BE_SQLITE_EXPORT DbResult Checkpoint(WalCheckpointMode mode, int* pnLog = nullptr, int* pnCkpt = nullptr);
+    BE_SQLITE_EXPORT DbResult PerformCheckpoint(WalCheckpointMode mode, int* pnLog = nullptr, int* pnCkpt = nullptr);
     // Set auto checkpoint frame threshold after which sqlite will perform checkpoint automatically
     BE_SQLITE_EXPORT DbResult SetAutoCheckpointThreshold(int frames);
 
