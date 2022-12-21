@@ -261,10 +261,9 @@ IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
 // --------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
+ECSqlStatus PrimitiveECSqlBinder::_BindIdSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    m_pVirtualSet = std::make_shared<IdSet<BeInt64Id>>(idSet);
-    return BindVirtualSet(m_pVirtualSet);
+    return _BindVirtualSet(virtualSet);
     }
 
 //---------------------------------------------------------------------------------------

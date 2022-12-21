@@ -341,9 +341,9 @@ BentleyStatus ECInstanceFinder::FindRelatedInstances(ECInstanceKeyMultiMap* rela
             statement->ClearBindings();
 
             // Make all seed instances with "this end" class our search criteria
-            ECInstanceIdSet seedIdSet;
+            std::shared_ptr<ECInstanceIdSet> seedIdSet = std::make_shared<ECInstanceIdSet>();
             for (auto it = instanceIdRange.first; it != instanceIdRange.second; ++it)
-                seedIdSet.insert(it->second);
+                seedIdSet->insert(it->second);
 
             statement->BindVirtualSet(1, seedIdSet);
 

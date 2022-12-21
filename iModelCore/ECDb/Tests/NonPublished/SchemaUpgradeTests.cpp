@@ -525,16 +525,16 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema) {
     // delete detected instances
     for(auto& kp : rc1.GetInstances().GetEntityKeyMap()) {
         auto baseClassId = kp.first;
-        IdSet<BeInt64Id> idToDelete;
+        std::shared_ptr<IdSet<BeInt64Id>> idToDelete = std::make_shared<IdSet<BeInt64Id>>();
         for (auto key: kp.second) {
-            idToDelete.insert(key.GetInstanceId());
+            idToDelete->insert(key.GetInstanceId());
         }
         Utf8String className = m_ecdb.Schemas().GetClass(baseClassId)->GetFullName();
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s WHERE InVirtualSet(?, ECInstanceId)", className.c_str())));
         stmt.BindIdSet(1, idToDelete);
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        ASSERT_EQ(m_ecdb.GetModifiedRowCount(), idToDelete.size());
+        ASSERT_EQ(m_ecdb.GetModifiedRowCount(), idToDelete->size());
     }
 
     auto rc3 = m_ecdb.Schemas().DropSchema("TestSchema1");
@@ -546,16 +546,16 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema) {
 
     for(auto& kp : rc0.GetInstances().GetEntityKeyMap()) {
         auto baseClassId = kp.first;
-        IdSet<BeInt64Id> idToDelete;
+        std::shared_ptr<IdSet<BeInt64Id>> idToDelete = std::make_shared<IdSet<BeInt64Id>>();
         for (auto key: kp.second) {
-            idToDelete.insert(key.GetInstanceId());
+            idToDelete->insert(key.GetInstanceId());
         }
         Utf8String className = m_ecdb.Schemas().GetClass(baseClassId)->GetFullName();
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s WHERE InVirtualSet(?, ECInstanceId)", className.c_str())));
         stmt.BindIdSet(1, idToDelete);
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        ASSERT_EQ(m_ecdb.GetModifiedRowCount(), idToDelete.size());
+        ASSERT_EQ(m_ecdb.GetModifiedRowCount(), idToDelete->size());
           m_ecdb.SaveChanges();
     }
     auto rc4 = m_ecdb.Schemas().DropSchema("TestSchema");

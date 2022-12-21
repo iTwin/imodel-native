@@ -73,11 +73,12 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
             return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
         }
 
-    if (const Exp* exp  = parameterExp.FindParent(Exp::Type::FunctionCall))
+    if (const Exp* exp = parameterExp.FindParent(Exp::Type::FunctionCall))
         {
-        FunctionCallExp const* parentExp = exp->GetAsCP<FunctionCallExp>();
-        if (parentExp != nullptr && parentExp->GetFunctionName().EqualsI("InVirtualSet") && parameterExp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset)
-            return CreateIdSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+        if (FunctionCallExp const* parentExp = exp->GetAsCP<FunctionCallExp>()) {
+            if (parentExp->GetFunctionName().EqualsI("InVirtualSet") && parentExp->GetChildren()[0] == &parameterExp)
+                return CreateIdSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+            }
         }
 
     return CreateBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);

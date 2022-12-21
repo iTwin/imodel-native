@@ -318,7 +318,10 @@ void DefinitionElementUsageInfo::ScanGeometricElement3ds(const BeSQLite::IdSet<B
 
     CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     if (nullptr != categoriesToScan)
-        statement->BindIdSet(1, *categoriesToScan);
+        {
+        std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScanShared = std::make_shared<BeSQLite::IdSet<BeInt64Id>>(*categoriesToScan);
+        statement->BindIdSet(1, categoriesToScanShared);
+        }
 
     while (BE_SQLITE_ROW == statement->Step())
         {
@@ -338,7 +341,10 @@ void DefinitionElementUsageInfo::ScanGeometricElement2ds(const BeSQLite::IdSet<B
 
     CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     if (nullptr != categoriesToScan)
-        statement->BindIdSet(1, *categoriesToScan);
+        {
+        std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> categoriesToScanShared = std::make_shared<BeSQLite::IdSet<BeInt64Id>>(*categoriesToScan);
+        statement->BindIdSet(1, categoriesToScanShared);
+        }
 
     while (BE_SQLITE_ROW == statement->Step())
         {

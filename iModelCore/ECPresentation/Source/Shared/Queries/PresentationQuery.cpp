@@ -192,7 +192,7 @@ rapidjson::Document BoundQueryIdSet::_ToJson(rapidjson::Document::AllocatorType*
     json.AddMember("type", "id-set", json.GetAllocator());
     rapidjson::Value idsJson;
     idsJson.SetArray();
-    for (auto const& id : m_set)
+    for (auto const& id : *m_set)
         idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("value", idsJson, json.GetAllocator());
     return json;
@@ -2241,7 +2241,7 @@ BoundRapidJsonValueSet::BoundRapidJsonValueSet(BoundRapidJsonValueSet const& oth
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundRapidJsonValueSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
-    return stmt.BindVirtualSet((int)index, *m_set);
+    return stmt.BindVirtualSet((int)index, m_set);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2387,7 +2387,7 @@ BoundECValueSet::BoundECValueSet(BoundECValueSet const& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundECValueSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
-    return stmt.BindVirtualSet((int)index, *m_set);
+    return stmt.BindVirtualSet((int)index, m_set);
     }
 
 /*---------------------------------------------------------------------------------**//**

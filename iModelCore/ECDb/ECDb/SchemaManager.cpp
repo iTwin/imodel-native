@@ -557,7 +557,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, ECClass
 InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet&& classIds) {
     ECSqlStatementCache stmtCache(20);
     const auto rootClasses = InstanceFinder::GetRootEntityAndRelationshipClasses(ecdb);
-    IdSet<BeInt64Id> classIdSet(std::move(classIds));
+    std::shared_ptr<IdSet<BeInt64Id>> classIdSet = std::make_shared<IdSet<BeInt64Id>>(std::move(classIds));
     std::map<ECClassId, std::vector<ECInstanceKey>> entityKeyMap;
     std::map<ECClassId, std::vector<LinkTableRelation>> linkTableKeyMap;
     std::map<ECClassId, std::vector<ForignKeyRelation>> foreignKeyMap;

@@ -162,21 +162,21 @@ IECSqlBinder& IdSetBinder::_AddArrayElement()
 // --------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IdSetBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
+ECSqlStatus IdSetBinder::_BindIdSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    m_pVirtualSet = std::make_shared<IdSet<BeInt64Id>>(idSet);
-    return BindVirtualSet(m_pVirtualSet);
+    return _BindVirtualSet(virtualSet);
     }
 
 // --------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IdSetBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> pVirtualSet)
+ECSqlStatus IdSetBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), (int64_t) pVirtualSet.get());
+    const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), (int64_t) virtualSet.get());
     if (sqliteStat != BE_SQLITE_OK)
-        return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind Int64 value %" PRIi64 " to Id parameter.", pVirtualSet.get()).c_str());
+        return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind Int64 value %" PRIi64 " to Id parameter.", virtualSet.get()).c_str());
 
+    m_virtualSet = virtualSet;
     return ECSqlStatus::Success;
     }
 

@@ -14,10 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PrimitiveECSqlBinder final : public ECSqlBinder
     {
 private:
-    std::shared_ptr<VirtualSet> m_pVirtualSet;
-
     ECSqlStatus CanBind(ECN::PrimitiveType requestedType) const;
-    void _OnClearBindings() override { m_pVirtualSet.reset(); }
 
     ECSqlStatus _BindNull() override;
     ECSqlStatus _BindBoolean(bool value) override;
@@ -31,8 +28,8 @@ private:
     ECSqlStatus _BindPoint2d (DPoint2dCR value) override;
     ECSqlStatus _BindPoint3d (DPoint3dCR value) override;
     ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
-    ECSqlStatus _BindIdSet(IdSet<BeInt64Id> const& idSet) override;
-    ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet>) override;
+    ECSqlStatus _BindIdSet(std::shared_ptr<VirtualSet> virtualSet) override;
+    ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override;
 
     IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;

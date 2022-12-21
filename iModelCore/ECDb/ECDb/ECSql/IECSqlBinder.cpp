@@ -135,7 +135,7 @@ ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECCla
 // --------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindIdSet(IdSet<BeInt64Id> const& idSet) { return _BindIdSet(idSet); }
+ECSqlStatus IECSqlBinder::BindIdSet(std::shared_ptr<VirtualSet> virtualSet) { return _BindIdSet(virtualSet); }
 
 // --------------------------------------------------------------------------------------
 // @bsimethod

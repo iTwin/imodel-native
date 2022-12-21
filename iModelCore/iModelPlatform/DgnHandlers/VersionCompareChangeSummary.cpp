@@ -720,9 +720,9 @@ RelationshipCacheEntry ChunkRelationshipQueryHelper::GetCurrentRelatedInstances(
     VCLOG.infov("ChunkRelationshipQueryHelper: Querying for relationship class: %s", path.m_relationshipClassId.ToHexStr().c_str());
 
     // Query all sources and targets for the related property paths that relate to the instance id
-    IdSet<BeInt64Id> ids;
+    std::shared_ptr<IdSet<BeInt64Id>> ids = std::make_shared<IdSet<BeInt64Id>>();
     for (auto const& instanceKey : instanceKeys)
-        ids.insert(instanceKey.GetInstanceId());
+        ids->insert(instanceKey.GetInstanceId());
 
     Utf8PrintfString ecsql("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM %s WHERE InVirtualSet(?, %s)", path.m_relationshipClassName.c_str(), whereSourceId.c_str());
     CachedECSqlStatementPtr stmt = GetCachedStatement(db, ecsql);
@@ -1354,9 +1354,9 @@ void ChangedElementFinder::QueryRelatedInstanceModelIds(DgnDbR db)
         return;
         }
 
-    BeSQLite::IdSet<ECInstanceId> ids;
+    std::shared_ptr<BeSQLite::IdSet<ECInstanceId>> ids = std::make_shared<BeSQLite::IdSet<ECInstanceId>>();
     for (auto const& related : m_relatedInstanceChanges)
-        ids.insert(related.first.GetInstanceId());
+        ids->insert(related.first.GetInstanceId());
 
     stmt.BindVirtualSet(1, ids);
 
