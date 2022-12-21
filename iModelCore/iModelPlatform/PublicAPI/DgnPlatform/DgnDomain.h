@@ -515,6 +515,10 @@ public:
     //! </ul>
     DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired = DgnDomain::Required::No, DgnDomain::Readonly isReadonly = DgnDomain::Readonly::No, BeFileNameCP schemaRootDir = nullptr);
 
+    //! Un-Register the domain for this session.
+    //! @param[in] domain The domain to un-register. Domains are singletons and cannot change during a session.
+    DGNPLATFORM_EXPORT static BentleyStatus UnRegisterDomain(const DgnDomain& domain);
+    
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.
     DGNPLATFORM_EXPORT DgnDomainCP FindDomain(Utf8CP name) const;

@@ -14,7 +14,7 @@ struct QueryExecutorHelperTests : ECPresentationTest
     {
     protected:
         static std::unique_ptr<ECDbTestProject> s_project;
-        static GenericQueryPtr s_query;
+        static std::unique_ptr<PresentationQuery> s_query;
 
         IConnectionPtr m_connection;
 

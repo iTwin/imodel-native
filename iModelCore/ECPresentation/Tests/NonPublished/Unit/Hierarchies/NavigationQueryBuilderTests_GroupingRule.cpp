@@ -24,19 +24,19 @@ TEST_F (NavigationQueryBuilderTests, Grouping_RuleClassFilterIsPolymorphic)
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classB->GetFullName(), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
         NavigationQueryContractPtr contract = MultiECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass), true);
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract, "this").From(selectClass))
+            .From(ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass))
             .GroupByContract(*contract)
             .OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().insert(classB);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().insert(classB);
         return grouped;
         });
     }
@@ -57,14 +57,14 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidSch
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        ComplexNavigationQueryPtr grouped = &RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this").From(selectClass)
+        ComplexQueryBuilderPtr grouped = &RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this").From(selectClass)
             )->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
         return grouped;
         });
@@ -86,14 +86,14 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidCla
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        ComplexNavigationQueryPtr grouped = &RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this").From(selectClass)
+        ComplexQueryBuilderPtr grouped = &RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this").From(selectClass)
             )->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
         return grouped;
         });
@@ -122,29 +122,29 @@ TEST_F (NavigationQueryBuilderTests, Grouping_SameLabelInstanceGroup_WhenAllInst
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
         RulesEngineTestHelpers::CreateClassNamesList({ classA, classB }), true);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         NavigationQueryContractPtr contractA = MultiECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA), true);
-        ComplexNavigationQueryPtr groupedA = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr groupedA = ComplexQueryBuilder::Create();
         groupedA->SelectAll();
-        groupedA->From(ComplexNavigationQuery::Create()->SelectContract(*contractA, "this").From(selectClassA));
+        groupedA->From(ComplexQueryBuilder::Create()->SelectContract(*contractA, "this").From(selectClassA));
         groupedA->GroupByContract(*contractA);
 
         SelectClass<ECClass> selectClassB(*classB, "this", true);
         NavigationQueryContractPtr contractB = MultiECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB), true);
-        ComplexNavigationQueryPtr groupedB = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr groupedB = ComplexQueryBuilder::Create();
         groupedB->SelectAll();
-        groupedB->From(ComplexNavigationQuery::Create()->SelectContract(*contractB, "this").From(selectClassB));
+        groupedB->From(ComplexQueryBuilder::Create()->SelectContract(*contractB, "this").From(selectClassB));
         groupedB->GroupByContract(*contractB);
 
-        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create({ groupedA, groupedB });
+        UnionQueryBuilderPtr sorted = UnionQueryBuilder::Create({ groupedA, groupedB });
         sorted->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().insert(classA);
-        sorted->GetResultParametersR().GetSelectInstanceClasses().insert(classB);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().insert(classA);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().insert(classB);
         return sorted;
         });
     }
@@ -174,33 +174,33 @@ TEST_F (NavigationQueryBuilderTests, Grouping_SameLabelInstanceGroup_WhenSomeIns
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
         RulesEngineTestHelpers::CreateClassNamesList({ classA, classB, classC }), true);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         NavigationQueryContractPtr contractA = MultiECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA), true);
-        ComplexNavigationQueryPtr groupedA = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr groupedA = ComplexQueryBuilder::Create();
         groupedA->SelectAll();
-        groupedA->From(ComplexNavigationQuery::Create()->SelectContract(*contractA, "this").From(selectClassA));
+        groupedA->From(ComplexQueryBuilder::Create()->SelectContract(*contractA, "this").From(selectClassA));
         groupedA->GroupByContract(*contractA);
 
         SelectClass<ECClass> selectClassB(*classB, "this", true);
         NavigationQueryContractPtr contractB = MultiECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB), true);
-        ComplexNavigationQueryPtr groupedB = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr groupedB = ComplexQueryBuilder::Create();
         groupedB->SelectAll();
-        groupedB->From(ComplexNavigationQuery::Create()->SelectContract(*contractB, "this").From(selectClassB));
+        groupedB->From(ComplexQueryBuilder::Create()->SelectContract(*contractB, "this").From(selectClassB));
         groupedB->GroupByContract(*contractB);
 
-        ComplexNavigationQueryPtr notGrouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
+        ComplexQueryBuilderPtr notGrouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             *RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(GetSchemaHelper(), SelectClass<ECClass>(*classC, "this", true)));
 
-        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create({ groupedA, groupedB, notGrouped });
+        UnionQueryBuilderPtr sorted = UnionQueryBuilder::Create({ groupedA, groupedB, notGrouped });
         sorted->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().insert(classA);
-        sorted->GetResultParametersR().GetSelectInstanceClasses().insert(classB);
-        sorted->GetResultParametersR().GetSelectInstanceClasses().insert(classC);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().insert(classA);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().insert(classB);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().insert(classC);
         return sorted;
         });
     }
@@ -221,23 +221,23 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByDirectClass)
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr, classA->GetId(), true);
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
-        grouped->From(ComplexNavigationQuery::Create()->SelectContract(*contract, "this").From(*classA, true, "this"));
+        grouped->From(ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(*classA, true, "this"));
         grouped->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectAll();
         query->From(*grouped);
         query->OrderBy(GetECClassGroupingNodesOrderByClause().c_str());
-        query->GetResultParametersR().GetSelectInstanceClasses().clear();
+        query->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return query;
         });
     }
@@ -275,7 +275,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseClassWhenSel
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
         RulesEngineTestHelpers::CreateClassNamesList({ classB, classC, classD }), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(2, queries.size());
 
     auto classGroupingQuery = queries[0];
@@ -283,24 +283,24 @@ TEST_F(NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseClassWhenSel
         {
         NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr, classA->GetId(), true);
 
-        ComplexNavigationQueryPtr nestedB = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nestedB = ComplexQueryBuilder::Create();
         nestedB->SelectContract(*contract, "this");
         nestedB->From(*classB, false, "this");
 
-        ComplexNavigationQueryPtr nestedC = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nestedC = ComplexQueryBuilder::Create();
         nestedC->SelectContract(*contract, "this");
         nestedC->From(*classC, false, "this");
 
-        ComplexNavigationQueryPtr groupedBC = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr groupedBC = ComplexQueryBuilder::Create();
         groupedBC->SelectAll();
-        groupedBC->From(*UnionNavigationQuery::Create({ nestedB, nestedC }));
+        groupedBC->From(*UnionQueryBuilder::Create({ nestedB, nestedC }));
         groupedBC->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectAll();
         sorted->From(*groupedBC);
         sorted->OrderBy(GetECClassGroupingNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().clear();
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return sorted;
         });
 
@@ -309,8 +309,8 @@ TEST_F(NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseClassWhenSel
         {
         SelectClass<ECClass> selectClass(*classD, "this", false);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classD, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classD,
-            ComplexNavigationQuery::Create()->SelectContract(*contract, "this").From(selectClass));
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classD,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         return query;
         });
@@ -348,7 +348,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsDerivedClassInsta
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
         RulesEngineTestHelpers::CreateClassNamesList({ classA }), true);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(2, queries.size());
 
     auto classGroupingQuery = queries[0];
@@ -358,24 +358,24 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsDerivedClassInsta
 
         SelectClassWithExcludes<ECClass> selectClassB(*classB, "this", true);
         selectClassB.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classC, ""));
-        ComplexNavigationQueryPtr nestedB = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nestedB = ComplexQueryBuilder::Create();
         nestedB->SelectContract(*contract, "this");
         nestedB->From(selectClassB);
-        
-        ComplexNavigationQueryPtr nestedC = ComplexNavigationQuery::Create();
+
+        ComplexQueryBuilderPtr nestedC = ComplexQueryBuilder::Create();
         nestedC->SelectContract(*contract, "this");
         nestedC->From(*classC, true, "this");
 
-        ComplexNavigationQueryPtr groupedBC = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr groupedBC = ComplexQueryBuilder::Create();
         groupedBC->SelectAll();
-        groupedBC->From(*UnionNavigationQuery::Create({ nestedB, nestedC }));
+        groupedBC->From(*UnionQueryBuilder::Create({ nestedB, nestedC }));
         groupedBC->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectAll();
         sorted->From(*groupedBC);
         sorted->OrderBy(GetECClassGroupingNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().clear();
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return sorted;
         });
 
@@ -385,8 +385,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsDerivedClassInsta
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
         selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classB, ""));
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*contract, "this").From(selectClass));
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         return query;
         });
@@ -423,7 +423,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseAndDirectCl
 
     AllInstanceNodesSpecification spec(1, false, false, false, true, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -433,31 +433,31 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseAndDirectCl
 
         SelectClassWithExcludes<ECClass> selectClassB(*classB, "this", true);
         selectClassB.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classC, ""));
-        ComplexNavigationQueryPtr classBQuery = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr classBQuery = ComplexQueryBuilder::Create();
         classBQuery->SelectContract(*baseClassGroupingContract, "this");
         classBQuery->From(selectClassB);
 
-        ComplexNavigationQueryPtr classCQuery = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr classCQuery = ComplexQueryBuilder::Create();
         classCQuery->SelectContract(*baseClassGroupingContract, "this");
         classCQuery->From(*classC, true, "this");
 
-        ComplexNavigationQueryPtr baseClassGroupingQueryGrouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr baseClassGroupingQueryGrouped = ComplexQueryBuilder::Create();
         baseClassGroupingQueryGrouped->SelectAll();
-        baseClassGroupingQueryGrouped->From(*UnionNavigationQuery::Create({ classBQuery, classCQuery }));
+        baseClassGroupingQueryGrouped->From(*UnionQueryBuilder::Create({ classBQuery, classCQuery }));
         baseClassGroupingQueryGrouped->GroupByContract(*baseClassGroupingContract);
 
         SelectClassWithExcludes<ECClass> selectClassA(*classA, "this", true);
         selectClassA.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classB, ""));
-        ComplexNavigationQueryPtr classGroupingQueryGrouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr classGroupingQueryGrouped = ComplexQueryBuilder::Create();
         classGroupingQueryGrouped->SelectAll();
         classGroupingQueryGrouped->From(
-            ComplexNavigationQuery::Create()->SelectContract(*classGroupingContract, "this").From(selectClassA));
+            ComplexQueryBuilder::Create()->SelectContract(*classGroupingContract, "this").From(selectClassA));
         classGroupingQueryGrouped->GroupByContract(*classGroupingContract);
 
-        auto query = UnionNavigationQuery::Create(
+        auto query = UnionQueryBuilder::Create(
             {
-            &ComplexNavigationQuery::Create()->SelectAll().From(*baseClassGroupingQueryGrouped),
-            &ComplexNavigationQuery::Create()->SelectAll().From(*classGroupingQueryGrouped),
+            &ComplexQueryBuilder::Create()->SelectAll().From(*baseClassGroupingQueryGrouped),
+            &ComplexQueryBuilder::Create()->SelectAll().From(*classGroupingQueryGrouped),
             });
         query->OrderBy(GetECClassGroupingNodesOrderByClause().c_str());
         return query;
@@ -484,14 +484,14 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_ReturnsChildrenOfClassG
     auto parentNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(nullptr, *classA, true, "MyLabel", {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
         query->From(selectClass);
         return RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *query);
@@ -517,23 +517,23 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, true, "this");
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return grouped;
         });
     }
@@ -567,28 +567,28 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
         RulesEngineTestHelpers::CreateClassNamesList({ classA, classB }), true);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contractA = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"),
             *classA->GetPropertyP("Prop"), *groupingSpecA, nullptr);
-        ComplexNavigationQueryPtr nestedA = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nestedA = ComplexQueryBuilder::Create();
         nestedA->SelectContract(*contractA, "this");
         nestedA->From(*classA, true, "this");
-        ComplexNavigationQueryPtr groupedA = &ComplexNavigationQuery::Create()->SelectAll().From(*nestedA).GroupByContract(*contractA);
+        ComplexQueryBuilderPtr groupedA = &ComplexQueryBuilder::Create()->SelectAll().From(*nestedA).GroupByContract(*contractA);
 
         NavigationQueryContractPtr contractB = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classB, "this"),
             *classB->GetPropertyP("Prop"), *groupingSpecB, nullptr);
-        ComplexNavigationQueryPtr nestedB = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nestedB = ComplexQueryBuilder::Create();
         nestedB->SelectContract(*contractB, "this");
         nestedB->From(*classB, true, "this");
-        ComplexNavigationQueryPtr groupedB = &ComplexNavigationQuery::Create()->SelectAll().From(*nestedB).GroupByContract(*contractB);
+        ComplexQueryBuilderPtr groupedB = &ComplexQueryBuilder::Create()->SelectAll().From(*nestedB).GroupByContract(*contractB);
 
-        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create({ groupedA, groupedB });
+        UnionQueryBuilderPtr unionQuery = UnionQueryBuilder::Create({ groupedA, groupedB });
         unionQuery->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        unionQuery->GetResultParametersR().GetSelectInstanceClasses().clear();
+        unionQuery->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return unionQuery;
         });
     }
@@ -615,20 +615,20 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectPropertyRang
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), true);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *groupingSpec, nullptr);
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, true, "this");
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll().From(*nested).GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return grouped;
         });
     }
@@ -652,23 +652,23 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_OverridesImageId)
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, true, "this");
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return grouped;
         });
     }
@@ -695,7 +695,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOn
         *classA->GetPropertyP("Prop"), "MyCustomLabel", "", { ECValue(9) }, false, {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -706,12 +706,12 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOn
         rapidjson::Document groupingValues(rapidjson::kArrayType);
         groupingValues.PushBack(rapidjson::Value(9), groupingValues.GetAllocator());
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[Prop])", { std::make_shared<BoundRapidJsonValueSet>(groupingValues, PRIMITIVETYPE_Integer) }));
 
-        ComplexNavigationQueryPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
+        ComplexQueryBuilderPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
         grouped->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
         return grouped;
         });
@@ -739,7 +739,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
         *classA->GetPropertyP("Prop"), "MyCustomLabel", "", { ECValue(123), ECValue(456) }, false, {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -751,12 +751,12 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
         groupingValues.PushBack(rapidjson::Value(123), groupingValues.GetAllocator());
         groupingValues.PushBack(rapidjson::Value(456), groupingValues.GetAllocator());
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[Prop])", { std::make_shared<BoundRapidJsonValueSet>(groupingValues, PRIMITIVETYPE_Integer) }));
 
-        ComplexNavigationQueryPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
+        ComplexQueryBuilderPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
         grouped->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
         return grouped;
         });
@@ -787,7 +787,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOn
         *classA->GetPropertyP("Prop"), "MyCustomLabel", "", { ECValue(0) }, true, {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -795,12 +795,12 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOn
         SelectClass<ECClass> selectClass(*classA, "this", false);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Where("([this].[Prop] BETWEEN ? AND ?)", { std::make_shared<BoundQueryECValue>(ECValue(1)), std::make_shared<BoundQueryECValue>(ECValue(5)) });
 
-        ComplexNavigationQueryPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
+        ComplexQueryBuilderPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
         grouped->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
         return grouped;
         });
@@ -833,7 +833,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOt
         *classA->GetPropertyP("Prop"), "MyCustomLabel", "", { ECValue(-1) }, true, {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -841,7 +841,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOt
         SelectClass<ECClass> selectClass(*classA, "this", false);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Where("([this].[Prop] NOT BETWEEN ? AND ? AND [this].[Prop] NOT BETWEEN ? AND ? AND [this].[Prop] NOT BETWEEN ? AND ?)",
@@ -849,7 +849,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOt
             std::make_shared<BoundQueryECValue>(ECValue(7)), std::make_shared<BoundQueryECValue>(ECValue(9)),
             std::make_shared<BoundQueryECValue>(ECValue(10)), std::make_shared<BoundQueryECValue>(ECValue(15)) });
 
-        ComplexNavigationQueryPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
+        ComplexQueryBuilderPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
         grouped->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
         return grouped;
         });
@@ -882,7 +882,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
         *classA->GetPropertyP("Prop"), "MyCustomLabel", "", { ECValue(-1), ECValue(0), ECValue(2) }, true, {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *propertyGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -890,7 +890,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
         SelectClass<ECClass> selectClass(*classA, "this", false);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Where(QueryClauseAndBindings(Utf8String()
@@ -904,7 +904,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
             }
         ));
 
-        ComplexNavigationQueryPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
+        ComplexQueryBuilderPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
         grouped->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
         return grouped;
         });
@@ -941,7 +941,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false,
         "", classA->GetFullName(), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -951,15 +951,15 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
 
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, selectClass,
             *classA->GetPropertyP("NavigationProp"), *groupingSpec, &navRelationship.GetTargetClass());
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Join(navRelationship);
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll().From(*nested).GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return grouped;
         });
     }
@@ -986,31 +986,31 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), true);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(2, queries.size());
 
-    NavigationQueryPtr propertyGroupingNodesQuery = queries[0];
+    auto propertyGroupingNodesQuery = queries[0];
     ValidateQuery(spec, propertyGroupingNodesQuery, [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
         NavigationQueryContractPtr propertyGroupingContract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, selectClass,
             *classB->GetPropertyP("Prop"), *groupingSpec, nullptr);
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
-        grouped->From(ComplexNavigationQuery::Create()->SelectContract(*propertyGroupingContract, "this").From(selectClass));
+        grouped->From(ComplexQueryBuilder::Create()->SelectContract(*propertyGroupingContract, "this").From(selectClass));
         grouped->GroupByContract(*propertyGroupingContract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return grouped;
         });
 
-    NavigationQueryPtr instanceNodesQuery = queries[1];
+    auto instanceNodesQuery = queries[1];
     ValidateQuery(spec, instanceNodesQuery, [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
         selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classB, ""));
-        ComplexNavigationQueryPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this").From(selectClass));
+        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this").From(selectClass));
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         return sorted;
         });
@@ -1044,27 +1044,27 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_When
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
         RulesEngineTestHelpers::CreateClassNamesList({ classB, classC }), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr propertyGroupingContract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr grouped1 = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped1 = ComplexQueryBuilder::Create();
         grouped1->SelectContract(*propertyGroupingContract, "this");
         grouped1->From(*classB, false, "this");
 
-        ComplexNavigationQueryPtr grouped2 = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped2 = ComplexQueryBuilder::Create();
         grouped2->SelectContract(*propertyGroupingContract, "this");
         grouped2->From(*classC, false, "this");
 
-        ComplexNavigationQueryPtr grouping = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouping = ComplexQueryBuilder::Create();
         grouping->SelectAll();
-        grouping->From(*UnionNavigationQuery::Create({ grouped1, grouped2 }));
+        grouping->From(*UnionQueryBuilder::Create({ grouped1, grouped2 }));
         grouping->GroupByContract(*propertyGroupingContract);
         grouping->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouping->GetResultParametersR().GetSelectInstanceClasses().clear();
+        grouping->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return grouping;
         });
     }
@@ -1107,25 +1107,25 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelatedInstanceProp
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
     spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, relAB->GetFullName(), classB->GetFullName(), "b"));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr propertyGroupingContract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classB, "b"), *classB->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*propertyGroupingContract, "this");
         query->From(*classA, false, "this");
         query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, "b", true)));
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*query);
         grouped->GroupByContract(*propertyGroupingContract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouped->GetResultParametersR().GetUsedRelationshipClasses().insert(relAB);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return grouped;
         });
     }
@@ -1170,42 +1170,42 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelatedInstancePro
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
     spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, relAB->GetFullName(), classB->GetFullName(), "b"));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(2, queries.size());
 
-    NavigationQueryPtr propertyGroupingNodesQuery = queries[0];
+    auto propertyGroupingNodesQuery = queries[0];
     ValidateQuery(spec, propertyGroupingNodesQuery, [&]()
         {
         NavigationQueryContractPtr propertyGroupingContract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classC, "b"), *classC->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectContract(*propertyGroupingContract, "this");
         grouped->From(*classA, false, "this");
         grouped->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classC, "b", true), true));
 
-        ComplexNavigationQueryPtr grouping = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouping = ComplexQueryBuilder::Create();
         grouping->SelectAll();
         grouping->From(*grouped);
         grouping->GroupByContract(*propertyGroupingContract);
         grouping->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouping->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouping->GetResultParametersR().GetUsedRelationshipClasses().insert(relAB);
+        grouping->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouping->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return grouping;
         });
 
-    NavigationQueryPtr instanceNodesQuery = queries[1];
+    auto instanceNodesQuery = queries[1];
     ValidateQuery(spec, instanceNodesQuery, [&]()
         {
         SelectClassWithExcludes<ECClass> targetClass(*classB, "b", true);
         targetClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classC, ""));
         RelatedClass relatedInstancePath(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, targetClass, true);
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        ComplexNavigationQueryPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstancePath} }), { RelatedClassPath{relatedInstancePath} }), "this")
+        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstancePath} }), { RelatedClassPath{relatedInstancePath} }), "this")
             .From(selectClass)
             .Join(relatedInstancePath));
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetUsedRelationshipClasses().insert(relAB);
+        sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return sorted;
         });
     }
@@ -1243,27 +1243,27 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelationshipProper
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 0, "", RequiredRelationDirection_Forward,
         "", relAB->GetFullName(), classB->GetFullName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *rootInstanceNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *rootInstanceNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr propertyGroupingContract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), *relAB->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*propertyGroupingContract, "this");
         query->From(*classB, true, "this");
         query->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false));
         query->Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) });
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*query);
         grouped->GroupByContract(*propertyGroupingContract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
-        grouped->GetResultParametersR().GetUsedRelationshipClasses().insert(relAB);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
+        grouped->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return grouped;
         });
     }
@@ -1316,33 +1316,33 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelationshipPropert
         "", RequiredRelationDirection_Forward, "", relAB->GetFullName(), RulesEngineTestHelpers::CreateClassNamesList({ classC, classD }));
 
     // request for root nodes
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *rootInstanceNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *rootInstanceNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contractC = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), *relAB->GetPropertyP("Prop"), *groupingSpec, nullptr);
-        ComplexNavigationQueryPtr queryC = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr queryC = ComplexQueryBuilder::Create();
         queryC->SelectContract(*contractC, "this");
         queryC->From(*classC, true, "this");
         queryC->Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false));
         queryC->Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) });
 
         NavigationQueryContractPtr contractD = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 1)), *relAB->GetPropertyP("Prop"), *groupingSpec, nullptr);
-        ComplexNavigationQueryPtr queryD = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr queryD = ComplexQueryBuilder::Create();
         queryD->SelectContract(*contractD, "this");
         queryD->From(*classD, true, "this");
         queryD->Join(RelatedClass(*classD, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 1)), false, SelectClass<ECClass>(*classA, "related", true), false));
         queryD->Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) });
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
-        grouped->From(*UnionNavigationQuery::Create({ queryC, queryD }));
+        grouped->From(*UnionQueryBuilder::Create({ queryC, queryD }));
         grouped->GroupByContract(*ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*relAB, ""), *relAB->GetPropertyP("Prop"), *groupingSpec, nullptr));
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
-        grouped->GetResultParametersR().GetUsedRelationshipClasses().insert(relAB);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
+        grouped->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return grouped;
         });
     }
@@ -1366,27 +1366,27 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByRawPropertyV
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, false, "this");
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectAll();
         sorted->From(*grouped);
         sorted->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().clear();
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return sorted;
         });
     }
@@ -1412,23 +1412,23 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_SortsByRawPropertyVa
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, false, "this");
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectAll();
         sorted->From(*nested);
         sorted->GroupByContract(*contract);
         sorted->OrderBy(Utf8PrintfString("[%s]", ECPropertyGroupingNodesQueryContract::GroupingValueFieldName).c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().clear();
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return sorted;
         });
     }
@@ -1453,23 +1453,23 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsAndSortsByRawP
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *groupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, false, "this");
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectAll();
         sorted->From(*nested);
         sorted->GroupByContract(*contract);
         sorted->OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::GroupingValueFieldName).append("]").c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().clear();
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return sorted;
         });
     }
@@ -1506,7 +1506,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PicksActiveGroupingSpecificationFro
         return 1;
         });
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
     EXPECT_EQ(1, localStateRequestsCount);
 
@@ -1514,16 +1514,16 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PicksActiveGroupingSpecificationFro
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classA->GetPropertyP("Prop"), *propertyGroupingSpec, nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, true, "this");
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return grouped;
         });
     }
@@ -1615,29 +1615,29 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, RootNodesQueryReturnsBase
     ECClassCP classC = GetECClass("C");
     ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, *m_specification);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, *m_specification);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(*m_specification, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr, classA->GetId(), true);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classA, true, "this");
         nested->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, "c", true)));
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectAll();
         sorted->From(*grouped);
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().clear();
-        sorted->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return sorted;
         });
     }
@@ -1654,10 +1654,10 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, BaseClassNodeChildrenQuer
     auto baseClassGroupingNode = TestNodesFactory(GetConnection(), m_specification->GetHash(), "").CreateECClassGroupingNode(nullptr, *classA, true, "test", {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *baseClassGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *baseClassGroupingNode);
     ASSERT_EQ(2, queries.size());
 
-    NavigationQueryPtr classGroupingNodesQuery = queries[0];
+    auto classGroupingNodesQuery = queries[0];
     ValidateQuery(*m_specification, classGroupingNodesQuery, [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
@@ -1665,26 +1665,26 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, BaseClassNodeChildrenQuer
 
         NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, "c", true)));
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectAll();
         sorted->From(*grouped);
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().clear();
-        sorted->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return sorted;
         });
 
-    NavigationQueryPtr instanceNodesQuery = queries[1];
+    auto instanceNodesQuery = queries[1];
     ValidateQuery(*m_specification, instanceNodesQuery, [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
@@ -1692,14 +1692,14 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, BaseClassNodeChildrenQuer
 
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
 
-        ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nestedQuery = ComplexQueryBuilder::Create();
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(selectClass);
         nestedQuery->Join(relatedInstanceClass);
 
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nestedQuery);
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nestedQuery);
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        query->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        query->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return query;
         });
     }
@@ -1720,28 +1720,27 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, DirectClassNodeChildrenQu
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *classGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *classGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(*m_specification, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", nullptr, SelectClass<ECClass>(*classA, "this"), *classB->GetPropertyP("PropA"), *m_propertyGroupingSpecPropA, nullptr);
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classB, false, "this");
         nested->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, "c", true)));
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouped->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return grouped;
         });
     }
@@ -1762,14 +1761,12 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, FirstLevelPropertyGroupin
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode, classGroupingNode->GetNodeId());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(*m_specification, queries[0], [&]()
@@ -1779,19 +1776,19 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, FirstLevelPropertyGroupin
         rapidjson::Document groupingValuesA(rapidjson::kArrayType);
         groupingValuesA.PushBack(rapidjson::Value("0x9"), groupingValuesA.GetAllocator());
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classB, false, "this");
         nested->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, "c", true)));
         nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouped->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return grouped;
         });
     }
@@ -1812,18 +1809,15 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, SecondLevelPropertyGroupi
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode1 = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1, classGroupingNode->GetNodeId());
 
     auto propertyGroupingNode2 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode1->GetKey().get(), *classB, *classB->GetPropertyP("PropB"), "test2", "", { ECValue("TestGroupingDescription") }, false, {});
-    propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2, propertyGroupingNode1->GetNodeId());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode2);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode2);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(*m_specification, queries[0], [&]()
@@ -1836,20 +1830,20 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, SecondLevelPropertyGroupi
         rapidjson::Document groupingValuesB(rapidjson::kArrayType);
         groupingValuesB.PushBack(rapidjson::Value("TestGroupingDescription"), groupingValuesB.GetAllocator());
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(*classB, false, "this");
         nested->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, "c", true)));
         nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesB, PRIMITIVETYPE_String) }));
         nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
         grouped->OrderBy(GetECPropertyGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouped->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return grouped;
         });
     }
@@ -1870,22 +1864,18 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, ThirdLevelPropertyGroupin
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode1 = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1, classGroupingNode->GetNodeId());
 
     auto propertyGroupingNode2 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode1->GetKey().get(), *classB, *classB->GetPropertyP("PropB"), "test2", "", { ECValue("TestGroupingDescription") }, false, {});
-    propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2, propertyGroupingNode1->GetNodeId());
 
     auto propertyGroupingNode3 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode2->GetKey().get(), *classC, *classC->GetPropertyP("PropC"), "test3", "", { ECValue(99) }, false, {});
-    propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3, propertyGroupingNode2->GetNodeId());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode3);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *propertyGroupingNode3);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(*m_specification, queries[0], [&]()
@@ -1903,7 +1893,7 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, ThirdLevelPropertyGroupin
         rapidjson::Document groupingValuesC(rapidjson::kArrayType);
         groupingValuesC.PushBack(rapidjson::Value(99), groupingValuesC.GetAllocator());
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
             .From(selectClass)
             .Join(relatedInstanceClass)
@@ -1911,14 +1901,14 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, ThirdLevelPropertyGroupin
             .Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesB, PRIMITIVETYPE_String) }))
             .Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectContract(*contract, "this")
             .From(*nested)
             .GroupByContract(*contract)
             .OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
-        grouped->GetResultParametersR().GetSelectInstanceClasses().clear();
-        grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
-        grouped->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        grouped->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        grouped->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
+        grouped->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return grouped;
         });
     }
@@ -1939,30 +1929,25 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, LabelGroupingNodeChildren
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *baseClassGroupingNode);
 
     auto classGroupingNode = nodesFactory.CreateECClassGroupingNode(baseClassGroupingNode->GetKey().get(), *classB, false, "test", {});
-    classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode, baseClassGroupingNode->GetNodeId());
 
     auto propertyGroupingNode1 = nodesFactory.CreateECPropertyGroupingNode(classGroupingNode->GetKey().get(), *classB, *classB->GetPropertyP("PropA"), "test1", "", { ECValue((uint64_t)9) }, false, {});
-    propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1, classGroupingNode->GetNodeId());
 
     auto propertyGroupingNode2 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode1->GetKey().get(), *classB, *classB->GetPropertyP("PropB"), "test2", "", { ECValue("TestGroupingDescription") }, false, {});
-    propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2, propertyGroupingNode1->GetNodeId());
 
     auto propertyGroupingNode3 = nodesFactory.CreateECPropertyGroupingNode(propertyGroupingNode2->GetKey().get(), *classC, *classC->GetPropertyP("PropC"), "test3", "", { ECValue(99) }, false, {});
-    propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3, propertyGroupingNode2->GetNodeId());
 
     NavNodePtr labelGroupingNode = nodesFactory.CreateDisplayLabelGroupingNode(propertyGroupingNode3->GetKey().get(), "test", 1);
-    labelGroupingNode->SetParentNode(*propertyGroupingNode3);
-    labelGroupingNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode);
+    labelGroupingNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode, propertyGroupingNode3->GetNodeId());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *labelGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());
 
-    NavigationQueryPtr query = queries[0];
+    auto query = queries[0];
     ValidateQuery(*m_specification, query, [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
@@ -1978,7 +1963,7 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, LabelGroupingNodeChildren
         rapidjson::Document groupingValuesC(rapidjson::kArrayType);
         groupingValuesC.PushBack(rapidjson::Value(99), groupingValuesC.GetAllocator());
 
-        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
         nested->Join(relatedInstanceClass);
@@ -1987,13 +1972,13 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, LabelGroupingNodeChildren
         nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesB, PRIMITIVETYPE_String) }));
         nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
 
-        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectContract(*contract, "this")
             .From(*nested)
             .GroupByContract(*contract)
             .OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        sorted->GetResultParametersR().GetSelectInstanceClasses().insert(classB);
-        sorted->GetResultParametersR().GetUsedRelationshipClasses().insert(relAC);
+        sorted->GetNavigationResultParameters().GetSelectInstanceClasses().insert(classB);
+        sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAC);
         return sorted;
         });
     }

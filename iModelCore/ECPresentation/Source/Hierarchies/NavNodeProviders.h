@@ -137,6 +137,7 @@ private:
     mutable IProvidersIndexAllocatorPtr m_providersIndexAllocator;
     bset<ArtifactsCapturer*> m_artifactsCapturers;
     std::function<void(NavNodesProviderContextR)> m_onHierarchyLevelLoaded;
+    Utf8String m_instanceFilter;
 
     // optimization flags
     OptimizationFlagsContainer m_optFlags;
@@ -155,7 +156,6 @@ private:
     ChildNodeRuleCP m_childNodeRule;
 
     // ECDb context
-    mutable NavigationQueryBuilder* m_queryBuilder;
     ECDbUsedClassesListenerWrapper* m_usedClassesListener;
 
     // hierarchy locking
@@ -185,7 +185,7 @@ public:
     void SetPhysicalParentNode(NavNodeCP node) {m_physicalParentNode = node;}
     NavNodeCPtr GetVirtualParentNode() const {return m_virtualParentNode;}
     void SetVirtualParentNode(NavNodeCP node) {m_virtualParentNode = node;}
-    NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, NavNodeCP parentNode, bool allowFromCache) const;
+    NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, NavNodeCP parentNode) const;
     CombinedHierarchyLevelIdentifier GetHierarchyLevelIdentifier() const;
     ECPRESENTATION_EXPORT bvector<RulesetVariableEntry> GetRelatedRulesetVariables() const;
     IProvidersIndexAllocator& GetProvidersIndexAllocator() const;
@@ -198,6 +198,8 @@ public:
     BeGuidCR GetRemovalId() const {return m_removalId;}
     std::function<void(NavNodesProviderContextR)> const& GetHierarchyLevelLoadedCallback() const {return m_onHierarchyLevelLoaded;}
     void SetHierarchyLevelLoadedCallback(std::function<void(NavNodesProviderContextR)> cb) {m_onHierarchyLevelLoaded = cb;}
+    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
+    void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
 
     // page options
     void SetPageOptions(std::shared_ptr<PageOptions> value) {m_pageOptions = value;}
@@ -226,7 +228,6 @@ public:
     // ECDb context
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, IECDbUsedClassesListener*);
     ECPRESENTATION_EXPORT void SetQueryContext(NavNodesProviderContextCR other);
-    NavigationQueryBuilder& GetQueryBuilder() const;
     IUsedClassesListener* GetUsedClassesListener() const;
 
     // hierarchy locking
@@ -386,10 +387,6 @@ private:
 protected:
     ECPRESENTATION_EXPORT NavNodesProvider(NavNodesProviderContextR context);
     void InitializeNodes();
-    bool ShouldReturnChildNodes(NavNodeR node) const;
-    NavNodesProviderPtr CreateProvider(NavNodeR node) const;
-    void EvaluateChildrenArtifacts(NavNodeR) const;
-    void EvaluateThisNodeArtifacts(NavNodeCR) const;
     bool IsInitialized() const {return m_nodesInitialized;}
 
 protected:
@@ -632,6 +629,10 @@ struct NodesCreatingMultiNavNodesProvider : MultiNavNodesProvider
 
 private:
     ECPRESENTATION_EXPORT std::unique_ptr<DirectNodesIterator> GetDirectNodesIterator() const;
+    bool ShouldReturnChildNodes(NavNodeR node) const;
+    void EvaluateChildrenArtifacts(NavNodeR) const;
+    void EvaluateThisNodeArtifacts(NavNodeCR) const;
+    NavNodesProviderPtr CreateProvider(NavNodeR node) const;
 
 protected:
     NodesCreatingMultiNavNodesProvider(NavNodesProviderContextR context)
@@ -746,13 +747,13 @@ private:
     HasChildrenFlag AnyChildSpecificationReturnsNodes(NavNodeR parentNode) const;
     bool HasSimilarNodeInHierarchy(NavNodeCR, NavNodeCR parentNode, int suppressCount) const;
     bool HasSimilarNodeInHierarchy(NavNodeCR, BeGuidCR parentNodeId, int suppressCount) const;
-    bool HasSimilarNodeInHierarchy(NavNodeCR, int suppressCount = -1) const;
+    bool HasSimilarNodeInHierarchy(NavNodeCR, int suppressCount) const;
 
 public:
     NodesFinalizer(NavNodesProviderContextR context)
         : m_context(&context)
         {}
-
+    ECPRESENTATION_EXPORT bool HasSimilarNodeInHierarchy(NavNodeCR) const;
     ECPRESENTATION_EXPORT void DetermineChildren(NavNodeR) const;
     ECPRESENTATION_EXPORT void Customize(NavNodeR) const;
 
@@ -890,13 +891,13 @@ struct QueryBasedNodesProvider : CachingNavNodesProviderBase<NodesCreatingMultiN
     struct NodeCounts;
 
 private:
-    NavigationQueryCPtr m_query;
+    PresentationQueryBuilderCPtr m_query;
     mutable bmap<ECClassId, bool> m_usedClassIds;
     size_t m_offset;
     DataSourceIdentifier m_parentDatasourceIdentifier;
 
 private:
-    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextR, NavigationQuery const&, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier);
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextR, PresentationQueryBuilderCR, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier);
     NodeCounts QueryNodeCounts() const;
     BentleyStatus InitializePartialProviders(bvector<PageNodeCounts> const&);
 
@@ -912,12 +913,12 @@ protected:
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextR context,
-        NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>(), DataSourceIdentifier parentDatasourceIdentifier = {})
+        PresentationQueryBuilderCR query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>(), DataSourceIdentifier parentDatasourceIdentifier = {})
         {
         return CallOnCreated(*new QueryBasedNodesProvider(context, query, usedClassIds, parentDatasourceIdentifier));
         }
     bmap<ECClassId, bool> const& GetUsedClassIds() const {return m_usedClassIds;}
-    void SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const&);
+    void SetQuery(PresentationQueryBuilderCP query, bmap<ECClassId, bool> const&);
     void SetOffset(size_t value) {m_offset = value;}
 };
 
@@ -934,7 +935,8 @@ private:
 
 private:
     ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextR context, ChildNodeSpecificationCR specification);
-    bvector<NavigationQueryPtr> CreateQueries(ChildNodeSpecificationCR specification) const;
+    std::unique_ptr<NavigationQueryBuilder> CreateQueryBuilder(IUsedClassesListener&) const;
+    QuerySet CreateQueries(NavigationQueryBuilderCR) const;
 
 protected:
     Utf8CP _GetName() const override {return "Query-based specification nodes provider";}

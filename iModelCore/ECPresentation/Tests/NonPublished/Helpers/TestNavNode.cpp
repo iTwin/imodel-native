@@ -61,7 +61,7 @@ NavNodePtr TestNodesHelper::CreateInstanceNode(IConnectionCR connection, IECInst
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr TestNodesHelper::CreateClassGroupingNode(IConnectionCR connection, ECClassCR ecClass, Utf8CP label)
     {
-    return s_testNodesFactory.CreateECClassGroupingNode(connection, "", nullptr, ecClass, false, *LabelDefinition::Create(label), {});
+    return s_testNodesFactory.CreateECClassGroupingNode(connection, "", nullptr, ecClass, false, *LabelDefinition::Create(label), 0, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,7 +69,7 @@ NavNodePtr TestNodesHelper::CreateClassGroupingNode(IConnectionCR connection, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr TestNodesHelper::CreateRelationshipGroupingNode(IConnectionCR connection, ECRelationshipClassCR rel, Utf8CP label)
     {
-    return s_testNodesFactory.CreateECRelationshipGroupingNode(connection, "", nullptr, rel, *LabelDefinition::Create(label), {});
+    return s_testNodesFactory.CreateECRelationshipGroupingNode(connection, "", nullptr, rel, *LabelDefinition::Create(label), 0, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,7 +78,7 @@ NavNodePtr TestNodesHelper::CreateRelationshipGroupingNode(IConnectionCR connect
 NavNodePtr TestNodesHelper::CreatePropertyGroupingNode(IConnectionCR connection, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, bvector<ECValue> const& groupingValues, bool isRangeGrouping)
     {
     return s_testNodesFactory.CreateECPropertyGroupingNode(connection, "", nullptr, ecClass, ecProperty, *LabelDefinition::Create(label), "",
-        GetGroupingValuesListJson(groupingValues), isRangeGrouping, {});
+        GetGroupingValuesListJson(groupingValues), isRangeGrouping, 0, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,7 +86,7 @@ NavNodePtr TestNodesHelper::CreatePropertyGroupingNode(IConnectionCR connection,
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr TestNodesHelper::CreateLabelGroupingNode(IConnectionCR connection, Utf8CP label)
     {
-    return s_testNodesFactory.CreateDisplayLabelGroupingNode(connection, "", nullptr, *LabelDefinition::Create(label), {});
+    return s_testNodesFactory.CreateDisplayLabelGroupingNode(connection, "", nullptr, *LabelDefinition::Create(label), 0, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,7 +94,7 @@ NavNodePtr TestNodesHelper::CreateLabelGroupingNode(IConnectionCR connection, Ut
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr TestNodesHelper::CreateCustomNode(IConnectionCR connection, Utf8CP type, Utf8CP label, Utf8CP description)
     {
-    return s_testNodesFactory.CreateCustomNode(connection, "", nullptr, *LabelDefinition::Create(label), description, "", type);
+    return s_testNodesFactory.CreateCustomNode(connection, "", nullptr, *LabelDefinition::Create(label), description, "", type, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

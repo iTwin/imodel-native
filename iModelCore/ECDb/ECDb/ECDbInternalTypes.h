@@ -25,7 +25,8 @@ enum class ECSqlType
     Select,
     Insert,
     Update,
-    Delete
+    Delete,
+    Pragma,
     };
 
 typedef BeInt64Id ECContainerId;

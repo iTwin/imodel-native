@@ -189,6 +189,7 @@ struct Exp
             Options,
             OrderBy,
             OrderBySpec,
+            Pragma,
             Parameter,
             Predicate,
             PropertyName,
@@ -435,10 +436,10 @@ struct Exp
         virtual ~Exp() {}
 
         template <typename TExp>
-        TExp const* GetAsCP() const 
-            { 
+        TExp const* GetAsCP() const
+            {
             BeAssert(dynamic_cast<TExp const*> (this) != nullptr);
-            return static_cast<TExp const*> (this); 
+            return static_cast<TExp const*> (this);
             }
 
         template <typename TExp>

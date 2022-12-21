@@ -13,7 +13,7 @@
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_NoQuery)
     {
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_TRUE(queries.empty());
     }
 
@@ -25,7 +25,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_AllowsStandardSch
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
     Utf8CP query = "SELECT * FROM [ECDbMap].[SchemaMap]";
     spec.AddQuerySpecification(*new StringQuerySpecification(query, "ECDbMeta", "ECSchemaDef"));
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_TRUE(queries.size() > 0);
     }
 
@@ -42,15 +42,15 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_NoGrouping)
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
     spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -71,27 +71,27 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClass)
     SearchResultInstanceNodesSpecification spec(1, false, false, false, true, false);
     spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         RefCountedPtr<ECClassGroupingNodesQueryContract> contract = ECClassGroupingNodesQueryContract::Create("", nullptr);
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
         query->From(*classA, true, "this");
         query->Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList());
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
         grouped->From(*query);
         grouped->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr ordered = ComplexQueryBuilder::Create();
         ordered->SelectAll();
         ordered->From(*grouped);
         ordered->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        ordered->GetResultParametersR().GetSelectInstanceClasses().clear();
+        ordered->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return ordered;
         });
     }
@@ -112,15 +112,15 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClass_Chil
     auto parentNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(nullptr, *classA, false, "MyLabel", {});
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
         RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr ordered = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+        ComplexQueryBuilderPtr ordered = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
         ordered->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -141,22 +141,22 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel)
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, true);
     spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this")
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+            .From(ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
                 .From(selectClass)
                 .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()))
                 .GroupByContract(*contract)
                 .OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        query->GetResultParametersR().GetSelectInstanceClasses().clear();
-        query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
+        query->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
         return query;
         });
     }
@@ -175,19 +175,19 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel_Chil
     spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
 
     auto parentNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateDisplayLabelGroupingNode(nullptr, "MyLabel", 1);
-    parentNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
+    parentNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             SetLabelGroupingNodeChildrenWhereClause(
-                ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+                ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
                 .From(selectClass))
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -209,25 +209,25 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClassAndLa
     spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
 
     auto parentNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(nullptr, *classA, false, "MyLabel", {});
-    parentNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
+    parentNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
         RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
-        query->From(ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+        query->From(ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
         query->GroupByContract(*contract);
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        query->GetResultParametersR().GetSelectInstanceClasses().clear();
-        query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
+        query->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
         return query;
         });
     }
@@ -251,20 +251,19 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClassAndLa
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
 
     auto labelGroupingNode = nodesFactory.CreateDisplayLabelGroupingNode(classGroupingNode->GetKey().get(), "Label Grouping Node", 1);
-    labelGroupingNode->SetParentNode(*classGroupingNode);
-    labelGroupingNode->SetInstanceKeysSelectQuery(StringGenericQuery::Create(CHILD_INSTANCE_KEYS_QUERY));
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode);
+    labelGroupingNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode, classGroupingNode->GetNodeId());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
         RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             SetLabelGroupingNodeChildrenWhereClause(
-                ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+                ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
                 .From(selectClass))
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -296,15 +295,15 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_UsesParentPropert
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
     spec.AddQuerySpecification(*new ECPropertyValueQuerySpecification(classA->GetSchema().GetName(), classA->GetName(), "TestQuery"));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -330,7 +329,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_InstanceLabelOver
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), "Prop1"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, false, classA->GetFullName(), "Prop2"));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -341,16 +340,16 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_InstanceLabelOver
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop2")),
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop1")),
             }));
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
         query->From(
-            ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
         query->GroupByContract(*contract);
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        query->GetResultParametersR().GetSelectInstanceClasses().clear();
-        query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
+        query->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
         return query;
         });
     }
@@ -376,33 +375,33 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_InstanceLabelOver
     spec.AddQuerySpecification(*new StringQuerySpecification(Utf8PrintfString("SELECT * FROM %s WHERE [ECInstanceId] > 0", classB->GetFullName()), classB->GetSchema().GetName(), classB->GetName()));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "PropA"));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         auto contractA = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classA, CreateDisplayLabelField(selectClassA, {}, { &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("PropA")) }));
-        ComplexNavigationQueryPtr queryA = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr queryA = ComplexQueryBuilder::Create();
         queryA->SelectContract(*contractA, "this")
             .From(selectClassA)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList());
 
         SelectClass<ECClass> selectClassB(*classB, "this", true);
         auto contractB = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classB, CreateDisplayLabelField(selectClassB));
-        ComplexNavigationQueryPtr queryB = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr queryB = ComplexQueryBuilder::Create();
         queryB->SelectContract(*contractB, "this")
             .From(selectClassB)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (SELECT *, ECInstanceId AS [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM %s WHERE [ECInstanceId] > 0))", classB->GetFullName()).c_str(), BoundQueryValuesList());
 
         auto contract = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, nullptr, CreateGroupingDisplayLabelField());
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
-        query->From(*UnionNavigationQuery::Create({ queryA, queryB }));
+        query->From(*UnionQueryBuilder::Create({ queryA, queryB }));
         query->GroupByContract(*contract);
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        query->GetResultParametersR().GetSelectInstanceClasses().clear();
-        query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
+        query->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
+        query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
         return query;
         });
     }
