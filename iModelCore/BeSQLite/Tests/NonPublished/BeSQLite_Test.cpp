@@ -299,9 +299,11 @@ struct DisableAsserts {
 
 TEST_F(BeSQliteTestFixture, WAL_basic_test) {
     DisableAsserts _notused;
-    auto getFileSize = [](Utf8CP file) {
-        struct stat buf;
-        return 0 == stat(file, &buf) ? buf.st_size : -1;
+    auto getFileSize = [](Utf8CP name) {
+        BeFileName fileName(name);
+        uint64_t sz = 0;
+        auto status = fileName.GetFileSize(sz);
+        return BeFileNameStatus::Success == status ? sz : -1;
     };
     auto getJournalMode = [](Db& db) {
         Statement stmt;
