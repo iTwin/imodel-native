@@ -2940,24 +2940,44 @@ DbResult Db::OpenSecondaryConnection(Db& newConnection, OpenParams params) const
     return newConnection.OpenBeSQLiteDb(GetDbFileName(), params);
     }
 
-/**
- * perform a checkpoint operation if this database is in WAL mode.
- */
+/** Perform a checkpoint operation if this database is in WAL mode. */
 DbResult Db::Checkpoint(WalCheckpointMode mode, int* pnLog, int* pnCkpt) {
-    return (DbResult) sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
+    auto savepoint = GetSavepoint(0);
+    if (savepoint)
+        savepoint->Commit();
+
+    auto result = (DbResult) sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
+    if (result != BE_SQLITE_OK) {
+        auto msg =  GetLastError(nullptr);
+        printf("err=%s", msg.c_str());
+    }
+
+    if (savepoint)
+        savepoint->Begin();
+    return result;
 }
 
-/**
- * Set the auto checkpoint threshold
- */
+/** Set the auto checkpoint threshold */
 DbResult Db::SetAutoCheckpointThreshold(int frames) {
     return (DbResult) sqlite3_wal_autocheckpoint(GetSqlDb(), frames);
 }
 
 /** Turn on or off WAL journal mode */
 DbResult Db::EnableWalMode(bool yesNo) {
-    Utf8String sql = "pragma journal_mode=" + yesNo ? "WAL" : "DELETE";
-    return TryExecuteSql(sql.c_str());
+    auto savepoint = GetSavepoint(0);
+    if (savepoint)
+        savepoint->Commit();
+
+    auto sql = Utf8String("pragma journal_mode=");
+    sql += yesNo ? "WAL" : "DELETE";
+    auto result = TryExecuteSql(sql.c_str());
+    if (result != BE_SQLITE_OK) {
+        auto msg =  GetLastError(nullptr);
+        printf("err=%s", msg.c_str());
+    }
+    if (savepoint)
+        savepoint->Begin();
+    return result;
 }
 
 //---------------------------------------------------------------------------------------
