@@ -807,14 +807,14 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
     if (m_isStandardSetFunction && m_functionName.EqualsI("count"))
         return FinalizeParseStatus::Completed;
 
-    //validation for InVirtualSet function - first argument for InVirtualSet should be VirtualSet or NULL
+    //validation for InVirtualSet function - the first argument should be an unset argument type that can only be bound to either VirtualSet or NULL
     if (m_functionName.EqualsI("InVirtualSet"))
         {
         ValueExp* argExp = GetChildP<ValueExp>(0);
         ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
-        if (typeKind != ECSqlTypeInfo::Kind::Unset && !argExp->GetTypeInfo().IsNull())
+        if (typeKind != ECSqlTypeInfo::Kind::Unset)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function '%s' can only be called with unset argument type. First argument is not unset.",
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "The function '%s' can only be called with an unset argument type as the first argument, for example, InVirtualSet(?, <second argument>). However, the first argument is not unset.",
                                           m_functionName.c_str());
             return FinalizeParseStatus::Error;
             }

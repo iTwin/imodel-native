@@ -859,7 +859,6 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
 
     // Bind string VirtualSet
     std::shared_ptr<Utf8StringVirtualSet> stringSet = std::make_shared<Utf8StringVirtualSet>([] (Utf8CP name) { return "tempstring"; });
-    // Utf8StringVirtualSet stringSet([] (Utf8CP name) { return "tempstring"; });
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, stringSet));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(1, statement.GetValueInt(0));
