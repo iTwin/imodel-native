@@ -135,10 +135,13 @@ ECPresentationResult IModelJsECPresentationUiStateProvider::UpdateHierarchyState
 
         if (item.isMember(PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters) && !item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters].isArray())
             return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Expected `" PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters "` member in `stateChanges` items to be an array of strings");
-        bvector<Utf8String> instanceFilters;
-        item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst instanceFilterJson)
+
+        bvector<std::shared_ptr<InstanceFilterDefinition const>> instanceFilters;
+        item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters].ForEachArrayMember([&](BeJsConst::ArrayIndex filterIndex, BeJsConst instanceFilterJson)
             {
-            instanceFilters.push_back(instanceFilterJson.ToUtf8CP());
+            auto instanceFilter = manager.GetSerializer().GetInstanceFilterFromJson(*connection, instanceFilterJson);
+            if (instanceFilter != nullptr)
+                instanceFilters.push_back(std::move(instanceFilter));
             return false;
             });
         hierarchyLevelState.SetInstanceFilters(instanceFilters);

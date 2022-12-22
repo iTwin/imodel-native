@@ -39,7 +39,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop = 2");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a2 }),
@@ -111,7 +111,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify getting child nodes with instance filter
-    params.SetInstanceFilter("this.Prop = 2");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
     params.SetParentNode(hierarchy[0].node.get());
     ValidateHierarchy(params,
         {
@@ -158,7 +158,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop = 2");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a2 }),
@@ -221,7 +221,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop > 1");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop > 1"));
     ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classA, false, { a2 }),
@@ -287,7 +287,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.FilterProp = 1");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilterProp = 1"));
     ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateLabelGroupingNodeValidator("1", { a11, a12 }),
@@ -345,7 +345,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop = 1");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
     ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classA, true, { b1 }),
@@ -400,7 +400,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop = 1");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
     ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ a1 }, ValueList{ ECValue(1) }),
@@ -470,7 +470,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.FilteringProp = 888");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilteringProp = 888"));
     ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ a3 }, ValueList{ ECValue(222) }),
@@ -527,7 +527,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.FilterProp = 1");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilterProp = 1"));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a11, a12 }),
@@ -598,7 +598,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop > 2");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop > 2"));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ b3 }),
@@ -677,7 +677,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop = 15");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 15"));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ b3 }),
@@ -748,7 +748,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop = 1");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ b1 }),
@@ -824,7 +824,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
 
     // verify with instance filter
-    params.SetInstanceFilter("this.Prop = 1");
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
     ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),

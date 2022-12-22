@@ -1152,7 +1152,7 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestIm
     std::shared_ptr<NodesCache> cache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
     VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
 
-    auto node = cache->GetPhysicalParentNode(params.GetNode().GetNodeId(), params.GetRulesetVariables(), params.GetInstanceFilter());
+    auto node = cache->GetPhysicalParentNode(params.GetNode().GetNodeId(), params.GetRulesetVariables(), params.GetInstanceFilter().get());
     if (node.IsValid())
         FinalizeNode(RequestWithRulesetImplParams::Create(params), *node);
 
@@ -1195,7 +1195,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     // create a savepoint to avoid committing any changes while we're creating the hierarchy
     auto cacheSavepoint = nodesCache->CreateSavepoint(true);
 
-    if (!nodesCache->IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables(), ""))
+    if (!nodesCache->IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables(), nullptr))
         {
         NavNodesProviderContextPtr rootNodesContext = CreateNodesProviderContext(CreateHierarchyRequestParams(params), nodesCache);
         if (rootNodesContext.IsNull())

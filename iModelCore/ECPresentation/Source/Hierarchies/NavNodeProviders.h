@@ -137,7 +137,7 @@ private:
     mutable IProvidersIndexAllocatorPtr m_providersIndexAllocator;
     bset<ArtifactsCapturer*> m_artifactsCapturers;
     std::function<void(NavNodesProviderContextR)> m_onHierarchyLevelLoaded;
-    Utf8String m_instanceFilter;
+    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
 
     // optimization flags
     OptimizationFlagsContainer m_optFlags;
@@ -198,8 +198,9 @@ public:
     BeGuidCR GetRemovalId() const {return m_removalId;}
     std::function<void(NavNodesProviderContextR)> const& GetHierarchyLevelLoadedCallback() const {return m_onHierarchyLevelLoaded;}
     void SetHierarchyLevelLoadedCallback(std::function<void(NavNodesProviderContextR)> cb) {m_onHierarchyLevelLoaded = cb;}
-    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
-    void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
+    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilterPtr() const {return m_instanceFilter;}
+    InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter.get();}
+    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
 
     // page options
     void SetPageOptions(std::shared_ptr<PageOptions> value) {m_pageOptions = value;}

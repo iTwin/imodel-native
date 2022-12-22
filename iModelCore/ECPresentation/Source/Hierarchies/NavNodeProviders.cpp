@@ -450,7 +450,7 @@ static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesPr
     else
         ctx->SetPhysicalParentNode(&parentNode);
     if (!NavNodeExtendedData(parentNode).HideNodesInHierarchy() && nullptr == parentNode.GetKey()->AsGroupingNodeKey())
-        ctx->SetInstanceFilter("");
+        ctx->SetInstanceFilter(nullptr);
     ctx->SetRemovalId(ancestorContext.GetRemovalId());
     return ctx;
     }
@@ -1110,14 +1110,14 @@ DataSourceIdentifier const& CachingNavNodesProviderBase<TProvider>::GetOrCreateD
         // try to get data source identifier from cache and lock hierarchy level if it's not cached yet
         m_datasourceIdentifier = GetResultOrLockHierarchy<DataSourceIdentifier>(context.GetHierarchyLevelLocker(), [&]()
             {
-            DataSourceIdentifier identifier = context.GetNodesCache().FindDataSource(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilter()), context.GetRulesetVariables()).GetIdentifier();
+            DataSourceIdentifier identifier = context.GetNodesCache().FindDataSource(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilterPtr()), context.GetRulesetVariables()).GetIdentifier();
             return make_bpair(identifier.IsValid(), identifier);
             });
 
         if (!m_datasourceIdentifier.IsValid())
             {
             IHierarchyCache::SavepointPtr savepoint = context.GetNodesCache().CreateSavepoint();
-            DataSourceInfo datasourceInfo(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilter()), context.GetRelatedRulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
+            DataSourceInfo datasourceInfo(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilterPtr()), context.GetRelatedRulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
             context.GetNodesCache().Cache(datasourceInfo);
             m_datasourceIdentifier = datasourceInfo.GetIdentifier();
             if (nullptr != createdNew)
@@ -1514,7 +1514,7 @@ struct SpecificationFiltersBuilder : PresentationRuleSpecificationVisitor
 private:
     IHierarchyCache const& m_nodesCache;
     RulesetVariables const& m_rulesetVariables;
-    Utf8StringCR m_instanceFilter;
+    InstanceFilterDefinitionCP m_instanceFilter;
     NavNodeCP m_parent;
     PresentationQueryBuilderCR m_query;
     DataSourceFilter m_filter;
@@ -1586,7 +1586,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    SpecificationFiltersBuilder(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
+    SpecificationFiltersBuilder(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
         : m_nodesCache(nodesCache), m_parent(parent), m_query(query), m_rulesetVariables(rulesetVariables), m_instanceFilter(instanceFilter)
         {}
     DataSourceFilter GetFilter() const {return m_filter;}
@@ -1595,7 +1595,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DataSourceFilter GetSpecificationFilter(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
+static DataSourceFilter GetSpecificationFilter(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
     auto const& params = query.GetNavigationResultParameters();
     if (nullptr == params.GetSpecification())
@@ -1673,7 +1673,7 @@ static bool NodesCountMightChangeToZeroCheap(PresentationQueryBuilderCR query)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NodesCountMightChangeToZeroExpensive(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
+static bool NodesCountMightChangeToZeroExpensive(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
     // we may also need to hide nodes if they're being created by the same specification as
     // one of the parent nodes
@@ -1692,7 +1692,7 @@ static bool NodesCountMightChangeToZeroExpensive(IHierarchyCache const& nodesCac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NodesCountMightChangeToZero(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
+static bool NodesCountMightChangeToZero(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
     return NodesCountMightChangeToZeroCheap(query) || NodesCountMightChangeToZeroExpensive(nodesCache, rulesetVariables, instanceFilter, parent, query);
     }
@@ -1700,7 +1700,7 @@ static bool NodesCountMightChangeToZero(IHierarchyCache const& nodesCache, Rules
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NodesCountMightChange(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
+static bool NodesCountMightChange(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
     auto const& params = query.GetNavigationResultParameters();
     bool hasHideFlags = NodesCountMightChangeToZeroCheap(query)
@@ -3354,7 +3354,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
     // it's more efficient to use the cached version compared to loading and merging everything again, so just return the cached provider.
-    DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilter());
+    DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilterPtr());
     DataSourceInfo mergedDatasourceInfo = context->GetNodesCache().FindDataSource(mergedDatasourceIdentifier, context->GetRulesetVariables());
     if (mergedDatasourceInfo.GetIdentifier().IsValid())
         {
@@ -3831,7 +3831,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetResultInstanceNodes
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId]"
         "  CROSS JOIN [" NODESCACHE_TABLENAME_NodeInstances "] ni on [ni].[NodeId] = [n].[Id]"
-        " WHERE [ds].[InstanceFilter] = ? "
+        " WHERE [ds].[InstanceFilter] IS ? "
         "       AND [dsn].[Visibility] = ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
@@ -3844,7 +3844,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetResultInstanceNodes
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_physicalHierarchyLevelId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, GetContext().GetRemovalId());
-    stmt->BindText(bindingIndex++, GetContext().GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
     stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
@@ -3869,7 +3869,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
-        " WHERE [ds].[InstanceFilter] = ? "
+        " WHERE [ds].[InstanceFilter] IS ? "
         "       AND [dsn].[Visibility] = ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
         " ORDER BY " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "], [dsn].[NodeIndex]) ";
@@ -3889,7 +3889,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_physicalHierarchyLevelId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, GetContext().GetRemovalId());
-    stmt->BindText(bindingIndex++, GetContext().GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
     stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
     if (GetContext().GetPageOptions())
@@ -3917,7 +3917,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         " WHERE [dsn].[Visibility] = ? "
-        "       AND [ds].[InstanceFilter] = ? "
+        "       AND [ds].[InstanceFilter] IS ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count query: `%s`", query));
@@ -3930,7 +3930,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_physicalHierarchyLevelId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, GetContext().GetRemovalId());
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
-    stmt->BindText(bindingIndex++, GetContext().GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
     stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
     return stmt;

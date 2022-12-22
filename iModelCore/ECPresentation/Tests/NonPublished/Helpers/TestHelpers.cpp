@@ -837,7 +837,7 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, NavNodeR node, Be
     hlInfo.SetId(cache.FindHierarchyLevelId(extendedData.GetConnectionId(), rulesetId.c_str(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid(), BeGuid()));
     if (!hlInfo.IsValid())
         cache.Cache(hlInfo);
-    DataSourceIdentifier identifier(hlInfo.GetId(), {0}, "");
+    DataSourceIdentifier identifier(hlInfo.GetId(), {0}, nullptr);
     DataSourceInfo dsInfo = cache.FindDataSource(identifier, RulesetVariables());
     if (!dsInfo.GetIdentifier().IsValid())
         {

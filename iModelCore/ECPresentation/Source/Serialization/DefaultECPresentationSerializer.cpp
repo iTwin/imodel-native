@@ -298,8 +298,8 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Hiera
     json.AddMember("RulesetId", rapidjson::Value(updateRecord.GetRulesetId().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("ECDbFileName", rapidjson::Value(updateRecord.GetECDbFileName().c_str(), json.GetAllocator()), json.GetAllocator());
 
-    if (!updateRecord.GetInstanceFilter().empty())
-        json.AddMember("InstanceFilter", rapidjson::Value(updateRecord.GetInstanceFilter().c_str(), json.GetAllocator()), json.GetAllocator());
+    if (updateRecord.GetInstanceFilter() != nullptr)
+        json.AddMember("InstanceFilter", AsJson(ctx, *updateRecord.GetInstanceFilter(), &json.GetAllocator()), json.GetAllocator());
 
     return json;
     }
@@ -1002,7 +1002,7 @@ KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR conn
         instanceKeys[ecClass] = instanceIdSet;
         return false;
         });
-    
+
     NavNodeKeySet nodeKeys;
     json["NodeKeys"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst nodeKeyJson)
         {
@@ -1064,13 +1064,67 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(ContextR ctx, RelatedC
     rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kObjectType);
+
     json.AddMember("SourceClassInfo", _AsJson(ctx, *relatedClass.GetSourceClass(), &allocator), allocator);
+
     json.AddMember("TargetClassInfo", _AsJson(ctx, relatedClass.GetTargetClass().GetClass(), &allocator), allocator);
-    json.AddMember("IsTargetPolymorphic", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
+    if (!relatedClass.GetTargetClass().GetAlias().empty())
+        json.AddMember("TargetClassAlias", rapidjson::Value(relatedClass.GetTargetClass().GetAlias().c_str(), allocator), allocator);
+    if (relatedClass.GetTargetClass().IsSelectPolymorphic())
+        json.AddMember("IsTargetPolymorphic", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
+    if (relatedClass.IsTargetOptional())
+        json.AddMember("IsTargetOptional", relatedClass.IsTargetOptional(), allocator);
+
     json.AddMember("RelationshipInfo", _AsJson(ctx, relatedClass.GetRelationship().GetClass(), &allocator), allocator);
-    json.AddMember("IsRelationshipPolymorphic", relatedClass.GetRelationship().IsSelectPolymorphic(), allocator);
-    json.AddMember("IsRelationshipForward", relatedClass.IsForwardRelationship(), allocator);
+    if (!relatedClass.GetRelationship().GetAlias().empty())
+        json.AddMember("RelationshipAlias", rapidjson::Value(relatedClass.GetRelationship().GetAlias().c_str(), allocator), allocator);
+    if (relatedClass.GetRelationship().IsSelectPolymorphic())
+        json.AddMember("IsRelationshipPolymorphic", relatedClass.GetRelationship().IsSelectPolymorphic(), allocator);
+    if (relatedClass.IsForwardRelationship())
+        json.AddMember("IsRelationshipForward", relatedClass.IsForwardRelationship(), allocator);
+
     return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECClassCR GetClassFromClassInfoJson(IConnectionCR connection, BeJsConst json)
+    {
+    if (!json.isObject() || !json.isMember("Id") || !json["Id"].isString())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid class info JSON format. Expecting member `Id` to be a string, got `%s`", json["Id"].ToJsonString().c_str()));
+
+    ECClassId classId;
+    BeInt64Id::FromString(classId, json["Id"].asCString());
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
+    if (!ecClass)
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid class info JSON. The `Id` attribute doesn't point to a valid ECClass in the iModel: `%s`", classId.ToHexStr().c_str()));
+
+    return *ecClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static RelatedClass GetRelatedClassDefFromJson(IConnectionCR connection, BeJsConst json)
+    {
+    if (!json.isObject())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid related class definition JSON format. Expecting an object, got `%s`", json.ToJsonString().c_str()));
+
+    RelatedClass rc;
+    rc.SetSourceClass(GetClassFromClassInfoJson(connection, json["SourceClassInfo"]));
+
+    auto const& relationshipClass = GetClassFromClassInfoJson(connection, json["RelationshipInfo"]);
+    if (!relationshipClass.IsRelationshipClass())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid relationship class info JSON. Expecting it to point to a relationship class, got `%s`", relationshipClass.GetFullName()));
+    rc.SetRelationship(SelectClass<ECRelationshipClass>(*relationshipClass.GetRelationshipClassCP(), json["RelationshipAlias"].asCString(), json["IsRelationshipPolymorphic"].asBool()));
+    rc.SetIsForwardRelationship(json.isMember("IsRelationshipForward") && json["IsRelationshipForward"].asBool());
+
+    auto const& targetClass = GetClassFromClassInfoJson(connection, json["TargetClassInfo"]);
+    rc.SetTargetClass(SelectClass<>(targetClass, json["TargetClassAlias"].asCString(), json["IsTargetPolymorphic"].asBool()));
+    rc.SetIsTargetOptional(json["IsTargetOptional"].asBool());
+
+    return rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1093,6 +1147,24 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(ContextR ctx, RelatedC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static RelatedClassPath GetRelatedClassPathFromJson(IConnectionCR connection, BeJsConst json)
+    {
+    if (!json.isArray())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid related class path JSON format. Expecting an array, got `%s`", json.ToJsonString().c_str()));
+
+    RelatedClassPath path;
+    json.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst stepJson)
+        {
+        path.push_back(GetRelatedClassDefFromJson(connection, stepJson));
+        return false;
+        });
+
+    return path;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Value DefaultECPresentationSerializer::_AsJson(ContextR ctx, SelectionInfo const& selectionInfo,
     rapidjson::Document::AllocatorType& allocator) const
     {
@@ -1101,4 +1173,68 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(ContextR ctx, Selectio
     info.AddMember("IsSubSelection", selectionInfo.IsSubSelection(), allocator);
     info.AddMember("Timestamp", rapidjson::Value(std::to_string(selectionInfo.GetTimestamp()).c_str(), allocator), allocator);
     return info;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, InstanceFilterDefinitionCR instanceFilter, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("Expr", rapidjson::Value(instanceFilter.GetExpression().c_str(), json.GetAllocator()), json.GetAllocator());
+    if (instanceFilter.GetSelectClass())
+        json.AddMember("SelectClass", rapidjson::Value(instanceFilter.GetSelectClass()->GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+    if (!instanceFilter.GetRelatedInstances().empty())
+        {
+        rapidjson::Value relatedInstancesJson(rapidjson::kArrayType);
+        for (auto const& relatedInstancePath : instanceFilter.GetRelatedInstances())
+            relatedInstancesJson.PushBack(_AsJson(ctx, relatedInstancePath, json.GetAllocator()), json.GetAllocator());
+        json.AddMember("RelatedInstances", relatedInstancesJson, json.GetAllocator());
+        }
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<InstanceFilterDefinition> DefaultECPresentationSerializer::_GetInstanceFilterFromJson(IConnectionCR connection, BeJsConst json) const
+    {
+    if (json.isNull() || !json.isObject())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid internal instance filter definition JSON format. Expecting an object, got `%s`", json.ToJsonString().c_str()));
+
+    if (!json.hasMember("Expr") || !json["Expr"].isString())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, "Invalid internal instance filter definition JSON format - missing `Expr` member or it's not a string");
+
+    Utf8CP expression = json["Expr"].asCString();
+
+    ECClassCP selectClass = nullptr;
+    if (json.hasMember("SelectClass"))
+        {
+        ECClassId selectClassId;
+        if (!json["SelectClass"].isString() || SUCCESS != BeInt64Id::FromString(selectClassId, json["SelectClass"].asCString()))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid internal instance filter definition JSON format. Expecting `SelectClass` member to be an ID, got `%s`", json["SelectClass"].ToJsonString().c_str()));
+
+        selectClass = connection.GetECDb().Schemas().GetClass(selectClassId);
+        if (!selectClass)
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid `SelectClass` value in internal instance filter definition JSON. The ID `%s` doesn't correspond to any ECClass in the iModel", selectClassId.ToHexStr().c_str()));
+        }
+
+    bvector<RelatedClassPath> relatedInstancePaths;
+    if (json.hasMember("RelatedInstances"))
+        {
+        if (!json["RelatedInstances"].isArray())
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Invalid internal instance filter definition JSON format. Expecting `RelatedInstances` member to be an array, got `%s`", json["RelatedInstances"].ToJsonString().c_str()));
+
+        json["RelatedInstances"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst pathJson)
+            {
+            relatedInstancePaths.push_back(GetRelatedClassPathFromJson(connection, pathJson));
+            return false;
+            });
+        }
+
+    if (selectClass)
+        return std::make_unique<InstanceFilterDefinition>(expression, *selectClass, relatedInstancePaths);
+
+    return std::make_unique<InstanceFilterDefinition>(expression);
     }
