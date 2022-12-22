@@ -154,8 +154,6 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareCo
 //---------------------------------------------------------------------------------------
 std::unique_ptr<VirtualSetBinder> ECSqlBinderFactory::CreateVirtualSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
     {
-    ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
-    BeAssert(typeKind != ECSqlTypeInfo::Kind::Unset);
     return std::unique_ptr<VirtualSetBinder>(new VirtualSetBinder(ctx, typeInfo, paramNameGen));
     }
 
