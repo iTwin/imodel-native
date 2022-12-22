@@ -333,6 +333,29 @@ struct SQLiteOps {
             JsInterop::throwSqlResult("error vacuuming", db.GetDbFileName(), status);
     }
 
+    void EnableWalMode(Napi::CallbackInfo const& info) {
+        Db& db = GetOpenedDb(info);
+        OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
+        auto status = db.EnableWalMode(yesNo);
+        if (BE_SQLITE_OK != status)
+            JsInterop::throwSqlResult("error changing WAL mode", db.GetDbFileName(), status);
+    }
+
+    void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info) {
+        Db& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_INTEGER(0, frames);
+        auto status = db.SetAutoCheckpointThreshold(frames);
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error setting autoCheckpoint threshold", db.GetDbFileName(), status);
+    }
+    void PerformCheckpoint(Napi::CallbackInfo const& info) {
+        Db& db = GetOpenedDb(info);
+        OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
+        DbResult status = db.PerformCheckpoint((WalCheckpointMode)mode);
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error checkpointing", db.GetDbFileName(), status);
+    }
+
     void RestartDefaultTxn(NapiInfoCR info) {
         GetOpenedDb(info).RestartDefaultTxn();
     }
@@ -624,6 +647,9 @@ public:
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
+            InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
+            InstanceMethod("performCheckpoint", &SQLiteDb::PerformCheckpoint),
+            InstanceMethod("setAutoCheckpointThreshold", &SQLiteDb::SetAutoCheckpointThreshold),
         });
 
         exports.Set("SQLiteDb", t);
@@ -2384,6 +2410,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("writeAffectedElementDependencyGraphToFile", &NativeDgnDb::WriteAffectedElementDependencyGraphToFile),
             InstanceMethod("writeFullElementDependencyGraphToFile", &NativeDgnDb::WriteFullElementDependencyGraphToFile),
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
+            InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
+            InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
+            InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
