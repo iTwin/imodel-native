@@ -2040,7 +2040,7 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
 
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT c.Name FROM meta.ECClassDef c JOIN meta.CustomAttribute ca ON ca.Class.Id=c.ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.ECClassDef c JOIN meta.CustomAttribute ca ON ca.Class.Id=c.ECInstanceId"));
         while (BE_SQLITE_ROW == stmt.Step())
             {
             printf("%s\n", stmt.GetValueText(0));
