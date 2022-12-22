@@ -5,7 +5,7 @@
 %include mdl.mki
 
 baseDir = $(_MakeFilePath)
-npmCmd = $(BBPYTHONCMD) $(SrcRoot)thirdparty/nodejs_14_16_0/bentley/npm.py
+npmCmd = npm
 npmArg =
 
 # On MacOSARM64, we must use an arm64 version of node which nodejs_14_16_0 does not support, so use a newer one.
@@ -16,7 +16,7 @@ npmArg =
         %warn *** Skipping tests as we're not running on an Apple Silicon processor ***
         %return
     %else
-        npmCmd = $(SrcRoot)thirdparty/nodejs_16_15_0/bentley/npm.sh
+        npmCmd = npm
         npmArg = --forceArm64
     %endif
 %endif
