@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bentleybuild/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="imodel-native"
+        PartFile="iModelCore/iModelCore"
+        PartName="iModelCoreOpen"
+        Platform="x64"
+        OnlyPlatforms="x64,androidarm64,iosarm64,iosx64,linuxx64,macosx64,macosarm64,androidx64"
+        />
+    
+    <DeferStrategy Name="*" BuildPass="1"/>
+
+</BuildStrategy>
