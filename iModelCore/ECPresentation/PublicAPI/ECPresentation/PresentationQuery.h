@@ -28,7 +28,7 @@ struct IBoundQueryValueSerializer
     virtual rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _ToJson(BoundRapidJsonValueSet const&, rapidjson::Document::AllocatorType*) const = 0;
-    virtual std::unique_ptr<BoundQueryValue> _FromJson(RapidJsonValueCR const&) { return nullptr; }
+    virtual std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const&) { return nullptr; }
     };
 
 /*=================================================================================**//**
@@ -83,8 +83,8 @@ struct EXPORT_VTABLE_ATTRIBUTE BoundQueryValue
         bool operator==(BoundQueryValue const& other) const { return Equals(other); }
         bool operator!=(BoundQueryValue const& other) const { return !Equals(other); }
         BeSQLite::EC::ECSqlStatus Bind(BeSQLite::EC::ECSqlStatement& stmt, uint32_t index) const { return _Bind(stmt, index); }
-        static std::unique_ptr<BoundQueryValue> FromJson(IBoundQueryValueSerializer &serializer, RapidJsonValueCR const& json) {
-            BeRapidJsonUtilities::ToPrettyString(json);
+        static std::unique_ptr<BoundQueryValue> FromJson(IBoundQueryValueSerializer &serializer, BeJsConst const& json) {
+            json.Stringify(StringifyFormat::Indented);
             return serializer._FromJson(json);
             }
     };
@@ -219,90 +219,123 @@ struct BoundQueryValuesList : bvector<std::shared_ptr<BoundQueryValue const>>
         }
     ECPRESENTATION_EXPORT BentleyStatus Bind(BeSQLite::EC::ECSqlStatement&) const;
     ECPRESENTATION_EXPORT rapidjson::Document ToJsonInternal(rapidjson::Document::AllocatorType* alloc = nullptr) const;
-    ECPRESENTATION_EXPORT BentleyStatus FromJson(IBoundQueryValueSerializer&, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT BentleyStatus FromJson(IBoundQueryValueSerializer&, BeJsConst);
     };
 
 typedef BoundQueryValuesList const& BoundQueryValuesListCR;
-struct StringPresentationQuery;
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct PresentationQueryBase : RefCountedBase
-    {
-    private:
-        mutable Utf8String m_queryString;
-        bool m_isOuterQuery;
-    protected:
-        virtual BoundQueryValuesList _GetBoundValues() const { return BoundQueryValuesList(); }
-        virtual Utf8String _ToString() const = 0;
-        virtual bool _IsEqual(PresentationQueryBase const& other) const = 0;
-        virtual void _OnIsOuterQueryValueChanged() {}
-        virtual StringPresentationQuery* _AsStringQuery() {return nullptr;}
-        virtual RefCountedPtr<PresentationQueryBase> _Clone() const = 0;
-    public:
-        Utf8StringCR ToString() const
-            {
-            if (Utf8String::IsNullOrEmpty(m_queryString.c_str()))
-                m_queryString = _ToString();
-            return m_queryString;
-            }
-        void InvalidateQueryString() const { m_queryString.clear(); }
-        bool IsEqual(PresentationQueryBase const& other) const { return _IsEqual(other); }
-        BoundQueryValuesList GetBoundValues() const { return _GetBoundValues(); }
-        ECPRESENTATION_EXPORT BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement&) const;
-        ECPRESENTATION_EXPORT rapidjson::Document ToJsonInternal(rapidjson::Document::AllocatorType* = nullptr) const;
-        StringPresentationQuery const* AsStringQuery() const {return const_cast<PresentationQueryBase*>(this)->AsStringQuery();}
-        StringPresentationQuery* AsStringQuery() {return _AsStringQuery();}
-        RefCountedPtr<PresentationQueryBase> Clone() const { return _Clone(); }
-
-        bool IsOuterQuery() const { return m_isOuterQuery; }
-        void SetIsOuterQuery(bool value) { m_isOuterQuery = value; _OnIsOuterQueryValueChanged(); }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE StringPresentationQuery : PresentationQueryBase
+struct PresentationQuery
     {
     private:
         Utf8String m_query;
         BoundQueryValuesList m_bindings;
-        //bool m_isOuterQuery;
-        //ResultParameters m_resultParameters;
-
-    protected:
-        StringPresentationQuery(Utf8StringCR query, BoundQueryValuesList bindings) : m_query(query), m_bindings(bindings) {}
-        bool _IsEqual(PresentationQueryBase const& otherBase) const override {
-
-            RefCountedPtr<StringPresentationQuery> other = Create(otherBase);
-            if (other.Equals(nullptr))
-                return false;
-
-            return m_query.Equals(other->m_query);
-            }
-        Utf8String _ToString() const override { return m_query; }
-        BoundQueryValuesList _GetBoundValues() const override { return m_bindings; }
-        //virtual void _OnIsOuterQueryValueChanged() {}
-        StringPresentationQuery* _AsStringQuery() override { return this; }
-        RefCountedPtr<PresentationQueryBase> _Clone() const override { return Create(*this); }
 
     public:
-        static RefCountedPtr<StringPresentationQuery> Create(Utf8StringCR query, BoundQueryValuesList bindings = BoundQueryValuesList())
+        PresentationQuery() {}
+        PresentationQuery(Utf8StringCR query, BoundQueryValuesList bindings = {})
+            : m_query(query), m_bindings(bindings)
+            {}
+        std::unique_ptr<PresentationQuery> Clone() const
             {
-            return new StringPresentationQuery(query, bindings);
+            return std::make_unique<PresentationQuery>(GetQueryString(), GetBindings());
             }
-        static RefCountedPtr<StringPresentationQuery> Create(PresentationQueryBase const& source)
+        bool IsEqual(PresentationQuery const& other) const
             {
-            return new StringPresentationQuery(source.ToString(), source.GetBoundValues());
+            return GetQueryString().Equals(other.GetQueryString())
+                && GetBindings() == other.GetBindings();
             }
-        ECPRESENTATION_EXPORT static RefCountedPtr<StringPresentationQuery> FromJson(IBoundQueryValueSerializer, RapidJsonValueCR);
+        Utf8StringCR GetQueryString() const { return m_query; }
+        Utf8StringR GetQueryString() { return m_query; }
+        BoundQueryValuesList const& GetBindings() const { return m_bindings; }
+        BoundQueryValuesList& GetBindings() { return m_bindings; }
 
-        //ResultParameters& GetResultParametersR() { return m_resultParameters; }
+        BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt) const { return GetBindings().Bind(stmt); }
 
-        //bool IsOuterQuery() const { return m_isOuterQuery; }
-        //void SetIsOuterQuery(bool value) { m_isOuterQuery = value; _OnIsOuterQueryValueChanged(); }
+        //ECPRESENTATION_EXPORT rapidjson::Document ToJsonInternal(rapidjson::Document::AllocatorType* = nullptr) const;
+        //ECPRESENTATION_EXPORT static std::unique_ptr<PresentationQuery> FromJson(BeJsConst);
     };
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+//struct PresentationQueryBase : RefCountedBase
+//    {
+//    private:
+//        mutable Utf8String m_queryString;
+//        bool m_isOuterQuery;
+//    protected:
+//        virtual BoundQueryValuesList _GetBoundValues() const { return BoundQueryValuesList(); }
+//        virtual Utf8String _ToString() const = 0;
+//        virtual bool _IsEqual(PresentationQueryBase const& other) const = 0;
+//        virtual void _OnIsOuterQueryValueChanged() {}
+//        virtual StringPresentationQuery* _AsStringQuery() {return nullptr;}
+//        virtual RefCountedPtr<PresentationQueryBase> _Clone() const = 0;
+//    public:
+//        Utf8StringCR ToString() const
+//            {
+//            if (Utf8String::IsNullOrEmpty(m_queryString.c_str()))
+//                m_queryString = _ToString();
+//            return m_queryString;
+//            }
+//        void InvalidateQueryString() const { m_queryString.clear(); }
+//        bool IsEqual(PresentationQueryBase const& other) const { return _IsEqual(other); }
+//        BoundQueryValuesList GetBoundValues() const { return _GetBoundValues(); }
+//        ECPRESENTATION_EXPORT BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement&) const;
+//        ECPRESENTATION_EXPORT rapidjson::Document ToJsonInternal(rapidjson::Document::AllocatorType* = nullptr) const;
+//        StringPresentationQuery const* AsStringQuery() const {return const_cast<PresentationQueryBase*>(this)->AsStringQuery();}
+//        StringPresentationQuery* AsStringQuery() {return _AsStringQuery();}
+//        RefCountedPtr<PresentationQueryBase> Clone() const { return _Clone(); }
+//
+//        bool IsOuterQuery() const { return m_isOuterQuery; }
+//        void SetIsOuterQuery(bool value) { m_isOuterQuery = value; _OnIsOuterQueryValueChanged(); }
+//    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+//struct EXPORT_VTABLE_ATTRIBUTE StringPresentationQuery : PresentationQueryBase
+//    {
+//    private:
+//        Utf8String m_query;
+//        BoundQueryValuesList m_bindings;
+//        //bool m_isOuterQuery;
+//        //ResultParameters m_resultParameters;
+//
+//    protected:
+//        StringPresentationQuery(Utf8StringCR query, BoundQueryValuesList bindings) : m_query(query), m_bindings(bindings) {}
+//        bool _IsEqual(PresentationQueryBase const& otherBase) const override {
+//
+//            RefCountedPtr<StringPresentationQuery> other = Create(otherBase);
+//            if (other.Equals(nullptr))
+//                return false;
+//
+//            return m_query.Equals(other->m_query);
+//            }
+//        Utf8String _ToString() const override { return m_query; }
+//        BoundQueryValuesList _GetBoundValues() const override { return m_bindings; }
+//        //virtual void _OnIsOuterQueryValueChanged() {}
+//        StringPresentationQuery* _AsStringQuery() override { return this; }
+//        RefCountedPtr<PresentationQueryBase> _Clone() const override { return Create(*this); }
+//
+//    public:
+//        static RefCountedPtr<StringPresentationQuery> Create(Utf8StringCR query, BoundQueryValuesList bindings = BoundQueryValuesList())
+//            {
+//            return new StringPresentationQuery(query, bindings);
+//            }
+//        static RefCountedPtr<StringPresentationQuery> Create(PresentationQueryBase const& source)
+//            {
+//            return new StringPresentationQuery(source.ToString(), source.GetBoundValues());
+//            }
+//        ECPRESENTATION_EXPORT static RefCountedPtr<StringPresentationQuery> FromJson(IBoundQueryValueSerializer, RapidJsonValueCR);
+//
+//        //ResultParameters& GetResultParametersR() { return m_resultParameters; }
+//
+//        //bool IsOuterQuery() const { return m_isOuterQuery; }
+//        //void SetIsOuterQuery(bool value) { m_isOuterQuery = value; _OnIsOuterQueryValueChanged(); }
+//    };
 
 /*=================================================================================**//**
 * @bsiclass

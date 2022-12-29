@@ -99,12 +99,12 @@ bvector<Utf8String> NavNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBasePtr NavNodeKey::GetInstanceKeysSelectQuery() const { return m_instanceKeysSelectQuery; }
+PresentationQuery const* NavNodeKey::GetInstanceKeysSelectQuery() const { return m_instanceKeysSelectQuery.get(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodeKey::SetInstanceKeysSelectQuery(PresentationQueryBasePtr query) { m_instanceKeysSelectQuery = query; }
+void NavNodeKey::SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const> query) { m_instanceKeysSelectQuery = std::move(query); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -294,8 +294,9 @@ NavNodeKey::NavNodeKey(NavNodeKey const& other)
     {
     m_type = other.m_type;
     m_specificationIdentifier = other.m_specificationIdentifier;
-    m_hashPath = other.m_hashPath;
-    m_instanceKeysSelectQuery = other.m_instanceKeysSelectQuery;
+    m_hashPath = other.m_hashPath; 
+    if (other.m_instanceKeysSelectQuery)
+        m_instanceKeysSelectQuery = other.m_instanceKeysSelectQuery->Clone();
     }
 
 #define NAVNODE_JSON_CHUNK_SIZE 256
@@ -398,11 +399,6 @@ RapidJsonAccessor NavNode::GetUsersExtendedData() const
         return RapidJsonAccessor();
     return RapidJsonAccessor(*m_usersExtendedData);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQuery const* NavNode::GetInstanceKeysSelectQuery() const {return m_instanceKeysSelectQuery.get();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

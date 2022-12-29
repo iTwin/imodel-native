@@ -79,8 +79,8 @@ protected:
     virtual void _AsJson(ContextR, LabelGroupingNodeKey const&, RapidJsonDocumentR) const = 0;
     virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst) const = 0;
 
-    virtual rapidjson::Document _AsJson(ContextR, PresentationQueryBase const&, rapidjson::Document::AllocatorType*) const = 0;
-    virtual PresentationQueryBasePtr _GetPresentationQueryBaseFromJson(RapidJsonValueCR) const = 0;
+    virtual rapidjson::Document _AsJson(ContextR, PresentationQuery const&, rapidjson::Document::AllocatorType*) const = 0;
+    virtual std::unique_ptr<PresentationQuery> _GetPresentationQueryFromJson(BeJsConst) const = 0;
 
     virtual rapidjson::Document _AsJson(ContextR, BoundQueryValuesList const&, rapidjson::Document::AllocatorType*) const = 0;
 
@@ -166,8 +166,8 @@ public:
     rapidjson::Document AsJson(ContextR ctx, LabelGroupingNodeKey const& labelGroupingNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(BeJsConst json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
 
-    rapidjson::Document AsJson(ContextR ctx, PresentationQueryBase const& presentationQueryBase, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, presentationQueryBase, allocator); };
-    PresentationQueryBasePtr GetPresentationQueryBaseFromJson(RapidJsonValueCR json) const {return _GetPresentationQueryBaseFromJson(json);}
+    rapidjson::Document AsJson(ContextR ctx, PresentationQuery const& presentationQuery, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, presentationQuery, allocator); };
+    std::unique_ptr<PresentationQuery> GetPresentationQueryFromJson(BeJsConst json) const {return _GetPresentationQueryFromJson(json);}
 
     rapidjson::Document AsJson(ContextR ctx, BoundQueryValuesList const& boundQueryValuesList, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, boundQueryValuesList, allocator); };
 

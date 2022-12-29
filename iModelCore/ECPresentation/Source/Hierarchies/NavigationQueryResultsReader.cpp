@@ -179,7 +179,7 @@ protected:
             InitNode(*m_inProgressNode);
             node = m_inProgressNode;
             node->SetNodeKey(*ECInstancesNodeKey::Create(GetConnection(), m_inProgressNode->GetKey()->GetSpecificationIdentifier(), GetParentKey(), m_inProgressInstanceKeys));
-            node->GetKey()->SetInstanceKeysSelectQuery(m_inProgressNode->GetKey()->GetInstanceKeysSelectQuery());
+            node->GetKey()->SetInstanceKeysSelectQuery(std::unique_ptr<const PresentationQuery>(m_inProgressNode->GetKey()->GetInstanceKeysSelectQuery()));
             return true;
             }
         return false;

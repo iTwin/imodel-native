@@ -770,22 +770,20 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    key->SetInstanceKeysSelectQuery(GetPresentationQueryBaseFromJson(json["InstanceKeysSelectQuery"]));
+    key->SetInstanceKeysSelectQuery(std::unique_ptr<const PresentationQuery>(GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"])));
     return key;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBasePtr DefaultECPresentationSerializer::_GetPresentationQueryBaseFromJson(RapidJsonValueCR json) const
+std::unique_ptr<PresentationQuery> DefaultECPresentationSerializer::_GetPresentationQueryFromJson(BeJsConst json) const
     {
-    RapidJsonValueCR queryJSON = json["instanceKeysSelectQuery"];
-    Utf8String queryString = queryJSON["query"].GetString();
-
+    Utf8CP queryString = json["Query"].asCString();
     BoundQueryValuesList bindings;
     DefaultBoundQueryValueSerializer serializer;
-    bindings.FromJson(serializer, queryJSON["bindings"]);
-    return StringPresentationQuery::Create(queryString, bindings);
+    bindings.FromJson(serializer, json["Bindings"]);
+    return std::make_unique<PresentationQuery>(queryString, bindings);
     }
 
 /*---------------------------------------------------------------------------------**//**

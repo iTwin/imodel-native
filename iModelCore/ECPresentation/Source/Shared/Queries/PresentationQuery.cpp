@@ -2151,6 +2151,7 @@ bool StringQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) con
         return false;
 
     return m_query->IsEqual(*other->m_query);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod BTBT
@@ -2440,58 +2441,4 @@ bool BoundECValueSet::_Equals(BoundQueryValue const& other) const
     ECValueVirtualSet const* firstSet = static_cast<ECValueVirtualSet const*>(m_set.get());
     ECValueVirtualSet const* secondSet = static_cast<ECValueVirtualSet const*>(otherVirtualSet->m_set.get());
     return firstSet->Equals(*secondSet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundECValueSet::_ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "value-set", json.GetAllocator());
-    json.AddMember("value-type", values.empty() ? 0 : (int)(*values.begin()).GetPrimitiveType(), json.GetAllocator());
-    rapidjson::Value valuesJson;
-    valuesJson.SetArray();
-    for (auto const& value : values)
-        valuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
-    json.AddMember("value", valuesJson, json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BoundQueryValue> BoundQueryValue::FromJson(RapidJsonValueCR json)
-    {
-    if (!json.IsObject() || !json.HasMember("type"))
-        return nullptr;
-
-    Utf8CP type = json["type"].GetString();
-    if (0 == strcmp("ec-value", type))
-        {
-        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), json["value"]);
-        return std::make_unique<BoundQueryECValue>(std::move(value));
-        }
-    if (0 == strcmp("value-set", type))
-        {
-        int valueType = json["value-type"].GetInt();
-        if (0 == valueType)
-            return std::make_unique<BoundECValueSet>(bvector<ECValue>());
-        return std::make_unique<BoundRapidJsonValueSet>(json["value"], (PrimitiveType)valueType);
-        }
-    if (0 == strcmp("id", type))
-        {
-        return std::make_unique<BoundQueryId>(json["value"].GetString());
-        }
-    if (0 == strcmp("id-set", type))
-        {
-        RapidJsonValueCR idsJson = json["value"];
-        bvector<BeInt64Id> ids;
-        for (rapidjson::SizeType i = 0; i < idsJson.Size(); ++i)
-            ids.push_back(BeInt64Id::FromString(idsJson[i].GetString()));
-        return std::make_unique<BoundQueryIdSet>(ids);
-        }
-    return nullptr;
     }

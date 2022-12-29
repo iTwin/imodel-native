@@ -33,7 +33,7 @@ private:
     Utf8String m_type;
     bvector<Utf8String> m_hashPath;
     Utf8String m_specificationIdentifier;
-    PresentationQueryBasePtr m_instanceKeysSelectQuery;
+    std::unique_ptr<PresentationQuery const> m_instanceKeysSelectQuery;
 
 private:
     static bvector<Utf8String> CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
@@ -105,8 +105,8 @@ public:
     //! Create a key from the supplied JSON.
     ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR, BeJsConst);
 
-    ECPRESENTATION_EXPORT PresentationQueryBasePtr GetInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(PresentationQueryBasePtr);
+    ECPRESENTATION_EXPORT PresentationQuery const* GetInstanceKeysSelectQuery() const;
+    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const>);
 };
 
 //=======================================================================================

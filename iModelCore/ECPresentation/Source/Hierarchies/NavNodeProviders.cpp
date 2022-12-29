@@ -3273,7 +3273,7 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     NavNodeCPtr parent = context.GetVirtualParentNode();
     ECInstancesNodeKeyPtr nodeKey = ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
         parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys);
-    nodeKey->SetInstanceKeysSelectQuery(target.GetKey()->GetInstanceKeysSelectQuery());
+    nodeKey->SetInstanceKeysSelectQuery(std::unique_ptr<const PresentationQuery>(target.GetKey()->GetInstanceKeysSelectQuery()));
     target.SetNodeKey(*nodeKey);
     }
 /*---------------------------------------------------------------------------------**//**

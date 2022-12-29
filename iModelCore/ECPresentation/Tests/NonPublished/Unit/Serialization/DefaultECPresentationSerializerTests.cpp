@@ -1427,7 +1427,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceChangeResultSerialization
 TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
     {
     NavNodeKeyPtr key = NavNodeKey::Create("TypeName", "Spec", {"123", "abc"});
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::Create("query"));
+    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>("query"));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1471,7 +1471,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
         ECClassInstanceKey(GetClassA(), ECInstanceId((uint64_t)123)),
         ECClassInstanceKey(GetClassB(), ECInstanceId((uint64_t)456))
         }, "Spec", {"123", "abc"});
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::Create(""));
+    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1527,7 +1527,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
 TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization)
     {
     ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*GetClassA(), true, "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::Create(""));
+    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     //Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1580,7 +1580,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
 TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationNoGroupingValue)
     {
     ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", rapidjson::Value(rapidjson::kArrayType), "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::Create(""));
+    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1640,7 +1640,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     groupingValues.PushBack(rapidjson::StringRef("GroupingValue1"), groupingValues.GetAllocator());
     groupingValues.PushBack(rapidjson::Value(123), groupingValues.GetAllocator());
     ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", groupingValues, "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::Create(""));
+    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1697,7 +1697,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
 TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     {
     LabelGroupingNodeKeyPtr key = LabelGroupingNodeKey::Create("LabelText", "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::Create(""));
+    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1861,7 +1861,7 @@ TEST_F(DefaultECPresentationSerializerTests, KeySetSerialization)
         ECClassInstanceKey(*GetClassB(), ECInstanceId((uint64_t)2))
         });
     auto key = NavNodeKey::Create("TypeName", "Spec", { "123", "abc" });
-    key->SetInstanceKeysSelectQuery(StringGenericQuery::Create(""));
+    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     keySet->Add(*key);
 
     // Serialize
