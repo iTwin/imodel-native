@@ -755,15 +755,6 @@ class DocItem (object):
 
             self.m_docfile = dom.firstChild.data.strip()
 
-#        <Documentation>
-#            <DocItem Type="Trisoft" Format="pdf" Baseline="Bentley Transmittal Services Implementation Guide-v1-GUID-DB9D1925-A04E-4B00-81BF-F8F3FAFFA306-2012/04/11 17:36:59">
-#                Transmittals\Bentley Transmittal Services Implementation Guide
-#            </DocItem>
-#            <DocItem Type="Trisoft" Format="chm" Baseline="Bentley Transmittal Services v1.0 User Guide-v1-GUID-63D554EB-15A0-406F-928F-F5E2C1F22BCE-2012/07/08 23:07:20">
-#                Transmittals\Bentley Transmittal Services v1.0 User Guide
-#            </DocItem>
-#        </Documentation>
-
     #-------------------------------------------------------------------------------------------
     # bsimethod
     #-------------------------------------------------------------------------------------------

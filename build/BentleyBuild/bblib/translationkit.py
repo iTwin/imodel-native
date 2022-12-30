@@ -5,9 +5,6 @@
 import os, time, glob, re, threading, shutil, xml
 from . import buildpaths, builddescriptionfile, cmdutil, compat, utils, symlinks, globalvars, versionutils, languagesettings, pseudolocalize
 from . import internal
-#  We should figure out how to split this up if it needs to be used here, like CreateSymLinks.
-#   Alternatively we could make it a call (subprocess) 
-import XliffToSqlangDb
 
 from operator import itemgetter
 from xml.dom import minidom
@@ -1447,6 +1444,9 @@ class BentleyRibbonResourceFile (BentleyResourceFile):
     # bsimethod
     #-------------------------------------------------------------------------------------------
     def Compile(self, tkBinding):
+        #  We should figure out how to split this up if it needs to be used here, like CreateSymLinks.
+        #   Alternatively we could make it a call (subprocess) 
+        import XliffToSqlangDb
         SetReadOutFilesOnly (False)
 
         self.ReadSourceFiles (tkBinding)
@@ -1478,6 +1478,9 @@ class DgnlibResourceFile (BentleyResourceFile):
     # bsimethod
     #-------------------------------------------------------------------------------------------
     def Compile(self, tkBinding):
+        #  We should figure out how to split this up if it needs to be used here, like CreateSymLinks.
+        #   Alternatively we could make it a call (subprocess) 
+        import XliffToSqlangDb
         SetReadOutFilesOnly (False)
 
         self.ReadSourceFiles (tkBinding)
