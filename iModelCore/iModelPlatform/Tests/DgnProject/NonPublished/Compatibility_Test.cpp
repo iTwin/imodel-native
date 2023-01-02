@@ -860,7 +860,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 
     if (BE_SQLITE_OK != expectedFirstOpenStatus)
         {
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         ASSERT_EQ(expectedFirstOpenStatus, openStatus);
         ASSERT_FALSE(db.IsValid());
         }
@@ -868,7 +868,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
     if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
         {
         DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+        DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, destFileName, openParams);
         ASSERT_EQ(BE_SQLITE_OK, openStatus);
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
@@ -876,7 +876,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
         }
 
     DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck));
-    m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, destFileName, openParams);
     ASSERT_EQ(BE_SQLITE_OK, openStatus);
     ASSERT_TRUE(m_db.IsValid());
     }
@@ -1417,7 +1417,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
         //Opening the copy
         if (BE_SQLITE_OK != expectedFirstOpenStatus)
             {
-            DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
             ASSERT_EQ(expectedFirstOpenStatus, openStatus);
             ASSERT_FALSE(db.IsValid());
             }
@@ -1426,13 +1426,13 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
             {
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
             openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
-            DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
+            DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, destFileName, openParams);
             ASSERT_EQ(BE_SQLITE_OK, openStatus);
             ASSERT_TRUE(db.IsValid());
             db->CloseDb();
             }
 
-        m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        m_db = DgnDb::OpenIModelDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         ASSERT_EQ(BE_SQLITE_OK, openStatus);
         ASSERT_TRUE(m_db.IsValid());
         }

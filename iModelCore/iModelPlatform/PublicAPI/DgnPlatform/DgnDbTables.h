@@ -336,12 +336,6 @@ public:
     //! @param[in] invalidChars the list of character that may NOT appear in name.
     //! @note names may also not start or end with a space.
     DGNPLATFORM_EXPORT static bool IsValidName(Utf8StringCR name, Utf8CP invalidChars);
-
-    //! Replace any instances of the invalid characters in the supplied name with a replacement character.
-    //! @param[in] name the name to validate
-    //! @param[in] invalidChars the list of invalid characters. All instances of these characters are replaced.
-    //! @param[in] replacement the character to substitute for any invalid characters in name.
-    DGNPLATFORM_EXPORT static void ReplaceInvalidCharacters(Utf8StringR name, Utf8CP invalidChars, Utf8Char replacement);
 };
 
 //=======================================================================================

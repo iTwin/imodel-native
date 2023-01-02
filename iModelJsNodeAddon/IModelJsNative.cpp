@@ -939,13 +939,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         m_dgndb = nullptr;
         }
 
-    void OpenDgnDb(BeFileNameCR dbname, DgnDb::OpenParams& openParams) {
+    void OpenIModelDb(BeFileNameCR dbname, DgnDb::OpenParams& openParams) {
         if (!openParams.IsReadonly())
             openParams.SetBusyRetry(new BeSQLite::BusyRetry(40, 500)); // retry 40 times, 1/2 second intervals (20 seconds total)
         NativeLogging::CategoryLogger("BeSQLite").infov(L"Opening DgnDb %ls", dbname.c_str());
 
         DbResult result;
-        auto dgndb = DgnDb::OpenDgnDb(&result, dbname, openParams);
+        auto dgndb = DgnDb::OpenIModelDb(&result, dbname, openParams);
         if (BE_SQLITE_OK != result)
             JsInterop::throwSqlResult("error opening iModel", dbname.GetNameUtf8().c_str(), result);
 
@@ -1000,13 +1000,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
         addContainerParams(Value(), dbName, openParams, info[4]);
-        OpenDgnDb(BeFileName(dbName), openParams);
+        OpenIModelDb(BeFileName(dbName), openParams);
     }
 
     void CreateIModel(NapiInfoCR info)  {
         REQUIRE_ARGUMENT_STRING(0, filename);
         REQUIRE_ARGUMENT_ANY_OBJ(1, props);
-        SetDgnDb(*JsInterop::CreateDgnDb(filename, props)); // CreateDgnDb throws on errors
+        SetDgnDb(*JsInterop::CreateIModel(filename, props)); // CreateIModel throws on errors
     }
 
     Napi::Value GetECClassMetaData(NapiInfoCR info)
