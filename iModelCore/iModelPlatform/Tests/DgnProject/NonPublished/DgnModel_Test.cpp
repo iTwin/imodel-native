@@ -1052,7 +1052,7 @@ TEST_F(DgnModelTests, ModelJsonRoundTrip)
     {
     DgnDbPtr db;
         {
-        db = DgnDbTestUtils::CreateIModel(L"ModelJsonRoundTrip.db", true);
+        db = DgnDbTestUtils::CreateDgnDb(L"ModelJsonRoundTrip.db", true);
         ASSERT_TRUE(db.IsValid()) << "Failed to create ModelJsonRoundTrip test dgndb";
 
         auto modelName = "ThePhysicalPartition";
@@ -1095,7 +1095,7 @@ TEST_F(DgnModelTests, ModelEmptyJsonRoundtrip)
     {
     DgnDbPtr db;
         {
-        db = DgnDbTestUtils::CreateIModel(L"ModelEmptyJsonRoundTrip.db", true);
+        db = DgnDbTestUtils::CreateDgnDb(L"ModelEmptyJsonRoundTrip.db", true);
         ASSERT_TRUE(db.IsValid()) << "Failed to create ModelJsonRoundTrip test dgndb";
 
         auto modelName = "ThePhysicalPartition";

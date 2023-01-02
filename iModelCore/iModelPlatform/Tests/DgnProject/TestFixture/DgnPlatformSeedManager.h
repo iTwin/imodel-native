@@ -58,7 +58,7 @@ private:
     static SeedDbInfo GetOneSpatialModelSeedDb(SeedDbOptions const& options);
 
 public:
-    static DgnDbPtr CreateSeedDb(WCharCP relPath) {return DgnDbTestUtils::CreateIModel(relPath, false);}
+    static DgnDbPtr CreateSeedDb(WCharCP relPath) {return DgnDbTestUtils::CreateDgnDb(relPath, false);}
 
     //! Get information about a root seed DgnDb. DgnDbTestUtils offers a "library" of seed DgnDbs. You can open them read-only or you
     //! can open a writable copy of one of these seed DgnDbs in your tests. If the library contains roughly what you need, then

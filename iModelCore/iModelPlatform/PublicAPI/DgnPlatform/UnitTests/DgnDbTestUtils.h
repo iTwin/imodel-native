@@ -188,7 +188,7 @@ public:
     //! @{
 
     //! @private - internal function called by seed data managers
-    static DgnDbPtr CreateIModel(WCharCP relPath, bool isRoot)
+    static DgnDbPtr CreateDgnDb(WCharCP relPath, bool isRoot)
         {
         MUST_HAVE_HOST(nullptr);
         BeFileName fileName = GetOutputPath(relPath);
@@ -206,7 +206,7 @@ public:
 
         if (!isRoot && BeFileName::GetDirectoryName(relPath).empty())
             {
-            EXPECT_FALSE(true) << "DgnDbTestUtils::CreateIModel - the destination must be in a sub-directory with the same name as the test group.";
+            EXPECT_FALSE(true) << "DgnDbTestUtils::CreateDgnDb - the destination must be in a sub-directory with the same name as the test group.";
             return nullptr;
             }
 
@@ -226,7 +226,7 @@ public:
     //! @param relPath  The subdirectory/filename for the new file. Be sure to use forward slash (/) as a directory separator.
     //! @return a pointer to the newly created file, or nullptr if the location is invalid
     //! @note Normally, this should be called only once for an entire test class in the class's SetUpTestCase function.
-    static DgnDbPtr CreateSeedDb(WCharCP relPath) {return CreateIModel(relPath, false);}
+    static DgnDbPtr CreateSeedDb(WCharCP relPath) {return CreateDgnDb(relPath, false);}
 
     //! Open the specified seed DgnDb read-only
     //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test class's SetUpTestCase logic, then you must specify the

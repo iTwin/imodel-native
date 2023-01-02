@@ -59,7 +59,7 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
     //  First request for this seed file. Create it.
-    DgnDbPtr db = DgnDbTestUtils::CreateIModel(info.fileName, true);
+    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true);
     if (!db.IsValid())
         return info;
 
