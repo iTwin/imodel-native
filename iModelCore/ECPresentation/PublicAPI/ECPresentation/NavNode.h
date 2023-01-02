@@ -19,6 +19,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 struct NavNodesHelper;
 struct NavNodesFactory;
 
+struct PresentationQuery;
+
 //=======================================================================================
 //! An abstract navigation node object. @ref NavNode objects are used to create a hierarchy
 //! for presentation-driven trees.
@@ -36,7 +38,6 @@ private:
     std::unique_ptr<rapidjson::Document> m_usersExtendedData;
     LabelDefinitionCPtr m_labelDefinition;
     BeGuid m_nodeId;
-    BeGuid m_parentNodeId;
     NavNodeKeyPtr m_nodeKey;
     Utf8String m_description;
     Utf8String m_imageId;
@@ -50,7 +51,7 @@ private:
     bool m_isCheckboxVisible;
     bool m_isCheckboxEnabled;
     bool m_shouldAutoExpand;
-    PresentationQueryBasePtr m_instanceKeysSelectQuery;
+    std::unique_ptr<PresentationQuery const> m_instanceKeysSelectQuery;
 
 private:
     void InitUsersExtendedData(rapidjson::Value const* source = nullptr);
@@ -79,37 +80,31 @@ public:
     //! Get guid of this node.
     BeGuidCR GetNodeId() const {return m_nodeId;}
 
-    //! Get guid of the parent node. Invalid guid is returned if this is a root node.
-    BeGuidCR GetParentNodeId() const {return m_parentNodeId;}
-    //! Set parent node guid.
-    ECPRESENTATION_EXPORT void SetParentNodeId(BeGuid id);
-    void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
-
     //! Set description.
-    void SetDescription(Utf8CP description) {m_description = description;}
+    void SetDescription(Utf8String description) {m_description = description;}
     //! Get the description.
     Utf8StringCR GetDescription() const {return m_description;}
 
     //! Set image ID for this node.
-    void SetImageId(Utf8CP imageId) {m_imageId = imageId;}
+    void SetImageId(Utf8String imageId) {m_imageId = imageId;}
     //! Get image ID for when this node.
     Utf8StringCR GetImageId() const {return m_imageId;}
 
     //! Set the color of this node's text.
-    void SetForeColor(Utf8CP color) {m_foreColor = color;}
+    void SetForeColor(Utf8String color) {m_foreColor = color;}
     //! Get the color of this node's text.
     Utf8StringCR GetForeColor() const {return m_foreColor;}
     //! Set the background color of this node.
-    void SetBackColor(Utf8CP color) {m_backColor = color;}
+    void SetBackColor(Utf8String color) {m_backColor = color;}
     //! Get the background color of this node.
     Utf8StringCR GetBackColor() const {return m_backColor;}
     //! Set the font style of this node's text.
-    void SetFontStyle(Utf8CP style) {m_fontStyle = style;}
+    void SetFontStyle(Utf8String style) {m_fontStyle = style;}
     //! Get the font style of this node's text.
     Utf8StringCR GetFontStyle() const {return m_fontStyle;}
 
     //! Set the type of this node.
-    void SetType(Utf8CP type) {m_type = type;}
+    void SetType(Utf8String type) {m_type = type;}
     //! Get the type of this node.
     Utf8StringCR GetType() const {return m_type;}
 
@@ -143,8 +138,8 @@ public:
     //! Should this node be auto-expanded.
     bool ShouldAutoExpand() const {return m_shouldAutoExpand;}
 
-    ECPRESENTATION_EXPORT PresentationQueryBasePtr GetInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(PresentationQueryBasePtr);
+    ECPRESENTATION_EXPORT PresentationQuery const* GetInstanceKeysSelectQuery() const;
+    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const>);
 
     //! Get extended data injected into this node by API user
     ECPRESENTATION_EXPORT RapidJsonAccessor GetUsersExtendedData() const;

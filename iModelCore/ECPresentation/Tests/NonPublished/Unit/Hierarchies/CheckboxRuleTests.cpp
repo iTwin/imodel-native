@@ -48,8 +48,8 @@ TEST_F(CheckboxRuleTests, SetsPropertyBoundCheckboxProperties)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     auto provider = PostProcess(*QueryBasedNodesProvider::Create(*m_context, *query));
     ASSERT_EQ(2, provider->GetNodesCount());
@@ -94,8 +94,8 @@ TEST_F(CheckboxRuleTests, SetsInversedPropertyBoundCheckboxProperties)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     auto provider = PostProcess(*QueryBasedNodesProvider::Create(*m_context, *query));
     ASSERT_EQ(2, provider->GetNodesCount());
@@ -129,8 +129,8 @@ TEST_F(CheckboxRuleTests, AppliesDefaultValueIfPropertyIsNull)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     auto provider = PostProcess(*QueryBasedNodesProvider::Create(*m_context, *query));
     ASSERT_EQ(1, provider->GetNodesCount());
@@ -155,8 +155,8 @@ TEST_F(CheckboxRuleTests, AppliesDefaultValueIfNotPropertyBound)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     auto provider = PostProcess(*QueryBasedNodesProvider::Create(*m_context, *query));
     ASSERT_EQ(1, provider->GetNodesCount());
@@ -181,8 +181,8 @@ TEST_F(CheckboxRuleTests, SetCheckBoxEnabled)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     auto provider = PostProcess(*QueryBasedNodesProvider::Create(*m_context, *query));
     ASSERT_EQ(1, provider->GetNodesCount());
@@ -205,8 +205,8 @@ TEST_F(CheckboxRuleTests, SetCheckBoxDisabled)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     auto provider = PostProcess(*QueryBasedNodesProvider::Create(*m_context, *query));
     ASSERT_EQ(1, provider->GetNodesCount());

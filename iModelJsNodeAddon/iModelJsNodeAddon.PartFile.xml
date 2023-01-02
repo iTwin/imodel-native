@@ -113,8 +113,17 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNative-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke">
+  <Part Name="breakpad" OnlyPlatforms="x64" >
     <SubPackage PkgType="UPack" Name="breakpad_54fa71efbe50" />
+    <Bindings>
+      <VendorNotices IfNotPresent="Continue">
+        Delivery/breakpad_notice.txt
+      </VendorNotices>
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsNative-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke">
+    <SubPart PartName="breakpad" />
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
@@ -122,7 +131,6 @@
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
       <VendorNotices IfNotPresent="Continue">
-        Delivery/breakpad_notice.txt,
         Delivery/libdisasm_notice.txt
       </VendorNotices>
     </Bindings>

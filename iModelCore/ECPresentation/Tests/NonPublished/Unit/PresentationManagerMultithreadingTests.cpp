@@ -228,7 +228,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     ASSERT_TRUE(txn.IsActive());
 
     // attempt to get some data (don't expect to get any, but make sure request succeeds)
-    folly::Future<NodesCountResponse> count = m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables(), nullptr));
+    folly::Future<NodesCountResponse> count = m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables()));
 
     // verify we don't get any result for 1 second
     count.wait(std::chrono::seconds(1));
@@ -290,7 +290,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     m_manager->GetLocaters().RegisterLocater(*locater);
 
     // attempt to get nodes count
-    folly::Future<NodesCountResponse> count = m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables(), nullptr));
+    folly::Future<NodesCountResponse> count = m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables()));
 
     // import a schema
     Utf8CP schemaXml = ""
@@ -387,7 +387,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionWithNoBusyTim
     m_manager->GetLocaters().RegisterLocater(*locater);
 
     // make a request to create a valid proxy connection
-    auto nodesCount = m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables(), nullptr)).get();
+    auto nodesCount = m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables())).get();
     EXPECT_NE(0, *nodesCount);
 
     // lock the db using the primary connection
@@ -401,7 +401,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionWithNoBusyTim
     BeTest::SetFailOnAssert(false);
 
     // initiate a request that executes a query
-    folly::Future<NodesResponse> nodesResponse = m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables(), nullptr));
+    folly::Future<NodesResponse> nodesResponse = m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, ruleset->GetRuleSetId(), RulesetVariables()));
 
     // wait for 1 minute at most, but we expect the future to resolve much quicker - as soon as we hit the BE_SQLITE_BUSY status
     nodesResponse.wait(std::chrono::seconds(60));
@@ -437,7 +437,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodes
         return 0;
         });
 
-    m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), "", RulesetVariables(), nullptr)).wait();
+    m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), "", RulesetVariables())).wait();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -456,46 +456,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodes
         });
 
     // request and verify
-    m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), "", RulesetVariables(), nullptr)).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeRequestOnECPresentationThread)
-    {
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetGetNodeHandler([&](auto const& params) -> NavNodeCPtr
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        return nullptr;
-        });
-
-    // request and verify
-    m_manager->GetNode(AsyncNodeByKeyRequestParams::Create(s_project->GetECDb(), "", RulesetVariables(), *NavNodeKey::Create("type", "", { "1" }))).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsParentNodeRequestOnECPresentationThread)
-    {
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetGetParentHandler([&](auto const& params) -> NavNodeCPtr
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        return nullptr;
-        });
-
-    // request and verify
-    auto childNode = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "");
-    m_manager->GetParent(AsyncNodeParentRequestParams::Create(s_project->GetECDb(), "", RulesetVariables(), *childNode)).wait();
+    m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), "", RulesetVariables())).wait();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -703,25 +664,25 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
         EXPECT_EQ(expectConnectionInterrupted, m_connectionInterrupted);
         }
 
-    void TerminateAndVerifyResult()
+    void TerminateAndVerifyResult(bool expectConnectionInterrupted)
         {
         EnsureBlocked();
         DELETE_AND_CLEAR(m_manager);
-        VerifyCancelation(true, true, 0);
+        VerifyCancelation(true, expectConnectionInterrupted, 0);
         }
 
-    void CloseConnectionAndVerifyResult()
+    void CloseConnectionAndVerifyResult(bool expectConnectionInterrupted)
         {
         EnsureBlocked();
         static_cast<TestConnectionManager*>(m_connections.get())->NotifyConnectionClosed(*m_connections->GetConnection(s_project->GetECDb()));
-        VerifyCancelation(true, true, 0);
+        VerifyCancelation(true, expectConnectionInterrupted, 0);
         }
 
-    void DisposeRulesetAndVerifyResult()
+    void DisposeRulesetAndVerifyResult(bool expectConnectionInterrupted)
         {
         EnsureBlocked();
         m_locater->Clear();
-        VerifyCancelation(true, false, 0);
+        VerifyCancelation(true, expectConnectionInterrupted, 0);
         }
     };
 uint64_t RulesDrivenECPresentationManagerRequestCancelationTests::s_blockingTaskTimeout = 5 * 1000; // 5 seconds to avoid hanging tests on failure
@@ -751,8 +712,8 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesCoun
         // request and verify
         if (!started)
             BlockECPresentationThreads();
-        DoRequest(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), nullptr)));
-        TerminateAndVerifyResult();
+        DoRequest(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables())));
+        TerminateAndVerifyResult(started);
         });
     }
 
@@ -780,8 +741,8 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesCoun
         // request and verify
         if (!started)
             BlockECPresentationThreads();
-        DoRequest(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), nullptr)));
-        CloseConnectionAndVerifyResult();
+        DoRequest(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables())));
+        CloseConnectionAndVerifyResult(started);
         });
     }
 
@@ -809,8 +770,8 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesCoun
         // request and verify
         if (!started)
             BlockECPresentationThreads();
-        DoRequest(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), nullptr)));
-        DisposeRulesetAndVerifyResult();
+        DoRequest(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables())));
+        DisposeRulesetAndVerifyResult(started);
         });
     }
 
@@ -838,8 +799,8 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesRequ
         // request and verify
         if (!started)
             BlockECPresentationThreads();
-        DoRequest(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), nullptr)));
-        TerminateAndVerifyResult();
+        DoRequest(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables())));
+        TerminateAndVerifyResult(started);
         });
     }
 
@@ -867,8 +828,8 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesRequ
         // request and verify
         if (!started)
             BlockECPresentationThreads();
-        DoRequest(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), nullptr)));
-        CloseConnectionAndVerifyResult();
+        DoRequest(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables())));
+        CloseConnectionAndVerifyResult(started);
         });
     }
 
@@ -896,156 +857,8 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesRequ
         // request and verify
         if (!started)
             BlockECPresentationThreads();
-        DoRequest(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), nullptr)));
-        DisposeRulesetAndVerifyResult();
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeRequestWhenManagerIsTerminated)
-    {
-    RunTestWithParams([this](bool started)
-        {
-        // set the request handler
-        m_impl->SetGetNodeHandler([&](auto const& params) -> NavNodeCPtr
-            {
-            if (started)
-                {
-                // Wait till request gets canceled
-                WaitTillStateGetsChanged(params.GetCancellationToken());
-                if (params.GetCancellationToken() && params.GetCancellationToken()->IsCanceled())
-                    return nullptr;
-                }
-            m_hitCount.IncrementAtomicPre();
-            return nullptr;
-            });
-
-        // request and verify
-        if (!started)
-            BlockECPresentationThreads();
-        DoRequest(m_manager->GetNode(AsyncNodeByKeyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), *NavNodeKey::Create("type", "", { "1" }))));
-        TerminateAndVerifyResult();
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeRequestWhenConnectionIsClosed)
-    {
-    RunTestWithParams([this](bool started)
-        {
-        // set the request handler
-        m_impl->SetGetNodeHandler([&](auto const& params) -> NavNodeCPtr
-            {
-            if (started)
-                {
-                // Wait till request gets canceled
-                WaitTillStateGetsChanged(params.GetCancellationToken());
-                if (params.GetCancellationToken() && params.GetCancellationToken()->IsCanceled())
-                    return nullptr;
-                }
-            m_hitCount.IncrementAtomicPre();
-            return nullptr;
-            });
-
-        // request and verify
-        if (!started)
-            BlockECPresentationThreads();
-        DoRequest(m_manager->GetNode(AsyncNodeByKeyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), *NavNodeKey::Create("type", "", { "1" }))));
-        CloseConnectionAndVerifyResult();
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNodeRequestWhenManagerIsTerminated)
-    {
-    RunTestWithParams([this](bool started)
-        {
-        // set the request handler
-        m_impl->SetGetParentHandler([&](auto const& params) -> NavNodeCPtr
-            {
-            if (started)
-                {
-                // Wait till request gets canceled
-                WaitTillStateGetsChanged(params.GetCancellationToken());
-                if (params.GetCancellationToken() && params.GetCancellationToken()->IsCanceled())
-                    return nullptr;
-                }
-            m_hitCount.IncrementAtomicPre();
-            return nullptr;
-            });
-
-        // request and verify
-        auto childNode = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "");
-        if (!started)
-            BlockECPresentationThreads();
-        DoRequest(m_manager->GetParent(AsyncNodeParentRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), *childNode)));
-        TerminateAndVerifyResult();
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNodeRequestWhenConnectionIsClosed)
-    {
-    RunTestWithParams([this](bool started)
-        {
-        // set the request handler
-        m_impl->SetGetParentHandler([&](auto const& params) -> NavNodeCPtr
-            {
-            if (started)
-                {
-                // Wait till request gets canceled
-                WaitTillStateGetsChanged(params.GetCancellationToken());
-                if (params.GetCancellationToken() && params.GetCancellationToken()->IsCanceled())
-                    return nullptr;
-                }
-            m_hitCount.IncrementAtomicPre();
-            return nullptr;
-            });
-
-        // request and verify
-        auto childNode = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "");
-        if (!started)
-            BlockECPresentationThreads();
-        DoRequest(m_manager->GetParent(AsyncNodeParentRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), *childNode)));
-        CloseConnectionAndVerifyResult();
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNodeRequestWhenRulesetIsDisposed)
-    {
-    RunTestWithParams([this](bool started)
-        {
-        // set the request handler
-        m_impl->SetGetParentHandler([&](auto const& params) -> NavNodeCPtr
-            {
-            if (started)
-                {
-                // Wait till request gets canceled
-                WaitTillStateGetsChanged(params.GetCancellationToken());
-                if (params.GetCancellationToken() && params.GetCancellationToken()->IsCanceled())
-                    return nullptr;
-                }
-            m_hitCount.IncrementAtomicPre();
-            return nullptr;
-            });
-
-        // request and verify
-        auto childNode = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "");
-        if (!started)
-            BlockECPresentationThreads();
-        DoRequest(m_manager->GetParent(AsyncNodeParentRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), *childNode)));
-        DisposeRulesetAndVerifyResult();
+        DoRequest(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables())));
+        DisposeRulesetAndVerifyResult(started);
         });
     }
 
@@ -1074,7 +887,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetNodePaths(AsyncNodePathsFromFilterTextRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "")));
-        TerminateAndVerifyResult();
+        TerminateAndVerifyResult(started);
         });
     }
 
@@ -1103,7 +916,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetNodePaths(AsyncNodePathsFromFilterTextRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "")));
-        CloseConnectionAndVerifyResult();
+        CloseConnectionAndVerifyResult(started);
         });
     }
 
@@ -1132,7 +945,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetNodePaths(AsyncNodePathsFromFilterTextRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "")));
-        DisposeRulesetAndVerifyResult();
+        DisposeRulesetAndVerifyResult(started);
         });
     }
 
@@ -1161,7 +974,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentClasses(AsyncContentClassesRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "", 0, bvector<ECClassCP>())));
-        TerminateAndVerifyResult();
+        TerminateAndVerifyResult(started);
         });
     }
 
@@ -1190,7 +1003,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentClasses(AsyncContentClassesRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "", 0, bvector<ECClassCP>())));
-        CloseConnectionAndVerifyResult();
+        CloseConnectionAndVerifyResult(started);
         });
     }
 
@@ -1219,7 +1032,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentClasses(AsyncContentClassesRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "", 0, bvector<ECClassCP>())));
-        DisposeRulesetAndVerifyResult();
+        DisposeRulesetAndVerifyResult(started);
         });
     }
 
@@ -1248,7 +1061,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "", 0, *KeySet::Create())));
-        TerminateAndVerifyResult();
+        TerminateAndVerifyResult(started);
         });
     }
 
@@ -1277,7 +1090,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "", 0, *KeySet::Create())));
-        CloseConnectionAndVerifyResult();
+        CloseConnectionAndVerifyResult(started);
         });
     }
 
@@ -1306,7 +1119,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), s_rulesetId, RulesetVariables(), "", 0, *KeySet::Create())));
-        DisposeRulesetAndVerifyResult();
+        DisposeRulesetAndVerifyResult(started);
         });
     }
 
@@ -1346,7 +1159,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
         req.wait();
 
         // verify
-        VerifyCancelation(true, false, 1);
+        VerifyCancelation(true, started, 1);
         });
     }
 
@@ -1507,7 +1320,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContent(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)));
-        TerminateAndVerifyResult();
+        TerminateAndVerifyResult(started);
         });
     }
 
@@ -1537,7 +1350,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContent(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)));
-        CloseConnectionAndVerifyResult();
+        CloseConnectionAndVerifyResult(started);
         });
     }
 
@@ -1567,7 +1380,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContent(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)));
-        DisposeRulesetAndVerifyResult();
+        DisposeRulesetAndVerifyResult(started);
         });
     }
 
@@ -1609,7 +1422,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCa
         req.wait();
 
         // verify
-        VerifyCancelation(true, false, 1);
+        VerifyCancelation(true, started, 1);
         });
     }
 
@@ -1743,7 +1556,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentSetSize(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)));
-        TerminateAndVerifyResult();
+        TerminateAndVerifyResult(started);
         });
     }
 
@@ -1773,7 +1586,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentSetSize(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)));
-        CloseConnectionAndVerifyResult();
+        CloseConnectionAndVerifyResult(started);
         });
     }
 
@@ -1803,7 +1616,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetContentSetSize(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)));
-        DisposeRulesetAndVerifyResult();
+        DisposeRulesetAndVerifyResult(started);
         });
     }
 
@@ -1845,7 +1658,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
         req.wait();
 
         // verify
-        VerifyCancelation(true, false, 1);
+        VerifyCancelation(true, started, 1);
         });
     }
 

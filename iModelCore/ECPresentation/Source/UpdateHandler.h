@@ -69,19 +69,18 @@ private:
     std::shared_ptr<NodesCache> m_nodesCache;
     bset<AffectedHierarchyLevelIdentifier> m_handledHierarchies;
     bset<Utf8String> m_reportedContentRulesetIds;
-    bmap<Utf8String, INavNodeKeysContainerCPtr> m_expandedNodes;
+    bmap<Utf8String, std::shared_ptr<UiState>> m_uiState;
     bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>> m_hierarchyLocks;
 public:
     bset<AffectedHierarchyLevelIdentifier>& GetHandledHierarchies() {return m_handledHierarchies;}
     bset<AffectedHierarchyLevelIdentifier> const& GetHandledHierarchies() const {return m_handledHierarchies;}
     bset<Utf8String>& GetReportedContentRulesetIds() {return m_reportedContentRulesetIds;}
-    INavNodeKeysContainerCPtr GetExpandedNodes(Utf8StringCR rulesetId) {auto iter = m_expandedNodes.find(rulesetId); return m_expandedNodes.end() != iter ? iter->second : nullptr;}
-    bool HasExpandedNodesSet(Utf8StringCR rulesetId) const {return m_expandedNodes.end() != m_expandedNodes.find(rulesetId);}
-    void SetExpandedNodes(Utf8StringCR rulesetId, INavNodeKeysContainerCPtr expandedNodes) {m_expandedNodes[rulesetId] = expandedNodes;}
     void SetHierarchyLocks(bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>> const& locks) {m_hierarchyLocks = locks;}
     bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>>& GetHierarchyLocks() {return m_hierarchyLocks;}
     void SetNodesCache(std::shared_ptr<NodesCache> cache) {m_nodesCache = cache;}
     std::shared_ptr<NodesCache> GetNodesCache() const {return m_nodesCache;}
+    void SetUiState(bmap<Utf8String, std::shared_ptr<UiState>> rulesetsUiState) {m_uiState = rulesetsUiState;}
+    bmap<Utf8String, std::shared_ptr<UiState>> const& GetUiState() const {return m_uiState;}
 };
 
 /*=================================================================================**//**

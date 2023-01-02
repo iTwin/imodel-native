@@ -2,12 +2,15 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { dbFileName, iModelJsNative } from "./utils";
+import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
 import { openDgnDb } from ".";
+import * as path from "path";
 import * as os from "os";
+import * as fs from "fs-extra";
+import { ProfileOptions } from "@itwin/core-common";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
@@ -30,7 +33,7 @@ describe("basic tests", () => {
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function
-    expect(() => (iModelJsNative as any).storeObjectInVault()).to.throw("Argument 0");
+    expect(() => (iModelJsNative as any).addFontWorkspace()).to.throw("Argument 0");
 
     // now try methods
     const db = new iModelJsNative.DgnDb() as any;
@@ -40,7 +43,6 @@ describe("basic tests", () => {
     // from Node
     expect(() => db.nonsense()).to.throw("not a function");
   });
-
 
   it("testTileVersionInfo", () => {
     const ver = iModelJsNative.getTileVersionInfo();
@@ -73,6 +75,48 @@ describe("basic tests", () => {
     for (const id of elementIdArray)
       assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
   });
+
+  it("testSchemaImport", () => {
+    const writeDbFileName = copyFile("testSchemaImport.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db = openDgnDb(writeDbFileName, {profile: ProfileOptions.Upgrade});
+    assert.isTrue(db !== undefined);
+    expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found"); // presentationrules alias is 'pr'.
+    let bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.00");
+    const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
+    const result = db.importSchemas([schemaPath]);
+    assert.isTrue(result === DbResult.BE_SQLITE_OK);
+
+    const prProps = db.getSchemaProps("PresentationRules");
+    bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.15"); // PR references 01.00.15, so importing PR will cause it to upgrade.
+  })
+
+  it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
+    const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
+    const db = openDgnDb(testFileName);
+    const assetsDir = path.join(getAssetsDir(), 'ImportSchemaTests');
+    const test100Path = path.join(assetsDir, "Test.01.00.00.ecschema.xml");
+
+    // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
+    // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
+    let bisProps = db.getSchemaProps("BisCore");
+    let result = db.importSchemas([test100Path]);
+    assert.equal(result, DbResult.BE_SQLITE_OK);
+    assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
+
+    let testRefProps = db.getSchemaProps("TestRef");
+    assert.equal(testRefProps.version, "01.00.00", "TestRef after Test 1.0.0 import");
+
+    // TestRef is updated to version 1.0.1 even though Test only references 1.0.0
+    // local directory has higher precedence than the db
+    const subAssetsDir = path.join(assetsDir, "LocalReferences");
+    const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
+    result = db.importSchemas([test101Path]);
+    assert.equal(result, DbResult.BE_SQLITE_OK);
+    assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
+  })
 
   it("testSchemaExport", () => {
     const xml = dgndb.schemaToXmlString("BisCore", IModelJsNative.ECVersion.V2_0);
@@ -120,6 +164,19 @@ describe("basic tests", () => {
     assert.isTrue(undefined === props.find((nvpair) => nvpair.name === "dynamic3"));
 
     // iModelJsNative.NativeDevTools.signal(3);
+  });
+
+  it("WAL mode", () => {
+    const withWal = new  iModelJsNative.DgnDb();
+    const tempDbName = path.join(getOutputDir(), "testWal.bim");
+    if (fs.existsSync(tempDbName))
+      fs.removeSync(tempDbName);
+
+    withWal.createIModel(tempDbName, {rootSubject: {name: "wal"}});
+    withWal.enableWalMode();
+    withWal.performCheckpoint();
+    withWal.setAutoCheckpointThreshold(2000);
+    withWal.closeIModel();
   });
 
   it("testGetSchemaProps", async () => {
@@ -218,5 +275,52 @@ describe("basic tests", () => {
     expectResult(4, { low: [-10, -16, -10], high: [14, 6, 10] });
     expectResult(5, { low: [5, 3, -10], high: [30, 25, 10] });
   });
-});
 
+  // NB: The test iModel contains 4 spheres and no other geometry.
+  describe("generateElementMeshes", () => {
+    it("throws if source is not a geometric element", async () => {
+      const msg = "Geometric element required";
+      await expect(dgndb.generateElementMeshes({source: "NotAnId"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ })).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0x1"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({source: "0x123456789"})).rejectedWith(msg);
+    });
+
+    it("produces meshes", async () => {
+      const elemIds = ["0x38", "0x3a", "0x3b", "0x39"];
+      for (const source of elemIds) {
+        let bytes = await dgndb.generateElementMeshes({
+          source,
+          chordTolerance: 0.001,
+        });
+
+        const numBytes = bytes.length;
+        expect(numBytes).least(32);
+
+        for (let i = 0; i < 4; i++)
+          expect(bytes[i]).to.equal("LMSH".charCodeAt(i));
+
+        let u32 = new Uint32Array(bytes.buffer);
+        expect(u32[1]).to.equal(0);
+
+        for (let i = 0; i < 4; i++)
+          expect(bytes[8 + i]).to.equal("PLFC".charCodeAt(i));
+
+        const numPolyfaceBytes = u32[3];
+        expect(numPolyfaceBytes).least(8);
+
+        const fewerBytes = await dgndb.generateElementMeshes({
+          source,
+          chordTolerance: 0.1,
+        });
+
+        expect(fewerBytes.length < bytes.length).to.be.true;
+        expect(fewerBytes.length).least(32);
+
+        u32 = new Uint32Array(fewerBytes.buffer);
+        expect(u32[3] < numPolyfaceBytes).to.be.true;
+      }
+    });
+  });
+});

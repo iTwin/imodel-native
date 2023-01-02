@@ -1,0 +1,554 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+
+        {
+            "name": "Debug specific iModelPlatformTest",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest/iModelPlatformTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=BeJsValueTest.RapidJson"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific BentleyDll Test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/Bentley-Gtest/BentleyTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=BeStringUtilitiesTests.StrLwr"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific BeSQLite test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/BeSQLite-Gtest/BeSQLiteTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=BeSQLiteDbTests.MaxBlobSize"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific ECDb test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=ECSqlStatementTestFixture.CTECrash"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific GeoCoord test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/GeoCoord-GTest/GeoCoordTests.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=WorkspaceTests.*"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific Units test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/Units-Gtest/UnitsTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=CompositeValueSpecJsonTest.TestDefaultAndEmptySpacerRoundTrips"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific ECObjects test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/ECObjects-Gtest/ECObjectsTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=SchemaJsonSerializationTest.SchemaWithItems"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific ECPresentation test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/ECPresentation-Gtest/ECPresentationTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=CustomNodesProviderTests.ReturnsValidChildNode"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "name": "Debug specific Geomlib test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/GeomLibs-Gtest/GeomLibsTest.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=MSBsplineSurface.BadBoundaryMarkupOnSmallBsurf"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach",
+            "port": 9229
+        },
+        {
+            "name": "Launch Native debugger for index.js tests",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "node.exe",
+            "args": [
+                "./iModelJsNodeAddon/api_package/ts/lib/test/index.js"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "imodel-native unit tests",
+            "program": "${workspaceFolder}/iModelJsNodeAddon/api_package/ts/lib/test/index.js"
+        },
+        {
+            "name": "(Windows) Attach",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        },
+        {
+            "name": "LNX Native BentleyTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/Bentley-Gtest/BentleyTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native BeSQLiteTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/BeSQLite-Gtest/BeSQLiteTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native iModelPlatformTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/iModelPlatform-Gtest/iModelPlatformTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+          "name": "MacOS Native Single iModelPlatformTest",
+          "type": "cppdbg",
+          "request": "launch",
+          "program": "${env:OutRoot}MacOSX64/Product/iModelPlatform-Gtest/iModelPlatformTest",
+          "cwd": "${workspaceFolder}",
+          "externalConsole": false,
+          "MIMode": "lldb",
+          "setupCommands": [
+              {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+              }
+          ],
+          "args": [
+            "--gtest_break_on_failure",
+            "--gtest_filter=SchemaVersionTestFixture.*"
+          ]
+        },
+        {
+            "name": "LNX Native ECDbTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECDb-Gtest/ECDbTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Single ECDbTest",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest/ECDbTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=SchemaRemapTestFixture.*"
+            ]
+        },
+        {
+            "name": "Single ECDb Performance Test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest-Performance/ECDbTestPerformance",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=PerformanceSchemaImportTests.Upgrade*Deep*"
+            ]
+        },
+        {
+            "name": "MacOS Native Single ECDbTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/ECDb-Gtest/ECDbTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=SchemaUpgradeTestFixture.UpdateClass_*"
+            ]
+        },
+        {
+            "name": "MacOS Native ECObjectsTest, single test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/ECObjects-Gtest/ECObjectsTest",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "args": [
+                "--gtest_filter=UnitSpecificationConversionTest.SchemaWithOldUnitSpecifications"
+            ]
+        },
+        {
+            "name": "MacOS Native UnitsTests, single test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/Units-Gtest/UnitsTest",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "args": [
+                "--gtest_filter=FormattingTestFixture.StdFormatting"
+            ]
+        },
+        {
+            "name": "LNX Native ECObjectsTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECObjects-Gtest/ECObjectsTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+          "name": "Filtered ECObjectsTest",
+          "type": "cppvsdbg",
+          "request": "launch",
+          "program": "${env:OutRoot}WinX64/Product/ECObjects-Gtest/ECObjectsTest",
+          "cwd": "${workspaceFolder}",
+          "externalConsole": false,
+          "MIMode": "gdb",
+          "setupCommands": [
+              {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+              }
+          ],
+          "args": [
+            "--gtest_break_on_failure",
+            "--gtest_filter=SchemaComparerXmlTests.*"
+          ]
+        },
+        {
+            "name": "LNX Native ECPresentationTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECPresentation-Gtest/ECPresentationTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native GeomLibsTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/GeomLibs-Gtest/GeomLibsTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native UnitsTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/Units-Gtest/UnitsTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native JS-Backend Tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/node",
+            // You cannot directly use the test.js wrapper because it spawns a second node process, which is very difficult for VS Code to debug.
+            //  If you want different args, then you can modify test.js to `console.log(args);` right before the spawn call towards the bottom,
+            //  run the wrapper, and copy/paste the resolved args here to run directly.
+            //
+            // To run the test.js wrapper:
+            // "args": [
+            //     "/workspace/imodeljs/core/backend/node_modules/@bentley/build-tools/scripts/test",
+            //     "--testDir=/workspace/imodeljs/core/backend/lib/test/",
+            //     "--recursive",
+            //     "--offline=mock",
+            //     "--grep", "//#integration",
+            //     "--invert"
+            // ],
+            //
+            // To run the tests directly:
+            "args": [
+                "/workspace/imodeljs/core/backend/node_modules/mocha/bin/_mocha",
+                "--check-leaks",
+                "--require",
+                "source-map-support/register",
+                "--watch-extensions",
+                "ts",
+                "-u",
+                "tdd",
+                "--timeout",
+                "999999",
+                "--colors",
+                "--reporter",
+                "/workspace/imodeljs/tools/build/mocha-reporter/index.js",
+                "--reporter-options",
+                "mochaFile=/workspace/imodeljs/core/backend/lib/test/junit_results.xml",
+                "--grep",
+                "//#integration",
+                "--invert",
+                "--offline",
+                "mock",
+                "/workspace/imodeljs/core/backend/lib/test/**/*.test.js"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/workspace/imodeljs/core/backend",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+                // Running the test.js wrapper and using these options technically works to debug the child node process,
+                // but the VS Code GUI does not work with the child process.
+                // You could use the DEBUG CONSOLE to use GDB directly, but that's painful.
+                //
+                // ,{
+                //     "description": "Allow GDB to also attach to any spawned child processes.",
+                //     "text": "set follow-fork-mode child"
+                // }
+                // ,{
+                //     "description": "If following child processes, allow GDB to remain attached to both.",
+                //     "text": "set detach-on-fork off"
+                // }
+            ]
+        },
+        {
+            "name": "LNX Native iModelJsNodeAddon Tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/node",
+            "args": [
+                "/workspace/src/imodel02/iModelJsNodeAddon/api_package/ts/lib/test/index.js"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/workspace/src/imodel02/iModelJsNodeAddon/api_package/ts/lib/test",
+            "environment": [
+                { "name": "LINUX_MINIDUMP_ENABLED", "value": "1" }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Script iModelJsNodeAddon Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "/workspace/src/imodel02/iModelJsNodeAddon/api_package/ts/lib/test/index.js",
+            "cwd": "/workspace/src/imodel02/iModelJsNodeAddon/api_package/ts/lib/test",
+            "args": [
+            ],
+            "env": {
+                "LINUX_MINIDUMP_ENABLED": "1"
+            },
+            "port": 9229,
+            "protocol": "inspector",
+            "outputCapture": "std"
+        },
+        {
+            "name": "LNX Script JS-Backend Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "/workspace/imodeljs/core/backend/node_modules/@bentley/build-tools/scripts/test",
+            "cwd": "/workspace/imodeljs/core/backend",
+            "args": [
+                "--testDir=/workspace/imodeljs/core/backend/lib/test/",
+                "--debug",
+                "--recursive",
+                "--offline=mock",
+                "--grep",
+                "//#integration",
+                "--invert"
+            ],
+            "port": 9229,
+            "protocol": "inspector",
+            "outputCapture": "std"
+        },
+        {
+            "name": "LNX Native Node Attach",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/usr/bin/node",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing"
+                },
+                {
+                    "description": "set detach-on-fork on",
+                    "text": "set detach-on-fork on"
+                },
+                {
+                    "description": "set follow-fork-mode child",
+                    "text": "set follow-fork-mode child"
+                }
+            ]
+        }
+    ]
+}

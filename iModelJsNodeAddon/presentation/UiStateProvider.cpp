@@ -10,66 +10,139 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult IModelJsECPresentationUiStateProvider::AddNodeKeys(Utf8StringCR rulesetId, NavNodeKeyListCR keys)
+IModelJsECPresentationUiStateProvider::~IModelJsECPresentationUiStateProvider()
     {
-    BeMutexHolder lock(m_mutex);
-    auto iter = m_expandedNodesPerHierarchy.find(rulesetId);
-    if (m_expandedNodesPerHierarchy.end() == iter)
-        iter = m_expandedNodesPerHierarchy.Insert(rulesetId, NavNodeKeySet()).first;
-
-    for (NavNodeKeyCPtr key : keys)
-        iter->second.insert(key);
-
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+    if (m_manager)
+        m_manager->GetConnections().DropListener(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult IModelJsECPresentationUiStateProvider::RemoveNodeKeys(Utf8StringCR rulesetId, NavNodeKeyListCR keys)
+void IModelJsECPresentationUiStateProvider::_OnConnectionEvent(ConnectionEvent const& evt)
     {
+    if (evt.GetEventType() != ConnectionEventType::Closed)
+        return;
+
     BeMutexHolder lock(m_mutex);
-    auto iter = m_expandedNodesPerHierarchy.find(rulesetId);
-    if (m_expandedNodesPerHierarchy.end() == iter)
-        return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+    auto iter = m_uiState.begin();
+    while (iter != m_uiState.end())
+        {
+        if (iter->first.first == &evt.GetConnection())
+            iter = m_uiState.erase(iter);
+        else
+            ++iter;
+        }
+    }
 
-    for (NavNodeKeyCPtr key : keys)
-        iter->second.erase(key);
-
-    if (iter->second.empty())
-        m_expandedNodesPerHierarchy.erase(rulesetId);
-
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+/*---------------------------------------------------------------------------------**//**
+* Warning: this must be protected with `m_mutex`, which must be held locked while the
+* result is being used.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+UiState& IModelJsECPresentationUiStateProvider::GetUiState(IConnectionCR connection, Utf8StringCR rulesetId)
+    {
+    auto key = bpair<IConnectionCP, Utf8String>(&connection, rulesetId);
+    auto iter = m_uiState.find(key);
+    if (m_uiState.end() == iter)
+        iter = m_uiState.insert(std::make_pair(key, std::make_unique<UiState>())).first;
+    return *iter->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr IModelJsECPresentationUiStateProvider::_GetExpandedNodes(Utf8StringCR rulesetId) const
+std::shared_ptr<UiState> IModelJsECPresentationUiStateProvider::_GetUiState(IConnectionCR connection, Utf8StringCR rulesetId) const
     {
     BeMutexHolder lock(m_mutex);
-    auto iter = m_expandedNodesPerHierarchy.find(rulesetId);
-    if (m_expandedNodesPerHierarchy.end() != iter)
-        return NavNodeKeySetContainer::Create(iter->second);
-
-    // if expanded nodes for this ruleset is not found assume that nothing is expanded
-    return NavNodeKeyListContainer::Create();
+    auto iter = m_uiState.find(make_bpair(&connection, rulesetId));
+    if (m_uiState.end() != iter)
+        return std::make_shared<UiState>(*iter->second);
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult IModelJsECPresentationUiStateProvider::UpdateHierarchyState(ECPresentationManager& manager, ECDbCR db, Utf8StringCR rulesetId, Utf8StringCR change, Utf8StringCR serializedKeys)
+bvector<RulesetUiState> IModelJsECPresentationUiStateProvider::_GetUiState(IConnectionCR connection) const
     {
+    BeMutexHolder lock(m_mutex);
+    bvector<RulesetUiState> result;
+    for (auto const& entry : m_uiState)
+        {
+        if (entry.first.first == &connection)
+            result.push_back(RulesetUiState(entry.first.second, std::make_shared<UiState>(*entry.second)));
+        }
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ConnectionUiState> IModelJsECPresentationUiStateProvider::_GetUiState(Utf8StringCR rulesetId) const
+    {
+    BeMutexHolder lock(m_mutex);
+    bvector<ConnectionUiState> result;
+    for (auto const& entry : m_uiState)
+        {
+        if (entry.first.second == rulesetId)
+            result.push_back(ConnectionUiState(*entry.first.first, std::make_shared<UiState>(*entry.second)));
+        }
+    return result;
+    }
+
+#define PRESENTATION_JSON_ATTRIBUTE_StateChanges_NodeKey            "nodeKey"
+#define PRESENTATION_JSON_ATTRIBUTE_StateChanges_IsExpanded         "isExpanded"
+#define PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters    "instanceFilters"
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationResult IModelJsECPresentationUiStateProvider::UpdateHierarchyState(ECPresentationManager& manager, ECDbCR db, Utf8StringCR rulesetId, BeJsConst stateChanges)
+    {
+    if (!m_manager)
+        {
+        m_manager = &manager;
+        m_manager->GetConnections().AddListener(*this);
+        }
+
     IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
     if (connection.IsNull())
-        return ECPresentationResult(ECPresentationStatus::Error, "Uknown ECDb connection");
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Uknown iModel connection");
 
-    NavNodeKeyList keys = IModelJsECPresentationSerializer::GetNavNodeKeysFromSerializedJson(*connection, serializedKeys.c_str());
-    if (0 == strcmp("nodesExpanded", change.c_str()))
-        return AddNodeKeys(rulesetId, keys);
-    if (0 == strcmp("nodesCollapsed", change.c_str()))
-        return RemoveNodeKeys(rulesetId, keys);
+    if (!stateChanges.isArray())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Expected `stateChanges` argument to be an array");
 
-    return ECPresentationResult(ECPresentationStatus::Error, "Uknown hierarchy state change type");
+    BeMutexHolder lock(m_mutex);
+    UiState& uiState = GetUiState(*connection, rulesetId);
+
+    for (BeJsConst::ArrayIndex i = 0; i < stateChanges.size(); ++i)
+        {
+        auto const& item = stateChanges[i];
+        if (!item.isObject())
+            return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Expected items in `stateChanges` array to be of object type");
+        if (!item.isMember(PRESENTATION_JSON_ATTRIBUTE_StateChanges_NodeKey))
+            return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Expected objects in `stateChanges` array to have a `" PRESENTATION_JSON_ATTRIBUTE_StateChanges_NodeKey "` member");
+
+        NavNodeKeyCPtr nodeKey;
+        if (!item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_NodeKey].isNull())
+            nodeKey = manager.GetSerializer().GetNavNodeKeyFromJson(*connection, item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_NodeKey]);
+        auto& hierarchyLevelState = uiState.GetHierarchyLevelState(nodeKey.get());
+
+        if (item.isMember(PRESENTATION_JSON_ATTRIBUTE_StateChanges_IsExpanded) && !item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_IsExpanded].isBool())
+            return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Expected `" PRESENTATION_JSON_ATTRIBUTE_StateChanges_IsExpanded "` member in `stateChanges` items to be a boolean");
+        bool isExpanded = item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_IsExpanded].GetBoolean(false);
+        hierarchyLevelState.SetIsExpanded(isExpanded);
+
+        if (item.isMember(PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters) && !item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters].isArray())
+            return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Expected `" PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters "` member in `stateChanges` items to be an array of strings");
+        bvector<Utf8String> instanceFilters;
+        item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst instanceFilterJson)
+            {
+            instanceFilters.push_back(instanceFilterJson.ToUtf8CP());
+            return false;
+            });
+        hierarchyLevelState.SetInstanceFilters(instanceFilters);
+        }
+
+    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
     }

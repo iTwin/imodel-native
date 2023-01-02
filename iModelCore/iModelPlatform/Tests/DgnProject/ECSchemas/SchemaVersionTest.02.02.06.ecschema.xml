@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="SchemaVersionTest" alias="vertest" version="02.02.06" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" description="This is a test schema.">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+	<ECSchemaReference name="TestSchema" version="01.00.00" alias="testSchema"/>
+
+    <ECEntityClass typeName="TestElement" displayLabel="Test label" description="Test element description.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="StringProperty1" typeName="string" description="Test property."/>
+    </ECEntityClass>
+</ECSchema>

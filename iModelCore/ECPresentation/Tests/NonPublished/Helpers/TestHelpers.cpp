@@ -317,37 +317,37 @@ PresentationQueryContractFieldPtr RulesEngineTestHelpers::CreateNullDisplayLabel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ECClassCR ecClass, NavigationQueryR instanceNodesQuery)
+ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ECClassCR ecClass, PresentationQueryBuilderR instanceNodesQuery)
     {
     auto displayLabelField = instanceNodesQuery.GetContract()->GetField(ECInstanceNodesQueryContract::DisplayLabelFieldName);
-    instanceNodesQuery.GetResultParametersR().SetResultType(NavigationQueryResultType::Invalid);
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    instanceNodesQuery.GetNavigationResultParameters().SetResultType(NavigationQueryResultType::Invalid);
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*MultiECInstanceNodesQueryContract::Create("", &ecClass, const_cast<PresentationQueryContractFieldP>(displayLabelField.get()), false));
     query->From(instanceNodesQuery);
-    query->GetResultParametersR().GetSelectInstanceClasses().insert(&ecClass);
+    query->GetNavigationResultParameters().GetSelectInstanceClasses().insert(&ecClass);
     return query;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& relatedInstancePaths)
+ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& relatedInstancePaths)
     {
     RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", &selectClass.GetClass(), CreateDisplayLabelField(schemaHelper, selectClass), relatedInstancePaths);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract, selectClass.GetAlias().c_str()).From(selectClass);
-    query->GetResultParametersR().GetSelectInstanceClasses().insert(&selectClass.GetClass());
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract, selectClass.GetAlias().c_str()).From(selectClass);
+    query->GetNavigationResultParameters().GetSelectInstanceClasses().insert(&selectClass.GetClass());
     return query;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(ECSchemaHelper const& schemaHelper, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler)
+PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(ECSchemaHelper const& schemaHelper, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler)
     {
-    UnionNavigationQueryPtr q = UnionNavigationQuery::Create(bvector<NavigationQueryPtr>());
+    auto q = UnionQueryBuilder::Create(bvector<PresentationQueryBuilderPtr>());
     for (auto pair: classes)
         {
-        ComplexNavigationQueryPtr query = CreateECInstanceNodesQueryForClass(schemaHelper, SelectClass<ECClass>(*pair.first, alias, pair.second));
+        ComplexQueryBuilderPtr query = CreateECInstanceNodesQueryForClass(schemaHelper, SelectClass<ECClass>(*pair.first, alias, pair.second));
         if (handler)
             handler(*query);
 
@@ -363,16 +363,16 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract const& contract, bset<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
+PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract const& contract, bset<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
     {
     if (classes.empty())
         return nullptr;
 
-    UnionNavigationQueryPtr query = UnionNavigationQuery::Create(bvector<NavigationQueryPtr>());
+    auto query = UnionQueryBuilder::Create(bvector<PresentationQueryBuilderPtr>());
     for (ECClassCP from : classes)
         {
-        ComplexNavigationQueryPtr thisQuery = &ComplexNavigationQuery::Create()->SelectContract(contract, alias).From(*from, polymorphic, alias);
-        thisQuery->GetResultParametersR().GetSelectInstanceClasses().insert(from);
+        ComplexQueryBuilderPtr thisQuery = &ComplexQueryBuilder::Create()->SelectContract(contract, alias).From(*from, polymorphic, alias);
+        thisQuery->GetNavigationResultParameters().GetSelectInstanceClasses().insert(from);
 
         if (handler)
             handler(*thisQuery);
@@ -388,16 +388,16 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract const& contract, bvector<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
+PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract const& contract, bvector<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
     {
     if (classes.empty())
         return nullptr;
 
-    UnionNavigationQueryPtr query = UnionNavigationQuery::Create(bvector<NavigationQueryPtr>());
+    auto query = UnionQueryBuilder::Create(bvector<PresentationQueryBuilderPtr>());
     for (ECClassCP from : classes)
         {
-        ComplexNavigationQueryPtr thisQuery = &ComplexNavigationQuery::Create()->SelectContract(contract, alias).From(*from, polymorphic, alias);
-        thisQuery->GetResultParametersR().GetSelectInstanceClasses().insert(from);
+        ComplexQueryBuilderPtr thisQuery = &ComplexQueryBuilder::Create()->SelectContract(contract, alias).From(*from, polymorphic, alias);
+        thisQuery->GetNavigationResultParameters().GetSelectInstanceClasses().insert(from);
 
         if (handler)
             handler(*thisQuery);
@@ -688,7 +688,7 @@ static bset<ECInstanceKey> ReadNodeInstanceKeys(ECDbCR connection, NavNodeCR nod
     {
     auto query = node.GetInstanceKeysSelectQuery();
     ECSqlStatement stmt;
-    if (!stmt.Prepare(connection, query->ToString().c_str()).IsSuccess())
+    if (!stmt.Prepare(connection, query->GetQueryString().c_str()).IsSuccess())
         {
         BeAssert(false);
         return bset<ECInstanceKey>();
@@ -739,16 +739,30 @@ static void VerifyInstanceKeysMatch(bvector<RefCountedPtr<IECInstance const>> co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR connection, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
+void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR db, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
     {
-    auto nodeInstanceKeys = ReadNodeInstanceKeys(connection, static_cast<NavNodeCR>(node));
+    auto nodeInstanceKeys = ReadNodeInstanceKeys(db, static_cast<NavNodeCR>(node));
     VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
 
     if (node.GetKey()->AsECInstanceNodeKey())
+        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesEngineTestHelpers::ValidateNodeInstances(INodeInstanceKeysProvider const& instanceKeysProvider, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
+    {
+    bset<ECInstanceKey> nodeInstanceKeys;
+    instanceKeysProvider.IterateInstanceKeys(node, [&nodeInstanceKeys](ECInstanceKeyCR k)
         {
-        auto nodeKeyInstanceKeys = GetECInstanceNodeKeys(node);
-        VerifyInstanceKeysMatch(instances, nodeKeyInstanceKeys);
-        }
+        nodeInstanceKeys.insert(k);
+        return true;
+        });
+    VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
+
+    if (node.GetKey()->AsECInstanceNodeKey())
+        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -812,20 +826,18 @@ ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR de
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, NavNodeR node)
+void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, NavNodeR node, BeGuidCR parentNodeId)
     {
     NavNodeExtendedData extendedData(node);
+    extendedData.AddVirtualParentId(parentNodeId);
     auto virtualParentIds = extendedData.GetVirtualParentIds();
     Utf8String rulesetId = extendedData.HasRulesetId() ? extendedData.GetRulesetId() : "";
-    HierarchyLevelIdentifier hlInfo = cache.FindHierarchyLevel(extendedData.GetConnectionId(),
-        rulesetId.c_str(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid(), BeGuid());
+    HierarchyLevelIdentifier hlInfo(extendedData.GetConnectionId(), rulesetId.c_str(),
+        parentNodeId, !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid());
+    hlInfo.SetId(cache.FindHierarchyLevelId(extendedData.GetConnectionId(), rulesetId.c_str(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid(), BeGuid()));
     if (!hlInfo.IsValid())
-        {
-        hlInfo = HierarchyLevelIdentifier(extendedData.GetConnectionId(), rulesetId.c_str(),
-            node.GetParentNodeId(), !virtualParentIds.empty() ? virtualParentIds.front() : BeGuid());
         cache.Cache(hlInfo);
-        }
-    DataSourceIdentifier identifier(hlInfo.GetId(), {0});
+    DataSourceIdentifier identifier(hlInfo.GetId(), {0}, "");
     DataSourceInfo dsInfo = cache.FindDataSource(identifier, RulesetVariables());
     if (!dsInfo.GetIdentifier().IsValid())
         {

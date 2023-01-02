@@ -68,13 +68,28 @@ public:
 };
 
 //=======================================================================================
+//! Params for a hierarchy level request. When requesting child hierarchy level, either
+//! parent node or its key may be provided.
 // @bsiclass
 //=======================================================================================
 struct HierarchyRequestParams : RequestWithRulesetParams
 {
 private:
+    NavNodeKeyCPtr m_parentNodeKey;
     NavNodeCPtr m_parentNode;
+    Utf8String m_instanceFilter;
 public:
+    //! Root nodes request
+    HierarchyRequestParams(RequestWithRulesetParams const& rulesetParams)
+        : RequestWithRulesetParams(rulesetParams)
+        {}
+    HierarchyRequestParams(RequestWithRulesetParams&& rulesetParams)
+        : RequestWithRulesetParams(std::move(rulesetParams))
+        {}
+    HierarchyRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables)
+        : RequestWithRulesetParams(rulesetId, rulesetVariables)
+        {}
+    //! Child nodes request with parent node
     HierarchyRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeCP parentNode)
         : RequestWithRulesetParams(rulesetParams), m_parentNode(parentNode)
         {}
@@ -84,8 +99,22 @@ public:
     HierarchyRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, NavNodeCP parentNode)
         : RequestWithRulesetParams(rulesetId, rulesetVariables), m_parentNode(parentNode)
         {}
+    //! Child nodes request with parent node key
+    HierarchyRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeKeyCP parentNodeKey)
+        : RequestWithRulesetParams(rulesetParams), m_parentNodeKey(parentNodeKey)
+        {}
+    HierarchyRequestParams(RequestWithRulesetParams&& rulesetParams, NavNodeKeyCP parentNodeKey)
+        : RequestWithRulesetParams(std::move(rulesetParams)), m_parentNodeKey(parentNodeKey)
+        {}
+    HierarchyRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, NavNodeKeyCP parentNodeKey)
+        : RequestWithRulesetParams(rulesetId, rulesetVariables), m_parentNodeKey(parentNodeKey)
+        {}
     NavNodeCP GetParentNode() const {return m_parentNode.get();}
-    void SetParentNode(NavNodeCP value) {m_parentNode = value;}
+    void SetParentNode(NavNodeCP value) {m_parentNode = value; m_parentNodeKey = nullptr;}
+    NavNodeKeyCP GetParentNodeKey() const {return m_parentNodeKey.get();}
+    void SetParentNodeKey(NavNodeKeyCP value) {m_parentNodeKey = value; m_parentNode = nullptr;}
+    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
+    void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
 };
 
 //=======================================================================================
@@ -111,30 +140,11 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NodeByKeyRequestParams : RequestWithRulesetParams
-{
-private:
-    NavNodeKeyCPtr m_key;
-public:
-    NodeByKeyRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeKeyCR key)
-        : RequestWithRulesetParams(rulesetParams), m_key(&key)
-        {}
-    NodeByKeyRequestParams(RequestWithRulesetParams&& rulesetParams, NavNodeKeyCR key)
-        : RequestWithRulesetParams(std::move(rulesetParams)), m_key(&key)
-        {}
-    NodeByKeyRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, NavNodeKeyCR key)
-        : RequestWithRulesetParams(rulesetId, rulesetVariables), m_key(&key)
-        {}
-    NavNodeKeyCR GetNodeKey() const {return *m_key;}
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
 struct NodeParentRequestParams : RequestWithRulesetParams
 {
 private:
     NavNodeCPtr m_node;
+    Utf8String m_instanceFilter;
 public:
     NodeParentRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeCR node)
         : RequestWithRulesetParams(rulesetParams), m_node(&node)
@@ -146,6 +156,8 @@ public:
         : RequestWithRulesetParams(rulesetId, rulesetVariables), m_node(&node)
         {}
     NavNodeCR GetNode() const {return *m_node;}
+    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
+    void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
 };
 
 //=======================================================================================

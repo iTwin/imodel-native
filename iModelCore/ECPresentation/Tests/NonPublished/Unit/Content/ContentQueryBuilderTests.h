@@ -36,15 +36,15 @@ struct ContentQueryBuilderTests : QueryBuilderTest
     ContentDescriptorBuilder& GetDescriptorBuilder() {return *m_descriptorBuilder;}
     ContentQueryBuilder& GetQueryBuilder() {return *m_queryBuilder;}
 
-    void ValidateContentQuerySet(ContentQuerySet const& querySet);
-    ContentQuerySet PrepareContentQuerySet(std::function<ContentQuerySet()> querySetFactory);
-    ContentQuerySet PrepareContentQuerySet(std::function<ContentQueryPtr()> queryFactory);
+    void ValidateContentQuerySet(QuerySet const& querySet);
+    QuerySet PrepareContentQuerySet(std::function<QuerySet()> querySetFactory);
+    QuerySet PrepareContentQuerySet(std::function<PresentationQueryBuilderPtr()> queryFactory);
 
-    void ValidateQueries(ContentQuerySet const& actual, ContentQuerySet const& expected);
-    void ValidateQueries(ContentQuerySet const& actual, std::function<ContentQueryPtr()> expectedSetFactory);
-    void ValidateQueries(ContentQuerySet const& actual, std::function<ContentQuerySet()> expectedSetFactory);
+    void ValidateQueries(QuerySet const& actual, QuerySet const& expected);
+    void ValidateQueries(QuerySet const& actual, std::function<PresentationQueryBuilderPtr()> expectedSetFactory);
+    void ValidateQueries(QuerySet const& actual, std::function<QuerySet()> expectedSetFactory);
 
-    bool AreDescriptorsEqual(ContentQuerySet const& lhs, ContentQuerySet const& rhs);
+    bool AreDescriptorsEqual(QuerySet const& lhs, QuerySet const& rhs);
     MultiSchemaClass* CreateMultiSchemaClass(bvector<ECClassCP> const& classes, bool polymorphic, Utf8CP schemaName = BeTest::GetNameOfCurrentTest());
 
     void RegisterCategoryInDescriptorIfNeeded(ContentDescriptorR descriptor, std::shared_ptr<ContentDescriptor::Category const> category);

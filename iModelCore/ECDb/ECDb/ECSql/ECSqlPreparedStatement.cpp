@@ -7,7 +7,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //***************************************************************************************
 //    IECSqlPreparedStatement
 //***************************************************************************************
@@ -17,13 +16,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlPreparedStatement::Prepare(ECSqlPrepareContext& ctx, Exp const& exp, Utf8CP ecsql)
     {
-    if (m_type != ECSqlType::Select && m_ecdb.IsReadonly())
+    if (m_type != ECSqlType::Select && m_type != ECSqlType::Pragma && m_ecdb.IsReadonly())
         {
         ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
         return ECSqlStatus::Error;
         }
 
-    //capture current clear cache counter so that we can invalidate the statement if another clear cache call 
+    //capture current clear cache counter so that we can invalidate the statement if another clear cache call
     //occurred in the lifetime of the statement
     m_preparationClearCacheCounter = m_ecdb.GetImpl().GetClearCacheCounter();
     m_ecsql.assign(ecsql);
@@ -148,7 +147,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         //is a wrong ECSQL provided by the user.
         if (nativeSqlStat == BE_SQLITE_INTERRUPT)
             return ECSqlStatus(nativeSqlStat);
-        
+
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -395,7 +394,7 @@ DbResult ECSqlSelectPreparedStatement::Step()
 ECSqlStatus ECSqlSelectPreparedStatement::_Reset()
     {
     ECSqlStatus resetStatementStat = SingleECSqlPreparedStatement::_Reset();
-    
+
     //even if statement reset failed we still try to reset the fields to clean-up things as good as possible.
     ECSqlStatus fieldResetStat = ResetFields();
 
@@ -894,7 +893,7 @@ ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Mode ECSqlInsertPreparedState
                 return Mode::UserProvidedOtherExp;
         }
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -920,7 +919,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     {
     PrepareInfo prepareInfo(ctx, exp.GetAs<UpdateStatementExp>());
 
-    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
+    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().GetPolymorphicInfo().IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
 
     ECSqlStatus checkReadOnlyStat = CheckForReadonlyProperties(prepareInfo);
     if (checkReadOnlyStat != ECSqlStatus::Success)
@@ -993,7 +992,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             const uint32_t paramIndex = (uint32_t) paramExp.GetParameterIndex();
             if (!prepareInfo.ParameterIndexExists(paramIndex))
                 m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
-            
+
             prepareInfo.AddParameterIndex(paramIndex, table);
             }
         }
@@ -1004,12 +1003,12 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (!stat.IsSuccess())
             return stat;
         }
-    
+
     //Prepare leaf UPDATE statements
     const ECSqlStatus stat = PrepareLeafStatements(prepareInfo);
     if (!stat.IsSuccess())
         return stat;
-   
+
     return PopulateProxyBinders(prepareInfo);
     }
 
@@ -1021,7 +1020,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PreprocessWhereClause(PrepareInfo& pre
     {
     BeAssert(prepareInfo.HasWhereExp());
     const bool isWhereClauseSelectorNeeded = IsWhereClauseSelectorStatementNeeded(prepareInfo);
-    
+
     WhereExp const& whereClause = *prepareInfo.GetWhereExp();
     for (Exp const* exp : whereClause.Find(Exp::Type::Parameter, true /* recursive*/))
         {
@@ -1306,7 +1305,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
-    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetInfo().GetMap(), m_type, exp.GetAs<DeleteStatementExp>().GetClassNameExp()->IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
+    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetInfo().GetMap(), m_type, exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetPolymorphicInfo().IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
 
     //WIP this will probably not be enough
     return SingleECSqlPreparedStatement::_Prepare(ctx, exp);

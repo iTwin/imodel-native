@@ -14,7 +14,8 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEngineTests::SetUpTestCase()
     {
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE, NativeLogging::LOG_INFO);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity(LOGGER_NAMESPACE, NativeLogging::LOG_INFO);
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -28,6 +29,7 @@ void RulesEngineTests::SetUp()
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDirectory);
     BeTest::GetHost().GetTempDir(temporaryDirectory);
     ECSchemaReadContext::Initialize(assetsDirectory);
+    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory);
 
     ECPresentationManager::Params params(ECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
     ECPresentationManager::Params::CachingParams cachingParams;
@@ -117,7 +119,7 @@ void RulesEngineSingleProjectTests::_SetupProjects()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR RulesEngineSingleProjectTests::GetRulesetId() const
+Utf8String RulesEngineSingleProjectTests::GetRulesetId() const
     {
     return m_locater->GetRuleSetIds().front();
     }
@@ -128,7 +130,7 @@ Utf8StringCR RulesEngineSingleProjectTests::GetRulesetId() const
 Timer::Timer(Utf8CP name)
     : StopWatch(name ? name : BeTest::GetNameOfCurrentTest(), true)
     {
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Started:  %s", GetDescription());
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Started:  %s", GetDescription());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -147,6 +149,6 @@ void Timer::Finish()
         return;
         }
 
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Finished: %s. Elapsed: %.2f", GetDescription(), GetCurrentSeconds());
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Finished: %s. Elapsed: %.2f", GetDescription(), GetCurrentSeconds());
     Stop();
     }

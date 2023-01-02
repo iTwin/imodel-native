@@ -22,16 +22,13 @@ USING_NAMESPACE_BENTLEY_EC
 +===============+===============+===============+===============+===============+======*/
 struct IModelJsECPresentationSerializer : IECPresentationSerializer
 {
-private:
-    static ECClassCP GetClassFromFullName(IConnectionCR connection, JsonValueCR);
-
 protected:
     // Not supported:
     rapidjson::Document _AsJson(ContextR, ConnectionEvent const&, rapidjson::Document::AllocatorType* allocator) const override;
 
     // Common:
     rapidjson::Document _AsJson(ContextR, KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const override;
-    KeySetPtr _GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const override;
+    KeySetPtr _GetKeySetFromJson(IConnectionCR connection, BeJsConst json) const override;
 	rapidjson::Document _AsJson(ContextR, ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, BeInt64Id const&, rapidjson::Document::AllocatorType*) const override;
     rapidjson::Document _AsJson(ContextR, ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator) const override;
@@ -74,22 +71,16 @@ protected:
 
     // Hierarchies:
     void _NavNodeKeyAsJson(ContextR, NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override;
-    NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override;
-    NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(JsonValueCR json) const override;
-    NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const override;
+    NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const override;
+    NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(BeJsConst json) const override;
     void _AsJson(ContextR, ECInstancesNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override;
-    ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override;
+    ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const override;
     void _AsJson(ContextR, ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override;
-    ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override;
+    ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const override;
     void _AsJson(ContextR, ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override;
-    ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override;
+    ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const override;
     void _AsJson(ContextR, LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const override;
-    LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const override;
+    LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst json) const override;
     rapidjson::Document _AsJson(ContextR, NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType* allocator) const override;
 
@@ -101,12 +92,10 @@ protected:
 
 public:
     using IECPresentationSerializer::AsJson;
-
-    static ECClassCP GetClassFromFullName(IConnectionCR connection, RapidJsonValueCR);
-    static bvector<NavNodeKeyCPtr> GetNavNodeKeysFromSerializedJson(IConnectionCR, Utf8CP json);
-
-    static KeySetPtr GetKeySetFromJson(IConnectionCR, RapidJsonValueCR);
-    static RulesetVariables GetRulesetVariablesFromJson(RapidJsonValueCR);
+    static bvector<NavNodeKeyCPtr> GetNavNodeKeysFromSerializedJson(IConnectionCR, Utf8CP serializedJson);
+    static ECClassCP GetClassFromFullName(IConnectionCR connection, BeJsConst);
+    static KeySetPtr GetKeySetFromJson(IConnectionCR, BeJsConst);
+    static RulesetVariables GetRulesetVariablesFromJson(BeJsConst);
 };
 
 /*=================================================================================**//**

@@ -24,7 +24,7 @@ ECSchemaPtr VirtualSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType 
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const{
-   // BeMutexHolder lock(m_ecdb.GetImpl().GetMutex()); 
+   // BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
     auto readerContext = ECSchemaReadContext::CreateContext();
     readerContext->AddSchemaLocater(const_cast<VirtualSchemaManager&>(*this));
     ECSchemaPtr schema;
@@ -70,8 +70,8 @@ void VirtualSchemaManager::SetVirtualTypeIds (ECN::ECSchemaR schema) const{
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VirtualSchemaManager::AddECDbVirtualSchema() const{
     auto schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema 
-                schemaName="ECDbVirtual" 
+        <ECSchema
+                schemaName="ECDbVirtual"
                 alias="ecdbvir"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -90,14 +90,14 @@ void VirtualSchemaManager::AddECDbVirtualSchema() const{
 void VirtualSchemaManager::AddSystemVirtualSchemas() const{
     auto schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema
-                schemaName="json1" 
+                schemaName="json1"
                 alias="json1"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbVirtual" version="01.00.00" alias="ecdbvir" />
             <ECCustomAttributes>
                 <VirtualSchema xmlns="ECDbVirtual.01.00.00"/>
-            </ECCustomAttributes>  
+            </ECCustomAttributes>
             <ECEntityClass typeName="json_tree" modifier="Abstract">
                 <ECCustomAttributes>
                     <VirtualType xmlns="ECDbVirtual.01.00.00"/>
@@ -125,7 +125,7 @@ void VirtualSchemaManager::AddSystemVirtualSchemas() const{
         </ECSchema>)xml";
     if (Add(schemaXml) != SUCCESS) {
         throw std::runtime_error("unable to load json1 schema");
-    } 
+    }
 }
 
 /*---------------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ VirtualSchemaManager::VirtualSchemaManager(ECDbCR ecdb): m_cache(ECSchemaCache::
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool VirtualSchemaManager::IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8StringR err) const { 
+bool VirtualSchemaManager::IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8StringR err) const {
     if (!schema.IsDefined("ECDbVirtual", "VirtualSchema")) {
         err = "schema does not have 'ECDbVirtual::VirtualSchema' customattribute";
         return false;
@@ -176,7 +176,7 @@ bool VirtualSchemaManager::IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8Strin
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP VirtualSchemaManager::GetSchema(Utf8StringCR schemaName) const{
-    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex()); 
+    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
     auto it = m_schemas.find(schemaName);
     if (it != m_schemas.end()) {
         return it->second;
@@ -188,7 +188,7 @@ ECSchemaCP VirtualSchemaManager::GetSchema(Utf8StringCR schemaName) const{
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP VirtualSchemaManager::GetClass(Utf8StringCR schemaName, Utf8StringCR className) const{
-    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex()); 
+    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
     auto schema = GetSchema(schemaName.c_str());
     if (schema == nullptr) {
         return nullptr;
@@ -460,8 +460,8 @@ ECClassCP SchemaManager::Dispatcher::GetClass(ECN::ECClassId classId, Utf8CP tab
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECN::ECClassCP SchemaManager::Dispatcher::FindClass(Utf8StringCR className, Utf8CP tableSpace) const { 
-    
+ECN::ECClassCP SchemaManager::Dispatcher::FindClass(Utf8StringCR className, Utf8CP tableSpace) const {
+
     Utf8String schemaToken;
     Utf8String classToken;
     for(auto i=0;i<className.length(); ++i) {
@@ -878,7 +878,7 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 //MainSchemaManager
 //*****************************************************************
 DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* schemaImportToken, bool logIssue) const {
-    PERFLOG_START("ECDb", "Drop schema");
+    ECDB_PERF_LOG_SCOPE("Drop schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchema");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions());
@@ -914,34 +914,26 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
     if (SUCCESS != ViewGenerator::DropECClassViews(m_ecdb))
         return DropSchemaResult(DropSchemaResult::Status::Error);
 
-    PERFLOG_START("ECDb", "Schema import> Create or update indexes");
     if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
         {
         ClearCache();
         return DropSchemaResult(DropSchemaResult::Status::Error);
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Create or update indexes");
 
-    PERFLOG_START("ECDb", "Schema import> Purge orphan tables");
     if (SUCCESS != PurgeOrphanTables(ctx))
         {
         ClearCache();
         return DropSchemaResult(DropSchemaResult::Status::Error);
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Purge orphan tables");
-
-    PERFLOG_START("ECDb", "Schema import> Validate mappings");
 
     m_ecdb.ClearECDbCache();
     if (SUCCESS != DbMapValidator(ctx).Validate()) {
         ClearCache();
         return DropSchemaResult(DropSchemaResult::Status::Error);
     }
-    PERFLOG_FINISH("ECDb", "Schema import> Validate mappings");
 
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    PERFLOG_FINISH("ECDb", "Drop schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchema");
     return rc;
 }
@@ -950,7 +942,7 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const
     {
-    PERFLOG_START("ECDb", "Schema import");
+    ECDB_PERF_LOG_SCOPE("Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_ecdb, options);
@@ -958,7 +950,6 @@ BentleyStatus MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& s
     ResetIds(schemas);
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    PERFLOG_FINISH("ECDb", "Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::ImportSchemas");
     return stat;
     }
@@ -986,11 +977,51 @@ VirtualSchemaManager const& MainSchemaManager::GetVirtualSchemaManager() const {
     return m_vsm;
 }
 
+#ifndef NDEBUG
+void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> const& schemas, Utf8CP suffix)
+    {
+    BeFileName directory(parentDirectory);
+    uint64_t ticks = BeTimeUtilities::QueryMillisecondsCounter();
+    directory.AppendUtf8(Utf8PrintfString("%" PRIu64 "_%s\\", ticks, suffix).c_str());
+	BeFileName::CreateNewDirectory(directory.c_str()); // create the directory
+    BeFileName::EmptyDirectory(directory.c_str()); // clear the directory
+    for (auto schema: schemas)
+        {
+        if(schema == nullptr)
+            continue;
+        BeFileName fileName(directory);
+        fileName.AppendUtf8(schema->GetName().c_str());
+        fileName.append(L".ecschema.xml");
+        schema->WriteToXmlFile(fileName.c_str());
+        }
+    };
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
+    #ifndef NDEBUG
+    /*
+    In Debug builds, the environment variable can be set to a directory path to
+    dump existing and incoming schemas to for every ImportSchemas call.
+    */
+    Utf8CP envVarName = "ECDB_SCHEMAIMPORT_DUMP_TO";
+    size_t requiredSize;
+    if (getenv_s(&requiredSize, NULL, 0, envVarName) == 0 && requiredSize != 0)
+        {
+        BeFileName dumpSchemaDir;
+        std::vector<char> chars(requiredSize);
+        if (getenv_s(&requiredSize, chars.data(), requiredSize, envVarName) == 0)
+            {
+            dumpSchemaDir.AssignUtf8(chars.data());
+            DumpSchemasToFile(dumpSchemaDir, m_ecdb.Schemas().GetSchemas(true), "existing");
+            DumpSchemasToFile(dumpSchemaDir, schemas, "incoming");
+            }
+        }
+    #endif
+
     if (!GetECDb().GetImpl().GetIdFactory().Reset())
         {
         LOG.error("Failed to import ECSchemas: Failed to create id factory.");
@@ -1056,7 +1087,12 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         return ERROR;
         }
 
-    return MapSchemas(ctx, schemasToMap);
+    if (SUCCESS != MapSchemas(ctx, schemasToMap))
+        {
+        LOG.debug("MainSchemaManager::ImportSchemas - failed to MapSchemas");
+        return ERROR;
+        }
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1064,84 +1100,69 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
+	ECDB_PERF_LOG_SCOPE("Schema import> Map schemas");
     if (schemas.empty())
         return SUCCESS;
 
-    PERFLOG_START("ECDb", "Schema import> Map schemas");
 
-    PERFLOG_START("ECDb", "Schema import> Clean modified property mappings");
     if (SUCCESS != ctx.RemapManager().CleanModifiedMappings())
         {
         ClearCache();
         return ERROR;
         }
     m_lightweightCache.Clear();
-    PERFLOG_FINISH("ECDb", "Schema import> Clean modified property mappings");
+
+    //necessary so .DerivedClasses() knows all leaf nodes that need mapping, even if they are not inside "schemas"
+    if(SUCCESS != ctx.RemapManager().EnsureInvolvedSchemasAreLoaded(schemas))
+        return ERROR;
 
     if (SUCCESS != DoMapSchemas(ctx, schemas))
         return ERROR;
 
-    PERFLOG_START("ECDb", "Schema import> Persist mappings");
     if (SUCCESS != SaveDbSchema(ctx) || SUCCESS != ctx.RemapManager().RestoreAndProcessCleanedPropertyMaps(ctx))
         {
         ClearCache();
         return ERROR;
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Persist mappings");
-
-    PERFLOG_START("ECDb", "Schema import> Create or update tables");
     if (SUCCESS != CreateOrUpdateRequiredTables())
         {
         ClearCache();
         return ERROR;
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Create or update tables");
 
-    PERFLOG_START("ECDb", "Schema import> Transform data");
     if (SUCCESS != ctx.GetDataTransfrom().Execute(m_ecdb))
         {
         ClearCache();
         return ERROR;
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Transform data");
 
-    PERFLOG_START("ECDb", "Schema import> Create or update indexes");
     if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
         {
         ClearCache();
         return ERROR;
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Create or update indexes");
 
-    PERFLOG_START("ECDb", "Schema import> Purge orphan tables");
     if (SUCCESS != PurgeOrphanTables(ctx))
         {
         ClearCache();
         return ERROR;
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Purge orphan tables");
 
-    PERFLOG_START("ECDb", "Schema import> Validate mappings");
 
     if (SUCCESS != DbMapValidator(ctx).Validate())
         return ERROR;
 
-    PERFLOG_FINISH("ECDb", "Schema import> Validate mappings");
 
-    PERFLOG_START("ECDb", "Schema import> Upgrading existing ECInstances with new property map to overflow tables");
     if (BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb))
         return ERROR;
 
-    PERFLOG_FINISH("ECDb", "Schema import> Upgrading existing ECInstances with new property map to overflow tables");
 
-    PERFLOG_START("ECDb", "Schema import> Upgrading existing ECInstances with remapped properties to different columns");
     if (SUCCESS != ctx.RemapManager().UpgradeExistingECInstancesWithRemappedProperties())
         return ERROR;
 
-    PERFLOG_FINISH("ECDb", "Schema import> Upgrading existing ECInstances with remapped properties to different columns");
+
 
     ClearCache();
-    PERFLOG_FINISH("ECDb", "Schema import> Map schemas");
     return SUCCESS;
     }
 
@@ -1150,6 +1171,7 @@ BentleyStatus MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<EC
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb)
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Upgrading existing ECInstances with new property map to overflow tables");
     Statement stmt;
     DbResult st = stmt.Prepare(ecdb, "SELECT PRI.Id, OVR.Id FROM ec_Table PRI INNER JOIN ec_Table OVR ON OVR.ParentTableId = PRI.Id WHERE OVR.Type = " SQLVAL_DbTable_Type_Overflow );
     if (st != BE_SQLITE_OK)
@@ -1235,6 +1257,7 @@ DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOver
 //---------------------------------------------------------------------------------------
 BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Persist mappings");
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
@@ -1258,34 +1281,34 @@ BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<
         }
 
     // Map mixin hierarchy before everything else. It does not map primary hierarchy and all classes map to virtual tables.
-    PERFLOG_START("ECDb", "Schema import> Map mixins");
+    ECDB_PERF_LOG_SCOPE_BEGIN(mapMixins, "Schema import> Map mixins");
     for (ECEntityClassCP mixin : rootMixins)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *mixin))
             return ERROR;
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Map mixins");
+    ECDB_PERF_LOG_SCOPE_END(mapMixins);
 
     // Starting with the root, recursively map the entire class hierarchy.
-    PERFLOG_START("ECDb", "Schema import> Map entity classes");
+    ECDB_PERF_LOG_SCOPE_BEGIN(logRootClasses, "Schema import> Map entity classes");
     for (ECClassCP rootClass : rootClassList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootClass))
             return ERROR;
         }
-    PERFLOG_FINISH("ECDb", "Schema import> Map entity classes");
+    ECDB_PERF_LOG_SCOPE_END(logRootClasses);
 
-    PERFLOG_START("ECDb", "Schema import> Map relationships");
+    ECDB_PERF_LOG_SCOPE_BEGIN(logRootRels, "Schema import> Map relationships");
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
             return ERROR;
         }
 
+    ECDB_PERF_LOG_SCOPE_END(logRootRels);
     if (SUCCESS != DbMappingManager::FkRelationships::FinishMapping(ctx))
         return ERROR;
 
-    PERFLOG_FINISH("ECDb", "Schema import> Map relationships");
     return SUCCESS;
     }
 
@@ -1379,6 +1402,7 @@ ClassMappingStatus MainSchemaManager::MapDerivedClasses(SchemaImportContext& ctx
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Create or update tables");
     m_ecdb.GetStatementCache().Empty();
 
     int nCreated = 0;
@@ -1455,6 +1479,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
 //---------------------------------------------------------------------------------------
 BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Create or update indexes");
     if (SUCCESS != m_dbSchema.LoadIndexDefs())
         return ERROR;
 
@@ -1623,6 +1648,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
 //---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) const
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Purge orphan tables");
     //skip ExistingTable and NotMapped
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Id, t.Name, t.Type FROM main.ec_Table t "
@@ -1639,9 +1665,9 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
      /*
         RULE for purge
         1. Skip overflow tables.
-        2. Traverse table to be deleted to leaf node and add those to table to be deleted. 
+        2. Traverse table to be deleted to leaf node and add those to table to be deleted.
         3. Delete entries from ec_table including virtual.
-        4. Drop non-virtual table 
+        4. Drop non-virtual table
      */
     struct TableInfo {
         DbTableId id;
@@ -1653,7 +1679,7 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
         auto stmt= m_ecdb.GetCachedStatement(R"sql(
             with child_tables(root_id, parent_id, id) as (
                 select id,id,id from ec_table where parentTableId is null
-                union select c.root_id, t.parentTableId, t.id from ec_table t, child_tables c where c.id=t.parentTableId  
+                union select c.root_id, t.parentTableId, t.id from ec_table t, child_tables c where c.id=t.parentTableId
             ) select t.id,t.name,t.type from child_tables c join ec_table t on t.id=c.id where c.parent_id!=c.id and c.root_id=?)sql");
         stmt->BindId(1, parentTableInfo.id);
         bvector<TableInfo> childTables;
@@ -1920,6 +1946,7 @@ BentleyStatus MainSchemaManager::GetRelationshipConstraintClassMaps(SchemaImport
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
     {
+    ECDB_PERF_LOG_SCOPE("Schema import> Persist mappings");
     if (m_dbSchema.SaveOrUpdateTables() != SUCCESS)
         {
         BeAssert(false);

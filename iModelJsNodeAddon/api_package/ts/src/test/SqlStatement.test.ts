@@ -32,8 +32,7 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).eq("foo");
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
@@ -49,8 +48,7 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).to.exist; //we generate a pseudo name automatically
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
@@ -66,8 +64,7 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).to.exist;
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
@@ -84,8 +81,7 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).to.exist;
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
@@ -101,7 +97,6 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).eq("SchemaName");
-      expect(colInfo.hasOriginProperty()).to.be.true;
       expect(colInfo.getOriginPropertyName()).eq("Name");
     } finally {
       stmt.dispose();

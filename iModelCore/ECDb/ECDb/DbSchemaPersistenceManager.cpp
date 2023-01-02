@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHierarchyCache);
+    ECDB_PERF_LOG_SCOPE("Repopulate table " TABLE_ClassHierarchyCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHierarchyCache))
         return ERROR;
 
@@ -43,7 +43,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
+    ECDB_PERF_LOG_SCOPE("Repopulate table " TABLE_ClassHasTablesCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHasTablesCache))
         return ERROR;
 
@@ -229,7 +229,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         {
         BeAssert(&table == &columnToAdd->GetTable());
         //Limitation of ADD COLUMN http://www.sqlite.org/lang_altertable.html
-        
+
         if (columnToAdd->IsOnlyColumnOfPrimaryKeyConstraint())
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to add column %s as primary column to table %s.", columnToAdd->GetName().c_str(),
@@ -257,7 +257,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 
             if (fkConstraint->GetFkColumns().size() != 1 || fkConstraint->GetFkColumns()[0] != columnToAdd)
                 continue;
-            
+
             if (SUCCESS != AppendForeignKeyToColumnDdl(ddl, *fkConstraint, *columnToAdd))
                 return ERROR;
             }
@@ -395,7 +395,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         desc.GetClassId().ToString(classIdStr);
         if (!polymorphic)
             {
-            //if partition's table is only used by a single class, no filter needed     
+            //if partition's table is only used by a single class, no filter needed
             if (partition->IsSharedTable())
                 {
                 filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);

@@ -5100,43 +5100,43 @@ TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy)
     {
     //Move Building and Facility classes from GeometricElement3d below CompositeElement
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
-<ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
-    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
-    <ECEntityClass typeName="Element" modifier="Abstract">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.2.0.0">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ClassMap>
-            <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
-        <BaseClass>Element</BaseClass>
-        <ECCustomAttributes>
-            <ShareColumns xmlns="ECDbMap.2.0.0">
-                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
-                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-            </ShareColumns>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="CompositeElement" modifier="Abstract">
-        <BaseClass>GeometricElement3d</BaseClass>
-        <ECProperty propertyName="X" typeName="string"/><!-- Maps to column 'js1'-->
-    </ECEntityClass>
-    <ECEntityClass typeName="Building">
-        <BaseClass>GeometricElement3d</BaseClass>
-        <ECProperty propertyName="A" typeName="string" /><!-- Maps to column 'js1'-->
-    </ECEntityClass>
-    <ECEntityClass typeName="Facility">
-        <BaseClass>GeometricElement3d</BaseClass>
-        <ECProperty propertyName="B" typeName="string" /><!-- Maps to column 'js1'-->
-    </ECEntityClass>
-    <ECEntityClass typeName="SpecializedFacility">
-        <BaseClass>Facility</BaseClass>
-        <ECProperty propertyName="C" typeName="string" /><!-- Maps to column 'js2'-->
-    </ECEntityClass>
-</ECSchema>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.2.0.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="CompositeElement" modifier="Abstract">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="X" typeName="string"/><!-- Maps to column 'js1'-->
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="A" typeName="string" /><!-- Maps to column 'js1'-->
+            </ECEntityClass>
+            <ECEntityClass typeName="Facility">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="B" typeName="string" /><!-- Maps to column 'js1'-->
+            </ECEntityClass>
+            <ECEntityClass typeName="SpecializedFacility">
+                <BaseClass>Facility</BaseClass>
+                <ECProperty propertyName="C" typeName="string" /><!-- Maps to column 'js2'-->
+            </ECEntityClass>
+        </ECSchema>
         )schema");
 
     ASSERT_EQ(SUCCESS, SetupECDb("PutMultipleSiblingsIntoHierarchy.ecdb", schemaItem));
@@ -5152,43 +5152,43 @@ TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy)
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
-<ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
-    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
-    <ECEntityClass typeName="Element" modifier="Abstract">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.2.0.0">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ClassMap>
-            <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
-        <BaseClass>Element</BaseClass>
-        <ECCustomAttributes>
-            <ShareColumns xmlns="ECDbMap.2.0.0">
-                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
-                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-            </ShareColumns>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="CompositeElement" modifier="Abstract">
-        <BaseClass>GeometricElement3d</BaseClass>
-        <ECProperty propertyName="X" typeName="string" />
-    </ECEntityClass>
-    <ECEntityClass typeName="Building">
-        <BaseClass>CompositeElement</BaseClass>
-        <ECProperty propertyName="A" typeName="string" />
-    </ECEntityClass>
-    <ECEntityClass typeName="Facility">
-        <BaseClass>CompositeElement</BaseClass>
-        <ECProperty propertyName="B" typeName="string" />
-    </ECEntityClass>
-    <ECEntityClass typeName="SpecializedFacility">
-        <BaseClass>Facility</BaseClass>
-        <ECProperty propertyName="C" typeName="string" />
-    </ECEntityClass>
-</ECSchema>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.2.0.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="CompositeElement" modifier="Abstract">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="X" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>CompositeElement</BaseClass>
+                <ECProperty propertyName="A" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Facility">
+                <BaseClass>CompositeElement</BaseClass>
+                <ECProperty propertyName="B" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SpecializedFacility">
+                <BaseClass>Facility</BaseClass>
+                <ECProperty propertyName="C" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
@@ -6165,4 +6165,563 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema)
+    {
+    //Purpose of this test is to check what happens if we make a change to only the base schema, which affects other schemas.
+    //Turn hierarchy from S1:A -> S1:C -> S2:D to S1:A -> S1:B -> S1:C -> S2:D
+    SchemaItem s1v1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropA" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="PropB" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="PropC" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema.ecdb", s1v1));
+
+    SchemaItem s2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="Schema1" version="01.00.00" alias="s1"/>
+          <ECEntityClass typeName="D">
+            <BaseClass>s1:C</BaseClass>
+            <ECProperty propertyName="PropD1" typeName="string"/>
+            <ECProperty propertyName="PropD2" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(s2));
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    }
+
+    //import edited schema with some changes.
+    SchemaItem s1v2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropA" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="PropB" typeName="string"/>
+            <ECProperty propertyName="PropB2" typeName="string"/>
+            <ECProperty propertyName="PropB3" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="PropC" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(s1v2));
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2)
+    {
+    //Similar to V1 but with deeper hierarchy and a new sibling class alongside class D
+    //Turn hierarchy from S1:A -> S1:B -> S1:C -> S2:D -> S2:E to S1:A -> S1:B -> S1:B2 -> S1:C -> S2:D -> S2:E
+    //Contains an affitional F class which also derives from C to occupy a shared column
+    SchemaItem s1v1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropA" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="PropB" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="B2">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="PropB2" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="PropC" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema2.ecdb", s1v1));
+
+    SchemaItem s2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="Schema1" version="01.00.00" alias="s1"/>
+          <ECEntityClass typeName="D">
+            <BaseClass>s1:C</BaseClass>
+            <ECProperty propertyName="PropD1" typeName="string"/>
+            <ECProperty propertyName="PropD2" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="E">
+            <BaseClass>D</BaseClass>
+            <ECProperty propertyName="PropE" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="F">
+            <BaseClass>s1:C</BaseClass>
+            <ECProperty propertyName="PropF" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(s2));
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    }
+
+    //import edited schema with some changes.
+    SchemaItem s1v2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropA" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="PropB" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="B2">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="PropB2" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B2</BaseClass>
+            <ECProperty propertyName="PropC" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(s1v2));
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3)
+    {
+    //Similar to "InjectBaseClassInBaseSchema" but different in that class "B" does not exist before the schema update, meaning
+    //its properties are mapped during the update, not before it.
+    //Turn hierarchy from S1:A -> S1:C -> S2:D to S1:A -> S1:B -> S1:C -> S2:D
+    SchemaItem s1v1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropA" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="PropC" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema3.ecdb", s1v1));
+
+    SchemaItem s2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="Schema1" version="01.00.00" alias="s1"/>
+          <ECEntityClass typeName="D">
+            <BaseClass>s1:C</BaseClass>
+            <ECProperty propertyName="PropD1" typeName="string"/>
+            <ECProperty propertyName="PropD2" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(s2));
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    }
+
+    //import edited schema with some changes.
+    SchemaItem s1v2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropA" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="PropB" typeName="string"/>
+            <ECProperty propertyName="PropD1" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="PropC" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(s1v2));
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4)
+    {
+    //Covers the same scenario as the tests InjectBaseClassInBaseSchema1-3, but is based on classes from real
+    //schemas, condensed into fewer schemas but still reflecting the actual class hierarchy encountered
+    SchemaItem bisCore(R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="BisCore" alias="bis" version="01.00.12" description="The BIS core schema contains classes that all other domain schemas extend." displayLabel="BIS Core" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" />
+            </ECEntityClass>
+          <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
+                </ECCustomAttributes>
+            </ECEntityClass>
+          <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>GeometricElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.2.0.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="InSpatialIndex" typeName="boolean" />
+            </ECEntityClass>
+          <ECEntityClass typeName="SpatialElement" modifier="Abstract">
+                <BaseClass>GeometricElement3d</BaseClass>
+            </ECEntityClass>
+          <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
+                <BaseClass>SpatialElement</BaseClass>
+            </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema4.ecdb", bisCore));
+
+    SchemaItem spCompV1(R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00.00" description="Provision of a spatial structure of the project by aggregating spatial elements." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.12" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+            <ECEntityClass typeName="CompositeElement" description="a spatial element that may be Composite of other CompositeElements" modifier="Abstract">
+                <BaseClass>bis:SpatialLocationElement</BaseClass>
+                <ECProperty propertyName="FootprintArea" typeName="double" displayLabel="FootprintArea" readOnly="true"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ICompositeVolume" description="An interface that indicates that the CompositeElement is delimited by a volume" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                        <AppliesToEntityClass>CompositeElement</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building" description="an element modeling the spatial perspective of a building">
+                <BaseClass>CompositeElement</BaseClass>
+                <BaseClass>ICompositeVolume</BaseClass>
+            </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(spCompV1));
+
+    SchemaItem ifcDyn(R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="IFCDynamic" alias="IFC" version="100.03.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="SpatialComposition" version="01.00.00" alias="spcomp"/>
+            <ECEntityClass typeName="IfcBuilding" displayLabel="IfcBuilding">
+                <BaseClass>spcomp:Building</BaseClass>
+                <ECProperty propertyName="ifcCompositionType" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(ifcDyn));
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO IFCDynamic.IfcBuilding (ifcCompositionType) VALUES ('A')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM IFCDynamic.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    }
+
+    //import edited schema with some changes.
+    SchemaItem spCompV2(R"schema(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00.01" description="Classes for defining the Spatial Structure Hierarchy of a project or asset." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="BisCore" version="01.00.12" alias="bis"/>
+          <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+          <ECEntityClass typeName="CompositeElement" description="DEPRECATED: A spatial element that may be Composite of other CompositeElements" modifier="Abstract">
+              <BaseClass>bis:SpatialLocationElement</BaseClass>
+              <ECProperty propertyName="FootprintArea" typeName="double" description="The area that this Element projects onto its base plane." displayLabel="FootprintArea" readOnly="true"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="ISpatialOrganizer" description="An bis:SpatialLocation that organizes bis:SpatialElements using 'SpatialOrganizerHoldsSpatialElements' and 'SpatialOrganizerReferencesSpatialElements'" displayLabel="Spatial Organizer" modifier="Abstract">
+              <ECCustomAttributes>
+                  <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                      <AppliesToEntityClass>bis:SpatialLocationElement</AppliesToEntityClass>
+                  </IsMixin>
+              </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="SpatialStructureElement" description="An Element used to form a spatial breakdown structure. As an ISpatialOrganizer, it may explicitly 'hold' or 'reference' SpatialElements." displayLabel="Spatial Structure Element" modifier="Abstract">
+              <BaseClass>CompositeElement</BaseClass>
+              <BaseClass>ISpatialOrganizer</BaseClass>
+              <ECProperty propertyName="Description" typeName="string" description="A human-readable description of this Spatial Structure Element"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Facility" description="A volume occupied by a built facility, such as a building, bridge, road, factory/plant, railway, tunnel, etc." modifier="Abstract">
+              <BaseClass>SpatialStructureElement</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="ICompositeVolume" description="DEPRECATED: An optional interface that indicates that the CompositeElement is delimited by a volume" modifier="Abstract">
+              <ECCustomAttributes>
+                  <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                      <AppliesToEntityClass>CompositeElement</AppliesToEntityClass>
+                  </IsMixin>
+              </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Building" description="An element modeling the spatial perspective of a building">
+              <BaseClass>Facility</BaseClass>
+              <BaseClass>ICompositeVolume</BaseClass>
+          </ECEntityClass>
+      </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(spCompV2));
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM IFCDynamic.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified)
+    {
+    // like the above test, but everything is in a single schema
+    SchemaItem bisCore(R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+          <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" />
+            </ECEntityClass>
+          <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
+                </ECCustomAttributes>
+            </ECEntityClass>
+          <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>GeometricElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.2.0.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="InSpatialIndex" typeName="boolean" />
+            </ECEntityClass>
+          <ECEntityClass typeName="SpatialElement" modifier="Abstract">
+                <BaseClass>GeometricElement3d</BaseClass>
+            </ECEntityClass>
+          <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
+                <BaseClass>SpatialElement</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="CompositeElement" description="a spatial element that may be Composite of other CompositeElements" modifier="Abstract">
+                <BaseClass>SpatialLocationElement</BaseClass>
+                <ECProperty propertyName="FootprintArea" typeName="double" displayLabel="FootprintArea" readOnly="true"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ICompositeVolume" description="An interface that indicates that the CompositeElement is delimited by a volume" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                        <AppliesToEntityClass>CompositeElement</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building" description="an element modeling the spatial perspective of a building">
+                <BaseClass>CompositeElement</BaseClass>
+                <BaseClass>ICompositeVolume</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="IfcBuilding" displayLabel="IfcBuilding">
+                <BaseClass>Building</BaseClass>
+                <ECProperty propertyName="ifcCompositionType" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClass4_Simplified.ecdb", bisCore));
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.IfcBuilding (ifcCompositionType) VALUES ('A')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    }
+
+    //import edited schema with some changes.
+    SchemaItem spCompV2(R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" />
+            </ECEntityClass>
+          <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
+                </ECCustomAttributes>
+            </ECEntityClass>
+          <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>GeometricElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.2.0.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="InSpatialIndex" typeName="boolean" />
+            </ECEntityClass>
+          <ECEntityClass typeName="SpatialElement" modifier="Abstract">
+                <BaseClass>GeometricElement3d</BaseClass>
+            </ECEntityClass>
+          <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
+                <BaseClass>SpatialElement</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="CompositeElement" description="DEPRECATED: A spatial element that may be Composite of other CompositeElements" modifier="Abstract">
+                <BaseClass>SpatialLocationElement</BaseClass>
+                <ECProperty propertyName="FootprintArea" typeName="double" description="The area that this Element projects onto its base plane." displayLabel="FootprintArea" readOnly="true"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ISpatialOrganizer" description="An bis:SpatialLocation that organizes bis:SpatialElements using 'SpatialOrganizerHoldsSpatialElements' and 'SpatialOrganizerReferencesSpatialElements'" displayLabel="Spatial Organizer" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                        <AppliesToEntityClass>SpatialLocationElement</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="SpatialStructureElement" description="An Element used to form a spatial breakdown structure. As an ISpatialOrganizer, it may explicitly 'hold' or 'reference' SpatialElements." displayLabel="Spatial Structure Element" modifier="Abstract">
+                <BaseClass>CompositeElement</BaseClass>
+                <BaseClass>ISpatialOrganizer</BaseClass>
+                <ECProperty propertyName="Description" typeName="string" description="A human-readable description of this Spatial Structure Element"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Facility" description="A volume occupied by a built facility, such as a building, bridge, road, factory/plant, railway, tunnel, etc." modifier="Abstract">
+                <BaseClass>SpatialStructureElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="ICompositeVolume" description="DEPRECATED: An optional interface that indicates that the CompositeElement is delimited by a volume" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                        <AppliesToEntityClass>CompositeElement</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building" description="An element modeling the spatial perspective of a building">
+                <BaseClass>Facility</BaseClass>
+                <BaseClass>ICompositeVolume</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="IfcBuilding" displayLabel="IfcBuilding">
+                <BaseClass>Building</BaseClass>
+                <ECProperty propertyName="ifcCompositionType" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(spCompV2));
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    }
+    }
 END_ECDBUNITTESTS_NAMESPACE

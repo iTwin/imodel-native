@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="TestSchema" alias="testSchema" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECEnumeration typeName="SchemaLayer" backingTypeName="string" isStrict="true" description="Defines the layers in the BIS schema hierarchy.">
+        <ECEnumerator name="Core"               displayLabel="Core"                value="Core"               description="Layer for schemas that define the most fundamental concepts and key organizational strategies for all other BIS schemas."/>
+        <ECEnumerator name="Common"             displayLabel="Common"              value="Common"             description="Layer for schemas that define abstract concepts and patterns used by multiple disciplines."/>
+        <ECEnumerator name="DisciplinePhysical" displayLabel="Discipline-Physical" value="DisciplinePhysical" description="Layer for schemas that focus on physical/spatial and closely associated concepts, in light of a specific discipline."/>
+        <ECEnumerator name="DisciplineOther"    displayLabel="Discipline-Other"    value="DisciplineOther"    description="Layer for schemas that define concepts from modeling perspectives other than physical, in light of a specific discipline."/>
+        <ECEnumerator name="Application"        displayLabel="Application"         value="Application"        description="Layer for schemas that define concepts that no other schema would need or want to reference."/>
+    </ECEnumeration>
+
+    <ECCustomAttributeClass typeName="SchemaLayerInfo" appliesTo="Schema" modifier="Sealed" description="Declares the target layer in the BIS schema hierarchy for a schema.">
+        <ECProperty propertyName="Value" typeName="SchemaLayer" description="Layer in the BIS schema hierarchy that a schema targets." />
+    </ECCustomAttributeClass>
+</ECSchema>

@@ -65,6 +65,7 @@ struct TestIModelCreator : TestFileCreator
     {
 private:
     BentleyStatus _UpgradeOldFiles() const override;
+    BentleyStatus _UpgradeSchemas() const override;
 
 protected:
     explicit TestIModelCreator(Utf8CP fileName) : TestFileCreator(fileName) {}
@@ -75,6 +76,9 @@ protected:
 
 public:
     virtual ~TestIModelCreator() {}
+    static BentleyStatus UnregisterDomainsForTest();
+    static BentleyStatus RegisterDomainsForTest();
+    static BentleyStatus LoadDomainsAndSchemas(DgnDbR dgndb);
     };
 
 //======================================================================================
@@ -84,6 +88,7 @@ struct EmptyTestIModelCreator final : TestIModelCreator
     {
     private:
         BentleyStatus _Create() override { return CreateNewTestFile(m_fileName) != nullptr ? SUCCESS : ERROR;  }
+        BentleyStatus _UpgradeSchemas() const override { return SUCCESS; }
 
     public:
         EmptyTestIModelCreator() : TestIModelCreator(TESTIMODEL_EMPTY) {}
@@ -238,6 +243,7 @@ struct EC31KoqsTestIModelCreator final : TestIModelCreator
 
 </ECSchema>)xml"));
             }
+        BentleyStatus _UpgradeSchemas() const override { return SUCCESS; }
     public:
         explicit EC31KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC31KOQS) {}
         ~EC31KoqsTestIModelCreator() {}

@@ -36,7 +36,7 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_UnitSystem " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-    
+
     stat = ecdb.ExecuteDdl(TABLEDDL_Phenomenon);
     if (BE_SQLITE_OK != stat)
         {
@@ -448,7 +448,7 @@ DbResult ProfileUpgrader_4002::FixMetaSchemaClassMapCAXml(ECDbCR ecdb)
         LOG.error("ECDb profile upgrade failed: Failed to execute SQL to find malformed ClassMap CA XML on ECDbMeta.ClassHasAllBaseClasses.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-    
+
     BeInt64Id caId = stmt.GetValueId<BeInt64Id>(0);
     Utf8String caXml(stmt.GetValueText(1));
     stmt.Finalize();
@@ -501,7 +501,7 @@ DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
 //static
 DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Profile schema import");
+    ECDB_PERF_LOG_SCOPE("Profile schema import");
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     // Don't add ecdb as schema locater so that referenced schemas of the profile schemas
     // get a chance to be upgraded as well (in case there are newer versions of them in the assets folder)
@@ -527,6 +527,15 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         {
         LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.", ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
+        }
+
+    // This sql update fixes an issue that occurs when upgrading profile version to 4002.
+    // The profile upgrade code modifies values in memory, but is leaving the ExtendedTypeName value inconsistent between memory and DB for the property ECInstanceID in the table ec_Property.
+    // So, we run this sql update to make the DB value consistent with the one in memory.
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Property " SET ExtendedTypeName = '" EXTENDEDTYPENAME_Id "' WHERE Id = (select p.Id from main." TABLE_Property " p join main." TABLE_Class " c on c.id = p.ClassId join main." TABLE_Schema " s on s.id = c.SchemaId where s.Name = '" ECSCHEMA_ECDbSystem "' and c.Name = '" ECDBSYS_CLASS_ClassECSqlSystemProperties "' and p.Name = '" ECDBSYS_PROP_ECInstanceId "')"))
+        {
+        LOG.errorv("ECDb profile upgrade failed with error: Failed to update ExtendedTypeName value for property '" ECDBSYS_PROP_ECInstanceId "' in table " TABLE_Property ".");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
     PERFLOG_FINISH("ECDb", "Profile schema import");

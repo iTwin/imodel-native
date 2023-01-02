@@ -10,7 +10,6 @@
 
 #define MERGE_RULESETS_TO_ATTACHED_QUERY MERGE_QUERY_REPLACE(NODESCACHE_TABLENAME_Rulesets)
 #define MERGE_RULESETS_VARIABLES_TO_ATTACHED_QUERY MERGE_QUERY_IGNORE(NODESCACHE_TABLENAME_Variables)
-#define MERGE_PHYSICAL_HIERARCHYLEVELS_TO_ATTACHED_QUERY MERGE_QUERY_IGNORE(NODESCACHE_TABLENAME_PhysicalHierarchyLevels)
 #define MERGE_HIERARCHYLEVELS_TO_ATTACHED_QUERY MERGE_QUERY_REPLACE(NODESCACHE_TABLENAME_HierarchyLevels)
 #define MERGE_DATASOURCES_TO_ATTACHED_QUERY MERGE_QUERY_REPLACE(NODESCACHE_TABLENAME_DataSources)
 #define MERGE_DATASOURCES_CLASSES_TO_ATTACHED_QUERY MERGE_QUERY_IGNORE(NODESCACHE_TABLENAME_DataSourceClasses)
@@ -18,6 +17,7 @@
 #define MERGE_NODES_KEYS_TO_ATTACHED_QUERY MERGE_QUERY_IGNORE(NODESCACHE_TABLENAME_NodeKeys)
 #define MERGE_NODES_INSTANCES_TO_ATTACHED_QUERY MERGE_QUERY_IGNORE(NODESCACHE_TABLENAME_NodeInstances)
 #define MERGE_MERGED_NODES_TO_ATTACHED_QUERY MERGE_QUERY_IGNORE(NODESCACHE_TABLENAME_MergedNodes)
+#define MERGE_DATASOURCE_NODES_TO_ATTACHED_QUERY MERGE_QUERY_IGNORE(NODESCACHE_TABLENAME_DataSourceNodes)
 
 /*=================================================================================**//**
 * @bsiclass
@@ -36,30 +36,6 @@ struct NodesCacheMerger
             {
             SAFE_CACHED_STATEMENT(stmt, m_db, query, );
             VALIDATE_STEP(stmt, BE_SQLITE_DONE);
-            }
-
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        void LimitHierarchyVariations()
-            {
-            static Utf8CP query =
-                " SELECT [HierarchyLevelId] "
-                " FROM ( "
-                "     SELECT [HierarchyLevelId] "
-                "     FROM [" ATTACHED_DB_ALIAS "].[" NODESCACHE_TABLENAME_DataSources "] "
-                "     WHERE [HierarchyLevelId] IN (SELECT [Id] FROM [main].[" NODESCACHE_TABLENAME_HierarchyLevels "])"
-                "     GROUP BY [HierarchyLevelId], [VariablesId]) "
-                " GROUP BY [HierarchyLevelId] "
-                " HAVING count(*) > ? ";
-            SAFE_CACHED_STATEMENT(stmt, m_db, query, );
-            stmt->BindInt(1, NODESCACHE_VARIATIONS_Threshold);
-
-            while (BE_SQLITE_ROW == stmt->Step())
-                {
-                BeGuid hierarchyLevelId = NodesCacheHelpers::GetGuid(*stmt, 0);
-                NodesCacheHelpers::LimitHierarchyVariations(m_db, LIMIT_HIERARCHY_VARIATIONS_QUERY(ATTACHED_DB_ALIAS), hierarchyLevelId, NODESCACHE_VARIATIONS_Threshold);
-                }
             }
 
         /*---------------------------------------------------------------------------------**//**
@@ -137,7 +113,6 @@ struct NodesCacheMerger
         void Merge()
             {
             ExecuteQuery(MERGE_RULESETS_VARIABLES_TO_ATTACHED_QUERY);
-            ExecuteQuery(MERGE_PHYSICAL_HIERARCHYLEVELS_TO_ATTACHED_QUERY);
             ExecuteQuery(MERGE_HIERARCHYLEVELS_TO_ATTACHED_QUERY);
             ExecuteQuery(MERGE_DATASOURCES_TO_ATTACHED_QUERY);
             MergeAllDataSourceClasses();
@@ -145,7 +120,7 @@ struct NodesCacheMerger
             MergeAllNodeKeys();
             MergeAllNodeInstances();
             MergeAllMergedNodes();
-            LimitHierarchyVariations();
+            ExecuteQuery(MERGE_DATASOURCE_NODES_TO_ATTACHED_QUERY);
             }
     };
 
@@ -190,34 +165,56 @@ NavNodePtr NodesCacheWrapper::_GetNode(BeGuidCR nodeId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeVisibility NodesCacheWrapper::_GetNodeVisibility(BeGuidCR nodeId) const
+NodeVisibility NodesCacheWrapper::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
     {
     if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
-        return m_memoryCache->GetNodeVisibility(nodeId);
+        return m_memoryCache->GetNodeVisibility(nodeId, contextVariables, instanceFilter);
 
-    return m_diskCache.GetNodeVisibility(nodeId);
+    return m_diskCache.GetNodeVisibility(nodeId, contextVariables, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<uint64_t> NodesCacheWrapper::_GetNodeIndex(BeGuidCR nodeId) const
+NavNodePtr NodesCacheWrapper::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
     {
     if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
-        return m_memoryCache->GetNodeIndex(nodeId);
+        return m_memoryCache->GetPhysicalParentNode(nodeId, contextVariables, instanceFilter);
 
-    return m_diskCache.GetNodeIndex(nodeId);
+    return m_diskCache.GetPhysicalParentNode(nodeId, contextVariables, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-HierarchyLevelIdentifier NodesCacheWrapper::_FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const
+BeGuid NodesCacheWrapper::_GetVirtualParentNodeId(BeGuidCR nodeId) const
     {
-    if (IsMemoryCacheInitialized() && ShouldTakeHierarchyLevelFromMemory(rulesetId, virtualParentNodeId, false))
-        return m_memoryCache->FindHierarchyLevel(connectionId, rulesetId, virtualParentNodeId, removalId);
+    if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
+        return m_memoryCache->GetVirtualParentNodeId(nodeId);
 
-    return m_diskCache.FindHierarchyLevel(connectionId, rulesetId, virtualParentNodeId, removalId);
+    return m_diskCache.GetVirtualParentNodeId(nodeId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<uint64_t> NodesCacheWrapper::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+    {
+    if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
+        return m_memoryCache->GetNodeIndex(hierarchyLevelId, nodeId, contextVariables, instanceFilter);
+
+    return m_diskCache.GetNodeIndex(hierarchyLevelId, nodeId, contextVariables, instanceFilter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid NodesCacheWrapper::_FindHierarchyLevelId(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const
+    {
+    if (IsMemoryCacheInitialized() && ShouldTakeHierarchyLevelFromMemory(rulesetId, virtualParentNodeId))
+        return m_memoryCache->FindHierarchyLevelId(connectionId, rulesetId, virtualParentNodeId, removalId);
+
+    return m_diskCache.FindHierarchyLevelId(connectionId, rulesetId, virtualParentNodeId, removalId);
     }
 
 #ifdef wip_enable_display_label_postprocessor
@@ -263,7 +260,7 @@ bvector<DataSourceInfo> NodesCacheWrapper::_FindDataSources(CombinedHierarchyLev
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeGuid NodesCacheWrapper::_FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const& identifier) const
     {
-    if (IsMemoryCacheInitialized() && HierarchyLevelExistInMemory(identifier.GetRulesetId().c_str(), identifier.GetPhysicalParentNodeId(), true))
+    if (IsMemoryCacheInitialized() && HierarchyLevelExistInMemory(identifier.GetRulesetId().c_str(), identifier.GetPhysicalParentNodeId()))
         return m_memoryCache->FindPhysicalHierarchyLevelId(identifier);
 
     return m_diskCache.FindPhysicalHierarchyLevelId(identifier);
@@ -303,20 +300,9 @@ DataSourceInfo NodesCacheWrapper::_FindDataSource(DataSourceIdentifier const& id
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceInfo NodesCacheWrapper::_FindDataSource(BeGuidCR nodeId, int partsToGet) const
-    {
-    if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
-        return m_memoryCache->FindDataSource(nodeId, partsToGet);
-
-    return m_diskCache.FindDataSource(nodeId, partsToGet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderPtr NodesCacheWrapper::_GetCombinedHierarchyLevel(NavNodesProviderContextR context, CombinedHierarchyLevelIdentifier const& identifier, bool onlyInitialized) const
     {
-    if (IsMemoryCacheInitialized() && ShouldTakeHierarchyLevelFromMemory(identifier.GetRulesetId().c_str(), identifier.GetPhysicalParentNodeId(), true))
+    if (IsMemoryCacheInitialized() && ShouldTakeHierarchyLevelFromMemory(identifier.GetRulesetId().c_str(), identifier.GetPhysicalParentNodeId()))
         return m_memoryCache->GetCombinedHierarchyLevel(context, identifier, onlyInitialized);
 
     return m_diskCache.GetCombinedHierarchyLevel(context, identifier, onlyInitialized);
@@ -325,12 +311,12 @@ NavNodesProviderPtr NodesCacheWrapper::_GetCombinedHierarchyLevel(NavNodesProvid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCacheWrapper::_GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const& identifier, bool onlyInitialized) const
+NavNodesProviderPtr NodesCacheWrapper::_GetHierarchyLevel(NavNodesProviderContextR context, BeGuidCR id, bool onlyInitialized) const
     {
-    if (IsMemoryCacheInitialized() && m_hierarchyLevelsFromDisk.end() == m_hierarchyLevelsFromDisk.find(identifier.GetId()) && NodesCacheHelpers::HierarchyLevelExists(m_memoryCache->GetDb(), identifier.GetId()))
-        return m_memoryCache->GetHierarchyLevel(context, identifier, onlyInitialized);
+    if (IsMemoryCacheInitialized() && m_hierarchyLevelsFromDisk.end() == m_hierarchyLevelsFromDisk.find(id) && NodesCacheHelpers::HierarchyLevelExists(m_memoryCache->GetDb(), id))
+        return m_memoryCache->GetHierarchyLevel(context, id, onlyInitialized);
 
-    return m_diskCache.GetHierarchyLevel(context, identifier, onlyInitialized);
+    return m_diskCache.GetHierarchyLevel(context, id, onlyInitialized);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -352,7 +338,7 @@ void NodesCacheWrapper::_Cache(HierarchyLevelIdentifier& identifier)
     InitializeMemoryCache();
     EnsureRulesetExists(identifier.GetRulesetId());
     EnsureParentNodesExist(identifier);
-    if (!NodesCacheHelpers::GetPhysicalHierarchyLevelId(m_memoryCache->GetDb(), identifier.GetCombined()).IsValid())
+    if (!NodesCacheHelpers::GetHierarchyLevelId(m_memoryCache->GetDb(), identifier.GetCombined()).IsValid())
         AttachedNodesCacheHelper::CopyPhysicalHierarchy(m_memoryCache->GetDb(), identifier.GetCombined());
     m_memoryCache->Cache(identifier);
 #ifdef NAVNODES_CACHE_DEBUG
@@ -404,10 +390,10 @@ void NodesCacheWrapper::_Update(DataSourceInfo const& dataSourceInfo, int partsT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheWrapper::_MakePhysical(NavNodeCR node)
+void NodesCacheWrapper::_MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter)
     {
     InitializeMemoryCache();
-    m_memoryCache->MakePhysical(node);
+    m_memoryCache->MakeVirtual(nodeId, contextVariables, instanceFilter);
 #ifdef NAVNODES_CACHE_DEBUG
     m_memoryCache->Persist();
 #endif
@@ -416,10 +402,10 @@ void NodesCacheWrapper::_MakePhysical(NavNodeCR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheWrapper::_MakeVirtual(NavNodeCR node)
+void NodesCacheWrapper::_MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter)
     {
     InitializeMemoryCache();
-    m_memoryCache->MakeVirtual(node);
+    m_memoryCache->MakeHidden(nodeId, contextVariables, instanceFilter);
 #ifdef NAVNODES_CACHE_DEBUG
     m_memoryCache->Persist();
 #endif
@@ -428,60 +414,48 @@ void NodesCacheWrapper::_MakeVirtual(NavNodeCR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheWrapper::_MakeHidden(NavNodeCR node)
+bool NodesCacheWrapper::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& identifier, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
     {
-    InitializeMemoryCache();
-    m_memoryCache->MakeHidden(node);
-#ifdef NAVNODES_CACHE_DEBUG
-    m_memoryCache->Persist();
-#endif
+    if (IsMemoryCacheInitialized() && ShouldTakeHierarchyLevelFromMemory(identifier.GetRulesetId().c_str(), identifier.GetPhysicalParentNodeId()))
+        return m_memoryCache->IsCombinedHierarchyLevelInitialized(identifier, contextVariables, instanceFilter);
+
+    return m_diskCache.IsCombinedHierarchyLevelInitialized(identifier, contextVariables, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCacheWrapper::_IsInitialized(CombinedHierarchyLevelIdentifier const& identifier, RulesetVariables const& variables) const
+bool NodesCacheWrapper::_IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
     {
-    if (IsMemoryCacheInitialized() && ShouldTakeHierarchyLevelFromMemory(identifier.GetRulesetId().c_str(), identifier.GetPhysicalParentNodeId(), true))
-        return m_memoryCache->IsInitialized(identifier, variables);
+    if (IsMemoryCacheInitialized() && m_hierarchyLevelsFromDisk.end() == m_hierarchyLevelsFromDisk.find(id) && NodesCacheHelpers::HierarchyLevelExists(m_memoryCache->GetDb(), id))
+        return m_memoryCache->IsHierarchyLevelInitialized(id, contextVariables, instanceFilter);
 
-    return m_diskCache.IsInitialized(identifier, variables);
+    return m_diskCache.IsHierarchyLevelInitialized(id, contextVariables, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCacheWrapper::_IsInitialized(HierarchyLevelIdentifier const& identifier, RulesetVariables const& variables) const
+bool NodesCacheWrapper::_IsDataSourceInitialized(BeGuidCR id) const
     {
-    if (IsMemoryCacheInitialized() && m_hierarchyLevelsFromDisk.end() == m_hierarchyLevelsFromDisk.find(identifier.GetId()) && NodesCacheHelpers::HierarchyLevelExists(m_memoryCache->GetDb(), identifier.GetId()))
-        return m_memoryCache->IsInitialized(identifier, variables);
+    if (ShouldTakeDataSourceFromMemory(id, BeGuid()))
+        return m_memoryCache->IsDataSourceInitialized(id);
 
-    return m_diskCache.IsInitialized(identifier, variables);
+    return m_diskCache.IsDataSourceInitialized(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCacheWrapper::_IsInitialized(DataSourceIdentifier const& identifier, RulesetVariables const& variables) const
-    {
-    if (ShouldTakeDataSourceFromMemory(identifier.GetId(), identifier.GetHierarchyLevelId()))
-        return m_memoryCache->IsInitialized(identifier, variables);
-
-    return m_diskCache.IsInitialized(identifier, variables);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCacheWrapper::_LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key, RulesetVariables const& variables) const
+NavNodeCPtr NodesCacheWrapper::_LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key) const
     {
     NavNodeCPtr node;
     if (IsMemoryCacheInitialized())
-        node = m_memoryCache->LocateNode(connection, rulesetId, key, variables);
+        node = m_memoryCache->LocateNode(connection, rulesetId, key);
     if (node.IsValid())
         return node;
 
-    return m_diskCache.LocateNode(connection, rulesetId, key, variables);
+    return m_diskCache.LocateNode(connection, rulesetId, key);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -493,17 +467,6 @@ void NodesCacheWrapper::_OnRulesetUsed(PresentationRuleSetCR ruleset)
     m_diskCache.OnRulesetUsed(ruleset);
     if (inserted && IsMemoryCacheInitialized() && !m_rootParentId.IsValid())
         LoadRootHierarchyLevels(ruleset.GetRuleSetId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheWrapper::_OnRulesetVariablesUsed(RulesetVariables const& variables, Utf8StringCR rulesetId)
-    {
-    if (IsMemoryCacheInitialized())
-        m_memoryCache->OnRulesetVariablesUsed(variables, rulesetId);
-
-    m_diskCache.OnRulesetVariablesUsed(variables, rulesetId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,12 +530,8 @@ void NodesCacheWrapper::LoadRootHierarchyLevels(Utf8StringCR rulesetId)
     {
     EnsureRulesetExists(rulesetId);
 
-    bvector<BeGuid> virtualHierarchyLevels = AttachedNodesCacheHelper::GetChildHierarchyLevelIds(m_memoryCache->GetDb(), false, m_rootParentId, rulesetId.c_str());
-    for (BeGuidCR levelId : virtualHierarchyLevels)
-        EnsureHierarchyLevelExists(levelId);
-
-    bvector<BeGuid> physicalHierarchyLevels = AttachedNodesCacheHelper::GetChildHierarchyLevelIds(m_memoryCache->GetDb(), true, m_rootParentId, rulesetId.c_str());
-    for (BeGuidCR levelId : physicalHierarchyLevels)
+    bvector<BeGuid> hierarchyLevels = AttachedNodesCacheHelper::GetChildHierarchyLevelIds(m_memoryCache->GetDb(), m_rootParentId, rulesetId.c_str());
+    for (BeGuidCR levelId : hierarchyLevels)
         EnsureHierarchyLevelExists(levelId);
 
     if (m_rootParentId.IsValid())
@@ -582,12 +541,12 @@ void NodesCacheWrapper::LoadRootHierarchyLevels(Utf8StringCR rulesetId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCacheWrapper::ShouldTakeHierarchyLevelFromMemory(Utf8CP rulesetId, BeGuidCR parentId, bool isPhysical) const
+bool NodesCacheWrapper::ShouldTakeHierarchyLevelFromMemory(Utf8CP rulesetId, BeGuidCR parentId) const
     {
     if (parentId.IsValid() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), parentId))
         return true;
 
-    bvector<BeGuid> hierarchyLevelIds = NodesCacheHelpers::GetChildHierarchyLevelIds(m_memoryCache->GetDb(), isPhysical, parentId, rulesetId);
+    bvector<BeGuid> hierarchyLevelIds = NodesCacheHelpers::GetChildHierarchyLevelIds(m_memoryCache->GetDb(), parentId, rulesetId);
     for (BeGuidCR levelId : hierarchyLevelIds)
         {
         if (m_hierarchyLevelsFromDisk.end() == m_hierarchyLevelsFromDisk.find(levelId))
@@ -613,12 +572,12 @@ bool NodesCacheWrapper::ShouldTakeDataSourceFromMemory(BeGuidCR dataSourceId, Be
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCacheWrapper::HierarchyLevelExistInMemory(Utf8CP rulesetId, BeGuidCR parentId, bool isPhysical) const
+bool NodesCacheWrapper::HierarchyLevelExistInMemory(Utf8CP rulesetId, BeGuidCR parentId) const
     {
     if (parentId.IsValid() && !NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), parentId))
         return false;
 
-    return !NodesCacheHelpers::GetChildHierarchyLevelIds(m_memoryCache->GetDb(), isPhysical, parentId, rulesetId).empty();
+    return !NodesCacheHelpers::GetChildHierarchyLevelIds(m_memoryCache->GetDb(), parentId, rulesetId).empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -673,9 +632,9 @@ void NodesCacheWrapper::EnsureHierarchyLevelExists(BeGuidCR hierarchyLevelId)
         return;
 
     AttachedNodesCacheHelper::HierarchyLevelCopyInfo hierarchyLevelCopyInfo = AttachedNodesCacheHelper::GetHierarchyLevelCopyInfo(m_memoryCache->GetDb(), hierarchyLevelId);
-    EnsureParentNodesExist({hierarchyLevelCopyInfo.PhysicalParentNodeId, hierarchyLevelCopyInfo.VirtualParentNodeId});
+    EnsureParentNodesExist({hierarchyLevelCopyInfo.ParentNodeId});
     EnsureRulesetExists(hierarchyLevelCopyInfo.RulesetId);
-    AttachedNodesCacheHelper::CopyHierarchyLevel(m_memoryCache->GetDb(), hierarchyLevelId, hierarchyLevelCopyInfo.PhysicalHierarchyLevelId);
+    AttachedNodesCacheHelper::CopyHierarchyLevel(m_memoryCache->GetDb(), hierarchyLevelId);
 
     m_hierarchyLevelsFromDisk.insert(hierarchyLevelId);
 

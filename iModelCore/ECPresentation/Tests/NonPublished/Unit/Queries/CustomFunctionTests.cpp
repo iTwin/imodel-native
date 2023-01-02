@@ -329,7 +329,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRan
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
@@ -353,7 +353,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeLab
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
@@ -377,7 +377,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeVal
     spec.AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("", "", "6", "9"));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
@@ -482,7 +482,7 @@ TEST_F(CustomFunctionTests, GetRangeIndex_PropertyValueDoesntMatchAnyRange)
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
@@ -504,7 +504,7 @@ TEST_F(CustomFunctionTests, GetRangeIndex_ReturnsValidRangeIndex)
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
@@ -526,7 +526,7 @@ TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsEmptyStringIfValueDoesntMatch
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
@@ -548,7 +548,7 @@ TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsRangeImageIdIfValueMatches)
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 

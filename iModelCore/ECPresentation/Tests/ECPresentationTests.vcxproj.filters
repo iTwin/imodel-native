@@ -63,6 +63,9 @@
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp">
       <Filter>Integration\Hierarchies</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_InstanceFiltering.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
     <ClCompile Include="NonPublished\Integration\Hierarchies\PagingTests.cpp">
       <Filter>Integration\Hierarchies</Filter>
     </ClCompile>
@@ -369,6 +372,9 @@
     <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
     <ClCompile Include="NonPublished\Unit\QueryBuilderTest.cpp">
       <Filter>Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_Filtering.cpp">
+      <Filter>Integration\Content</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

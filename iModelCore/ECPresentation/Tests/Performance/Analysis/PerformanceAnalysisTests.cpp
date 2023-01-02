@@ -17,7 +17,8 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEnginePerformanceAnalysisTests::SetUpTestCase()
     {
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE, NativeLogging::LOG_INFO);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity(LOGGER_NAMESPACE, NativeLogging::LOG_INFO);
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
 
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
@@ -96,7 +97,7 @@ void RulesEnginePerformanceAnalysisTests::LoadRulesetConfigs()
         RulesetConfig config;
         if (SUCCESS != ParseRulesetConfig(value, config))
             {
-            NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->errorv("Invalid config encountered for ruleset - %s", rulesetId.c_str());
+            NativeLogging::CategoryLogger(LOGGER_NAMESPACE).errorv("Invalid config encountered for ruleset - %s", rulesetId.c_str());
             continue;
             }
         m_rulesetConfigs.Insert(rulesetId, config);
@@ -165,7 +166,6 @@ void SingleManagerRulesEnginePerformanceAnalysisTests::Reset(ECDb* project)
     ECPresentationManager::Params params(ECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
     params.SetMultiThreadingParams(threadAllocations);
     params.SetLocalState(&m_localState);
-    params.SetMode(ECPresentationManager::Mode::ReadOnly);
     ECPresentationManager::Params::CachingParams cachingParams;
     cachingParams.SetCacheDirectoryPath(temporaryDirectory);
     params.SetCachingParams(cachingParams);
@@ -198,7 +198,7 @@ void SingleManagerRulesEnginePerformanceAnalysisTests::ForEachDatasetAndRuleset(
         if (isDirectory || dataSetPath.GetExtension().EqualsI(L"json"))
             continue;
 
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov(L"Dataset: %s", dataSetPath.GetFileNameAndExtension().c_str());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov(L"Dataset: %s", dataSetPath.GetFileNameAndExtension().c_str());
 
         // load project
         ECDb project;
@@ -206,7 +206,7 @@ void SingleManagerRulesEnginePerformanceAnalysisTests::ForEachDatasetAndRuleset(
         if (BeSQLite::DbResult::BE_SQLITE_OK != (result = project.OpenBeSQLiteDb(dataSetPath, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly))))
             {
             BeAssert(false);
-            NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->errorv("  Dataset open failed with: %d", (int)result);
+            NativeLogging::CategoryLogger(LOGGER_NAMESPACE).errorv("  Dataset open failed with: %d", (int)result);
             return;
             }
         m_manager->GetConnections().CreateConnection(project);
@@ -226,7 +226,7 @@ void SingleManagerRulesEnginePerformanceAnalysisTests::ForEachDatasetAndRuleset(
             Reset(&project);
 
             // load ruleset
-            NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov(L"  Ruleset: %s", rulesetPath.GetFileNameAndExtension().c_str());
+            NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov(L"  Ruleset: %s", rulesetPath.GetFileNameAndExtension().c_str());
             PresentationRuleSetPtr ruleset;
             if (rulesetPath.GetExtension().EqualsI(L"xml"))
                 ruleset = PresentationRuleSet::ReadFromXmlFile(rulesetPath);
@@ -235,7 +235,7 @@ void SingleManagerRulesEnginePerformanceAnalysisTests::ForEachDatasetAndRuleset(
             if (ruleset.IsNull())
                 {
                 BeAssert(false);
-                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->error("  Ruleset read failed");
+                NativeLogging::CategoryLogger(LOGGER_NAMESPACE).error("  Ruleset read failed");
                 continue;
                 }
             m_locater->AddRuleSet(*ruleset);
