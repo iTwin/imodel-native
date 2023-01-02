@@ -36,15 +36,17 @@ BentleyStatus BoundQueryValuesList::Bind(ECSqlStatement& stmt) const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(RapidJsonValueCR const& json)
+std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJsConst const& json)
     {
-    if (!json.IsObject() || !json.HasMember("type"))
+    if (!json.isObject() || !json.hasMember("type"))
         return nullptr;
 
-    Utf8CP type = json["type"].GetString();
+    Utf8CP type = json["type"].asCString();
     if (0 == strcmp("ec-value", type))
         {
-        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), json["value"]);
+        rapidjson::Document doc;    // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        doc.Parse(json["value"].Stringify().c_str());
+        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), doc);
         return std::make_unique<BoundQueryECValue>(std::move(value));
         }
     if (0 == strcmp("value-set", type))
@@ -52,18 +54,20 @@ std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(Rap
         int valueType = json["value-type"].GetInt();
         if (0 == valueType)
             return std::make_unique<BoundECValueSet>(bvector<ECValue>());
-        return std::make_unique<BoundRapidJsonValueSet>(json["value"], (PrimitiveType)valueType);
+        rapidjson::Document doc;
+        doc.Parse(json["value"].Stringify().c_str());
+        return std::make_unique<BoundRapidJsonValueSet>(doc, (PrimitiveType)valueType);
         }
     if (0 == strcmp("id", type))
         {
-        return std::make_unique<BoundQueryId>(json["value"].GetString());
+        return std::make_unique<BoundQueryId>(json["value"].asCString());
         }
     if (0 == strcmp("id-set", type))
         {
-        RapidJsonValueCR idsJson = json["value"];
+        BeJsConst idsJson = json["value"];
         bvector<BeInt64Id> ids;
-        for (rapidjson::SizeType i = 0; i < idsJson.Size(); ++i)
-            ids.push_back(BeInt64Id::FromString(idsJson[i].GetString()));
+        for (rapidjson::SizeType i = 0; i < idsJson.size(); ++i)
+            ids.push_back(BeInt64Id::FromString(idsJson[i].asCString()));
         return std::make_unique<BoundQueryIdSet>(ids);
         }
     return nullptr;
@@ -564,18 +568,6 @@ static bool AreEqual(JoinClause const& lhs, JoinClause const& rhs)
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document PresentationQuery::ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("query", rapidjson::Value(GetQueryString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("bindings", GetBindings().ToJson(&json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 // @bsimethod BTBT
 +---------------+---------------+---------------+---------------+---------------+------*/
 //rapidjson::Document PresentationQueryBase::ToJsonInternal(rapidjson::Document::AllocatorType* allocator) const
@@ -585,17 +577,6 @@ rapidjson::Document PresentationQuery::ToJson(rapidjson::Document::AllocatorType
 //    json.AddMember("Query", rapidjson::Value(ToString().c_str(), json.GetAllocator()), json.GetAllocator());
 //    json.AddMember("Bindings", GetBoundValues().ToJsonInternal(&json.GetAllocator()), json.GetAllocator());
 //    return json;
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<PresentationQuery> PresentationQuery::FromJson(RapidJsonValueCR json)
-    {
-    BoundQueryValuesList bindings;
-    if (SUCCESS == bindings.FromJson(json["bindings"]))
-        return std::make_unique<PresentationQuery>(json["query"].GetString(), bindings);
-    return nullptr;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 // Note: need these here to avoid compiler from complaining regarding unknown type of
@@ -2156,14 +2137,14 @@ bool StringQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) con
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod BTBT
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BoundQueryValuesList::FromJson(IBoundQueryValueSerializer &serializer, RapidJsonValueCR json)
+BentleyStatus BoundQueryValuesList::FromJson(IBoundQueryValueSerializer &serializer, BeJsConst json)
     {
     clear();
 
-    if (!json.IsArray())
+    if (!json.isArray())
         return ERROR;
-    BeRapidJsonUtilities::ToPrettyString(json);
-    for (rapidjson::SizeType i = 0; i < json.Size(); ++i)
+    auto thing = json.Stringify(StringifyFormat::Indented);
+    for (uint32_t i = 0; i < json.size(); ++i)
         {
         auto value = BoundQueryValue::FromJson(serializer, json[i]);
         if (value)

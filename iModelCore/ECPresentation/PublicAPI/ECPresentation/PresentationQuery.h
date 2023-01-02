@@ -42,7 +42,7 @@ struct DefaultBoundQueryValueSerializer : IBoundQueryValueSerializer
     rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const;
     rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const;
     rapidjson::Document _ToJson(BoundRapidJsonValueSet const&, rapidjson::Document::AllocatorType*) const;
-    std::unique_ptr<BoundQueryValue> _FromJson(RapidJsonValueCR const&);
+    std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const&);
     };
 
 /*=================================================================================**//**
