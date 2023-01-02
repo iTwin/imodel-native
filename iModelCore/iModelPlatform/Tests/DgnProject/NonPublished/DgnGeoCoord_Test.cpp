@@ -57,7 +57,7 @@ TEST_F(BaseDgnGeoCoordTest, GeneralTestsOneDb)
 
     DbResult status;
     CreateDgnDbParams params("Test");
-    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
+    dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
 
     GeoCoordinates::BaseGCSPtr theNewGCS = GeoCoordinates::BaseGCS::CreateGCS("UTM84-10N");
 
@@ -218,7 +218,7 @@ TEST_F(BaseDgnGeoCoordTest, GeneralTestsTwoDb)
 
     DbResult status;
     CreateDgnDbParams params1("Test1");
-    dgnProj1 = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName1.GetNameUtf8().c_str()), params1);
+    dgnProj1 = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName1.GetNameUtf8().c_str()), params1);
 
     GeoCoordinates::BaseGCSPtr theNewGCS1 = GeoCoordinates::BaseGCS::CreateGCS("UTM84-10N");
 
@@ -244,7 +244,7 @@ TEST_F(BaseDgnGeoCoordTest, GeneralTestsTwoDb)
         BeFileName::BeDeleteFile(dgndbFileName2);
 
     CreateDgnDbParams params2("Test2");
-    dgnProj2 = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName2.GetNameUtf8().c_str()), params2);
+    dgnProj2 = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName2.GetNameUtf8().c_str()), params2);
 
     GeoCoordinates::BaseGCSPtr theNewGCS2 = GeoCoordinates::BaseGCS::CreateGCS("UTM84-11N");
 
@@ -936,12 +936,12 @@ TEST_F(BaseECEFLocationTests, EffectOfTangentVSSecantPlanes)
     {
 
     // This test compares a few ways to compute ECEF location starting from a specified GCS and an
-    // origin point within this GCS. The following details are adapted from the text found here: 
+    // origin point within this GCS. The following details are adapted from the text found here:
     // https://www.geometrictools.com/Documentation/ConvertingBetweenCoordinateSystems.pdf
     // The tests below all begin by computing an affine transformation from GCS coordinates to ECEF
-    // coordinates by first computing a list of linearly independent directions from the selected model  
+    // coordinates by first computing a list of linearly independent directions from the selected model
     // origin which forms a basis for R^3. Then any point p in R^3 can be written as p = A*x where the columns of A
-    // are the 3 linearly independent directions and x is a vector reprensenting the coordinates of the point 
+    // are the 3 linearly independent directions and x is a vector reprensenting the coordinates of the point
     // in the local frame. If we repeat this process to compute a local frame in ECEF, then any point y in R^3 can
     // be expressed as y = A_ECEF * x (the local frame is being scaled, rotated and translated by using the same
     // coefficient vector x). Combining this with p = A*x we get y = A_ECEF * A^(-1) * p. The matrix
@@ -1016,7 +1016,7 @@ TEST_F(BaseECEFLocationTests, EffectOfTangentVSSecantPlanes)
         tangent2.TranslateInLocalCoordinates(tangent2, -modelOrigin.x, -modelOrigin.y, -modelOrigin.z);
         }
 
-        // Compare values at distant point. Tangent plane should be more precise close to the  
+        // Compare values at distant point. Tangent plane should be more precise close to the
         // chosen origin point (first part), up to about half way through the distance chosen to compute
         // the secant plane in the positive direction, where the earth surface begins to curve back
         // towards the secant plane (second part).
@@ -1098,7 +1098,7 @@ TEST_F(BaseECEFLocationTests, EffectOfElevation)
         { // Compute tangent plane using ground elevation ( z = 0 )
         auto origin = modelOrigin;
         origin.z = 0.0;
-        
+
         auto eastPoint = DPoint3d::From(origin.x + 1.0, origin.y, origin.z);
         auto northPoint = DPoint3d::From(origin.x, origin.y + 1.0, origin.z);
         auto elevationPoint = DPoint3d::From(origin.x, origin.y, origin.z + 1.0);
@@ -1141,7 +1141,7 @@ TEST_F(BaseECEFLocationTests, EffectOfElevation)
         auto error_t_g = testPoint_ecef_g.Distance(groundTruthTestPoint_ecef);
         EXPECT_TRUE(error_t < error_t_g);
 
-        // ... Elevation vector is perpendicular to both tangent planes 
+        // ... Elevation vector is perpendicular to both tangent planes
         DPoint3d groundTestPoint_ecef_g;
         t_g.Multiply(groundTestPoint_ecef_g, groundTestPoint);
 
@@ -1181,13 +1181,13 @@ TEST_F(BaseECEFLocationTests, EffectOfElevation)
         EXPECT_NEAR(dot, 1.0, 1.e-6);
         }
 
-        // The projection on the tangent plane is simply the extension of the line passing through the  
-        // center of the earth and the expected ECEF point all the way to the intersection point on the 
+        // The projection on the tangent plane is simply the extension of the line passing through the
+        // center of the earth and the expected ECEF point all the way to the intersection point on the
         // tangent plane t(P). Therefore the test point vector is parallel to the expected test point vector.
         auto testPointAngle = testPoint_ecef.DotProduct(groundTruthTestPoint_ecef) / ( testPoint_ecef.Magnitude() * groundTruthTestPoint_ecef.Magnitude());
         EXPECT_NEAR(testPointAngle, 1.0, 1.e-6);
 
-        // Tangent plane based on the model origin height will be more precise relative to the model origin height ellipsoid as long as the 
+        // Tangent plane based on the model origin height will be more precise relative to the model origin height ellipsoid as long as the
         // ratio of the error computed here is less than 0.5. This can be shown by using the Pythagorean theorem on the right angle triangle formed
         // by t(P), t_g(P) and t_g((Px, Py, 0).
         auto deltaTestPointECEFGroundTruthECEF = testPoint_ecef.Distance(groundTruthTestPoint_ecef);
@@ -1323,7 +1323,7 @@ TEST_F(SetAndGetDgnGeoCoord, SetAndGetAndCompare)
 
         DbResult status;
         CreateDgnDbParams params("Test");
-        dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
+        dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
 
         GeoCoordinates::BaseGCSPtr theNewGCS = GeoCoordinates::BaseGCS::CreateGCS();
 

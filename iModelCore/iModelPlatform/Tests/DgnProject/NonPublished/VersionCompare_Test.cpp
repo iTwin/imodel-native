@@ -130,7 +130,7 @@ void VersionCompareTestFixture::SetUpTestCase()
 
     BeSQLite::DbResult result;
     CreateDgnDbParams createParams ("VersionCompareTest");
-    m_db = DgnDb::CreateDgnDb(&result, dgndbPath, createParams);
+    m_db = DgnDb::CreateIModel(&result, dgndbPath, createParams);
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE(result == BeSQLite::DbResult::BE_SQLITE_OK);
 
@@ -447,6 +447,8 @@ DgnElementPtr   VersionCompareTestFixture::InsertPhysicalElement(Utf8String code
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr    VersionCompareTestFixture::CloneTemporaryDb(DgnDbPtr db)
     {
+    db->SaveChanges();
+    db->PerformCheckpoint(WalCheckpointMode::Truncate);
     WString name = WString(L"Temp_") + db->GetFileName().GetFileNameWithoutExtension();
     BeFileName tempFilename = db->GetFileName().GetDirectoryName();
     tempFilename.AppendToPath(name.c_str());

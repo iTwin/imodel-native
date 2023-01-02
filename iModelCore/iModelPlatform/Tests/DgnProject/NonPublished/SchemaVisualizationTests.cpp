@@ -1091,7 +1091,7 @@ TEST_F(SchemaVisualizationTests, TestSchemaDiagram)
     dbCreateParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
     DbResult createStatus;
-    DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, dbPath, dbCreateParams);
+    DgnDbPtr db = DgnDb::CreateIModel(&createStatus, dbPath, dbCreateParams);
     ASSERT_TRUE(BE_SQLITE_OK == createStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -1140,7 +1140,7 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
     dbCreateParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
     DbResult createStatus;
-    DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, dbPath, dbCreateParams);
+    DgnDbPtr db = DgnDb::CreateIModel(&createStatus, dbPath, dbCreateParams);
     ASSERT_TRUE(BE_SQLITE_OK == createStatus);
     ASSERT_TRUE(db.IsValid());
 

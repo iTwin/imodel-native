@@ -573,7 +573,7 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbPtr JsInterop::CreateDgnDb(Utf8StringCR filenameIn, BeJsConst props) {
+DgnDbPtr JsInterop::CreateIModel(Utf8StringCR filenameIn, BeJsConst props) {
     auto rootSubject = props[json_rootSubject()];
     if (!rootSubject.isStringMember(json_name()))
         BeNapi::ThrowJsException(Env(), "Root subject name is missing");
@@ -601,7 +601,7 @@ DgnDbPtr JsInterop::CreateDgnDb(Utf8StringCR filenameIn, BeJsConst props) {
     if (!params.IsReadonly())
         params.SetBusyRetry(new BeSQLite::BusyRetry(40, 500)); // retry 40 times, 1/2 second intervals (20 seconds total)
     DbResult result;
-    DgnDbPtr db = DgnDb::CreateDgnDb(&result, filename, params);
+    DgnDbPtr db = DgnDb::CreateIModel(&result, filename, params);
     if (!db.IsValid())
         throwSqlResult("cannot create iModel", filenameIn.c_str(), result);
 
@@ -859,11 +859,11 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext) 
+void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext)
     {
     // Add the db then the standard schema paths as fallback locations to load referenced schemas.
     schemaContext->SetFinalSchemaLocater(db.GetSchemaLocater());
-    
+
     BeFileName rootDir = PlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     rootDir.AppendToPath(L"ECSchemas");
     BeFileName dgnPath = rootDir;

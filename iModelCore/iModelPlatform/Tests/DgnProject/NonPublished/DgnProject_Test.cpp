@@ -118,7 +118,7 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
     BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"));
 
     //Create and Verify that project was created
-    project = DgnDb::CreateDgnDb(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
+    project = DgnDb::CreateIModel(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
     ASSERT_TRUE(project != NULL);
     ASSERT_EQ(BE_SQLITE_OK, status) << "Status returned is:" << status;
 
@@ -129,7 +129,7 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
     params.SetOverwriteExisting(false);
 
     //Create another project with same name. It should fail
-    project2 = DgnDb::CreateDgnDb(&status2, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
+    project2 = DgnDb::CreateIModel(&status2, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
     EXPECT_FALSE(project2.IsValid()) << "Project with Duplicate name should not be created";
     EXPECT_EQ(BE_SQLITE_ERROR_FileExists, status2) << "Status returned for duplicate name is: " << status2;
 }
@@ -175,7 +175,7 @@ TEST_F(DgnDbTest, InvalidFileFormat)
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnDbTest, CreateDgnDb)
+TEST_F(DgnDbTest, CreateIModel)
 {
     DgnDbPtr dgnProj;
     BeFileName dgndbFileName;
@@ -187,7 +187,7 @@ TEST_F(DgnDbTest, CreateDgnDb)
 
     DbResult status;
     CreateDgnDbParams params(TEST_NAME);
-    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
+    dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
     ASSERT_TRUE(dgnProj != NULL);
 }
@@ -202,7 +202,7 @@ TEST_F(DgnDbTest, SetBriefcaseAsStandalone)
     DbResult result = BE_SQLITE_ERROR;
     CreateDgnDbParams params(TEST_NAME);
     auto filename =  DgnDbTestDgnManager::GetOutputFilePath(L"MasterCopy.ibim");
-    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&result, filename, params);
+    DgnDbPtr dgndb = DgnDb::CreateIModel(&result, filename, params);
     ASSERT_TRUE(dgndb.IsValid());
 
     dgndb->ResetBriefcaseId(TEST_BRIEFCASE_ID);
@@ -247,7 +247,7 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
     // importing schema into a briefcase with local changes should NOT be possible.
     DbResult result = BE_SQLITE_ERROR;
     CreateDgnDbParams params(TEST_NAME);
-    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&result, DgnDbTestDgnManager::GetOutputFilePath(L"ImportSchemaWithLocalChanges.ibim"), params);
+    DgnDbPtr dgndb = DgnDb::CreateIModel(&result, DgnDbTestDgnManager::GetOutputFilePath(L"ImportSchemaWithLocalChanges.ibim"), params);
     // Fails on Linux
     ASSERT_TRUE(dgndb.IsValid());
 
@@ -284,7 +284,7 @@ TEST_F(DgnDbTest, CreateWithInvalidName)
 
     DbResult status;
     CreateDgnDbParams params(TEST_NAME);
-    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
+    dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
     ASSERT_TRUE(dgnProj != NULL);
     /////////It creates a DgnDbfile with .txt extension having success status needs to figure out is this right behavior
@@ -333,7 +333,7 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
 TEST_F(DgnDbTest, IsPurgeOperationActive)
     {
     CreateDgnDbParams params(TEST_NAME);
-    DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, DgnDbTestDgnManager::GetOutputFilePath(L"IsPurgeOperationActive.bim"), params);
+    DgnDbPtr db = DgnDb::CreateIModel(nullptr, DgnDbTestDgnManager::GetOutputFilePath(L"IsPurgeOperationActive.bim"), params);
     ASSERT_TRUE(db.IsValid());
 
     db->BeginPurgeOperation();

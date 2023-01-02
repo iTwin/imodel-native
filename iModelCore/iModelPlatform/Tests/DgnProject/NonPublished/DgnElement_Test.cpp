@@ -2355,7 +2355,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
     BeFileName dbPath;
     DgnElementId elId;
         {
-        db = DgnDbTestUtils::CreateDgnDb(L"AutoHandledGeometryProps.db", true);
+        db = DgnDbTestUtils::CreateIModel(L"AutoHandledGeometryProps.db", true);
         dbPath = db->GetFileName();
         ASSERT_TRUE(db.IsValid()) << "Failed to create AutoHandledGeometryProps test dgndb";
 

@@ -550,16 +550,6 @@ TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     GeometricModel::Formatter displayInfo = model->GetFormatterR();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
     EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
-    Utf8String name = "Invalid*Name";
-    Utf8CP InvalidChar = "*";
-    Utf8Char replace = ' ';
-
-    bool check = DgnDbTable::IsValidName(name, InvalidChar);
-    EXPECT_FALSE(check);
-    DgnDbTable::ReplaceInvalidCharacters(name, InvalidChar, replace);
-    EXPECT_EQ("Invalid Name", (Utf8String) name);
-    check = DgnDbTable::IsValidName(name, InvalidChar);
-    EXPECT_TRUE(check);
 
     // Try Update model unit definition with wrong values
     GeometricModel::Formatter displayInfo2 = model->GetFormatterR();
@@ -1062,7 +1052,7 @@ TEST_F(DgnModelTests, ModelJsonRoundTrip)
     {
     DgnDbPtr db;
         {
-        db = DgnDbTestUtils::CreateDgnDb(L"ModelJsonRoundTrip.db", true);
+        db = DgnDbTestUtils::CreateIModel(L"ModelJsonRoundTrip.db", true);
         ASSERT_TRUE(db.IsValid()) << "Failed to create ModelJsonRoundTrip test dgndb";
 
         auto modelName = "ThePhysicalPartition";
@@ -1105,7 +1095,7 @@ TEST_F(DgnModelTests, ModelEmptyJsonRoundtrip)
     {
     DgnDbPtr db;
         {
-        db = DgnDbTestUtils::CreateDgnDb(L"ModelEmptyJsonRoundTrip.db", true);
+        db = DgnDbTestUtils::CreateIModel(L"ModelEmptyJsonRoundTrip.db", true);
         ASSERT_TRUE(db.IsValid()) << "Failed to create ModelJsonRoundTrip test dgndb";
 
         auto modelName = "ThePhysicalPartition";

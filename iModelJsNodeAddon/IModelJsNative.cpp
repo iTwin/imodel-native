@@ -1006,7 +1006,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     void CreateIModel(NapiInfoCR info)  {
         REQUIRE_ARGUMENT_STRING(0, filename);
         REQUIRE_ARGUMENT_ANY_OBJ(1, props);
-        SetDgnDb(*JsInterop::CreateDgnDb(filename, props)); // CreateDgnDb throws on errors
+        SetDgnDb(*JsInterop::CreateIModel(filename, props)); // CreateIModel throws on errors
     }
 
     Napi::Value GetECClassMetaData(NapiInfoCR info)

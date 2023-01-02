@@ -366,7 +366,7 @@ void CreateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             createParams.SetOverwriteExisting(true);
 
             DbResult fileStatus;
-            Dgn::DgnDbPtr iModel = Dgn::DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
+            Dgn::DgnDbPtr iModel = Dgn::DgnDb::CreateIModel(&fileStatus, filePath, createParams);
             if (BE_SQLITE_OK != fileStatus)
                 {
                 IModelConsole::WriteErrorLine("Failed to create iModel file '%s'.", filePath.GetNameUtf8().c_str());

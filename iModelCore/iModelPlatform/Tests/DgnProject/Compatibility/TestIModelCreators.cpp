@@ -54,7 +54,7 @@ DgnDbPtr TestIModelCreator::CreateNewTestFile(Utf8StringCR fileName)
 
     CreateDgnDbParams createParam(fileName.c_str());
     DbResult stat = BE_SQLITE_OK;
-    DgnDbPtr bim = DgnDb::CreateDgnDb(&stat, filePath, createParam);
+    DgnDbPtr bim = DgnDb::CreateIModel(&stat, filePath, createParam);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("Failed to create new test file '%s'.", filePath.GetNameUtf8().c_str());
@@ -263,7 +263,7 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
             return ERROR;
             }
         }
-        
+
     auto status = BE_SQLITE_OK;
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(DgnDbProfile::Get().GetCreatedDataFolder(), TESTIMODEL_EC32ENUMS_PROFILEUPGRADED, true))
         {
