@@ -172,6 +172,7 @@ namespace connectivity
                 opt_column_commalist,
                 opt_column_ref_commalist,
                 opt_cte_recursive,
+                opt_disqualify_polymorphic_constraint,
                 opt_disqualify_primary_join,
                 opt_ecsqloptions_clause,
                 opt_escape,
@@ -179,7 +180,12 @@ namespace connectivity
                 opt_having_clause,
                 opt_limit_offset_clause,
                 opt_member_function_args,
+                opt_only,
                 opt_order_by_clause,
+                opt_pragma_for,
+                opt_pragma_func,
+                opt_pragma_set_val,
+                opt_pragma_set,
                 opt_where_clause,
                 ordering_spec_commalist,
                 ordering_spec,
@@ -187,6 +193,9 @@ namespace connectivity
                 outer_join_type,
                 parameter_ref,
                 parameter,
+                pragma_path,
+                pragma_value,
+                pragma,
                 predicate_check,
                 property_path_entry,
                 property_path,
@@ -230,7 +239,7 @@ namespace connectivity
                 value_exp,
                 values_or_query_spec,
                 where_clause,
-                rule_count,                
+                rule_count,
                 UNKNOWN_RULE            // ID indicating that a node is no rule with a matching Rule-enum value (see getKnownRuleID)
                 };
 
@@ -331,7 +340,9 @@ namespace connectivity
     //-----------------------------------------------------------------------------
     inline OSQLParseNode* OSQLParseNode::getChild(size_t nPos) const
         {
-        OSL_ENSURE(nPos < m_aChildren.size(), "Invalid Position");
+        if (nPos >= m_aChildren.size()) {
+            OSL_ENSURE(nPos < m_aChildren.size(), "Invalid Position");
+        }
         return m_aChildren.at(nPos);
         }
     inline OSQLParseNode* OSQLParseNode::getLast() const
@@ -354,5 +365,4 @@ namespace connectivity
 #define SQL_ISTOKEN(pParseNode, token)          ((pParseNode)->isToken() && (pParseNode)->getTokenID() == SQL_TOKEN_##token)
 #define SQL_ISPUNCTUATION(pParseNode, aString)  ((pParseNode)->getNodeType() == SQL_NODE_PUNCTUATION && !(pParseNode)->getTokenValue().Equals(aString))
     }
-
 #endif    //_CONNECTIVITY_SQLNODE_HXX

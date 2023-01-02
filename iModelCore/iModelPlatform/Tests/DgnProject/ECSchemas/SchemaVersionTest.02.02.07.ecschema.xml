@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+========================================================================================== -->
+<ECSchema schemaName="SchemaVersionTest" alias="vertest" version="02.02.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" description="This is a test schema.">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+	
+    <ECEntityClass typeName="TestElement" displayLabel="Test label1" description="Test element description.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IntegerProperty1" typeName="int" description="Test property1."/>
+		<ECProperty propertyName="IntegerProperty2" typeName="int" description="Test property2."/>
+		<ECProperty propertyName="IntegerProperty3" typeName="int" description="Test property3."/>
+		<ECProperty propertyName="IntegerProperty4" typeName="int" description="Test property4."/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="AnotherTestElement" displayLabel="Test label2" description="Test element description.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IntegerProperty5" typeName="int" description="Test property5."/>
+    </ECEntityClass>
+</ECSchema>

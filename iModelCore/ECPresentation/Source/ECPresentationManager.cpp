@@ -48,9 +48,11 @@ protected:
             {
             return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId));
             });
-        m_manager.GetTasksManager().CreateAndExecute([&, connectionId = connection->GetId(), changes](IECPresentationTaskCR)
+        m_manager.GetTasksManager().CreateAndExecute([&, connectionId = connection->GetId(), changes](IECPresentationTaskR task)
             {
-            NotifyECInstancesChanged(connections.GetConnection(connectionId.c_str())->GetECDb(), changes);
+            IConnectionPtr taskConnection = connections.GetConnection(connectionId.c_str());
+            task.SetTaskConnection(*taskConnection);
+            NotifyECInstancesChanged(taskConnection->GetECDb(), changes);
             }, taskParams);
         }
 public:
@@ -106,7 +108,6 @@ private:
             {
             return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId));
             });
-        connection.InterruptRequests();
         return InterruptResult{ std::move(cancelation), blocker };
         }
 
@@ -363,45 +364,28 @@ IECPropertyFormatter const& ECPresentationManager::GetFormatter() const {return 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ECPresentationManager::GetConnectionId(ECDbCR db) const
+IConnectionCR ECPresentationManager::GetConnection(ECDbCR db) const
     {
-    IConnectionCP connection = GetConnections().GetConnection(db);
-    if (!connection)
-        return nullptr;
-    return connection->GetId().c_str();
+    auto scope = Diagnostics::Scope::Create("Get task connection");
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Did not find a connection for given ECDb `%s`", db.GetDbFileName()));
+    if (!connection->IsOpen())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Found a connection for given ECDb `%s`, but it's not open", db.GetDbFileName()));
+    return *connection;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IConnectionCR ECPresentationManager::GetTaskConnection(IECPresentationTaskCR task) const
+IConnectionCR ECPresentationManager::GetConnection(Utf8CP connectionId) const
     {
     auto scope = Diagnostics::Scope::Create("Get task connection");
-
-    bset<Utf8String> taskConnectionIds;
-    auto filter = TaskDependencyOnConnection::CreatePredicate([&taskConnectionIds](Utf8StringCR connectionId)
-        {
-        taskConnectionIds.insert(connectionId);
-        return false;
-        });
-    for (auto const& dep : task.GetDependencies())
-        filter(*dep);
-
-    if (taskConnectionIds.empty())
-        throw InternalError("Failed to find a connection for current task");
-
-    if (taskConnectionIds.size() > 1)
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_WARNING, Utf8PrintfString("Expected to find only 1 connection for current task, but found: %" PRIu64, taskConnectionIds.size()));
-
-    Utf8StringCR connectionId = *taskConnectionIds.begin();
-    IConnectionCPtr connection = GetConnections().GetConnection(connectionId.c_str());
-
+    IConnectionCPtr connection = GetConnections().GetConnection(connectionId);
     if (connection.IsNull())
-        throw InternalError(Utf8PrintfString("Failed to find a connection for current task with ID = `%s`", connectionId.c_str()));
-
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Did not find a connection with given ID `%s`", connectionId));
     if (!connection->IsOpen())
-        throw InternalError(Utf8PrintfString("Found a connection for current task with ID = `%s`, but it's not open", connectionId.c_str()));
-
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Found a connection with given ID `%s`, but it's not open", connectionId));
     return *connection;
     }
 
@@ -416,14 +400,29 @@ folly::Future<folly::Unit> ECPresentationManager::GetTasksCompletion() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECPresentationTaskParams CreateNodesTaskParams(ECPresentationManager::Impl const& impl, Utf8CP connectionId, AsyncHierarchyRequestParams const& requestParams)
+static ECPresentationTaskParams CreateNodesTaskParams(ECPresentationManager::Impl const& impl, IConnectionCR connection, AsyncHierarchyRequestParams const& requestParams)
     {
     ECPresentationTaskParams taskParams;
-    BeGuid parentId = requestParams.GetParentNode() ? requestParams.GetParentNode()->GetNodeId() : BeGuid();
+
+    BeGuid parentId;
+    if (requestParams.GetParentNode())
+        {
+        parentId = requestParams.GetParentNode()->GetNodeId();
+        }
+    else if (requestParams.GetParentNodeKey())
+        {
+        // note: we may not find the node by key here, but it's okay - in that case we lock
+        // the whole hierarchy starting from the root, because we'll need to create it up until
+        // the requested parent node is found
+        auto cache = impl.GetHierarchyCache(connection.GetId());
+        NavNodeCPtr parentNode = cache->LocateNode(connection, requestParams.GetRulesetId().c_str(), *requestParams.GetParentNodeKey());
+        if (parentNode.IsValid())
+            parentId = parentNode->GetNodeId();
+        }
 
     taskParams.SetDependencies(TaskDependencies
         {
-        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnConnection>(connection.GetId()),
         std::make_shared<TaskDependencyOnRuleset>(requestParams.GetRulesetId()),
         std::make_shared<TaskDependencyOnParentNode>(parentId)
         });
@@ -437,7 +436,7 @@ static ECPresentationTaskParams CreateNodesTaskParams(ECPresentationManager::Imp
         });
 
     // set predicate which checks if this task is blocked
-    taskParams.SetThisTaskBlockingPredicate([&impl, connectionId = Utf8String(connectionId), identifier = CombinedHierarchyLevelIdentifier(connectionId, requestParams.GetRulesetId(), parentId)]()
+    taskParams.SetThisTaskBlockingPredicate([&impl, connectionId = connection.GetId(), identifier = CombinedHierarchyLevelIdentifier(connection.GetId(), requestParams.GetRulesetId(), parentId)]()
         {
         auto cache = impl.GetHierarchyCache(connectionId);
         return nullptr != cache && cache->IsHierarchyLevelLocked(identifier);
@@ -480,21 +479,19 @@ folly::Future<NodesResponse> ECPresentationManager::GetNodes(WithPageOptions<Asy
     auto diagnostics = Diagnostics::Scope::Create("Get child nodes");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<NodesResponse>(InvalidArgumentException("ECDb not registered as a connection"));
-
-    return m_tasksManager->CreateAndExecute<NodesResponse>([&, params](auto const& task) mutable
+    IConnectionCR connection = GetConnection(params.GetECDb());
+    return m_tasksManager->CreateAndExecute<NodesResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
         INavNodesDataSourcePtr source = m_impl->GetNodes(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         if (source.IsValid())
             return NavNodesContainer(*ConstNodesDataSource::Create(*source));
         return NavNodesContainer();
-        }, CreateNodesTaskParams(*m_impl, connectionId, params));
+        }, CreateNodesTaskParams(*m_impl, connection, params));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,68 +502,16 @@ folly::Future<NodesCountResponse> ECPresentationManager::GetNodesCount(AsyncHier
     auto diagnostics = Diagnostics::Scope::Create("Get child nodes count");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<NodesCountResponse>(InvalidArgumentException("ECDb not registered as a connection"));
-
-    return m_tasksManager->CreateAndExecute<NodesCountResponse>([&, params](auto const& task) mutable
+    IConnectionCR connection = GetConnection(params.GetECDb());
+    return m_tasksManager->CreateAndExecute<NodesCountResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
         return m_impl->GetNodesCount(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
-        }, CreateNodesTaskParams(*m_impl, connectionId, params));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NodeResponse> ECPresentationManager::GetParent(AsyncNodeParentRequestParams const& params)
-    {
-    auto diagnostics = Diagnostics::Scope::Create("Get parent node");
-    Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
-
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<NodeResponse>(InvalidArgumentException("ECDb not registered as a connection"));
-
-    ECPresentationTaskParams taskParams;
-    taskParams.SetDependencies({ std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()) });
-    taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<NodeResponse>([&, params](auto const& task) mutable
-        {
-        CALL_TASK_START_CALLBACK(params);
-
-        IConnectionCR taskConnection = GetTaskConnection(task);
-
-        return m_impl->GetParent(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
-        }, taskParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NodeResponse> ECPresentationManager::GetNode(AsyncNodeByKeyRequestParams const& params)
-    {
-    auto diagnostics = Diagnostics::Scope::Create("Get node");
-    Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
-
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<NodeResponse>(InvalidArgumentException("ECDb not registered as a connection"));
-
-    ECPresentationTaskParams taskParams;
-    taskParams.SetDependencies({ std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()) });
-    taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<NodeResponse>([&, params](auto const& task) mutable
-        {
-        CALL_TASK_START_CALLBACK(params);
-
-        IConnectionCR taskConnection = GetTaskConnection(task);
-
-        return m_impl->GetNode(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
-        }, taskParams);
+        }, CreateNodesTaskParams(*m_impl, connection, params));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -577,26 +522,25 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
     auto diagnostics = Diagnostics::Scope::Create("Get filtered node paths");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<NodePathsResponse>(InvalidArgumentException("ECDb not registered as a connection"));
+    IConnectionCR connection = GetConnection(params.GetECDb());
 
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies({
-        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnConnection>(connection.GetId()),
         std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId())
         });
     taskParams.SetPriority(params.GetRequestPriority());
-    taskParams.SetOtherTasksBlockingPredicate([connectionId, rulesetId = params.GetRulesetId()](auto const& task)
+    taskParams.SetOtherTasksBlockingPredicate([connectionId = connection.GetId(), rulesetId = params.GetRulesetId()](auto const& task)
         {
         return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId)) && task.GetDependencies().Has(TaskDependencyOnRuleset(rulesetId));
         });
 
-    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
         Utf8String escapedString(params.GetFilterText());
         escapedString.ToLower();
@@ -605,7 +549,11 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
         implParams.SetFilterText(escapedString);
 
         bvector<NavNodeCPtr> nodes = m_impl->GetFilteredNodes(implParams);
-        return NodePathsHelper::CreateHierarchy(*m_impl, implParams, nodes);
+        auto parentGetter = [&](NavNodeCR child) -> NavNodeCPtr
+            {
+            return m_impl->GetParent(NodeParentRequestImplParams::Create(taskConnection, task.GetCancelationToken(), params.GetRulesetId(), params.GetRulesetVariables(), child));
+            };
+        return NodePathsHelper::CreateHierarchy(nodes, parentGetter, escapedString);
         }, taskParams);
     }
 
@@ -617,27 +565,26 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
     auto diagnostics = Diagnostics::Scope::Create("Get node paths");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<NodePathsResponse>(InvalidArgumentException("ECDb not registered as a connection"));
+    IConnectionCR connection = GetConnection(params.GetECDb());
 
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies({
-        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnConnection>(connection.GetId()),
         std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId())
         });
     taskParams.SetPriority(params.GetRequestPriority());
-    taskParams.SetOtherTasksBlockingPredicate([connectionId, rulesetId = params.GetRulesetId()](auto const& task)
+    taskParams.SetOtherTasksBlockingPredicate([connectionId = connection.GetId(), rulesetId = params.GetRulesetId()](auto const& task)
         {
         return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId)) && task.GetDependencies().Has(TaskDependencyOnRuleset(rulesetId));
         });
-    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<NodePathsResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
-        auto pathParamsBase = NodePathFromInstanceKeyPathRequestImplParams::Create(taskConnection, task.GetCancelationToken(), HierarchyRequestParams(params, nullptr), bvector<ECInstanceKey>());
+        auto pathParamsBase = NodePathFromInstanceKeyPathRequestImplParams::Create(taskConnection, task.GetCancelationToken(), HierarchyRequestParams(params), bvector<ECInstanceKey>());
         auto paths = ContainerHelpers::TransformContainer<bvector<NodesPathElement>>(params.GetInstanceKeyPaths(), [&](auto const& keyPath)
             {
             auto pathParams = pathParamsBase;
@@ -656,18 +603,20 @@ folly::Future<ContentClassesResponse> ECPresentationManager::GetContentClasses(A
     auto diagnostics = Diagnostics::Scope::Create("Get content classes");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<ContentClassesResponse>(InvalidArgumentException("ECDb not registered as a connection"));
+    IConnectionCR connection = GetConnection(params.GetECDb());
 
     ECPresentationTaskParams taskParams;
-    taskParams.SetDependencies({ std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()) });
+    taskParams.SetDependencies({
+        std::make_shared<TaskDependencyOnConnection>(connection.GetId()),
+        std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()),
+        });
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentClassesResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentClassesResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
         return m_impl->GetContentClasses(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
@@ -676,10 +625,10 @@ folly::Future<ContentClassesResponse> ECPresentationManager::GetContentClasses(A
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool ShouldCancelContentRequest(IECPresentationTaskCR request, Utf8StringCR displayType, Utf8CP connectionId, SelectionInfoCR selectionInfo)
+static bool ShouldCancelContentRequest(IECPresentationTaskCR request, Utf8StringCR displayType, Utf8StringCR connectionId, SelectionInfoCR selectionInfo)
     {
     return request.GetDependencies().Has(TaskDependencyOnDisplayType(displayType))
-        && request.GetDependencies().Has(TaskDependencyOnConnection(connectionId ? connectionId : ""))
+        && request.GetDependencies().Has(TaskDependencyOnConnection(connectionId))
         && request.GetDependencies().Has(TaskDependencyOnSelection::CreatePredicate([&selectionInfo](SelectionInfoCR dependencySelectionInfo)
             {
             return dependencySelectionInfo.GetSelectionProviderName().Equals(selectionInfo.GetSelectionProviderName())
@@ -695,21 +644,19 @@ folly::Future<ContentDescriptorResponse> ECPresentationManager::GetContentDescri
     auto diagnostics = Diagnostics::Scope::Create("Get content descriptor");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<ContentDescriptorResponse>(InvalidArgumentException("ECDb not registered as a connection"));
+    IConnectionCR connection = GetConnection(params.GetECDb());
 
     if (params.GetSelectionInfo())
         {
         m_tasksManager->Cancel([&](IECPresentationTaskCR task)
             {
-            return ShouldCancelContentRequest(task, params.GetPreferredDisplayType(), connectionId, *params.GetSelectionInfo());
+            return ShouldCancelContentRequest(task, params.GetPreferredDisplayType(), connection.GetId(), *params.GetSelectionInfo());
             });
         }
 
     TaskDependencies dependencies
         {
-        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnConnection>(connection.GetId()),
         std::make_shared<TaskDependencyOnRuleset>(params.GetRulesetId()),
         std::make_shared<TaskDependencyOnDisplayType>(params.GetPreferredDisplayType()),
         };
@@ -719,11 +666,12 @@ folly::Future<ContentDescriptorResponse> ECPresentationManager::GetContentDescri
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentDescriptorResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentDescriptorResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
         return m_impl->GetContentDescriptor(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
@@ -756,11 +704,12 @@ folly::Future<ContentResponse> ECPresentationManager::GetContent(WithPageOptions
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentResponse>([&, params](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
+        task.SetTaskConnection(taskConnection);
 
         ContentCPtr content = m_impl->GetContent(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         if (content.IsValid())
@@ -796,11 +745,12 @@ folly::Future<ContentSetSizeResponse> ECPresentationManager::GetContentSetSize(A
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<ContentSetSizeResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<ContentSetSizeResponse>([&, params](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
+        task.SetTaskConnection(taskConnection);
 
         return m_impl->GetContentSetSize(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
@@ -824,13 +774,11 @@ folly::Future<DisplayLabelResponse> ECPresentationManager::GetDisplayLabel(Async
     auto diagnostics = Diagnostics::Scope::Create("Get display label");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<DisplayLabelResponse>(InvalidArgumentException("ECDb not registered as a connection"));
+    IConnectionCR connection = GetConnection(params.GetECDb());
 
     TaskDependencies dependencies
         {
-        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnConnection>(connection.GetId()),
         std::make_shared<TaskDependencyOnDisplayType>(ContentDisplayType::List),
         };
     if (!params.GetRulesetId().empty())
@@ -839,11 +787,12 @@ folly::Future<DisplayLabelResponse> ECPresentationManager::GetDisplayLabel(Async
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<DisplayLabelResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<DisplayLabelResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
         return m_impl->GetDisplayLabel(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
@@ -869,11 +818,12 @@ folly::Future<DistinctValuesResponse> ECPresentationManager::GetDistinctValues(W
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies(dependencies);
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<DistinctValuesResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<DistinctValuesResponse>([&, params](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
+        task.SetTaskConnection(taskConnection);
 
         PagingDataSourceCPtr<DisplayValueGroupCPtr> source = m_impl->GetDistinctValues(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         if (source.IsValid())
@@ -900,22 +850,21 @@ folly::Future<HierarchiesCompareResponse> ECPresentationManager::CompareHierarch
     auto diagnostics = Diagnostics::Scope::Create("Compare hierarchies");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
-    Utf8CP connectionId = GetConnectionId(params.GetECDb());
-    if (!connectionId)
-        return folly::makeFuture<HierarchiesCompareResponse>(InvalidArgumentException("ECDb not registered as a connection"));
+    IConnectionCR connection = GetConnection(params.GetECDb());
 
     ECPresentationTaskParams taskParams;
     taskParams.SetDependencies({
-        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnConnection>(connection.GetId()),
         std::make_shared<TaskDependencyOnRuleset>(params.GetLhsRulesetId()),
         std::make_shared<TaskDependencyOnRuleset>(params.GetRhsRulesetId()),
         });
     taskParams.SetPriority(params.GetRequestPriority());
-    return m_tasksManager->CreateAndExecute<HierarchiesCompareResponse>([&, params](auto const& task) mutable
+    return m_tasksManager->CreateAndExecute<HierarchiesCompareResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
         {
         CALL_TASK_START_CALLBACK(params);
 
-        IConnectionCR taskConnection = GetTaskConnection(task);
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
 
         return m_impl->CompareHierarchies(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);

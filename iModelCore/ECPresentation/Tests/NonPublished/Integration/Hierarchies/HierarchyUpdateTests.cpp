@@ -16,12 +16,33 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct TestUiStateProvider : IUiStateProvider
 {
 private:
-    NavNodeKeySet m_expandedNodes;
+    std::function<bvector<IConnectionCP>()> m_connectionsGetter;
+    std::function<bvector<PresentationRuleSetCPtr>()> m_rulesetsGetter;
+    std::shared_ptr<UiState> m_state;
 protected:
-    INavNodeKeysContainerCPtr _GetExpandedNodes(Utf8StringCR) const override {return NavNodeKeySetContainer::Create(m_expandedNodes);}
+    std::shared_ptr<UiState> _GetUiState(IConnectionCR, Utf8StringCR) const override {return m_state;}
+    bvector<RulesetUiState> _GetUiState(IConnectionCR) const override
+        {
+        return ContainerHelpers::TransformContainer<bvector<RulesetUiState>>(m_rulesetsGetter(), [&](auto const& ruleset)
+            {
+            return RulesetUiState(ruleset->GetRuleSetId(), m_state);
+            });
+        }
+    bvector<ConnectionUiState> _GetUiState(Utf8StringCR) const override
+        {
+        return ContainerHelpers::TransformContainer<bvector<ConnectionUiState>>(m_connectionsGetter(), [&](auto const& connection)
+            {
+            return ConnectionUiState(*connection, m_state);
+            });
+        }
 public:
-    void AddExpandedNode(NavNodeKeyCPtr key) {m_expandedNodes.insert(key);}
-    void RemoveExpandedNode(NavNodeKeyCPtr key) {m_expandedNodes.erase(key);}
+    TestUiStateProvider(std::function<bvector<IConnectionCP>()> connectionsGetter, std::function<bvector<PresentationRuleSetCPtr>()> rulesetsGetter)
+        : m_connectionsGetter(connectionsGetter), m_rulesetsGetter(rulesetsGetter), m_state(std::make_shared<UiState>())
+        {}
+    void AddExpandedNode(NavNodeKeyCPtr key) {m_state->GetHierarchyLevelState(key.get()).SetIsExpanded(true);}
+    void RemoveExpandedNode(NavNodeKeyCPtr key) {m_state->GetHierarchyLevelState(key.get()).SetIsExpanded(false);}
+    void SetInstanceFilter(NavNodeCP parentNode, Utf8String instanceFilter) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters({ instanceFilter });}
+    void SetInstanceFilters(NavNodeCP parentNode, bvector<Utf8String> instanceFilters) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters(instanceFilters);}
 };
 
 /*=================================================================================**//**
@@ -33,7 +54,15 @@ struct HierarchyUpdateTests : UpdateTests
 
     void SetUp() override
         {
-        m_uiState = std::make_shared<TestUiStateProvider>();
+        m_uiState = std::make_shared<TestUiStateProvider>(
+            [this]() -> bvector<IConnectionCP>
+                {
+                return { m_manager->GetConnections().GetConnection(m_db) };
+                },
+            [this]() -> bvector<PresentationRuleSetCPtr>
+                {
+                return ContainerHelpers::TransformContainer<bvector<PresentationRuleSetCPtr>>(m_locater->LocateRuleSets());
+                });
         UpdateTests::SetUp();
         }
 
@@ -67,7 +96,7 @@ TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -81,7 +110,7 @@ TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
 
     // expect 1 node
-    nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_EQ(*retainedNode->GetKey(), *nodes[0]->GetKey());
 
@@ -111,7 +140,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 class grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -138,7 +167,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
 
     // expect the same one class grouping node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode));
@@ -181,7 +210,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     bvector<NavNodeCPtr> removedChildNodes;
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 class grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -217,7 +246,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the class grouping node to be gone as there're no instances left to group
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect one update record
@@ -245,7 +274,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 class grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -266,7 +295,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the class grouping node to be gone as there're no instances left to group
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect one update record
@@ -297,7 +326,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -329,7 +358,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
 
     // expect the display label grouping node to be gone (single instance is not grouped under a display label grouping node)
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
@@ -371,7 +400,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     bvector<NavNodeCPtr> removedInstanceNodes;
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -409,7 +438,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the display label grouping node to be gone as there're no instances left to group
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
@@ -444,7 +473,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -465,7 +494,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the display label grouping node to be gone as there're no instances left to group
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
@@ -500,7 +529,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -532,7 +561,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // expect the display label grouping node to be gone (single instance is not grouped under a display label grouping node)
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
@@ -565,7 +594,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect no nodes
     ASSERT_EQ(0, rootNodes.GetSize());
@@ -575,7 +604,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect one widget instance node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
@@ -609,7 +638,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 2 gadget nodes
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -619,7 +648,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect one additional widget instance node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[2].IsValid());
     ASSERT_TRUE(rootNodes[2]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
@@ -654,7 +683,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 3 ECInstance nodes
     ASSERT_EQ(3, rootNodes.GetSize());
@@ -676,7 +705,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // expect the display label grouping node to be created
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode));
@@ -714,7 +743,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 2 ECInstance nodes
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -731,7 +760,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
 
     // expect the display label grouping node to be created
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
@@ -770,7 +799,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
     ASSERT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str());
@@ -793,7 +822,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget4);
 
     // expect the display label grouping node to have 3 children now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_EQ(3, rootNodes[0]->GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount());
 
@@ -838,7 +867,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     for (NavNodeCPtr const& node : rootNodes)
         {
@@ -851,7 +880,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
 
     // expect 3 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
     for (NavNodeCPtr const& node : rootNodes)
         {
@@ -859,7 +888,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
         EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // verify records
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -890,7 +919,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
     for (NavNodeCPtr const& node : rootNodes)
         {
@@ -904,7 +933,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget2);
 
     // expect 2 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     for (NavNodeCPtr const& node : rootNodes)
         {
@@ -939,7 +968,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECInstanceNodeAfterECInstanceChange)
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -957,7 +986,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECInstanceNodeAfterECInstanceChange)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // expect the label of the node to be changed
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ("Label 2", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -989,7 +1018,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -999,7 +1028,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // expect 2 nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
@@ -1035,7 +1064,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1045,7 +1074,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // expect 2 nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
@@ -1082,7 +1111,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1092,7 +1121,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     m_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
 
     // still expect 1 node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
@@ -1121,7 +1150,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1131,7 +1160,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     m_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
 
     // expect 2 nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
     // verify records
@@ -1159,7 +1188,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateRootDataSourceAfterECInstanceInsertIfC
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1169,7 +1198,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateRootDataSourceAfterECInstanceInsertIfC
     m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // still expect 1 node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
@@ -1203,7 +1232,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_RelatedInst
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1222,7 +1251,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_RelatedInst
     m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // expect 1 node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1261,7 +1290,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rule->AddSpecification(*spec);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 2 ECInstance nodes
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -1272,7 +1301,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     ECValue v;
 
     // expect 3 nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
 
     // verify records
@@ -1307,7 +1336,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rule->AddSpecification(*spec);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 2 ECInstance nodes
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -1318,7 +1347,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     ECValue v;
 
     // expect 3 nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
 
     // verify records
@@ -1352,7 +1381,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rule->AddSpecification(*spec);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1363,7 +1392,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     ECValue v;
 
     // expect 2 nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
     // verify records
@@ -1413,7 +1442,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     childRule->AddSpecification(*spec);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1435,7 +1464,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     ECValue v;
 
     // expect 1 child node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
 
@@ -1481,7 +1510,7 @@ TEST_F (HierarchyUpdateTests, CreatesNodeAfterECInstanceInsertWhenPreviouslyNotC
     childRule->AddSpecification(*childSpec);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 0 nodes
     ASSERT_EQ(0, rootNodes.GetSize());
@@ -1491,7 +1520,7 @@ TEST_F (HierarchyUpdateTests, CreatesNodeAfterECInstanceInsertWhenPreviouslyNotC
     m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // expect 1 node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
@@ -1527,7 +1556,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 widget
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1538,7 +1567,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // still expect 1 node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstances(*rootNodes[0], {widget, widget2});
 
@@ -1574,7 +1603,7 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 instance
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1594,7 +1623,7 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
     m_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
 
     // still expect 1 ECClassGrouping node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
     ASSERT_STREQ("ClassE", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1638,7 +1667,7 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 property grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1658,7 +1687,7 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // still expect 1 ECProperty grouping node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1705,7 +1734,7 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
     groupingRule->AddGroup(*groupingSpec);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 property grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1725,7 +1754,7 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // still expect 1 ECProperty grouping node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     ASSERT_STREQ("5 to 10", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1770,7 +1799,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 property grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -1794,7 +1823,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget2);
 
     // expect 2 ECProperty grouping nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1844,7 +1873,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChangeWith
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 2 ECInstance nodes
     ASSERT_EQ(2, rootNodes.GetSize());
@@ -1859,7 +1888,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChangeWith
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget2);
 
     // expect 1 ECProperty grouping node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1896,7 +1925,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // insert a widget to force custom spec update
@@ -1904,7 +1933,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect 1 root node now (still no custom node)
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1940,7 +1969,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // insert a widget to force custom spec update
@@ -1948,7 +1977,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect 2 root nodes now (including the custom node)
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -1987,7 +2016,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     bvector<NavNodeCPtr> deletedNodes = {rootNodes[0], rootNodes[1]};
 
@@ -1996,7 +2025,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update records
@@ -2033,7 +2062,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("MyCustomType", rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("MyLabel", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2062,7 +2091,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // expect 2 children now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
@@ -2102,7 +2131,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_EQ(3, rootNodes[0]->GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount());
@@ -2132,7 +2161,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     m_eventsSource->NotifyECInstanceDeleted(m_db, *differentWidget);
 
     // expect 2 children now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_EQ(2, rootNodes[0]->GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount());
@@ -2185,7 +2214,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2200,7 +2229,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 child node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
@@ -2247,7 +2276,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2262,7 +2291,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 child node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
@@ -2310,7 +2339,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2328,7 +2357,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 children now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
@@ -2374,7 +2403,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2392,7 +2421,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 children now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
@@ -2437,7 +2466,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2455,7 +2484,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 child node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
@@ -2502,7 +2531,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2520,7 +2549,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 child node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
@@ -2568,7 +2597,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2589,7 +2618,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 children now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
@@ -2635,7 +2664,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -2656,7 +2685,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 children now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
@@ -2696,7 +2725,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -2707,7 +2736,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2743,7 +2772,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -2754,7 +2783,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2791,7 +2820,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2804,7 +2833,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -2839,7 +2868,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2852,7 +2881,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -2886,7 +2915,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -2894,7 +2923,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2930,7 +2959,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardH
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -2938,7 +2967,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardH
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2975,7 +3004,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -2985,7 +3014,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -3020,7 +3049,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3030,7 +3059,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -3064,7 +3093,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -3075,7 +3104,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3111,7 +3140,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -3122,7 +3151,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3159,7 +3188,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3172,7 +3201,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -3207,7 +3236,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3220,7 +3249,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -3254,7 +3283,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -3262,7 +3291,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3298,7 +3327,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardG
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // relate the instances
@@ -3306,7 +3335,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardG
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3343,7 +3372,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3353,7 +3382,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -3388,7 +3417,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardG
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3398,7 +3427,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardG
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 root nodes now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -3438,7 +3467,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUp
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     gadget->SetValue("MyID", ECValue("123"));
@@ -3448,7 +3477,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUp
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3492,7 +3521,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // expand node
@@ -3506,7 +3535,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // expect 1 root node with 1 child
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *widget);
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
@@ -3558,7 +3587,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // expand node
@@ -3572,7 +3601,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // expect 1 root node with no children
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *widget);
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
@@ -3618,7 +3647,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *widget1);
 
@@ -3633,7 +3662,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     m_eventsSource->NotifyECInstancesUpdated(m_db, {widget2.get(), gadget.get()});
 
     // expect the child node to exist now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *widget1);
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
@@ -3677,7 +3706,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
 
     // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label override with related instance property got applied
@@ -3688,7 +3717,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // still expect 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label has changed
@@ -3729,7 +3758,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
 
     // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label override with related instance property got applied
@@ -3743,7 +3772,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
         });
 
     // still expect 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label has changed
@@ -3784,7 +3813,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
 
     // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label override with related instance property got applied
@@ -3796,7 +3825,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // still expect 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label has changed
@@ -3841,9 +3870,9 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     rules3->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
-    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
-    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables())).get(); });
+    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables())).get(); });
+    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables())).get(); });
 
     // verify expected results
     ASSERT_EQ(1, rootNodes1.GetSize());
@@ -3860,9 +3889,9 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // verify expected results
-    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
-    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
-    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables())).get(); });
+    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables())).get(); });
+    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes1.GetSize());
     EXPECT_STREQ("456", rootNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, rootNodes2.GetSize());
@@ -3921,9 +3950,9 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     rules3->AddPresentationRule(*childRule3);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
-    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
-    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables())).get(); });
+    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables())).get(); });
+    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables())).get(); });
 
     // verify expected results
     ASSERT_EQ(1, rootNodes1.GetSize());
@@ -3957,11 +3986,11 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // verify expected results
-    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules1->GetRuleSetId(), RulesetVariables(), rootNodes1[0].get())).get(); });
-    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules2->GetRuleSetId(), RulesetVariables(), rootNodes2[0].get())).get(); });
-    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables())).get(); });
     childNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules3->GetRuleSetId(), RulesetVariables(), rootNodes3[0].get())).get(); });
     ASSERT_EQ(1, childNodes1.GetSize());
     EXPECT_STREQ("456", childNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
@@ -3970,15 +3999,20 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     ASSERT_EQ(0, childNodes3.GetSize());
 
     // expect 2 update records
+    // note: the order of records between different rulesets is undefined
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode()->Equals(*rootNodes1[0]));
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
-    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    auto rules1Records = ContainerHelpers::FindSubset<HierarchyUpdateRecord>(m_updateRecordsHandler->GetRecords(), [&](auto const& rec){return rec.GetRulesetId() == rules1->GetRuleSetId();});
+    ASSERT_EQ(1, rules1Records.size());
+    EXPECT_TRUE(rules1Records[0].GetParentNode()->Equals(*rootNodes1[0]));
+    EXPECT_EQ(1, rules1Records[0].GetNodesCount());
+    ASSERT_EQ(0, rules1Records[0].GetExpandedNodes().size());
 
-    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[1].GetParentNode()->Equals(*rootNodes2[0]));
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
-    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+    auto rules2Records = ContainerHelpers::FindSubset<HierarchyUpdateRecord>(m_updateRecordsHandler->GetRecords(), [&](auto const& rec){return rec.GetRulesetId() == rules2->GetRuleSetId();});
+    ASSERT_EQ(1, rules2Records.size());
+    EXPECT_TRUE(rules2Records[0].GetParentNode()->Equals(*rootNodes2[0]));
+    EXPECT_EQ(1, rules2Records[0].GetNodesCount());
+    ASSERT_EQ(0, rules2Records[0].GetExpandedNodes().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4002,7 +4036,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
     // expand node
@@ -4015,7 +4049,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect the root node to have a "has children" flag set to "true"
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
@@ -4064,7 +4098,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     childRule1->GetSpecifications().front()->AddNestedRule(*childRule2);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
     SetNodeExpanded(*rootNodes[0]);
@@ -4080,7 +4114,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // expect the middle child node to have a "has children" flag set to "true"
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
@@ -4131,7 +4165,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
     // expand node
@@ -4145,7 +4179,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // expect the root node to have a "has children" flag set to "false"
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
@@ -4185,7 +4219,7 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // insert a widget
@@ -4193,7 +4227,7 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect the root node to get inserted
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
 
@@ -4229,7 +4263,7 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
     NavNodeCPtr deletedRootNode = rootNodes[0];
@@ -4245,7 +4279,7 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // expect the root node to be gone
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update records
@@ -4283,7 +4317,7 @@ TEST_F (HierarchyUpdateTests, DoesNotUpdateChildHierarchyIfParentIsRemoved)
     rules->AddPresentationRule(*grandchildRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // verify expected results
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -4307,7 +4341,7 @@ TEST_F (HierarchyUpdateTests, DoesNotUpdateChildHierarchyIfParentIsRemoved)
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // verify expected results
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // expect 1 update record
@@ -4334,7 +4368,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
     // insert a widget
@@ -4342,7 +4376,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect 1 root node now
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4384,7 +4418,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4405,7 +4439,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4444,7 +4478,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4464,7 +4498,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
 
     // make sure we have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4504,7 +4538,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("Gadget_Label", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4527,7 +4561,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("Gadget_Label", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4576,7 +4610,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenLastChildrenRemovedForNod
     rules->AddPresentationRule(*childRule2);
 
     // make sure we have 1 root node
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4597,7 +4631,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenLastChildrenRemovedForNod
     m_eventsSource->NotifyECInstanceDeleted(m_db, *sprocket);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
@@ -4642,7 +4676,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
@@ -4660,7 +4694,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
     m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
@@ -4703,7 +4737,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
@@ -4720,7 +4754,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
     m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
@@ -4765,7 +4799,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
@@ -4790,7 +4824,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
@@ -4840,7 +4874,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
 
     // expect 1 root node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -4861,7 +4895,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
     m_eventsSource->NotifyECInstanceInserted(m_db, *gadget2);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // make sure now it has 2 children nodes
@@ -4911,7 +4945,7 @@ TEST_F(HierarchyUpdateTests, UpdatesParentWhenNotFinalizedChildDatasourceBecomes
     rules->AddPresentationRule(*childRule2);
 
     // request root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // expect to have 1 children
@@ -4922,7 +4956,7 @@ TEST_F(HierarchyUpdateTests, UpdatesParentWhenNotFinalizedChildDatasourceBecomes
     m_eventsSource->NotifyECInstanceDeleted(m_db, *c);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // make sure we have 0 child nodes
@@ -4964,7 +4998,7 @@ TEST_F(HierarchyUpdateTests, UpdateParentNodeWhenChildInstanceIsInserted_WithRul
 
     // request root nodes
     m_manager->GetUserSettings().GetSettings(rules->GetRuleSetId()).SetSettingBoolValue("show_nodes", true);
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // expect to have 0 children
@@ -4975,7 +5009,7 @@ TEST_F(HierarchyUpdateTests, UpdateParentNodeWhenChildInstanceIsInserted_WithRul
     m_eventsSource->NotifyECInstanceInserted(m_db, *b);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // make sure we have 1 child node
@@ -5022,7 +5056,7 @@ TEST_F(HierarchyUpdateTests, UpdatesRootNodeWhenChildrenCountIsAffectedByChangeI
     rules->AddPresentationRule(*grandChildRule);
 
     // request root nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
@@ -5036,7 +5070,7 @@ TEST_F(HierarchyUpdateTests, UpdatesRootNodeWhenChildrenCountIsAffectedByChangeI
     m_eventsSource->NotifyECInstanceDeleted(m_db, *c);
 
     // make sure we still have 1 root node
-    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), nullptr)).get(); });
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // make sure we have 0 child node
@@ -5049,4 +5083,769 @@ TEST_F(HierarchyUpdateTests, UpdatesRootNodeWhenChildrenCountIsAffectedByChangeI
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UpdateFilteredRootHierarchyLevel, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(HierarchyUpdateTests, UpdateFilteredRootHierarchyLevel)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // insert some instances
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(2));});
+    m_db.SaveChanges();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), false, { classA->GetName() }),
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    // set up hierarchy level instance filter
+    Utf8CP filter = "this.Prop = 1";
+    m_uiState->SetInstanceFilter(nullptr, filter);
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    params.SetInstanceFilter(filter);
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        });
+
+    // add an instance that doesn't match the filter
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(3)); }, true);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *a3);
+
+    // verify hierarchy didn't change
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        });
+
+    // expect 1 update record - the hierarchy level gets reported even when it doesn't change (we don't want to compare individual nodes)
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    m_updateRecordsHandler->Clear();
+
+    // add another instance matching the filter
+    IECInstancePtr a4 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(1));}, true);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *a4);
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a4 }),
+        });
+
+    // expect 1 update record
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UpdateFilteredChildHierarchyLevel, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(HierarchyUpdateTests, UpdateFilteredChildHierarchyLevel)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b1);
+
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b2);
+
+    m_db.SaveChanges();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), false, { classA->GetName() }),
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) }),
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    // set up hierarchy level instance filter
+    Utf8CP filter = "this.Prop = 1";
+    auto aChildrenFilterSetter = [&](AsyncHierarchyRequestParams& p)
+        {
+        NavNodeKeyCP parentKey = p.GetParentNode() ? p.GetParentNode()->GetKey().get() : p.GetParentNodeKey() ? p.GetParentNodeKey() : nullptr;
+        if (parentKey && ContainerHelpers::Contains(parentKey->AsECInstanceNodeKey()->GetInstanceKeys(), [&](auto const& k){return k.GetClass()->GetName().Equals("A");}))
+            p.SetInstanceFilter(filter);
+        };
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    auto hierarchy = ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            }),
+        });
+
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
+
+    // add an instance that doesn't match the filter
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(3));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b3, nullptr, true);
+    m_eventsSource->NotifyECInstancesInserted(m_db, { a.get(), b3.get() });
+
+    // verify the hierarchy didn't change
+    ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            }),
+        });
+
+    // expect 2 update records - the hierarchy levels gets reported even when they don't change (we don't want to compare individual nodes)
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+
+    m_updateRecordsHandler->Clear();
+
+    // add another instance matching the filter
+    IECInstancePtr b4 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b4, nullptr, true);
+    m_eventsSource->NotifyECInstancesInserted(m_db, { a.get(), b4.get() });
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            CreateInstanceNodeValidator({ b4 }),
+            }),
+        });
+
+    // expect 2 update records
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenFlagAndChildrenAreRemoved, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenFlagAndChildrenAreRemoved)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b1);
+
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b2);
+
+    m_db.SaveChanges();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), false, { classA->GetName() }),
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) }),
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    // set up hierarchy level instance filter
+    Utf8CP filter = "this.Prop = 1";
+    auto aChildrenFilterSetter = [&](AsyncHierarchyRequestParams& p)
+        {
+        NavNodeKeyCP parentKey = p.GetParentNode() ? p.GetParentNode()->GetKey().get() : p.GetParentNodeKey() ? p.GetParentNodeKey() : nullptr;
+        if (parentKey && ContainerHelpers::Contains(parentKey->AsECInstanceNodeKey()->GetInstanceKeys(), [&](auto const& k){return k.GetClass()->GetName().Equals("A");}))
+            p.SetInstanceFilter(filter);
+        };
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    auto hierarchy = ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            }),
+        });
+
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
+
+    // remove the instance matching the filter
+    RulesEngineTestHelpers::DeleteInstance(m_db, *b1, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *b1);
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        // notes: 
+        // - even though 'a' has 'hide if no children' flag and has no children, we still show it
+        //   or otherwise there would be no way to clear the filter and get it back
+        // - even though the node has no children, it still has the 'has children' flag set to 
+        //   'true' - we don't know the filter for 'a' node when creating it
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }), true,
+            {
+            }),
+        });
+
+    // expect 2 update records
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenFlagAndChildrenAreInserted, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenFlagAndChildrenAreInserted)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1)); });
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b1);
+
+    m_db.SaveChanges();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), false, { classA->GetName() }),
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) }),
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    // set up hierarchy level instance filter
+    Utf8CP filter = "this.Prop = 2";
+    auto aChildrenFilterSetter = [&](AsyncHierarchyRequestParams& p)
+        {
+        NavNodeKeyCP parentKey = p.GetParentNode() ? p.GetParentNode()->GetKey().get() : p.GetParentNodeKey() ? p.GetParentNodeKey() : nullptr;
+        if (parentKey && ContainerHelpers::Contains(parentKey->AsECInstanceNodeKey()->GetInstanceKeys(), [&](auto const& k){return k.GetClass()->GetName().Equals("A"); }))
+            p.SetInstanceFilter(filter);
+        };
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    auto hierarchy = ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }), true,
+            {
+            }),
+        });
+
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
+
+    // insert an instance matching the filter
+    auto b2 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b2, nullptr, true);
+    m_eventsSource->NotifyECInstancesInserted(m_db, { a.get(), b2.get() });
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b2 }),
+            }),
+        });
+
+    // expect 2 update records
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UpdatesFilteredHierarchyLevelWhenNodesUnderVirtualParentAreUpdated, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(HierarchyUpdateTests, UpdatesFilteredHierarchyLevelWhenNodesUnderVirtualParentAreUpdated)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b1);
+
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b2);
+
+    m_db.SaveChanges();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), false, { classA->GetName() }),
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) }),
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    auto groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classB->GetName(), "", "", "");
+    groupingRule->AddGroup(*new PropertyGroup("", "", false, "Prop"));
+    rules->AddPresentationRule(*groupingRule);
+
+    // set up hierarchy level instance filter
+    Utf8CP filter = "this.Prop = 1";
+    auto aChildrenFilterSetter = [&](AsyncHierarchyRequestParams& p)
+        {
+        NavNodeKeyCP parentKey = p.GetParentNode() ? p.GetParentNode()->GetKey().get() : p.GetParentNodeKey() ? p.GetParentNodeKey() : nullptr;
+        if (!parentKey)
+            return;
+
+        bool isParentAInstanceNode = parentKey->AsECInstanceNodeKey()
+            && ContainerHelpers::Contains(parentKey->AsECInstanceNodeKey()->GetInstanceKeys(), [&](auto const& k){return k.GetClass()->GetName().Equals("A");});
+        bool isParentAPropertyGroupingNode = parentKey->AsECPropertyGroupingNodeKey()
+            && &parentKey->AsECPropertyGroupingNodeKey()->GetECClass() == classA;
+        if (isParentAInstanceNode || isParentAPropertyGroupingNode)
+            {
+            p.SetInstanceFilter(filter);
+            }
+        };
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    auto hierarchy = ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            }),
+        });
+
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
+
+    // insert an instance matching the filter
+    auto b3 = RulesEngineTestHelpers::InsertInstance(m_db, *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a, *b3, nullptr, true);
+    m_eventsSource->NotifyECInstancesInserted(m_db, { a.get(), b3.get() });
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params, aChildrenFilterSetter,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ b1.get(), b3.get() }, { ECValue(1) }),
+                {
+                CreateInstanceNodeValidator({ b1 }),
+                CreateInstanceNodeValidator({ b3 }),
+                }),
+            }),
+        });
+
+    // expect 2 update records
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UpdatesHierarchyLevelWhenNodesUnderFilteredParentAreUpdated, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(HierarchyUpdateTests, UpdatesHierarchyLevelWhenNodesUnderFilteredParentAreUpdated)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr a0 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(0));});
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(m_db, *classB);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a1, *b1);
+
+    m_db.SaveChanges();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), false, { classA->GetName() }),
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) }),
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    // set up hierarchy level instance filter
+    Utf8CP filter = "this.Prop = 1";
+    m_uiState->SetInstanceFilter(nullptr, filter);
+    
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    params.SetInstanceFilter(filter);
+    auto hierarchy = ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            }),
+        });
+
+    m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
+
+    // insert another B instance
+    auto b2 = RulesEngineTestHelpers::InsertInstance(m_db, *classB);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a1, *b2, nullptr, true);
+    m_eventsSource->NotifyECInstancesInserted(m_db, { a1.get(), b2.get() });
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),
+            {
+            CreateInstanceNodeValidator({ b1 }),
+            CreateInstanceNodeValidator({ b2 }),
+            }),
+        });
+
+    // expect 2 update records
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a1);
+
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a1);
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UpdateHierarchyLevelFilteredWithMultipleFilters, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(HierarchyUpdateTests, UpdateHierarchyLevelFilteredWithMultipleFilters)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // insert some instances
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(1)); });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(2)); });
+    m_db.SaveChanges();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), false, { classA->GetName() }),
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    // set up hierarchy level instance filter
+    Utf8CP filter1 = "this.Prop = 1";
+    Utf8CP filter2 = "this.Prop = 2";
+    m_uiState->SetInstanceFilters(nullptr, { filter1, filter2, ""});
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+
+    params.SetInstanceFilter(filter1);
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        });
+
+    params.SetInstanceFilter(filter2);
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a2 }),
+        });
+    
+    params.SetInstanceFilter("");
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a2 }),
+        });
+
+    // add an instance that doesn't match any of the filters
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(3)); }, true);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *a3);
+
+    // verify hierarchy changes
+    params.SetInstanceFilter(filter1);
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        });
+
+    params.SetInstanceFilter(filter2);
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a2 }),
+        });
+
+    params.SetInstanceFilter("");
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a2 }),
+        CreateInstanceNodeValidator({ a3 }),
+        });
+
+    // expect 3 update records, 1 for each variation
+    EXPECT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_STREQ(filter1, m_updateRecordsHandler->GetRecords()[0].GetInstanceFilter().c_str());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[1].GetParentNode().IsNull());
+    EXPECT_STREQ(filter2, m_updateRecordsHandler->GetRecords()[1].GetInstanceFilter().c_str());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[2].GetParentNode().IsNull());
+    EXPECT_STREQ("", m_updateRecordsHandler->GetRecords()[2].GetInstanceFilter().c_str());
+    EXPECT_EQ(3, m_updateRecordsHandler->GetRecords()[2].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetExpandedNodes().size());
+
+    m_updateRecordsHandler->Clear();
+
+    // add another instance matching one of the filters
+    IECInstancePtr a4 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(1)); }, true);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *a4);
+
+    // verify hierarchy changes
+    params.SetInstanceFilter(filter1);
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a4 }),
+        });
+
+    params.SetInstanceFilter(filter2);
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a2 }),
+        });
+
+    params.SetInstanceFilter("");
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a2 }),
+        CreateInstanceNodeValidator({ a3 }),
+        CreateInstanceNodeValidator({ a4 }),
+        });
+
+    // expect 3 update records again
+    EXPECT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
+    EXPECT_STREQ(filter1, m_updateRecordsHandler->GetRecords()[0].GetInstanceFilter().c_str());
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[1].GetParentNode().IsNull());
+    EXPECT_STREQ(filter2, m_updateRecordsHandler->GetRecords()[1].GetInstanceFilter().c_str());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
+
+    EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[2].GetParentNode().IsNull());
+    EXPECT_STREQ("", m_updateRecordsHandler->GetRecords()[2].GetInstanceFilter().c_str());
+    EXPECT_EQ(4, m_updateRecordsHandler->GetRecords()[2].GetNodesCount());
+    ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetExpandedNodes().size());
     }

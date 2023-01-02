@@ -22,9 +22,12 @@ import type  {
   FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
 import type { Range3dProps } from "@itwin/core-geometry";
+
+// ###TODO import from core-common after merge with master
+export type ElementMeshRequestProps = any;
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 /* eslint-disable @bentley/prefer-get, no-restricted-syntax */
@@ -93,6 +96,16 @@ export class NativeLibrary {
   }
 }
 
+/** WAL checkpoint mode
+ * @internal
+ */
+export const enum WalCheckpointMode {
+  Passive=0,  /* Do as much as possible w/o blocking */
+  Full=1,     /* Wait for writers, then checkpoint */
+  Restart=2,  /* Like FULL but wait for for readers */
+  Truncate=3,  /* Like RESTART but also truncate WAL */
+}
+
 /** Possible outcomes of generateElementGraphics.
 * Must be kept in sync with Dgn::Tile::Graphics::TileGraphicsStatus.
 * @internal
@@ -157,11 +170,6 @@ export declare namespace IModelJsNative {
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
   function setCrashReportProperty(name: string, value: string | undefined): void;
   function getCrashReportProperties(): NameValuePair[];
-  function storeObjectInVault(obj: any, id: string): void;
-  function getObjectFromVault(id: string): any;
-  function dropObjectFromVault(id: string): void;
-  function addReferenceToObjectInVault(id: string): void;
-  function getObjectRefCountFromVault(id: string): number;
   function clearLogLevelCache(): void;
   function addFontWorkspace(fileName: LocalFileName, container?: CloudContainer): boolean;
   function addGcsWorkspaceDb(dbNames: string, container?: CloudContainer, priority?: number): boolean;
@@ -199,8 +207,22 @@ export declare namespace IModelJsNative {
      */
   }
   interface IConcurrentQueryManager {
-    concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse):void;
+    concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    concurrentQueryShutdown(): void;
   }
+
+/** Concurrent query config which should be set before making first call to concurrent query manager.
+ * @internal
+ */
+  export interface QueryConfig {
+    globalQuota?: QueryQuota,
+    ignoreDelay?: boolean
+    ignorePriority?: boolean,
+    requestQueueSize?: number,
+    workerThreads?: number,
+  }
+
   interface TileContent {
     content: Uint8Array;
     elapsedSeconds: number;
@@ -356,6 +378,9 @@ export declare namespace IModelJsNative {
     saveChanges(): void;
     saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal: Uint8Array | undefined): void;
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    enableWalMode(yesNo?: boolean): void;
+    performCheckpoint(mode?: WalCheckpointMode): void;
+    setAutoCheckpointThreshold(frames: number): void;
   }
 
   /** The result of DgnDb.inlineGeometryParts.
@@ -427,7 +452,9 @@ export declare namespace IModelJsNative {
     public closeIModel(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
-    public concurrentQueryExecute(request: any, onResponse: ConcurrentQuery.OnResponse):void;
+    public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    public concurrentQueryShutdown(): void;
     public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
@@ -458,6 +485,7 @@ export declare namespace IModelJsNative {
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public findGeometryPartReferences(partIds: Id64String[], is2d: boolean): Id64String[];
     public generateElementGraphics(request: ElementGraphicsRequestProps): Promise<ElementGraphicsResult>;
+    public generateElementMeshes(request: ElementMeshRequestProps): Promise<Uint8Array>;
     public getBriefcaseId(): number;
     public getChangesetSize(): number;
     public getChangeTrackingMemoryUsed(): number;
@@ -562,6 +590,9 @@ export declare namespace IModelJsNative {
     public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems:Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public enableWalMode(yesNo?: boolean): void;
+    public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
 
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
@@ -604,7 +635,9 @@ export declare namespace IModelJsNative {
     public getLastError(): string;
     public getLastInsertRowId(): number;
     public static enableSharedCache(enable: boolean): DbResult;
-    public concurrentQueryExecute(request: any, onResponse: ConcurrentQuery.OnResponse):void;
+    public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
+    public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    public concurrentQueryShutdown(): void;
   }
 
   class ChangedElementsECDb implements IDisposable {
@@ -660,7 +693,7 @@ export declare namespace IModelJsNative {
     constructor();
     public getAccessString(): string;
     public getPropertyName(): string;
-    public getOriginPropertyName(): string;
+    public getOriginPropertyName(): string | undefined;
     public getRootClassAlias(): string;
     public getRootClassName(): string;
     public getRootClassTableSpace(): string;
@@ -668,7 +701,6 @@ export declare namespace IModelJsNative {
     public isEnum(): boolean;
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
-    public hasOriginProperty(): boolean;
   }
 
   class ECSqlValue {
@@ -770,6 +802,9 @@ export declare namespace IModelJsNative {
     public saveChanges(): void;
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public enableWalMode(yesNo?: boolean): void;
+    public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
   }
 
   class SqliteStatement implements IDisposable {
@@ -1077,11 +1112,6 @@ export declare namespace IModelJsNative {
     InvalidArgument = Error + 1,
   }
 
-  const enum ECPresentationManagerMode {
-    ReadOnly = "ro",
-    ReadWrite = "rw",
-  }
-
   interface ECPresentationMemoryHierarchyCacheConfig {
     mode: "memory";
   }
@@ -1112,7 +1142,6 @@ export declare namespace IModelJsNative {
         serializedFormat: string;
       };
     };
-    mode: ECPresentationManagerMode;
     isChangeTrackingEnabled: boolean;
     cacheConfig: ECPresentationHierarchyCacheConfig;
     contentCacheSize?: number;
@@ -1134,7 +1163,7 @@ export declare namespace IModelJsNative {
     public clearRulesets(): ECPresentationManagerResponse<void>;
     public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<string>>, cancel: () => void };
     public getUpdateInfo(): ECPresentationManagerResponse<any>;
-    public updateHierarchyState(db: DgnDb, rulesetId: string, changeType: "nodesExpanded" | "nodesCollapsed", serializedKeys: string): ECPresentationManagerResponse<void>;
+    public updateHierarchyState(db: DgnDb, rulesetId: string, stateChanges: Array<{ nodeKey: undefined | object, isExpanded?: boolean, instanceFilters?: string[] }>): ECPresentationManagerResponse<void>;
     public dispose(): void;
   }
 

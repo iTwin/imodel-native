@@ -14,6 +14,7 @@ ECPRESENTATION_TYPEDEFS(IConnectionManager)
 ECPRESENTATION_TYPEDEFS(IConnection)
 ECPRESENTATION_REFCOUNTED_PTR(IConnection)
 
+ECPRESENTATION_TYPEDEFS(PresentationQuery)
 ECPRESENTATION_TYPEDEFS(IRulesPreprocessor)
 ECPRESENTATION_REFCOUNTED_PTR(IRulesPreprocessor)
 ECPRESENTATION_TYPEDEFS(PageOptions)
@@ -47,9 +48,6 @@ ECPRESENTATION_TYPEDEFS(IECPropertyFormatter)
 
 ECPRESENTATION_TYPEDEFS(ICancelationToken)
 ECPRESENTATION_REFCOUNTED_PTR(ICancelationToken)
-
-ECPRESENTATION_TYPEDEFS(PresentationQueryBase)
-ECPRESENTATION_REFCOUNTED_PTR(PresentationQueryBase)
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -527,6 +525,30 @@ public:
         {}
     TValue const& GetValue() const {return m_value;}
     bool IsApproximate() const {return m_isApproximate;}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct InstanceFilterDefinition
+{
+private:
+    ECClassCP m_selectClass;
+    Utf8String m_expression;
+    bvector<RelatedClassPath> m_relatedInstances;
+
+public:
+    InstanceFilterDefinition(Utf8String expression, ECClassCP selectClass, bvector<RelatedClassPath> relatedInstances)
+        : m_expression(expression), m_selectClass(selectClass), m_relatedInstances(relatedInstances)
+        {}
+
+    bool Equals(InstanceFilterDefinition const& other) const {return m_selectClass == other.m_selectClass && m_expression.Equals(other.m_expression) && m_relatedInstances == other.m_relatedInstances;}
+    bool operator==(InstanceFilterDefinition const& other) const {return Equals(other);}
+    bool operator!=(InstanceFilterDefinition const& other) const {return !Equals(other);}
+
+    ECClassCP GetSelectClass() const {return m_selectClass;}
+    bvector<RelatedClassPath> const& GetRelatedInstances() const {return m_relatedInstances;}
+    Utf8StringCR GetExpression() const {return m_expression;}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -43,8 +43,9 @@ void TypeListExp::_ToECSql(ECSqlRenderContext& ctx) const
     auto classNameList = ClassNames();
     for (auto classNameExp : ClassNames())
         {
-        if (classNameExp->IsPolymorphic())
-            ctx.AppendToECSql("ONLY ");    
+        const auto polyECSql = classNameExp->GetPolymorphicInfo().ToECSql();
+        if (!polyECSql.empty())
+            ctx.AppendToECSql(polyECSql).AppendToECSql(" ");
 
         ctx.AppendToECSql(classNameExp->GetFullName());
         if (classNameList.back() != classNameExp)

@@ -202,6 +202,26 @@ BeFileName Profile::GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) c
     return filePath.AppendToPath(fileName);
     }
 
+bool Profile::IsFileCreatedForCurrentTestRun(const TestFile& testFile) const
+    {
+    // Get just the test file directory name
+    auto testFileDirectory = testFile.GetSeedPath().GetDirectoryName();
+    if (testFileDirectory.EndsWith(L"/") || testFileDirectory.EndsWith(L"\\"))
+        testFileDirectory.erase(testFileDirectory.size() - 1, 1);
+
+    const auto separatorPos = testFileDirectory.find_last_of(L"/\\");
+    if (separatorPos != BeFileName::npos)
+        testFileDirectory.erase(0U, separatorPos + 1U);
+
+    // Append the directory and test file name to the created data folder
+    auto createdDataFolder = GetCreatedDataFolder();
+    createdDataFolder.AppendToPath(testFileDirectory.c_str());
+    createdDataFolder.AppendToPath(BeFileName(testFile.GetName()).c_str());
+
+    // Check if the updated created data folder path matches the test file seed path 
+    return createdDataFolder.GetNameUtf8().Equals(testFile.GetSeedPath().GetNameUtf8());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

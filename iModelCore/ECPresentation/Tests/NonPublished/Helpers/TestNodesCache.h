@@ -22,16 +22,12 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct TestNodesCache : INavNodesCache
 {
-    typedef std::function<NavNodePtr(BeGuid)> GetNodeHandler;
-    typedef std::function<NavNodesProviderPtr(HierarchyLevelIdentifier const&)> GetHierarchyDataSourceHandler;
-    typedef std::function<std::unique_ptr<DirectNodesIterator>(DataSourceIdentifier const&)> GetDataSourceIteratorHandler;
-    typedef std::function<NavNodesProviderPtr(BeGuid)> GetParentNodeDataSourceHandler;
+    typedef std::function<NavNodePtr(BeGuidCR)> GetNodeHandler;
+    typedef std::function<NavNodePtr(BeGuidCR)> GetPhysicalParentNodeHandler;
+    typedef std::function<BeGuid(BeGuidCR)> GetParentNodeIdHandler;
     typedef std::function<void(HierarchyLevelIdentifier&)> CacheHierarchyLevelHandler;
     typedef std::function<void(DataSourceInfo&)> CacheDataSourceHandler;
     typedef std::function<void(NavNodeR, NodeVisibility)> CacheNodeHandler;
-    typedef std::function<void(NavNodeCR)> NodeHandler;
-    typedef std::function<void(DataSourceInfo const&, int)> UpdateDataSourceHandler;
-    typedef std::function<NavNodeCPtr(IConnectionCR, Utf8StringCR, NavNodeKeyCR)> LocateNodeHandler;
 
     /*=================================================================================**//**
     * @bsiclass
@@ -80,23 +76,22 @@ private:
     bmap<BeGuid, NodeVisibility> m_nodeVisibilities;
 
     GetNodeHandler m_getNodeHandler;
-    GetHierarchyDataSourceHandler m_getHierarchyDataSourceHandler;
-    GetDataSourceIteratorHandler m_getDataSourceIteratorHandler;
-    GetParentNodeDataSourceHandler m_getParentNodeDataSourceHandler;
+    GetPhysicalParentNodeHandler m_getPhysicalParentNodeHandler;
     CacheHierarchyLevelHandler m_cacheHierarchyLevelHandler;
     CacheDataSourceHandler m_cacheDataSourceHandler;
     CacheNodeHandler m_cacheNodeHandler;
-    NodeHandler m_makePhysicalHandler;
-    NodeHandler m_makeVirtualHandler;
-    NodeHandler m_makeHiddenHandler;
-    UpdateDataSourceHandler m_updateDataSourceHandler;
-    LocateNodeHandler m_locateNodeHandler;
 
 private:
     HierarchyLevelIdentifier GetHierarchyLevelIdentifier(NavNodeCR node) const
         {
         NavNodeExtendedData ex(node);
-        return HierarchyLevelIdentifier(ex.GetConnectionId(), ex.GetRulesetId(), node.GetParentNodeId(), node.GetParentNodeId());
+        auto physicalParentNode = GetPhysicalParentNode(node.GetNodeId(), RulesetVariables(), "");
+        return HierarchyLevelIdentifier(
+            ex.GetConnectionId(),
+            ex.GetRulesetId(),
+            physicalParentNode.IsValid() ? physicalParentNode->GetNodeId() : BeGuid(),
+            GetVirtualParentNodeId(node.GetNodeId())
+            );
         }
     HierarchyLevelIdentifier GetHierarchyLevelIdentifier(DataSourceIdentifier const& dsInfo) const
         {
@@ -133,20 +128,73 @@ protected:
         auto iter = m_nodes.find(nodeId);
         return (m_nodes.end() != iter) ? iter->second : nullptr;
         }
-    NodeVisibility _GetNodeVisibility(BeGuidCR nodeId) const override
+    NodeVisibility _GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_nodeVisibilities.find(nodeId);
         return (m_nodeVisibilities.end() != iter) ? iter->second : NodeVisibility::Hidden;
         }
-    bvector<uint64_t> _GetNodeIndex(BeGuidCR nodeId) const override
+    bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_nodeIndexes.find(nodeId);
         return (m_nodeIndexes.end() != iter) ? iter->second : bvector<uint64_t>();
         }
+    NavNodePtr _GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& v, Utf8StringCR instanceFilter) const override
+        {
+        BeMutexHolder lock(m_mutex);
+        if (m_getPhysicalParentNodeHandler)
+            return m_getPhysicalParentNodeHandler(nodeId);
+        DataSourceIdentifier dsId;
+        for (auto const& dsEntry : m_partialHierarchies)
+            {
+            if (ContainerHelpers::Contains(dsEntry.second.second, [&](auto const& node){return node->GetNodeId() == nodeId;}))
+                {
+                dsId = dsEntry.first;
+                break;
+                }
+            }
+        if (!dsId.IsValid())
+            return nullptr;
+        for (auto const& vhEntry : m_virtualHierarchy)
+            {
+            if (vhEntry.first.GetId() != dsId.GetHierarchyLevelId())
+                continue;
 
-    HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR) const override
+            BeGuidCR parentId = vhEntry.first.GetVirtualParentNodeId();
+            if (!parentId.IsValid())
+                return nullptr;
+
+            if (NodeVisibility::Virtual == GetNodeVisibility(parentId, v, instanceFilter))
+                return GetPhysicalParentNode(parentId, v, instanceFilter);
+
+            return GetNode(parentId);
+            }
+        return nullptr;
+        }
+    BeGuid _GetVirtualParentNodeId(BeGuidCR nodeId) const override
+        {
+        BeMutexHolder lock(m_mutex);
+        DataSourceIdentifier dsId;
+        for (auto const& dsEntry : m_partialHierarchies)
+            {
+            if (ContainerHelpers::Contains(dsEntry.second.second, [&](auto const& node){return node->GetNodeId() == nodeId;}))
+                {
+                dsId = dsEntry.first;
+                break;
+                }
+            }
+        if (!dsId.IsValid())
+            return BeGuid();
+        for (auto const& vhEntry : m_virtualHierarchy)
+            {
+            if (vhEntry.first.GetId() == dsId.GetHierarchyLevelId())
+                return vhEntry.first.GetVirtualParentNodeId();
+            }
+        return BeGuid();
+        }
+
+    BeGuid _FindHierarchyLevelId(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR) const override
         {
         BeMutexHolder lock(m_mutex);
         for (auto const& entry : m_virtualHierarchy)
@@ -154,9 +202,9 @@ protected:
             if ((!connectionId || entry.first.GetConnectionId().Equals(connectionId))
                 && (!rulesetId || entry.first.GetRulesetId().Equals(rulesetId))
                 && entry.first.GetVirtualParentNodeId() == virtualParentNodeId)
-                return entry.first;
+                return entry.first.GetId();
             }
-        return HierarchyLevelIdentifier();
+        return BeGuid();
         }
 #ifdef wip_enable_display_label_postprocessor
     bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const& hlIdentifier, RulesetVariables const&, int) const override
@@ -186,24 +234,11 @@ protected:
             }
         return DataSourceInfo();
         }
-    DataSourceInfo _FindDataSource(BeGuidCR nodeId, int) const override
-        {
-        BeMutexHolder lock(m_mutex);
-        for (auto const& entry : m_partialHierarchies)
-            {
-            for (NavNodeCPtr node : entry.second.second)
-                {
-                if (node->GetNodeId() == nodeId)
-                    return entry.second.first;
-                }
-            }
-        return DataSourceInfo();
-        }
     NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR context, CombinedHierarchyLevelIdentifier const& info, bool) const override
         {
         BeMutexHolder lock(m_mutex);
 
-        if (!IsInitialized(info, context.GetRulesetVariables()))
+        if (!IsCombinedHierarchyLevelInitialized(info, context.GetRulesetVariables(), context.GetInstanceFilter()))
             return nullptr;
 
         auto iter = m_physicalHierarchy.find(info);
@@ -212,26 +247,26 @@ protected:
 
     BeGuid _FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const&) const override {return BeGuid();}
 
-    NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const& info, bool) const override
+    NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR context, BeGuidCR id, bool) const override
         {
         BeMutexHolder lock(m_mutex);
-        if (m_getHierarchyDataSourceHandler)
-            return m_getHierarchyDataSourceHandler(info);
 
-        if (!IsInitialized(info, context.GetRulesetVariables()))
+        if (!IsHierarchyLevelInitialized(id, context.GetRulesetVariables(), context.GetInstanceFilter()))
             return nullptr;
 
-        auto iter = m_virtualHierarchy.find(info);
-        return (m_virtualHierarchy.end() != iter) ? BVectorNodesProvider::Create(context, GetFullHierarchyLevel(iter->second)) : nullptr;
+        for (auto const& entry : m_virtualHierarchy)
+            {
+            if (entry.first.GetId() == id)
+                return BVectorNodesProvider::Create(context, GetFullHierarchyLevel(entry.second));
+            }
+        return nullptr;
         }
 
     std::unique_ptr<DirectNodesIterator> _GetCachedDirectNodesIterator(NavNodesProviderContextCR context, DataSourceIdentifier const& identifier) const override
         {
         BeMutexHolder lock(m_mutex);
-        if (m_getDataSourceIteratorHandler)
-            return m_getDataSourceIteratorHandler(identifier);
 
-        if (!_IsInitialized(identifier, context.GetRulesetVariables()))
+        if (!IsDataSourceInitialized(identifier.GetId()))
             return nullptr;
 
         auto iter = m_partialHierarchies.find(identifier);
@@ -278,32 +313,20 @@ protected:
             m_cacheNodeHandler(node, visibility);
         }
 
-    void _MakePhysical(NavNodeCR node) override
+    void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) override
         {
         BeMutexHolder lock(m_mutex);
-        m_nodeVisibilities.erase(node.GetNodeId());
-        m_nodeVisibilities.Insert(node.GetNodeId(), NodeVisibility::Visible);
-        if (m_makePhysicalHandler)
-            m_makePhysicalHandler(node);
+        m_nodeVisibilities.erase(nodeId);
+        m_nodeVisibilities.Insert(nodeId, NodeVisibility::Virtual);
         }
-    void _MakeVirtual(NavNodeCR node) override
+    void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) override
         {
         BeMutexHolder lock(m_mutex);
-        m_nodeVisibilities.erase(node.GetNodeId());
-        m_nodeVisibilities.Insert(node.GetNodeId(), NodeVisibility::Virtual);
-        if (m_makeVirtualHandler)
-            return m_makeVirtualHandler(node);
-        }
-    void _MakeHidden(NavNodeCR node) override
-        {
-        BeMutexHolder lock(m_mutex);
-        m_nodeVisibilities.erase(node.GetNodeId());
-        m_nodeVisibilities.Insert(node.GetNodeId(), NodeVisibility::Hidden);
-        if (m_makeHiddenHandler)
-            return m_makeHiddenHandler(node);
+        m_nodeVisibilities.erase(nodeId);
+        m_nodeVisibilities.Insert(nodeId, NodeVisibility::Hidden);
         }
 
-    bool _IsInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables) const override
+    bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables, Utf8StringCR instanceFilter) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_physicalHierarchy.find(info);
@@ -311,28 +334,36 @@ protected:
             return false;
         for (auto const& dsInfo : iter->second)
             {
-            if (!IsInitialized(dsInfo, variables))
+            if (dsInfo.GetInstanceFilter() != instanceFilter)
+                continue;
+            if (!IsDataSourceInitialized(dsInfo.GetId()))
                 return false;
             }
         return true;
         }
-    bool _IsInitialized(HierarchyLevelIdentifier const& info, RulesetVariables const& variables) const override
+    bool _IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& variables, Utf8StringCR instanceFilter) const override
         {
         BeMutexHolder lock(m_mutex);
-        auto iter = m_virtualHierarchy.find(info);
-        if (m_virtualHierarchy.end() == iter || iter->second.empty())
-            return false;
-        for (auto const& dsInfo : iter->second)
+        for (auto const& entry : m_virtualHierarchy)
             {
-            if (!IsInitialized(dsInfo, variables))
-                return false;
+            if (entry.first.GetId() == id && !entry.second.empty())
+                {
+                for (auto const& dsInfo : entry.second)
+                    {
+                    if (dsInfo.GetInstanceFilter() != instanceFilter)
+                        continue;
+                    if (!IsDataSourceInitialized(dsInfo.GetId()))
+                        return false;
+                    }
+                return true;
+                }
             }
-        return true;
+        return false;
         }
-    bool _IsInitialized(DataSourceIdentifier const& info, RulesetVariables const& variables) const override
+    bool _IsDataSourceInitialized(BeGuidCR id) const override
         {
         BeMutexHolder lock(m_mutex);
-        return m_finalizedDataSources.end() != m_finalizedDataSources.find(info.GetId());
+        return m_finalizedDataSources.end() != m_finalizedDataSources.find(id);
         }
 
     void _Update(DataSourceInfo const& info, int partsToUpdate) override
@@ -340,21 +371,15 @@ protected:
         BeMutexHolder lock(m_mutex);
         if (info.IsInitialized() && 0 != ((int)DataSourceInfo::PART_IsFinalized & partsToUpdate))
             m_finalizedDataSources.insert(info.GetIdentifier().GetId());
-        if (m_updateDataSourceHandler)
-            return m_updateDataSourceHandler(info, partsToUpdate);
         }
 
-    NavNodeCPtr _LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key, RulesetVariables const&) const override
+    NavNodeCPtr _LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key) const override
         {
-        BeMutexHolder lock(m_mutex);
-        if (m_locateNodeHandler)
-            return m_locateNodeHandler(connection, rulesetId, key);
         return nullptr;
         }
     IHierarchyCache::SavepointPtr _CreateSavepoint(bool) override {return new Savepoint(*this);}
 
     void _OnRulesetUsed(PresentationRuleSetCR) override {}
-    void _OnRulesetVariablesUsed(RulesetVariables const&, Utf8StringCR) override {}
 
     std::shared_ptr<IHierarchyLevelLocker> _CreateHierarchyLevelLocker(CombinedHierarchyLevelIdentifier const& identifier) override {return nullptr;}
 
@@ -363,25 +388,27 @@ protected:
 public:
     TestNodesCache() {}
     void SetGetNodeHandler(GetNodeHandler handler) {m_getNodeHandler = handler;}
-    void SetGetHierarchyDataSourceHandler(GetHierarchyDataSourceHandler handler) {m_getHierarchyDataSourceHandler = handler;}
-    void SetGetDataSourceIteratorHandler(GetDataSourceIteratorHandler handler) {m_getDataSourceIteratorHandler = handler;}
-    void SetGetParentNodeDataSourceHandler(GetParentNodeDataSourceHandler handler) {m_getParentNodeDataSourceHandler = handler;}
+    void SetGetPhysicalParentNodeHandler(GetPhysicalParentNodeHandler handler) {m_getPhysicalParentNodeHandler = handler;}
     void SetCacheHierarchyLevelHandler(CacheHierarchyLevelHandler handler) {m_cacheHierarchyLevelHandler = handler;}
     void SetCacheDataSourceHandler(CacheDataSourceHandler handler) {m_cacheDataSourceHandler = handler;}
     void SetCacheNodeHandler(CacheNodeHandler handler) {m_cacheNodeHandler = handler;}
-    void SetMakePhysicalHandler(NodeHandler handler) {m_makePhysicalHandler = handler;}
-    void SetMakeVirtualHandler(NodeHandler handler) {m_makeVirtualHandler = handler;}
-    void SetMakeHiddenHandler(NodeHandler handler) {m_makeHiddenHandler = handler;}
-    void SetUpdateDataSourceHandler(UpdateDataSourceHandler handler) {m_updateDataSourceHandler = handler;}
-    void SetLocateNodeHandler(LocateNodeHandler handler) {m_locateNodeHandler = handler;}
     size_t GetCachedChildrenCount(BeGuidCR parentId)
         {
         BeMutexHolder lock(m_mutex);
-        return std::count_if(m_nodes.begin(), m_nodes.end(),
-            [&](bpair<BeGuid, NavNodePtr> nodePair)
+        size_t count = 0;
+        for (auto const& phEntry : m_physicalHierarchy)
             {
-            return parentId == nodePair.second->GetParentNodeId();
-            });
+            if (phEntry.first.GetPhysicalParentNodeId() == parentId)
+                {
+                for (auto const& dsId : phEntry.second)
+                    {
+                    auto dsIter = m_partialHierarchies.find(dsId);
+                    if (dsIter != m_partialHierarchies.end())
+                        count += dsIter->second.second.size();
+                    }
+                }
+            }
+        return count;
         }
 };
 

@@ -945,13 +945,17 @@ void bcvfsEntryUnref(BcvCommon *p, CacheEntry *pEntry){
 ** passed as the second argument.
 */
 static int bcvfsWriteBlock(
-  sqlite3_bcvfs *p, 
+  sqlite3_bcvfs *pFs, 
   BcvfsFile *pFile, 
   int iBlk, 
   CacheEntry *pEntry
 ){
   int rc = SQLITE_OK;
-  sqlite3_stmt *pStmt = p->c.pInsertBlock;
+  sqlite3_stmt *pStmt = 0;
+
+  CHECK_VFS_MUTEX;
+
+  pStmt = pFs->c.pInsertBlock;
   sqlite3_bind_int(pStmt, 1, pEntry->iPos);
   if( pEntry->bDirty ){
     sqlite3_bind_text(pStmt, 3, pFile->pCont->zName, -1, SQLITE_STATIC); 
@@ -1008,7 +1012,6 @@ static int bcvfsCopyBlock(
   int iTo, 
   int iFrom
 ){
-  sqlite3_bcvfs *pFs = pFile->pFs;
   const static int nCopy = 32*1024;
   u8 *aBuf;
   int ii;
@@ -1462,12 +1465,6 @@ static int bcvfsReadWriteDatabase(
     bWriteBlock = 1;
   }
 
-  /* If the block was just downloaded and no error has occurred, write the
-  ** entry to blocksdb.bcv. */
-  if( rc==SQLITE_OK && bWriteBlock ){
-    rc = bcvfsWriteBlock(pFs, pFile, iBlk, pEntry);
-  }
-
   /* Read or write the data from or to the appropriate page of the
   ** cache file block.  
   */
@@ -1486,10 +1483,15 @@ static int bcvfsReadWriteDatabase(
     }
   }
 
-  /* Under cover of the VFS mutex, release the reference to the cache 
-  ** entry used by this call.
-  */
   ENTER_VFS_MUTEX; {
+    /* If the block was just downloaded and no error has occurred, write 
+    ** the entry to blocksdb.bcv. */
+    if( rc==SQLITE_OK && bWriteBlock ){
+      rc = bcvfsWriteBlock(pFs, pFile, iBlk, pEntry);
+    }
+
+    /* Under cover of the VFS mutex, release the reference to the cache 
+    ** entry used by this call.  */
     if( pEntry ){
       if( pEntry->bValid==0 ){
         if( rc==SQLITE_OK ){
@@ -5291,12 +5293,12 @@ static void bcvfsPrefetchCb(
     p->rc = bcvWritefile(p->pCacheFile, aData, nData, iOff);
   }
 
-  if( p->rc==SQLITE_OK ){
-    assert( pEntry->bDirty==0 );
-    p->rc = bcvfsWriteBlock(pFs, 0, 0, pEntry);
-  }
-
   ENTER_VFS_MUTEX; {
+    if( p->rc==SQLITE_OK ){
+      assert( pEntry->bDirty==0 );
+      p->rc = bcvfsWriteBlock(pFs, 0, 0, pEntry);
+    }
+
     if( p->rc==SQLITE_OK ){
       pEntry->bValid = 1;
     }else{

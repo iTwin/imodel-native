@@ -255,7 +255,7 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetNodes)
     TestCancelations<NavNodesContainer>(
         [&](ICancelationTokenCR token) -> NavNodesContainer 
             {
-            INavNodesDataSourcePtr source = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables(), nullptr));
+            INavNodesDataSourcePtr source = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables()));
             if (source.IsNull())
                 return NavNodesContainer();
             return NavNodesContainer(*ConstNodesDataSource::Create(*source));
@@ -289,7 +289,7 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetNodesCount)
     TestCancelations<size_t>(
         [&](ICancelationTokenCR token) -> size_t
             {
-            return m_impl->GetNodesCount(HierarchyRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables(), nullptr));
+            return m_impl->GetNodesCount(HierarchyRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables()));
             }, 
         [](size_t const& expectedResult, size_t const& actualResult)-> void
             {

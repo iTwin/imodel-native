@@ -34,8 +34,10 @@ always:
 
 USING_BREAKPAD = 0
 
-%if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64")
-    USING_BREAKPAD = 1
+%if defined (BSI)
+    %if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") 
+        USING_BREAKPAD = 1
+    %endif
 %endif
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -113,6 +115,8 @@ $(o)ECPresentationSerializer$(oext) : $(presentationDir)ECPresentationSerializer
 $(o)UiStateProvider$(oext) : $(presentationDir)UiStateProvider.cpp $(presentationDir)UiStateProvider.h ${MultiCompileDepends}
 
 $(o)DgnDbWorker$(oext) : $(baseDir)DgnDbWorker.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
+
+$(o)ElementMesh$(oext) : $(baseDir)ElementMesh.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
 
 $(o)TextureImageWorker$(oext) : $(baseDir)TextureImageWorker.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
 

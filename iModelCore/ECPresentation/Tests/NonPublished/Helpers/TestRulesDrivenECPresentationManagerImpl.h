@@ -20,7 +20,6 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<INavNodesDataSourcePtr(WithPageOptions<HierarchyRequestImplParams> const&)> Handler_GetNodes;
     typedef std::function<size_t(HierarchyRequestImplParams const&)> Handler_GetNodesCount;
     typedef std::function<NavNodeCPtr(NodeParentRequestImplParams const&)> Handler_GetParent;
-    typedef std::function<NavNodeCPtr(NodeByKeyRequestImplParams const&)> Handler_GetNode;
     typedef std::function<bvector<NavNodeCPtr>(NodePathsFromFilterTextRequestImplParams const&)> Handler_GetFilteredNodes;
     typedef std::function<HierarchyComparePositionPtr(HierarchyCompareRequestImplParams const&)> Handler_CompareHierarchies;
 
@@ -39,7 +38,6 @@ private:
     Handler_GetNodes m_nodesHandler;
     Handler_GetNodesCount m_nodesCountHandler;
     Handler_GetParent m_getParentHandler;
-    Handler_GetNode m_getNodeHandler;
     Handler_GetFilteredNodes m_filteredNodesHandler;
 
     Handler_GetContentClasses m_contentClassesHandler;
@@ -52,7 +50,7 @@ private:
     Handler_CompareHierarchies m_compareHierarchiesHandler;
 
 protected:
-    std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams const&) const override
+    std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const&) const override
         {
         return nullptr;
         }
@@ -72,12 +70,6 @@ protected:
         {
         if (m_getParentHandler)
             return m_getParentHandler(params);
-        return nullptr;
-        }
-    NavNodeCPtr _GetNode(NodeByKeyRequestImplParams const& params) override
-        {
-        if (m_getNodeHandler)
-            return m_getNodeHandler(params);
         return nullptr;
         }
     bvector<NavNodeCPtr> _GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const& params) override
@@ -138,7 +130,6 @@ public:
     void SetNodesHandler(Handler_GetNodes handler) {m_nodesHandler = handler;}
     void SetNodesCountHandler(Handler_GetNodesCount handler) {m_nodesCountHandler = handler;}
     void SetGetParentHandler(Handler_GetParent handler) {m_getParentHandler = handler;}
-    void SetGetNodeHandler(Handler_GetNode handler) {m_getNodeHandler = handler;}
     void SetGetFilteredNodesHandler(Handler_GetFilteredNodes handler) {m_filteredNodesHandler = handler;}
 
     void SetContentClassesHandler(Handler_GetContentClasses handler) {m_contentClassesHandler = handler;}

@@ -16,6 +16,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
+#define TEST_RULESET_ID "ruleset-id"
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -56,8 +58,8 @@ struct NodesCacheTests : ECPresentationTest
     bvector<NavNodePtr> FillWithNodes(bpair<HierarchyLevelIdentifier, DataSourceIdentifier> const&, size_t count, bool createChildDataSources = false, bool areVirtual = false);
     HierarchyLevelIdentifier CacheHierarchyLevel(IHierarchyCache& cache, Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId = BeGuid(), BeGuidCR physicalParentId = BeGuid());
     HierarchyLevelIdentifier CacheHierarchyLevel(Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId = BeGuid(), BeGuidCR physicalParentId = BeGuid());
-    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(IHierarchyCache& cache, Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId = BeGuid(), bool finalize = true, RulesetVariables const& variables = RulesetVariables());
-    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId = BeGuid(), bool finalize = true, RulesetVariables const& variables = RulesetVariables());
-    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(IHierarchyCache& cache, Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId, BeGuidCR physicalParentId, bool finalize = true, RulesetVariables const& variables = RulesetVariables());
-    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId, BeGuidCR physicalParentId, bool finalize = true, RulesetVariables const& variables = RulesetVariables());
+    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(IHierarchyCache& cache, Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId = BeGuid(), bvector<uint64_t> const& = { 0 }, bool finalize = true, RulesetVariables const& variables = RulesetVariables(), Utf8StringCR instanceFilter = {});
+    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId = BeGuid(), bvector<uint64_t> const& = { 0 }, bool finalize = true, RulesetVariables const& variables = RulesetVariables(), Utf8StringCR instanceFilter = {});
+    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(IHierarchyCache& cache, Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId, BeGuidCR physicalParentId, bvector<uint64_t> const& = { 0 }, bool finalize = true, RulesetVariables const& variables = RulesetVariables(), Utf8StringCR instanceFilter = {});
+    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> CacheDataSource(Utf8StringCR connectionId, Utf8StringCR rulesetId, BeGuidCR virtualParentId, BeGuidCR physicalParentId, bvector<uint64_t> const& = { 0 }, bool finalize = true, RulesetVariables const& variables = RulesetVariables(), Utf8StringCR instanceFilter = {});
     };

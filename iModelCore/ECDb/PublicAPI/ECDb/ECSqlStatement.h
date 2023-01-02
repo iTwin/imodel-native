@@ -584,7 +584,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
 
         CachedECSqlStatement* FindEntry(ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* crudWriteToken, Utf8CP ecsql) const; // Requires m_mutex locked
         CachedECSqlStatementPtr AddStatement(CachedECSqlStatementPtr&, ECDbCR, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const; // Requires m_mutex locked
-        void GetPreparedStatement(CachedECSqlStatementPtr&, ECDbCR ,DbCP, ECCrudWriteToken const*, Utf8CP, bool logPrepareErrors) const;
+        void GetPreparedStatement(CachedECSqlStatementPtr&, ECDbCR ,DbCP, ECCrudWriteToken const*, Utf8CP, bool logPrepareErrors, ECSqlStatus* outPrepareStatus) const;
     public:
         //! Initializes a new ECSqlStatementCache of the specified size.
         //! @param [in] maxSize Maximum number of statements the cache can hold. If a new statement is added
@@ -600,8 +600,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         //! @param [in] ecdb ECDb file
         //! @param [in] ecsql ECSQL string for which to return a prepared statement
         //! @param[in] logPrepareErrors It determines when attempt to prepare statement, if to log errors or not
+        //! @param[out] prepareStatus Optional statement prepare status only set if the statement needed to be prepared.
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-        CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, bool logPrepareErrors = true) const { return GetPreparedStatement(ecdb, ecsql, nullptr, logPrepareErrors); }
+        CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, bool logPrepareErrors = true, ECSqlStatus* prepareStatus = nullptr) const
+            {
+            return GetPreparedStatement(ecdb, ecsql, nullptr, logPrepareErrors, prepareStatus);
+            }
 
         //! Gets a cached and prepared statement for the specified ECSQL.
         //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
@@ -613,8 +617,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         //! the ECDb file was set-up with the "require ECSQL write token" option.
         //! If the option is not set, nullptr can be passed for @p token.
         //! @param[in] logPrepareErrors It determines when attempt to prepare statement, if to log errors or not
+        //! @param[out] prepareStatus Optional statement prepare status only set if the statement needed to be prepared.
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logPrepareErrors = true) const;
+        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logPrepareErrors = true, ECSqlStatus* prepareStatus = nullptr) const;
 
         //! Gets a cached and prepared statement for the specified SELECT ECSQL.
         //! @remarks
@@ -631,8 +636,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         //! another thread than @p schemaManager
         //! @param[in] selectECSql SELECT ECSQL
         //! @param[in] logPrepareErrors It determines when attempt to prepare statement, if to log errors or not
+        //! @param[out] prepareStatus Optional statement prepare status only set if the statement needed to be prepared.
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(SchemaManagerCR schemaManager, DbCR dataSourceECDb, Utf8CP selectECSql, bool logPrepareErrors = true) const;
+        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(SchemaManagerCR schemaManager, DbCR dataSourceECDb, Utf8CP selectECSql, bool logPrepareErrors = true, ECSqlStatus* prepareStatus = nullptr) const;
 
         //! Returns whether the cache is currently empty or not.
         //! @return true if cache is empty, false otherwise

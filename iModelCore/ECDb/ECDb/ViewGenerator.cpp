@@ -20,15 +20,27 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static 
-BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp)
+//static
+BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp)
     {
-    // Turn a polymorphic query into a non-polymorphic query if the class is sealed or has no subclasses.
-    // This will speed up the query
-    if (isPolymorphicQuery)
+    if (!polymorphicQuery.IsDisqualified()) {
+        // Note: Following need to be cached statement
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success == stmt.Prepare(prepareContext.GetECDb(),
+            SqlPrintfString("PRAGMA disqualify_type_index FOR  %s", classMap.GetClass().GetFullName()))) {
+            if (stmt.Step() == BE_SQLITE_ROW) {
+                if (stmt.GetValueBoolean(0)){
+                    LOG.debugv("ECSql Prepare: Applying 'disqualify_type_index' flag to %s", classMap.GetClass().GetFullName());
+                    polymorphicQuery.SetDisqualified(true);
+                }
+            }
+        }
+    }
+
+    if (polymorphicQuery.IsPolymorphic())
         {
         if (classMap.GetClass().GetClassModifier() == ECClassModifier::Sealed)
-            isPolymorphicQuery = false;
+            polymorphicQuery.SetType(PolymorphicInfo::Type::Only);
         else
             {
             ECDerivedClassesList const* subClasses = prepareContext.GetECDb().Schemas().GetDerivedClassesInternal(classMap.GetClass(), classMap.GetSchemaManager().GetTableSpace().GetName().c_str());
@@ -36,12 +48,12 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
                 return ERROR; // loading subclasses failed
 
             if (subClasses->empty())
-                isPolymorphicQuery = false;
+                polymorphicQuery.SetType(PolymorphicInfo::Type::Only);
             }
         }
 
-    SelectFromViewContext ctx(prepareContext, classMap.GetSchemaManager(), isPolymorphicQuery, disqualifyPrimaryJoin, memberFunctionCallExp);
-    if (memberFunctionCallExp == nullptr) 
+    SelectFromViewContext ctx(prepareContext, classMap.GetSchemaManager(), polymorphicQuery, disqualifyPrimaryJoin, memberFunctionCallExp);
+    if (memberFunctionCallExp == nullptr)
         return GenerateViewSql(viewSql, ctx, classMap);
 
     if (!memberFunctionCallExp->GetFunctionName().EqualsIAscii(ECSQLFUNC_Changes))
@@ -56,10 +68,11 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static 
+//static
 BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Create ECClass views");
+    ECDB_PERF_LOG_SCOPE("Create ECClass views");
+
     if (ecdb.IsReadonly())
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
@@ -70,7 +83,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
         return ERROR;
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
                                      "SELECT c.Id FROM main." TABLE_Class " c, main." TABLE_ClassMap " cm WHERE c.Id = cm.ClassId AND "
                                      "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
                                      "cm.MapStrategy NOT IN (" SQLVAL_MapStrategy_NotMapped "," SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"))
@@ -93,14 +106,13 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
             return ERROR;
         }
 
-    PERFLOG_FINISH("ECDb", "Create ECClass views");
     return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static 
+//static
 BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> const& ecclassIds)
     {
     for (ECClassId classId : ecclassIds)
@@ -136,7 +148,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static 
+//static
 BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
     {
     ECClassViewContext ctx(ecdb);
@@ -171,11 +183,10 @@ BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static 
+//static
 BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Drop ECClass views");
-
+    ECDB_PERF_LOG_SCOPE("Drop ECClass views");
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
                                      "SELECT ('DROP VIEW IF EXISTS main.[' || s.Alias || '.' || c.Name || '];') FROM main.ec_Class c "
@@ -189,7 +200,6 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
             return ERROR;
         }
 
-    PERFLOG_FINISH("ECDb", "Drop ECClass views");
     return SUCCESS;
     }
 
@@ -359,7 +369,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     Utf8String classIdStr = classMap.GetClass().GetId().ToString();
     viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange);
-    if (ctx.IsPolymorphicQuery())
+    if (ctx.GetPolymorphicInfo().IsPolymorphic())
         viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s",
                                 ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classIdStr.c_str());
 
@@ -370,7 +380,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         }
 
     viewSql.Append(" WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=");
-    
+
     if (changedValueState == nullptr)
         viewSql.Append(SQLFUNC_ChangedValueStateToOpCode "(").Append(changedValueStateArgSql).Append(")");
     else
@@ -382,7 +392,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
 
-    if (!ctx.IsPolymorphicQuery())
+    if (!ctx.GetPolymorphicInfo().IsPolymorphic())
         viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classIdStr.c_str());
 
     viewSql.AppendParenRight();
@@ -464,7 +474,7 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(NativeSqlBuilder& viewSql, Cont
     //! Drill down and find all the classmap.
     if (ctx.GetViewType() == ViewType::SelectFromView)
         {
-        if (!ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery())
+        if (!ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic())
             return RenderNullView(viewSql, ctx, mixInClassMap);
 
         viewSql.AppendParenLeft();
@@ -535,7 +545,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         }
     else
         {
-        if (ctx.GetViewType() != ViewType::SelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery())
+        if (ctx.GetViewType() != ViewType::SelectFromView || ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic())
             {
             for (Partition const& partition : storageDesc.GetHorizontalPartitions())
                 partitionOfInterest.push_back(&partition);
@@ -584,18 +594,17 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition->GetTable()))
             {
             const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && 
+            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
                 (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                 {
-                const bool considerSubclasses = !isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery();
-
+                const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
                 Utf8String filterSQL;
-                if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), considerSubclasses))
+                if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), polymorphicInfo))
                     return ERROR;
 
                 if (!filterSQL.empty())
                     {
-                    if (!considerSubclasses)
+                    if (polymorphicInfo.IsOnly())
                         view.Append(" WHERE ").Append(filterSQL.c_str());
                     else
                         view.Append(" ").Append(filterSQL.c_str());
@@ -638,7 +647,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
     viewSql.Append(" FROM ").AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot().AppendEscaped(contextTable.GetName());
 
     const bool disqualifyPrimaryJoin = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().IsDisqualifyPrimaryJoin() : false;
-    //Join necessary table for table 
+    //Join necessary table for table
     for(DbTable const* to : requireJoinTo)
         {
         DbColumn const* primaryKey = contextTable.FindFirst(DbColumn::Kind::ECInstanceId);
@@ -753,13 +762,13 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             if (classIdDataPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                 {
                 Utf8String filterSQL;
-                const bool considerSubclasses = !isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery();
-                if (SUCCESS != GenerateECClassIdFilter(filterSQL, relationMap, partition.GetTable(), classIdDataPropertyMap->GetColumn(), considerSubclasses))
+                const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
+                if (SUCCESS != GenerateECClassIdFilter(filterSQL, relationMap, partition.GetTable(), classIdDataPropertyMap->GetColumn(), polymorphicInfo))
                     return ERROR;
 
                 if (!filterSQL.empty())
                     {
-                    if (!considerSubclasses)
+                    if (polymorphicInfo.IsOnly())
                         view.Append(" WHERE ").Append(filterSQL.c_str());
                     else
                         view.Append(" ").Append(filterSQL.c_str());
@@ -809,7 +818,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
     auto toSql = [&ctx] (NativeSqlBuilder& sqlBuilder, DbColumn const& col, Utf8CP tableQualifier = nullptr)
         {
-  
+
         const bool requiresCast = ctx.GetViewType() == ViewType::ECClassView && col.IsShared();
         if (requiresCast)
             sqlBuilder.Append("CAST(");
@@ -834,7 +843,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         toSql(unionQuerySql, partition->GetECInstanceIdColumn());
         if (appendAlias)
             unionQuerySql.AppendSpace().Append(ECDBSYS_PROP_ECInstanceId);
-        
+
         unionQuerySql.AppendComma();
 
         //ECClassId
@@ -934,11 +943,11 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             toSql(unionQuerySql, referenceIdColumn);
             }
 
-        //no need to cast referencidColumn because IS NOT NULL doesn't need to change the data affinity
+        //no need to cast referencIdColumn because IS NOT NULL doesn't need to change the data affinity
         unionQuerySql.Append(" WHERE ").AppendFullyQualified(referenceIdColumn.GetTable().GetName(), referenceIdColumn.GetName()).Append(" IS NOT NULL");
         if (partition->GetECClassIdColumn().GetPersistenceType() == PersistenceType::Physical)
             {
-            const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery() : true;
+            const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic() : true;
             unionQuerySql.Append(" AND ");
             toSql(unionQuerySql, partition->GetECClassIdColumn());
             if (isPolymorphic)
@@ -985,7 +994,7 @@ BentleyStatus ViewGenerator::RenderEndpointECInstanceId(NativeSqlBuilder& viewSq
     viewSql.AppendComma().Append(sqlResult.GetSqlBuilder());
     if (sqlResult.GetSqlExpressionType() != ToSqlVisitor::Result::SqlExpressionType::PropertyName || !sqlResult.GetColumn().GetName().EqualsI(propMap.GetAccessString()))
         viewSql.AppendSpace().AppendEscaped(propMap.GetAccessString());
-    
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -1015,10 +1024,10 @@ BentleyStatus ViewGenerator::RenderEndpointECClassId(NativeSqlBuilder& viewSql, 
 
                 if (sqlResult.GetSqlExpressionType() != ToSqlVisitor::Result::SqlExpressionType::PropertyName || !sqlResult.GetColumn().GetName().EqualsI(propMap.GetAccessString()))
                     viewSql.AppendSpace().AppendEscaped(propMap.GetAccessString());
-                
+
                 return BentleyStatus::SUCCESS;
                 };
-            
+
             if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(propMap, true /*ignoreVirtualColumnCheck*/))
                 {
                 ToSqlVisitor constraintSqlVisitor(ctx, *table, contextTable.GetName());
@@ -1200,9 +1209,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
     if (requireJoinTo.empty())
         {
         if (ctx.GetViewType() == ViewType::SelectFromView)
-            addTableAlias = ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery() && ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled();
+            addTableAlias = ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic() && ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled();
         }
-        
+
 
     Utf8String systemContextTableAlias = addTableAlias ? contextTable.GetName() : Utf8String();
     NativeSqlBuilder::List propertySqlList;
@@ -1310,7 +1319,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 //@bsimethod
 //------------------------------------------------------------------------------------------
 //static
-BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
+BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, PolymorphicInfo const& polymorphicInfo)
     {
     if (table.GetType() == DbTable::Type::Virtual)
         return SUCCESS;
@@ -1333,12 +1342,16 @@ BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpres
     classIdColSql.append(table.GetName()).append("].").append(classIdColumn.GetName());
     Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
     classMap.GetClass().GetId().ToString(classIdStr);
-    if (!polymorphic)
+    if (!polymorphicInfo.IsPolymorphic())
         {
-        //if partition's table is only used by a single class, no filter needed     
+        //if partition's table is only used by a single class, no filter needed
         if (partition->IsSharedTable())
-            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
+            {
+            if (polymorphicInfo.IsDisqualified())
+                filterSqlExpression.append("+");
 
+            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
+            }
         return SUCCESS;
         }
 
@@ -1504,8 +1517,8 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, TableSpaceSchemaManager const& manager, bool isPolymorphicQuery,  bool disqualifyPrimaryJoin, MemberFunctionCallExp const* functionCallExp)
-    : Context(ViewType::SelectFromView, prepareCtx.GetECDb(), manager), m_prepareCtx(prepareCtx), m_isPolymorphicQuery(isPolymorphicQuery), m_memberFunctionCallExp(functionCallExp), m_disqualifyPrimaryJoin(disqualifyPrimaryJoin)
+ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, TableSpaceSchemaManager const& manager, PolymorphicInfo polymorphicInfo,  bool disqualifyPrimaryJoin, MemberFunctionCallExp const* functionCallExp)
+    : Context(ViewType::SelectFromView, prepareCtx.GetECDb(), manager), m_prepareCtx(prepareCtx), m_polymorphicInfo(polymorphicInfo), m_memberFunctionCallExp(functionCallExp), m_disqualifyPrimaryJoin(disqualifyPrimaryJoin)
     {}
 
 //---------------------------------------------------------------------------------------

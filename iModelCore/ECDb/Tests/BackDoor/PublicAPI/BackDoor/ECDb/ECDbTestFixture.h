@@ -129,6 +129,7 @@ protected:
     BentleyStatus PopulateECDb(int instanceCountPerClass);
 
     BentleyStatus ImportSchema(SchemaItem const& schema) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchema(schema); }
+    BentleyStatus ImportSchema(SchemaItem const& schema, SchemaManager::SchemaImportOptions const& options) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchema(schema, options); }
     BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchemas(schemas); }
 
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);

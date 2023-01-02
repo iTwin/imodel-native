@@ -1,6 +1,6 @@
 %code top   {
 /**************************************************************
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,16 +8,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  *************************************************************/
 
 //#pragma warning(disable:4603) Give Error on iOS
@@ -52,12 +52,12 @@ static Utf8String aEmptyString;
 
 #define CREATE_NODE  context->GetScanner()->NewNode
 
-// yyi ist die interne Nr. der Regel, die gerade reduziert wird.
+// yyi is the internal number of the rule being reduced.
 // Ueber die Mapping-Tabelle yyrmap wird daraus eine externe Regel-Nr.
 #define SQL_NEW_RULE             context->GetScanner()->NewNode(aEmptyString, SQL_NODE_RULE, yyr1[yyn])
 #define SQL_NEW_LISTRULE         context->GetScanner()->NewNode(aEmptyString, SQL_NODE_LISTRULE, yyr1[yyn])
-#define SQL_NEW_COMMALISTRULE   context->GetScanner()->NewNode(aEmptyString, SQL_NODE_COMMALISTRULE, yyr1[yyn])
-#define SQL_NEW_DOTLISTRULE   context->GetScanner()->NewNode(aEmptyString, SQL_NODE_DOTLISTRULE, yyr1[yyn])
+#define SQL_NEW_COMMALISTRULE    context->GetScanner()->NewNode(aEmptyString, SQL_NODE_COMMALISTRULE, yyr1[yyn])
+#define SQL_NEW_DOTLISTRULE      context->GetScanner()->NewNode(aEmptyString, SQL_NODE_DOTLISTRULE, yyr1[yyn])
 
 #if !(defined MACOSX && defined PPC)
 #define YYERROR_VERBOSE
@@ -89,7 +89,7 @@ using namespace connectivity;
 
 
     /* literal keyword tokens */
-%token <pParseNode> SQL_TOKEN_WITH SQL_TOKEN_RECURSIVE 
+%token <pParseNode> SQL_TOKEN_WITH SQL_TOKEN_RECURSIVE
 
 %token <pParseNode> SQL_TOKEN_ALL SQL_TOKEN_ANY SQL_TOKEN_AS SQL_TOKEN_ASC SQL_TOKEN_AVG
 
@@ -117,7 +117,7 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_TRUE SQL_TOKEN_UNION
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_USING SQL_TOKEN_VALUE SQL_TOKEN_VALUES
-%token <pParseNode> SQL_TOKEN_WHERE 
+%token <pParseNode> SQL_TOKEN_WHERE
 
 %token <pParseNode> SQL_BITWISE_NOT
 
@@ -132,12 +132,15 @@ using namespace connectivity;
 // LIMIT and OFFSET
 %token <pParseNode> SQL_TOKEN_LIMIT SQL_TOKEN_OFFSET SQL_TOKEN_ONLY
 
+// PRAGMA ... FOR
+%token <pParseNode> SQL_TOKEN_PRAGMA SQL_TOKEN_FOR
+
 //non-standard
 %token <pParseNode> SQL_TOKEN_MATCH SQL_TOKEN_ECSQLOPTIONS
 
 //data types (standard and EC)
-%token <pParseNode> SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT64 SQL_TOKEN_LONG SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_REAL SQL_TOKEN_FLOAT 
-%token <pParseNode> SQL_TOKEN_STRING SQL_TOKEN_VARCHAR SQL_TOKEN_BINARY SQL_TOKEN_BLOB SQL_TOKEN_DATE SQL_TOKEN_TIME SQL_TOKEN_TIMESTAMP 
+%token <pParseNode> SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT64 SQL_TOKEN_LONG SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_REAL SQL_TOKEN_FLOAT
+%token <pParseNode> SQL_TOKEN_STRING SQL_TOKEN_VARCHAR SQL_TOKEN_BINARY SQL_TOKEN_BLOB SQL_TOKEN_DATE SQL_TOKEN_TIME SQL_TOKEN_TIMESTAMP
 
 /* operators */
 %left SQL_TOKEN_NAME
@@ -167,7 +170,7 @@ using namespace connectivity;
 
 %type <pParseNode> sql
 %type <pParseNode> column_commalist opt_column_array_idx property_path_entry property_path
-%type <pParseNode> opt_column_commalist column_ref_commalist opt_column_ref_commalist 
+%type <pParseNode> opt_column_commalist column_ref_commalist opt_column_ref_commalist
 %type <pParseNode> opt_order_by_clause ordering_spec_commalist
 %type <pParseNode> ordering_spec opt_asc_desc manipulative_statement commit_statement
 %type <pParseNode> delete_statement_searched
@@ -203,7 +206,7 @@ using namespace connectivity;
 %type <pParseNode> table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
 %type <pParseNode> when_operand_list when_operand case_operand
-%type <pParseNode> searched_when_clause_list simple_when_clause_list opt_disqualify_primary_join
+%type <pParseNode> searched_when_clause_list simple_when_clause_list opt_disqualify_primary_join opt_disqualify_polymorphic_constraint
 
 /* LIMIT and OFFSET */
 %type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_offset opt_only union_op
@@ -211,6 +214,7 @@ using namespace connectivity;
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
 %type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
+%type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
 %%
 
 /* Parse Tree an OSQLParser zurueckliefern
@@ -218,17 +222,94 @@ using namespace connectivity;
  *
  */
 sql_single_statement:
-        sql
-        { context->setParseTree( $1 ); }
-    |    sql ';'
-        { context->setParseTree( $1 ); }
+        sql         { context->setParseTree( $1 ); }
+    |   sql    ';'  { context->setParseTree( $1 ); }
+    |   pragma      { context->setParseTree( $1 ); }
+    |   pragma ';'  { context->setParseTree( $1 ); }
     ;
 
 sql:
         manipulative_statement
     ;
-/* 
- * CTE query support 
+
+/* PRAGMA NAME[[= val]|[(val)]] [FOR path]
+ */
+pragma:
+    SQL_TOKEN_PRAGMA SQL_TOKEN_NAME opt_pragma_set opt_pragma_for
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($1);
+        $$->append($2);
+        $$->append($3);
+        $$->append($4);
+    }
+    ;
+
+opt_pragma_for:
+    {
+        $$ = SQL_NEW_RULE;
+    }
+    | SQL_TOKEN_FOR pragma_path
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+opt_pragma_set:
+    {
+        $$ = SQL_NEW_RULE;
+    }
+    | opt_pragma_set_val
+    | opt_pragma_func
+    ;
+
+opt_pragma_set_val:
+    SQL_EQUAL pragma_value
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+opt_pragma_func:
+    '(' pragma_value ')'
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+pragma_value:
+        SQL_TOKEN_INTNUM
+    |   SQL_TOKEN_APPROXNUM
+    |   SQL_TOKEN_NAME
+    |   SQL_TOKEN_STRING
+    |   SQL_TOKEN_TRUE
+    |   SQL_TOKEN_FALSE
+    |   SQL_TOKEN_NULL
+    ;
+
+pragma_path:
+        SQL_TOKEN_NAME
+            {
+            $$ = SQL_NEW_DOTLISTRULE;
+            $$->append($1);
+            }
+    |   pragma_path '.' SQL_TOKEN_NAME %prec '.'
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    |   pragma_path ':' SQL_TOKEN_NAME %prec ':'
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    ;
+
+/*
+ * CTE query support
  */
 
 opt_cte_recursive:
@@ -340,7 +421,7 @@ opt_column_ref_commalist:
     /* module language */
 
 opt_order_by_clause:
-        /* empty */         
+        /* empty */
         {$$ = SQL_NEW_RULE;}
     |   SQL_TOKEN_ORDER SQL_TOKEN_BY ordering_spec_commalist
         {
@@ -372,7 +453,7 @@ ordering_spec:
             $$->append($2);
         }
 
-    |   
+    |
     row_value_constructor_elem opt_asc_desc
         {
             $$ = SQL_NEW_RULE;
@@ -406,7 +487,7 @@ manipulative_statement:
     ;
 
 select_statement:
-        single_select_statement 
+        single_select_statement
             {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -471,7 +552,7 @@ row_value_constructor_commalist:
             $$->append($1);
         }
     |   row_value_constructor_commalist ',' row_value_constructor
-        {    
+        {
             $1->append($3);
             $$ = $1;
         }
@@ -573,7 +654,7 @@ single_select_statement:
             $$->append($3);
             $$->append($4);
         }
-        | values_or_query_spec 
+        | values_or_query_spec
     ;
 
 selection:
@@ -658,10 +739,27 @@ table_primary_as_range_column:
         }
     ;
 
+opt_disqualify_polymorphic_constraint:
+        /* empty */ {$$ = SQL_NEW_RULE;}
+    |    '+' {
+                    $$ = SQL_NEW_RULE;
+                    $$->append($1 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
+    }
+    ;
+
 opt_only:
         /* empty */ {$$ = SQL_NEW_RULE;}
-    |    SQL_TOKEN_ONLY
-
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ONLY {
+                    $$ = SQL_NEW_RULE;
+                    $$->append($1);
+                    $$->append($2 = CREATE_NODE("ONLY", SQL_NODE_NAME));
+        }
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ALL {
+                    $$ = SQL_NEW_RULE;
+                    $$->append($1);
+                    $$->append($2 = CREATE_NODE("ALL", SQL_NODE_NAME));
+        }
+    ;
 
 opt_disqualify_primary_join:
         /* empty */ {$$ = SQL_NEW_RULE;}
@@ -669,7 +767,7 @@ opt_disqualify_primary_join:
                     $$ = SQL_NEW_RULE;
                     $$->append($1 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
     }
-
+    ;
 
 table_ref:
         opt_only opt_disqualify_primary_join table_node_with_opt_member_func_call table_primary_as_range_column
@@ -679,6 +777,14 @@ table_ref:
             $$->append($2);
             $$->append($3);
             $$->append($4);
+        }
+     |  opt_disqualify_primary_join table_node_with_opt_member_func_call table_primary_as_range_column
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append(CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only)));
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
         }
     |   opt_only subquery range_variable opt_column_ref_commalist
         {
@@ -690,6 +796,7 @@ table_ref:
         }
     |    joined_table
     ;
+
 where_clause:
         SQL_TOKEN_WHERE search_condition
         {
@@ -729,7 +836,7 @@ truth_value:
 boolean_primary:
         predicate
       | unsigned_value_spec
-      | fct_spec 
+      | fct_spec
 	  | column_ref
       | scalar_subquery
       | value_exp
@@ -828,7 +935,7 @@ predicate:
 
 
 
-comparison_predicate_part_2:    
+comparison_predicate_part_2:
         comparison row_value_constructor
         {
             $$ = SQL_NEW_RULE; // comparison_predicate: rule 1
@@ -893,7 +1000,7 @@ between_predicate_part_2:
         }
 between_predicate:
         row_value_constructor between_predicate_part_2
-        {    
+        {
             $$ = SQL_NEW_RULE; // between_predicate: rule 1
             $$->append($1);
             $$->append($2);
@@ -1153,7 +1260,7 @@ literal:
     |   SQL_TOKEN_REAL_NUM
     |   SQL_TOKEN_INTNUM
     |   SQL_TOKEN_APPROXNUM
-    |    SQL_TOKEN_ACCESS_DATE
+    |   SQL_TOKEN_ACCESS_DATE
 /*    rules for predicate check */
     |    literal SQL_TOKEN_STRING
         {
@@ -1216,7 +1323,7 @@ as_clause:
         }
     |    column
     ;
-   
+
 unsigned_value_spec:
         general_value_spec
     |    literal
@@ -1267,15 +1374,15 @@ fct_spec:
             $$->append($4);
             $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         };
-        
+
 
     ;
-    
+
 function_name:
     SQL_TOKEN_NAME
     ;
-	
-    
+
+
 general_set_fct:
         set_fct_type '(' opt_all_distinct function_arg ')'
         {
@@ -1433,7 +1540,7 @@ named_columns_join:
 all:
     /* empty*/ {$$ = SQL_NEW_RULE;}
     |    SQL_TOKEN_ALL
-    
+
     ;
 scalar_subquery:
         subquery
@@ -1443,7 +1550,7 @@ cast_operand:
     ;
 
 cast_target_primitive_type:
-      SQL_TOKEN_BINARY 
+      SQL_TOKEN_BINARY
     | SQL_TOKEN_BLOB
     | SQL_TOKEN_BOOLEAN
     | SQL_TOKEN_DOUBLE
@@ -1462,18 +1569,18 @@ cast_target_primitive_type:
     ;
 
 cast_target_scalar:
-    cast_target_primitive_type 
+    cast_target_primitive_type
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-        }  
+        }
     | SQL_TOKEN_NAME '.' SQL_TOKEN_NAME
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             $$->append($3);
-        }  
+        }
         ;
 
 cast_target_array:
@@ -1482,7 +1589,7 @@ cast_target_array:
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
-        }  
+        }
         ;
 
 cast_target:
@@ -1504,7 +1611,7 @@ cast_spec:
     ;
 value_exp_primary:
         unsigned_value_spec
-      | fct_spec 
+      | fct_spec
 	  | column_ref
       | scalar_subquery
       | case_expression
@@ -1695,7 +1802,7 @@ value_exp_commalist:
     ;
 
 function_arg:
-        result 
+        result
     ;
 
 function_args_commalist:
@@ -1710,7 +1817,7 @@ function_args_commalist:
             $$ = $1;
             }
     ;
-    
+
 value_exp:
         num_value_exp
       | string_value_exp
@@ -1770,9 +1877,9 @@ table_node:
             $$ = SQL_NEW_RULE;
             $$->append($1);
         };
-        
+
 tablespace_qualified_class_name:
-        SQL_TOKEN_NAME '.' qualified_class_name 
+        SQL_TOKEN_NAME '.' qualified_class_name
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1781,7 +1888,7 @@ tablespace_qualified_class_name:
         };
 
 qualified_class_name:
-        SQL_TOKEN_NAME '.' class_name 
+        SQL_TOKEN_NAME '.' class_name
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1789,7 +1896,7 @@ qualified_class_name:
             $$->append($3);
         }
         |
-        SQL_TOKEN_NAME ':' class_name 
+        SQL_TOKEN_NAME ':' class_name
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1798,7 +1905,7 @@ qualified_class_name:
         };
 
 class_name:
-        SQL_TOKEN_NAME 
+        SQL_TOKEN_NAME
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1806,12 +1913,12 @@ class_name:
 ;
 
 table_node_with_opt_member_func_call:
-        table_node_path 
+        table_node_path
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
         }
-       ;  
+       ;
 
 table_node_path:
         table_node_path_entry
@@ -1834,7 +1941,7 @@ table_node_path:
 table_node_path_entry:
         SQL_TOKEN_NAME opt_member_function_args
         {
-            $$ = SQL_NEW_RULE;            
+            $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
         }
@@ -1850,7 +1957,7 @@ opt_member_function_args:
             $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
 		};
 
-        
+
 opt_column_array_idx:
 		{$$ = SQL_NEW_RULE;}
 	|	SQL_TOKEN_ARRAY_INDEX
@@ -1858,7 +1965,7 @@ opt_column_array_idx:
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
 		}
-;	
+;
 
 property_path:
         property_path_entry
@@ -1881,7 +1988,7 @@ property_path:
             $1->append($3);
             $$ = $1;
         }
-    ;	
+    ;
 
 property_path_entry:
         SQL_TOKEN_NAME opt_column_array_idx
@@ -1889,12 +1996,12 @@ property_path_entry:
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
 			$$->append($2);
-		} 
+		}
 	|   '*'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
-        } 
+        }
     ;
 
 column_ref:
@@ -2022,7 +2129,7 @@ result_expression:
 case_operand:
     row_value_constructor_elem
     ;
-    
+
 parameter:
         ':' SQL_TOKEN_NAME
         {
@@ -2037,7 +2144,7 @@ parameter:
         }
     ;
 
-range_variable: 
+range_variable:
         {
             $$ = SQL_NEW_RULE;
         }
@@ -2049,7 +2156,7 @@ range_variable:
         }
     ;
 
-    
+
 opt_ecsqloptions_clause:
         /* empty */         {$$ = SQL_NEW_RULE;}
     |   ecsqloptions_clause
@@ -2082,7 +2189,7 @@ ecsqloption:
             {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            }           
+            }
    |
    SQL_TOKEN_NAME SQL_EQUAL ecsqloptionvalue
             {
@@ -2329,7 +2436,7 @@ Utf8String ConvertLikeToken(const OSQLParseNode* pTokenNode, const OSQLParseNode
             sSearch.append("*?");
             sReplace.append("%_");
         }
-        
+
         bool wasEscape = false;
         for (size_t i = 0; i < nLen; i++)
         {
@@ -2556,7 +2663,7 @@ void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank)
     {
         aValue.append(" ");
     }
-    
+
     aValue.append(pLiteral->getChild(1)->getTokenValue());
 
     pLiteral = m_scanner->NewNode(aValue,SQL_NODE_STRING);
@@ -2567,7 +2674,7 @@ void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank)
 void OSQLParser::error( const sal_Char* fmt)
 {
     if(!m_sErrorMessage.size())
-    {    
+    {
         Utf8String sStr(fmt);
         Utf8String sSQL_TOKEN("SQL_TOKEN_");
 

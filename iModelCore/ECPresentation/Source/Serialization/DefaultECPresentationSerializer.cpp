@@ -297,6 +297,10 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Hiera
 
     json.AddMember("RulesetId", rapidjson::Value(updateRecord.GetRulesetId().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("ECDbFileName", rapidjson::Value(updateRecord.GetECDbFileName().c_str(), json.GetAllocator()), json.GetAllocator());
+
+    if (!updateRecord.GetInstanceFilter().empty())
+        json.AddMember("InstanceFilter", rapidjson::Value(updateRecord.GetInstanceFilter().c_str(), json.GetAllocator()), json.GetAllocator());
+
     return json;
     }
 
@@ -484,7 +488,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Conte
     json.AddMember("SortDirection", (int)contentDescriptor.GetSortDirection(), json.GetAllocator());
     json.AddMember("ContentFlags", contentDescriptor.GetContentFlags(), json.GetAllocator());
     json.AddMember("ConnectionId", rapidjson::StringRef(contentDescriptor.GetConnectionId().c_str()), json.GetAllocator());
-    json.AddMember("FilterExpression", rapidjson::StringRef(contentDescriptor.GetFilterExpression().c_str()), json.GetAllocator());
+    json.AddMember("FilterExpression", rapidjson::StringRef(contentDescriptor.GetFieldsFilterExpression().c_str()), json.GetAllocator());
     json.AddMember("InputKeysHash", rapidjson::Value(contentDescriptor.GetInputNodeKeys().GetHash().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("RulesetId", rapidjson::StringRef(contentDescriptor.GetRuleset().GetRuleSetId().c_str()), json.GetAllocator());
     json.AddMember("UnitSystem", (int)contentDescriptor.GetUnitSystem(), json.GetAllocator());
@@ -693,29 +697,21 @@ void DefaultECPresentationSerializer::_NavNodeKeyAsJson(ContextR ctx, NavNodeKey
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<Utf8String> ParseNodeKeyHashPath(JsonValueCR pathJson)
+static bvector<Utf8String> ParseNodeKeyHashPath(BeJsConst pathJson)
     {
     bvector<Utf8String> path;
-    for (JsonValueCR pathElement : pathJson)
+    pathJson.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst pathElement)
+        {
         path.push_back(pathElement.asString());
+        return false;
+        });
     return path;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<Utf8String> ParseNodeKeyHashPath(RapidJsonValueCR pathJson)
-    {
-    bvector<Utf8String> path;
-    for (RapidJsonValueCR pathElement : pathJson.GetArray())
-        path.push_back(pathElement.GetString());
-    return path;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
+NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const
     {
     if (!json.isObject() || json.isNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, "Attempting to get NavNode key from invalid JSON");
@@ -738,43 +734,10 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
-    {
-    if (!json.IsObject() || json.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, "Attempting to get NavNode key from invalid JSON");
-
-    Utf8CP type = json["Type"].GetString();
-    if (nullptr == type)
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, "NavNode key JSON doesn't contain node type information");
-
-    if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type))
-        return _GetECInstanceNodeKeyFromJson(connection, json);
-    if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
-        return _GetECClassGroupingNodeKeyFromJson(connection, json);
-    if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
-        return _GetECPropertyGroupingNodeKeyFromJson(connection, json);
-    if (0 == strcmp(NAVNODE_TYPE_DisplayLabelGroupingNode, type))
-        return _GetLabelGroupingNodeKeyFromJson(json);
-    return _GetBaseNavNodeKeyFromJson(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(JsonValueCR json) const
+NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsConst json) const
     {
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
-    return NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const
-    {
-    Utf8CP type = json["Type"].GetString();
-    Utf8CP specificationIdentifier = json["SpecificationIdentifier"].GetString();
     return NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
@@ -797,42 +760,21 @@ void DefaultECPresentationSerializer::_AsJson(ContextR ctx, ECInstancesNodeKey c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstancesNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
+ECInstancesNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const
     {
     bvector<ECClassInstanceKey> instanceKeys;
     if (json.isMember("InstanceKeys") && json["InstanceKeys"].isArray())
         {
-        JsonValueCR instanceKeysJson = json["InstanceKeys"];
+        BeJsConst instanceKeysJson = json["InstanceKeys"];
         for (Json::ArrayIndex i = 0; i < instanceKeysJson.size(); ++i)
             {
-            ECClassId classId(BeJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECClassId"]));
+            ECClassId classId(instanceKeysJson[i]["ECClassId"].GetUInt64());
             ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
-            ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECInstanceId"]));
+            ECInstanceId instanceId(instanceKeysJson[i]["ECInstanceId"].GetUInt64());
             instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
             }
         }
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
-    return ECInstancesNodeKey::Create(instanceKeys, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECInstancesNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
-    {
-    bvector<ECClassInstanceKey> instanceKeys;
-    if (json.HasMember("InstanceKeys") && json["InstanceKeys"].IsArray())
-        {
-        RapidJsonValueCR instanceKeysJson = json["InstanceKeys"];
-        for (rapidjson::SizeType i = 0; i < instanceKeysJson.Size(); ++i)
-            {
-            ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECClassId"]));
-            ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
-            ECInstanceId instanceId(BeRapidJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECInstanceId"]));
-            instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
-            }
-        }
-    Utf8CP specificationIdentifier = json["SpecificationIdentifier"].GetString();
     return ECInstancesNodeKey::Create(instanceKeys, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
@@ -848,26 +790,13 @@ void DefaultECPresentationSerializer::_AsJson(ContextR ctx, ECClassGroupingNodeK
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
+ECClassGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const
     {
-    uint64_t groupedInstancesCount = BeJsonUtilities::UInt64FromValue(json["GroupedInstancesCount"]);
+    uint64_t groupedInstancesCount = json["GroupedInstancesCount"].GetUInt64();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
+    ECClassId classId(json["ECClassId"].GetUInt64());
     ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
     bool isPolymorphic = json["IsPolymorphic"].asBool(false);
-    return ECClassGroupingNodeKey::Create(*ecClass, isPolymorphic, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]), groupedInstancesCount);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
-    {
-    uint64_t groupedInstancesCount = BeRapidJsonUtilities::UInt64FromValue(json["GroupedInstancesCount"]);
-    Utf8CP specificationIdentifier = json["SpecificationIdentifier"].GetString();
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
-    bool isPolymorphic = json.HasMember("IsPolymorphic") ? json["IsPolymorphic"].GetBool() : false;
     return ECClassGroupingNodeKey::Create(*ecClass, isPolymorphic, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]), groupedInstancesCount);
     }
 
@@ -885,29 +814,16 @@ void DefaultECPresentationSerializer::_AsJson(ContextR ctx, ECPropertyGroupingNo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
+ECPropertyGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const
     {
-    uint64_t groupedInstancesCount = BeJsonUtilities::UInt64FromValue(json["GroupedInstancesCount"]);
+    uint64_t groupedInstancesCount = json["GroupedInstancesCount"].GetUInt64();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
+    ECClassId classId(json["ECClassId"].GetUInt64());
     ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
     Utf8CP propertyName = json["PropertyName"].asCString();
     rapidjson::Document groupingValues;
-    groupingValues.Parse(Json::FastWriter().write(json["GroupingValues"]).c_str());
+    json["GroupingValues"].SaveTo(BeJsValue(groupingValues, groupingValues.GetAllocator()));
     return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, groupingValues, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]), groupedInstancesCount);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
-    {
-    uint64_t groupedInstancesCount = BeRapidJsonUtilities::UInt64FromValue(json["GroupedInstancesCount"]);
-    Utf8CP specificationIdentifier = json["SpecificationIdentifier"].GetString();
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
-    Utf8CP propertyName = json["PropertyName"].GetString();
-    return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, json["GroupingValues"], specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]), groupedInstancesCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -922,22 +838,11 @@ void DefaultECPresentationSerializer::_AsJson(ContextR ctx, LabelGroupingNodeKey
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const
+LabelGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(BeJsConst json) const
     {
-    uint64_t groupedInstancesCount = BeJsonUtilities::UInt64FromValue(json["GroupedInstancesCount"]);
+    uint64_t groupedInstancesCount = json["GroupedInstancesCount"].GetUInt64();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
     Utf8CP label = json["Label"].asCString();
-    return LabelGroupingNodeKey::Create(label, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]), groupedInstancesCount);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-LabelGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const
-    {
-    uint64_t groupedInstancesCount = BeRapidJsonUtilities::UInt64FromValue(json["GroupedInstancesCount"]);
-    Utf8CP specificationIdentifier = json["SpecificationIdentifier"].GetString();
-    Utf8CP label = json["Label"].GetString();
     return LabelGroupingNodeKey::Create(label, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]), groupedInstancesCount);
     }
 
@@ -949,9 +854,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, NavNo
     rapidjson::Document json(allocator);
     json.SetObject();
     Utf8String nodeId = ValueHelpers::GuidToString(navNode.GetNodeId());
-    Utf8String parentNodeId = ValueHelpers::GuidToString(navNode.GetParentNodeId());
     json.AddMember("NodeId", rapidjson::Value(nodeId.c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("ParentNodeId", rapidjson::Value(parentNodeId.c_str(), json.GetAllocator()), json.GetAllocator());
     if (navNode.GetKey().IsNull())
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, "Attempting to serialize a node with NULL key");
@@ -1077,33 +980,35 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, KeySe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const
+KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR connection, BeJsConst json) const
     {
     InstanceKeyMap instanceKeys;
-    JsonValueCR instanceKey = json["InstanceKeys"];
-    bvector<Utf8String> classIds = instanceKey.getMemberNames();
-    for (Utf8StringCR classIdString : classIds)
+    json["InstanceKeys"].ForEachProperty([&](Utf8CP classId, BeJsConst instanceIdsJson)
         {
         ECClassId ecClassId;
-        ECClassId::FromString(ecClassId, classIdString.c_str());
+        ECClassId::FromString(ecClassId, classId);
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(ecClassId);
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Serialization, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Instance key contains an invalid ECClass ID: '%s'", classIdString.c_str()));
-            continue;
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Serialization, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Instance key contains an invalid ECClass ID: '%s'", classId));
+            return false;
             }
         bset<ECInstanceId> instanceIdSet;
-        for (JsonValueCR instanceIdJson : instanceKey[classIdString.c_str()])
+        instanceIdsJson.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst instanceIdJson)
             {
-            uint64_t instanceId = BeJsonUtilities::UInt64FromValue(instanceIdJson);
-            instanceIdSet.insert(ECInstanceId(instanceId));
-            }
+            instanceIdSet.insert(ECInstanceId(instanceIdJson.GetUInt64()));
+            return false;
+            });
         instanceKeys[ecClass] = instanceIdSet;
-        }
-
+        return false;
+        });
+    
     NavNodeKeySet nodeKeys;
-    for (JsonValueCR nodeKeyJson : json["NodeKeys"])
+    json["NodeKeys"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst nodeKeyJson)
+        {
         nodeKeys.insert(_GetNavNodeKeyFromJson(connection, nodeKeyJson));
+        return false;
+        });
 
     return KeySet::Create(instanceKeys, nodeKeys);
     }

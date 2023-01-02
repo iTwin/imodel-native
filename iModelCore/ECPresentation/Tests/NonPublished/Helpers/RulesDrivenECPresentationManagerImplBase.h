@@ -27,7 +27,7 @@ private:
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier const* m_categorySupplier;
     bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
-    std::shared_ptr<INavNodesCache> m_nodesCache;
+    std::shared_ptr<TestNodesCache> m_nodesCache;
 protected:
     IPropertyCategorySupplier const& _GetCategorySupplier() const override { return *m_categorySupplier; }
     IECPropertyFormatter const& _GetECPropertyFormatter() const override { return *m_ecPropertyFormatter; }
@@ -59,6 +59,7 @@ public:
 
         m_nodesCache = std::make_shared<TestNodesCache>();
         }
+    TestNodesCache& GetNodesCache() {return *m_nodesCache;}
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

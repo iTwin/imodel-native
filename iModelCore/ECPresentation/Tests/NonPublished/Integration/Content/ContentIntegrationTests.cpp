@@ -771,7 +771,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s > 1 or %s < 0", FIELD_NAME(classA, "IntProperty"), FIELD_NAME(classA, "DoubleProperty")).c_str());
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s > 1 or %s < 0", FIELD_NAME(classA, "IntProperty"), FIELD_NAME(classA, "DoubleProperty")));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -822,7 +822,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithEsc
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8String(FIELD_NAME(classA, "Property")).append(" LIKE \"%\\%%\"").c_str());
+    ovr->SetFieldsFilterExpression(Utf8String(FIELD_NAME(classA, "Property")).append(" LIKE \"%\\%%\""));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -873,7 +873,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Filters
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetUniqueName().c_str()));
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetUniqueName().c_str()));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -943,7 +943,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s = \"1\"", descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()));
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s = \"1\"", descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
@@ -4092,7 +4092,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInLabelO
 
     // set up the dataset
     IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA,
-        [] (IECInstanceR instance) { instance.SetValue("Property", ECValue("A label")); });
+        [](IECInstanceR instance){instance.SetValue("Property", ECValue("A label"));});
     IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB,
         [](IECInstanceR instance){instance.SetValue("Property", ECValue("B label"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
@@ -11452,7 +11452,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
 
@@ -11509,7 +11509,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
 
@@ -11594,7 +11594,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
 
     // cache hierarchy
     // get B node
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // get C node
@@ -11657,7 +11657,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
 
@@ -11720,7 +11720,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
 
@@ -11789,7 +11789,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str()); // A display grouping node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str()); // B instance
@@ -11856,7 +11856,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str()); // A display grouping node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str()); // B instance
@@ -11925,7 +11925,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str()); // A node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str()); // B instance
@@ -11993,7 +11993,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str()); // A display grouping node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str()); // B instance
@@ -12065,7 +12065,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
 
@@ -12131,7 +12131,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
 
     // cache hierarchy
-    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr)));
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
 
@@ -15622,7 +15622,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
 
     // request nodes
     RulesetVariables variables({ RulesetVariableEntry("show_nodes", true) });
-    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), variables, nullptr))); });
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), variables))); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
 
@@ -15748,7 +15748,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FilterW
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("GetVariableIntValues(\"values\").AnyMatches(x => x = %s)", FIELD_NAME(classA, "IntProp")).c_str());
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("GetVariableIntValues(\"values\").AnyMatches(x => x = %s)", FIELD_NAME(classA, "IntProp")));
 
     // get the content with descriptor override
     content = GetVerifiedContent(*ovr);
