@@ -195,7 +195,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         DbResult stat;
         Dgn::DgnDb::OpenParams params(openMode);
         params.SetProfileUpgradeOptions(profileUpgradeOptions);
-        Dgn::DgnDbPtr iModel = Dgn::DgnDb::OpenDgnDb(&stat, filePath, params);
+        Dgn::DgnDbPtr iModel = Dgn::DgnDb::OpenIModelDb(&stat, filePath, params);
         if (BE_SQLITE_OK != stat)
             {
             IModelConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());

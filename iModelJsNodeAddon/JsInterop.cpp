@@ -762,7 +762,7 @@ RevisionStatus JsInterop::ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<
 
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
     DbResult result;
-    DgnDbPtr dgndb = DgnDb::OpenDgnDb(&result, dbFileName, openParams);
+    DgnDbPtr dgndb = DgnDb::OpenIModelDb(&result, dbFileName, openParams);
     POSTCONDITION(result == BE_SQLITE_OK, RevisionStatus::ApplyError);
     result = dgndb->SaveChanges();
     POSTCONDITION(result == BE_SQLITE_OK, RevisionStatus::ApplyError);

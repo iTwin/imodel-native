@@ -24,7 +24,7 @@ BeFileName DynamicSchemaTest::ImportSchema(Utf8CP schemaName, Utf8CP schemaXml)
 
     DbResult result = BE_SQLITE_OK;
 
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    m_db = DgnDb::OpenIModelDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsSchema(schemaName));
 
@@ -51,14 +51,14 @@ void DynamicSchemaTest::TestSchemaUpgrade(Utf8CP schemaName, BeFileNameCR fileNa
     {
     DbResult result = BE_SQLITE_OK;
 
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    m_db = DgnDb::OpenIModelDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(schemaName));
 
     ECSchemaPtr updatedSchema = nullptr;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(m_db->GetSchemaLocater());
-    
+
     auto schemaStatus = ECSchema::ReadFromXmlString(updatedSchema, updatedSchemaXml, *context);
     ASSERT_EQ(SchemaReadStatus::Success, schemaStatus);
 

@@ -22,7 +22,7 @@ struct PerformanceECInstanceDeleteTestsFixture : public ::testing::Test
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(sourceFile, dgndbFileName, false));
 
         DbResult status;
-        dgnProj = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        dgnProj = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
         ASSERT_TRUE(dgnProj != NULL);
         }

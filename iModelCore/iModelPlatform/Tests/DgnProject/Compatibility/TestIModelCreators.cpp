@@ -171,7 +171,7 @@ BentleyStatus TestIModelCreator::_UpgradeSchemas() const
         {
         if (testFile.GetInitialDgnDbVersion().CompareTo(DgnDbProfile::Get().GetExpectedVersion()) == 0)
             {
-            auto dgnDbPtr = DgnDb::OpenDgnDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            auto dgnDbPtr = DgnDb::OpenIModelDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
             if (dgnDbPtr == nullptr || status != BE_SQLITE_OK)
                 return ERROR;
             if (TestIModelCreator::LoadDomainsAndSchemas(*dgnDbPtr) != SUCCESS)
@@ -206,7 +206,7 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
         params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
         DgnDbPtr bim = nullptr;
         DbResult stat = BE_SQLITE_OK;
-        DgnDb::OpenDgnDb(&stat, targetPath, params);
+        DgnDb::OpenIModelDb(&stat, targetPath, params);
         if (BE_SQLITE_OK != stat)
             {
             LOG.errorv("Failed to create new upgraded test file '%s': Upgrading the old test file failed: %s", targetPath.GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
@@ -237,7 +237,7 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
 
 
         DbResult stat = BE_SQLITE_OK;
-        DgnDbPtr bim = DgnDb::OpenDgnDb(&stat, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        DgnDbPtr bim = DgnDb::OpenIModelDb(&stat, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         if (BE_SQLITE_OK != stat)
             {
             LOG.errorv("Failed to upgrade schema in test file '%s': Could not open the test file read-write: %s", testFile.GetSeedPath().GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
@@ -269,7 +269,7 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
         {
         if (testFile.GetInitialDgnDbVersion().CompareTo(DgnDbProfile::Get().GetExpectedVersion()) == 0)
             {
-            auto dgnDbPtr = DgnDb::OpenDgnDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            auto dgnDbPtr = DgnDb::OpenIModelDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
             if (dgnDbPtr == nullptr || status != BE_SQLITE_OK)
                 return ERROR;
             if (TestIModelCreator::LoadDomainsAndSchemas(*dgnDbPtr) != SUCCESS)

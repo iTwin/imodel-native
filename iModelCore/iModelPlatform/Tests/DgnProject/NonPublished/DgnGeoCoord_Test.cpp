@@ -72,7 +72,7 @@ TEST_F(BaseDgnGeoCoordTest, GeneralTestsOneDb)
     dgnProj->SaveChanges();
     dgnProj->CloseDb();
 
-    DgnDbPtr reOpenedProj = DgnDb::OpenDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
+    DgnDbPtr reOpenedProj = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
 
     DgnGeoLocation& storedGeoLocation = reOpenedProj->GeoLocation();
 
@@ -261,14 +261,14 @@ TEST_F(BaseDgnGeoCoordTest, GeneralTestsTwoDb)
 
     //---------------------------------------------
 
-    DgnDbPtr reOpenedProj1 = DgnDb::OpenDgnDb(&status, BeFileName(dgndbFileName1.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
+    DgnDbPtr reOpenedProj1 = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileName1.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
 
     DgnGeoLocation& storedGeoLocation1 = reOpenedProj1->GeoLocation();
 
     DgnGCS* theGCS1 = storedGeoLocation1.GetDgnGCS();
 
 
-    DgnDbPtr reOpenedProj2 = DgnDb::OpenDgnDb(&status, BeFileName(dgndbFileName2.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
+    DgnDbPtr reOpenedProj2 = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileName2.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
 
     DgnGeoLocation& storedGeoLocation2 = reOpenedProj2->GeoLocation();
 
@@ -1342,7 +1342,7 @@ TEST_F(SetAndGetDgnGeoCoord, SetAndGetAndCompare)
         dgnProj->SaveChanges();
         dgnProj->CloseDb();
 
-        DgnDbPtr reOpenedProj = DgnDb::OpenDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
+        DgnDbPtr reOpenedProj = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
 
         DgnGeoLocation& storedGeoLocation = reOpenedProj->GeoLocation();
 

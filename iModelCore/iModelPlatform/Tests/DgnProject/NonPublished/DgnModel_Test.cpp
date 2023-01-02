@@ -317,7 +317,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     // Verify that loading works
     if (true)
         {
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        DgnDbPtr db = DgnDb::OpenIModelDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());
 
         Sheet::ModelPtr sheetModel1 = db->Models().Get<Sheet::Model>(sheetModelId1);
@@ -346,7 +346,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
     if (true)
         {
-        m_db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        m_db = DgnDb::OpenIModelDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(m_db.IsValid());
         ASSERT_EQ(1, countSheetModels(*m_db));
 
@@ -408,7 +408,7 @@ TEST_F(DgnModelTests, ImportDictionaryModel)
 
     DbResult result = BE_SQLITE_OK;
     DgnDb::OpenMode mode = DgnDb::OpenMode::ReadWrite;
-    DgnDbPtr dbcopy = DgnDb::OpenDgnDb(&result, fullOutputFileName, DgnDb::OpenParams(mode));
+    DgnDbPtr dbcopy = DgnDb::OpenIModelDb(&result, fullOutputFileName, DgnDb::OpenParams(mode));
     ASSERT_EQ(BE_SQLITE_OK, result);
     ASSERT_TRUE(dbcopy.IsValid());
 
@@ -820,7 +820,7 @@ TEST_F(DgnModelTests, ModelModelsElementSubClass)
         }
 
     // Verify that the Model.ModeledElement property captures the correct ECRelationship in both cases
-    m_db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    m_db = DgnDb::OpenIModelDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     ASSERT_TRUE(m_db.IsValid());
 
     DgnModelCPtr model1 = m_db->Models().GetModel(mid1);
@@ -871,7 +871,7 @@ TEST_F(DgnModelTests, FlagsAddedInBisCore108)
         m_db->CloseDb();
         }
 
-    m_db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    m_db = DgnDb::OpenIModelDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     EXPECT_TRUE(m_db->Models().FindModel(modelId).IsNull());
 
     auto model = m_db->Models().Get<PhysicalModel>(modelId);

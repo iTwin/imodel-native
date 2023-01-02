@@ -338,7 +338,7 @@ public:
     //! Note that any previously committed local changes that haven't been pushed up to the server
     //! will cause an error. These need to be flushed out by creating a revision. See @ref RevisionManager
     //! </ul>
-    DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
+    DGNPLATFORM_EXPORT static DgnDbPtr OpenIModelDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnDb file.
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully created, error code otherwise. May be NULL.

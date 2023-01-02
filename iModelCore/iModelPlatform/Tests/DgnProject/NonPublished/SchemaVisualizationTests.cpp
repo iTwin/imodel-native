@@ -1992,7 +1992,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"GVDiagramTestOutput.bim", __FILE__));
 
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 

@@ -16,8 +16,7 @@ static WCharCP s_dotBim   = L".bim";
 * used to check names saved in categories, models, etc.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDbTable::IsValidName(Utf8StringCR name, Utf8CP invalidChars)
-    {
+bool DgnDbTable::IsValidName(Utf8StringCR name, Utf8CP invalidChars) {
     // empty names, names that start or end with space, or contain an invalid character are illegal.
     return !name.empty() && ' ' != *name.begin() && ' ' != *name.rbegin() && Utf8String::npos == name.find_first_of(invalidChars);
 }
@@ -26,25 +25,24 @@ bool DgnDbTable::IsValidName(Utf8StringCR name, Utf8CP invalidChars)
 DgnDbFonts::DgnDbFonts(DgnDbR db) : m_fontDb(db, false) {
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDb::DgnDb() : m_profileVersion(0, 0, 0, 0), m_fonts(*this), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
-                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence")
-    {
+                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence") {
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
     AddECDbCacheClearListener(*this);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Object DgnDb::GetJsTxns() {
     VerifyMainThread(); // should never be called except from main thread
     auto jsDb = GetJsIModelDb();
     if (nullptr == jsDb)
-       return Napi::Object();
+        return Napi::Object();
 
     auto txns = jsDb->Get("txns");
     return txns.IsObject() ? txns.As<Napi::Object>() : Napi::Object();
@@ -629,7 +627,7 @@ DbResult DgnDb::DoOpenIModel(BeFileNameCR fileNameIn, OpenParams const& params) 
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams const& openParams) {
+DgnDbPtr DgnDb::OpenIModelDb(DbResult* outResult, BeFileNameCR fileName, OpenParams const& openParams) {
     DbResult ALLOW_NULL_OUTPUT(status, outResult);
     bool wantReadonly = openParams.IsReadonly();
 

@@ -67,7 +67,7 @@ public:
     //! @param options  Optional features of the seed DgnDb that you want
     //! @return Information about the requested seed DgnDb.
     //! @note This function may create the seed DgnDb as a side effect, if it hasn't been created already.
-    //! @see OpenDgnDb
+    //! @see OpenIModelDb
     static SeedDbInfo GetSeedDb(SeedDbId seedId, SeedDbOptions const& options = SeedDbOptions());
 
     static DgnDbPtr OpenSeedDb(WCharCP relSeedPath) {return DgnDbTestUtils::OpenSeedDb(relSeedPath);}
@@ -76,7 +76,7 @@ public:
 
     static DgnDbStatus MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName) {return DgnDbTestUtils::MakeSeedDbCopy(actualName, relSeedPath, newName);}
 
-    static DgnDbPtr OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode) {return DgnDbTestUtils::OpenDgnDb(relPath, mode);}
+    static DgnDbPtr OpenIModelDb(WCharCP relPath, DgnDb::OpenMode mode) {return DgnDbTestUtils::OpenIModelDb(relPath, mode);}
 
     static BeFileNameStatus CreateSubDirectory(WCharCP relPath) {return DgnDbTestUtils::CreateSubDirectory(relPath);}
 

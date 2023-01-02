@@ -2434,7 +2434,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
 
         {
         BeSQLite::DbResult reopenStatus;
-        db = DgnDb::OpenDgnDb(&reopenStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        db = DgnDb::OpenIModelDb(&reopenStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
         ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, reopenStatus);
 
         auto el = db->Elements().GetElement(elId);

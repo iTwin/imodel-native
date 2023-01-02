@@ -145,13 +145,13 @@ TEST_F(DgnDbTest, MultipleReadWrite)
 
     DbResult status1;
     DgnDbPtr dgnProj1;
-    dgnProj1 = DgnDb::OpenDgnDb(&status1, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
+    dgnProj1 = DgnDb::OpenIModelDb(&status1, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status1) << status1;
     ASSERT_TRUE(dgnProj1 != NULL);
 
     DbResult status2;
     DgnDbPtr dgnProj2;
-    dgnProj2 = DgnDb::OpenDgnDb(&status2, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
+    dgnProj2 = DgnDb::OpenIModelDb(&status2, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_NE(BE_SQLITE_OK, status2) << status2;
     ASSERT_TRUE(dgnProj2 == NULL);
 }
@@ -167,7 +167,7 @@ TEST_F(DgnDbTest, InvalidFileFormat)
     ASSERT_TRUE(SUCCESS == testDataFound);
 
     DbResult status;
-    dgnProj = DgnDb::OpenDgnDb(&status, path, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    dgnProj = DgnDb::OpenIModelDb(&status, path, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_NOTADB, status) << status;
     ASSERT_TRUE(dgnProj == NULL);
 }
@@ -218,7 +218,7 @@ TEST_F(DgnDbTest, SetBriefcaseAsStandalone)
     dgndb->CloseDb();
 
     DbResult stat;
-    dgndb = DgnDb::OpenDgnDb(&stat, filename, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    dgndb = DgnDb::OpenIModelDb(&stat, filename, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(dgndb->Txns().HasPendingTxns());
 
     dgndb->SaveProjectGuid(BeGuid(true));
@@ -303,7 +303,7 @@ TEST_F(DgnDbTest, FileNotFoundToOpen)
     BeTest::GetHost().GetOutputRoot(dgndbFileNotExist);
     dgndbFileNotExist.AppendToPath(L"MyFileNotExist.ibim");
 
-    dgnProj = DgnDb::OpenDgnDb(&status, BeFileName(dgndbFileNotExist.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
+    dgnProj = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileNotExist.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_ERROR_FileNotFound, status) << status;
     ASSERT_TRUE(dgnProj == NULL);
 }
@@ -317,12 +317,12 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
     ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(dgndbFileName, L"OpenAlreadyOpen.bim"));
 
     DbResult status;
-    DgnDbPtr dgnProj = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
+    DgnDbPtr dgnProj = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
     ASSERT_TRUE(dgnProj != NULL);
 
     // once a Db is opened for ReadWrite with exclusive access, it can't be opened, even for read.
-    DgnDbPtr dgnProj1 = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    DgnDbPtr dgnProj1 = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_BUSY, status) << status;
     ASSERT_TRUE(dgnProj1 == NULL);
 }

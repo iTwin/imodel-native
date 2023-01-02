@@ -464,7 +464,7 @@ DgnDbPtr    VersionCompareTestFixture::CloneTemporaryDb(DgnDbPtr db)
     // Open the target db using the temporary filename
     BeSQLite::DbResult result;
     DgnDb::OpenParams params (Db::OpenMode::ReadWrite);
-    DgnDbPtr clonedDb = DgnDb::OpenDgnDb(&result, tempFilename, params);
+    DgnDbPtr clonedDb = DgnDb::OpenIModelDb(&result, tempFilename, params);
     return clonedDb;
     }
 
@@ -2590,7 +2590,7 @@ TEST_F(VersionCompareTestFixture, TestBriefcaseRolling)
     // Ensure target Db file got rolled properly
     BeSQLite::DbResult result;
     DgnDb::OpenParams params (Db::OpenMode::ReadWrite);
-    DgnDbPtr updatedTargetDb = DgnDb::OpenDgnDb(&result, dbFilename, params);
+    DgnDbPtr updatedTargetDb = DgnDb::OpenIModelDb(&result, dbFilename, params);
     ASSERT_TRUE(updatedTargetDb->Revisions().GetParentRevisionId().Equals(changeset->GetChangesetId()));
     }
 
