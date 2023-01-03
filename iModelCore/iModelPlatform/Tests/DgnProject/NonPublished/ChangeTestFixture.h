@@ -20,8 +20,8 @@ protected:
     CodeSpecCPtr m_defaultCodeSpec;
 
     void SetupDgnDb(BeFileName seedFileName, WCharCP newFileName);
-    void OpenDgnDb(BeFileName fileName, Db::OpenMode openMode = Db::OpenMode::ReadWrite);
-    void OpenDgnDb(BeFileName fileName, DgnDb::OpenParams openParams);
+    void OpenIModelDb(BeFileName fileName, Db::OpenMode openMode = Db::OpenMode::ReadWrite);
+    void OpenIModelDb(BeFileName fileName, DgnDb::OpenParams openParams);
     void CloseDgnDb();
     DgnCategoryId InsertCategory(Utf8CP categoryName);
     static DgnElementId InsertPhysicalElement(DgnDbR db, PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z);

@@ -40,7 +40,11 @@ CCompOpts + -we4238
 
 # This was recently introduced to clang.
 # Ignore unused but set variables for GeomLibs. Other compilers (gcc) already are ignoring this warning
-IsClang13_0_0_OrGreater = $[@readstdout "$(BBPYTHONCMD) $(SrcRoot)bsicommon/build/DetectClangVersion.py 1300.0.00.0"]
+%if defined (BSI)
+    IsClang13_0_0_OrGreater = $[@readstdout "$(BBPYTHONCMD) $(SrcRoot)bsicommon/build/DetectClangVersion.py 1300.0.00.0"]
+%else
+    IsClang13_0_0_OrGreater = $[@readstdout "$(BBPYTHONCMD) $(_CurrentFilePath)/../../../../../build/PublicSDK/DetectClangVersion.py 1300.0.00.0"]
+%endif
 %if $(IsClang13_0_0_OrGreater) == "YES"
     LLVMCommonCompOpts + -Wno-unused-but-set-variable
 %endif

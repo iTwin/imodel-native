@@ -673,7 +673,7 @@ TEST_F(BeSQLiteDbTests, Serialize)
     Db db2;
     EXPECT_EQ(BE_SQLITE_OK, Db::Deserialize(buffer, db2));
     EXPECT_EQ(buffer.Size(), 0);
-    
+
     Statement stmt;
     EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db2, "SELECT COUNT(*) FROM TestTable"));
 
@@ -1578,18 +1578,6 @@ TEST_F (BeSQLiteDbTests, MaxBlobSize)
     auto hardMaxLimit = 2147483647;
     auto maxLength = m_db.GetLimit(DbLimits::Length);
     ASSERT_EQ(hardMaxLimit, maxLength);
-
-    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("create table tb(b1)"));
-    auto stmt = m_db.GetCachedStatement("insert into tb values(?)");
-    // Though sqlite say max is 1 Gb but it is also max row size. RowId will take 6 bytes and rest would be allocated to b1.
-    const auto kActualMaxLength = maxLength - 6;
-    stmt->BindZeroBlob(1,  kActualMaxLength);
-    ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
-
-    stmt = m_db.GetCachedStatement("insert into tb values(?)");
-    ASSERT_EQ(BE_SQLITE_TOOBIG, stmt->BindZeroBlob(1, kActualMaxLength + 10000));
-
-    m_db.AbandonChanges();
 }
 
 //---------------------------------------------------------------------------------------

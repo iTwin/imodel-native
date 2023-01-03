@@ -79,7 +79,7 @@ TEST_F(DgnLineStyleTest, InsertReadLineStyles)
 
     BeSQLite::Db::OpenMode mode = Db::OpenMode::Readonly;
     DbResult result = BE_SQLITE_OK;
-    DgnDbPtr project = DgnDb::OpenDgnDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
+    DgnDbPtr project = DgnDb::OpenIModelDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
     ASSERT_EQ(BE_SQLITE_OK, result);
 
     //Get line styles count
@@ -237,7 +237,7 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
 
     BeSQLite::Db::OpenMode mode = Db::OpenMode::Readonly;
     DbResult result = BE_SQLITE_OK;
-    DgnDbPtr project = DgnDb::OpenDgnDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
+    DgnDbPtr project = DgnDb::OpenIModelDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
     ASSERT_EQ(BE_SQLITE_OK, result);
 
     //Get line styles
@@ -288,7 +288,7 @@ TEST_F(DgnLineStyleTest, IteratorLineStyleElement)
 
     BeSQLite::Db::OpenMode mode = Db::OpenMode::Readonly;
     DbResult result = BE_SQLITE_OK;
-    DgnDbPtr project = DgnDb::OpenDgnDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
+    DgnDbPtr project = DgnDb::OpenIModelDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
     ASSERT_EQ(BE_SQLITE_OK, result);
 
     int count = 0;
