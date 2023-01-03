@@ -2132,7 +2132,8 @@ static BeGuid QueryExistingNode(Db& db, StatementCache& statements, BeGuidCR hie
             " WHERE     [ni].[ECClassId] = ? "
             "       AND [ni].[ECInstanceId] = ? "
             "       AND [n].[HierarchyLevelId] = ? "
-            "       AND [nk].[SpecificationIdentifier] = ? ";
+            "       AND [nk].[SpecificationIdentifier] = ? "
+            "       AND 1 == (SELECT COUNT(1) FROM [" NODESCACHE_TABLENAME_NodeInstances "] nic WHERE [nic].[NodeId] = [n].[Id])";
 
         if (BE_SQLITE_OK != statements.GetPreparedStatement(stmt, *db.GetDbFile(), instanceNodeLookupQuery))
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare existing node query (instance)");

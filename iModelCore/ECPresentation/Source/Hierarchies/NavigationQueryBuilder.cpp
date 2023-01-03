@@ -1186,6 +1186,9 @@ public:
             if (!usedParentInstanceLevels.empty() && (!parentInstanceNode || SUCCESS != AppendParents(query, usedParentInstanceLevels, params, *parentInstanceNode)))
                 continue;
 
+            for (auto const& relatedInstancePath : instanceFilterDef->GetRelatedInstances())
+                query.Join(relatedInstancePath);
+
             ECExpressionContextsProvider::NodeRulesContextParameters contextParams(parentNode, params.GetConnection(),
                 params.GetRulesetVariables(), params.GetUsedVariablesListener());
             auto expressionContext = ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
@@ -2825,18 +2828,18 @@ enum class SelectClassAcceptStatus
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static SelectClassAcceptStatus ApplyClassGrouping(SelectClassWithExcludes<>& selectClass, SelectClass<> const& groupingClass)
+static SelectClassAcceptStatus ApplyClassFilter(SelectClassWithExcludes<>& selectClass, SelectClass<> const& filterClass)
     {
-    if (&groupingClass.GetClass() == &selectClass.GetClass())
+    if (&filterClass.GetClass() == &selectClass.GetClass())
         {
-        selectClass.SetIsSelectPolymorphic(selectClass.IsSelectPolymorphic() && groupingClass.IsSelectPolymorphic());
+        selectClass.SetIsSelectPolymorphic(selectClass.IsSelectPolymorphic() && filterClass.IsSelectPolymorphic());
         }
-    else if (groupingClass.GetClass().Is(&selectClass.GetClass()) && selectClass.IsSelectPolymorphic())
+    else if (filterClass.GetClass().Is(&selectClass.GetClass()) && selectClass.IsSelectPolymorphic())
         {
-        selectClass.SetClass(groupingClass.GetClass());
-        selectClass.SetIsSelectPolymorphic(groupingClass.IsSelectPolymorphic());
+        selectClass.SetClass(filterClass.GetClass());
+        selectClass.SetIsSelectPolymorphic(filterClass.IsSelectPolymorphic());
         }
-    else if (selectClass.GetClass().Is(&groupingClass.GetClass()) && groupingClass.IsSelectPolymorphic())
+    else if (selectClass.GetClass().Is(&filterClass.GetClass()) && filterClass.IsSelectPolymorphic())
         {
         // no need to do anything - we're selecting from derived class and grouping by its base class
         }
@@ -2851,12 +2854,12 @@ static SelectClassAcceptStatus ApplyClassGrouping(SelectClassWithExcludes<>& sel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ApplyClassGrouping(bvector<SelectClassWithExcludes<>>& selectClasses, SelectClass<> const& groupingClass)
+static void ApplyClassFilter(bvector<SelectClassWithExcludes<>>& selectClasses, SelectClass<> const& groupingClass)
     {
     bvector<SelectClassWithExcludes<> const*> toErase;
     for (auto& selectClass : selectClasses)
         {
-        if (SelectClassAcceptStatus::Drop == ApplyClassGrouping(selectClass, groupingClass))
+        if (SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, groupingClass))
             toErase.push_back(&selectClass);
         }
     ContainerHelpers::RemoveIf(selectClasses, [&toErase](auto const& item)
@@ -2868,13 +2871,13 @@ static void ApplyClassGrouping(bvector<SelectClassWithExcludes<>>& selectClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ApplyClassGrouping(bvector<RelatedClassPath>& selectPaths, SelectClass<> const& groupingClass)
+static void ApplyClassFilter(bvector<RelatedClassPath>& selectPaths, SelectClass<> const& groupingClass)
     {
     bvector<RelatedClassPath const*> toErase;
     for (RelatedClassPathR path : selectPaths)
         {
         auto& pathTarget = path.back().GetTargetClass();
-        if (SelectClassAcceptStatus::Drop == ApplyClassGrouping(pathTarget, groupingClass))
+        if (SelectClassAcceptStatus::Drop == ApplyClassFilter(pathTarget, groupingClass))
             toErase.push_back(&path);
         }
     ContainerHelpers::RemoveIf(selectPaths, [&toErase](auto const& item)
@@ -2899,8 +2902,10 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         {
         return SelectClassWithExcludes<ECClass>(*entry.first, "this", entry.second);
         });
+    if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+        ApplyClassFilter(selectClasses, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), ""));
     if (groupingResolver.GetGroupingClass())
-        ApplyClassGrouping(selectClasses, *groupingResolver.GetGroupingClass());
+        ApplyClassFilter(selectClasses, *groupingResolver.GetGroupingClass());
 
     // quick return if nothing to select from
     if (selectClasses.empty())
@@ -3001,8 +3006,10 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
             relationshipClassPaths = m_params.GetSchemaHelper().GetRecursiveRelationshipClassPaths(parentClass, parentInstanceIds,
                 specification.GetRelationshipPaths(), classesCounter, true, false);
             if (groupingResolver.GetGroupingClass())
-                ApplyClassGrouping(relationshipClassPaths, *groupingResolver.GetGroupingClass());
+                ApplyClassFilter(relationshipClassPaths, *groupingResolver.GetGroupingClass());
             }
+        if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+            ApplyClassFilter(relationshipClassPaths, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), ""));
 
         // create select infos
         bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, relationshipClassPaths, groupingResolver,
@@ -3043,8 +3050,10 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         selectClass.GetDerivedExcludedClasses() = excludedClasses;
         return selectClass;
         });
+    if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+        ApplyClassFilter(selectClasses, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), ""));
     if (groupingResolver.GetGroupingClass())
-        ApplyClassGrouping(selectClasses, *groupingResolver.GetGroupingClass());
+        ApplyClassFilter(selectClasses, *groupingResolver.GetGroupingClass());
 
     // quick return if nothing to select from
     if (selectClasses.empty())
@@ -3235,9 +3244,14 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
             }
 
         SelectClassWithExcludes<ECClass> selectClass(*queryClass, "this", true);
+        if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+            {
+            if (SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), "")))
+                continue;
+            }
         if (groupingResolver.GetGroupingClass())
             {
-            if (SelectClassAcceptStatus::Drop == ApplyClassGrouping(selectClass, *groupingResolver.GetGroupingClass()))
+            if (SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, *groupingResolver.GetGroupingClass()))
                 continue;
             }
 
