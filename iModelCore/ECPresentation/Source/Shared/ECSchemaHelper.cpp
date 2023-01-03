@@ -1341,7 +1341,7 @@ enum class RelationshipsJoinIdType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void JoinRelationships(ComplexGenericQueryR query, RelatedClassPath const& path, RelationshipsJoinIdType idType, Utf8StringP lastJoinAlias, bool* wasLastJoinForward)
+static void JoinRelationships(ComplexQueryBuilderR query, RelatedClassPath const& path, RelationshipsJoinIdType idType, Utf8StringP lastJoinAlias, bool* wasLastJoinForward)
     {
     static Utf8CP s_sourceECClassId = "SourceECClassId";
     static Utf8CP s_sourceECInstanceId = "SourceECInstanceId";
@@ -1381,15 +1381,15 @@ static void JoinRelationships(ComplexGenericQueryR query, RelatedClassPath const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ComplexGenericQueryPtr CreateTargetIdsPartialQuery(bvector<RelatedClassPath> const& paths)
+static ComplexQueryBuilderPtr CreateTargetIdsPartialQuery(bvector<RelatedClassPath> const& paths)
     {
-    GenericQueryPtr nestedQuery;
+    PresentationQueryBuilderPtr nestedQuery;
     for (RelatedClassPath const& path : paths)
         {
         if (path.empty())
             continue;
 
-        ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
 
         Utf8String lastJoinAlias;
         JoinRelationships(*query, path, RelationshipsJoinIdType::ECClassId, &lastJoinAlias, nullptr);
@@ -1400,13 +1400,13 @@ static ComplexGenericQueryPtr CreateTargetIdsPartialQuery(bvector<RelatedClassPa
         contract->AddField(*targetIdField);
         contract->AddField(*PresentationQueryContractSimpleField::Create(TARGET_IDS_QUERY_FIELD_NAME_SourceId, path.front().IsForwardRelationship() ? "SourceECInstanceId" : "TargetECInstanceId"));
         query->SelectContract(*contract, "r0");
-        QueryBuilderHelpers::SetOrUnion<GenericQuery>(nestedQuery, *query);
+        QueryBuilderHelpers::SetOrUnion(nestedQuery, *query);
         }
 
     if (nestedQuery.IsNull())
         return nullptr;
 
-    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(*nestedQuery);
     return query;
@@ -1427,11 +1427,11 @@ static T_ECInstanceIdsMap GetTargetIds(IConnectionCR connection, bvector<Related
     query->Where(ValuesFilteringHelper(sourceIds).Create(TARGET_IDS_QUERY_FIELD_NAME_SourceId));
 
     CachedECSqlStatementPtr stmt = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(),
-        connection.GetDb(), query->ToString().c_str());
+        connection.GetDb(), query->GetQuery()->GetQueryString().c_str());
     if (stmt.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", query->ToString().c_str()));
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", query->GetQuery()->GetQueryString().c_str()));
 
-    query->BindValues(*stmt);
+    query->GetQuery()->BindValues(*stmt);
 
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*stmt))
         {
@@ -2047,14 +2047,14 @@ static PresentationQueryContractFieldPtr CreateTargetClassIdGroupingField(Select
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UnionGenericQueryPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSchemaHelper const& helper, SelectClass<ECClass> const& sourceClass,
+static UnionQueryBuilderPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSchemaHelper const& helper, SelectClass<ECClass> const& sourceClass,
     RelationshipPathSpecification const& pathSpecification, InstanceFilteringParams const* sourceInstanceFilter, bvector<RelatedClassPath> const& relatedInstancePaths,
     bool isTargetPolymorphic, bool countTargets, bvector<Utf8String> const& stepInstanceFilters)
     {
     ECClassCP requestedTargetClass = (!pathSpecification.GetSteps().empty() && !pathSpecification.GetSteps().back()->GetTargetClassName().empty())
         ? helper.GetECClass(pathSpecification.GetSteps().back()->GetTargetClassName().c_str()) : nullptr;
 
-    UnionGenericQueryPtr unionQuery = UnionGenericQuery::Create({});
+    auto unionQuery = UnionQueryBuilder::Create({});
 
     auto paths = helper.BuildRelationshipPathsFromStepSpecifications(sourceClass.GetClass(), pathSpecification.GetSteps(), stepInstanceFilters, false);
 
@@ -2075,7 +2075,7 @@ static UnionGenericQueryPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSc
         auto pathInfoField = PresentationQueryContractSimpleField::Create("PathInfo", pathInfoSelectClause.c_str(), false);
         auto requestedTargetECClassIdField = PresentationQueryContractSimpleField::Create("RequestedTargetECClassId", requestedTargetClass ? Utf8PrintfString("%" PRIu64, requestedTargetClass->GetId().GetValue()).c_str() : "0", false);
 
-        ComplexGenericQueryPtr pathQuery = ComplexGenericQuery::Create();
+        ComplexQueryBuilderPtr pathQuery = ComplexQueryBuilder::Create();
         pathQuery->SelectContract(*SimpleQueryContract::Create(
             {
             sourceClassIdField,
@@ -2122,13 +2122,13 @@ static UnionGenericQueryPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UnionGenericQueryPtr CreateRelationshipPathQuery(ECSchemaHelper const& helper, SelectClass<ECClass> sourceClass,
+static UnionQueryBuilderPtr CreateRelationshipPathQuery(ECSchemaHelper const& helper, SelectClass<ECClass> sourceClass,
     RelationshipPathSpecification const& pathSpecification, bool isTargetPolymorphic)
     {
     ECClassCP requestedTargetClass = (!pathSpecification.GetSteps().empty() && !pathSpecification.GetSteps().back()->GetTargetClassName().empty())
         ? helper.GetECClass(pathSpecification.GetSteps().back()->GetTargetClassName().c_str()) : nullptr;
 
-    UnionGenericQueryPtr unionQuery = UnionGenericQuery::Create({});
+    UnionQueryBuilderPtr unionQuery = UnionQueryBuilder::Create({});
     bvector<RelatedClassPath> paths = helper.BuildRelationshipPathsFromStepSpecifications(sourceClass.GetClass(), pathSpecification.GetSteps(), {}, false);
     for (auto& path : paths)
         {
@@ -2136,14 +2136,14 @@ static UnionGenericQueryPtr CreateRelationshipPathQuery(ECSchemaHelper const& he
         Utf8CP targetClassIdsQuery = isTargetPolymorphic
             ? "SELECT SourceECInstanceId AS ECClassId FROM meta.ClassHasAllBaseClasses WHERE TargetECInstanceId = ?"
             : "SELECT ECInstanceId AS ECClassId FROM meta.ECClassDef WHERE ECInstanceId = ?";
-        ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*SimpleQueryContract::Create(
             {
             PresentationQueryContractSimpleField::Create("SourceECClassIds", Utf8PrintfString("'[%" PRIu64 "]'", sourceClass.GetClass().GetId().GetValue()).c_str(), false),
             PresentationQueryContractSimpleField::Create("PathInfo", Utf8PrintfString("'%s'", BeRapidJsonUtilities::ToString(pathInfoJson).c_str()).c_str(), false),
             PresentationQueryContractSimpleField::Create("RequestedTargetECClassId", Utf8PrintfString("%" PRIu64, requestedTargetClass ? requestedTargetClass->GetId().GetValue() : 0).c_str(), false),
             }));
-        query->From(*StringGenericQuery::Create(targetClassIdsQuery, {std::make_shared<BoundQueryId>(path.back().GetTargetClass().GetClass().GetId())}));
+        query->From(*StringQueryBuilder::Create(targetClassIdsQuery, {std::make_shared<BoundQueryId>(path.back().GetTargetClass().GetClass().GetId())}));
         unionQuery->AddQuery(*query);
         }
     return !unionQuery->GetQueries().empty() ? unionQuery : nullptr;
@@ -2160,7 +2160,7 @@ Nullable<uint64_t> ECSchemaHelper::QueryTargetsCount(RelatedClassPathCR path, In
     SelectClass<ECClass> selectClass(*path[0].GetSourceClass(), "this");
     SelectClass<ECClass> const& targetClass = path.back().GetTargetClass();
 
-    ComplexGenericQueryPtr targetCountsQuery = ComplexGenericQuery::Create();
+    ComplexQueryBuilderPtr targetCountsQuery = ComplexQueryBuilder::Create();
 
     auto sourceInstanceIdSelectField = PresentationQueryContractSimpleField::Create("/SourceECInstanceId/", "ECInstanceId");
     sourceInstanceIdSelectField->SetGroupingClause(Utf8PrintfString("[%s].[ECInstanceId]", selectClass.GetAlias().c_str()));
@@ -2196,7 +2196,7 @@ Nullable<uint64_t> ECSchemaHelper::QueryTargetsCount(RelatedClassPathCR path, In
         {
         PresentationQueryContractSimpleField::Create("", "[T].[TargetsCount]", false),
         }, false);
-    auto possibleTargetsCountQuery = ComplexGenericQuery::Create();
+    auto possibleTargetsCountQuery = ComplexQueryBuilder::Create();
     possibleTargetsCountQuery->SelectContract(*SimpleQueryContract::Create(
         {
         possibleTargetsCountField,
@@ -2206,11 +2206,11 @@ Nullable<uint64_t> ECSchemaHelper::QueryTargetsCount(RelatedClassPathCR path, In
     // prepare & bind
     Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::QueryTargetsCount");
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, txn.IsActive(), "Failed to start a transaction");
-    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), possibleTargetsCountQuery->ToString().c_str());
+    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), possibleTargetsCountQuery->GetQuery()->GetQueryString().c_str());
     if (!stmt.IsValid())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", possibleTargetsCountQuery->ToString().c_str()));
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", possibleTargetsCountQuery->GetQuery()->GetQueryString().c_str()));
 
-    possibleTargetsCountQuery->BindValues(*stmt);
+    possibleTargetsCountQuery->GetQuery()->BindValues(*stmt);
 
     // query the count
     if (BE_SQLITE_ROW != QueryExecutorHelper::Step(*stmt))
@@ -2334,15 +2334,15 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
 
     // build a query that selects ECClassIds of all matching classes that have instances
     int maxTargetIndex = -1;
-    UnionGenericQueryPtr unionQuery = UnionGenericQuery::Create({});
+    UnionQueryBuilderPtr unionQuery = UnionQueryBuilder::Create({});
     for (auto const& pathSpecEntry : *params.m_paths)
         {
-        UnionGenericQueryPtr specQuery = pathSpecEntry.m_applyTargetInstancesCheck
+        UnionQueryBuilderPtr specQuery = pathSpecEntry.m_applyTargetInstancesCheck
             ? CreateRelationshipPathsWithTargetInstancesQuery(*this, params.m_source, *pathSpecEntry.m_specification, params.m_sourceInstanceFilter, params.m_relatedInstancePaths, pathSpecEntry.m_isTargetPolymorphic, params.m_countTargets, pathSpecEntry.m_stepInstanceFilters)
             : CreateRelationshipPathQuery(*this, params.m_source, *pathSpecEntry.m_specification, pathSpecEntry.m_isTargetPolymorphic);
         if (specQuery.IsValid())
             {
-            auto indexedQuery = ComplexGenericQuery::Create();
+            auto indexedQuery = ComplexQueryBuilder::Create();
             auto selectContract = SimpleQueryContract::Create(
                 {
                 PresentationQueryContractSimpleField::Create("Index", std::to_string(pathSpecEntry.m_targetIndex).c_str()), // 0
@@ -2365,11 +2365,11 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
     // prepare & bind
     Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetRelationshipPaths");
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, txn.IsActive(), "Failed to start a transaction");
-    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), unionQuery->ToString().c_str());
+    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), unionQuery->GetQuery()->GetQueryString().c_str());
     if (!stmt.IsValid())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", unionQuery->ToString().c_str()));
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", unionQuery->GetQuery()->GetQueryString().c_str()));
 
-    unionQuery->BindValues(*stmt);
+    unionQuery->GetQuery()->BindValues(*stmt);
 
     // create the paths list
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*stmt))

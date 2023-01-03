@@ -395,6 +395,7 @@ struct JsInterop {
     BE_JSON_NAME(forceUseId)
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
+    BE_JSON_NAME(httpTimeout)
     BE_JSON_NAME(id)
     BE_JSON_NAME(index)
     BE_JSON_NAME(localFileName)
@@ -450,7 +451,7 @@ public:
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, BeJsConst jsonInstance);
     static void InitLogging();
     static void Initialize(BeFileNameCR, Napi::Env, BeFileNameCR);
-    static DgnDbPtr CreateDgnDb(Utf8StringCR filename, BeJsConst props);
+    static DgnDbPtr CreateIModel(Utf8StringCR filename, BeJsConst props);
     static DgnDbStatus GetECClassMetaData(BeJsValue results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     static DgnDbStatus GetSchemaItem(BeJsValue results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);

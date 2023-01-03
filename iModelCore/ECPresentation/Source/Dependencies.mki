@@ -34,7 +34,6 @@ ECPresentationInternalHeaders   = $(SourceDirectory)Content/ContentCache.h      
                                   $(SourceDirectory)Content/ContentItemBuilder.h                          \
                                   $(SourceDirectory)Content/ContentProviders.h                            \
                                   $(SourceDirectory)Content/ContentSpecificationsHandler.h                \
-                                  $(SourceDirectory)Content/ContentQuery.h                                \
                                   $(SourceDirectory)Content/ContentQueryBuilder.h                         \
                                   $(SourceDirectory)Content/ContentQueryContracts.h                       \
                                   $(SourceDirectory)Content/ContentQueryResultsReader.h                   \

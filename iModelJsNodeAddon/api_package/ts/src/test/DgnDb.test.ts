@@ -2,13 +2,14 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { copyFile, dbFileName, getAssetsDir, iModelJsNative } from "./utils";
+import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
 import { openDgnDb } from ".";
 import * as path from "path";
 import * as os from "os";
+import * as fs from "fs-extra";
 import { ProfileOptions } from "@itwin/core-common";
 
 // Crash reporting on linux is gated by the presence of this env variable.
@@ -42,10 +43,6 @@ describe("basic tests", () => {
     // from Node
     expect(() => db.nonsense()).to.throw("not a function");
   });
-
-  it("testImportSchemas", () => {
-
-  })
 
   it("testTileVersionInfo", () => {
     const ver = iModelJsNative.getTileVersionInfo();
@@ -167,6 +164,19 @@ describe("basic tests", () => {
     assert.isTrue(undefined === props.find((nvpair) => nvpair.name === "dynamic3"));
 
     // iModelJsNative.NativeDevTools.signal(3);
+  });
+
+  it("WAL mode", () => {
+    const withWal = new  iModelJsNative.DgnDb();
+    const tempDbName = path.join(getOutputDir(), "testWal.bim");
+    if (fs.existsSync(tempDbName))
+      fs.removeSync(tempDbName);
+
+    withWal.createIModel(tempDbName, {rootSubject: {name: "wal"}});
+    withWal.enableWalMode();
+    withWal.performCheckpoint();
+    withWal.setAutoCheckpointThreshold(2000);
+    withWal.closeIModel();
   });
 
   it("testGetSchemaProps", async () => {
