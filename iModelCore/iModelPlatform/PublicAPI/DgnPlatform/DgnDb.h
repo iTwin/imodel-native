@@ -153,7 +153,7 @@ public:
     void SetClient(Utf8CP client) {m_client = client;}
 
     //! Set the filename of an existing, valid, SQLite file to be used as the "seed database" for the new DgnDb created using this CreateDgnDbParams.
-    //! If a SeedDb is specified, it is merely copied verbatim to the filename supplied to DgnDb::CreateDgnDb. Then, the DgnDb
+    //! If a SeedDb is specified, it is merely copied verbatim to the filename supplied to DgnDb::CreateIModel. Then, the DgnDb
     //! tables are added to the copy of the seed database.
     //! @note The default is to create a new database from scratch (in other words, no seed database).
     //! @note When using a seed database, it determines the page size, encoding, compression, user_version, etc, for the database. Make sure they are appropriate
@@ -168,7 +168,7 @@ public:
     BeSQLite::BeGuid GetGuid() const {return m_guid;}
 
 
-    //! Determine whether to overwrite an existing file in DgnDb::CreateDgnDb. The default is to fail if a file by the supplied name
+    //! Determine whether to overwrite an existing file in DgnDb::CreateIModel. The default is to fail if a file by the supplied name
     //! already exists.
     void SetOverwriteExisting(bool val) {m_overwriteExisting = val;}
 };
@@ -256,7 +256,7 @@ protected:
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnBeforeClearECDbCache() override;
 
-    BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
+    BeSQLite::DbResult CreateNewIModel(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateCodeSpecs(); //!< @private
     BeSQLite::DbResult CreateRepositoryModel(); //!< @private
@@ -266,7 +266,7 @@ protected:
     BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
-    BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
+    BeSQLite::DbResult DoOpenIModel(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
 
 public:
     Napi::ObjectReference m_private_iModelDbJs; // only public so it can be set from IModelJsNative::NativeDgnDb::SetIModelDb
@@ -338,7 +338,7 @@ public:
     //! Note that any previously committed local changes that haven't been pushed up to the server
     //! will cause an error. These need to be flushed out by creating a revision. See @ref RevisionManager
     //! </ul>
-    DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
+    DGNPLATFORM_EXPORT static DgnDbPtr OpenIModelDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnDb file.
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully created, error code otherwise. May be NULL.
@@ -349,7 +349,7 @@ public:
     //! @note If this method succeeds, it will return a valid DgnDbPtr. The DgnDb will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
     //! @see CreateDgnDbParams::SetRootSubjectName
-    DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
+    DGNPLATFORM_EXPORT static DgnDbPtr CreateIModel(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb

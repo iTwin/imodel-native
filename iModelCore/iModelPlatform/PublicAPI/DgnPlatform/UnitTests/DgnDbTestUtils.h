@@ -212,7 +212,7 @@ public:
 
         CreateDgnDbParams createDgnDbParams("DgnDbTestUtils");
         BeSQLite::DbResult createStatus;
-        DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, fileName, createDgnDbParams);
+        DgnDbPtr db = DgnDb::CreateIModel(&createStatus, fileName, createDgnDbParams);
         if (!db.IsValid())
             EXPECT_FALSE(true) << WPrintfString(L"%ls - create failed", fileName.c_str()).c_str();
 
@@ -232,7 +232,7 @@ public:
     //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test class's SetUpTestCase logic, then you must specify the
     //! relative path to it.
     //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist
-    static DgnDbPtr OpenSeedDb(WCharCP relSeedPath) { return OpenDgnDb(relSeedPath, DgnDb::OpenMode::Readonly); }
+    static DgnDbPtr OpenSeedDb(WCharCP relSeedPath) { return OpenIModelDb(relSeedPath, DgnDb::OpenMode::Readonly); }
 
     //! Open <em>a copy of</em> the specified seed DgnDb for reading and writing. The result will be a private copy for the use of the caller.
     //! The copy will always be located in a subdirectory with the same name as the calling test.
@@ -242,7 +242,7 @@ public:
     //! @param newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed DgnDb. If not null, then
     //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
     //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist.
-    //! @see OpenDgnDb
+    //! @see OpenIModelDb
     static DgnDbPtr OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName = nullptr)
         {
         WString relSeedPath(relSeedPathIn);
@@ -314,7 +314,7 @@ public:
         BeFileNameStatus fileStatus = BeFileName::BeCopyFile(infileName.c_str(), ccfileName.c_str(), /*failIfFileExists*/true);
         EXPECT_EQ(BeFileNameStatus::Success, fileStatus) << WPrintfString(L"%ls => %ls - copy failed", infileName.c_str(), ccfileName.c_str()).c_str();
 
-        return OpenDgnDb(ccRelPathUnique.c_str(), DgnDb::OpenMode::ReadWrite);
+        return OpenIModelDb(ccRelPathUnique.c_str(), DgnDb::OpenMode::ReadWrite);
         }
 
     //! This is a convenenience function that calls OpenSeedDbCopy and returns the full filename of the opened copy.
@@ -324,12 +324,12 @@ public:
     //! @param relPath Identifies a seed DgnDb that already exists in the specified subdirectory. Be sure to use forward slash (/) as a directory separator.
     //! @param mode the file open mode
     //! @return a pointer to the open DgnDb, or nullptr if the file does not exist
-    static DgnDbPtr OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode)
+    static DgnDbPtr OpenIModelDb(WCharCP relPath, DgnDb::OpenMode mode)
         {
         BeFileName fileName = GetOutputPath(relPath);
         BeSQLite::DbResult openStatus;
         DgnDb::OpenParams openParams(mode);
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+        DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
         if (!db.IsValid())
             EXPECT_FALSE(true) << WPrintfString(L"%ls - open failed with %x", fileName.c_str(), (int)openStatus).c_str();
         return db;

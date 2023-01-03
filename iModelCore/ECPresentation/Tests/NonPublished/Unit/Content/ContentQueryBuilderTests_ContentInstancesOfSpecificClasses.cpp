@@ -29,7 +29,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -64,7 +64,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, true, "this");
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -104,7 +104,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryW
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -143,7 +143,7 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
         AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_1", "CalculatedProperty_0", "\"Value\" & 1", nullptr, 1200));
         AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_2", "CalculatedProperty_1", "this.Prop & \"Test\"", nullptr, 1500));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -171,7 +171,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryW
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
 
-    int priority = querySet.GetContract()->GetDescriptor().GetVisibleFields()[0]->GetPriority();
+    int priority = querySet.GetContract()->AsContentQueryContract()->GetDescriptor().GetVisibleFields()[0]->GetPriority();
     EXPECT_EQ(1200, priority);
     }
 
@@ -193,7 +193,7 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
 
-    int priority = querySet.GetContract()->GetDescriptor().GetVisibleFields()[0]->GetPriority();
+    int priority = querySet.GetContract()->AsContentQueryContract()->GetDescriptor().GetVisibleFields()[0]->GetPriority();
     EXPECT_EQ(ContentDescriptor::Property::DEFAULT_PRIORITY, priority);
     }
 
@@ -228,15 +228,15 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
 
-        ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query1 = ComplexQueryBuilder::Create();
         query1->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query1), "this");
         query1->From(*classA, false, "this");
 
-        ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query2 = ComplexQueryBuilder::Create();
         query2->SelectContract(*CreateQueryContract(2, *descriptor, classB, *query2), "this");
         query2->From(*classB, false, "this");
 
-        UnionContentQueryPtr query = UnionContentQuery::Create({ query1, query2 });
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ query1, query2 });
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -281,15 +281,15 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA1, *classA1->GetPropertyP("PropA1")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA2, *classA2->GetPropertyP("PropA2")));
 
-        ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query1 = ComplexQueryBuilder::Create();
         query1->SelectContract(*CreateQueryContract(1, *descriptor, classA1, *query1), "this");
         query1->From(*classA1, false, "this");
 
-        ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query2 = ComplexQueryBuilder::Create();
         query2->SelectContract(*CreateQueryContract(2, *descriptor, classA2, *query2), "this");
         query2->From(*classA2, false, "this");
 
-        UnionContentQueryPtr query = UnionContentQuery::Create({ query1, query2 });
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ query1, query2 });
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -322,7 +322,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInsta
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Where("[this].[Prop] = 10", BoundQueryValuesList());
@@ -377,7 +377,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInsta
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, nullptr, { {aTob} }), "this");
         query->From(*classA, false, "this");
         query->Join(aTob);
@@ -454,7 +454,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SetsMergeRes
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         return query;
@@ -518,12 +518,12 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SelectPointP
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PointProp")));
 
-        ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr nestedQuery = ComplexQueryBuilder::Create();
         ContentQueryContractPtr contract = CreateQueryContract(1, *descriptor, classA, *nestedQuery);
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(*classA, false, "this");
 
-        ComplexContentQueryPtr groupedQuery = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr groupedQuery = ComplexQueryBuilder::Create();
         groupedQuery->SelectAll();
         groupedQuery->From(*nestedQuery);
         groupedQuery->GroupByContract(*contract);
@@ -572,7 +572,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, CreateDisplayLabelField(selectClass, {}, labelOverride.GetValueSpecifications())), "this");
         query->From(selectClass);
         return query;
@@ -620,16 +620,16 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass1(*classA, "this", false);
-        ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
         q1->SelectContract(*CreateQueryContract(1, *descriptor, classA, *q1, CreateDisplayLabelField(selectClass1, {}, labelOverride.GetValueSpecifications())), "this");
         q1->From(selectClass1);
 
         SelectClass<ECClass> selectClass2(*classB, "this", false);
-        ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr q2 = ComplexQueryBuilder::Create();
         q2->SelectContract(*CreateQueryContract(2, *descriptor, classB, *q2, CreateDisplayLabelField(selectClass2)), "this");
         q2->From(selectClass2);
 
-        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({q1, q2});
         return query;
         });
     }
@@ -682,7 +682,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, CreateDisplayLabelField(selectClass)), "this");
         query->From(selectClass);
         query->Join(aTob);
@@ -803,7 +803,7 @@ TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_DoesNotJoinCl
             CreatePropertiesField(CreateCategory(*classC), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC"))),
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
         query->From(*classA, false, "this");
         query->Join(navigationPropertyPathAE);
