@@ -3249,11 +3249,6 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     NavNodeExtendedData targetExtendedData(target);
     NavNodeExtendedData sourceExtendedData(source);
 
-    target.GetKey()->SetInstanceKeysSelectQuery(UnionQueryBuilder::Create({
-        StringQueryBuilder::Create(*target.GetKey()->GetInstanceKeysSelectQuery()),
-        StringQueryBuilder::Create(*source.GetKey()->GetInstanceKeysSelectQuery()),
-        })->CreateQuery());
-
     bvector<ECClassInstanceKey> instanceKeys = target.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
     for (auto const& sourceInstanceKey : source.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys())
         {
@@ -3273,7 +3268,12 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     NavNodeCPtr parent = context.GetVirtualParentNode();
     ECInstancesNodeKeyPtr nodeKey = ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
         parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys);
-    nodeKey->SetInstanceKeysSelectQuery(std::unique_ptr<const PresentationQuery>(target.GetKey()->GetInstanceKeysSelectQuery()));
+
+    nodeKey->SetInstanceKeysSelectQuery(UnionQueryBuilder::Create({
+        StringQueryBuilder::Create(*target.GetKey()->GetInstanceKeysSelectQuery()),
+        StringQueryBuilder::Create(*source.GetKey()->GetInstanceKeysSelectQuery()),
+        })->CreateQuery());
+
     target.SetNodeKey(*nodeKey);
     }
 /*---------------------------------------------------------------------------------**//**

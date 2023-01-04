@@ -39,7 +39,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     /*  0 */ "COALESCE((" MERGED_NODES_VIRTUAL_PARENT_IDS_CORRELATED_SELECT_STMT(nodes_table_alias) "), [" hierarchy_levels_table_alias "].[ParentNodeId]) VirtualParentNodeIds, " \
     /*  1 */ "[" nodes_table_alias "].[Data], " \
     /*  2 */ "[" nodes_table_alias "].[Label], " \
-    /*  3 */ "[" nodes_table_alias "].[InstanceKeysSelectQuery], " \
+    /*  3 */ "[" node_keys_table_alias "].[InstanceKeysSelectQuery], " \
     /*  4 */ "[" nodes_table_alias "].[Id], " \
     /*  5 */ "[" node_keys_table_alias "].[Type]," \
     /*  6 */ "[" node_keys_table_alias "].[SpecificationIdentifier]," \

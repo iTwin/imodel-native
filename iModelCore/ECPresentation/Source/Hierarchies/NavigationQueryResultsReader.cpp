@@ -170,7 +170,6 @@ protected:
         {
         if (m_inProgressNode.IsValid())
             {
-            m_inProgressNode->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(m_inProgressInstanceKeys));
             NavNodeExtendedData extendedData(*m_inProgressNode);
 #ifdef wip_skipped_instance_keys_performance_issue
             extendedData.SetSkippedInstanceKeys(m_inProgressSkippedInstanceKeys);
@@ -179,7 +178,7 @@ protected:
             InitNode(*m_inProgressNode);
             node = m_inProgressNode;
             node->SetNodeKey(*ECInstancesNodeKey::Create(GetConnection(), m_inProgressNode->GetKey()->GetSpecificationIdentifier(), GetParentKey(), m_inProgressInstanceKeys));
-            node->GetKey()->SetInstanceKeysSelectQuery(std::unique_ptr<const PresentationQuery>(m_inProgressNode->GetKey()->GetInstanceKeysSelectQuery()));
+            node->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(m_inProgressInstanceKeys));
             return true;
             }
         return false;

@@ -722,7 +722,8 @@ void DefaultECPresentationSerializer::_NavNodeKeyAsJson(ContextR ctx, NavNodeKey
         pathJson.PushBack(rapidjson::Value(pathElement.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
     navNodeKeyBaseJson.AddMember("PathFromRoot", pathJson, navNodeKeyBaseJson.GetAllocator());
-    navNodeKeyBaseJson.AddMember("InstanceKeysSelectQuery", _AsJson(ctx, *navNodeKey.GetInstanceKeysSelectQuery(), &navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
+    if (nullptr != navNodeKey.GetInstanceKeysSelectQuery())
+        navNodeKeyBaseJson.AddMember("InstanceKeysSelectQuery", _AsJson(ctx, *navNodeKey.GetInstanceKeysSelectQuery(), &navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -770,7 +771,7 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    key->SetInstanceKeysSelectQuery(std::unique_ptr<const PresentationQuery>(GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"])));
+    key->SetInstanceKeysSelectQuery(std::move(GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"])));
     return key;
     }
 
