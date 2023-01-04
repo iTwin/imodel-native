@@ -205,7 +205,7 @@ bool includeClosurePoint
                 }
             if (includeClosurePoint && hullPoints.size() > 1)
                 {
-                DPoint3d xyz = hullPoints.back ();
+                DPoint3d xyz = hullPoints.front();
                 hullPoints.push_back (xyz);
                 }
             }
