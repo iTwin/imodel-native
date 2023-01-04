@@ -565,7 +565,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderContextPtr CreateProviderContext(Utf8StringCR rulesetId, NavNodeCP parent, Utf8StringCR instanceFilter = "") const
+    NavNodesProviderContextPtr CreateProviderContext(Utf8StringCR rulesetId, NavNodeCP parent, std::shared_ptr<InstanceFilterDefinition const> instanceFilter = nullptr) const
         {
         NavNodesProviderContextPtr providerContext = m_providerContextFactory.Create(m_connection, rulesetId.c_str(), parent, m_nodesCache, nullptr, RulesetVariables());
         if (providerContext.IsNull())
@@ -578,7 +578,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr CreateProvider(CombinedHierarchyLevelIdentifier const& identifier, std::shared_ptr<IHierarchyLevelLocker> locker, NavNodeCP parent, Utf8StringCR instanceFilter)
+    NavNodesProviderPtr CreateProvider(CombinedHierarchyLevelIdentifier const& identifier, std::shared_ptr<IHierarchyLevelLocker> locker, NavNodeCP parent, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
         {
         NavNodesProviderContextPtr providerContext = CreateProviderContext(identifier.GetRulesetId(), parent, instanceFilter);
         if (providerContext.IsNull())
@@ -593,7 +593,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr GetCachedProvider(CombinedHierarchyLevelIdentifier const& identifier, NavNodeCP parent, Utf8StringCR instanceFilter)
+    NavNodesProviderPtr GetCachedProvider(CombinedHierarchyLevelIdentifier const& identifier, NavNodeCP parent, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
         {
         NavNodesProviderContextPtr providerContext = CreateProviderContext(identifier.GetRulesetId(), parent, instanceFilter);
         if (providerContext.IsNull())
@@ -863,7 +863,7 @@ public:
                 identifier.GetHierarchyLevelIdentifier().GetRulesetId(),
                 refreshedProvider->GetContext().GetConnection().GetECDb().GetDbFileName(),
                 parentNode.get(),
-                refreshedProvider->GetContext().GetInstanceFilter(),
+                refreshedProvider->GetContext().GetInstanceFilterPtr(),
                 refreshedProvider->GetNodesCount(),
                 expandedChildNodes
                 );
