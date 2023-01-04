@@ -28,7 +28,7 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
         Utf8String schemaName, className;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, usedClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse ECClass name: '%s'", usedClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse ECClass name: '%s'", usedClassName.c_str()));
             continue;
             }
         if (!schemaName.empty())
@@ -36,7 +36,7 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
             ECClassCP usedClass = schemaHelper.GetECClass(schemaName.c_str(), className.c_str());
             if (nullptr == usedClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s:%s'", schemaName.c_str(), className.c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s:%s'", schemaName.c_str(), className.c_str()));
                 continue;
                 }
             listener._OnClassUsed(*usedClass, true);
@@ -70,7 +70,7 @@ void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& l
         ECClassCP ruleClass = schemaHelper.GetECClass(rule->GetClassName().c_str());
         if (!ruleClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s'", rule->GetClassName().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s'", rule->GetClassName().c_str()));
             continue;
             }
         listener._OnClassUsed(*ruleClass, true);
@@ -406,7 +406,7 @@ protected:
             m_ruleClass = m_schemaHelper.GetECClass(m_rule.GetSchemaName().c_str(), m_rule.GetClassName().c_str());
             if (!m_ruleClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Grouping rule target class not found: '%s:%s'",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Grouping rule target class not found: '%s:%s'",
                     m_rule.GetSchemaName().c_str(), m_rule.GetClassName().c_str()));
                 }
             }
@@ -482,7 +482,7 @@ private:
             m_specClass = m_schemaHelper.GetECClass(m_specification.GetSchemaName().c_str(), m_specification.GetBaseClassName().c_str());
             if (!m_specClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Base class grouping specification class not found: '%s:%s'",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Base class grouping specification class not found: '%s:%s'",
                     m_specification.GetSchemaName().c_str(), m_specification.GetBaseClassName().c_str()));
                 }
             }
@@ -594,7 +594,7 @@ public:
             m_groupingProperty = ecClass->GetPropertyP(m_specification.GetPropertyName().c_str());
             if (nullptr == m_groupingProperty)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested property does not exist in class: '%s.%s'",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested property does not exist in class: '%s.%s'",
                     ecClass->GetFullName(), m_specification.GetPropertyName().c_str()));
                 }
             }
@@ -767,7 +767,7 @@ private:
             if (handler.IsAppliedTo(*m_parentNode))
                 {
                 m_parentGrouping = &handler;
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Parent grouping: `%s`", handler.GetName()));
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Parent grouping: `%s`", handler.GetName()));
                 return;
                 }
             }
@@ -817,11 +817,11 @@ private:
         if (bestClassMatch.IsValid())
             {
             m_groupingClass = std::make_unique<SelectClass<ECClass>>(bestClassMatch);
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Grouping class: `%s`", m_groupingClass->GetClass().GetFullName()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Grouping class: `%s`", m_groupingClass->GetClass().GetFullName()));
             }
         else
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "No grouping class");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "No grouping class");
             }
         }
 
@@ -1641,7 +1641,7 @@ private:
 
             if (GetSpecification().GetDoNotSort())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Requested nodes to not be sorted.");
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Requested nodes to not be sorted.");
                 notSorted.push_back(selectInfo);
                 continue;
                 }
@@ -1649,7 +1649,7 @@ private:
             bvector<ClassSortingRule> sortingRules = QueryBuilderHelpers::GetClassSortingRules(GetSortingRulesForSpecification(), selectInfo->GetSelectClass(), selectInfo->GetRelatedInstancePaths(), GetQueryBuilderParams().GetSchemaHelper());
             if (sortingRules.empty())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "No sorting rules apply.");
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "No sorting rules apply.");
                 labelSorted.push_back(selectInfo);
                 continue;
                 }
@@ -1657,12 +1657,12 @@ private:
             // if the rule of highest priority tells to not sort, we don't care about other rules
             if (sortingRules.front().GetRule().GetDoNotSort())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Highest priority sorting rule requests nodes to not be sorted.");
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Highest priority sorting rule requests nodes to not be sorted.");
                 notSorted.push_back(selectInfo);
                 continue;
                 }
 
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Found %" PRIu64 " sorting rules that apply", (uint64_t)sortingRules.size()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Found %" PRIu64 " sorting rules that apply", (uint64_t)sortingRules.size()));
             rulesSorted.push_back(make_bpair(selectInfo, sortingRules));
             }
         }
@@ -1867,7 +1867,7 @@ protected:
             ? &GetParentNode()->GetKey()->AsECClassGroupingNodeKey()->GetECClass() : nullptr;
         if (!parentGroupingClass)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Did not find parent grouping class - accept the select fully.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Did not find parent grouping class - accept the select fully.");
             return AcceptResult::CreateFullyAccepted();
             }
 
@@ -1876,7 +1876,7 @@ protected:
         // - one selects everything EXCEPT instances of the parent grouping class (non-polymorphically), and that gets grouped by class
         // - second selects only instances of parent grouping class (non-polymorphically), and that gets skipped by this query
         //   handler, allowing other, lower priority, query handlers to do their job on it
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Found parent grouping class `%s` - accept the select partially.", parentGroupingClass->GetFullName()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Found parent grouping class `%s` - accept the select partially.", parentGroupingClass->GetFullName()));
         auto ungroupedSelectInfo = std::make_shared<SelectQueryInfo>(selectInfo);
         ungroupedSelectInfo->SetSelectClass(SelectClass<ECClass>(*parentGroupingClass, selectInfo.GetSelectClass().GetAlias(), false));
         selectInfo.GetSelectClass().GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*parentGroupingClass, "", false));
@@ -1912,7 +1912,7 @@ protected:
 
         if (!GetSpecification().GetDoNotSort())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Sorting by label.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Sorting by label.");
             static Utf8PrintfString const sortedDisplayLabel("%s([%s]) IS NULL, %s([%s])", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName, FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
             unionQuery = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*unionQuery, {ECClassGroupingNodesQueryContract::DisplayLabelFieldName});
             QueryBuilderHelpers::Order(*unionQuery, sortedDisplayLabel.c_str());
@@ -1980,14 +1980,14 @@ protected:
 
         if (!GetSpecification().GetDoNotSort())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Sort by label.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Sort by label.");
             static Utf8PrintfString const sortedDisplayLabel("%s([%s]) IS NULL, %s([%s])", FUNCTION_NAME_GetSortingValue, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, FUNCTION_NAME_GetSortingValue, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
             unionQuery = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*unionQuery, {DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName});
             QueryBuilderHelpers::Order(*unionQuery, sortedDisplayLabel.c_str());
             }
 
         unionQuery->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Will hide nodes if they have only one child.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Will hide nodes if they have only one child.");
 
         return unionQuery;
         }
@@ -2093,7 +2093,7 @@ protected:
 
         if (!GetSpecification().GetDoNotSort())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Sorting by label.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Sorting by label.");
             static Utf8PrintfString const sortedDisplayLabel("%s([%s]) IS NULL, %s([%s])", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName, FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
             unionQuery = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*unionQuery, {ECClassGroupingNodesQueryContract::DisplayLabelFieldName});
             QueryBuilderHelpers::Order(*unionQuery, sortedDisplayLabel.c_str());
@@ -2102,7 +2102,7 @@ protected:
         if (!GetGroupingHandler().GetGroupingSpecification().GetCreateGroupForSingleItem())
             {
             unionQuery->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "May hide grouping nodes due to 'create group for single item' flag not being set.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "May hide grouping nodes due to 'create group for single item' flag not being set.");
             }
 
         return unionQuery;
@@ -2230,7 +2230,7 @@ protected:
         ECPropertyCP groupingProperty = GetGroupingHandler().GetGroupingProperty();
         if (nullptr == groupingProperty)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Failed to create the query as there's no grouping property.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Failed to create the query as there's no grouping property.");
             return nullptr;
             }
 
@@ -2278,7 +2278,7 @@ protected:
                 {
                 case PropertyGroupingValue::PropertyValue:
                     {
-                    DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Requested sorting by property raw value.");
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Requested sorting by property raw value.");
                     PrimitiveECPropertyCP primitiveGroupingProperty = groupingProperty->GetAsPrimitiveProperty();
                     ECEnumerationCP enumeration = primitiveGroupingProperty ? primitiveGroupingProperty->GetEnumeration() : nullptr;
                     if (primitiveGroupingProperty && (PRIMITIVETYPE_String == primitiveGroupingProperty->GetType() || nullptr != enumeration))
@@ -2301,32 +2301,32 @@ protected:
                     }
                 case PropertyGroupingValue::DisplayLabel:
                     {
-                    DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Requested sorting by property display value.");
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Requested sorting by property display value.");
                     orderByClause = Utf8PrintfString("%s([%s]) IS NULL, %s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName, FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName);
                     unionQuery = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*unionQuery, {ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName});
                     break;
                     }
                 default:
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, Utf8PrintfString("Unhandled sorting value type: %d", (int)GetGroupingHandler().GetGroupingSpecification().GetSortingValue()))
+                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Unhandled sorting value type: %d", (int)GetGroupingHandler().GetGroupingSpecification().GetSortingValue()))
                 }
             if (!orderByClause.empty())
                 QueryBuilderHelpers::Order(*unionQuery, orderByClause.c_str());
             }
         else
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Not sorting due to 'do not sort' flag.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Not sorting due to 'do not sort' flag.");
             }
 
         if (!GetGroupingHandler().GetGroupingSpecification().GetCreateGroupForSingleItem())
             {
             unionQuery->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "May hide property grouping nodes due to 'hide if only one child' flag.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "May hide property grouping nodes due to 'hide if only one child' flag.");
             }
 
         if (!GetGroupingHandler().GetGroupingSpecification().GetCreateGroupForUnspecifiedValues() && GetGroupingHandler().GetGroupingSpecification().GetRanges().empty())
             {
             unionQuery->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetHideIfGroupingValueNotSpecified(true);
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Will hide property grouping node that groups by unspecified values.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Will hide property grouping node that groups by unspecified values.");
             }
 
         NavigationQueryExtendedData(*unionQuery).AddRangesData(*groupingProperty, GetGroupingHandler().GetGroupingSpecification());
@@ -2495,7 +2495,7 @@ public:
         m_ecInstancesSelectHandler = std::make_unique<ECInstanceSelectQueryHandler>(groupingResolver.GetQueryBuilderParams(),
             groupingResolver.GetParentNode(), groupingResolver.GetParentInstanceNode(), groupingResolver.GetSpecification(), groupingResolver.GetSpecificationIdentifier());
         m_groupingFilters = groupingResolver.GetFilterHandlers();
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Found grouping node filters: %" PRIu64, (uint64_t)m_groupingFilters.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Found grouping node filters: %" PRIu64, (uint64_t)m_groupingFilters.size()));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2515,14 +2515,14 @@ public:
                 });
             if (!isAtLeastOneClassAccepted)
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "One of grouping filters completely filters-out the select. Skip it.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "One of grouping filters completely filters-out the select. Skip it.");
                 return false;
                 }
             }
 
         // build a list of handlers for given select query info. the handlers are sorted by priority they should be used
         bvector<GroupingHandler const*> groupingHandlers = m_groupingResolver.GetHandlersForNextGroupingLevel(selectClasses, false);
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Total grouping handlers that apply to this select: %" PRIu64, (uint64_t)groupingHandlers.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Total grouping handlers that apply to this select: %" PRIu64, (uint64_t)groupingHandlers.size()));
 
         bvector<SelectQueryHandler const*> selectQueryHandlers = ContainerHelpers::TransformContainer<bvector<SelectQueryHandler const*>>(groupingHandlers, [&](auto handler)
             {
@@ -2544,7 +2544,7 @@ public:
                 {
                 if (!criteria(*handler))
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Query handler `%s` skipped - it doesn't match the criteria", handler->GetName()));
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Query handler `%s` skipped - it doesn't match the criteria", handler->GetName()));
                     skipHandler = true;
                     break;
                     }
@@ -2553,7 +2553,7 @@ public:
                 continue;
 
             SelectQueryHandler::AcceptResult result = handler->Accept(*currSelectInfo);
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Accept result from handler `%s`: `%s`", handler->GetName(), GetSelectQueryAcceptStatusStr(result.GetStatus())));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Accept result from handler `%s`: `%s`", handler->GetName(), GetSelectQueryAcceptStatusStr(result.GetStatus())));
 
             if (result.GetStatus() > acceptStatus)
                 acceptStatus = result.GetStatus();
@@ -2574,7 +2574,7 @@ public:
                 }
             }
 
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Overall accept result: `%s`", GetSelectQueryAcceptStatusStr(acceptStatus)));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Overall accept result: `%s`", GetSelectQueryAcceptStatusStr(acceptStatus)));
         return acceptStatus != SelectQueryHandler::AcceptResult::Status::Reject;
         }
 
@@ -2588,7 +2588,7 @@ public:
         bvector<bpair<SelectQueryHandler const*, bvector<std::shared_ptr<SelectQueryInfo const>>>> orderedSelects;
         ContainerHelpers::TransformContainer(orderedSelects, m_selectsByHandler, [](auto const& entry){return make_bpair(entry.first, entry.second);});
         std::stable_sort(orderedSelects.begin(), orderedSelects.end(), [](auto const& lhs, auto const& rhs){return lhs.first->GetOrderInUnion() > rhs.first->GetOrderInUnion();});
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Total select handlers: %" PRIu64, (uint64_t)orderedSelects.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Total select handlers: %" PRIu64, (uint64_t)orderedSelects.size()));
 
         bvector<PresentationQueryBuilderPtr> queries;
         for (auto const& entry : orderedSelects)
@@ -2596,28 +2596,28 @@ public:
             PresentationQueryBuilderPtr query = entry.first->CreateQuery(entry.second, m_groupingFilters);
             if (query.IsNull())
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Select handler returned NULL query - skip.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Select handler returned NULL query - skip.");
                 continue;
                 }
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Created query: %s", query->GetQuery()->GetQueryString().c_str()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Created query: %s", query->GetQuery()->GetQueryString().c_str()));
 
             NavigationQueryResultType resultType = query->GetNavigationResultParameters().GetResultType();
             if (queries.size() > 0 && queries.back()->GetNavigationResultParameters().GetResultType() == resultType)
                 {
                 QueryBuilderHelpers::SetOrUnion(queries.back(), *query);
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Unioned to previous query of the same type.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Unioned to previous query of the same type.");
                 }
             else
                 {
                 queries.push_back(query);
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Previous query is of different type. Add as a new query to set.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Previous query is of different type. Add as a new query to set.");
                 }
             }
 
         for (auto const& query : queries)
             SetCommonQueryResultParameters(*query);
 
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Total queries in set: %" PRIu64, (uint64_t)queries.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Total queries in set: %" PRIu64, (uint64_t)queries.size()));
         return queries;
         }
 };
@@ -2910,7 +2910,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     // quick return if nothing to select from
     if (selectClasses.empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Did not find any select classes - no query created");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Did not find any select classes - no query created");
         return bvector<PresentationQueryBuilderPtr>();
         }
 
@@ -2962,7 +2962,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     // this specification can be used only if parent node is ECInstance node
     if (nullptr == groupingResolver.GetParentInstanceNode() || nullptr == groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("`%s` specification can only be used "
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("`%s` specification can only be used "
             "if parent node or any of of its ancestor nodes is an ECInstance node - no query created.", specification.GetJsonElementType()));
         return bvector<PresentationQueryBuilderPtr>();
         }
@@ -3058,7 +3058,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     // quick return if nothing to select from
     if (selectClasses.empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Did not find any select classes - no query created");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Did not find any select classes - no query created");
         return bvector<PresentationQueryBuilderPtr>();
         }
 
@@ -3118,9 +3118,9 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create query from %s", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         m_query = spec.GetQuery();
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Using query: `%s`", m_query.c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Using query: `%s`", m_query.c_str()));
         InjectRulesEngineFields(m_query);
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Query after injecting rules engine fields: `%s`", m_query.c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Query after injecting internal fields: `%s`", m_query.c_str()));
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -3132,14 +3132,14 @@ protected:
 
         if (nullptr == m_parentNode || nullptr == m_parentNode->GetKey()->AsECInstanceNodeKey())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "ECPropertyValueQuerySpecification can only be used when its parent "
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "ECPropertyValueQuerySpecification can only be used when its parent "
                 "or any of its ancestors is an ECInstance node - ignoring the specification.");
             return;
             }
 
         ECInstancesNodeKey const& key = *m_parentNode->GetKey()->AsECInstanceNodeKey();
         bmap<ECClassCP, bvector<ECInstanceId>> parentClassInstanceIds = GroupClassInstanceKeys(key.GetInstanceKeys());
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Parent ECInstance node is based on %" PRIu64 " instances", (uint64_t)key.GetInstanceKeys().size()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Parent ECInstance node is based on %" PRIu64 " instances", (uint64_t)key.GetInstanceKeys().size()));
 
         ECClassInstanceKey usedParentInstanceKey;
         for (auto const& entry : parentClassInstanceIds)
@@ -3150,17 +3150,17 @@ protected:
             ECPropertyCP queryProperty = parentClass->GetPropertyP(spec.GetParentPropertyName().c_str());
             if (nullptr == queryProperty)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("The class `%s` doesn't contain requested ECProperty `%s`.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("The class `%s` doesn't contain requested ECProperty `%s`.",
                     parentClass->GetFullName(), spec.GetParentPropertyName().c_str()));
                 continue;
                 }
             if (!queryProperty->GetIsPrimitive() || PRIMITIVETYPE_String != queryProperty->GetAsPrimitiveProperty()->GetType())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECProperty `%s.%s` is not of string type. "
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECProperty `%s.%s` is not of string type. "
                     "The specification requires a string property", parentClass->GetFullName(), queryProperty->GetName().c_str()));
                 continue;
                 }
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Using property `%s.%s`.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Using property `%s.%s`.",
                 parentClass->GetFullName(), spec.GetParentPropertyName().c_str()));
 
             for (ECInstanceId instanceId : entry.second)
@@ -3170,19 +3170,19 @@ protected:
                 ECValue propertyValue = ECInstancesHelper::GetValue(m_helper.GetConnection(), ECInstanceKey(parentClass->GetId(), instanceId), queryProperty->GetName().c_str());
                 if (propertyValue.IsUninitialized() || propertyValue.IsNull())
                     {
-                    DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Property value not set, skipping this instance ID.");
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Property value not set, skipping this instance ID.");
                     continue;
                     }
 
                 if (!propertyValue.IsString())
                     {
-                    DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, LOG_ERROR, Utf8PrintfString("String property has non-string value: `%s`", propertyValue.ToString().c_str()));
+                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("String property has non-string value: `%s`", propertyValue.ToString().c_str()));
                     continue;
                     }
 
                 usedParentInstanceKey = ECClassInstanceKey(parentClass, instanceId);
                 m_query = propertyValue.GetUtf8CP();
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Using query: `%s`", m_query.c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Using query: `%s`", m_query.c_str()));
                 break;
                 }
 
@@ -3194,7 +3194,7 @@ protected:
             m_usedClassesListener->_OnClassUsed(*usedParentInstanceKey.GetClass(), false);
 
         InjectRulesEngineFields(m_query);
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Query after injecting rules engine fields: `%s`", m_query.c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Query after injecting internal fields: `%s`", m_query.c_str()));
         }
 
 public:
@@ -3221,7 +3221,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     {
     if (specification.GetQuerySpecifications().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "SearchResultInstanceNodes specification has no queries specified");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "SearchResultInstanceNodes specification has no queries specified");
         return bvector<PresentationQueryBuilderPtr>();
         }
 
@@ -3238,7 +3238,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         ECClassCP queryClass = m_params.GetSchemaHelper().GetECClass(querySpecification->GetSchemaName().c_str(), querySpecification->GetClassName().c_str());
         if (nullptr == queryClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested search query class not found: '%s:%s'",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested search query class not found: '%s:%s'",
                 querySpecification->GetSchemaName().c_str(), querySpecification->GetClassName().c_str()));
             continue;
             }
@@ -3259,7 +3259,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         Utf8String searchQuery = GetQuery(m_params.GetSchemaHelper(), *querySpecification, groupingResolver.GetParentInstanceNode(), m_params.GetUsedClassesListener());
         if (searchQuery.empty())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "Failed to create a search query for given query specification");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Failed to create a search query for given query specification");
             continue;
             }
 

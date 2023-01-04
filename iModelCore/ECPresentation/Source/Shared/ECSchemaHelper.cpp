@@ -269,7 +269,7 @@ void ECSchemaHelper::ParseECSchemas(ECSchemaSet& schemas, bool& exclude, Utf8Str
         ECSchemaCP schema = GetSchema(name.c_str(), false);
         if (nullptr == schema)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested ECSchema does not exist: '%s'", name.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECSchema does not exist: '%s'", name.c_str()));
             continue;
             }
         schemas.insert(schema);
@@ -352,7 +352,7 @@ SupportedClassInfos ECSchemaHelper::GetECClassesFromClassList(bvector<MultiSchem
             auto ecClass = GetECClass(schemaClass->GetSchemaName().c_str(), className.c_str(), false);
             if (ecClass == nullptr)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Given ECClass `%s.%s` does not exist. Ignoring.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Given ECClass `%s.%s` does not exist. Ignoring.",
                     schemaClass->GetSchemaName().c_str(), className.c_str()));
                 continue;
                 }
@@ -1243,7 +1243,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPaths(ECClassId sourceClassId, bvec
             {
             if (!actualRelated->Is(isForward ? relationship->GetSource().GetAbstractConstraint() : relationship->GetTarget().GetAbstractConstraint()))
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Found related class '%s' which is neither target not source of relationship '%s'",
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Found related class '%s' which is neither target not source of relationship '%s'",
                     actualRelated->GetFullName(), relationship->GetFullName()));
                 }
             else
@@ -1721,8 +1721,7 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
     if (nullptr != sourceClass && nullptr != targetClass)
         return RelatedClass(*sourceClass, SelectClass<ECRelationshipClass>(*relationship, ""), isRelationshipForward, SelectClass<ECClass>(*targetClass, ""), isTargetClassOptional);
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Failed to determine source and target for navigation property '%s.%s'", prop.GetClass().GetFullName(), prop.GetName().c_str()));
-    return RelatedClass();
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to determine source and target for navigation property '%s.%s'", prop.GetClass().GetFullName(), prop.GetName().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2445,7 +2444,7 @@ bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePa
         RelatedInstanceSpecificationCR spec = *relatedInstanceSpecs[i];
         if (paths.end() != paths.find(spec.GetAlias()))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec.GetAlias().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec.GetAlias().c_str()));
             continue;
             }
         for (auto& pathResult : indexedPaths.GetPaths(i))
@@ -2487,7 +2486,7 @@ void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR st
         ECClassCP ecClass = helper.GetECClass(entry.GetSchemaName(), entry.GetClassName());
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested ECClass not found: '%s.%s'", entry.GetSchemaName(), entry.GetClassName()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECClass not found: '%s.%s'", entry.GetSchemaName(), entry.GetClassName()));
             continue;
             }
         SupportedClassInfo<ECClass> info(*ecClass, entry.GetFlags());

@@ -238,7 +238,7 @@ public:
                 bvector<ECInstanceKey> labelRequestsStack = (nArgs == 3) ? ValueHelpers::GetECInstanceKeysFromJsonString(args[2].GetValueText()) : bvector<ECInstanceKey>();
                 if (ContainerHelpers::Contains(labelRequestsStack, [&requestKey](auto const& key){return key == requestKey;}))
                     {
-                    DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_WARNING, LOG_ERROR, Utf8PrintfString("Detected recursion in labels calculation. "
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Detected recursion in labels calculation. "
                         "ECInstance keys stack: `%s`. Trying to get label for: `%s`", args[2].GetValueText(), ValueHelpers::GetECInstanceKeyAsJsonString(requestKey).c_str()));
                     }
                 else
@@ -2088,10 +2088,10 @@ static bool RegisterFunctionsInDb(DbCR db, bvector<std::shared_ptr<DbFunction>> 
             continue;
 
         DbResult result = (DbResult)db.AddFunction(*func);
-        if (DbResult::BE_SQLITE_OK != result)
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_ERROR, Utf8PrintfString("Failed to add custom function '%s'. Result: %d", func->GetName(), (int)result))
-        else
-            didRegister = true;
+        if (BE_SQLITE_OK != result)
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Failed to add custom function '%s'. Result: %d", func->GetName(), (int)result))
+
+        didRegister = true;
         }
     return didRegister;
     }
@@ -2105,7 +2105,7 @@ static void UnregisterFunctionsFromDb(DbCR db, bvector<std::shared_ptr<DbFunctio
         {
         DbResult result = (DbResult)db.RemoveFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_ERROR, Utf8PrintfString("Failed to remove custom function '%s'. Result: %d", func->GetName(), (int)result));
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Failed to remove custom function '%s'. Result: %d", func->GetName(), (int)result));
         }
     }
 
