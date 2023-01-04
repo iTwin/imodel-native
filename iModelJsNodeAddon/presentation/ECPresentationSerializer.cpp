@@ -1404,11 +1404,11 @@ static bvector<RelatedClassPath> ParseInstanceFilterRelatedInstances(IConnection
             pathToProperty.back().GetTargetClass().SetAlias(alias);
             hasAlias = true;
             }
-
         if (instanceDef.hasMember(PRESENTATION_JSON_ATTRIBUTE_InstanceFilterDefinition_RelatedInstances_RelationshipAlias) && instanceDef[PRESENTATION_JSON_ATTRIBUTE_InstanceFilterDefinition_RelatedInstances_RelationshipAlias].isString())
             {
             Utf8String alias = instanceDef[PRESENTATION_JSON_ATTRIBUTE_InstanceFilterDefinition_RelatedInstances_RelationshipAlias].ToUtf8CP();
             pathToProperty.back().GetRelationship().SetAlias(alias);
+            hasAlias = true;
             }
 
         if (!hasAlias)
