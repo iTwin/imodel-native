@@ -89,7 +89,7 @@ void QueryBuilderHelpers::Order(PresentationQueryBuilder& query, Utf8CP clause)
     else if (nullptr != query.AsExceptQueryBuilder())
         query.AsExceptQueryBuilder()->OrderBy(clause);
     else
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, "Unexpected query type");
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Unexpected query type");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,7 +129,7 @@ void QueryBuilderHelpers::Limit(PresentationQueryBuilder& query, uint64_t limit,
     else if (nullptr != query.AsExceptQueryBuilder())
         query.AsExceptQueryBuilder()->Limit(limit, offset);
     else
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, "Unexpected query type");
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Unexpected query type");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -288,11 +288,8 @@ bool RecursiveQueriesHelper::IsRecursiveJoinForward(SelectClassInfo const& selec
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RecursiveQueriesHelper::ParseRecursiveRelationships(bset<ECRelationshipClassCP>& relationships, bool& isForward, RecursiveQueryInfo const& info)
     {
-    if (info.GetPathsFromInputToSelectClass().empty())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Expected 1 path from input to select class, got 0");
-
-    if (info.GetPathsFromInputToSelectClass().size() > 1)
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Expected 1 path from input to select class, got %" PRIu64, (uint64_t)info.GetPathsFromInputToSelectClass().size()));
+    if (info.GetPathsFromInputToSelectClass().size() != 1)
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected 1 path from input to select class, got %" PRIu64, (uint64_t)info.GetPathsFromInputToSelectClass().size()));
 
     for (RelatedClassPath const& path : info.GetPathsFromInputToSelectClass())
         {
@@ -541,10 +538,8 @@ std::unique_ptr<InputFilteringParams> QueryBuilderHelpers::CreateInputFilter(ICo
     // to filter 'this' by path-from-input-to-select-class target ids
     if (pathFromSelectToInputClass.empty())
         {
-        if (selectInfo.GetPathFromInputToSelectClass().empty())
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Expected size of path from input to select class to be 1, got 0");
-        if (selectInfo.GetPathFromInputToSelectClass().size() > 1)
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Expected size of path from input to select class to be 1, got: %" PRIu64, (uint64_t)selectInfo.GetPathFromInputToSelectClass().size()));
+        if (selectInfo.GetPathFromInputToSelectClass().size() != 1)
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected size of path from input to select class to be 1, got: %" PRIu64, (uint64_t)selectInfo.GetPathFromInputToSelectClass().size()));
         auto const& ids = selectInfo.GetPathFromInputToSelectClass().back().GetTargetIds();
         if (ids.empty())
             return nullptr;
@@ -776,7 +771,7 @@ protected:
             valuePart->GetSpecification()->Accept(builder);
             if (builder.GetSelectFields().empty())
                 {
-                DIAGNOSTICS_EDITOR_LOG(DiagnosticsCategory::Default, LOG_ERROR, "Value part did not result in any select fields");
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, "Value part did not result in any select fields");
                 continue;
                 }
 
@@ -805,7 +800,7 @@ protected:
                 });
             if (relatedInstancePropertyValueField.IsNull())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
                 }
             else
                 {
@@ -885,7 +880,7 @@ protected:
             std::bind(&InstanceLabelOverrideSelectFieldsBuilder::CreateDisplayLabelField, this, std::placeholders::_1, std::placeholders::_2));
         if (relatedInstanceDisplayLabelField.IsNull())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
             return;
             }
         m_fields.push_back(relatedInstanceDisplayLabelField);
@@ -990,7 +985,7 @@ ECValue QueryBuilderHelpers::CreateECValueFromJson(RapidJsonValueCR json)
     else if (json.IsDouble())
         v.SetDouble(json.GetDouble());
     else
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, "Unhandled ECValue type");
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Unhandled ECValue type");
     return v;
     }
 
@@ -1006,7 +1001,7 @@ bmap<ECClassCP, bvector<InstanceLabelOverride const*>> QueryBuilderHelpers::GetL
         ECClassCP ecClass = helper.GetECClass(labelOverride->GetClassName().c_str());
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("LabelOverride class not found: '%s'", labelOverride->GetClassName().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("LabelOverride class not found: '%s'", labelOverride->GetClassName().c_str()));
             continue;
             }
 
@@ -1420,7 +1415,7 @@ bvector<ClassSortingRule> QueryBuilderHelpers::GetClassSortingRules(bvector<Sort
             ECSchemaCP ruleSchema = helper.GetSchema(rule->GetSchemaName().c_str(), false);
             if (nullptr == ruleSchema)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule schema not found: '%s'", rule->GetSchemaName().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule schema not found: '%s'", rule->GetSchemaName().c_str()));
                 continue;
                 }
             AppendRule(rules, *rule, selectClass, relatedPaths, [&ruleSchema](ECClassCR selectClass) {return ruleSchema == &selectClass.GetSchema(); });
@@ -1430,7 +1425,7 @@ bvector<ClassSortingRule> QueryBuilderHelpers::GetClassSortingRules(bvector<Sort
         ECClassCP ruleClass = helper.GetECClass(rule->GetSchemaName().c_str(), rule->GetClassName().c_str());
         if (nullptr == ruleClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule class not found: `%s.%s`",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule class not found: `%s.%s`",
                 rule->GetSchemaName().c_str(), rule->GetClassName().c_str()));
             continue;
             }
@@ -1498,7 +1493,7 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(bvector<ClassSorting
         ECPropertyCP ecProperty = rule.GetSelectClass().GetClass().GetPropertyP(rule.GetRule().GetPropertyName().c_str());
         if (nullptr == ecProperty)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule property not found: '%s.%s'",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule property not found: '%s.%s'",
                 rule.GetSelectClass().GetClass().GetFullName(), rule.GetRule().GetPropertyName().c_str()));
             continue;
             }

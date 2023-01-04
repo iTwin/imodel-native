@@ -211,7 +211,7 @@ bool PropertyEditorJsonParameters::_ReadXml(BeXmlNodeP xmlNode)
     xmlNode->GetContent(content);
     if (!Json::Reader::Parse(content, m_json))
         {
-        DIAGNOSTICS_EDITOR_LOG(DiagnosticsCategory::Rules, LOG_ERROR, Utf8PrintfString("Failed to parse property editor JSON parameters: %s", content.c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse property editor JSON parameters: %s", content.c_str()));
         return false;
         }
     return true;

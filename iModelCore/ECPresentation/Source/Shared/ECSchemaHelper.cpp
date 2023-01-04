@@ -1243,7 +1243,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPaths(ECClassId sourceClassId, bvec
             {
             if (!actualRelated->Is(isForward ? relationship->GetSource().GetAbstractConstraint() : relationship->GetTarget().GetAbstractConstraint()))
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Found related class '%s' which is neither target not source of relationship '%s'",
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Found related class '%s' which is neither target not source of relationship '%s'",
                     actualRelated->GetFullName(), relationship->GetFullName()));
                 }
             else
@@ -1721,8 +1721,7 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
     if (nullptr != sourceClass && nullptr != targetClass)
         return RelatedClass(*sourceClass, SelectClass<ECRelationshipClass>(*relationship, ""), isRelationshipForward, SelectClass<ECClass>(*targetClass, ""), isTargetClassOptional);
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Failed to determine source and target for navigation property '%s.%s'", prop.GetClass().GetFullName(), prop.GetName().c_str()));
-    return RelatedClass();
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to determine source and target for navigation property '%s.%s'", prop.GetClass().GetFullName(), prop.GetName().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**

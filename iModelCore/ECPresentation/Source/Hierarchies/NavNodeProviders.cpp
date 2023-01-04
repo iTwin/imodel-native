@@ -38,7 +38,7 @@ static void CheckQueryPlan(Db& db, Utf8CP query, StatementCache const& stmtCache
 
     if (lastLine.ContainsI("ORDER BY"))
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, SEVERITY::LOG_ERROR, "Slow query plan");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "Possibly a slow query plan");
         }
     }
 #endif
@@ -2197,8 +2197,7 @@ QuerySet QueryBasedSpecificationNodesProvider::CreateQueries(NavigationQueryBuil
         return queryBuilder.GetQueries(*GetContext().GetChildNodeRule(), m_specification, *parent);
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "Attempting to create queries for provider which has neither root nor child nodes context");
-    return QuerySet();
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Attempting to create queries for provider which has neither root nor child nodes context");
     }
 
 /*=================================================================================**//**

@@ -374,7 +374,7 @@ static SameLabelInstanceGroupApplicationStage GetSameLabelInstanceGroupApplicati
     else if (str.Equals(SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_POSTPROCESS))
         return SameLabelInstanceGroupApplicationStage::PostProcess;
 
-    DIAGNOSTICS_EDITOR_LOG(DiagnosticsCategory::Rules, LOG_ERROR, Utf8PrintfString("Failed to parse same-label instance group application stage: '%s'. Defaulting to 'Query'.", str.c_str()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse same-label instance group application stage: '%s'. Defaulting to 'Query'.", str.c_str()));
     return SameLabelInstanceGroupApplicationStage::Query;
     }
 
@@ -388,8 +388,7 @@ static Utf8CP GetSameLabelInstanceGroupApplicationStageAsString(SameLabelInstanc
         case SameLabelInstanceGroupApplicationStage::Query: return SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY;
         case SameLabelInstanceGroupApplicationStage::PostProcess: return SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_POSTPROCESS;
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, Utf8PrintfString("Failed to serialize same-label instance group application stage: %d. Defaulting to 'Query'.", (int)value));
-    return SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Rules, Utf8PrintfString("Failed to serialize same-label instance group application stage: %d.", (int)value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -662,10 +661,10 @@ static PropertyGroupingValue GetPropertyGroupingValueFromString(Utf8StringCR str
     {
     if (str.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL))
         return PropertyGroupingValue::DisplayLabel;
-    else if (str.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE))
+    if (str.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE))
         return PropertyGroupingValue::PropertyValue;
 
-    DIAGNOSTICS_EDITOR_LOG(DiagnosticsCategory::Rules, LOG_ERROR, Utf8PrintfString("Failed to parse property grouping value: '%s'. Defaulting to 'DisplayLabel'.", str.c_str()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse property grouping value: '%s'. Defaulting to 'DisplayLabel'.", str.c_str()));
     return PropertyGroupingValue::DisplayLabel;
     }
 
@@ -679,8 +678,7 @@ static Utf8CP GetPropertyGroupingValueAsString(PropertyGroupingValue value)
         case PropertyGroupingValue::PropertyValue:  return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE;
         case PropertyGroupingValue::DisplayLabel:   return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, Utf8PrintfString("Failed to serialize property grouping value: %d. Defaulting to 'DisplayLabel'.", (int)value));
-    return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Rules, Utf8PrintfString("Failed to serialize property grouping value: %d.", (int)value));
     }
 
 /*---------------------------------------------------------------------------------**//**

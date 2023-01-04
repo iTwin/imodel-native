@@ -100,8 +100,7 @@ uint8_t PresentationQueryContract::GetIndex(Utf8CP fieldName) const
         return (uint8_t)(aggregateFieldIndex + nonAggregateFieldsCount);
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Failed to find requested field in contract: '%s'", fieldName));
-    return 0;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to find requested field in contract: '%s'", fieldName));
     }
 
 /*---------------------------------------------------------------------------------**//**

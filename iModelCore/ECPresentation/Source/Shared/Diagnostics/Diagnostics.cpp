@@ -236,10 +236,6 @@ rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::Allocato
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Scope::AddMessage(DiagnosticsCategory category, NativeLogging::SEVERITY const* devSeverity, NativeLogging::SEVERITY const* editorSeverity, Utf8String msg)
     {
-    // pass dev logs to native logger (messages of severity lower than configured will be dropped)
-    if (devSeverity)
-        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).message(*devSeverity, msg.c_str());
-
     if (devSeverity && *devSeverity < GetOptions().GetDevSeverity())
         devSeverity = nullptr;
 
@@ -289,17 +285,6 @@ void Diagnostics::Scope::DevLog(DiagnosticsCategory category, NativeLogging::SEV
 void Diagnostics::Scope::EditorLog(DiagnosticsCategory category, NativeLogging::SEVERITY severity, Utf8String msg)
     {
     AddMessage(category, nullptr, &severity, msg);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Diagnostics::Scope::IsEnabled(DiagnosticsCategory category, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity) const
-    {
-    return devSeverity >= GetOptions().GetDevSeverity()
-        || editorSeverity >= GetOptions().GetEditorSeverity()
-        // note: we get A LOT of trace messages - don't want to emit those to native logger (even the check if they're enabled gets expensive)
-        || devSeverity > NativeLogging::LOG_TRACE && NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).isSeverityEnabled(devSeverity);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -365,15 +350,21 @@ Diagnostics::Scope* Diagnostics::GetCurrentScopeRaw()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsDiagnosticsCategoryEnabledForNativeLogger(DiagnosticsCategory category, NativeLogging::SEVERITY severity)
+    {
+    // note: we get A LOT of trace messages - don't want to emit those to native logger (even the check if they're enabled gets expensive)
+    return severity > NativeLogging::LOG_TRACE
+        && NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).isSeverityEnabled(severity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TCallable> static void WithDiagnosticsScope(TCallable cb)
     {
     auto scope = Diagnostics::GetCurrentScope().lock();
-    if (!scope)
-        {
-        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(DiagnosticsCategory::Default)).error("Attempted to log a diagnostics message outside of Diagnostics::Scope");
-        return;
-        }
-    cb(*scope);
+    if (scope)
+        cb(*scope);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -381,6 +372,10 @@ template<typename TCallable> static void WithDiagnosticsScope(TCallable cb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Log(DiagnosticsCategory category, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg)
     {
+    // pass dev logs to native logger (messages of severity lower than configured will be dropped)
+    if (IsDiagnosticsCategoryEnabledForNativeLogger(category, devSeverity))
+        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).message(devSeverity, msg.c_str());
+
     WithDiagnosticsScope([&](auto& scope)
         {
         scope.Log(category, devSeverity, editorSeverity, std::move(msg));
@@ -392,6 +387,10 @@ void Diagnostics::Log(DiagnosticsCategory category, NativeLogging::SEVERITY devS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::DevLog(DiagnosticsCategory category, NativeLogging::SEVERITY severity, Utf8String msg)
     {
+    // pass dev logs to native logger (messages of severity lower than configured will be dropped)
+    if (IsDiagnosticsCategoryEnabledForNativeLogger(category, severity))
+        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).message(severity, msg.c_str());
+
     WithDiagnosticsScope([&](auto& scope)
         {
         scope.DevLog(category, severity, std::move(msg));

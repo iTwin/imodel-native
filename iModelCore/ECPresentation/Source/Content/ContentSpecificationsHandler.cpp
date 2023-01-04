@@ -809,7 +809,8 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in ContentModifier rule was not found", modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str())); // TODO: rule ref
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
+                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
                 continue;
                 }
             infos->push_back(RuleApplicationInfo(*ecClass, true));
@@ -819,7 +820,8 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(labelOverride->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in InstanceLabelOverride rule was not found", labelOverride->GetClassName().c_str())); // TODO: rule ref
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in %s was not found",
+                    labelOverride->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*labelOverride).c_str()));
                 continue;
                 }
             infos->push_back(RuleApplicationInfo(*ecClass, true));
@@ -829,7 +831,8 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in sorting rule was not found", sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str())); // TODO: rule ref
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
+                    sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*sortingRule).c_str()));
                 continue;
                 }
             infos->push_back(RuleApplicationInfo(*ecClass, sortingRule->GetIsPolymorphic()));

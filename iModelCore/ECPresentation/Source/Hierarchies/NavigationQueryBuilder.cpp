@@ -2304,7 +2304,7 @@ protected:
                     break;
                     }
                 default:
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, Utf8PrintfString("Unhandled sorting value type: %d", (int)GetGroupingHandler().GetGroupingSpecification().GetSortingValue()))
+                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Unhandled sorting value type: %d", (int)GetGroupingHandler().GetGroupingSpecification().GetSortingValue()))
                 }
             if (!orderByClause.empty())
                 QueryBuilderHelpers::Order(*unionQuery, orderByClause.c_str());
