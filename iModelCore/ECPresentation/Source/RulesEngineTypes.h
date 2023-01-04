@@ -233,7 +233,7 @@ static inline void ThrowIfCancelled(ICancelationTokenCR token)
     {
     if (token.IsCanceled())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Cancelled");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_INFO, "Cancelled");
         throw CancellationException();
         }
     }

@@ -22,21 +22,21 @@ struct NavigationQueryBuilderParameters : QueryBuilderParameters
 private:
     IHierarchyCacheCR m_nodesCache;
     IUsedClassesListener* m_usedClassesListener;
-    Utf8String m_instanceFilter;
+    InstanceFilterDefinitionCP m_instanceFilter;
     bool m_useSpecificationIdentifier;
 public:
     NavigationQueryBuilderParameters(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, ICancelationTokenCP cancellationToken,
         IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* variablesListener, ECExpressionsCache& ecexpressionsCache,
         IHierarchyCacheCR nodesCache, IJsonLocalState const* localState = nullptr)
         : QueryBuilderParameters(schemaHelper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, ecexpressionsCache, variablesListener, localState),
-        m_nodesCache(nodesCache), m_usedClassesListener(nullptr), m_useSpecificationIdentifier(true)
+        m_nodesCache(nodesCache), m_usedClassesListener(nullptr), m_useSpecificationIdentifier(true), m_instanceFilter(nullptr)
         {}
     IHierarchyCacheCR GetNodesCache() const {return m_nodesCache;}
     void SetUsedClassesListener(IUsedClassesListener* listener) {m_usedClassesListener = listener;}
     IUsedClassesListener* GetUsedClassesListener() const {return m_usedClassesListener;}
 
-    void SetInstanceFilter(Utf8String instanceFilter) {m_instanceFilter = instanceFilter;}
-    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
+    void SetInstanceFilter(InstanceFilterDefinitionCP instanceFilter) {m_instanceFilter = instanceFilter;}
+    InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter;}
 
     // note: this should only be used in query builder tests to avoid using specification identifiers in
     // query contracts to make produced queries easier to verify

@@ -84,7 +84,7 @@ Utf8CP ContentInstancesOfSpecificClassesSpecification::_GetXmlElementName () con
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentInstancesOfSpecificClassesSpecification::SetClasses(bvector<MultiSchemaClass*> value)
-    { 
+    {
     CommonToolsInternal::FreePresentationRules(m_classes);
     m_classes = value;
     InvalidateHash();
@@ -122,7 +122,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
         !CommonToolsInternal::ParseMultiSchemaClassesFromClassNamesString(classNames, defaultPolymorphism, m_classes, this) ||
         m_classes.empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString(INVALID_XML, CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString(INVALID_XML, CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES));
         return false;
         }
     return true;
@@ -166,7 +166,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
         {
         defaultPolymorphism = json[CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_ATTRIBUTE_HANDLEINSTANCESPOLYMORPHICALLY].asBool(false);
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s.%s.%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s.%s.%s`.",
             _GetJsonElementType(), CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_ATTRIBUTE_HANDLEINSTANCESPOLYMORPHICALLY,
             _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_CLASSES, COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC));
         }
@@ -174,7 +174,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
         {
         defaultPolymorphism = json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC].asBool(false);
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s.%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s.%s`.",
             _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC,
             _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_CLASSES, COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC));
         }
@@ -183,7 +183,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     // required:
     if (!CommonToolsInternal::ParseMultiSchemaClassesFromJson(json[COMMON_JSON_ATTRIBUTE_CLASSES], defaultPolymorphism, m_classes, this) || m_classes.empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
             _GetJsonElementType(), json.ToString().c_str(), "at least one class"));
         return false;
         }

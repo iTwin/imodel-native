@@ -186,14 +186,14 @@ bool ContentModifiersList::ReadJson(JsonValueCR json)
     if (json.isMember(CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS))
         {
         CommonToolsInternal::LoadFromJson(CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS, json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS], m_propertyOverrides, &CreatePropertyEditorSpecification, this);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES));
         }
     if (json.isMember(CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS))
         {
         if (CommonToolsInternal::ValidateJsonValueType(CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], Json::arrayValue))
             LoadPropertyDisplaySpecifications(json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], m_propertyOverrides, this);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES));
         }
 
