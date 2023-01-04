@@ -429,7 +429,7 @@ static BeJsConst ToBeJsConst(rapidjson::Value const& value)
 static NativeLogging::SEVERITY ParseSeverityFromJson(RapidJsonValueCR json)
     {
     if (json.IsBool())
-        return json.GetBool() ? NativeLogging::LOG_DEBUG : NativeLogging::LOG_ERROR;
+        return json.GetBool() ? NativeLogging::LOG_INFO : NativeLogging::LOG_ERROR;
 
     if (json.IsString())
         {
@@ -440,7 +440,7 @@ static NativeLogging::SEVERITY ParseSeverityFromJson(RapidJsonValueCR json)
         if (0 == strcmp("info", json.GetString()))
             return NativeLogging::LOG_INFO;
         if (0 == strcmp("debug", json.GetString()))
-            return NativeLogging::LOG_DEBUG;
+            return NativeLogging::LOG_TRACE;
         if (0 == strcmp("trace", json.GetString()))
             return NativeLogging::LOG_TRACE;
         }

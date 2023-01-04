@@ -89,7 +89,7 @@ NavNodesProviderPtr HierarchiesComparer::GetCachedOrCreateProvider(IConnectionCR
 HierarchiesComparer::CompareResult HierarchiesComparer::CompareDataSources(CompareWithConnectionParams const& params, NavNodesProviderCR lhsProvider, NavNodesProviderR rhsProvider) const
     {
     auto scope = Diagnostics::Scope::Create("Compare data sources");
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_DEBUG, Utf8PrintfString("Sizes LHS: %" PRIu64 ", RHS: %" PRIu64, (uint64_t)lhsProvider.GetNodesCount(), (uint64_t)rhsProvider.GetNodesCount()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_INFO, Utf8PrintfString("Sizes LHS: %" PRIu64 ", RHS: %" PRIu64, (uint64_t)lhsProvider.GetNodesCount(), (uint64_t)rhsProvider.GetNodesCount()));
 
     bool allowGettingPastLhsNodes = params.ShouldLoadLhsNodes()
         || m_params.GetNodesCache()->IsCombinedHierarchyLevelInitialized(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), params.GetLhsVariables(), lhsProvider.GetContext().GetInstanceFilter());

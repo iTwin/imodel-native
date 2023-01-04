@@ -330,7 +330,7 @@ IECPresentationSerializer const& ECPresentationManager::GetSerializer()
     {
     if (nullptr == s_serializer)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, "Attepting to use serializer, but it's not set. Using default.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, "Attempting to use serializer, but it's not set. Using default.");
         SetSerializer(new DefaultECPresentationSerializer());
         }
     return *s_serializer;

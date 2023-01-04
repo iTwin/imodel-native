@@ -36,7 +36,7 @@ bool RequiredSchemaSpecification::_ReadJson(JsonValueCR json)
             m_minVersion = temp;
         else
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
                 _GetJsonElementType(), REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MINVERSION, json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MINVERSION].ToString().c_str(),
                 "version string in format {read version}.{write version}.{minor version}"));
             }
@@ -48,7 +48,7 @@ bool RequiredSchemaSpecification::_ReadJson(JsonValueCR json)
             m_maxVersion = temp;
         else
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
                 _GetJsonElementType(), REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MAXVERSION, json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MAXVERSION].ToString().c_str(),
                 "version string in format {read version}.{write version}.{minor version}"));
             }
