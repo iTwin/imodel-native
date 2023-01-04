@@ -222,7 +222,7 @@ private:
     bvector<ECInstanceId> m_parentInstanceIds;
     bvector<RelatedClassPath> m_pathsFromSelectClassToRelatedInstanceClasses;
     bvector<InstanceLabelOverrideValueSpecification const*> m_labelOverrideValueSpecs;
-    bvector<Utf8String> m_instanceFilterECExpressions;
+    bvector<InstanceFilterDefinitionCP> m_instanceFilterDefinitions;
     QueryClauseAndBindings m_instanceFilterECSqlExpression;
     NavigationQueryContractCPtr m_forcedGroupingContract;
 
@@ -236,8 +236,8 @@ public:
     SelectClassWithExcludes<ECClass>& GetSelectClass() {return m_selectClass;}
     void SetSelectClass(SelectClassWithExcludes<ECClass> selectClass) {m_selectClass = selectClass;}
 
-    void SetInstanceFilterECExpressions(bvector<Utf8String> value) {m_instanceFilterECExpressions = value;}
-    bvector<Utf8String> const& GetInstanceFilterECExpressions() const {return m_instanceFilterECExpressions;}
+    void SetInstanceFilterDefinitions(bvector<InstanceFilterDefinitionCP> value) {m_instanceFilterDefinitions = value;}
+    bvector<InstanceFilterDefinitionCP> const& GetInstanceFilterDefinitions() const {return m_instanceFilterDefinitions;}
 
     void SetInstanceFilterECSqlExpression(QueryClauseAndBindings value) {m_instanceFilterECSqlExpression = value;}
     QueryClauseAndBindings const& GetInstanceFilterECSqlExpression() const {return m_instanceFilterECSqlExpression;}
@@ -1173,18 +1173,21 @@ public:
         if (!selectInfo.GetInstanceFilterECSqlExpression().GetClause().empty())
             query.Where(selectInfo.GetInstanceFilterECSqlExpression());
 
-        if (selectInfo.GetInstanceFilterECExpressions().empty())
+        if (selectInfo.GetInstanceFilterDefinitions().empty())
             return;
 
-        for (Utf8StringCR ecExpressionFilter : selectInfo.GetInstanceFilterECExpressions())
+        for (auto const& instanceFilterDef : selectInfo.GetInstanceFilterDefinitions())
             {
-            if (ecExpressionFilter.empty())
+            if (!instanceFilterDef || instanceFilterDef->GetExpression().empty())
                 continue;
 
-            Utf8String instanceFilter = FormatInstanceFilter(ecExpressionFilter);
+            Utf8String instanceFilter = FormatInstanceFilter(instanceFilterDef->GetExpression());
             bset<unsigned> usedParentInstanceLevels = GetUsedParentInstanceLevels(instanceFilter);
             if (!usedParentInstanceLevels.empty() && (!parentInstanceNode || SUCCESS != AppendParents(query, usedParentInstanceLevels, params, *parentInstanceNode)))
                 continue;
+
+            for (auto const& relatedInstancePath : instanceFilterDef->GetRelatedInstances())
+                query.Join(relatedInstancePath);
 
             ECExpressionContextsProvider::NodeRulesContextParameters contextParams(parentNode, params.GetConnection(),
                 params.GetRulesetVariables(), params.GetUsedVariablesListener());
@@ -2769,7 +2772,7 @@ static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildN
 template<typename TSpecification>
 static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, GroupingResolver const& resolver,
     bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode,
-    bvector<Utf8String> const& instanceFilterECExpressions, QueryClauseAndBindings instanceFilterECSqlExpression,
+    bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, QueryClauseAndBindings instanceFilterECSqlExpression,
     NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
     bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
@@ -2779,7 +2782,7 @@ static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bv
         {
         SelectQueryInfo info(sc);
         info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
-        info.SetInstanceFilterECExpressions(instanceFilterECExpressions);
+        info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
         info.SetInstanceFilterECSqlExpression(instanceFilterECSqlExpression);
         return info;
         });
@@ -2792,7 +2795,7 @@ static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bv
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecification const& spec, bvector<RelatedClassPath> const& pathsFromParentToSelectClass, GroupingResolver const& resolver,
     bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode, bvector<ECInstanceId> const& parentInstanceIds,
-    bvector<Utf8String> const& instanceFilterECExpressions, NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
+    bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
     bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
     bvector<RelatedClassPath> processedPathsFromParentToSelectClass = ProcessSelectPathsBasedOnCustomizationRules(pathsFromParentToSelectClass, resolver,
@@ -2801,7 +2804,7 @@ static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecificat
         {
         SelectQueryInfo info(path.back().GetTargetClass());
         info.GetSelectClass().SetAlias("this");
-        info.SetInstanceFilterECExpressions(instanceFilterECExpressions);
+        info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
         info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
         info.GetPathFromParentToSelectClass() = path;
         for (RelatedClass& rc : info.GetPathFromParentToSelectClass())
@@ -2825,18 +2828,18 @@ enum class SelectClassAcceptStatus
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static SelectClassAcceptStatus ApplyClassGrouping(SelectClassWithExcludes<>& selectClass, SelectClass<> const& groupingClass)
+static SelectClassAcceptStatus ApplyClassFilter(SelectClassWithExcludes<>& selectClass, SelectClass<> const& filterClass)
     {
-    if (&groupingClass.GetClass() == &selectClass.GetClass())
+    if (&filterClass.GetClass() == &selectClass.GetClass())
         {
-        selectClass.SetIsSelectPolymorphic(selectClass.IsSelectPolymorphic() && groupingClass.IsSelectPolymorphic());
+        selectClass.SetIsSelectPolymorphic(selectClass.IsSelectPolymorphic() && filterClass.IsSelectPolymorphic());
         }
-    else if (groupingClass.GetClass().Is(&selectClass.GetClass()) && selectClass.IsSelectPolymorphic())
+    else if (filterClass.GetClass().Is(&selectClass.GetClass()) && selectClass.IsSelectPolymorphic())
         {
-        selectClass.SetClass(groupingClass.GetClass());
-        selectClass.SetIsSelectPolymorphic(groupingClass.IsSelectPolymorphic());
+        selectClass.SetClass(filterClass.GetClass());
+        selectClass.SetIsSelectPolymorphic(filterClass.IsSelectPolymorphic());
         }
-    else if (selectClass.GetClass().Is(&groupingClass.GetClass()) && groupingClass.IsSelectPolymorphic())
+    else if (selectClass.GetClass().Is(&filterClass.GetClass()) && filterClass.IsSelectPolymorphic())
         {
         // no need to do anything - we're selecting from derived class and grouping by its base class
         }
@@ -2851,12 +2854,12 @@ static SelectClassAcceptStatus ApplyClassGrouping(SelectClassWithExcludes<>& sel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ApplyClassGrouping(bvector<SelectClassWithExcludes<>>& selectClasses, SelectClass<> const& groupingClass)
+static void ApplyClassFilter(bvector<SelectClassWithExcludes<>>& selectClasses, SelectClass<> const& groupingClass)
     {
     bvector<SelectClassWithExcludes<> const*> toErase;
     for (auto& selectClass : selectClasses)
         {
-        if (SelectClassAcceptStatus::Drop == ApplyClassGrouping(selectClass, groupingClass))
+        if (SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, groupingClass))
             toErase.push_back(&selectClass);
         }
     ContainerHelpers::RemoveIf(selectClasses, [&toErase](auto const& item)
@@ -2868,13 +2871,13 @@ static void ApplyClassGrouping(bvector<SelectClassWithExcludes<>>& selectClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ApplyClassGrouping(bvector<RelatedClassPath>& selectPaths, SelectClass<> const& groupingClass)
+static void ApplyClassFilter(bvector<RelatedClassPath>& selectPaths, SelectClass<> const& groupingClass)
     {
     bvector<RelatedClassPath const*> toErase;
     for (RelatedClassPathR path : selectPaths)
         {
         auto& pathTarget = path.back().GetTargetClass();
-        if (SelectClassAcceptStatus::Drop == ApplyClassGrouping(pathTarget, groupingClass))
+        if (SelectClassAcceptStatus::Drop == ApplyClassFilter(pathTarget, groupingClass))
             toErase.push_back(&path);
         }
     ContainerHelpers::RemoveIf(selectPaths, [&toErase](auto const& item)
@@ -2899,8 +2902,10 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         {
         return SelectClassWithExcludes<ECClass>(*entry.first, "this", entry.second);
         });
+    if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+        ApplyClassFilter(selectClasses, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), ""));
     if (groupingResolver.GetGroupingClass())
-        ApplyClassGrouping(selectClasses, *groupingResolver.GetGroupingClass());
+        ApplyClassFilter(selectClasses, *groupingResolver.GetGroupingClass());
 
     // quick return if nothing to select from
     if (selectClasses.empty())
@@ -2970,6 +2975,9 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     bvector<ECClassInstanceKey> const& parentInstanceKeys = groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
     bmap<ECClassCP, bvector<ECInstanceId>> parentClassInstanceIdsMap = GroupClassInstanceKeys(parentInstanceKeys);
 
+    // preserve specification instance filter
+    auto specificationInstanceFilter = std::make_unique<InstanceFilterDefinition>(specification.GetInstanceFilter());
+
     // iterate over all parent classes
     for (auto const& entry : parentClassInstanceIdsMap)
         {
@@ -2998,13 +3006,15 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
             relationshipClassPaths = m_params.GetSchemaHelper().GetRecursiveRelationshipClassPaths(parentClass, parentInstanceIds,
                 specification.GetRelationshipPaths(), classesCounter, true, false);
             if (groupingResolver.GetGroupingClass())
-                ApplyClassGrouping(relationshipClassPaths, *groupingResolver.GetGroupingClass());
+                ApplyClassFilter(relationshipClassPaths, *groupingResolver.GetGroupingClass());
             }
+        if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+            ApplyClassFilter(relationshipClassPaths, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), ""));
 
         // create select infos
         bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, relationshipClassPaths, groupingResolver,
             instanceLabelOverrides, groupingResolver.GetParentInstanceNode(), parentInstanceIds,
-            { specification.GetInstanceFilter(), m_params.GetInstanceFilter() }, m_params, classesCounter);
+            { specificationInstanceFilter.get(), m_params.GetInstanceFilter() }, m_params, classesCounter);
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Total select infos: %" PRIu64, (uint64_t)selectInfos.size()));
 
         // union everything
@@ -3040,8 +3050,10 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         selectClass.GetDerivedExcludedClasses() = excludedClasses;
         return selectClass;
         });
+    if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+        ApplyClassFilter(selectClasses, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), ""));
     if (groupingResolver.GetGroupingClass())
-        ApplyClassGrouping(selectClasses, *groupingResolver.GetGroupingClass());
+        ApplyClassFilter(selectClasses, *groupingResolver.GetGroupingClass());
 
     // quick return if nothing to select from
     if (selectClasses.empty())
@@ -3054,10 +3066,12 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
 
+    // preserve specification instance filter
+    auto specificationInstanceFilter = std::make_unique<InstanceFilterDefinition>(specification.GetInstanceFilter());
+
     // create select infos
-    bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, selectClasses, groupingResolver,
-        instanceLabelOverrides, groupingResolver.GetParentInstanceNode(), { specification.GetInstanceFilter(), m_params.GetInstanceFilter() },
-        QueryClauseAndBindings(), m_params, classesCounter);
+    bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, selectClasses, groupingResolver, instanceLabelOverrides, groupingResolver.GetParentInstanceNode(),
+        { specificationInstanceFilter.get(), m_params.GetInstanceFilter() }, QueryClauseAndBindings(), m_params, classesCounter);
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Total select infos: %" PRIu64, (uint64_t)selectInfos.size()));
 
     // union everything
@@ -3230,9 +3244,14 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
             }
 
         SelectClassWithExcludes<ECClass> selectClass(*queryClass, "this", true);
+        if (m_params.GetInstanceFilter() && m_params.GetInstanceFilter()->GetSelectClass())
+            {
+            if (SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, SelectClass<>(*m_params.GetInstanceFilter()->GetSelectClass(), "")))
+                continue;
+            }
         if (groupingResolver.GetGroupingClass())
             {
-            if (SelectClassAcceptStatus::Drop == ApplyClassGrouping(selectClass, *groupingResolver.GetGroupingClass()))
+            if (SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, *groupingResolver.GetGroupingClass()))
                 continue;
             }
 
