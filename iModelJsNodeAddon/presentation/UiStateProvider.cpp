@@ -137,7 +137,7 @@ ECPresentationResult IModelJsECPresentationUiStateProvider::UpdateHierarchyState
             return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Expected `" PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters "` member in `stateChanges` items to be an array of strings");
 
         bvector<std::shared_ptr<InstanceFilterDefinition const>> instanceFilters;
-        item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters].ForEachArrayMember([&](BeJsConst::ArrayIndex filterIndex, BeJsConst instanceFilterJson)
+        item[PRESENTATION_JSON_ATTRIBUTE_StateChanges_InstanceFilters].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst instanceFilterJson)
             {
             auto instanceFilter = manager.GetSerializer().GetInstanceFilterFromJson(*connection, instanceFilterJson);
             if (instanceFilter != nullptr)

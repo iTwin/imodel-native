@@ -121,13 +121,6 @@ public:
     DataSourceIdentifier(BeGuid id, BeGuid hierarchyLevelId, bvector<uint64_t> index, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
         : m_id(id), m_hierarchyLevelId(hierarchyLevelId), m_index(index), m_instanceFilter(instanceFilter)
         {}
-    // bool operator<(DataSourceIdentifier const& other) const
-    //     {
-    //     NUMERIC_LESS_COMPARE(m_id, other.m_id);
-    //     NUMERIC_LESS_COMPARE(m_hierarchyLevelId, other.m_hierarchyLevelId);
-    //     VECTOR_LESS_COMPARE(m_index, other.m_index);
-    //     return false;
-    //     }
     bool operator==(DataSourceIdentifier const& other) const
         {
         return Equals(other);
