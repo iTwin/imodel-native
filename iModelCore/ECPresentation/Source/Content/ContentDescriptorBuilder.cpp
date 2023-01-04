@@ -421,14 +421,14 @@ protected:
         RelatedClass pathFromPropertyClassToNavigationPropertyTargetClass;
         if (ecProperty.GetIsNavigation())
             {
-            // note: pathFromPropertyClassToNavigationPropertyTargetClass need to be declared outside this scope, because 
+            // note: pathFromPropertyClassToNavigationPropertyTargetClass need to be declared outside this scope, because
             // we're using its target class alias
             pathFromPropertyClassToNavigationPropertyTargetClass = m_context.GetSchemaHelper().GetForeignKeyClass(ecProperty);
             pathFromPropertyClassToNavigationPropertyTargetClass.GetTargetClass().SetAlias(m_context.CreateNavigationClassAlias(pathFromPropertyClassToNavigationPropertyTargetClass.GetTargetClass().GetClass()));
             pathFromPropertyClassToNavigationPropertyTargetClass.GetRelationship().SetAlias(m_context.CreateNavigationClassAlias(pathFromPropertyClassToNavigationPropertyTargetClass.GetRelationship().GetClass()));
             result.GetAppendedNavigationPropertyPaths().push_back(pathFromPropertyClassToNavigationPropertyTargetClass);
             propertyClassAlias = pathFromPropertyClassToNavigationPropertyTargetClass.GetTargetClass().GetAlias().c_str();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Switched to alias `%s` as it's a navigation property.", propertyClassAlias));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Switched to alias `%s` as it's a navigation property.", propertyClassAlias));
             }
         result.MergeWith(_DoAppendProperty(ecProperty, propertyClassAlias, overrides));
         return result;
@@ -735,7 +735,7 @@ private:
                 if (replacePath->size() == existingRelatedContentField->GetPathFromSelectToContentClass().size())
                     startsWith = true;
                 }
-                
+
             if (startsWith)
                 {
                 // create separate relationship and related content fields even if paths are the same
@@ -745,18 +745,18 @@ private:
                 // do not add any nested fields inside a relationship field
                 if (path.size() > existingRelatedContentField->GetPathFromSelectToContentClass().size() && existingRelatedContentField->IsRelationshipField())
                     continue;
-            
+
                 if (replacePath != nullptr)
                     existingRelatedContentField->SetPathFromSelectToContentClass(*replacePath);
 
                 // if m_pathFromSelectToPropertyClass starts with existing nested content field path, this field should be nested in existing field
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Found a related content field with similar start - merging");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a related content field with similar start - merging");
                 ContainerHelpers::Push(existingRelatedContentField->GetActualSourceClasses(), sourceClasses);
                 RelatedClassPath prevPath = path;
                 path = GetPathDifference(path, existingRelatedContentField->GetPathFromSelectToContentClass());
                 if (path.empty())
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Paths are completely equal - reuse the related content field.");
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Paths are completely equal - reuse the related content field.");
                     result.field = existingRelatedContentField;
                     result.pathReplacement = std::make_unique<bpair<RelatedClassPath, RelatedClassPath>>(prevPath, existingRelatedContentField->GetPathFromSelectToContentClass());
                     result.pathReplacement->second.SetTargetsCount(GetMaxTargetsCount(existingRelatedContentField->GetPathFromSelectToContentClass().GetTargetsCount(), prevPath.GetTargetsCount()));
@@ -767,19 +767,19 @@ private:
                     auto nestedMerge = MergeWithExistingRelatedContentField(path, existingRelatedContentField->GetFields(), sourceClasses, isRelationshipField);
                     if (nestedMerge.field)
                         {
-                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Paths are similar - reuse the related content field.");
+                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Paths are similar - reuse the related content field.");
                         result.field = nestedMerge.field;
                         result.pathReplacement = std::make_unique<bpair<RelatedClassPath, RelatedClassPath>>(prevPath, RelatedClassPath::Combine(existingRelatedContentField->GetPathFromSelectToContentClass(), nestedMerge.pathReplacement->second));
                         }
                     else if (nestedMerge.nestingField)
                         {
-                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Use child field of existing related content field as parent field for the one we're going to create");
+                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Use child field of existing related content field as parent field for the one we're going to create");
                         result.nestingField = nestedMerge.nestingField;
                         result.pathReplacement = std::make_unique<bpair<RelatedClassPath, RelatedClassPath>>(prevPath, RelatedClassPath::Combine(existingRelatedContentField->GetPathFromSelectToContentClass(), nestedMerge.pathReplacement->second));
                         }
                     else
                         {
-                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Use existing related content field as parent field for the one we're going to create");
+                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Use existing related content field as parent field for the one we're going to create");
                         result.nestingField = existingRelatedContentField;
                         result.pathReplacement = std::make_unique<bpair<RelatedClassPath, RelatedClassPath>>(prevPath, RelatedClassPath::Combine(existingRelatedContentField->GetPathFromSelectToContentClass(), path));
                         }
@@ -793,7 +793,7 @@ private:
                 RelatedClassPath unifiedPath;
                 if (SUCCESS == RelatedClassPath::Unify(unifiedPath, existingRelatedContentField->GetPathFromSelectToContentClass(), path))
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Found a related content field with the same target class - reuse the related content field after unifying the paths.");
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a related content field with the same target class - reuse the related content field after unifying the paths.");
                     RelatedClassPath prevFieldPath = existingRelatedContentField->GetPathFromSelectToContentClass();
                     unifiedPath.SetTargetsCount(GetMaxTargetsCount(existingRelatedContentField->GetPathFromSelectToContentClass().GetTargetsCount(), path.GetTargetsCount()));
                     existingRelatedContentField->SetPathFromSelectToContentClass(unifiedPath);
@@ -956,7 +956,7 @@ public:
             {
             if (relatedPropertySpecsStack.back()->ShouldSkipIfDuplicate())
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Found a similar related content field and we're skipping duplicate fields - skip creating the related content field.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a similar related content field and we're skipping duplicate fields - skip creating the related content field.");
                 return { nullptr, nullptr, nullptr };
                 }
 
@@ -1188,7 +1188,7 @@ protected:
 
         if (pathFromSelectToPropertyClass.empty())
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Path from select to property class is empty - returning direct properties appender.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Path from select to property class is empty - returning direct properties appender.");
             return new DirectPropertiesAppender(GetContext(), *m_propertyInfos, *m_descriptor, categoriesSupplier, propertyClass, categorySpecifications);
             }
 
@@ -1196,11 +1196,11 @@ protected:
             pathFromSelectToPropertyClass, propertyClass, actualSourceClasses);
         if (!relatedContentField.field)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get or create a related content field - returning NULL property appender.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get or create a related content field - returning NULL property appender.");
             return nullptr;
             }
 
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Returning a related content properties appender");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Returning a related content properties appender");
 
         std::unique_ptr<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath> replacedPathFromSelectToPropertyClass;
         if (relatedContentField.pathReplacement)
@@ -1237,7 +1237,7 @@ protected:
         if (nullptr != m_specification && ShouldCreateFields(*m_descriptor))
             {
             int count = AddCalculatedFields(m_specification->GetCalculatedProperties(), nullptr);
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Added %" PRIu64 " fields from specification.", (uint64_t)count));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Added %" PRIu64 " fields from specification.", (uint64_t)count));
             }
 
         for (auto const& category : m_categoriesSupplierContext->GetAllCategories())
@@ -1275,7 +1275,7 @@ protected:
         if (ShouldCreateFields(*m_descriptor))
             {
             size_t count = AddCalculatedFieldsFromContentModifiers(classInfo.GetSelectClass().GetClass());
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Added %" PRIu64 " fields from content modifiers.", (uint64_t)count));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Added %" PRIu64 " fields from content modifiers.", (uint64_t)count));
             }
         }
 
@@ -1397,19 +1397,19 @@ public:
             m_descriptor->AddRootField(*field->Clone());
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Cloned nested field `%s` into descriptor.", field->GetUniqueName().c_str()));
             }
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Total fields: %" PRIu64, (uint64_t)m_descriptor->GetAllFields().size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Total fields: %" PRIu64, (uint64_t)m_descriptor->GetAllFields().size()));
 
         NestedContentFieldDataContext nestedContentFieldData(GetContext());
         GatherNestedContentFieldData(nestedContentFieldData, contentField);
 
         ContainerHelpers::Push(m_descriptor->GetCategories(), nestedContentFieldData.GetCategories());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Total categories: %" PRIu64, (uint64_t)m_descriptor->GetCategories().size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Total categories: %" PRIu64, (uint64_t)m_descriptor->GetCategories().size()));
 
         SelectClassInfo selectInfo(SelectClassWithExcludes<ECClass>(contentField.GetContentClass(), contentField.GetContentClassAlias()));
         ContainerHelpers::Push(selectInfo.GetNavigationPropertyClasses(), nestedContentFieldData.GetNavigationPropertyClasses());
         ContainerHelpers::Push(selectInfo.GetRelatedPropertyPaths(), nestedContentFieldData.GetRelatedPropertyPaths());
         m_descriptor->AddSelectClass(selectInfo, m_specification ? m_specification->GetHash() : "");
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Select class: `%s`.", selectInfo.GetSelectClass().GetClass().GetFullName()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Select class: `%s`.", selectInfo.GetSelectClass().GetClass().GetFullName()));
 
         bmap<Utf8String, uint64_t> requestedNameCounts;
         AssignFieldNames(requestedNameCounts, m_descriptor->GetAllFields());

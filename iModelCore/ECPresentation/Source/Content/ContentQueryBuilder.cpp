@@ -227,7 +227,7 @@ static void ApplyDescriptorOverrides(RefCountedPtr<PresentationQueryBuilder>& qu
                 {
                 case PresentationQueryFieldType::Enum:
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Sorting by enum type field: `%s`", sortingField->GetUniqueName().c_str()));
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Sorting by enum type field: `%s`", sortingField->GetUniqueName().c_str()));
                     if (!sortingField->IsPropertiesField() || !sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetIsPrimitive()
                         || nullptr == sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration())
                         {
@@ -240,21 +240,21 @@ static void ApplyDescriptorOverrides(RefCountedPtr<PresentationQueryBuilder>& qu
                     }
                 case PresentationQueryFieldType::LabelDefinition:
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Sorting by label field");
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Sorting by label field");
                     orderByClause.append(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(")
                         .append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str())).append(")");
                     break;
                     }
                 case PresentationQueryFieldType::NavigationPropertyValue:
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Sorting by navigation type field: `%s`", sortingField->GetUniqueName().c_str()));
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Sorting by navigation type field: `%s`", sortingField->GetUniqueName().c_str()));
                     orderByClause.append(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(json_extract(")
                         .append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str())).append(", '$.label'))");
                     break;
                     }
                 default:
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Sorting by field: `%s`", sortingField->GetUniqueName().c_str()));
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Sorting by field: `%s`", sortingField->GetUniqueName().c_str()));
                     orderByClause.append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str()));
                     }
                 }
@@ -269,7 +269,7 @@ static void ApplyDescriptorOverrides(RefCountedPtr<PresentationQueryBuilder>& qu
 #endif
         if (!orderByClause.empty() && SortDirection::Descending == ovr.GetSortDirection())
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Sorting in descending order");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Sorting in descending order");
             orderByClause.append(" DESC");
             }
 
@@ -293,11 +293,11 @@ static void ApplyDescriptorOverrides(RefCountedPtr<PresentationQueryBuilder>& qu
     if (!ovr.GetFieldsFilterExpression().empty())
         {
         auto filteringScope = Diagnostics::Scope::Create("Set filtering");
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Applying descriptor's filter expression: `%s`", ovr.GetFieldsFilterExpression().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Applying descriptor's filter expression: `%s`", ovr.GetFieldsFilterExpression().c_str()));
 
         auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(builderParams, ovr);
         auto whereClause = ECExpressionsHelper(builderParams.GetECExpressionsCache()).ConvertToECSql(ovr.GetFieldsFilterExpression(), query->GetContract(), filteringExpressionContext.get());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Converted expression to ECSQL: `%s`", whereClause.GetClause().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Converted expression to ECSQL: `%s`", whereClause.GetClause().c_str()));
 
         if (!whereClause.GetClause().empty())
             {
@@ -348,7 +348,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(SelectedNodeInstancesSpecificationC
 
         if (IsSelectClassFilteredOut(*selectClassInfo, descriptor.GetInstanceFilter().get()))
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
             continue;
             }
 
@@ -362,7 +362,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(SelectedNodeInstancesSpecificationC
         auto inputFilter = QueryBuilderHelpers::CreateInputFilter(m_params.GetConnection(), *selectClassInfo, nullptr, specificationInput);
         if (nullptr == inputFilter)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Results for class `%s` completely filtered-out by input keys. Skipping this query.", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Results for class `%s` completely filtered-out by input keys. Skipping this query.", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
             continue;
             }
 
@@ -380,7 +380,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(SelectedNodeInstancesSpecificationC
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 #endif
         classQuery->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo->GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
         QueryBuilderHelpers::AddToUnionSet(set, *classQuery);
         }
 
@@ -444,7 +444,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentRelatedInstancesSpecificatio
 
         if (IsSelectClassFilteredOut(*selectClassInfo, descriptor.GetInstanceFilter().get()))
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
             continue;
             }
 
@@ -460,7 +460,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentRelatedInstancesSpecificatio
         auto inputFilter = QueryBuilderHelpers::CreateInputFilter(m_params.GetConnection(), *selectClassInfo, recursiveInfo.get(), specificationInput);
         if (nullptr == inputFilter && m_params.ShouldOmitFilteredOutQueries())
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Results for class `%s` completely filtered-out by input keys. Skipping this query.", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Results for class `%s` completely filtered-out by input keys. Skipping this query.", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
             continue;
             }
 
@@ -482,7 +482,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentRelatedInstancesSpecificatio
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 #endif
         classQuery->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo->GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
         QueryBuilderHelpers::AddToUnionSet(set, *classQuery);
         }
 
@@ -502,7 +502,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentInstancesOfSpecificClassesSp
 
         if (IsSelectClassFilteredOut(*selectClassInfo, descriptor.GetInstanceFilter().get()))
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Skipping select class: `%s` due to instance filter", selectClassInfo->GetSelectClass().GetClass().GetFullName()));
             continue;
             }
 
@@ -525,7 +525,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentInstancesOfSpecificClassesSp
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 #endif
         classQuery->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo->GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
         QueryBuilderHelpers::AddToUnionSet(set, *classQuery);
         }
 
@@ -545,7 +545,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Got empty descriptor - returning empty query set");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Got empty descriptor - returning empty query set");
         return QuerySet();
         }
 
@@ -590,7 +590,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
         }
     else
         query->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo.GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created query: `%s`", query->GetQuery()->GetQueryString().c_str()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", query->GetQuery()->GetQueryString().c_str()));
     return QuerySet({ query });
     }
 
@@ -602,7 +602,7 @@ bool MultiContentQueryBuilder::Accept(SelectedNodeInstancesSpecificationCR speci
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
 
     QuerySet querySet = m_builder->CreateQuerySet(specification, *m_descriptor, input);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
 
     if (querySet.GetQueries().empty())
         return false;
@@ -619,7 +619,7 @@ bool MultiContentQueryBuilder::Accept(ContentRelatedInstancesSpecificationCR spe
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
 
     QuerySet querySet = m_builder->CreateQuerySet(specification, *m_descriptor, input);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
 
     if (querySet.GetQueries().empty())
         return false;
@@ -636,7 +636,7 @@ bool MultiContentQueryBuilder::Accept(ContentInstancesOfSpecificClassesSpecifica
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
 
     QuerySet querySet = m_builder->CreateQuerySet(specification, *m_descriptor);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
 
     if (querySet.GetQueries().empty())
         return false;

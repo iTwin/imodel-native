@@ -398,13 +398,13 @@ void NavNodesProvider::InitializeNodes()
 
     if (m_nodesInitialized)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes already initialized");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes already initialized");
         return;
         }
 
     if (GetContext().HasPageOptions() && GetContext().GetPageOptions()->HasSize() && 0 == GetContext().GetPageOptions()->GetSize())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Skipping initialization due to 0 page size");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Skipping initialization due to 0 page size");
         _ResetInitializedNodes();
         return;
         }
@@ -413,7 +413,7 @@ void NavNodesProvider::InitializeNodes()
     NodesInitializationState initState = _InitializeNodes();
     if (SUCCESS != initState.GetStatus())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes not initialized - _InitializeNodes returned 'false'");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes not initialized - _InitializeNodes returned 'false'");
         return;
         }
 
@@ -422,16 +422,16 @@ void NavNodesProvider::InitializeNodes()
     if (initState.IsFullyInitialized())
         {
         m_nodesInitialized = true;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes initialized fully");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes initialized fully");
         }
     else if (GetContext().HasPageOptions() && initState.IsPageInitialized(*GetContext().GetPageOptions()))
         {
         m_nodesInitialized = true;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Page of nodes initialized");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Page of nodes initialized");
         }
     else
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes initialized partially");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes initialized partially");
         }
     }
 
@@ -551,7 +551,7 @@ bool NavNodesProvider::HasNodes() const
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Has nodes?", GetName()));
     if (m_cachedHasNodes.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "'Has nodes' flag not cached in memory");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "'Has nodes' flag not cached in memory");
 
         Nullable<bool> cachedHasNodesInfo = GetResultOrLockHierarchy<Nullable<bool>>(GetContext().GetHierarchyLevelLocker(),
             [&]()
@@ -566,7 +566,7 @@ bool NavNodesProvider::HasNodes() const
         if (cachedHasNodesInfo.IsValid())
             {
             m_cachedHasNodes = cachedHasNodesInfo.Value();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag found in persistent cache: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag found in persistent cache: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
             }
         else
             {
@@ -576,7 +576,7 @@ bool NavNodesProvider::HasNodes() const
                 if (parent->DeterminedChildren())
                     {
                     m_cachedHasNodes = parent->HasChildren();
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag determined from parent: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag determined from parent: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
                     }
                 else if (!RequiresFullLoad())
                     {
@@ -586,14 +586,14 @@ bool NavNodesProvider::HasNodes() const
                         case ChildrenHint::Never: m_cachedHasNodes = false; break;
                         }
                     if (m_cachedHasNodes.IsValid())
-                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag determined from children hint: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag determined from children hint: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
                     }
                 }
             if (m_cachedHasNodes.IsNull())
                 {
                 MaxNodesToLoadContext checkingNodes(*this, 1);
                 m_cachedHasNodes = _HasNodes();
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag calculated: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag calculated: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
                 }
             const_cast<NavNodesProviderP>(this)->_OnHasNodesFlagSet(m_cachedHasNodes.Value());
             }
@@ -609,7 +609,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Get nodes count", GetName()));
     if (m_cachedNodesCount.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes count not cached in memory");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes count not cached in memory");
         Nullable<size_t> cachedTotalNodesCount = GetResultOrLockHierarchy<Nullable<size_t>>(GetContext().GetHierarchyLevelLocker(),
             [&]()
             {
@@ -623,7 +623,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
         if (cachedTotalNodesCount.IsValid())
             {
             m_cachedNodesCount = cachedTotalNodesCount.Value();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Nodes count found in persistent cache: %" PRIu64, m_cachedNodesCount.Value()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count found in persistent cache: %" PRIu64, m_cachedNodesCount.Value()));
             }
         else if (GetContext().GetOptimizationFlags().GetMaxNodesToLoad() == 1)
             {
@@ -634,7 +634,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
                 return CountInfo(1, false);
 
             m_cachedNodesCount = (uint64_t)0;
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Nodes count deduced from 'has nodes' flag: %" PRIu64, m_cachedNodesCount.Value()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count deduced from 'has nodes' flag: %" PRIu64, m_cachedNodesCount.Value()));
             }
         else
             {
@@ -644,7 +644,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
 
             m_cachedNodesCount = count.GetCount();
             const_cast<NavNodesProviderP>(this)->_OnNodesCountSet(m_cachedNodesCount.Value());
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Calculated nodes count: %" PRIu64, m_cachedNodesCount.Value()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Calculated nodes count: %" PRIu64, m_cachedNodesCount.Value()));
             }
         }
     return CountInfo(m_cachedNodesCount.Value(), true);
@@ -1460,13 +1460,13 @@ std::unique_ptr<DirectNodesIterator> CustomNodesProvider::_CreateDirectNodesIter
 
     if (m_specification.GetNodeType().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "Type is a required attribute for custom node specifications and is not set. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Type is a required attribute for custom node specifications and is not set. Returning empty list.");
         return nullptr;
         }
 
     if (m_specification.GetLabel().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "Label is a required attribute for custom node specifications and is not set. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Label is a required attribute for custom node specifications and is not set. Returning empty list.");
         return nullptr;
         }
 
@@ -1493,7 +1493,7 @@ std::unique_ptr<DirectNodesIterator> CustomNodesProvider::_CreateDirectNodesIter
     GetContext().GetNodesCache().Cache(*node, GetIdentifier(), 0, NodeVisibility::Visible);
     nodes.push_back(node);
     const_cast<CustomNodesProvider*>(this)->_OnDirectNodesRead(1);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Created 1 direct node based on CustomNode specification");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Created 1 direct node based on CustomNode specification");
     return std::make_unique<BVectorDirectNodesIterator>(nodes);
     }
 
@@ -1622,7 +1622,7 @@ struct QueryBasedNodesProvider::Savepoint
         if (m_shouldCancel)
             {
             m_cacheSavepoint->Cancel();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Cancelled hierarchy cache savepoint");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Cancelled hierarchy cache savepoint");
             }
         }
     void Commit() {m_shouldCancel = false;}
@@ -1747,7 +1747,7 @@ std::unique_ptr<DirectNodesIterator> QueryBasedNodesProvider::_CreateDirectNodes
     const_cast<QueryBasedNodesProvider*>(this)->_OnDirectNodesRead(nodes.size());
     savepoint.Commit();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " direct nodes based on query based specification", (uint64_t)nodes.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " direct nodes based on query based specification", (uint64_t)nodes.size()));
     return std::make_unique<BVectorDirectNodesIterator>(nodes);
     }
 
@@ -2342,11 +2342,11 @@ std::unique_ptr<DirectNodesIterator> NodesCreatingMultiNavNodesProvider::GetDire
         });
     if (cachedDirectNodesIterator)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Direct nodes found in cache");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Direct nodes found in cache");
         return cachedDirectNodesIterator;
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Direct nodes not found in cache, creating");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Direct nodes not found in cache, creating");
     return _CreateDirectNodesIterator();
     }
 
@@ -2433,7 +2433,7 @@ NodesInitializationState NodesCreatingMultiNavNodesProvider::_InitializeNodes()
             if (GetContext().GetOptimizationFlags().GetMaxNodesToLoad() <= loadedNodesCount)
                 {
                 // found what we're looking for - no need to handle other nodes
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Found provider with nodes while looking for children. Break at %" PRIu64 " after handling %" PRIu64 " / %" PRIu64 " nodes.",
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Found provider with nodes while looking for children. Break at %" PRIu64 " after handling %" PRIu64 " / %" PRIu64 " nodes.",
                     (uint64_t)providerIndex, (uint64_t)handledNodesCount, (uint64_t)nodesIterator->NodesCount()));
                 break;
                 }

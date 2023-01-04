@@ -355,14 +355,14 @@ static BeFileName GetCacheDbPath(BeFileNameCR directory, IConnectionCR connectio
     if (directory.IsEmpty())
         {
         path = BeFileName(connection.GetECDb().GetTempFileBaseName().c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Cache directory not set, using base path: '%s'", path.GetNameUtf8().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Cache directory not set, using base path: '%s'", path.GetNameUtf8().c_str()));
         }
     else
         {
         DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, directory.DoesPathExist(), Utf8PrintfString("Provided cache directory does not exist: '%s'", directory.GetNameUtf8().c_str()));
         path = directory;
         path.AppendToPath(BeFileName(connection.GetECDb().GetDbFileName()).GetFileNameAndExtension().c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Cache directory set, using base path: '%s'", path.GetNameUtf8().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Cache directory set, using base path: '%s'", path.GetNameUtf8().c_str()));
         }
     path.AppendString(NAVNODES_CACHE_DB_SUFFIX);
     return path;
@@ -391,14 +391,14 @@ DbResult NodesCache::DbFactory::CheckCacheCompatibility(BeSQLite::Db& db, IConne
         // if the existing cache version is too old, simply delete the old cache and create a new one
         db.CloseDb();
         result = BE_SQLITE_ERROR_ProfileTooOld;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Profile too old, deleted DB file");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Profile too old, deleted DB file");
         }
     else if (IsConnectionAndCacheOutOfSync(db, connection))
         {
         // if connection modification date does not match cached date delete cache (hierarchies may be out of sync)
         db.CloseDb();
         result = BE_SQLITE_ERROR_ProfileTooOld;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Cache is out-of-sync, deleted DB file");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Cache is out-of-sync, deleted DB file");
         }
     return result;
     }
@@ -437,7 +437,7 @@ DbResult NodesCache::DbFactory::OpenCacheDb(IConnectionCR connection, BeSQLite::
     if (BE_SQLITE_OK != result)
         return result;
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "DB opened for read-write successfully");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "DB opened for read-write successfully");
     return CheckCacheCompatibility(db, connection);
     }
 
@@ -640,22 +640,22 @@ DbResult NodesCache::DbFactory::InitializeDiskDb(Db& db, BeFileNameCR directory,
     if (tempCache)
         return CreateTempDiskDb(db, path, connection, cacheType);
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Using path '%s'", path.GetNameUtf8().c_str()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Using path '%s'", path.GetNameUtf8().c_str()));
 
     bool createNewCache = true;
 #ifdef NAVNODES_CACHE_DEBUG_REMOVE_DB
     // always create a new cache if debugging
     path.BeDeleteFile();
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Deleted the cache for debugging");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Deleted the cache for debugging");
 #else
     if (path.DoesPathExist())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("File exists: '%s'", path.GetNameUtf8().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("File exists: '%s'", path.GetNameUtf8().c_str()));
         DbResult result = OpenCacheDb(connection, db, path, DefaultTxn::No, InfiniteBusyRetry::Create());
         if (BE_SQLITE_OK == result)
             return BE_SQLITE_OK;
 
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Failed to open the cache with result '%d'. Creating a new one.", (int)result));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Failed to open the cache with result '%d'. Creating a new one.", (int)result));
         // attempt to delete old cache file. Sets 'createNewCache' to false if old file could not be deleted
         createNewCache = DeleteSQLiteDbFile(path);
     }
@@ -670,7 +670,7 @@ DbResult NodesCache::DbFactory::InitializeDiskDb(Db& db, BeFileNameCR directory,
         }
 
     tempCache = true;
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Could not open or create main cache DB, switching to a temporary cache");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Could not open or create main cache DB, switching to a temporary cache");
     return CreateTempDiskDb(db, path, connection, cacheType);
     }
 

@@ -40,7 +40,7 @@ private:
             {
             if (!arg.IsECValue())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("All arguments in `Set` function should be primitive, got: %d. Skipping", (int)arg.GetValueType()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("All arguments in `Set` function should be primitive, got: %d. Skipping", (int)arg.GetValueType()));
                 continue;
                 }
 
@@ -690,21 +690,21 @@ private:
             }
         else
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid relationship direction specified. Expected 'Forward' or 'Backward', got: '%s'", direction));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid relationship direction specified. Expected 'Forward' or 'Backward', got: '%s'", direction));
             return ExpressionStatus::UnknownError;
             }
 
         Utf8String relationshipSchemaName, relationshipClassName;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, relationshipName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse specified relationship name: '%s'", relationshipName));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse specified relationship name: '%s'", relationshipName));
             return ExpressionStatus::UnknownError;
             }
 
         Utf8String relatedClassSchemaName, relatedClassName;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, className))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse specified class name: '%s'", className));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse specified class name: '%s'", className));
             return ExpressionStatus::UnknownError;
             }
 
@@ -734,7 +734,7 @@ private:
 
         if (3 != args.size())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Wrong number of arguments. Expected 3, got: %" PRIu64, (uint64_t)args.size()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Wrong number of arguments. Expected 3, got: %" PRIu64, (uint64_t)args.size()));
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
@@ -742,7 +742,7 @@ private:
             {
             if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid type of argument %" PRIu64 " - expected a string", (uint64_t)i));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid type of argument %" PRIu64 " - expected a string", (uint64_t)i));
                 return ExpressionStatus::WrongType;
                 }
             }
@@ -1318,21 +1318,21 @@ private:
             }
         else
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid relationship direction. Expected 'Forward' or 'Backward', got: '%s'", info.Direction.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid relationship direction. Expected 'Forward' or 'Backward', got: '%s'", info.Direction.c_str()));
             return ERROR;
             }
 
         Utf8String relationshipSchemaAndClassName = args.GetArgument(0)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelationshipNames.SchemaName, info.RelationshipNames.ClassName, relationshipSchemaAndClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse relationship name: '%s'", relationshipSchemaAndClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse relationship name: '%s'", relationshipSchemaAndClassName.c_str()));
             return ERROR;
             }
 
         Utf8String relatedSchemaAndClassName = args.GetArgument(2)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelatedClassNames.SchemaName, info.RelatedClassNames.ClassName, relatedSchemaAndClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
             return ERROR;
             }
 
@@ -1349,7 +1349,7 @@ private:
         Utf8String relatedSchemaAndClassName = args.GetArgument(0)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelatedClassName.SchemaName, info.RelatedClassName.ClassName, relatedSchemaAndClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
             return ERROR;
             }
 
@@ -1357,7 +1357,7 @@ private:
         LambdaNodeCP lambda = dynamic_cast<LambdaNodeCP>(secondArg);
         if (nullptr == lambda)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Expecting second argument to be a lambda");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Expecting second argument to be a lambda");
             return ERROR;
             }
         info.RelatedClassAlias = lambda->GetSymbolName();
@@ -1426,7 +1426,7 @@ private:
             return HandleHasRelatedInstanceSpecialCaseWith3Args(node);
         if (2 == args->GetArgumentCount())
             return HandleHasRelatedInstanceSpecialCaseWith2Args(node);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
         return false;
         }
 
@@ -1498,7 +1498,7 @@ private:
             return HandleGetRelatedValueSpecialCaseWith4Args(node);
         if (3 == args->GetArgumentCount())
             return HandleGetRelatedValueSpecialCaseWith3Args(node);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 3 or 4, got: %" PRIu64, args->GetArgumentCount()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 3 or 4, got: %" PRIu64, args->GetArgumentCount()));
         return false;
         }
 
@@ -1559,7 +1559,7 @@ private:
             return HandleGetRelatedInstancesCountSpecialCaseWith3Args(node);
         if (2 == args->GetArgumentCount())
             return HandleGetRelatedInstancesCountSpecialCaseWith2Args(node);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
         return false;
         }
 
@@ -1581,12 +1581,12 @@ private:
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Missing arguments");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Missing arguments");
             return false;
             }
         if (1 != args->GetArgumentCount())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1, got: %" PRIu64, args->GetArgumentCount()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1, got: %" PRIu64, args->GetArgumentCount()));
             return false;
             }
 
@@ -1602,7 +1602,7 @@ private:
         {
         if (m_currentValueListMethodNode.IsNull() && m_currentValueListIdentNode.IsNull())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "`AnyMatch` may only be used on value lists");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "`AnyMatch` may only be used on value lists");
             return false;
             }
 
@@ -1628,12 +1628,12 @@ private:
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Missing arguments");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Missing arguments");
             return false;
             }
         if (2 != args->GetArgumentCount())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2, got: %" PRIu64, args->GetArgumentCount()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2, got: %" PRIu64, args->GetArgumentCount()));
             return false;
             }
 
@@ -1655,18 +1655,18 @@ private:
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Missing arguments");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Missing arguments");
             return false;
             }
         if (1 != args->GetArgumentCount() && 2 != args->GetArgumentCount())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1 or 2, got: %" PRIu64, args->GetArgumentCount()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1 or 2, got: %" PRIu64, args->GetArgumentCount()));
             return false;
             }
         PrimaryListNodeCP listNode = dynamic_cast<PrimaryListNodeCP>(args->GetArgument(0));
         if (nullptr == listNode || 2 != listNode->GetNumberOfOperators())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("First argument should be property accessor, e.g. 'this.MyProperty'. Got: '%s'", args->GetArgument(0)->ToExpressionString().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("First argument should be property accessor, e.g. 'this.MyProperty'. Got: '%s'", args->GetArgument(0)->ToExpressionString().c_str()));
             return false;
             }
         IdentNodeCP ident = dynamic_cast<IdentNodeCP>(listNode->GetOperatorNode(0));
@@ -1968,7 +1968,7 @@ private:
                 }
             }
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Only an EQUALS operation or function calls are allowed in lambda expression");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Only an EQUALS operation or function calls are allowed in lambda expression");
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -2313,7 +2313,7 @@ QueryClauseAndBindings ECExpressionsHelper::ConvertToECSql(Utf8StringCR expressi
     NodePtr node = GetNodeFromExpression(copy.c_str());
     if (node.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
         return QueryClauseAndBindings();
         }
 
@@ -2337,7 +2337,7 @@ bvector<Utf8String> ECExpressionsHelper::GetUsedClasses(Utf8StringCR expression)
     NodePtr node = GetNodeFromExpression(expression.c_str());
     if (node.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
         return empty;
         }
 

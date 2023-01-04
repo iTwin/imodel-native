@@ -47,12 +47,14 @@ static Utf8CP GetDiagnosticsCategoryName(DiagnosticsCategory category)
         case DiagnosticsCategory::RulesetVariables: return LOGGER_NAMESPACE_ECPRESENTATION_RULESET_VARIABLES;
         case DiagnosticsCategory::ECExpressions: return LOGGER_NAMESPACE_ECPRESENTATION_ECEXPRESSIONS;
 
-        case DiagnosticsCategory::Hierarchies: return LOGGER_NAMESPACE_ECPRESENTATION_HIEARCHIES;
-        case DiagnosticsCategory::HierarchiesCache: return LOGGER_NAMESPACE_ECPRESENTATION_HIEARCHIES_CACHE;
-        case DiagnosticsCategory::HierarchiesUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_HIEARCHIES_UPDATE;
+        case DiagnosticsCategory::Hierarchies: return LOGGER_NAMESPACE_ECPRESENTATION_HIERARCHIES;
+        case DiagnosticsCategory::HierarchiesCache: return LOGGER_NAMESPACE_ECPRESENTATION_HIERARCHIES_CACHE;
 
         case DiagnosticsCategory::Content: return LOGGER_NAMESPACE_ECPRESENTATION_CONTENT;
-        case DiagnosticsCategory::ContentUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_CONTENT_UPDATE;
+
+        case DiagnosticsCategory::Update: return LOGGER_NAMESPACE_ECPRESENTATION_UPDATE;
+        case DiagnosticsCategory::HierarchiesUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_UPDATE_HIERARCHIES;
+        case DiagnosticsCategory::ContentUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_UPDATE_CONTENT;
         }
     BeAssert(false);
     return LOGGER_NAMESPACE_ECPRESENTATION;
@@ -296,8 +298,8 @@ bool Diagnostics::Scope::IsEnabled(DiagnosticsCategory category, NativeLogging::
     {
     return devSeverity >= GetOptions().GetDevSeverity()
         || editorSeverity >= GetOptions().GetEditorSeverity()
-        // note: we get A LOT of trace messages - don't want to emit those to native logger (even the check if they're enabled is expensive)
-        || devSeverity >= NativeLogging::LOG_DEBUG && NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).isSeverityEnabled(devSeverity);
+        // note: we get A LOT of trace messages - don't want to emit those to native logger (even the check if they're enabled gets expensive)
+        || devSeverity > NativeLogging::LOG_TRACE && NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).isSeverityEnabled(devSeverity);
     }
 
 /*---------------------------------------------------------------------------------**//**

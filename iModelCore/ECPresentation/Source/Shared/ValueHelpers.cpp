@@ -40,7 +40,7 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 
     if (nullptr == enumerator)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Failed to determine enumerator for `%s`, value `%s`",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_ERROR, LOG_INFO, Utf8PrintfString("Failed to determine enumerator for `%s`, value `%s`",
             enumeration->GetFullName().c_str(), rawValue.ToString().c_str()));
         return ERROR;
         }

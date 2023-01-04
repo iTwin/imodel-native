@@ -29,9 +29,11 @@ enum class DiagnosticsCategory
 
     Hierarchies,
     HierarchiesCache,
-    HierarchiesUpdate,
 
     Content,
+
+    Update,
+    HierarchiesUpdate,
     ContentUpdate,
     };
 

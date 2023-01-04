@@ -805,7 +805,7 @@ protected:
                 });
             if (relatedInstancePropertyValueField.IsNull())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
                 }
             else
                 {
@@ -885,7 +885,7 @@ protected:
             std::bind(&InstanceLabelOverrideSelectFieldsBuilder::CreateDisplayLabelField, this, std::placeholders::_1, std::placeholders::_2));
         if (relatedInstanceDisplayLabelField.IsNull())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
             return;
             }
         m_fields.push_back(relatedInstanceDisplayLabelField);
@@ -1006,7 +1006,7 @@ bmap<ECClassCP, bvector<InstanceLabelOverride const*>> QueryBuilderHelpers::GetL
         ECClassCP ecClass = helper.GetECClass(labelOverride->GetClassName().c_str());
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("LabelOverride class not found: '%s'", labelOverride->GetClassName().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("LabelOverride class not found: '%s'", labelOverride->GetClassName().c_str()));
             continue;
             }
 
@@ -1110,13 +1110,13 @@ QueryClauseAndBindings QueryBuilderHelpers::CreatePropertyGroupFilteringClause(E
     {
     if (groupingSpecification.GetRanges().empty())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Filtering by property values");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Filtering by property values");
         PrimitiveType groupedValuesType = ecProperty.GetIsPrimitive() ? ecProperty.GetAsPrimitiveProperty()->GetType() : ecProperty.GetIsNavigation() ? PRIMITIVETYPE_Long : PRIMITIVETYPE_String;
         return QueryClauseAndBindings(Utf8String("InVirtualSet(?, ").append(propertyValueSelector).append(")"),
             { std::make_shared<BoundRapidJsonValueSet>(groupingValues, groupedValuesType) });
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Filtering by property value ranges");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Filtering by property value ranges");
     PropertyRangeGroupList const& groupingRanges = groupingSpecification.GetRanges();
     Utf8String rangesClause;
     BoundQueryValuesList rangesBindings;
@@ -1420,7 +1420,7 @@ bvector<ClassSortingRule> QueryBuilderHelpers::GetClassSortingRules(bvector<Sort
             ECSchemaCP ruleSchema = helper.GetSchema(rule->GetSchemaName().c_str(), false);
             if (nullptr == ruleSchema)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested sorting rule schema not found: '%s'", rule->GetSchemaName().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule schema not found: '%s'", rule->GetSchemaName().c_str()));
                 continue;
                 }
             AppendRule(rules, *rule, selectClass, relatedPaths, [&ruleSchema](ECClassCR selectClass) {return ruleSchema == &selectClass.GetSchema(); });
@@ -1430,7 +1430,7 @@ bvector<ClassSortingRule> QueryBuilderHelpers::GetClassSortingRules(bvector<Sort
         ECClassCP ruleClass = helper.GetECClass(rule->GetSchemaName().c_str(), rule->GetClassName().c_str());
         if (nullptr == ruleClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested sorting rule class not found: `%s.%s`",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule class not found: `%s.%s`",
                 rule->GetSchemaName().c_str(), rule->GetClassName().c_str()));
             continue;
             }
@@ -1498,7 +1498,7 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(bvector<ClassSorting
         ECPropertyCP ecProperty = rule.GetSelectClass().GetClass().GetPropertyP(rule.GetRule().GetPropertyName().c_str());
         if (nullptr == ecProperty)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested sorting rule property not found: '%s.%s'",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule property not found: '%s.%s'",
                 rule.GetSelectClass().GetClass().GetFullName(), rule.GetRule().GetPropertyName().c_str()));
             continue;
             }

@@ -990,7 +990,7 @@ KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR conn
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(ecClassId);
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Serialization, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Instance key contains an invalid ECClass ID: '%s'", classId));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Serialization, LOG_INFO, LOG_ERROR, Utf8PrintfString("Instance key contains an invalid ECClass ID: '%s'", classId));
             return false;
             }
         bset<ECInstanceId> instanceIdSet;
@@ -1002,7 +1002,7 @@ KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR conn
         instanceKeys[ecClass] = instanceIdSet;
         return false;
         });
-    
+
     NavNodeKeySet nodeKeys;
     json["NodeKeys"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst nodeKeyJson)
         {
