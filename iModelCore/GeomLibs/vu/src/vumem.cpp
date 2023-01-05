@@ -102,9 +102,7 @@ int     id1
     static int s_printGraph = 0;
     if (s_printGraph)
         {
-        char buffer[1024];
-        sprintf (buffer, "%s (%d, %d)\n", pAppName ? pAppName : "postGraphToTrapFunc", id0, id1);
-         vu_printFaceLabels (pGraph, buffer);
+         vu_printFaceLabels (pGraph, Utf8PrintfString("%s (%d, %d)\n", pAppName ? pAppName : "postGraphToTrapFunc", id0, id1).c_str());
         }
 #endif
     }

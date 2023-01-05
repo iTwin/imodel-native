@@ -793,41 +793,29 @@ void EmitCompleteTag (char const * pTagName, char const *pNameString, char const
 
 void Content (char const *pName, DPoint3d const *pPoint)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg", pPoint->x, pPoint->y, pPoint->z);
-    EmitCompleteTag("DPoint3d", pName, stringVal);
+    EmitCompleteTag("DPoint3d", pName, Utf8PrintfString("%lg,%lg,%lg", pPoint->x, pPoint->y, pPoint->z).c_str());
     }
 
 void Content (char const *pName, DVec3d const *pVec)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg", pVec->x, pVec->y, pVec->z);
-    EmitCompleteTag("DVec3d", pName, stringVal);
+    EmitCompleteTag("DVec3d", pName, Utf8PrintfString("%lg,%lg,%lg", pVec->x, pVec->y, pVec->z).c_str());
     }
 
 void Content (char const *pName, DPoint2d const *pData)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg", pData->x, pData->y);
-    EmitCompleteTag("DPoint2d", pName, stringVal);
+    EmitCompleteTag("DPoint2d", pName, Utf8PrintfString("%lg,%lg", pData->x, pData->y).c_str());
     }
 
 void Content (char const *pName, RotMatrix const *pM)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg", pM->form3d[0][0], pM->form3d[0][1], pM->form3d[0][2]);
-    EmitCompleteTag ("row0", pName, stringVal);
-    sprintf (stringVal, "%lg,%lg,%lg", pM->form3d[1][0], pM->form3d[1][1], pM->form3d[1][2]);
-    EmitCompleteTag ("row1", pName, stringVal);
-    sprintf (stringVal, "%lg,%lg,%lg]", pM->form3d[2][0], pM->form3d[2][1], pM->form3d[2][2]);
-    EmitCompleteTag ("row2", pName, stringVal);
+    EmitCompleteTag ("row0", pName, Utf8PrintfString("%lg,%lg,%lg", pM->form3d[0][0], pM->form3d[0][1], pM->form3d[0][2]).c_str());
+    EmitCompleteTag ("row1", pName, Utf8PrintfString("%lg,%lg,%lg", pM->form3d[1][0], pM->form3d[1][1], pM->form3d[1][2]).c_str());
+    EmitCompleteTag ("row2", pName, Utf8PrintfString("%lg,%lg,%lg]", pM->form3d[2][0], pM->form3d[2][1], pM->form3d[2][2]).c_str());
     }
 
 void Content (char const *pName, DPoint4d const *pPoint)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg", pPoint->x, pPoint->y, pPoint->z, pPoint->w);
-    EmitCompleteTag("DPoint4d", pName, stringVal);
+    EmitCompleteTag("DPoint4d", pName, Utf8PrintfString("%lg,%lg,%lg", pPoint->x, pPoint->y, pPoint->z, pPoint->w).c_str());
     }
 
 void Content (char const *pName, GraphicsPoint const *pGP)
@@ -895,16 +883,12 @@ void Content (double a)
 
 void ContentHex (char const *pName, int a)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "0x%x", a);
-    EmitCompleteTag ("hex", pName, stringVal);
+    EmitCompleteTag ("hex", pName, Utf8PrintfString("0x%x", a).c_str());
     }
 
 void Content (char const *pName, double a)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%20.15lg", a);
-    EmitCompleteTag ("double", pName, stringVal);
+    EmitCompleteTag ("double", pName, Utf8PrintfString("%20.15lg", a).c_str());
     }
 
 void Content (DPoint3d const *pPoint)
@@ -914,16 +898,12 @@ void Content (DPoint3d const *pPoint)
 
 void Content (char const *pName, int a)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%d", a);
-    EmitCompleteTag ("int", pName, stringVal);
+    EmitCompleteTag ("int", pName, Utf8PrintfString("%d", a).c_str());
     }
 
 void Content (char const *pName, bool a)
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%s", a ? "true" : "false");
-    EmitCompleteTag ("bool", pName, stringVal);
+    EmitCompleteTag ("bool", pName, Utf8PrintfString("%s", a ? "true" : "false").c_str());
     }
 
 void Content (int a)

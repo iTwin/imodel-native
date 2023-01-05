@@ -45,67 +45,40 @@ void Check::StartScope (char const *string)
 
 void Check::StartScope (char const *name, double value)
     {
-    char buffer[2048];
-    sprintf (buffer, "(%s %.15lg)", name, value);
-    StartScope (buffer);
+    StartScope (Utf8PrintfString("(%s %.15lg)", name, value).c_str());
     }
 
 void Check::StartScope (char const *name, size_t value)
     {
-    char buffer[2048];
-    sprintf (buffer, "(%s %u)", name, (unsigned int)value);
-    StartScope (buffer);
+    StartScope (Utf8PrintfString("(%s %u)", name, (unsigned int)value).c_str());
     }
 
 void Check::StartScope(char const *name, int value)
     {
-    char buffer[2048];
-    sprintf(buffer, "(%s %d)", name, value);
-    StartScope(buffer);
+    StartScope(Utf8PrintfString("(%s %d)", name, value).c_str());
     }
 
 
 void Check::StartScope (char const *name, DPoint3dCR value)
     {
-    char buffer[2048];
-    sprintf (buffer, "(%s %.15lg %.15lg %.15lg)", name, value.x, value.y, value.z);
-    StartScope (buffer);
+    StartScope (Utf8PrintfString("(%s %.15lg %.15lg %.15lg)", name, value.x, value.y, value.z).c_str());
     }
 
 void Check::StartScope (char const *name, DRay3dCR value)
     {
-    char buffer[2048];
-    sprintf (buffer, "(%s (origin %.15lg %.15lg %.15lg) (dir %.15lg %.15lg %.15lg))",
-            name,
-            value.origin.x, value.origin.y, value.origin.z,
-            value.direction.x, value.direction.y, value.direction.z
-            );
-    StartScope (buffer);
+    StartScope (Utf8PrintfString("(%s (origin %.15lg %.15lg %.15lg) (dir %.15lg %.15lg %.15lg))", name, value.origin.x, value.origin.y, value.origin.z, value.direction.x, value.direction.y, value.direction.z).c_str());
     }
 
 void Check::StartScope (char const *name, RotMatrixCR value)
     {
-    char buffer[2048];
-    sprintf (buffer, "(%s \n  (RowX %.15lg %.15lg %.15lg)\n  (RowY %.15lg %.15lg %.15lg)\n  (RowY %.15lg %.15lg %.15lg))",
-            name,
-            value.form3d[0][0], value.form3d[0][1], value.form3d[0][2],
-            value.form3d[1][0], value.form3d[1][1], value.form3d[1][2],
-            value.form3d[2][0], value.form3d[2][1], value.form3d[2][2]
-            );
-    StartScope (buffer);
+    StartScope (Utf8PrintfString("(%s \n  (RowX %.15lg %.15lg %.15lg)\n  (RowY %.15lg %.15lg %.15lg)\n  (RowY %.15lg %.15lg %.15lg))", name, value.form3d[0][0], value.form3d[0][1], value.form3d[0][2], value.form3d[1][0], value.form3d[1][1], value.form3d[1][2], value.form3d[2][0], value.form3d[2][1], value.form3d[2][2]).c_str());
     }
 
 
 
 void Check::StartScope (char const *name, DPlane3dCR value)
     {
-    char buffer[2048];
-    sprintf (buffer, "(%s \n  (origin %.15lg %.15lg %.15lg)  (normal %.15lg %.15lg %.15lg))",
-            name,
-            value.origin.x, value.origin.y, value.origin.z,
-            value.normal.x, value.normal.y, value.normal.z
-            );
-    StartScope (buffer);
+    StartScope (Utf8PrintfString("(%s \n  (origin %.15lg %.15lg %.15lg)  (normal %.15lg %.15lg %.15lg))", name, value.origin.x, value.origin.y, value.origin.z, value.normal.x, value.normal.y, value.normal.z).c_str());
     }
 
 void Check::EndScope ()
@@ -241,10 +214,8 @@ bool Check::LessThanOrEqual (double a, double b, char const*pString)
     {
     if (a <= b)
         return true;
-    char message[2048];
-    sprintf (message, "(fail %.17g <= %.17g) %s\n", a, b, pString ? pString : "");
     Check::PrintScope ();
-    Check::Fail (message);
+    Check::Fail (Utf8PrintfString("(fail %.17g <= %.17g) %s\n", a, b, pString ? pString : "").c_str());
     return false;
     }
 
@@ -470,9 +441,7 @@ bool Check::Parallel (DVec3dCR a, DVec3dCR b, char const*pString, double refValu
     double tol = Tol (theta, refValue);
     if (fabs (theta) < tol)
         return true;
-    char string[1024];
-    sprintf (string, " Parallel actual %le %s", theta, pString);
-    Check::True (stat, string);
+    Check::True (stat, Utf8PrintfString(" Parallel actual %le %s", theta, pString).c_str());
     return false;
     }
 
@@ -481,10 +450,8 @@ bool Check::Perpendicular (DVec3dCR a, DVec3dCR b, char const*pString, double re
     bool stat = a.IsPerpendicularTo (b);
     if (stat)
         return true;
-    char string[1024];
     double theta = a.AngleTo (b);
-    sprintf (string, " Perpendicular actual %le %s", theta, pString);
-    Check::True (stat, string);
+    Check::True (stat, Utf8PrintfString(" Perpendicular actual %le %s", theta, pString).c_str());
     return false;
     }
 
@@ -497,31 +464,23 @@ bool Check::Near (DPoint3dCR a, DPoint3dCR b, char const*pString, double refValu
     if (d <= tol)
         return true;
     Check::PrintScope ();
-    char message[1024];
-    sprintf (message, "%s Point distance (%.16g,%.16g,%.16g)(%.16g,%.16g,%.16g)",
-                    pString,
-                    a.x, a.y, a.z, b.x, b.y, b.z);
-    AssertNear (d, 0.0, tol, message);
+    AssertNear (d, 0.0, tol, Utf8PrintfString("%s Point distance (%.16g,%.16g,%.16g)(%.16g,%.16g,%.16g)", pString, a.x, a.y, a.z, b.x, b.y, b.z).c_str());
     return false;
     }
 
 void Check::Near (DPoint2dCP a, DPoint2dCP b, int n, char const*pName, double refValue)
     {
-    char longName[2048];
     for (int i = 0; i < n; i++)
         {
-        sprintf (longName, "DPoint2d[%d]%s", i, pName ? pName : "");
-        Check::Near (a[i], b[i], longName, refValue);
+        Check::Near (a[i], b[i], Utf8PrintfString("DPoint2d[%d]%s", i, pName ? pName : "").c_str(), refValue);
         }
     }
 
 void Check::Near (DPoint3dCP a, DPoint3dCP b, int n, char const*pName, double refValue)
     {
-    char longName[2048];
     for (int i = 0; i < n; i++)
         {
-        sprintf (longName, "DPoint3d[%d]%s", i, pName ? pName : "");
-        Check::Near (a[i], b[i], longName, refValue);
+        Check::Near (a[i], b[i], Utf8PrintfString("DPoint3d[%d]%s", i, pName ? pName : "").c_str(), refValue);
         }
     }
 
@@ -611,9 +570,7 @@ void Check::Near (DMatrix4d a, DMatrix4d b, char const*pString, double refValue)
         {
         for (int j = 0; j < 4; j++)
             {
-            char message[128];
-            sprintf (message, "[%d][%d]", i, j);
-            Check::StartScope (message);
+            Check::StartScope (Utf8PrintfString("[%d][%d]", i, j).c_str());
             Check::Near (a.coff[i][j], b.coff[i][j], pString, refValue);
             Check::EndScope ();
             }
@@ -1215,18 +1172,17 @@ void Check::Print (bvector<double> const &data, char const *name)
         return;
 
     printf ("(%s", name == nullptr ? "doubles" : name);
-    char buffer[100];
     size_t numChars = 2 + strlen (name);
     for (size_t i = 0; i < data.size (); i++)
         {
-        sprintf (buffer, "  %.17g", data[i]);
-        size_t numChars1 = strlen (buffer);
+        Utf8PrintfString buffer("  %.17g", data[i]);
+        size_t numChars1 = strlen (buffer.c_str());
         if (numChars + numChars1 > 70)
             {
             printf ("\n");
             numChars = numChars1;
             }
-        printf ("%s",buffer);
+        printf ("%s",buffer.c_str());
         }
 
     printf (")\n");
@@ -1677,29 +1633,17 @@ void Check::DirectKeyin (char const *message)
     }
 void Check::KeyinText (DPoint3dCR xyz, char const *text)
     {
-    char message[2048];
-    sprintf (message,
-        "facet import dgnjs --text@[%lg,%lg,%lg]=%s\n",
-                xyz.x,xyz.y, xyz.z,
-                text
-                );
-    DirectKeyin (message);
+    DirectKeyin (Utf8PrintfString("facet import dgnjs --text@[%lg,%lg,%lg]=%s\n", xyz.x, xyz.y, xyz.z, text).c_str());
     }
 
 void Check::KeyinTextSize (double height)
     {
-    char message[2048];
-    sprintf (message,
-        "facet import dgnjs --textsize=%lg\n", height);
-    DirectKeyin (message);
+    DirectKeyin (Utf8PrintfString("facet import dgnjs --textsize=%lg\n", height).c_str());
     }
 
 void Check::KeyinOrigin(DPoint3dCR origin)
     {
-    char message[2048];
-    sprintf (message,
-        "facet import dgnjs --origin=[%lg,%lg,%lg]\n", origin.x, origin.y, origin.z);
-    DirectKeyin (message);
+    DirectKeyin (Utf8PrintfString("facet import dgnjs --origin=[%lg,%lg,%lg]\n", origin.x, origin.y, origin.z).c_str());
     }
 
 void Check::KeyinImport (char const *name, char const *extension)
@@ -1714,10 +1658,7 @@ void Check::KeyinImport (char const *name, char const *extension)
     BeStringUtilities::Utf8ToWChar (extensionString, extension);
     path.AppendExtension (extensionString.c_str ());
 
-    char message[2048];
-    sprintf (message,
-        "facet import dgnjs %ls\n", path.c_str ());
-    DirectKeyin (message);
+    DirectKeyin (Utf8PrintfString("facet import dgnjs %ls\n", path.c_str()).c_str());
     }
 
 static int s_save = 1;
