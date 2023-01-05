@@ -1445,12 +1445,25 @@ TEST(CurvePrimitive,ParallelLinesFrenetFrame)
         }    
     }    
 
+static void testLineStringFrenetFrame(bvector<DPoint3d> const& pts, TransformCR expectedFrame, const char* pDescription = nullptr)
+    {
+    ICurvePrimitivePtr lineString = ICurvePrimitive::CreateLineString(pts);
+    CurveVectorPtr collection = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    collection->push_back (lineString);
+
+    Transform frame;
+    if (Check::True (collection->GetAnyFrenetFrame (frame), pDescription))
+        {
+        Check::Near(frame, expectedFrame);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,LineStringFrenetFrame)
     {
-    double eps = 1.0e-8;
+    double eps = 1.0e-7;
     bvector<DPoint3d> pts;
     pts.push_back(DPoint3d::From(0,0));
     pts.push_back(DPoint3d::From(1,0));
@@ -1459,18 +1472,19 @@ TEST(CurvePrimitive,LineStringFrenetFrame)
     pts.push_back(DPoint3d::From(4,-eps));
     pts.push_back(DPoint3d::From(5,0));
     pts.push_back(DPoint3d::From(6,0));
-    ICurvePrimitivePtr lineString = ICurvePrimitive::CreateLineString(pts);
-    CurveVectorPtr collection = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-    collection->push_back (lineString);
 
-    Transform frame;
-    if (Check::True (collection->GetAnyFrenetFrame (frame), "Frenet frame on line string with front-loaded colinear vertices."))
-        {
-        Transform expected = Transform::From(pts[3]);
-        expected.SetMatrixByRowAndColumn(0, 1, eps);
-        expected.SetMatrixByRowAndColumn(1, 0, -eps);
-        Check::Near(frame, expected);
-        }
+    Transform expected = Transform::From(pts[3]);
+    expected.SetMatrixByRowAndColumn(0, 1, eps);
+    expected.SetMatrixByRowAndColumn(1, 0, -eps);
+
+    testLineStringFrenetFrame(pts, expected, "line string with front-loaded colinear vertices");
+
+    double smallerEps = eps / 10;
+    pts[1].y = -smallerEps;
+    expected.SetTranslation(pts[0]);
+    expected.SetMatrixByRowAndColumn(0, 1, smallerEps);
+    expected.SetMatrixByRowAndColumn(1, 0, -smallerEps);
+    testLineStringFrenetFrame(pts, expected, "line string with acceptable but not optimal frame at front");
     }
 
 /*---------------------------------------------------------------------------------**//**
