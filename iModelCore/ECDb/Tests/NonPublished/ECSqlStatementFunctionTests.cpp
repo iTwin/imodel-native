@@ -305,6 +305,35 @@ TEST_F(ECSqlStatementFunctionTestFixture, ClassNameFunc)
         EXPECT_STREQ(expectedResult, stmt.GetValueText(0)) << ecsql;
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementFunctionTestFixture, FailingClassNameFunction) {
+    ASSERT_EQ(SUCCESS, SetupECDb("loadAllSchemas.bim"));
+
+    ECSqlStatement classDefStatement;
+
+    ASSERT_EQ(ECSqlStatus::Success, classDefStatement.Prepare(m_ecdb, "SELECT ec_classname(ECInstanceId) FROM meta.ECClassDef"));
+
+	  std::vector<BentleyM0200::Utf8CP> classNames = {};
+
+	while(BE_SQLITE_ROW == classDefStatement.Step())
+		{
+		classNames.push_back(classDefStatement.GetValueText(0));
+		}
+
+    //Put a breakpoint here and look at the contents of the classNames variable
+	for(size_t i = 0; i < classNames.size(); i++)
+		{
+		ECSqlStatement CheckStatement;
+		ASSERT_EQ(ECSqlStatus::Success, CheckStatement.Prepare(m_ecdb,
+    	SqlPrintfString("SELECT COUNT(*) FROM %s LEFT JOIN meta.ECClassDef on Element.ECClassId = ECClassDef.ECInstanceId WHERE ECClassDef.ECInstanceId IS NULL", classNames[i])));
+		ASSERT_EQ(BE_SQLITE_ROW, CheckStatement.Step());
+		ASSERT_EQ(0, CheckStatement.GetValueInt(0));
+		}
+	}
+    
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
