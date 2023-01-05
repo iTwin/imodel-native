@@ -1444,7 +1444,35 @@ TEST(CurvePrimitive,ParallelLinesFrenetFrame)
         {
         }    
     }    
-        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurvePrimitive,LineStringFrenetFrame)
+    {
+    double eps = 1.0e-8;
+    bvector<DPoint3d> pts;
+    pts.push_back(DPoint3d::From(0,0));
+    pts.push_back(DPoint3d::From(1,0));
+    pts.push_back(DPoint3d::From(2,0));
+    pts.push_back(DPoint3d::From(3,0));
+    pts.push_back(DPoint3d::From(4,-eps));
+    pts.push_back(DPoint3d::From(5,0));
+    pts.push_back(DPoint3d::From(6,0));
+    ICurvePrimitivePtr lineString = ICurvePrimitive::CreateLineString(pts);
+    CurveVectorPtr collection = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    collection->push_back (lineString);
+
+    Transform frame;
+    if (Check::True (collection->GetAnyFrenetFrame (frame), "Frenet frame on line string with front-loaded colinear vertices."))
+        {
+        Transform expected = Transform::From(pts[3]);
+        expected.SetMatrixByRowAndColumn(0, 1, eps);
+        expected.SetMatrixByRowAndColumn(1, 0, -eps);
+        Check::Near(frame, expected);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
