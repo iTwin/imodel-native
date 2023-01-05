@@ -123,6 +123,8 @@ public:
         m_revisionProcessOption = revisionOptions;
         }
 
+
+
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
     DomainUpgradeOptions GetDomainUpgradeOptions() const { return m_domainUpgradeOptions; }
 
@@ -155,16 +157,15 @@ enum class SchemaStatus
     SchemaTooNew,
     SchemaTooOld,
     SchemaUpgradeRequired,
-    SchemaLockFailed,
+    DataTransformRequired,
     SchemaImportFailed,
     SchemaDomainNamesMismatched,
     SchemaInvalid,
-    MergeSchemaRevisionFailed,
     DbHasLocalChanges,
     DbIsReadonly,
-    CouldNotAcquireLocksOrCodes,
     SchemaUpgradeRecommended,
     SchemaIsDynamic,
+    LockCallbackNotSet,
     };
 
 struct DgnDomains;
@@ -173,10 +174,10 @@ struct DgnDomains;
 
 A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
 
-To connect your Domain's ECSChema with your C++ classes, create a subclass of DgnDomain. A DgnDomain is a singleton - that is,
+To connect your Domain's ECSchema with your C++ classes, create a subclass of DgnDomain. A DgnDomain is a singleton - that is,
 there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the system
 about your DgnDomain by calling the static method DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name",
-which must match the ECShema file name. That is how a DgnDomain is paired with its ECSchema.
+which must match the ECSchema file name. That is how a DgnDomain is paired with its ECSchema.
 
 A DgnDomain holds an array of C++ singleton objects, each of which each derive from DgnDomain::Handler. A DgnDomain::Handler
 holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler.
@@ -411,7 +412,7 @@ public:
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb, BeSQLite::EC::SchemaManager::SchemaImportOptions options);
 
     //! Returns true of the schema for this domain has been imported into the supplied DgnDb.
     //! @remarks Only checks if the schema has been imported, and does not do any validation of
@@ -465,16 +466,16 @@ private:
     void SyncWithSchemas();
 
     // Imports schemas of all required domains into the DgnDb.
-    SchemaStatus ImportSchemas();
+    SchemaStatus ImportSchemas(BeSQLite::EC::SchemaManager::SchemaImportOptions options);
     // Validates (and upgrades if necessary) domain schemas - used when the DgnDb is first opened up.
     SchemaStatus InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions, bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
     // Upgrades just the schemas and domains specified via the input parameters.  Use DoValidateSchemas to get all the schemas that should be Upgraded.
-    SchemaStatus UpgradeSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport);
+    SchemaStatus UpgradeSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
     SchemaStatus DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
     SchemaStatus ValidateSchemaReferences(SchemaStatus& status, bvector<ECN::ECSchemaPtr>* schemasToImport, ECN::ECSchemaReadContextR schemaContext, bset<ECN::ECSchemaP>& validatedSchemas);
     static SchemaStatus DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
-    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport);
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
     BeSQLite::EC::DropSchemaResult DoDropSchema(Utf8StringCR name, bool logIssue = true);
     ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;
 
@@ -518,7 +519,7 @@ public:
     //! Un-Register the domain for this session.
     //! @param[in] domain The domain to un-register. Domains are singletons and cannot change during a session.
     DGNPLATFORM_EXPORT static BentleyStatus UnRegisterDomain(const DgnDomain& domain);
-    
+
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.
     DGNPLATFORM_EXPORT DgnDomainCP FindDomain(Utf8CP name) const;

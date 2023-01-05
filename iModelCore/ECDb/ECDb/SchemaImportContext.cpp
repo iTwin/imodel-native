@@ -8,9 +8,19 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//****************************************************************************************** 
-//SchemaImportContext
-//****************************************************************************************** 
+//******************************************************************************************
+// SchemaImportContext
+//******************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaImportContext::AllowDataTransform() {
+    constexpr auto kSchemaUpgrade = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
+    if ((kSchemaUpgrade & GetOptions()) == kSchemaUpgrade) {
+        return true;
+    }
+    return false;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -56,7 +66,7 @@ BentleyStatus SchemaPolicies::ReadPolicy(ECDbCR ecdb, ECN::ECSchemaCR schema, Sc
     if (it != m_optedInPolicies.end())
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas. Schema '%s' opts in policy '%s' although it is already opted in by schema '%s'. A schema policy can only be opted in by one schema.",
-                                                      schema.GetName().c_str(), SchemaPolicy::TypeToString(policyType), 
+                                                      schema.GetName().c_str(), SchemaPolicy::TypeToString(policyType),
                                                     SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), it->second->GetOptingInSchemaId()).c_str());
         return ERROR;
         }
@@ -213,7 +223,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
         else
             {
             ECClassId exceptionClassId = ecdb.Schemas().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
-            
+
             // If class id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionClassId.IsValid())
                 policy->m_classExceptions.insert(exceptionClassId);
@@ -254,7 +264,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                       policyCA.GetClass().GetName().c_str(), 
+                                       policyCA.GetClass().GetName().c_str(),
                                        SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
         return nullptr;
         }
@@ -265,7 +275,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
         if (tokenCount == 0 || tokenCount > 2)
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                           policyCA.GetClass().GetName().c_str(), 
+                                           policyCA.GetClass().GetName().c_str(),
                                            SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
             return nullptr;
             }
@@ -317,7 +327,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalForeignKeyConstraintsPolicy::Create(EC
     if (SUCCESS != policy->ReadExceptionsFromCA(ecdb, policyCA))
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                       policyCA.GetClass().GetName().c_str(), 
+                                       policyCA.GetClass().GetName().c_str(),
                                        SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
         return nullptr;
         }
@@ -332,12 +342,12 @@ std::unique_ptr<SchemaPolicy> NoAdditionalForeignKeyConstraintsPolicy::Create(EC
 BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDbCR ecdb, ECN::IECInstanceCR policyCA)
     {
     m_schemaExceptions.insert(m_optingInSchemaId); // the opting-in schema is always an exception
-   
+
     bvector<bvector<Utf8String>> tokenedExceptions;
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                       policyCA.GetClass().GetName().c_str(), 
+                                       policyCA.GetClass().GetName().c_str(),
                                        SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), m_optingInSchemaId).c_str());
         return ERROR;
         }
@@ -403,6 +413,341 @@ bool NoAdditionalForeignKeyConstraintsPolicy::IsException(ECN::NavigationECPrope
         return true;
 
     return m_propertyExceptions.find(navProp.GetId()) != m_propertyExceptions.end();
+}
+
+//***************************************************************************************
+// SqlTypeDetector
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+const std::vector<std::string> SqlTypeDetector::GetDataTables(DbCR conn) {
+    std::vector<std::string> tables;
+    auto sql = R"sql(
+        SELECT [tbl_name]
+        FROM   [sqlite_master]
+        WHERE   [type] = 'table'
+                AND NOT [tbl_name] LIKE 'ec\_%'     ESCAPE '\'
+                AND NOT [tbl_name] LIKE 'dgn\_%'    ESCAPE '\'
+                AND NOT [tbl_name] LIKE 'be\_%'     ESCAPE '\'
+                AND NOT [tbl_name] LIKE 'sqlite\_%' ESCAPE '\')sql";
+    auto stmt = conn.GetCachedStatement(sql);
+    while (stmt->Step() == BE_SQLITE_ROW) {
+        tables.push_back(stmt->GetValueText(0));
     }
+    std::sort(tables.begin(), tables.end());
+    return tables;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+const std::vector<std::string> SqlTypeDetector::GetSystemTables(DbCR conn) {
+    std::vector<std::string> tables;
+    auto sql = R"sql(
+        SELECT tbl_name
+        FROM   [sqlite_master]
+        WHERE  [type] = 'table'
+                AND     [tbl_name] LIKE 'ec\_%' ESCAPE '\')sql";
+    auto stmt = conn.GetCachedStatement(sql);
+    while (stmt->Step() == BE_SQLITE_ROW) {
+        tables.push_back(stmt->GetValueText(0));
+    }
+    std::sort(tables.begin(), tables.end());
+    return tables;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::string SqlTypeDetector::Join(std::vector<std::string> const& v, const std::string sep) {
+    if (v.empty()) {
+        return "";
+    }
+    std::string init = v.front();
+    return std::accumulate(v.begin() + 1, v.end(), init,
+                           [&](std::string& s, const std::string& piece) -> decltype(auto) {
+                               return s.append(sep).append(piece);
+                           });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void SqlTypeDetector::Validate(RE2 const& re) {
+    if (!re.ok()) {
+        LOG.errorv("REGEX: %s\n", re.pattern().c_str());
+        LOG.errorv("ERROR: %s\n", re.error().c_str());
+    }
+    BeAssert(re.ok());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void SqlTypeDetector::SetupRegex(DbCR conn, bool useDataCRUD) {
+    RE2::Options opts;
+    opts.set_never_capture(true);
+    opts.set_case_sensitive(false);
+    opts.set_one_line(false);
+    opts.set_log_errors(true);
+
+    m_alterTableRegEx = std::make_unique<RE2>(
+        R"(^\s*ALTER\s+TABLE\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_dropTableRegEx = std::make_unique<RE2>(
+        R"(^\s*DROP\s+TABLE\s+(IF\s+EXISTS)?\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_dropIndexRegEx = std::make_unique<RE2>(
+        R"(^\s*DROP\s+INDEX\s+(IF\s+EXISTS)?\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_createTableRegEx = std::make_unique<RE2>(
+        R"(^\s*CREATE\s+((TEMP|TEMPORARY)\s*)?TABLE\s+(IF\s+NOT\s+EXISTS)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_createIndexRegEx = std::make_unique<RE2>(
+        R"(^\s*CREATE\s+((UNIQUE)\s*)?INDEX\s+(IF\s+NOT\s+EXISTS)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_createViewRegEx = std::make_unique<RE2>(
+        R"(^\s*CREATE\s+((TEMP|TEMPORARY)\s*)?VIEW\s+(IF\s+NOT\s+EXISTS)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_pragmaRegEx = std::make_unique<RE2>(
+        R"(^\s*PRAGMA\s+(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_insertRegEx = std::make_unique<RE2>(
+        R"(^\s*INSERT\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_deleteRegEx = std::make_unique<RE2>(
+        R"(^\s*DELETE\s+(FROM)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+    m_updateRegEx = std::make_unique<RE2>(
+        R"(^\s*UPDATE\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))", opts);
+
+    const auto dataTables = Join(GetDataTables(conn), "|");
+    m_dataInsertRegEx = std::make_unique<RE2>(
+        SqlPrintfString(R"(^\s*INSERT\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", dataTables.c_str()).GetUtf8CP(), opts);
+    m_dataDeleteRegEx = std::make_unique<RE2>(
+        SqlPrintfString(R"(^\s*DELETE\s+(FROM)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", dataTables.c_str()).GetUtf8CP(), opts);
+    m_dataUpdateRegEx = std::make_unique<RE2>(
+        SqlPrintfString(R"(^\s*UPDATE\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", dataTables.c_str()).GetUtf8CP(), opts);
+
+    const auto sysTables = Join(GetSystemTables(conn), "|");
+    m_sysInsertRegEx = std::make_unique<RE2>(
+        SqlPrintfString(R"(^\s*INSERT\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", sysTables.c_str()).GetUtf8CP(), opts);
+    m_sysDeleteRegEx = std::make_unique<RE2>(
+        SqlPrintfString(R"(^\s*DELETE\s+(FROM)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", sysTables.c_str()).GetUtf8CP(), opts);
+    m_sysUpdateRegEx = std::make_unique<RE2>(
+        SqlPrintfString(R"(^\s*UPDATE\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", sysTables.c_str()).GetUtf8CP(), opts);
+
+    Validate(*m_alterTableRegEx);
+    Validate(*m_alterTableRegEx);
+    Validate(*m_createIndexRegEx);
+    Validate(*m_createTableRegEx);
+    Validate(*m_createViewRegEx);
+    Validate(*m_dataDeleteRegEx);
+    Validate(*m_dataInsertRegEx);
+    Validate(*m_dataUpdateRegEx);
+    Validate(*m_deleteRegEx);
+    Validate(*m_dropIndexRegEx);
+    Validate(*m_dropTableRegEx);
+    Validate(*m_insertRegEx);
+    Validate(*m_pragmaRegEx);
+    Validate(*m_sysDeleteRegEx);
+    Validate(*m_sysInsertRegEx);
+    Validate(*m_sysUpdateRegEx);
+    Validate(*m_updateRegEx);
+}
+
+//***************************************************************************************
+// DataChangeSqlListener
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult DataChangeSqlListener::Start(bool emptyCaptureBuffer) const {
+    if (m_cancelCb != nullptr) {
+        return BE_SQLITE_OK;
+    }
+    if (emptyCaptureBuffer) {
+        m_dataChangeSql.clear();
+        m_unknownSql.clear();
+    }
+    m_cancelCb = m_conn.GetTraceStmtEvent().AddListener(
+        [&](TraceContext const& ctx, Utf8CP sql) {
+            //! ignore readonly statement
+            const auto isStmtReadonly = ctx.IsReadonly();
+            if (isStmtReadonly) {
+                return;
+            }
+            if (m_sqlDetector.IsDdl(sql) || m_sqlDetector.IsPragma(sql)) {
+                return;
+            }
+            if (m_sqlDetector.IsSysDml(sql)) {
+                return;
+            }
+            if (m_sqlDetector.IsDataDml(sql)) {
+                m_dataChangeSql.push_back(ctx.GetExpandedSql());
+                return;
+            }
+            m_unknownSql.push_back(ctx.GetExpandedSql());
+        });
+    m_conn.ConfigTraceEvents(DbTrace::Stmt, true);
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void DataChangeSqlListener::Stop() const {
+    if (m_cancelCb == nullptr) {
+        return;
+    }
+    m_cancelCb();
+    m_cancelCb = nullptr;
+    if (m_dataChangeSql.empty() && m_unknownSql.empty()) {
+        return;
+    }
+    for (auto& sql : m_dataChangeSql) {
+        LOG.warningv("DATA CHANGE> %s\n", sql.c_str());
+    }
+    for (auto& sql : m_unknownSql) {
+        LOG.warningv("UNKNOWN CHANGE> %s\n", sql.c_str());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DataChangeSqlListener::DataChangeSqlListener(ECDbCR conn)
+    : m_conn(conn), m_sqlDetector(conn, true) {
+    Start();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DataChangeSqlListener::~DataChangeSqlListener() {
+    Stop();
+}
+
+//***************************************************************************************
+// SqlTransformStep
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void TransformData::Append(Utf8StringCR description, Utf8String sql) {
+    m_transforms.emplace_back(description, sql);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void TransformData::ForEach(std::function<bool(Task const&)> cb) {
+    for(auto& task : m_transforms) {
+        if (!cb(task)) {
+            return;
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult TransformData::Execute(ECDbCR conn) const{
+    for(auto& transform : m_transforms) {
+        if (transform.IsExecuted()) {
+            BeAssert(false);
+            return BE_SQLITE_ERROR;
+        }
+        auto rc = transform.Execute(conn);
+        if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool TransformData::Validate(ECDbCR conn)  const{
+    for(auto& transform : m_transforms) {
+        if (!transform.Validate(conn)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TransformData::Task& TransformData::Task::operator = (TransformData::Task&& rhs) {
+    if (this != &rhs) {
+        m_sql = std::move(rhs.m_sql);
+        m_executed = std::move(rhs.m_executed);
+        m_description = std::move(rhs.m_description);
+    }
+    return *this;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TransformData::Task& TransformData::Task::operator = (TransformData::Task& rhs) {
+    if (this != &rhs) {
+        m_sql = rhs.m_sql;
+        m_executed = rhs.m_executed;
+        m_description = rhs.m_description;
+    }
+    return *this;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult TransformData::Task::Execute(ECDbCR conn) const {
+    LOG.infov("Executing data transform step: %s", m_description.c_str());
+    auto rc = conn.TryExecuteSql(m_sql.c_str());
+    m_executed = true;
+    if (rc != BE_SQLITE_OK) {
+        Utf8String msg = SqlPrintfString("[TransformData] Failed: %s - %s: %s",
+                                        m_description.c_str(), m_sql.c_str(), BeSQLiteLib::GetLogError(rc).c_str())
+                            .GetUtf8CP();
+        conn.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, msg.c_str());
+        LOG.error(msg.c_str());
+        BeAssert(false && "transform query failed");
+        return rc;
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool TransformData::Task::Validate(ECDbCR conn) const {
+    Statement stmt;
+    const auto rc = stmt.Prepare(conn, m_sql.c_str());
+    if (rc != BE_SQLITE_OK) {
+        conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "[TransformData] Failed: %s. SQLite Error: %s", m_description.c_str(), BeSQLiteLib::GetLogError(rc).c_str());
+        return false;
+    }
+    if (stmt.GetParameterCount() > 0) {
+        conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "[TransformData] Failed: %s. Transform sql should not be parameterized.", m_description.c_str());
+        return false;
+    }
+    if (stmt.IsReadonly()) {
+        conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "[TransformData] Failed: %s. Transform sql must be a DML statement.", m_description.c_str());
+        return false;
+    }
+    return true;
+}
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

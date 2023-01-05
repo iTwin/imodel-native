@@ -67,7 +67,7 @@ void SqlFunctionsTest::SetUpTestCase()
     auto db = DgnPlatformSeedManager::OpenSeedDbCopy(seedFileInfo.fileName, L"SqlFunctionsTest/seed.bim");
     ASSERT_TRUE(db.IsValid());
 
-    DgnSqlTestDomain::GetDomain().ImportSchema(*db);
+    DgnSqlTestDomain::GetDomain().ImportSchema(*db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
 
     CodeSpecPtr codeSpec = CodeSpec::Create(*db, "SqlFunctionsTest");
     if (codeSpec.IsValid())

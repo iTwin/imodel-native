@@ -191,7 +191,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheCle
 
     private:
         SchemaUpgradeOptions m_schemaUpgradeOptions;
-
     public:
         //! Constructor
         //! @param[in] openMode The mode for opening the database
@@ -239,9 +238,9 @@ protected:
     mutable std::unordered_map<uint64_t, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_cacheECInstanceInserter;
 
     DGNPLATFORM_EXPORT BeSQLite::ProfileState _CheckProfileVersion() const override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _UpgradeProfile() override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeProfileUpgrade() override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterProfileUpgrade() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _UpgradeProfile(BeSQLite::Db::OpenParams const&) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeProfileUpgrade(BeSQLite::Db::OpenParams const&) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterProfileUpgrade(BeSQLite::Db::OpenParams const&) override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
@@ -364,6 +363,7 @@ public:
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported.
+    //! @param[in] allowDataTransformDuringSchemaUpdate Allow schema import to upgrade instances which is disallowed by default.
     //! @remarks
     //! <ul>
     //! <li> ONLY to be used for cases where the schemas are NOT paired with a domain.
@@ -374,7 +374,7 @@ public:
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool allowDataTransformDuringSchemaUpdate = false);
 
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.

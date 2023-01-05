@@ -79,7 +79,7 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
         fillData(m_ecdb, "ts.b2m", mt, 2 * million);
         fillData(m_ecdb, "ts.c2m", mt, 2 * million);
         fillData(m_ecdb, "ts.d2m", mt, 2 * million);
-        
+
         BeFileName out(m_ecdb.GetDbFileName(), true);
         m_ecdb.CloseDb();
         BeFileName::BeCopyFile(out, existingFile);
@@ -132,7 +132,7 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
         ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
         for (Utf8CP task_sql : tasks)
             taskFunc(&ecdb, nullptr, task_sql);
- 
+
         timer.Stop();
         printf("SingleConnection/SingleThread : [task_count=%zd] [hardware_concurrency=%d] [time: %.4f sec]\n", tasks.size(), std::thread::hardware_concurrency(), timer.GetElapsedSeconds());
         };
@@ -145,7 +145,7 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
         std::vector<std::thread> threads;
         for (Utf8CP task_sql : tasks)
             threads.push_back( std::thread(taskFunc, &ecdb, nullptr, task_sql));
- 
+
         for (std::thread& thread : threads)
             thread.join();
 
@@ -227,7 +227,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
         union
         select f2, 2000 val from ts.classB
         union
-        select f3, 1000 val from ts.classC 
+        select f3, 1000 val from ts.classC
     )"));
 
     stmt.Finalize();
@@ -236,34 +236,17 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     //case-0-b this should fail wih a usefull error message
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, R"(
-        select f1, 3000 val from ts.classA  
+        select f1, 3000 val from ts.classA
         union
         select f2, 2000 val from ts.classB  order by f2
         union
-        select f3, 1000 val from ts.classC 
-    )"));
-
-    stmt.Finalize();
-    
-    //------------------------------------------------------------------------------------------------------------------
-    //case-1 this is successfull 
-    //------------------------------------------------------------------------------------------------------------------
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
-        select f1, 3000 val from ts.classA  
-        union
-        select f2, 2000 val from ts.classB
-        union
         select f3, 1000 val from ts.classC
-        order by f1 
     )"));
 
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
     stmt.Finalize();
 
     //------------------------------------------------------------------------------------------------------------------
-    //case-2 this is successfull 
+    //case-1 this is successfull
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
         select f1, 3000 val from ts.classA
@@ -271,7 +254,24 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
         select f2, 2000 val from ts.classB
         union
         select f3, 1000 val from ts.classC
-        order by f1 desc 
+        order by f1
+    )"));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-2 this is successfull
+    //------------------------------------------------------------------------------------------------------------------
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+        select f1, 3000 val from ts.classA
+        union
+        select f2, 2000 val from ts.classB
+        union
+        select f3, 1000 val from ts.classC
+        order by f1 desc
     )"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
@@ -280,7 +280,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     stmt.Finalize();
 
     //------------------------------------------------------------------------------------------------------------------
-    //case-3 
+    //case-3
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
         select f1, 3000 val from ts.classA
@@ -314,7 +314,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     stmt.Finalize();
 
     //------------------------------------------------------------------------------------------------------------------
-    //case-5 
+    //case-5
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
         select f1, 3000 val from ts.classA
@@ -330,7 +330,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     stmt.Finalize();
 
     //------------------------------------------------------------------------------------------------------------------
-    //case-6 
+    //case-6
     //------------------------------------------------------------------------------------------------------------------
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
@@ -347,7 +347,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     stmt.Finalize();
 
     //------------------------------------------------------------------------------------------------------------------
-    //case-7 
+    //case-7
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
         select f1 boo, 3000 from ts.classA
@@ -363,7 +363,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     stmt.Finalize();
 
     //------------------------------------------------------------------------------------------------------------------
-    //case-8 
+    //case-8
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
         select f1 boo, 3000 from ts.classA
@@ -378,7 +378,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
     stmt.Finalize();
-    
+
     //------------------------------------------------------------------------------------------------------------------
     //case-9 This need to show better error as orderby in union must match columna and it cannot have computed expression
     //------------------------------------------------------------------------------------------------------------------
@@ -392,7 +392,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     )"));
 
     stmt.Finalize();
-    
+
     //------------------------------------------------------------------------------------------------------------------
     //case-10 This need to show better error as orderby in union must match columna and it cannot have computed expression
     //------------------------------------------------------------------------------------------------------------------
@@ -406,9 +406,9 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     )"));
 
     stmt.Finalize();
-    
+
     //------------------------------------------------------------------------------------------------------------------
-    //case-11 
+    //case-11
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, R"(
         select p1 boo, 3000 from ts.classA
@@ -421,7 +421,7 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
     stmt.Finalize();
 
     //------------------------------------------------------------------------------------------------------------------
-    //case-12 
+    //case-12
     //------------------------------------------------------------------------------------------------------------------
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
         select f1, p1, 3000 from ts.classA
@@ -859,7 +859,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
                         </Target>
                      </ECRelationshipClass>
                 </ECSchema>)xml")));
-    
+
     ECInstanceId instanceParentId(UINT64_C(1));
     ECInstanceId instanceGrandchildAId(UINT64_C(2));
     ECInstanceId instanceGrandchildBId(UINT64_C(3));
@@ -867,12 +867,12 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)", 
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)",
                                                                              instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }   
+        }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildA(ECInstanceId, ChildProp, GrandchildAProp, Parent.Id) VALUES (%s, 0x20, 0x200, %s)",
@@ -881,7 +881,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildB(ECInstanceId, ChildProp, GrandchildBProp, Parent.Id) VALUES (%s, 0x30, 0x300, %s)",
@@ -890,7 +890,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildC(ECInstanceId, ChildProp, GrandchildCProp) VALUES (%s, 0x40, 0x400)",
@@ -898,7 +898,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    
+
         {
         const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
@@ -920,7 +920,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    
+
         {
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
         const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
@@ -950,7 +950,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, IncrementallyMapRelationship) 
+TEST_F(DbMappingTestFixture, IncrementallyMapRelationship)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -1038,7 +1038,7 @@ TEST_F(DbMappingTestFixture, IncrementallyMapRelationship)
         "      <BaseClass>ts:ITargetEnd</BaseClass>"
         "  </ECEntityClass>"
         "</ECSchema>")));
-    
+
     Table tri_TargetImpl0 = GetHelper().GetMappedTable("tri_TargetImpl0");
     ASSERT_TRUE(tri_TargetImpl0.Exists()) << "Mapped table tri_TargetImpl0";
     ASSERT_EQ(Table::Type::Joined, tri_TargetImpl0.GetType()) << "Mapped table tri_TargetImpl0";
@@ -1213,7 +1213,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCasting)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
-        
+
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Child WHERE D='10'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
@@ -1435,38 +1435,38 @@ TEST_F(DbMappingTestFixture, Simple_MixIn)
                        <ECProperty propertyName='P2' typeName='long' />
                        <ECProperty propertyName='P3' typeName='long' />
                    </ECEntityClass>
-                   <ECEntityClass typeName='ChildA'> 
+                   <ECEntityClass typeName='ChildA'>
                        <BaseClass>BaseClass</BaseClass>
                        <BaseClass>MyMixin</BaseClass>
                        <ECProperty propertyName='A1' typeName='long' />
                        <ECProperty propertyName='A2' typeName='long' />
                        <ECProperty propertyName='A3' typeName='long' />
                    </ECEntityClass>
-                   <ECEntityClass typeName='ChildB'> 
+                   <ECEntityClass typeName='ChildB'>
                        <BaseClass>BaseClass</BaseClass>
                        <ECProperty propertyName='B1' typeName='long' />
                        <ECProperty propertyName='B2' typeName='long' />
                        <ECProperty propertyName='B3' typeName='long' />
                    </ECEntityClass>
-                   <ECEntityClass typeName='ChildC'> 
+                   <ECEntityClass typeName='ChildC'>
                        <BaseClass>ChildB</BaseClass>
                        <ECProperty propertyName='C1' typeName='long' />
                        <ECProperty propertyName='C2' typeName='long' />
                        <ECProperty propertyName='C3' typeName='long' />
                    </ECEntityClass>
-                   <ECEntityClass typeName='ChildD'> 
+                   <ECEntityClass typeName='ChildD'>
                        <BaseClass>ChildB</BaseClass>
                        <ECProperty propertyName='D1' typeName='long' />
                        <ECProperty propertyName='D2' typeName='long' />
                        <ECProperty propertyName='D3' typeName='long' />
                    </ECEntityClass>
-                   <ECEntityClass typeName='ChildE'> 
+                   <ECEntityClass typeName='ChildE'>
                        <BaseClass>ChildD</BaseClass>
                        <ECProperty propertyName='E1' typeName='long' />
                        <ECProperty propertyName='E2' typeName='long' />
                        <ECProperty propertyName='E3' typeName='long' />
                    </ECEntityClass>
-                   <ECEntityClass typeName='ChildF'> 
+                   <ECEntityClass typeName='ChildF'>
                        <BaseClass>ChildD</BaseClass>
                        <BaseClass>MyMixin</BaseClass>
                        <ECProperty propertyName='F1' typeName='long' />
@@ -1506,7 +1506,7 @@ TEST_F(DbMappingTestFixture, MixinInheritance)
                        </ECCustomAttributes>
                        <ECProperty propertyName="B1" typeName="long" />
                    </ECEntityClass>
-                   <ECEntityClass typeName="ChildA"> 
+                   <ECEntityClass typeName="ChildA">
                        <BaseClass>BaseClass</BaseClass>
                        <ECProperty propertyName="A1" typeName="int" />
                        <ECProperty propertyName="A2" typeName="double" />
@@ -1639,7 +1639,7 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)
     ASSERT_EQ(ExpectedColumns({{"ts_BaseClass_Overflow", "os1"}, {"ts_BaseClass_Overflow", "os2"}, {"ts_BaseClass_Overflow", "os3"},
                                 {"ts_BaseClass_Overflow", "os4"}, {"ts_BaseClass_Overflow", "os5"}, {"ts_BaseClass_Overflow", "os6"},
                                 {"ts_BaseClass_Overflow", "os7"}, {"ts_BaseClass_Overflow", "os8"}, {"ts_BaseClass_Overflow", "os9"},
-                                {"ts_BaseClass_Overflow", "os10"}, {"ts_BaseClass_Overflow", "os11"}, {"ts_BaseClass_Overflow", "os12"}}), 
+                                {"ts_BaseClass_Overflow", "os10"}, {"ts_BaseClass_Overflow", "os11"}, {"ts_BaseClass_Overflow", "os12"}}),
                         GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "ST")));
 
     ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os8"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ST.Theta")));
@@ -2530,7 +2530,7 @@ TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
     </ECSchema>)xml")));
 
     ASSERT_FALSE(GetHelper().TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
-       
+
     ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable","Id",Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId")));
 
     ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "ECClassId")));
@@ -4468,23 +4468,23 @@ TEST_F(DbMappingTestFixture, OverflowIssue)
                     <ECProperty propertyName="p6" typeName="long"/>
                     <ECProperty propertyName="p7" typeName="long"/>
                 </ECEntityClass>
-            </ECSchema>)xml")));
+            </ECSchema>)xml"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     m_ecdb.SaveChanges();
     ReopenECDb();
     {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO DomainSchema.SmallElement(code,z,y,z,p1,p2) VALUES (1,2,3,4,5,6)"));
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_FALSE(nativeSql.Contains("ts_GeometricElement3d_Overflow"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO DomainSchema.LargeElement(code,z,y,z,p1,p2,p3,p4,p5,p6,p7) VALUES (1,2,3,4,5,6,7,8,9,10,11)"));
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_TRUE(nativeSql.Contains("ts_GeometricElement3d_Overflow"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     m_ecdb.SaveChanges();
 
@@ -5109,7 +5109,6 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
         "    </ECEntityClass>"
         "</ECSchema>")));
 
-
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5124,7 +5123,7 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
         "        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
         "        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>")));
+        "</ECSchema>"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
@@ -5935,7 +5934,7 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
         "        <BaseClass>ts:Sub3</BaseClass>"
         "        <ECProperty propertyName='Sub31Prop1' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>")));
+        "</ECSchema>"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     int geometricElement2dOverflowExpectedColCount = 3;
     int geometricElement3dOverflowExpectedColCount = 3;
@@ -5958,7 +5957,7 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
         "        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
         "        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>")));
+        "</ECSchema>"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     geometricElement3dOverflowExpectedColCount += 1;
 
@@ -6357,7 +6356,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
             ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql() << " link table mapping to existing table";
             stmt.Finalize();
 
-            //cannot modify classes with 'existing table' 
+            //cannot modify classes with 'existing table'
             ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO t.FooHasGoo (SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)")) << " link table mapping to existing table";
             stmt.Finalize();
 
@@ -6591,7 +6590,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
     ASSERT_EQ(0, sqlstmt.GetValueInt(0));
     sqlstmt.Finalize();
 
-    //NotNull constraint on FK Relationship for SharedTable CA 
+    //NotNull constraint on FK Relationship for SharedTable CA
     ASSERT_EQ(SUCCESS, SetupECDb("NotNull.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -9049,7 +9048,7 @@ TEST_F(DbMappingTestFixture, OverflowingStructColumns)
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Code' typeName='string' />"      //Code  
+        "        <ECProperty propertyName='Code' typeName='string' />"      //Code
         "    </ECEntityClass>"
         "    <ECStructClass typeName='Matrix4x4' modifier='None'>"
         "        <ECProperty propertyName='M11' typeName='double'/>"        //sc1   [SharedColumn]
@@ -9304,7 +9303,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                                 {"ts_GeometricElement","js4"},
                                 {"ts_GeometricElement","js5"},
                                 {"ts_GeometricElement","js6"},
-                                {"ts_GeometricElement","js7"}}), 
+                                {"ts_GeometricElement","js7"}}),
               GetHelper().GetPropertyMapColumns(AccessString("ts", "GeometricElement", "Transform")));
 
     ASSERT_FALSE(GetHelper().TableExists("ts_GeometricElement_Overflow"));
@@ -9312,7 +9311,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     }
 
     {
-    //Struct that doesn't fit in joined table comes before primitive prop 
+    //Struct that doesn't fit in joined table comes before primitive prop
     //->prim prop expected in joined table
     //->struct expected in overflow table
     ASSERT_EQ(SUCCESS, SetupECDb("OverflowAndJoinedTableCombinations11.ecdb", SchemaItem(
@@ -9362,7 +9361,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     }
 
     {
-    //Struct that doesn't fit in joined table comes before primitive prop 
+    //Struct that doesn't fit in joined table comes before primitive prop
     //->prim prop expected in joined table
     //->struct expected in overflow table
     ASSERT_EQ(SUCCESS, SetupECDb("OverflowAndJoinedTableCombinations11.ecdb", SchemaItem(
@@ -10174,7 +10173,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Cost"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Room"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "AssetRecordKey"));
-    //Local properties of Furniture   
+    //Local properties of Furniture
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Condition"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Material"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Weight"));
@@ -10183,7 +10182,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Type"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Color"));
 
-    // Properties of Desk which is derived from Furniture    
+    // Properties of Desk which is derived from Furniture
     EXPECT_TRUE(db.ColumnExists(tblAsset, "DeskFootPrint"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "NumberOfCabinets"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Size"));
@@ -10323,7 +10322,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "BuildingCode"));
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "OfficeCode"));
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "Area"));
-    //array    
+    //array
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "OccupiedBy"));
     //relation
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "FloorId"));
@@ -10443,7 +10442,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
             </ECEntityClass>
             <ECEntityClass typeName="PhysicalElement" modifier="Abstract"  >
                 <BaseClass>SpatialElement</BaseClass>
-            </ECEntityClass>    
+            </ECEntityClass>
                 <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
                 <BaseClass>GeometricElement3d</BaseClass>
             </ECEntityClass>
@@ -10462,7 +10461,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 <ECProperty propertyName="Roll" typeName="double" />
                 <ECProperty propertyName="BBoxLow" typeName="point3d"  />
                 <ECProperty propertyName="BBoxHigh" typeName="point3d"  />
-            </ECEntityClass>    
+            </ECEntityClass>
             <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
                 <BaseClass>Element</BaseClass>
                 <ECCustomAttributes>
@@ -10520,7 +10519,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
             <ECEntityClass typeName="LinearlyLocatedFurnitureElement" modifier="Abstract" >
                 <BaseClass>FurnitureElement</BaseClass>
                 <BaseClass>ILinearlyLocatedElement</BaseClass>
-            </ECEntityClass>    
+            </ECEntityClass>
             <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
                 <BaseClass>DefinitionElement</BaseClass>
             </ECEntityClass>
@@ -10594,7 +10593,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
             </ECEntityClass>
             <ECEntityClass typeName="PhysicalElement" modifier="Abstract"  >
                 <BaseClass>SpatialElement</BaseClass>
-            </ECEntityClass>    
+            </ECEntityClass>
                 <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
                 <BaseClass>GeometricElement3d</BaseClass>
             </ECEntityClass>
@@ -10613,7 +10612,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <ECProperty propertyName="Roll" typeName="double" />
                 <ECProperty propertyName="BBoxLow" typeName="point3d"  />
                 <ECProperty propertyName="BBoxHigh" typeName="point3d"  />
-            </ECEntityClass>    
+            </ECEntityClass>
             <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
                 <BaseClass>Element</BaseClass>
                 <ECCustomAttributes>
@@ -10668,7 +10667,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <BaseClass>PhysicalElement</BaseClass>
                 <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
             </ECEntityClass>
-  
+
             <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
                 <BaseClass>DefinitionElement</BaseClass>
             </ECEntityClass>
@@ -10881,7 +10880,7 @@ TEST_F(DbMappingTestFixture, OverflowTableJoinedTest)
 TEST_F(DbMappingTestFixture, SchemaImportWithDoNotFailSchemaValidationForLegacyIssuesFlag)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaImportWithDoNotFailSchemaValidationForLegacyIssuesFlag.ecdb"));
-    
+
     ECSchemaReadContextPtr ctx = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(ctx, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="LegacySchema" alias="legacy" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -10988,7 +10987,7 @@ TEST_F(DbMappingTestFixture, LinkTable_DefaultBehaviour)
     ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e2));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e1, e2)); // Duplicate Relationships
     ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e3));
-    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side, We do not enforce this anymore. 
+    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side, We do not enforce this anymore.
     }
 
 //---------------------------------------------------------------------------------------
@@ -11075,7 +11074,7 @@ TEST_F(DbMappingTestFixture, LinkTable_DefaultBehaviour_WithCustomAttribute)
     ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e2));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e1, e2)); // Duplicate Relationships
     ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e3));
-    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side, We do not enforce this anymore. 
+    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side, We do not enforce this anymore.
     }
 
 //---------------------------------------------------------------------------------------

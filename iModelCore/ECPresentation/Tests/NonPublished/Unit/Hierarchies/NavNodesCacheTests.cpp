@@ -13,7 +13,7 @@ void NodesCacheTests::SetUp()
     {
     ECPresentationTest::SetUp();
     if (!s_project->GetECDb().IsDbOpen())
-        s_project->Open("NodesCacheTests", Db::OpenParams(Db::OpenMode::ReadWrite));
+        s_project->Open("NodesCacheTests", ECDb::OpenParams(Db::OpenMode::ReadWrite));
 
     ReCreateNodesCache();
     }
@@ -62,7 +62,7 @@ void NodesCacheTests::ReCreateProject()
         }
 
     s_project = new ECDbTestProject();
-    s_project->Open("NodesCacheTests", Db::OpenParams(Db::OpenMode::ReadWrite));
+    s_project->Open("NodesCacheTests", ECDb::OpenParams(Db::OpenMode::ReadWrite));
     m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
     }
 

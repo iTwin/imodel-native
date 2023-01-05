@@ -519,10 +519,9 @@ enum DbResult
     BE_SQLITE_ERROR_SchemaUpgradeRequired   = (BE_SQLITE_IOERR | 15 << 24), //!< The schemas found in the database need to be upgraded.
     BE_SQLITE_ERROR_SchemaTooNew            = (BE_SQLITE_IOERR | 16 << 24), //!< The schemas found in the database are too new, and the application needs to be upgraded.
     BE_SQLITE_ERROR_SchemaTooOld            = (BE_SQLITE_IOERR | 17 << 24), //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
-    BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 18 << 24), //!< Error acquiring a lock on the schemas before upgrade.
+    BE_SQLITE_ERROR_DataTransformRequired   = (BE_SQLITE_IOERR | 18 << 24), //!< Schema update need to update data.
     BE_SQLITE_ERROR_SchemaUpgradeFailed     = (BE_SQLITE_IOERR | 19 << 24), //!< Error upgrading the schemas in the database.
     BE_SQLITE_ERROR_SchemaImportFailed      = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing the schemas into the database.
-    BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | 21 << 24), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended = (BE_SQLITE_IOERR | 22 << 24), //!< Recommended that the schemas found in the database be upgraded
     BE_SQLITE_ERROR_NOTOPEN                 = (BE_SQLITE_IOERR | (23 << 24)),
 
@@ -2715,14 +2714,14 @@ protected:
     //!
     //! @return Profile state
     BE_SQLITE_EXPORT virtual ProfileState _CheckProfileVersion() const;
-    virtual DbResult _OnBeforeProfileUpgrade() { return BE_SQLITE_OK; }
-    BE_SQLITE_EXPORT virtual DbResult _UpgradeProfile();
-    virtual DbResult _OnAfterProfileUpgrade() { return BE_SQLITE_OK; }
+    virtual DbResult _OnBeforeProfileUpgrade(OpenParams const& params) { return BE_SQLITE_OK; }
+    BE_SQLITE_EXPORT virtual DbResult _UpgradeProfile(OpenParams const& params);
+    virtual DbResult _OnAfterProfileUpgrade(OpenParams const& params) { return BE_SQLITE_OK; }
     virtual DbResult _OnDbAttached(Utf8CP filename, Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual DbResult _OnDbDetached(Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual int _OnAddFunction(DbFunction& func) const {return 0;}
     virtual void _OnRemoveFunction(DbFunction& func) const {}
-    BE_SQLITE_EXPORT DbResult DoProfileUpgrade();
+    BE_SQLITE_EXPORT DbResult DoProfileUpgrade(OpenParams const& params);
 
     friend struct Statement;
     friend struct Savepoint;

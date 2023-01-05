@@ -776,7 +776,7 @@ TEST_F(DgnModelTests, ModelModelsElementSubClass)
     if (true)
         {
         SetupSeedProject();
-        ASSERT_EQ(DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db), SchemaStatus::Success);
+        ASSERT_EQ(DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade), SchemaStatus::Success);
 
         if (true)
             {

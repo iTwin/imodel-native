@@ -32,7 +32,7 @@ BentleyStatus DgnDomains::UnRegisterDomain(const DgnDomain& domain) {
     // Validate supplied domain
     if (!domain.ValidateSchemaPathname())
         return ERROR;
-        
+
     // Remove domain from the domains list
     auto& domains = T_HOST.RegisteredDomains();
     domains.erase(std::remove_if(domains.begin(), domains.end(), [&domain](const DgnDomain* currentDomain) {
@@ -43,7 +43,7 @@ BentleyStatus DgnDomains::UnRegisterDomain(const DgnDomain& domain) {
     for (const auto currentDomain : domains)
         if (domain.m_domainName.EqualsI(currentDomain->GetDomainName()))
             return ERROR;
-            
+
     return SUCCESS;
 }
 
@@ -325,7 +325,7 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb)
+SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb, SchemaManager::SchemaImportOptions options)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
     schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
@@ -347,13 +347,13 @@ SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb)
     bvector<DgnDomainP> domainsToImport;
     domainsToImport.push_back(this);
 
-    return dgndb.Domains().DoImportSchemas(schemasToImport, domainsToImport);
+    return dgndb.Domains().DoImportSchemas(schemasToImport, domainsToImport, options);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaStatus DgnDomains::ImportSchemas()
+SchemaStatus DgnDomains::ImportSchemas(SchemaManager::SchemaImportOptions options)
     {
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
@@ -362,20 +362,20 @@ SchemaStatus DgnDomains::ImportSchemas()
     if (status != SchemaStatus::SchemaUpgradeRequired && status != SchemaStatus::SchemaUpgradeRecommended)
         return status;
 
-    return DoImportSchemas(schemasToImport, domainsToImport);
+    return DoImportSchemas(schemasToImport, domainsToImport, options);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport)
+SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions)
     {
     BeAssert(!schemasToImport.empty());
     bvector<ECSchemaCP> importSchemas;
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    SchemaStatus status = DoImportSchemas(importSchemas, SchemaManager::SchemaImportOptions::None);
+    SchemaStatus status = DoImportSchemas(importSchemas, importOptions);
     if (SchemaStatus::Success != status)
         return status;
 
@@ -390,7 +390,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport)
+SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions)
     {
     BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && !schemasToImport.empty());
 
@@ -401,7 +401,6 @@ SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImp
     if (m_dgndb.AreTxnsRequired())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
-    SchemaManager::SchemaImportOptions importOptions = SchemaManager::SchemaImportOptions::None;
     SchemaStatus status = DoImportSchemas(importSchemas, importOptions);
     if (SchemaStatus::Success != status)
         return status;
@@ -582,7 +581,7 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
             status = SchemaStatus::SchemaUpgradeRecommended;
         else
             status = SchemaStatus::SchemaUpgradeRequired;
-        
+
         if (schemasToImport)
             schemasToImport->push_back(schema);
         }
@@ -733,7 +732,8 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
 
     dgndb.Txns().SetHasEcSchemaChanges(true);
 
-    if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken())) {
+    const auto rc =  dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken());
+    if (!rc.IsOk()) {
         if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) {
             LOG.errorv("Failed to import legacy V8 schemas");
         } else {
@@ -741,6 +741,8 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
             UNUSED_VARIABLE(result);
             BeAssert(result == BE_SQLITE_OK);
         }
+        if (rc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED)
+            return SchemaStatus::DataTransformRequired;
 
         return SchemaStatus::SchemaImportFailed;
     }

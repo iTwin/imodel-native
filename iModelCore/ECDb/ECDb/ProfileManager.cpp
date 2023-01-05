@@ -41,7 +41,7 @@ DbResult ProfileManager::CreateProfile() const
         return stat;
         }
 
-    stat = ProfileSchemaUpgrader::ImportProfileSchemas(m_ecdb);
+    stat = ProfileSchemaUpgrader::ImportProfileSchemas(m_ecdb, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     if (stat != BE_SQLITE_OK)
         {
         m_ecdb.AbandonChanges();
@@ -70,7 +70,7 @@ ProfileState ProfileManager::CheckProfileVersion() const
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ProfileManager::UpgradeProfile() const
+DbResult ProfileManager::UpgradeProfile(Db::OpenParams const& params) const
     {
     BeAssert(!m_ecdb.IsReadonly());
 
@@ -106,7 +106,10 @@ DbResult ProfileManager::UpgradeProfile() const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(m_ecdb))
+    const auto importOpts =  static_cast<ECDb::OpenParams const&>(params).GetAllowDataTransformDuringSchemaUpdate() ?
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade : SchemaManager::SchemaImportOptions::None;
+
+    if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(m_ecdb, importOpts))
         {
         m_ecdb.AbandonChanges();
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;

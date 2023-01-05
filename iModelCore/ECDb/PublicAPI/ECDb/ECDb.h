@@ -145,6 +145,39 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
     //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
+    {
+        friend struct ECDb;
+    private:
+        bool m_allowDataTransformDuringSchemaUpdate = false;
+    public:
+        //! Constructor
+        //! @param[in] openMode The mode for opening the database
+        //! @param[in] startDefaultTxn Whether to start a default transaction on the database.
+        //! @param[in] retry Supply a BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
+        //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
+        //!                  to the database and do not permit sharing.
+        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, BusyRetry* retry = nullptr) :
+            Db::OpenParams(openMode, startDefaultTxn, retry) {}
+
+
+        //! @param[in] openMode The mode for opening the database
+        //! @param[in] profileUpgradeOptions Options for a profile upgrade. If an upgrade is to be performed, the Db must be opened readwrite.
+        OpenParams(OpenMode openMode, ProfileUpgradeOptions profileUpgradeOptions) :
+            Db::OpenParams(openMode, profileUpgradeOptions) {}
+
+
+        // ! Allow or disallow schema changes that require data transformation or profile upgrade.
+        void SetAllowDataTransformDuringSchemaUpdate(bool allowed) { m_allowDataTransformDuringSchemaUpdate = allowed ; }
+
+        // ! Allow schema changes that require data transform.
+        bool GetAllowDataTransformDuringSchemaUpdate() const { return m_allowDataTransformDuringSchemaUpdate;  }
+
+        virtual ~OpenParams() {}
+    };
+    //=======================================================================================
     //! Compile-time Settings that subclasses can set.
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
@@ -237,7 +270,7 @@ protected:
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT ProfileState _CheckProfileVersion() const override;
-    ECDB_EXPORT DbResult _UpgradeProfile() override;
+    ECDB_EXPORT DbResult _UpgradeProfile(Db::OpenParams const& params) override;
     ECDB_EXPORT DbResult _OnDbAttached(Utf8CP fileName, Utf8CP dbAlias) const override;
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;

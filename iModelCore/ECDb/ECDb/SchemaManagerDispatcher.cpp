@@ -940,13 +940,13 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const
+SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_ecdb, options);
-    const BentleyStatus stat = ImportSchemas(ctx, schemas, token);
+    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token);
     ResetIds(schemas);
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1000,7 +1000,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
+SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
     #ifndef NDEBUG
     /*
@@ -1025,32 +1025,32 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
     if (!GetECDb().GetImpl().GetIdFactory().Reset())
         {
         LOG.error("Failed to import ECSchemas: Failed to create id factory.");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
     if (!policy.IsSupported())
         {
         LOG.error("Failed to import ECSchemas: Caller has not provided a SchemaImportToken.");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     if (m_ecdb.IsReadonly())
         {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. ECDb file is read-only.");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     if (schemas.empty())
         {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
             m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
-            return ERROR;
+            return SchemaImportResult::ERROR;
         }
     }
     // Import into new files is not supported unless it only differs in version sub2. Import into older files is only supported
@@ -1060,116 +1060,156 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         {
         m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this softwares. The file's version, however, is %s.",
                                           ECDb::CurrentECDbProfileVersion().ToString().c_str(), m_ecdb.GetECDbProfileVersion().ToString().c_str());
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     BeMutexHolder lock(m_mutex);
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     bvector<ECSchemaCP> schemasToMap;
-    if (SUCCESS != SchemaWriter::ImportSchemas(schemasToMap, ctx, schemas))
+
+    auto rc = SchemaWriter::ImportSchemas(schemasToMap, ctx, schemas);
+    if (SchemaImportResult::OK != rc)
         {
         LOG.debug("MainSchemaManager::ImportSchemas - failed in SchemaWriter::ImportSchemas");
-        return ERROR;
+        return rc;
         }
 
     if (schemasToMap.empty())
-        return SUCCESS;
+        return SchemaImportResult::OK;
 
     if (SUCCESS != ctx.GetSchemaPoliciesR().ReadPolicies(m_ecdb))
         {
         LOG.debug("MainSchemaManager::ImportSchemas - failed to ReadPolicies");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     if (SUCCESS != ViewGenerator::DropECClassViews(m_ecdb))
         {
         LOG.debug("MainSchemaManager::ImportSchemas - failed to DropECClassViews");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
-    if (SUCCESS != MapSchemas(ctx, schemasToMap))
+    rc = MapSchemas(ctx, schemasToMap);
+    if (!rc.IsOk())
         {
         LOG.debug("MainSchemaManager::ImportSchemas - failed to MapSchemas");
-        return ERROR;
+        return rc;
         }
-    return SUCCESS;
+    return SchemaImportResult::OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
-    {
-	ECDB_PERF_LOG_SCOPE("Schema import> Map schemas");
-    if (schemas.empty())
-        return SUCCESS;
+SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const {
+    if (schemas.empty()) {
+        return  SchemaImportResult::OK;
+    }
 
-
-    if (SUCCESS != ctx.RemapManager().CleanModifiedMappings())
-        {
+    auto failedToMap = [&]() {
         ClearCache();
-        return ERROR;
-        }
+        return  SchemaImportResult::ERROR;
+    };
+
+#ifndef NDEBUG
+    // Record any DML sql against data tables for validation purpose.
+    // No changes should be made to data tables.
+    DataChangeSqlListener dataChangeListener(ctx.GetECDb());
+#endif
+
+    if (SUCCESS != ctx.RemapManager().CleanModifiedMappings()) {
+        return failedToMap();
+    }
+
     m_lightweightCache.Clear();
 
     //necessary so .DerivedClasses() knows all leaf nodes that need mapping, even if they are not inside "schemas"
-    if(SUCCESS != ctx.RemapManager().EnsureInvolvedSchemasAreLoaded(schemas))
-        return ERROR;
-
-    if (SUCCESS != DoMapSchemas(ctx, schemas))
-        return ERROR;
-
-    if (SUCCESS != SaveDbSchema(ctx) || SUCCESS != ctx.RemapManager().RestoreAndProcessCleanedPropertyMaps(ctx))
-        {
-        ClearCache();
-        return ERROR;
-        }
-    if (SUCCESS != CreateOrUpdateRequiredTables())
-        {
-        ClearCache();
-        return ERROR;
-        }
-
-    if (SUCCESS != ctx.GetDataTransfrom().Execute(m_ecdb))
-        {
-        ClearCache();
-        return ERROR;
-        }
-
-    if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
-        {
-        ClearCache();
-        return ERROR;
-        }
-
-    if (SUCCESS != PurgeOrphanTables(ctx))
-        {
-        ClearCache();
-        return ERROR;
-        }
-
-
-    if (SUCCESS != DbMapValidator(ctx).Validate())
-        return ERROR;
-
-
-    if (BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb))
-        return ERROR;
-
-
-    if (SUCCESS != ctx.RemapManager().UpgradeExistingECInstancesWithRemappedProperties())
-        return ERROR;
-
-
-
-    ClearCache();
-    return SUCCESS;
+    if(SUCCESS != ctx.RemapManager().EnsureInvolvedSchemasAreLoaded(schemas)) {
+        return failedToMap();
     }
+
+    if (SUCCESS != DoMapSchemas(ctx, schemas)) {
+        return failedToMap();
+    }
+
+    if (SUCCESS != SaveDbSchema(ctx) || SUCCESS != ctx.RemapManager().RestoreAndProcessCleanedPropertyMaps(ctx)) {
+        return failedToMap();
+    }
+
+    if (SUCCESS != SaveDbSchema(ctx)) {
+        return failedToMap();
+    }
+
+    if (SUCCESS != CreateOrUpdateRequiredTables()) {
+        return failedToMap();
+    }
+
+    if (SUCCESS != CreateOrUpdateIndexesInDb(ctx)) {
+        return failedToMap();;
+    }
+
+    if (SUCCESS != PurgeOrphanTables(ctx)) {
+        return failedToMap();
+    }
+
+    if (SUCCESS != DbMapValidator(ctx).Validate()) {
+        return failedToMap();
+    }
+
+    if (BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, &ctx)){
+        return failedToMap();
+    }
+
+    if (SUCCESS != ctx.RemapManager().UpgradeExistingECInstancesWithRemappedProperties(ctx)) {
+        return failedToMap();
+    }
+
+#ifndef NDEBUG
+    dataChangeListener.Stop();
+    if (!dataChangeListener.GetDataChangeSqlList().empty()) {
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "Detected data changes during schema mapping which should be deferred and recorded by sql transform api.");
+
+        for(auto& sql : dataChangeListener.GetDataChangeSqlList()) {
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Data change sql executed is '%s'. ", sql.c_str());
+        }
+        return failedToMap();
+    }
+#endif
+
+    if (!ctx.GetDataTransform().IsEmpty()) {
+        if (!ctx.GetDataTransform().Validate(m_ecdb)) {
+            return failedToMap();
+        }
+
+        if (!ctx.AllowDataTransform()) {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
+            ctx.GetDataTransform().ForEach([&](TransformData::Task const& task) {
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Transform SQL (%s): %s", task.GetDescription().c_str(), task.GetSql().c_str());
+                return true;
+            });
+
+            return SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED;
+        }
+        if (BE_SQLITE_OK != ctx.GetDataTransform().Execute(m_ecdb)) {
+            return failedToMap();
+        }
+    }
+    ClearCache();
+    return  SchemaImportResult::OK;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb)
+DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx)
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Upgrading existing ECInstances with new property map to overflow tables");
     Statement stmt;
@@ -1199,20 +1239,7 @@ DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOver
         Utf8CP primaryId = primaryTable->FindFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str();
         Utf8CP primaryClassId = primaryTable->FindFirst(DbColumn::Kind::ECClassId)->GetName().c_str();
 
-        /*
-        -- Template query for reference.
-        INSERT INTO bis_ElementUniqueAspect_Overflow(Id, ECClassId)
-            SELECT bis_ElementUniqueAspect.Id, bis_ElementUniqueAspect.ECClassId
-            FROM bis_ElementUniqueAspect
-                LEFT JOIN bis_ElementUniqueAspect_Overflow ON bis_ElementUniqueAspect_Overflow.Id = bis_ElementUniqueAspect.Id
-            WHERE bis_ElementUniqueAspect_Overflow.Id IS NULL AND
-                bis_ElementUniqueAspect.ECClassId IN (
-                SELECT M.ClassId
-                FROM ec_PropertyMap M
-                    INNER JOIN ec_Column C ON C.Id = M.ColumnId
-                    INNER JOIN ec_Table O  ON O.Id = C.TableId AND O.Type = 3 --has overflow table
-                GROUP BY M.ClassId)
-        */
+
 
         //Generated query for a given overflow
         Utf8String transformSql;
@@ -1237,17 +1264,24 @@ DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOver
                              overflowId,
                              primaryClassId, SQLVAL_DbTable_Type_Overflow);
 
-        st = ecdb.ExecuteSql(transformSql.c_str());
-        if (st != BE_SQLITE_OK)
-            return st;
-
-        const int modifiedCount = ecdb.GetModifiedRowCount();
-        if (modifiedCount > 0)
+        if (ctx != nullptr )
             {
-            LOG.infov("Schema Import/Upgrade inserted '%d' empty rows in '%s' overflow table corresponding to rows in '%s'", modifiedCount, overflowTableName, primaryTableName);
+            const Utf8String description = SqlPrintfString("upgrade instances in '%s' by inserting a corresponding row in '%s'.", primaryTableName, overflowTableName).GetUtf8CP();
+            ctx->GetDataTransform().Append(description, transformSql);
             }
-        }
+        else
+            {
+            st = ecdb.TryExecuteSql(transformSql.c_str());
+            if (st != BE_SQLITE_OK)
+                return st;
 
+            const int modifiedCount = ecdb.GetModifiedRowCount();
+            if (modifiedCount > 0)
+                {
+                LOG.infov("Schema Import/Upgrade inserted '%d' empty rows in '%s' overflow table corresponding to rows in '%s'", modifiedCount, overflowTableName, primaryTableName);
+                }
+            }
+    }
     return BE_SQLITE_OK;
     }
 

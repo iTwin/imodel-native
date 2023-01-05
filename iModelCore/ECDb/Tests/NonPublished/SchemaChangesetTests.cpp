@@ -157,7 +157,7 @@ TEST_F(SchemaChangesetTestFixture, RevertAndReinstateSchemaChange)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     SchemaChangesetTestChangeSet changeset3;
     ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));

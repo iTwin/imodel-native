@@ -2858,22 +2858,22 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::DoProfileUpgrade() {
-    DbResult rc = _OnBeforeProfileUpgrade();
+DbResult Db::DoProfileUpgrade(OpenParams const& params) {
+    DbResult rc = _OnBeforeProfileUpgrade(params);
     if (BE_SQLITE_OK != rc) {
         AbandonChanges();
         CloseDb();
         return rc;
     }
 
-    rc = _UpgradeProfile();
+    rc = _UpgradeProfile(params);
     if (BE_SQLITE_OK != rc) {
         AbandonChanges();
         CloseDb();
         return rc;
     }
 
-    rc = _OnAfterProfileUpgrade();
+    rc = _OnAfterProfileUpgrade(params);
     if (BE_SQLITE_OK != rc) {
         AbandonChanges();
         CloseDb();
@@ -2921,7 +2921,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params) {
     }
 
     if (doUpgrade) {
-        rc = DoProfileUpgrade();
+        rc = DoProfileUpgrade(params);
         if (BE_SQLITE_OK != rc) {
             return rc;
         }
@@ -2929,8 +2929,11 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params) {
 
     rc = _OnDbOpened(params);
     if (BE_SQLITE_OK != rc) {
-        AbandonChanges();
-        CloseDb();
+        // Make sure only call AbandonChanges() only if connection is still open. Otherwise it causes crash.
+        if (IsDbOpen()) {
+            AbandonChanges();
+            CloseDb();
+        }
         return rc;
     }
 
@@ -2993,7 +2996,7 @@ ProfileState Db::_CheckProfileVersion() const { return BeSQLiteProfileManager::C
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::_UpgradeProfile() { return BeSQLiteProfileManager::UpgradeProfile(*this); }
+DbResult Db::_UpgradeProfile(OpenParams const& params) { return BeSQLiteProfileManager::UpgradeProfile(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -5462,10 +5465,9 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
         case BE_SQLITE_ERROR_SchemaUpgradeRecommended:      return "BE_SQLITE_ERROR_SchemaUpgradeRecommended";
         case BE_SQLITE_ERROR_SchemaTooNew:                  return "BE_SQLITE_ERROR_SchemaTooNew";
         case BE_SQLITE_ERROR_SchemaTooOld:                  return "BE_SQLITE_ERROR_SchemaTooOld";
-        case BE_SQLITE_ERROR_SchemaLockFailed:              return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_DataTransformRequired:         return "BE_SQLITE_ERROR_DataTransformRequired";
         case BE_SQLITE_ERROR_SchemaUpgradeFailed:           return "BE_SQLITE_ERROR_SchemaUpgradeFailed";
         case BE_SQLITE_ERROR_SchemaImportFailed:            return "BE_SQLITE_ERROR_SchemaImportFailed";
-        case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes:   return "BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes";
         case BE_SQLITE_ERROR_NOTOPEN:                       return "BE_SQLITE_ERROR_NOTOPEN";
     };
 
@@ -5597,10 +5599,9 @@ Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
         case BE_SQLITE_ERROR_SchemaUpgradeRecommended:      return "recommended that the schemas found in the database be upgraded";
         case BE_SQLITE_ERROR_SchemaTooNew:                  return "the schemas found in the database are too new, upgrade application";
         case BE_SQLITE_ERROR_SchemaTooOld:                  return "the schema found in the database are too old";
-        case BE_SQLITE_ERROR_SchemaLockFailed:              return "failed to acquire schema lock for upgrade";
+        case BE_SQLITE_ERROR_DataTransformRequired:         return "failed to import schema as it require data transform.";
         case BE_SQLITE_ERROR_SchemaUpgradeFailed:           return "failed to upgrade schemas";
         case BE_SQLITE_ERROR_SchemaImportFailed:            return "failed to import schemas";
-        case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes:   return "error acquiring locks or codes";
         case BE_SQLITE_ERROR_NOTOPEN:                       return "db not open";
     };
     return sqlite3_errstr(rc);

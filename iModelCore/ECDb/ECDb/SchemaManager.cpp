@@ -25,10 +25,11 @@ SchemaManager::~SchemaManager()
         }
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token) const
+SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token) const
     {
     return Main().ImportSchemas(schemas, options, token);
     }
@@ -87,7 +88,7 @@ bool SchemaManager::OwnsSchema(ECN::ECSchemaCR schema) const { return m_dispatch
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECDerivedClassesList const& SchemaManager::GetDerivedClasses(ECClassCR ecClass, Utf8CP tableSpace) const 
+ECDerivedClassesList const& SchemaManager::GetDerivedClasses(ECClassCR ecClass, Utf8CP tableSpace) const
     {
     if (GetDerivedClassesInternal(ecClass, tableSpace) == nullptr)
         {
@@ -503,7 +504,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, ECSchem
         FROM   [ec_cache_ClassHierarchy] [cc]
                 JOIN [ec_ClassMap] [mm] ON [mm].[ClassId] = [cc].[ClassId]
                 JOIN [ec_Class] [ss] ON [ss].[Id] = [cc].[BaseClassId]
-        WHERE  [ss].[SchemaId] = ? AND [mm].[MapStrategy] NOT IN (10, 11, 3) 
+        WHERE  [ss].[SchemaId] = ? AND [mm].[MapStrategy] NOT IN (10, 11, 3)
         GROUP BY [cc].[ClassId]; )" : R"(
         SELECT [cc].[Id]
         FROM   [ec_class] [cc]

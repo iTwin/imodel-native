@@ -20,7 +20,7 @@ TEST_F(PhysicalMaterialTests, CRUD)
     SetupSeedProject();
     DefinitionModelR dictionary = m_db->GetDictionaryModel();
 
-    SchemaStatus status = PhysicalMaterialDomain::GetDomain().ImportSchema(*m_db);
+    SchemaStatus status = PhysicalMaterialDomain::GetDomain().ImportSchema(*m_db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     ASSERT_EQ(SchemaStatus::Success, status);
 
     DgnClassId aluminumClassId = m_db->Schemas().GetClassId(PHYSICAL_MATERIAL_DOMAIN_NAME, PHYSICAL_MATERIAL_CLASS_Aluminum);

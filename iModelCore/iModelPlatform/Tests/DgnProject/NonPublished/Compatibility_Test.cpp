@@ -816,7 +816,7 @@ GenericGroupCPtr CompatibilityTests::GetSpatialLocationGroup(SubjectCR subject)
 void CompatibilityTests::ImportFunctionalSchema()
     {
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    ASSERT_EQ(SchemaStatus::Success, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
+    ASSERT_EQ(SchemaStatus::Success, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb(), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     }
 
 //---------------------------------------------------------------------------------------

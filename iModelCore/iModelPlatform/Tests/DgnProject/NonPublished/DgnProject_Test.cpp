@@ -263,7 +263,7 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
     dgndb->SaveChanges();
 
     BeTest::SetFailOnAssert(false);
-    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
+    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     BeTest::SetFailOnAssert(true);
 
     ASSERT_TRUE(schemaStatus != SchemaStatus::Success);
@@ -542,7 +542,7 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas(), true));
     ASSERT_TRUE(m_db->IsDbOpen());
 }
 

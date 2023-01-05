@@ -62,7 +62,7 @@ static DgnDbPtr openCopyOfDb(WCharCP destName, DgnDb::OpenMode mode = Db::OpenMo
     db2 = initDb(destName,mode,true);
     if (!db2.IsValid())
         return nullptr;
-    DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
+    DgnPlatformTestDomain::GetDomain().ImportSchema(*db2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     return db2;
     }
 

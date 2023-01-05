@@ -34,7 +34,7 @@ void ChangeTestFixture::SetUpTestCase()
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, ChangeTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
 
-    ASSERT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
+    ASSERT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     TestDataManager::SetAsStandaloneDb(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");

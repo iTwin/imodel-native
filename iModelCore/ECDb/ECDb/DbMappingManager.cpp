@@ -251,13 +251,16 @@ BentleyStatus DbMappingManager::Classes::MoveProperty(Context& ctx, ECPropertyCR
         .Append(" SET ").Append(deleteSourceFragment)
         .AppendFormatted(" WHERE [%s] IN (SELECT [ClassId] FROM [ec_cache_ClassHierarchy] WHERE BaseClassId=%s)", sourceTable->GetECClassIdColumn().GetName().c_str(), classIdHex.c_str());
 
+    auto& trans = ctx.m_importCtx->GetDataTransform();
+    const Utf8String description = SqlPrintfString(
+        "Moving property %s of class %s to overflow table",
+        property.GetName().c_str(),
+        ctx.m_classMap.GetClass().GetFullName()
+    ).GetUtf8CP();
 
-    auto dataTransformTask = std::make_unique<GroupDataTransformTask>(SqlPrintfString("Moving property %s of class %s to overflow table", property.GetName().c_str(), ctx.m_classMap.GetClass().GetFullName()));
-    dataTransformTask->AddTask(std::make_unique<SqlDataTransformTask>("Move property by updating overflow table columns", transformUpdate.GetSql().c_str()));
-    dataTransformTask->AddTask(std::make_unique<SqlDataTransformTask>("Move property by inserting rows in overflow table", transformInsert.GetSql().c_str()));
-    dataTransformTask->AddTask(std::make_unique<SqlDataTransformTask>("Move property and delete old values after data moved", transformDelete.GetSql().c_str()));
-    ctx.m_importCtx->GetDataTransfrom().AddTask(std::move(dataTransformTask));
-
+    trans.Append(description, transformUpdate.GetSql().c_str());
+    trans.Append(description, transformInsert.GetSql().c_str());
+    trans.Append(description, transformDelete.GetSql().c_str());
     return SUCCESS;
 }
 

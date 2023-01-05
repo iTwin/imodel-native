@@ -499,7 +499,7 @@ DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
+DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb, SchemaManager::SchemaImportOptions opts)
     {
     ECDB_PERF_LOG_SCOPE("Profile schema import");
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -523,7 +523,7 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), opts, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
         {
         LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.", ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;

@@ -221,7 +221,8 @@ DbResult DgnDb::DisqualifyTypeIndexForBisCoreExternalSourceAspect()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     {
-    SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams const&) params).GetSchemaUpgradeOptions();
+    const auto& inParams = ((DgnDb::OpenParams const&)params);
+    SchemaUpgradeOptions const& schemaUpgradeOptions = inParams.GetSchemaUpgradeOptions();
 
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
@@ -242,9 +243,10 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     if (!upgrade)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
 
-    if (std::any_of(schemasToImport.begin(), schemasToImport.end(), [&](ECSchemaPtr schema) { return SchemaRequiresProfileUpgrade(*schema); }))
+    const auto requireProfileUpgrade = std::any_of(schemasToImport.begin(), schemasToImport.end(), [&](ECSchemaPtr schema) { return SchemaRequiresProfileUpgrade(*schema); });
+    if (requireProfileUpgrade)
         {
-        DbResult rc = DoProfileUpgrade();
+        DbResult rc = DoProfileUpgrade(params);
         if (DbResult::BE_SQLITE_OK != rc)
             return rc;
 
@@ -255,9 +257,14 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         BeAssert(status == SchemaStatus::SchemaUpgradeRequired || status == SchemaStatus::SchemaUpgradeRecommended);
         }
 
-    status = Domains().UpgradeSchemas(schemasToImport, domainsToImport);
+        auto schemaImportOptions = SchemaManager::SchemaImportOptions::None;
+        if (inParams.GetAllowDataTransformDuringSchemaUpdate())
+            {
+            schemaImportOptions = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
+            }
 
-    return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
+        status = Domains().UpgradeSchemas(schemasToImport, domainsToImport, schemaImportOptions);
+        return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
     }
 
 //--------------------------------------------------------------------------------------
@@ -278,9 +285,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaUpgradeRequired;
         case SchemaStatus::SchemaUpgradeRecommended:
             return BE_SQLITE_ERROR_SchemaUpgradeRecommended;
-        // case SchemaStatus::SchemaLockFailed:     NEEDS WORK - shouldn't we map this to BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes, too?
-        case SchemaStatus::CouldNotAcquireLocksOrCodes:
-            return BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes;
+       case SchemaStatus::DataTransformRequired:
+           return BE_SQLITE_ERROR_DataTransformRequired;
         default:
             return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
         }
