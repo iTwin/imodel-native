@@ -283,7 +283,11 @@ TEST(ConvexHull, GridTest)
                 xyz.pop_back();
             for (auto &xyz1 : xyz)
                 Check::SaveTransformedMarker(xyz1, 0.02);
-            DPoint3dOps::ConvexHullXY (xyz, xyzHull);
+            DPoint3dOps::ConvexHullXY (xyz, xyzHull, true);
+
+            if (xyzHull.size() > 1 && Check::Exact(xyzHull.front(), xyzHull.back(), "ConvexHullXY closure point"))
+                xyzHull.pop_back(); // rest of test assumes no closure point
+
             CheckHull(xyzHull, xyz);
             Check::SaveTransformed(xyzHull);
             Check::Shift(4 * gridCount, 0);
