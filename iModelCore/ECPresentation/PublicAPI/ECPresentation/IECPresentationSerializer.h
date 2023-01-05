@@ -103,6 +103,9 @@ protected:
 
     virtual rapidjson::Value _AsJson(ContextR, SelectionInfo const&, rapidjson::Document::AllocatorType&) const = 0;
 
+    virtual rapidjson::Document _AsJson(ContextR, InstanceFilterDefinitionCR, rapidjson::Document::AllocatorType*) const = 0;
+    virtual std::unique_ptr<InstanceFilterDefinition> _GetInstanceFilterFromJson(IConnectionCR, BeJsConst) const = 0;
+
 public:
     virtual ~IECPresentationSerializer() {}
 
@@ -180,6 +183,9 @@ public:
 
     rapidjson::Document AsJson(ContextR ctx, KeySet const& keySet, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, keySet, allocator);}
     KeySetPtr GetKeySetFromJson(IConnectionCR connection, BeJsConst json) const {return _GetKeySetFromJson(connection, json);}
+
+    rapidjson::Document AsJson(ContextR ctx, InstanceFilterDefinitionCR instanceFilter, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, instanceFilter, allocator);}
+    std::unique_ptr<InstanceFilterDefinition> GetInstanceFilterFromJson(IConnectionCR connection, BeJsConst json) const {return _GetInstanceFilterFromJson(connection, json);}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

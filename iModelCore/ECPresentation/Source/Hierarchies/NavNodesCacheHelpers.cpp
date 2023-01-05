@@ -343,6 +343,19 @@ BeGuid NodesCacheHelpers::GetGuid(Statement& stmt, int index)
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ void NodesCacheHelpers::BindInstanceFilter(Statement& stmt, int index, InstanceFilterDefinitionCP instanceFilter)
+    {
+    if (!instanceFilter)
+        {
+        stmt.BindNull(index);
+        return;
+        }
+    stmt.BindText(index, BeRapidJsonUtilities::ToString(instanceFilter->ToInternalJson()), Statement::MakeCopy::Yes);
+    }
+
 #define EXISTS_QUERY(tableName, key) "SELECT 1 FROM [" tableName "] WHERE [" key "] = ? "
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

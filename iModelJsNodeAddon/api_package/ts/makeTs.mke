@@ -13,9 +13,9 @@ outDir = $(_MakeFilePath)lib/
 always:
     ~chdir $(srcDir)
 %if defined(BMAKE_DELETE_ALL_TARGETS)
-    -$(BBPYTHONCMD) $(SrcRoot)thirdparty/nodejs_14_16_0/bentley/npm.py run clean
+    npm run clean
 %endif
-    -$(BBPYTHONCMD) $(SrcRoot)thirdparty/nodejs_14_16_0/bentley/npm.py run build
+    npm run build
 
 $(BuildContext)Delivery/lib : $(outDir)
     $(LinkFirstDepToFirstTargetAsDirectory)

@@ -103,7 +103,7 @@ TEST_F(HierarchyPerformanceAnalysis, Run)
     {
     ForEachDatasetAndRuleset([&](Reporter& reporter, ECDbR project, Utf8StringCR rulesetId)
         {
-        auto params = AsyncHierarchyRequestParams::Create(project, rulesetId, RulesetVariables(), nullptr);
+        auto params = AsyncHierarchyRequestParams::Create(project, rulesetId, RulesetVariables());
         PresentationManagerTestsHelper::HierarchyDepthLimiter depthLimiter(GetHierarchyDepthLimit(rulesetId));
 
         // first measure the time it takes to load the hierarchy without paging (used when creating the whole hierarchy)

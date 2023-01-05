@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 // default for "nRequests" to SQLite apis (number of simultaneous HTTP connections). 6 is the maximum from Chrome.
 static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
+// default for "httpTimeout" to SQLite apis (time in seconds to wait without a response before considering an http request as timed out).
+static const int DEFAULT_HTTP_TIMEOUT = 60; 
 
 Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP container) {
     if (nullptr == container)
@@ -103,7 +105,7 @@ void CloudCache::ReadGuid() {
  * @param name the name of this vfs
  * @param rootDir the directory to use for caching cloud containers
  */
-CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize, int64_t nRequest, bool curlDiagnostics) {
+CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64_t cacheSize, int nRequest, int httpTimeout, bool curlDiagnostics) {
     m_name = name;
     m_rootDir = rootDir;
     auto stat = CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_create(m_rootDir.c_str(), m_name.c_str(), &m_vfs, msg); }, "create CloudCache");
@@ -123,6 +125,9 @@ CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64
         if (nRequest <= 0)
             nRequest = DEFAULT_MAX_HTTP_CONNECTIONS;
         sqlite3_bcvfs_config(m_vfs, SQLITE_BCV_NREQUEST, nRequest);
+        if (httpTimeout <= 0)
+            httpTimeout = DEFAULT_HTTP_TIMEOUT;
+        sqlite3_bcvfs_config(m_vfs, SQLITE_BCV_HTTPTIMEOUT, httpTimeout);
 
         ReadGuid(); // sets the m_guid member to either a new GUID or one from the localstore for write locks
     }
@@ -393,8 +398,9 @@ CloudPrefetch::PrefetchStatus CloudPrefetch::Run(int nRequest, int timeout) {
  * Initialize a CloudUtil object for a container. Opens a "handle" from SQLite to connect to the container.
  * @param container the container for the connection
  * @param nRequest if >0, the number of simultaneous http requests to make. Default is 6.
+ * @param httpTimeout if >0, the number of seconds to wait before considering an http request as timed out. Timed out requests will be tried. Default is 60 seconds.
  */
-CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest) {
+CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest, int httpTimeout) {
     int stat = sqlite3_bcv_open(container.m_storageType.c_str(), container.m_accessName.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
     if (SQLITE_OK != stat)
         return CloudResult(stat,  Utf8PrintfString("cannot open CloudContainer: %s", sqlite3_bcv_errmsg(m_handle)).c_str());
@@ -405,6 +411,9 @@ CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int n
     if (nRequest <= 0)
         nRequest = DEFAULT_MAX_HTTP_CONNECTIONS;
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_NREQUEST, nRequest);
+    if (httpTimeout <= 0) 
+        httpTimeout = DEFAULT_HTTP_TIMEOUT;
+    sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_HTTPTIMEOUT, httpTimeout);
     return CloudResult();
 }
 

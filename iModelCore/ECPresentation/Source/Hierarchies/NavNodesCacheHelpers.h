@@ -118,7 +118,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     "    CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] AS ds " \
     "         ON     [ds].[HierarchyLevelId] = [chl].[Id] " \
     "            AND [ds].[VariablesId] = [phl].[VariablesId] " \
-    "            AND [ds].[InstanceFilter] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter "] " \
+    "            AND [ds].[InstanceFilter] IS [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter "] " \
     ")"
 
 /*=================================================================================**//**
@@ -141,6 +141,8 @@ public:
     ECPRESENTATION_EXPORT static void BindGuid(Statement& stmt, int index, BeGuidCR id);
     ECPRESENTATION_EXPORT static void BindGuid(Statement& target, int targetIndex, Statement& source, int sourceIndex);
     ECPRESENTATION_EXPORT static BeGuid GetGuid(Statement& stmt, int index);
+
+    ECPRESENTATION_EXPORT static void BindInstanceFilter(Statement& stmt, int index, InstanceFilterDefinitionCP);
 
     ECPRESENTATION_EXPORT static bool VariablesExists(Db& db, BeGuidCR variablesId);
     ECPRESENTATION_EXPORT static bool RulesetExists(Db& db, Utf8StringCR rulesetId);

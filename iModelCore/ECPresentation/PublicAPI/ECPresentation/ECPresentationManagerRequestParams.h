@@ -77,7 +77,7 @@ struct HierarchyRequestParams : RequestWithRulesetParams
 private:
     NavNodeKeyCPtr m_parentNodeKey;
     NavNodeCPtr m_parentNode;
-    Utf8String m_instanceFilter;
+    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
 public:
     //! Root nodes request
     HierarchyRequestParams(RequestWithRulesetParams const& rulesetParams)
@@ -113,8 +113,8 @@ public:
     void SetParentNode(NavNodeCP value) {m_parentNode = value; m_parentNodeKey = nullptr;}
     NavNodeKeyCP GetParentNodeKey() const {return m_parentNodeKey.get();}
     void SetParentNodeKey(NavNodeKeyCP value) {m_parentNodeKey = value; m_parentNode = nullptr;}
-    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
-    void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
+    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
+    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
 };
 
 //=======================================================================================
@@ -144,7 +144,7 @@ struct NodeParentRequestParams : RequestWithRulesetParams
 {
 private:
     NavNodeCPtr m_node;
-    Utf8String m_instanceFilter;
+    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
 public:
     NodeParentRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeCR node)
         : RequestWithRulesetParams(rulesetParams), m_node(&node)
@@ -156,8 +156,8 @@ public:
         : RequestWithRulesetParams(rulesetId, rulesetVariables), m_node(&node)
         {}
     NavNodeCR GetNode() const {return *m_node;}
-    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
-    void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
+    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
+    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
 };
 
 //=======================================================================================

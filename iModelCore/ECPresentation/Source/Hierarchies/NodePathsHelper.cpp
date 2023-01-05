@@ -248,7 +248,7 @@ static NodesPathElement FindNode(ECPresentationManager::Impl& manager, NodeByIns
     if (!nodes.IsValid())
         return NodesPathElement();
 
-    auto instanceKeysProvider = manager.CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams::Create(NodeInstanceKeysRequestParams(params, ""), params));
+    auto instanceKeysProvider = manager.CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams::Create(NodeInstanceKeysRequestParams(params, nullptr), params));
     if (!instanceKeysProvider)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to create node instance keys provider. Returning invalid result.");
 

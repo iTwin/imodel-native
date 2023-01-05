@@ -405,3 +405,227 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_InstanceLabelOver
         return query;
         });
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnDirectClass, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(NavigationQueryBuilderTests, SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnDirectClass)
+    {
+    ECClassCP classA = GetECClass("A");
+
+    SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
+
+    // first verify without instance filter
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClass(*classA, "this", true);
+        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
+            .From(selectClass)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+
+    // then with instance filter
+    InstanceFilterDefinition instanceFilter("this.Prop = 123", *classA, {});
+    GetBuilder().GetParameters().SetInstanceFilter(&instanceFilter);
+    queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClass(*classA, "this", true);
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
+            .From(selectClass)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList())
+            .Where("[this].[Prop] = 123", BoundQueryValuesList()));
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnOneOfDirectClasses, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(NavigationQueryBuilderTests, SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnOneOfDirectClasses)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+
+    SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classB), classB->GetSchema().GetName(), classB->GetName()));
+
+    // first verify without instance filter
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClassA(*classA, "this", true);
+        ComplexQueryBuilderPtr nestedQueryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            .From(selectClassA)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
+
+        SelectClass<ECClass> selectClassB(*classB, "this", true);
+        ComplexQueryBuilderPtr nestedQueryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+            .From(selectClassB)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classB).c_str()).c_str(), BoundQueryValuesList()));
+
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQueryA, nestedQueryB });
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+
+    // then with instance filter for B instances
+    InstanceFilterDefinition instanceFilter("this.PropB = 123", *classB, {});
+    GetBuilder().GetParameters().SetInstanceFilter(&instanceFilter);
+    queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClass(*classB, "this", true);
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
+            .From(selectClass)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classB).c_str()).c_str(), BoundQueryValuesList())
+            .Where("[this].[PropB] = 123", BoundQueryValuesList()));
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnDerivedClass, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(NavigationQueryBuilderTests, SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnDerivedClass)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+
+    SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
+
+    // first verify without instance filter
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClass(*classA, "this", true);
+        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
+            .From(selectClass)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+
+    // then with instance filter for B instances
+    InstanceFilterDefinition instanceFilter("this.PropB = 123", *classB, {});
+    GetBuilder().GetParameters().SetInstanceFilter(&instanceFilter);
+    queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClass(*classB, "this", true);
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
+            .From(selectClass)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList())
+            .Where("[this].[PropB] = 123", BoundQueryValuesList()));
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnRelatedClass, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(NavigationQueryBuilderTests, SearchResultInstanceNodes_HierarchyLevelInstanceFilter_OnRelatedClass)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+    ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
+
+    SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY(*classA), classA->GetSchema().GetName(), classA->GetName()));
+
+    // first verify without instance filter
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClass(*classA, "this", true);
+        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
+            .From(selectClass)
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList()));
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+
+    // then with instance filter using related B instance
+    InstanceFilterDefinition instanceFilter("b.PropB = 123", *classA,
+        {
+        RelatedClassPath{ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "rel"), true, SelectClass<ECClass>(*classB, "b", true)) }
+        });
+    GetBuilder().GetParameters().SetInstanceFilter(&instanceFilter);
+    queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    ValidateQuery(spec, queries[0], [&]()
+        {
+        SelectClass<ECClass> selectClass(*classA, "this", true);
+        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
+            .From(selectClass)
+            .Join(instanceFilter.GetRelatedInstances()[0])
+            .Where(Utf8PrintfString("[this].[ECInstanceId] IN (SELECT [" SEARCH_QUERY_FIELD_ECInstanceId "] FROM (%s))", SEARCH_NODE_QUERY_PROCESSED(*classA).c_str()).c_str(), BoundQueryValuesList())
+            .Where("[b].[PropB] = 123", BoundQueryValuesList()));
+        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
+        return query;
+        });
+    }
