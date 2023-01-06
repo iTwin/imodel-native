@@ -295,3 +295,30 @@ TEST(ConvexHull, GridTest)
         }
     Check::ClearGeometry("ConvexHull.GridTest");
     }
+
+static bool testPushBackWithRealloc(bvector<DPoint3d>& v)
+    {
+    if (v.size() != v.capacity())
+        return false;   // no realloc, don't care
+
+    // push_back will reallocate. Does it safely access v[0] before it is freed? VS2010 did not! 
+    v.push_back(v[0]);
+    Check::Exact(v.front(), v.back(), "push_back of first element with reallocate");
+    return true;
+    }
+
+TEST(ConvexHull, VectorPushBackTest)
+    {
+    bvector<DPoint3d> v({DPoint3d::From(41,37,59)});
+    if (!testPushBackWithRealloc(v))
+        {
+        // try shrinkwrap suggestion
+        v.shrink_to_fit();
+        if (!testPushBackWithRealloc(v))
+            {
+            // try the "swap trick" from Item 17 of "Effective STL" by Scott Meyers
+            bvector<DPoint3d>(v).swap(v);
+            testPushBackWithRealloc(v);
+            }
+        }
+    }
