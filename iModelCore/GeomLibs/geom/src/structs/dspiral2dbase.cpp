@@ -949,14 +949,13 @@ double&   minDistance
 )
     {
     DSpiral2dBaseClosestPointSearcher searcher (spiral, spiralToWorld, spacePoint);
-    bool stat = false;
     if (startFraction * endFraction < 0.0)
         {
         // fraction0 is within the interval. Search strokes to each end.
         DVec2d uv0;
         uv0.Zero ();
-        stat = searcher.SearchStrokesInFractionInterval (0.0, endFraction, uv0)
-                && searcher.SearchStrokesInFractionInterval (0.0, startFraction, uv0);
+        if (searcher.SearchStrokesInFractionInterval (0.0, endFraction, uv0))
+            searcher.SearchStrokesInFractionInterval (0.0, startFraction, uv0);
         }
     else
         {
