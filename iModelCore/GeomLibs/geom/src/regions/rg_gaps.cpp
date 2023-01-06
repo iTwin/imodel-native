@@ -322,7 +322,8 @@ double          maxDiagBoxFraction
                         size_t num1 = xyz1.size ();
                         if (num1 > 2)
                             {
-                            xyz1[num1++] = xyz1[0];
+                            xyz1.push_back(xyz1[0]);
+                            ++num1;
                             }
                         for (j = 1; j < num1; j++)
                             {
