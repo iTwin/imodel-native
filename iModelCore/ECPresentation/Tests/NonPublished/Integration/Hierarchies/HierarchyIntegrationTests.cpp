@@ -14088,7 +14088,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CorrectlyHandlesChildren
     grandChildRule->AddCustomizationRule(*new NodeArtifactsRule("", artifactDefinitions));
 
     // verify
-    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr);
     ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
