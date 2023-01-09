@@ -125,8 +125,7 @@ DPoint2d    *pointP,
 int         numPoint
 )
     {
-    VuP faceP;
-    faceP = vu_makeLoopFromArray (graphP, pointP, numPoint, true, true);
+    vu_makeLoopFromArray (graphP, pointP, numPoint, true, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -139,11 +138,9 @@ BsurfBoundary   *boundsP,
 int             numBounds
 )
     {
-    int i;
-    VuP faceP;
-    for (i = 0; i < numBounds; i++ )
+    for (int i = 0; i < numBounds; i++ )
         {
-        faceP = vu_makeLoopFromArray
+        vu_makeLoopFromArray
                             (
                             graphP,
                             boundsP[i].points,
@@ -168,13 +165,12 @@ double          ymax
 )
     {
     DPoint2d corner[4];
-    VuP faceP;
     corner[0].x = corner[3].x = xmin;
     corner[1].x = corner[2].x = xmax;
     corner[0].y = corner[1].y = ymin;
     corner[2].y = corner[3].y = ymax;
 
-    faceP = vu_makeLoopFromArray (graphP, corner, 4, true, true);
+    vu_makeLoopFromArray (graphP, corner, 4, true, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -523,7 +519,6 @@ bool            isVerticalSeam      /* True for vertical seam (left and right),
         VuP high0P = vu_fpred (high1P);
         VuP high2P = vu_fsucc (high1P);
         VuP low0P  = vu_fpred (low1P);
-        VuP low2P  = vu_fsucc (low1P);
 
         /* Jump across top. */
         vu_join (graphP, high1P, low1P, &newHighNodeP, &newLowNodeP);
@@ -550,7 +545,6 @@ bool            isVerticalSeam      /* True for vertical seam (left and right),
             /* Skitter down the low side until the seam disappears */
             low1P = low0P;
             low0P = vu_fpred (low1P);
-            low2P = vu_fsucc (low1P);
             vu_setMask (low1P,  deleteMask);
             } while (vu_isExteriorSeamNode (low0P, lowParam, isVerticalSeam));
 

@@ -307,11 +307,9 @@ double          maxDiagBoxFraction
                         }
                     else if (s_addMode == 2)    /* Convex hull */
                         {
-                        int num00;
                         xyz0.clear ();
                         xyz1.clear ();
                         DPoint3d xyzA;
-                        num00 = 0;
                         for (i = i0; i < i1;  i++)
                             {
                             jmdlEmbeddedIntArray_getInt (pBlockIndexArray, &iIndex, i);

@@ -2473,7 +2473,6 @@ double                      ptol        /* => point equal tolerance, recommand s
 
     /* Initialize some variables */
 
-    ITLIM = 4;
     top = ptol;
     toc = 1.e-6;
     ktol = 0.0001;
