@@ -251,8 +251,8 @@ public:
 //! The combination of the three must be unique across all elements within a DgnDb.
 //! The meaning of a DgnCode is determined by the CodeSpec.
 //!
-//! The CodeSpecId must be non-null and identify a valid CodeSpec.
-//! The scope must not be null and identifies the uniqueness scope for the value.
+//! The CodeSpecId must be the ElementId of a valid CodeSpec.
+//! The scope must be the ElementId of a valid element that defines the uniqueness scope.
 //! The value may be null if the element does not have a name. The value may not be an empty string.
 //!
 //! @see CodeSpec

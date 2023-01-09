@@ -559,8 +559,6 @@ void DgnCode::ToJson(BeJsValue val) const {
 DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db) {
     DgnCode val = CreateEmpty();
     val.m_value = value[json_value()].asString();
-    if (val.m_value.empty())
-        return val; // if the value is empty, don't use any of the other parameters
 
     auto specJson = value[json_spec()];
     val.m_specId = CodeSpecId(specJson.asUInt64());
