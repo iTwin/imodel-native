@@ -229,7 +229,7 @@ void NavNodesProviderContext::Init()
     m_queryBuilder = nullptr;
     m_usedClassesListener = nullptr;
     m_pageOptions = nullptr;
-    m_mayHaveArtifacts = false;
+    m_mayHaveArtifacts = true;
     }
 
 /*---------------------------------------------------------------------------------**//**

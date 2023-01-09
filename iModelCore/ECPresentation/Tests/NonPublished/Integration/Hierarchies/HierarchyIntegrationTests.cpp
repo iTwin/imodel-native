@@ -13911,7 +13911,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreateChildGroupingNodeW
         [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA2[0].get())).get(); }
     );
     ASSERT_EQ(0, noInstanceNodesA.GetSize());
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14043,4 +14042,61 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, OrdersMultipleNodesWithN
     VerifyNodeInstances(*rootNodes[1], { a3 });
     VerifyNodeInstances(*rootNodes[2], { a4 });
     VerifyNodeInstances(*rootNodes[3], { a2 });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CorrectlyHandlesChildrenArtifactsInChildLevelHideExpression, R"*(
+    <ECEntityClass typeName="A"/>
+    <ECEntityClass typeName="B"/>
+    <ECEntityClass typeName="C"/>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, CorrectlyHandlesChildrenArtifactsInChildLevelHideExpression)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    //expected returned instances
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    auto rootRule = new RootNodeRule();
+    rules->AddPresentationRule(*rootRule);
+    auto rootSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), true);
+    rootRule->AddSpecification(*rootSpec);
+
+    auto childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    rules->AddPresentationRule(*childRule);
+    auto childSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classB->GetFullName(), true);
+    childSpec->SetHideExpression("NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.isVisibleChild)");
+    childRule->AddSpecification(*childSpec);
+
+    auto grandChildRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classB->GetName().c_str(), classB->GetSchema().GetName().c_str()), 1, false);
+    rules->AddPresentationRule(*grandChildRule);
+    auto grandChildSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classC->GetFullName(), true);
+    grandChildRule->AddSpecification(*grandChildSpec);
+
+    bmap<Utf8String, Utf8String> artifactDefinitions;
+    artifactDefinitions.Insert("isVisibleChild", "TRUE");
+    grandChildRule->AddCustomizationRule(*new NodeArtifactsRule("", artifactDefinitions));
+
+    // verify
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr);
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            ExpectedHierarchyDef(CreateInstanceNodeValidator({ b }),
+                {
+                CreateInstanceNodeValidator({ c })
+                }),
+            }),
+        });
     }
