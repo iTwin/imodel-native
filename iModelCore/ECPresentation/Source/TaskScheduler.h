@@ -267,7 +267,7 @@ protected:
     virtual folly::Future<folly::Unit> _GetCompletion() const override {return const_cast<folly::SharedPromise<folly::Unit>&>(m_completionPromise).getFuture();}
     virtual void _Complete() override {m_completionPromise.setValue();}
     virtual ICancelationTokenCP _GetCancelationToken() const override {return m_cancelationToken.get();}
-    virtual void _Cancel() override 
+    virtual void _Cancel() override
         {
         m_promise.getFuture().cancel();
         }
@@ -310,8 +310,8 @@ protected:
         catch (std::exception const& e)
             {
             return [this, e = folly::exception_wrapper{ std::current_exception(), e }](){Resolve(folly::Try<TResult>(e));};
-            } 
-        catch (...) 
+            }
+        catch (...)
             {
             return [this](){Resolve(folly::Try<TResult>(InternalError("Unexpected error occurred.")));};
             }
@@ -370,7 +370,7 @@ public:
     void SetIsCancelable(bool isCancelable) {m_cancelationToken = isCancelable ? SimpleCancelationToken::Create() : nullptr;}
     void SetOtherTasksBlockingPredicate(IECPresentationTask::Predicate pred) {m_otherTasksBlockingPredicate = pred;}
     void SetThisTaskBlockingPredicate(std::function<bool()> pred) {m_blockPredicate = pred;}
-    void SetExecutor(folly::Executor* e) {m_futureExecutor = e;}
+    void SetFutureExecutor(folly::Executor* e) {m_futureExecutor = e;}
 };
 
 /*=================================================================================**//**
@@ -644,14 +644,14 @@ public:
     folly::Future<folly::Unit> CreateAndExecute(std::function<void(IECPresentationTaskR)> func, ECPresentationTaskParams const& params = {})
         {
         RefCountedPtr<ECPresentationTask> task = new ECPresentationTask(m_scheduler->GetMutex(), func);
-        task->SetExecutor(m_tasksExecutor.get());
+        task->SetFutureExecutor(&BeFolly::ThreadPool::GetCpuPool());
         params.Apply(*task);
         return Execute<folly::Unit>(*task);
         }
     template<typename TResult> folly::Future<TResult> CreateAndExecute(std::function<TResult(IECPresentationTaskWithResult<TResult>&)> func, ECPresentationTaskParams const& params = {})
         {
         RefCountedPtr<ECPresentationTaskWithResult<TResult>> task = new ECPresentationTaskWithResult<TResult>(m_scheduler->GetMutex(), func);
-        task->SetExecutor(m_tasksExecutor.get());
+        task->SetFutureExecutor(&BeFolly::ThreadPool::GetCpuPool());
         params.Apply(*task);
         return Execute<TResult>(*task);
         }

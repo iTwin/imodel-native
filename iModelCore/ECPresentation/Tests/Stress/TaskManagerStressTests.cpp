@@ -17,6 +17,16 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+struct TestActionExecuteParams
+    {
+    std::function<ECPresentationTasksManager&()> getManager;
+    folly::Future<folly::Unit>* previousAction;
+    std::function<void()> recreateTaskManager;
+    };
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 struct TestActionExecuteResult
     {
     folly::Future<folly::Unit> future;
@@ -29,7 +39,7 @@ struct TestActionExecuteResult
 struct TaskManagerStressTestAction
     {
     virtual ~TaskManagerStressTestAction() {}
-    virtual TestActionExecuteResult _Execute(ECPresentationTasksManager&, folly::Future<folly::Unit>*) const = 0;
+    virtual TestActionExecuteResult _Execute(TestActionExecuteParams const&) const = 0;
     virtual rapidjson::Document _ToJson(rapidjson::Document::AllocatorType*) const = 0;
     static std::unique_ptr<TaskManagerStressTestAction> FromJson(RapidJsonValueCR);
     template<typename TRandomizer> static std::unique_ptr<TaskManagerStressTestAction> CreateRandom(TRandomizer&);
@@ -67,11 +77,11 @@ struct TaskManagerStressTestTaskAction : TaskManagerStressTestAction
         json.AddMember("ExecTime", m_execTime, json.GetAllocator());
         return json;
         }
-    TestActionExecuteResult _Execute(ECPresentationTasksManager& manager, folly::Future<folly::Unit>*) const override
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
         {
         ECPresentationTaskParams params;
         params.SetIsCancelable(m_isCancellable);
-        auto future = manager.CreateAndExecute([this](IECPresentationTaskCR)
+        auto future = actionParams.getManager().CreateAndExecute([this](IECPresentationTaskCR)
             {
             BeThreadUtilities::BeSleep(m_execTime);
             }, params);
@@ -108,10 +118,10 @@ struct TaskManagerStressTestChainedTaskAction : TaskManagerStressTestAction
         json.AddMember("ExecTime", m_execTime, json.GetAllocator());
         return json;
         }
-    TestActionExecuteResult _Execute(ECPresentationTasksManager& manager, folly::Future<folly::Unit>* prev) const override
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
         {
-        auto future = prev 
-            ? prev->then([this]()
+        auto future = actionParams.previousAction
+            ? actionParams.previousAction->then([this]()
                 {
                 BeThreadUtilities::BeSleep(m_execTime);
                 }) 
@@ -145,9 +155,9 @@ struct TaskManagerStressTestRestartAction : TaskManagerStressTestAction
         json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
         return json;
         }
-    TestActionExecuteResult _Execute(ECPresentationTasksManager& manager, folly::Future<folly::Unit>*) const override
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
         {
-        auto result = manager.Restart([](IECPresentationTaskCR){ return true; });
+        auto result = actionParams.getManager().Restart([](IECPresentationTaskCR){ return true; });
         return { result.GetCompletion().then(), false };
         }
     };
@@ -176,10 +186,10 @@ struct TaskManagerStressTestCancelPreviousAction : TaskManagerStressTestAction
         json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
         return json;
         }
-    TestActionExecuteResult _Execute(ECPresentationTasksManager&, folly::Future<folly::Unit>* prev) const override
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
         {
-        if (prev)
-            prev->cancel();
+        if (actionParams.previousAction)
+            actionParams.previousAction->cancel();
         return { folly::unit, false };
         }
     };
@@ -209,13 +219,43 @@ struct TaskManagerStressTestCancelWithPredicateAction : TaskManagerStressTestAct
         json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
         return json;
         }
-    TestActionExecuteResult _Execute(ECPresentationTasksManager& manager, folly::Future<folly::Unit>*) const override
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
         {
-        auto result = manager.Cancel([](IECPresentationTaskCR){return true;});
+        auto result = actionParams.getManager().Cancel([](IECPresentationTaskCR){return true;});
         return { result.GetCompletion().then(), false };
         }
     };
 Utf8CP const TaskManagerStressTestCancelWithPredicateAction::s_type = "CancelWithPredicate";
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct TaskManagerStressTestRecreateTaskManagerAction : TaskManagerStressTestAction
+    {
+    static Utf8CP const s_type;
+    template<typename TRandomizer>
+    static std::unique_ptr<TaskManagerStressTestAction> CreateRandom(TRandomizer&)
+        {
+        return std::make_unique<TaskManagerStressTestRecreateTaskManagerAction>();
+        }
+    static std::unique_ptr<TaskManagerStressTestAction> FromJson(RapidJsonValueCR json)
+        {
+        return std::make_unique<TaskManagerStressTestRecreateTaskManagerAction>();
+        }
+    rapidjson::Document _ToJson(rapidjson::Document::AllocatorType* allocator) const override
+        {
+        rapidjson::Document json(allocator);
+        json.SetObject();
+        json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
+        return json;
+        }
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
+        {
+        actionParams.recreateTaskManager();
+        return { folly::unit, false };
+        }
+    };
+Utf8CP const TaskManagerStressTestRecreateTaskManagerAction::s_type = "RecreateTaskManager";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -228,6 +268,7 @@ std::unique_ptr<TaskManagerStressTestAction> TaskManagerStressTestAction::FromJs
         std::make_pair(TaskManagerStressTestChainedTaskAction::s_type, &TaskManagerStressTestChainedTaskAction::FromJson),
         std::make_pair(TaskManagerStressTestCancelPreviousAction::s_type, &TaskManagerStressTestCancelPreviousAction::FromJson),
         std::make_pair(TaskManagerStressTestCancelWithPredicateAction::s_type, &TaskManagerStressTestCancelWithPredicateAction::FromJson),
+        std::make_pair(TaskManagerStressTestRecreateTaskManagerAction::s_type, &TaskManagerStressTestRecreateTaskManagerAction::FromJson),
         };
     auto iter = factories.find(json["Type"].GetString());
     if (factories.end() != iter)
@@ -247,6 +288,7 @@ std::unique_ptr<TaskManagerStressTestAction> TaskManagerStressTestAction::Create
         &TaskManagerStressTestChainedTaskAction::CreateRandom,
         &TaskManagerStressTestCancelPreviousAction::CreateRandom,
         &TaskManagerStressTestCancelWithPredicateAction::CreateRandom,
+        &TaskManagerStressTestRecreateTaskManagerAction::CreateRandom,
         };
     auto factory = factories[(size_t)std::uniform_int_distribution<unsigned>(0, factories.size() - 1)(randomizer)];
     return factory(randomizer);
@@ -373,13 +415,29 @@ struct TaskManagerStressTests : ECPresentationTest
 
     void ExecuteStrategy(TaskManagerStressTestStrategy const& s)
         {
-        TThreadAllocationsMap threadAllocations;
-        threadAllocations.Insert(INT_MAX, s.m_threadsCount);
-        auto taskManager = std::make_unique<ECPresentationTasksManager>(threadAllocations);
+        std::unique_ptr<ECPresentationTasksManager> taskManager;
+        auto getTaskManager = [&]() ->ECPresentationTasksManager&
+            {
+            return *taskManager;
+            };
+        auto createTaskManager = [&]()
+            {
+            TThreadAllocationsMap threadAllocations;
+            threadAllocations.Insert(INT_MAX, s.m_threadsCount);
+            taskManager = std::make_unique<ECPresentationTasksManager>(threadAllocations);
+            };
+        createTaskManager();
 
         std::vector<TestActionExecuteResult> results;
         for (auto const& action : s.m_actions)
-            results.push_back(action->_Execute(*taskManager, results.empty() ? nullptr : &results.back().future));
+            {
+            results.push_back(action->_Execute(
+                {
+                getTaskManager,
+                results.empty() ? nullptr : &results.back().future,
+                createTaskManager,
+                }));
+            }
 
         std::vector<folly::Future<folly::Unit>> futures;
         for (size_t i = 0; i < results.size(); ++i)
