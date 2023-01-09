@@ -570,14 +570,13 @@ double globalRelTol
 )
     {
     double tol;
-    double maxAbs, maxDiagonal;
+    double maxDiagonal;
     double a, b;
     DRange3d range;
     DVec3d diagonal;
     range.InitFrom(pXYZ, numXYZ);
     diagonal.DifferenceOf (range.low, range.high);
-    maxAbs = range.LargestCoordinate ();
-    maxDiagonal = diagonal.MaxAbs ();
+    maxDiagonal = diagonal.MaxAbs ();   // TODO: probably should be range.LargestCoordinate >= diagonal.MaxAbs 
 
     if (absTol < sDefaultAbsTol)
         absTol = sDefaultAbsTol;
