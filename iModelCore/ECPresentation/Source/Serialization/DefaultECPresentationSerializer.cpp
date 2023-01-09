@@ -681,13 +681,13 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, ECIns
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, PresentationQuery const& presentationQueryBase,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, PresentationQuery const& presentationQuery,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    json.AddMember("Query", rapidjson::Value(presentationQueryBase.GetQueryString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Bindings", _AsJson(ctx, presentationQueryBase.GetBindings(), &json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Query", rapidjson::Value(presentationQuery.GetQueryString().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Bindings", _AsJson(ctx, presentationQuery.GetBindings(), &json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
