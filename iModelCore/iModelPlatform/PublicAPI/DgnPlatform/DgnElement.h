@@ -3852,7 +3852,6 @@ private:
 
     void Destroy();
     void AddToPool(DgnElementCR) const;
-    void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, Utf8CP jsonProps, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
@@ -3893,6 +3892,8 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
     DGNPLATFORM_EXPORT DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
+
+    DGNPLATFORM_EXPORT bool ElementExists(DgnElementId);
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.

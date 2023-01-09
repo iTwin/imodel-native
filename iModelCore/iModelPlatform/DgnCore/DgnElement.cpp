@@ -1392,7 +1392,6 @@ void DgnElement::_FromJson(BeJsConst props) {
 DgnElement::CreateParams::CreateParams(DgnDbR db, BeJsConst val) : m_dgndb(db) {
     m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(val[DgnElement::json_classFullName()], db.GetClassLocater());
     m_modelId.FromJson(val[DgnElement::json_model()]);
-    m_code = DgnCode::FromJson(val[DgnElement::json_code()], db);
     m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
     m_userLabel = val[DgnElement::json_userLabel()].asString();
 

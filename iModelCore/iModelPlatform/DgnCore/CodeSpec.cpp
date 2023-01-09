@@ -557,7 +557,11 @@ void DgnCode::ToJson(BeJsValue val) const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db) {
-    DgnCode val;
+    DgnCode val = CreateEmpty();
+    val.m_value = value[json_value()].asString();
+    if (val.m_value.empty())
+        return val; // if the value is empty, don't use any of the other parameters
+
     auto specJson = value[json_spec()];
     val.m_specId = CodeSpecId(specJson.asUInt64());
     if (!val.m_specId.IsValid()) {
@@ -566,7 +570,26 @@ DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db) {
         auto specPtr = db.CodeSpecs().GetCodeSpec(specJson.asCString());
         val.m_specId = specPtr.IsValid() ? specPtr->GetCodeSpecId() : CodeSpec::GetNullCodeSpecId();
     }
-    val.m_scope = value[json_scope()].asString();
-    val.m_value = value[json_value()].asString();
+
+    // the code scope must refer to an existing element. The json may have an ElementId or FederationGuid
+    auto scopeJson = value[json_scope()];
+    auto scopeStr = scopeJson.asCString();
+
+    // Note: this is necessary since GetId64 parses strings that start with number successfully and can get confused with Guids.
+    // ElementIds in JSON must start with "0x"
+    auto validId = scopeStr && (scopeStr[0] == '0' && (scopeStr[1] == 'X' || scopeStr[1] == 'x'));
+
+    auto scopeId = scopeJson.GetId64<DgnElementId>();
+    if (!validId || !db.Elements().ElementExists(scopeId)) {
+        BeGuid scopeFederationGuid;
+        DgnElementCPtr scopeEl;
+        if (BentleyStatus::SUCCESS == scopeFederationGuid.FromString(scopeJson.asCString()))
+            scopeEl = db.Elements().QueryElementByFederationGuid(scopeFederationGuid);
+        if (!scopeEl.IsValid())
+            throw std::invalid_argument("invalid code scope");// the value didn't refer to an element either by ElementId or FederationGuid
+
+        scopeId = scopeEl->GetElementId();
+    }
+    val.m_scope = scopeId.ToHexStr();
     return val;
 }
