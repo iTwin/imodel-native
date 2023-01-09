@@ -340,7 +340,7 @@ public:
         m_promiseResolved = std::make_shared<bool>(false);
         m_promise.setInterruptHandler([&, promiseResolved = m_promiseResolved](folly::exception_wrapper const& e)
             {
-            BeMutexHolder lock(m_mutex);
+            BeMutexHolder lock(mutex);
             if (*promiseResolved)
                 {
                 // the interrupt handler may outlive the task - the `promiseResolved` shared_ptr is used

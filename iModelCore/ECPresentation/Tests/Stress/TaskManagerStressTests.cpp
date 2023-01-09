@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 #define STRATEGY_FILENAME       L"TaskManagerStressTestStrategy.json"
-#define MAX_TASK_EXECUTION_TIME 200
+#define MAX_TASK_EXECUTION_TIME 100
 #define MAX_WORKER_THREADS      4
 
 /*=================================================================================**//**
@@ -169,14 +169,18 @@ Utf8CP const TaskManagerStressTestRestartAction::s_type = "Restart";
 struct TaskManagerStressTestCancelPreviousAction : TaskManagerStressTestAction
     {
     static Utf8CP const s_type;
+    unsigned m_sleepBeforeCancel;
     template<typename TRandomizer>
-    static std::unique_ptr<TaskManagerStressTestAction> CreateRandom(TRandomizer&)
+    static std::unique_ptr<TaskManagerStressTestAction> CreateRandom(TRandomizer& randomizer)
         {
-        return std::make_unique<TaskManagerStressTestCancelPreviousAction>();
+        auto action = std::make_unique<TaskManagerStressTestCancelPreviousAction>();
+        action->m_sleepBeforeCancel = std::uniform_int_distribution<unsigned>(0, MAX_TASK_EXECUTION_TIME)(randomizer);
+        return action;
         }
     static std::unique_ptr<TaskManagerStressTestAction> FromJson(RapidJsonValueCR json)
         {
         auto action = std::make_unique<TaskManagerStressTestCancelPreviousAction>();
+        action->m_sleepBeforeCancel = json["SleepBeforeCancel"].GetUint();
         return action;
         }
     rapidjson::Document _ToJson(rapidjson::Document::AllocatorType* allocator) const override
@@ -184,10 +188,12 @@ struct TaskManagerStressTestCancelPreviousAction : TaskManagerStressTestAction
         rapidjson::Document json(allocator);
         json.SetObject();
         json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
+        json.AddMember("SleepBeforeCancel", m_sleepBeforeCancel, json.GetAllocator());
         return json;
         }
     TestActionExecuteResult _Execute(TestActionExecuteParams const& actionParams) const override
         {
+        BeThreadUtilities::BeSleep(m_sleepBeforeCancel);
         if (actionParams.previousAction)
             actionParams.previousAction->cancel();
         return { folly::unit, false };
