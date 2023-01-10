@@ -239,11 +239,11 @@ protected:
         caBuilder.EmplaceProperty("LooseEnumerationProperty", 2);
         for (auto i = 0; i < 2; ++ i)
             caBuilder.EmplaceProperty("DoubleArrayProperty", 1, 2, i);
-        caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder.BuildInstance());
+        caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder);
         for (auto i = 0; i < 2; ++ i)
             {
-            simpleStructBuilder.EmplaceProperty("SimpleProperty", Utf8PrintfString("value-%d", i));
-            caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder.BuildInstance(), 2, i);
+            simpleStructBuilder.EmplaceProperty("SimpleProperty", Utf8PrintfString("value-%d", i).c_str());
+            caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder, 2, i);
             }
         m_customAttribute = caBuilder.BuildInstance();
 
