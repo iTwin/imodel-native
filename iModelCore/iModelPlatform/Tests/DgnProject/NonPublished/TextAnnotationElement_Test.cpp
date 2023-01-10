@@ -47,6 +47,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
         {
         SetupSeedProject();
         dbPath = BeFileName(m_db->GetDbFileName());
+        m_db->CloseDb();
         }
 
     DgnModelId modelId;
@@ -219,6 +220,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
         {
         SetupSeedProject();
         dbPath = BeFileName(m_db->GetDbFileName());
+        m_db->CloseDb();
         }
 
     DgnModelId modelId;
