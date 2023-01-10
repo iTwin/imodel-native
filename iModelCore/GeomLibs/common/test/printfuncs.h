@@ -808,14 +808,14 @@ void Content (char const *pName, DPoint2d const *pData)
 
 void Content (char const *pName, RotMatrix const *pM)
     {
-    EmitCompleteTag ("row0", pName, Utf8PrintfString("%lg,%lg,%lg", pM->form3d[0][0], pM->form3d[0][1], pM->form3d[0][2]).c_str());
+    EmitCompleteTag ("row0", pName, Utf8PrintfString("[%lg,%lg,%lg", pM->form3d[0][0], pM->form3d[0][1], pM->form3d[0][2]).c_str());
     EmitCompleteTag ("row1", pName, Utf8PrintfString("%lg,%lg,%lg", pM->form3d[1][0], pM->form3d[1][1], pM->form3d[1][2]).c_str());
     EmitCompleteTag ("row2", pName, Utf8PrintfString("%lg,%lg,%lg]", pM->form3d[2][0], pM->form3d[2][1], pM->form3d[2][2]).c_str());
     }
 
 void Content (char const *pName, DPoint4d const *pPoint)
     {
-    EmitCompleteTag("DPoint4d", pName, Utf8PrintfString("%lg,%lg,%lg", pPoint->x, pPoint->y, pPoint->z, pPoint->w).c_str());
+    EmitCompleteTag("DPoint4d", pName, Utf8PrintfString("%lg,%lg,%lg,%lg", pPoint->x, pPoint->y, pPoint->z, pPoint->w).c_str());
     }
 
 void Content (char const *pName, GraphicsPoint const *pGP)

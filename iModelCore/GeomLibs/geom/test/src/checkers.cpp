@@ -71,7 +71,7 @@ void Check::StartScope (char const *name, DRay3dCR value)
 
 void Check::StartScope (char const *name, RotMatrixCR value)
     {
-    StartScope (Utf8PrintfString("(%s \n  (RowX %.15lg %.15lg %.15lg)\n  (RowY %.15lg %.15lg %.15lg)\n  (RowY %.15lg %.15lg %.15lg))", name, value.form3d[0][0], value.form3d[0][1], value.form3d[0][2], value.form3d[1][0], value.form3d[1][1], value.form3d[1][2], value.form3d[2][0], value.form3d[2][1], value.form3d[2][2]).c_str());
+    StartScope (Utf8PrintfString("(%s \n  (RowX %.15lg %.15lg %.15lg)\n  (RowY %.15lg %.15lg %.15lg)\n  (RowZ %.15lg %.15lg %.15lg))", name, value.form3d[0][0], value.form3d[0][1], value.form3d[0][2], value.form3d[1][0], value.form3d[1][1], value.form3d[1][2], value.form3d[2][0], value.form3d[2][1], value.form3d[2][2]).c_str());
     }
 
 
