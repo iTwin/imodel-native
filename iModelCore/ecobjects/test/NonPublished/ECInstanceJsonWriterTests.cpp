@@ -136,11 +136,15 @@ struct ECInstanceJsonWriterTests : ECTestFixture
     {
     static ECSchemaPtr m_schema;
 
+    static PrimitiveECPropertyP m_simpleStructProperty;
+    static ECStructClassP m_simpleStructClass;
+
     static ECRelationshipClassP m_relationshipClass;
     static ECEntityClassP m_sourceClass;
     static ECEntityClassP m_targetClass;
     static ECStructClassP m_structClass;
     static ECStructClassP m_structStructClass;
+    static ECCustomAttributeClassP m_customAttributeClass;
     static ECEnumerationP m_strictEnumeration;
     static ECEnumerationP m_looseEnumeration;
 
@@ -176,6 +180,19 @@ struct ECInstanceJsonWriterTests : ECTestFixture
     static KindOfQuantityP m_angleKindOfQuantity;
     static KindOfQuantityP m_volumeKindOfQuantity;
 
+    static PrimitiveECPropertyP m_caIntProperty;
+    static PrimitiveECPropertyP m_caDoubleProperty;
+    static PrimitiveECPropertyP m_caStringProperty;
+    static PrimitiveECPropertyP m_caGeometryProperty;
+    static PrimitiveECPropertyP m_caStrictEnumerationProperty;
+    static PrimitiveECPropertyP m_caLooseEnumerationProperty;
+    static PrimitiveArrayECPropertyP m_caDoubleArrayProperty;
+    static StructECPropertyP m_caStructProperty;
+    static StructArrayECPropertyP m_caStructArrayProperty;
+
+    static IGeometryPtr m_caGeomVal;
+    static IECInstancePtr m_customAttribute;
+
 protected:
     void SetUp() override
         {
@@ -187,15 +204,50 @@ protected:
         m_schema->AddReferencedSchema(*GetUnitsSchema());
         m_schema->AddReferencedSchema(*GetFormatsSchema());
 
+        m_schema->CreateStructClass(m_simpleStructClass, "SimpleStruct");
+        m_simpleStructClass->CreatePrimitiveProperty(m_simpleStructProperty, "SimpleProperty", PRIMITIVETYPE_String);
+
         m_schema->CreateEntityClass(m_sourceClass, "SourceClass");
         m_schema->CreateEntityClass(m_targetClass, "TargetClass");
         m_schema->CreateRelationshipClass(m_relationshipClass, "RelationshipClass");
         m_schema->CreateStructClass(m_structClass, "OuterStructClass");
         m_schema->CreateStructClass(m_structStructClass, "InnerStructClass");
+        m_schema->CreateCustomAttributeClass(m_customAttributeClass, "CustomAttributeClass");
         m_schema->CreateEnumeration(m_strictEnumeration, "StrictEnumeration", PRIMITIVETYPE_String);
         m_schema->CreateEnumeration(m_looseEnumeration, "LooseEnumeration", PRIMITIVETYPE_Integer);
         m_schema->CreateKindOfQuantity(m_volumeKindOfQuantity, "VolumeKindOfQuantity");
         m_schema->CreateKindOfQuantity(m_angleKindOfQuantity, "AngleKindOfQuantity");
+
+        m_customAttributeClass->CreatePrimitiveProperty(m_caIntProperty, "IntProperty", PRIMITIVETYPE_Integer);
+        m_customAttributeClass->CreatePrimitiveProperty(m_caDoubleProperty, "DoubleProperty", PRIMITIVETYPE_Double);
+        m_customAttributeClass->CreatePrimitiveProperty(m_caStringProperty, "StringProperty", PRIMITIVETYPE_String);
+        m_customAttributeClass->CreatePrimitiveProperty(m_caGeometryProperty, "GeometryProperty", PRIMITIVETYPE_IGeometry);
+        m_customAttributeClass->CreateEnumerationProperty(m_caStrictEnumerationProperty, "StrictEnumerationProperty", *m_strictEnumeration);
+        m_customAttributeClass->CreateEnumerationProperty(m_caLooseEnumerationProperty, "LooseEnumerationProperty", *m_looseEnumeration);
+        m_customAttributeClass->CreatePrimitiveArrayProperty(m_caDoubleArrayProperty, "DoubleArrayProperty", PRIMITIVETYPE_Double);
+        m_customAttributeClass->CreateStructProperty(m_caStructProperty, "StructProperty", *m_simpleStructClass);
+        m_customAttributeClass->CreateStructArrayProperty(m_caStructArrayProperty, "StructArrayProperty", *m_simpleStructClass);
+
+        auto simpleStructBuilder = ECInstanceBuilder(*m_simpleStructClass);
+        simpleStructBuilder.EmplaceProperty("SimpleProperty", "simple-value");
+        auto caBuilder = ECInstanceBuilder(*m_customAttributeClass);
+        caBuilder.EmplaceProperty("IntProperty", 1);
+        caBuilder.EmplaceProperty("DoubleProperty", 2.0);
+        caBuilder.EmplaceProperty("StringProperty", "string");
+        caBuilder.EmplaceProperty("GeometryProperty", *m_caGeomVal);
+        caBuilder.EmplaceProperty("StrictEnumerationProperty", "EnumeratorB");
+        caBuilder.EmplaceProperty("LooseEnumerationProperty", 2);
+        for (auto i = 0; i < 2; ++ i)
+            caBuilder.EmplaceProperty("DoubleArrayProperty", 1, 2, i);
+        caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder.BuildInstance());
+        for (auto i = 0; i < 2; ++ i)
+            {
+            simpleStructBuilder.EmplaceProperty("SimpleProperty", Utf8PrintfString("value-%d", i));
+            caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder.BuildInstance(), 2, i);
+            }
+        m_customAttribute = caBuilder.BuildInstance();
+
+        m_sourceClass->SetCustomAttribute(*m_customAttribute);
 
         m_relationshipClass->GetSource().AddClass(*m_sourceClass);
         m_relationshipClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
@@ -300,11 +352,14 @@ private:
 // Static member definitions
 
 ECSchemaPtr ECInstanceJsonWriterTests::m_schema;
+PrimitiveECPropertyP ECInstanceJsonWriterTests::m_simpleStructProperty;
+ECStructClassP ECInstanceJsonWriterTests::m_simpleStructClass;
 ECRelationshipClassP ECInstanceJsonWriterTests::m_relationshipClass;
 ECEntityClassP ECInstanceJsonWriterTests::m_sourceClass;
 ECEntityClassP ECInstanceJsonWriterTests::m_targetClass;
 ECStructClassP ECInstanceJsonWriterTests::m_structClass;
 ECStructClassP ECInstanceJsonWriterTests::m_structStructClass;
+ECCustomAttributeClassP ECInstanceJsonWriterTests::m_customAttributeClass;
 ECEnumerationP ECInstanceJsonWriterTests::m_strictEnumeration;
 ECEnumerationP ECInstanceJsonWriterTests::m_looseEnumeration;
 StructECPropertyP ECInstanceJsonWriterTests::m_sourceStructProperty;
@@ -332,6 +387,17 @@ ECEnumeratorP ECInstanceJsonWriterTests::m_looseEnumerator1;
 ECEnumeratorP ECInstanceJsonWriterTests::m_looseEnumerator2;
 KindOfQuantityP ECInstanceJsonWriterTests::m_angleKindOfQuantity;
 KindOfQuantityP ECInstanceJsonWriterTests::m_volumeKindOfQuantity;
+PrimitiveECPropertyP ECInstanceJsonWriterTests::m_caIntProperty;
+PrimitiveECPropertyP ECInstanceJsonWriterTests::m_caDoubleProperty;
+PrimitiveECPropertyP ECInstanceJsonWriterTests::m_caStringProperty;
+PrimitiveECPropertyP ECInstanceJsonWriterTests::m_caGeometryProperty;
+PrimitiveECPropertyP ECInstanceJsonWriterTests::m_caStrictEnumerationProperty;
+PrimitiveECPropertyP ECInstanceJsonWriterTests::m_caLooseEnumerationProperty;
+PrimitiveArrayECPropertyP ECInstanceJsonWriterTests::m_caDoubleArrayProperty;
+StructECPropertyP ECInstanceJsonWriterTests::m_caStructProperty;
+StructArrayECPropertyP ECInstanceJsonWriterTests::m_caStructArrayProperty;
+IGeometryPtr ECInstanceJsonWriterTests::m_caGeomVal = IGeometry::Create(ICurvePrimitive::CreateArc(DEllipse3d::From(1, 1, 1,   0, 0, 2,   0, 3, 0,   0.0, Angle::TwoPi())));
+IECInstancePtr ECInstanceJsonWriterTests::m_customAttribute;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
