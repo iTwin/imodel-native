@@ -302,37 +302,33 @@ DgnDbStatus JsInterop::GetSchemaItem(BeJsValue mjson, DgnDbR dgndb, Utf8CP schem
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Object obj) {
-    try {
-        BeJsConst inOpts(obj);
-        DgnElementCPtr elem;
-        DgnElementId eid = inOpts[json_id()].GetId64<DgnElementId>();
+    BeJsConst inOpts(obj);
+    DgnElementCPtr elem;
+    DgnElementId eid = inOpts[json_id()].GetId64<DgnElementId>();
 
-        if (!eid.IsValid()) {
-            auto fedJson = inOpts[json_federationGuid()];
-            if (fedJson.isString()) {
-                BeGuid federationGuid;
-                federationGuid.FromString(fedJson.asCString());
-                elem = dgndb.Elements().QueryElementByFederationGuid(federationGuid);
-            } else {
-                eid = dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson(inOpts[json_code()], dgndb));
-            }
+    if (!eid.IsValid()) {
+        auto fedJson = inOpts[json_federationGuid()];
+        if (fedJson.isString()) {
+            BeGuid federationGuid;
+            federationGuid.FromString(fedJson.asCString());
+            elem = dgndb.Elements().QueryElementByFederationGuid(federationGuid);
+        } else {
+            eid = dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson(inOpts[json_code()], dgndb, false));
         }
-
-        if (!elem.IsValid())
-            elem = dgndb.Elements().GetElement(eid);
-
-        if (!elem.IsValid())
-            return DgnDbStatus::NotFound;
-
-        // if they only want base properties, don't bother calling virtual function
-        if (inOpts[json_onlyBaseProperties()].asBool())
-            elem->ToBaseJson(elementJson);
-        else
-            elem->ToJson(elementJson, inOpts);
-        return DgnDbStatus::Success;
-    } catch (std::logic_error const& err) {
-        BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
     }
+
+    if (!elem.IsValid())
+        elem = dgndb.Elements().GetElement(eid);
+
+    if (!elem.IsValid())
+        return DgnDbStatus::NotFound;
+
+    // if they only want base properties, don't bother calling virtual function
+    if (inOpts[json_onlyBaseProperties()].asBool())
+        elem->ToBaseJson(elementJson);
+    else
+        elem->ToJson(elementJson, inOpts);
+    return DgnDbStatus::Success;
 }
 
 struct SetNapiObjOnElement {
@@ -1029,27 +1025,23 @@ void JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::GetModel(Napi::Object modelObj, DgnDbR dgndb, BeJsConst inOpts) {
-    try {
-        DgnModelId modelId = inOpts[json_id()].GetId64<DgnModelId>();
-        if (!modelId.IsValid()) {
-            auto codeVal = inOpts[json_code()];
-            if (codeVal.isNull())
-                return DgnDbStatus::NotFound;
-
-            modelId = dgndb.Models().QuerySubModelId(DgnCode::FromJson(codeVal, dgndb));
-        }
-
-        //  Look up the model
-        auto model = dgndb.Models().GetModel(modelId);
-        if (!model.IsValid())
+    DgnModelId modelId = inOpts[json_id()].GetId64<DgnModelId>();
+    if (!modelId.IsValid()) {
+        auto codeVal = inOpts[json_code()];
+        if (codeVal.isNull())
             return DgnDbStatus::NotFound;
 
-        model->ToJson(modelObj, inOpts);
-        // Note: there are no auto-handled properties on DgnModels. Any such data goes on the modeled element.
-        return DgnDbStatus::Success;
-    } catch (std::logic_error const& err) {
-        BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
+        modelId = dgndb.Models().QuerySubModelId(DgnCode::FromJson(codeVal, dgndb, false));
     }
+
+    //  Look up the model
+    auto model = dgndb.Models().GetModel(modelId);
+    if (!model.IsValid())
+        return DgnDbStatus::NotFound;
+
+    model->ToJson(modelObj, inOpts);
+    // Note: there are no auto-handled properties on DgnModels. Any such data goes on the modeled element.
+    return DgnDbStatus::Success;
 }
 
 //---------------------------------------------------------------------------------------

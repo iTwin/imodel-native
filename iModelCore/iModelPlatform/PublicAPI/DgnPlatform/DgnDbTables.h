@@ -314,7 +314,7 @@ public:
     BE_JSON_NAME(scope)
     BE_JSON_NAME(value)
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
-    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR);
+    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR, bool validateScope);
 };
 
 typedef bset<DgnCode> DgnCodeSet;

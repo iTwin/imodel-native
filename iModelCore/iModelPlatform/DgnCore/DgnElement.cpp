@@ -1328,7 +1328,7 @@ void DgnElement::_FromJson(BeJsConst props) {
 
     auto code = props[json_code()];
     if (!code.isNull())
-        m_code = DgnCode::FromJson(code, m_dgndb);
+        m_code = DgnCode::FromJson(code, m_dgndb, true);
 
     // support partial update, only update m_federationGuid if props has member
     if (props.hasMember(json_federationGuid())) {
@@ -1348,7 +1348,7 @@ void DgnElement::_FromJson(BeJsConst props) {
             m_userLabel.clear(); // allow undefined to clear an existing value
     }
 
-         // support partial update, only update m_parent if props has member
+    // support partial update, only update m_parent if props has member
     if (props.hasMember(json_parent())) {
         auto parent = props[json_parent()];
         m_parent.FromJson(m_dgndb, parent); // RelatedElement::FromJson also clears for undefined
