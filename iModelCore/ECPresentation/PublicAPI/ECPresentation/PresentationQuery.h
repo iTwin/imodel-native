@@ -218,7 +218,6 @@ struct BoundQueryValuesList : bvector<std::shared_ptr<BoundQueryValue const>>
         return true;
         }
     ECPRESENTATION_EXPORT BentleyStatus Bind(BeSQLite::EC::ECSqlStatement&) const;
-    ECPRESENTATION_EXPORT rapidjson::Document ToJsonInternal(rapidjson::Document::AllocatorType* alloc = nullptr) const;
     ECPRESENTATION_EXPORT BentleyStatus FromJson(IBoundQueryValueSerializer&, BeJsConst);
     };
 

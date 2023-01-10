@@ -151,23 +151,6 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundRapidJsonValu
     ((RapidJsonValueCR)json).Accept(writer);
     return json;
     }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundQueryValuesList::ToJsonInternal(rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    DefaultBoundQueryValueSerializer boundQueryValueSerializer;
-    json.SetArray();
-    for (size_t i = 0; i < size(); ++i)
-        {
-        auto const& value = at(i);
-        json.PushBack(value->ToJson(boundQueryValueSerializer, &json.GetAllocator()), json.GetAllocator());
-        }
-    return json;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
