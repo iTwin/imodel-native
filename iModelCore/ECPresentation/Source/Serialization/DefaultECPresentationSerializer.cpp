@@ -897,19 +897,14 @@ LabelGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetLabelGroupingNodeKe
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const
     {
+    if (navNode.GetKey().IsNull())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, "Attempting to serialize a node with NULL key");
+
     rapidjson::Document json(allocator);
     json.SetObject();
     Utf8String nodeId = ValueHelpers::GuidToString(navNode.GetNodeId());
     json.AddMember("NodeId", rapidjson::Value(nodeId.c_str(), json.GetAllocator()), json.GetAllocator());
-    if (navNode.GetKey().IsNull())
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, "Attempting to serialize a node with NULL key");
-        json.AddMember("Key", NavNodeKey::Create("", "", bvector<Utf8String>())->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-        }
-    else
-        {
-        json.AddMember("Key", navNode.GetKey()->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-        }
+    json.AddMember("Key", navNode.GetKey()->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
     json.AddMember("Description", rapidjson::Value(navNode.GetDescription().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("ImageId", rapidjson::Value(navNode.GetImageId().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("ForeColor", rapidjson::Value(navNode.GetForeColor().c_str(), json.GetAllocator()), json.GetAllocator());
@@ -1036,7 +1031,7 @@ KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR conn
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(ecClassId);
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Serialization, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Instance key contains an invalid ECClass ID: '%s'", classId));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Serialization, LOG_INFO, LOG_ERROR, Utf8PrintfString("Instance key contains an invalid ECClass ID: '%s'", classId));
             return false;
             }
         bset<ECInstanceId> instanceIdSet;

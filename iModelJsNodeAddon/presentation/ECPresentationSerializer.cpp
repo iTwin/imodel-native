@@ -21,7 +21,7 @@ ECClassCP IModelJsECPresentationSerializer::GetClassFromFullName(ECDbCR db, BeJs
     {
     ECClassCP ecClass = ECJsonUtilities::GetClassFromClassNameJson(fullClassNameJson, db.GetClassLocater());
     if (nullptr == ecClass)
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_DEBUG, NativeLogging::LOG_ERROR, Utf8PrintfString("Failed to find a requested ECClass: '%s'", fullClassNameJson.asCString()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_INFO, NativeLogging::LOG_ERROR, Utf8PrintfString("Failed to find a requested ECClass: '%s'", fullClassNameJson.asCString()));
     return ecClass;
     }
 
@@ -1542,7 +1542,7 @@ KeySetPtr IModelJsECPresentationSerializer::GetKeySetFromJson(IConnectionCR conn
             ECClassCP ecClass = GetClassFromFullName(connection, instanceKeysEntry[0]);
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_DEBUG, NativeLogging::LOG_ERROR, Utf8PrintfString("Found invalid ECClass in given KeySet: '%s'", instanceKeysEntry[0].asCString()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_INFO, NativeLogging::LOG_ERROR, Utf8PrintfString("Found invalid ECClass in given KeySet: '%s'", instanceKeysEntry[0].asCString()));
                 return false;
                 }
 

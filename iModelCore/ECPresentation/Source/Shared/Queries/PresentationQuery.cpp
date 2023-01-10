@@ -174,8 +174,7 @@ ECSqlStatus BoundQueryECValue::_Bind(ECSqlStatement& stmt, uint32_t index) const
         case PRIMITIVETYPE_Point3d: return stmt.BindPoint3d((int)index, m_value.GetPoint3d());
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled ECValue type: %d", (int)m_value.GetPrimitiveType()));
-    return ECSqlStatus::Error;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled ECValue type: %d", (int)m_value.GetPrimitiveType()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -556,7 +555,7 @@ static bool AreEqual(JoinClause const& lhs, JoinClause const& rhs)
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilder::PresentationQueryBuilder() : m_isOuterQuery(true) {}
-PresentationQueryBuilder::PresentationQueryBuilder(PresentationQueryBuilder const& other) 
+PresentationQueryBuilder::PresentationQueryBuilder(PresentationQueryBuilder const& other)
     : m_isOuterQuery(other.m_isOuterQuery)
     {
     if (other.m_navigationResultParams != nullptr)
@@ -687,8 +686,7 @@ bool ComplexQueryBuilder::HasClause(PresentationQueryClauses clauses) const
     if (CLAUSE_Having == (CLAUSE_Having & clauses))
         return !m_havingClause.GetClause().empty();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled presentation query clause type: %d", (int)clauses));
-    return false;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled presentation query clause type: %d", (int)clauses));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1232,9 +1230,8 @@ static std::unique_ptr<JoinInfo> DetermineJoinTarget(bvector<std::shared_ptr<Sel
             return std::make_unique<JoinInfo>(fromClause.GetClass(), fromClause.GetAlias().empty() ? fromClause.GetClass().GetName() : fromClause.GetAlias(), true);
             }
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Tried to JOIN on a relationship whose neither target nor source exists in the FROM clause"
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Tried to JOIN on a relationship whose neither target nor source exists in the FROM clause"
         "Relationship: '%s'", joinClause.m_using.GetClass().GetFullName()));
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1299,8 +1296,7 @@ static Utf8String GetOppositeNavigationPropertyName(NavigationECPropertyCR navig
         return wasPreviousJoinForward ? "[TargetECInstanceId]" : "[SourceECInstanceId]";
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Previously joined class is not an Entity and not a Relationship class: '%s'", previouslyJoinedClass.GetFullName()));
-    return "[ECInstanceId]";
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Previously joined class is not an Entity and not a Relationship class: '%s'", previouslyJoinedClass.GetFullName()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1539,8 +1535,7 @@ Utf8String ComplexQueryBuilder::GetClause(PresentationQueryClauses clause) const
     if (CLAUSE_Having == (CLAUSE_Having & clause))
         return m_havingClause.GetClause();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid presentation query clause: '%d'", (int)clause));
-    return "";
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid presentation query clause: '%d'", (int)clause));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2169,8 +2164,7 @@ bool RapidJsonValueComparer::operator() (rapidjson::Value const* left, rapidjson
             return BeRapidJsonUtilities::ToString(*left).CompareTo(BeRapidJsonUtilities::ToString(*right));
             }
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled rapidjson value type: %d", (int)left->GetType()));
-    return false;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled rapidjson value type: %d", (int)left->GetType()));
     };
 
 /*=================================================================================**//**
@@ -2182,10 +2176,8 @@ bool RapidJsonValueSet::Equals(RapidJsonValueSet const& otherSet) const
     }
 bool RapidJsonValueSet::_IsInSet(int nVals, BeSQLite::DbValue const* vals) const
     {
-    if (nVals < 1)
+    if (nVals < 1 || nVals > 1)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
-    if (nVals > 1)
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
 
     rapidjson::Document jsonValue;
     if (!vals[0].IsNull())
@@ -2292,22 +2284,22 @@ size_t PrimitiveECValueHasher::operator()(ECValueCR value) const
             hash ^= std::hash<std::string>{}(value.GetUtf8CP()) << 2;
             break;
         case PRIMITIVETYPE_Point2d:
-        {
-        DPoint2d point2d = value.GetPoint2d();
-        hash ^= (std::hash<double>{}(point2d.x) ^ (std::hash<double>{}(point2d.y) << 8)) << 2;
-        break;
-        }
+            {
+            DPoint2d point2d = value.GetPoint2d();
+            hash ^= (std::hash<double>{}(point2d.x) ^ (std::hash<double>{}(point2d.y) << 8)) << 2;
+            break;
+            }
         case PRIMITIVETYPE_Point3d:
-        {
-        DPoint3d point3d = value.GetPoint3d();
-        hash ^= (std::hash<double>{}(point3d.x) ^ (std::hash<double>{}(point3d.y) << 8) ^ (std::hash<double>{}(point3d.z) << 16)) << 2;
-        break;
-        }
+            {
+            DPoint3d point3d = value.GetPoint3d();
+            hash ^= (std::hash<double>{}(point3d.x) ^ (std::hash<double>{}(point3d.y) << 8) ^ (std::hash<double>{}(point3d.z) << 16)) << 2;
+            break;
+            }
         case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_IGeometry:
             break;
         default:
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
         }
     return hash;
     };
@@ -2341,10 +2333,8 @@ void ECValueVirtualSet::Insert(ECValue value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECValueVirtualSet::_IsInSet(int nVals, BeSQLite::DbValue const* vals) const
     {
-    if (nVals < 1)
+    if (nVals < 1 || nVals > 1)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
-    if (nVals > 1)
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
 
     if (m_values.empty())
         return false;
