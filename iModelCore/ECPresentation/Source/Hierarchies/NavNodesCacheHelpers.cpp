@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
-//#include <ECPresentation/DefaultECPresentationSerializer.h> BTBT
 #include "NavNodesHelper.h"
 #include "NavNodesCacheHelpers.h"
 #include "NavNodesCache.h"
@@ -197,10 +196,10 @@ static bvector<BeGuid> GetVirtualParentIds(Statement& stmt, int index)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void SetInstanceKeysSelectQueryFromStatement(Statement& stmt, NavNodeKeyPtr nodeKey)
     {
-    if (!stmt.IsColumnNull(3))
+    if (!stmt.IsColumnNull(4))
         {
         rapidjson::Document json;
-        json.Parse(stmt.GetValueText(3));
+        json.Parse(stmt.GetValueText(4));
         nodeKey->SetInstanceKeysSelectQuery(ECPresentationManager::GetSerializer().GetPresentationQueryFromJson(json));
         }
     }
@@ -284,7 +283,7 @@ NavNodePtr NodesCacheHelpers::CreateNodeFromStatement(Statement& stmt, NavNodesF
     e.SetIsCustomized(false);
     e.SetNodeInitialized(false);
 
-    node->SetNodeId(NodesCacheHelpers::GetGuid(stmt, 4));
+    node->SetNodeId(NodesCacheHelpers::GetGuid(stmt, 3));
 
     NavNodeExtendedData extendedData(*node);
     extendedData.SetVirtualParentIds(GetVirtualParentIds(stmt, 0));

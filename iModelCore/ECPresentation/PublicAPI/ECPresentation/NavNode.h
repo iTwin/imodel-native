@@ -19,8 +19,6 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 struct NavNodesHelper;
 struct NavNodesFactory;
 
-//struct PresentationQuery;
-
 //=======================================================================================
 //! An abstract navigation node object. @ref NavNode objects are used to create a hierarchy
 //! for presentation-driven trees.

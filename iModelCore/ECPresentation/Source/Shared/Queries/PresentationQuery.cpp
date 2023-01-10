@@ -568,17 +568,6 @@ static bool AreEqual(JoinClause const& lhs, JoinClause const& rhs)
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod BTBT
-+---------------+---------------+---------------+---------------+---------------+------*/
-//rapidjson::Document PresentationQueryBase::ToJsonInternal(rapidjson::Document::AllocatorType* allocator) const
-//    {
-//    rapidjson::Document json(allocator);
-//    json.SetObject();
-//    json.AddMember("Query", rapidjson::Value(ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-//    json.AddMember("Bindings", GetBoundValues().ToJsonInternal(&json.GetAllocator()), json.GetAllocator());
-//    return json;
-
-/*---------------------------------------------------------------------------------**//**
 // Note: need these here to avoid compiler from complaining regarding unknown type of
 // `m_navigationResultParams`.
 // @bsimethod
@@ -2135,7 +2124,7 @@ bool StringQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) con
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod BTBT
+// @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BoundQueryValuesList::FromJson(IBoundQueryValueSerializer &serializer, BeJsConst json)
     {
