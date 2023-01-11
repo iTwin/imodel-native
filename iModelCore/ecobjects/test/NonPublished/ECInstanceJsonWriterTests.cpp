@@ -242,8 +242,9 @@ protected:
         caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder);
         for (auto i = 0; i < 2; ++ i)
             {
-            simpleStructBuilder.EmplaceProperty("SimpleProperty", Utf8PrintfString("value-%d", i).c_str());
-            caBuilder.EmplaceProperty("StructProperty", simpleStructBuilder, 2, i);
+            auto simpleStructArrayMemberBuilder = ECInstanceBuilder(*m_simpleStructClass);
+            simpleStructArrayMemberBuilder.EmplaceProperty("SimpleProperty", Utf8PrintfString("value-%d", i).c_str());
+            caBuilder.EmplaceProperty("StructArrayProperty", simpleStructArrayMemberBuilder, 2, i);
             }
         m_customAttribute = caBuilder.BuildInstance();
 
