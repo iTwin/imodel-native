@@ -167,8 +167,6 @@ void SetupForLoopOverFaces (bool primarySelect, bool clipperSelect) override
     VuMask visitMask = vu_grabMask (m_pGraph);
     vu_clearMaskInSet (m_pGraph, visitMask);
     vu_arrayClear (m_pFaceArray);
-    double totalArea = 0.0;
-    double area;
     VU_SET_LOOP (pCurr, m_pGraph)
         {
         if (!vu_getMask (pCurr, visitMask))
@@ -178,8 +176,6 @@ void SetupForLoopOverFaces (bool primarySelect, bool clipperSelect) override
             if (   (primarySelect == (0 == vu_getMask (pCurr, s_PRIMARY_EXTERIOR_MASK)))
                 && (clipperSelect == (0 == vu_getMask (pCurr, s_SECONDARY_COMPOSITE_EXTERIOR_MASK))))
                 {
-                area = vu_area (pCurr);
-                totalArea += area;
                 vu_arrayAdd (m_pFaceArray, pCurr);
                 }
             }

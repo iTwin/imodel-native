@@ -301,7 +301,6 @@ bool                laplacianSmoothing
     static double s_defaultCount = 10.0;
     //static double s_graphRelTol = 1.0e-10;
     VuSetP      graph = vu_newVuSet (0);
-    StatusInt status = SUCCESS;
     int    maxPerFace = 3;
 
     static double s_shortEdgeToleranceFactor = 1.0e-8;
@@ -335,12 +334,10 @@ bool                laplacianSmoothing
 
     if (s_maxEdge * meshXLength < dx)
         {
-        status = ERROR;
         meshXLength = dx / s_maxEdge;
         }
     if (s_maxEdge * meshYLength < dy)
         {
-        status = ERROR;
         meshYLength = dy / s_maxEdge;
         }
     

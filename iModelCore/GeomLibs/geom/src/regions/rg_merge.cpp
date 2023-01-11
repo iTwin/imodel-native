@@ -144,7 +144,6 @@ const DPoint3d      *pPoint11
     static int s_noisy = 0;
 #endif
 
-    bool    myStat = false;
     MTGNodeId nodeId[2];
 
     point[0][0] = *pPoint00;
@@ -250,7 +249,6 @@ const DPoint3d      *pPoint11
             t = xx * inverseLength[iLong];
             jmdlRGMerge_selectOrigin (&i0, &i1, t);
             jmdlRGMerge_selectOrigin (&j0, &j1, s);
-            myStat = true;
 
 #ifdef DEBUG_MERGE
                 if (s_noisy)
@@ -331,8 +329,6 @@ int                 endSelect,
 RG_EdgeData         *pEdge1
 )
     {
-
-    double param0;
     double param1, dsq;
     DPoint3d nearPoint;
     double tol = jmdlRG_getTolerance (pRG);
@@ -342,7 +338,6 @@ RG_EdgeData         *pEdge1
     DPoint3d xyz;
     if (endSelect != 0)
         endSelect = 1;
-    param0 = endSelect == 0 ? 0.0 : 1.0;
 
     xyz = pEdge0->xyz[endSelect];
 
@@ -625,7 +620,6 @@ RG_IntersectionList             *pRGIL
         return jmdlRGMerge_findAllIntersections (pRG, pRGIL);
 
     MTGGraph *pGraph = pRG->pGraph;
-    MTGNodeId nodeA1Id;
     RangeTreeCCINodeContext context;
     HideTreeRange   nodeARange;
     DRange3d nodeADRange3d;
@@ -638,7 +632,6 @@ RG_IntersectionList             *pRGIL
 
     MTGARRAY_SET_LOOP (nodeA0Id, pGraph)
         {
-        nodeA1Id = jmdlMTGGraph_getEdgeMate (pGraph, nodeA0Id);
         if  (   jmdlMTGGraph_getMask (pGraph, nodeA0Id, MTG_DIRECTED_EDGE_MASK)
              && jmdlRG_getEdgeRange (pRG, &nodeADRange3d, nodeA0Id)
             )
@@ -1060,7 +1053,6 @@ double                          minGeomStep
     int master0 = i0 - 1;
     int master1 = i0 - 1;
     int master  = i0 - 1;
-    int currType;
     double dist;
     DPoint3d currPoint, startPoint, endPoint, prevPoint;
 
@@ -1139,7 +1131,6 @@ double                          minGeomStep
             RGI_SETMASK (pA->type, processedTypeMask);
             numEdge++;
             }
-        currType = RGI_GETPROCESSFIELD (pA->type);
         }
 
     return  numEdge;
@@ -1165,7 +1156,7 @@ bool                            noisy
     {
     int i, j;
     double param;
-    MTGNodeId firstChildEdgeBaseId, lastChildBaseId, currChildLeftId, currChildRightId, lastChildNodeId;
+    MTGNodeId firstChildEdgeBaseId, currChildLeftId, currChildRightId, lastChildNodeId;
     MTGNodeId previousChildBaseId;
     int currVertexIndex;
     DPoint3d currPoint;
@@ -1240,7 +1231,6 @@ bool                            noisy
             param = pA->param;
             jmdlMTGGraph_splitEdge (pRG->pGraph, &currChildLeftId, &currChildRightId, previousChildBaseId);
 
-            lastChildBaseId = currChildLeftId;
             jmdlRG_findOrCreateVertexFromEdgeData (pRG,
                             &currPoint, &currVertexIndex,
                             &parentEdge,

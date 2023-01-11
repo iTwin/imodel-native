@@ -75,10 +75,10 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
     const double WMIN = 1e-5;
     const double WMAX = 200.0;
 
-    int   i, j, k, l, ll,   ii, jj, first, last, off, n, ns, m, r, s = 0, fout, p;
+    int   i, j, k, l, ll,   ii, jj, first, last, off, n, m, r, s = 0, fout, p;
     size_t kk = numCurves - 1;
 
-    double    *U, *a, wmin, wmax, pmax, alf, bet, lam = 0.0, oml = 0.0, bsum, wi, wj;
+    double    *U, wmin, wmax, pmax, alf, bet, lam = 0.0, oml = 0.0, bsum, wi, wj;
 
     bvector<DPoint4d> Pw;
 
@@ -102,7 +102,6 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
     p = out[kk]->GetIntOrder () - 1;
     m = out[kk]->NumberAllocatedKnots () - 1;
     U = out[kk]->knots;
-    ns = n;
 
     if( out[0]->rational )
         {
@@ -286,8 +285,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                 {
                 for (int iTemp=0; iTemp<out[ll]->NumberAllocatedPoles (); iTemp++)
                     Pw[iTemp] = out[ll]->GetPoleDPoint4d (iTemp);
-                a = out[ll]->knots;
-
+    
                 i  = first;
                 j  = last;
                 ii = 1;
@@ -349,7 +347,6 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                     {
                     for (int iTemp=0; iTemp<out[ll]->NumberAllocatedPoles (); iTemp++)
                         Pw[iTemp] = out[ll]->GetPoleDPoint4d (iTemp);
-                    a = out[ll]->knots;
 
                     i = first;
                     j = last;

@@ -729,11 +729,10 @@ TEST(BezierHull, Test3)
     printf ("SUCCESSIVE DERIVATIVES\n");
     while (function.order > 1)
         {
-        char title[1024];
-        sprintf (title, "(order %d)\n", function.order);
-        function.PrintCoffs (title);
+        Utf8PrintfString title("(order %d)\n", function.order);
+        function.PrintCoffs (title.c_str());
         BezHull function1 = function;
-        Solve (function1, roots, title);
+        Solve (function1, roots, title.c_str());
         function.Differentiate ();
         }
     }
@@ -754,11 +753,10 @@ TEST(BezierHull, Test4)
     printf ("SUCCESSIVE DERIVATIVES\n");
     while (function.order > 1)
         {
-        char title[1024];
-        sprintf (title, "(order %d)\n", function.order);
-        function.PrintCoffs (title);
+        Utf8PrintfString title("(order %d)\n", function.order);
+        function.PrintCoffs (title.c_str());
         BezHull function1 = function;
-        Solve (function1, roots, title);
+        Solve (function1, roots, title.c_str());
         function.Differentiate ();
         }
     }
@@ -777,10 +775,8 @@ TEST(BezierHull, Test5)
     printf ("SUCCESSIVE DERIVATIVES\n");
     while (function.order > 1)
         {
-        char title[1024];
-        sprintf (title, "(order %d)\n", function.order);
         BezHull function1 = function;
-        Solve (function1, roots, title);
+        Solve (function1, roots, Utf8PrintfString("(order %d)\n", function.order).c_str());
         function.Differentiate ();
         }
     }
