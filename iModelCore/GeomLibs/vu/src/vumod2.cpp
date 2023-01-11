@@ -69,7 +69,7 @@ VuMask          fixedMask
     VuP             nextP, leftP, rightP;
     VuP             insideP, outsideP;
     VuP             newLeftP, newRightP;
-    double          v0, v1, vLine;
+    double          v1, vLine;
     int             i;
     VuMask          mask;
 
@@ -114,7 +114,6 @@ VuMask          fixedMask
             {
             leftP = nextP;
             nextP = VU_FPRED (leftP);
-            v0 = v1;
             v1 = VU_V (nextP);
             }
         while (v1 < vLine && VU_BELOW (leftP, nextP));
@@ -144,7 +143,6 @@ VuMask          fixedMask
             {
             rightP = nextP;
             nextP = VU_FSUCC (rightP);
-            v0 = v1;
             v1 = VU_V (nextP);
             }
         while (v1 < vLine && VU_BELOW (rightP, nextP));

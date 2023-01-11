@@ -570,14 +570,13 @@ double globalRelTol
 )
     {
     double tol;
-    double maxAbs, maxDiagonal;
+    double maxDiagonal;
     double a, b;
     DRange3d range;
     DVec3d diagonal;
     range.InitFrom(pXYZ, numXYZ);
     diagonal.DifferenceOf (range.low, range.high);
-    maxAbs = range.LargestCoordinate ();
-    maxDiagonal = diagonal.MaxAbs ();
+    maxDiagonal = diagonal.MaxAbs ();   // TODO: probably should be range.LargestCoordinate >= diagonal.MaxAbs 
 
     if (absTol < sDefaultAbsTol)
         absTol = sDefaultAbsTol;
@@ -1751,12 +1750,12 @@ bvector<MeshRegion> &monotoneRegions
 )
     {
     int             xSlope, firstXSlope, lastXSlope,  ySlope, firstYSlope, lastYSlope,
-                    status, pointBufSize, index, nDistinct;
+                    status, index, nDistinct;
     bool            ascending;
     Intercept       *intersectionP;
     InterceptHeader crossHeader[2], touchHeader[2];
     int             iTop,iBottom;       /* These swap between 0 and 1 on successive cuts */
-    double yTop,yBottom,yNext;
+    double          yBottom, yNext;
     bvector<double> extrema;
 
     crossHeader[0].clear ();
@@ -1840,7 +1839,6 @@ bvector<MeshRegion> &monotoneRegions
     for (size_t i=1; i < extrema.size (); i++ )
         {
         /* Swap the old 'bottom' to be the current top */
-        yTop = yBottom;
         yBottom = extrema[i];
         iTop = iBottom;
         iBottom = 1 - iTop;
@@ -1862,8 +1860,6 @@ bvector<MeshRegion> &monotoneRegions
             _Analysis_assume_(intersectionP != nullptr); // see the conditional assignment above.
             monotoneRegions.push_back (MeshRegion ());
             MeshRegion &newRegion = monotoneRegions.back();
-
-            pointBufSize = 0;
 
             /* Left Side */
             ascending   = intersectionP[j].ascending;
@@ -2023,13 +2019,11 @@ DPoint2d            *paramScaleP,               /* => parameter scale */
 bool                reverse
 )
     {
-    int             status = ERROR, totalPoints, i, j;
+    int             status = ERROR, i, j;
 
     DPoint2d        pnt, min, max,
                     paramMin, paramDelta;
     DPoint2d delta;
-
-    totalPoints = nU * nV;
 
     if ( nU < 2 || nV < 2 )
         return SUCCESS;
@@ -2090,7 +2084,7 @@ DPoint2d            *paramScaleP,               /* => parameter scale */
 bool                reverse
 )
     {
-    int             status = ERROR, totalPoints, i, j, nU, nV, uMinIndex, uMaxIndex,
+    int             status = ERROR, i, j, nU, nV, uMinIndex, uMaxIndex,
                     vMinIndex, vMaxIndex;
     DPoint2d        pnt, min, max,
                     paramMin, paramDelta;
@@ -2112,7 +2106,6 @@ bool                reverse
 
     nU = (uMaxIndex - uMinIndex + 1);
     nV = (vMaxIndex - vMinIndex + 1);
-    totalPoints = nU * nV;
 
     mpP->handler.ClearArrays ();
     
@@ -2911,18 +2904,15 @@ bvector<DPoint2d>    &boundary,                 /* = region boundary */
 MSBsplineSurface    *surfaceP
 )
     {
-    int                 minIndex, maxIndex, nPnts, status, bufSize, j, next,
-                        minLeftIndex, maxLeftIndex, minRightIndex, maxRightIndex, index,
-                        pointBufSize;
+    int                 minIndex, maxIndex, nPnts, status, j, next,
+                        minLeftIndex, maxLeftIndex, minRightIndex, maxRightIndex, index;
     double              boundMin, boundMax;
     DPoint2d            *pnts, *pntP, *endP, minLeftPoint, maxLeftPoint,
-                        minRightPoint, maxRightPoint, *pointP;
+                        minRightPoint, maxRightPoint;
     
-    pointP = NULL;
     bvector<DPoint2d*> slicePointers;
     bvector<DPoint2d> slicePoints;
     bvector<DPoint2d>  points;  
-    pointBufSize = 0;
     pnts  = &boundary[0];
     nPnts = (int)boundary.size () - 1;
 
@@ -2942,7 +2932,6 @@ MSBsplineSurface    *surfaceP
             }
         }
 
-    bufSize = 0;
     minLeftIndex = minRightIndex = minIndex;
     minLeftPoint = minRightPoint = pnts[minIndex];
     int uNumSegs, vNumSegs;

@@ -1497,11 +1497,7 @@ void                    *pOutputParams
     int band;
     StatusInt bandStatus;
 
-    double phiSweep, thetaSweep;
-
-    thetaSweep  = theta1 - theta0;
-
-    phiSweep    = phi1 - phi0;
+    double phiSweep = phi1 - phi0;
 
     /* Two complete theta loops, each with restricted phi range */
     if (!Angle::IsFullCircle (phiSweep))
@@ -1706,15 +1702,11 @@ void                    *pOutputData
     double phiStart, phiEnd, thetaStart, thetaEnd;
     double smallAngle = bsiTrig_smallAngle ();
 
-    double phiSweep, thetaSweep;
     double thetaBandSweep;
     double phiBandSweep;
 
     double maxDTheta = bandTolerance;
     double maxDPhi   = bandTolerance;
-    thetaSweep  = theta1 - theta0;
-
-    phiSweep    = phi1 - phi0;
 
     /* Get the raw bubble limits */
     fillCriticalAngles (thetaCrit, &numThetaCrit, pThetaLimit, numThetaLimit, 0.0, msGeomConst_2pi);
@@ -1799,8 +1791,7 @@ void                *pUserData      /* => arbitrary pointer */
 )
     {
     StatusInt status = ERROR;
-    double a,b;
-    double theta0, theta1, thetaSweep, phi0, phi1, phiSweep;
+    double theta0, theta1, phi0, phi1;
 
     DPoint3d thetaLimit[8], phiLimit[8];
     int numThetaLimit, numPhiLimit;
@@ -1813,18 +1804,10 @@ void                *pUserData      /* => arbitrary pointer */
     if (!pSurface || RC_Torus != pSurface->type)
         return ERROR;
 
-    /* Torus sizes, correspond to analysis on paper */
-    a = 1.0;
-    b = pSurface->hoopRadius;
-
     theta0 = pSurface->parameterRange.low.x;
     theta1 = pSurface->parameterRange.high.x;
-    thetaSweep = theta1 - theta0;
-
     phi0 = pSurface->parameterRange.low.y;
     phi1 = pSurface->parameterRange.high.y;
-    phiSweep = phi1 - phi0;
-
 
     bsiRotatedConic_toroidalFormLimits (thetaLimit, &numThetaLimit, pMatrix, false);
     bsiRotatedConic_toroidalFormLimits (phiLimit, &numPhiLimit, pMatrix, true);

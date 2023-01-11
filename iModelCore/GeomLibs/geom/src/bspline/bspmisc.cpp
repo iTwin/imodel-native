@@ -102,7 +102,7 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
 )
     {
     bool        badFullKnots = false;
-    int         divisor, numKnots, numInteriorKnots, i;
+    int         divisor, numKnots, i;
     double      *pP, *pStart, *pEnd, *pNext, accum, step;
 
     if (!pKnots || !pParams)
@@ -130,8 +130,6 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
         }
     else
         {
-        numInteriorKnots = numKnots - 2 * pParams->order;
-
         /* replace any decreasing interior knots with uniformly spaced knots */
         for (pP = pStart + 1; pP < pEnd; pP++)
             {

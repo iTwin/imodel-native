@@ -573,22 +573,18 @@ CurveVectorPtr CollectChains (bool formRegions, bool markEdgeFractions)
     MTGMask edgeVisitedMask = m_graph.GrabMask ();
     m_graph.ClearMask (edgeVisitedMask);
     bvector<DPoint3d> chainXYZ;
-    CurveVector::BoundaryType topType, childType;
+    CurveVector::BoundaryType topType;
     size_t minSize;
-    bool addLinestringsAtTop = false;
     if (otherVerts == 0 && formRegions)
         {
         // The graph has nothing but closed loops !!! (All cheer)
         topType = CurveVector::BOUNDARY_TYPE_ParityRegion;
-        childType = CurveVector::BOUNDARY_TYPE_Outer;
         minSize = 3;
         }
     else
         {
         topType = CurveVector::BOUNDARY_TYPE_None;
-        childType = CurveVector::BOUNDARY_TYPE_Open;
         minSize = 2;
-        addLinestringsAtTop = true;
         }
     
     size_t numFace = m_graph.CountFaceLoops ();
