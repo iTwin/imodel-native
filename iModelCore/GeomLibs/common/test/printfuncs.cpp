@@ -307,9 +307,7 @@ const double a0,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg", a0);
-    printDatum ("double", pName, stringVal, pParent);
+    printDatum ("double", pName, Utf8PrintfString("%lg", a0).c_str(), pParent);
     }
 
 /*---------------------------------------------------------------------*//**
@@ -323,9 +321,7 @@ const int a0,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%d", a0);
-    printDatum ("int", pName, stringVal, pParent);
+    printDatum ("int", pName, Utf8PrintfString("%d", a0).c_str(), pParent);
     }
 
 /*---------------------------------------------------------------------*//**
@@ -339,9 +335,7 @@ const int a0,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "0x%x", a0);
-    printDatum ("hex", pName, stringVal, pParent);
+    printDatum ("hex", pName, Utf8PrintfString("0x%x", a0).c_str(), pParent);
     }
 
 
@@ -370,9 +364,7 @@ const DVec3d *pVec,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg", pVec->x, pVec->y, pVec->z);
-    printDatum ("DVec3d", pName, stringVal, pParent);
+    printDatum ("DVec3d", pName, Utf8PrintfString("%lg,%lg,%lg", pVec->x, pVec->y, pVec->z).c_str(), pParent);
     }
 
 /*---------------------------------------------------------------------*//**
@@ -386,9 +378,7 @@ const DVec2d *pVec,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg", pVec->x, pVec->y);
-    printDatum ("DVec2d", pName, stringVal, pParent);
+    printDatum ("DVec2d", pName, Utf8PrintfString("%lg,%lg", pVec->x, pVec->y).c_str(), pParent);
     }
 
 /*---------------------------------------------------------------------*//**
@@ -402,9 +392,7 @@ const DPoint3d *pVec,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg", pVec->x, pVec->y, pVec->z);
-    printDatum ("DPoint3d", pName, stringVal, pParent);
+    printDatum ("DPoint3d", pName, Utf8PrintfString("%lg,%lg,%lg", pVec->x, pVec->y, pVec->z).c_str(), pParent);
     }
 
 /*---------------------------------------------------------------------*//**
@@ -418,9 +406,7 @@ const DPoint4d *pVec,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg,%lg", pVec->x, pVec->y, pVec->z, pVec->w);
-    printDatum ("DPoint4d", pName, stringVal, pParent);
+    printDatum ("DPoint4d", pName, Utf8PrintfString("%lg,%lg,%lg,%lg", pVec->x, pVec->y, pVec->z, pVec->w).c_str(), pParent);
     }
 
 
@@ -601,11 +587,8 @@ const DPlane3d *pPlane1,
 const char *pDescr
 )
     {
-    char descr[2048];
-    sprintf (descr, "(DPlane3d.origin)%s", pDescr);
-    checkDPoint3d (&pPlane0->origin, &pPlane1->origin, descr);
-    sprintf (descr, "(DPlane3d.normal)%s", pDescr);
-    checkDVec3d (&pPlane0->normal, &pPlane1->normal, descr);
+    checkDPoint3d (&pPlane0->origin, &pPlane1->origin, Utf8PrintfString("(DPlane3d.origin)%s", pDescr).c_str());
+    checkDVec3d (&pPlane0->normal, &pPlane1->normal, Utf8PrintfString("(DPlane3d.normal)%s", pDescr).c_str());
     }
 
 /*---------------------------------------------------------------------*//**
@@ -657,13 +640,9 @@ const RotMatrix *pM,
 Tag *pParent
 )
     {
-    char stringVal[1024];
-    sprintf (stringVal, "%lg,%lg,%lg", pM->form3d[0][0], pM->form3d[0][1], pM->form3d[0][2]);
-    printDatum ("row0", pName, stringVal, pParent);
-    sprintf (stringVal, "%lg,%lg,%lg", pM->form3d[1][0], pM->form3d[1][1], pM->form3d[1][2]);
-    printDatum ("row1", pName, stringVal, pParent);
-    sprintf (stringVal, "%lg,%lg,%lg]", pM->form3d[2][0], pM->form3d[2][1], pM->form3d[2][2]);
-    printDatum ("row2", pName, stringVal, pParent);
+    printDatum ("row0", pName, Utf8PrintfString("%lg,%lg,%lg", pM->form3d[0][0], pM->form3d[0][1], pM->form3d[0][2]).c_str(), pParent);
+    printDatum ("row1", pName, Utf8PrintfString("%lg,%lg,%lg", pM->form3d[1][0], pM->form3d[1][1], pM->form3d[1][2]).c_str(), pParent);
+    printDatum ("row2", pName, Utf8PrintfString("%lg,%lg,%lg]", pM->form3d[2][0], pM->form3d[2][1], pM->form3d[2][2]).c_str(), pParent);
     }
 
 /*---------------------------------------------------------------------*//**
@@ -811,9 +790,7 @@ double messageValue
     {
     if (messageValue != DBL_MAX)
         {
-        char message[2048];
-        sprintf (message, pDescr, messageValue);
-        checkDoubleLessThan (a0, a1, message);
+        checkDoubleLessThan (a0, a1, Utf8PrintfString(pDescr, messageValue).c_str());
         return;
         }
     double diff = fabs (a0 - a1);
@@ -850,9 +827,7 @@ double messageValue
     {
     if (messageValue != DBL_MAX)
         {
-        char message[2048];
-        sprintf (message, pDescr, messageValue);
-        checkDouble (a0, a1, message);
+        checkDouble (a0, a1, Utf8PrintfString(pDescr, messageValue).c_str());
         return;
         }
     double diff = fabs (a0 - a1);
@@ -943,9 +918,7 @@ double messageValue
     {
     if (messageValue != DBL_MAX)
         {
-        char message[2048];
-        sprintf (message, pDescr, messageValue);
-        checkTrue (a0, message);
+        checkTrue (a0, Utf8PrintfString(pDescr, messageValue).c_str());
         return;
         }
     if (a0)
@@ -975,9 +948,7 @@ double messageValue
     {
     if (messageValue != DBL_MAX)
         {
-        char message[2048];
-        sprintf (message, pDescr, messageValue);
-        checkFalse (a0, message);
+        checkFalse (a0, Utf8PrintfString(pDescr, messageValue).c_str());
         return;
         }
     if (!a0)

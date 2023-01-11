@@ -2029,7 +2029,6 @@ int             numXYZB
     {
     DPoint3d originA, originB;
     DVec3d   normalA, normalB;
-    double   areaA,   areaB;
     int numParamA, numParamB;
     if (numXYZA < 2 || numXYZB < 2)
         return false;
@@ -2043,8 +2042,8 @@ int             numXYZB
                                             // a polygon intersecting at their commone edge. -TR# 274510.
 
     DRay3d ray;
-    areaA = bsiPolygon_polygonNormalAndArea (&normalA, &originA, pXYZArrayA, numXYZA);
-    areaB = bsiPolygon_polygonNormalAndArea (&normalB, &originB, pXYZArrayB, numXYZB);
+    bsiPolygon_polygonNormalAndArea (&normalA, &originA, pXYZArrayA, numXYZA);
+    bsiPolygon_polygonNormalAndArea (&normalB, &originB, pXYZArrayB, numXYZB);
 
     if (pNormalA)
         *pNormalA = normalA;

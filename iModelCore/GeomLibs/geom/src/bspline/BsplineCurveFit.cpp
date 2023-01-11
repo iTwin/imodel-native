@@ -2452,11 +2452,9 @@ double                      Ep,         /* => parametric tolerance, recommand se
 double                      ptol        /* => point equal tolerance, recommand set to 0.01*geomTol */
 )
     {
-    int         ITLIM = 50;
     bool        keepTangent = false, closed = false;
-    int         nn, mm, i, j, k, km, kn, jj, kk, np, k1, k2, k3, mmm, m, u2size;
-    //int         save = ITLIM;
-    double      *U1, *U2, mintol, d1, d2, d3, du, top, toc, bigerr, dv, Ebnd, ktol, maxtol;
+    int         nn, mm, i, j, k, km, kn, jj, kk, np, k1, k2, k3, m, u2size;
+    double      *U1, *U2, mintol, d1, d2, d3, du, top, toc, dv, Ebnd, ktol, maxtol;
     DVec3d      Vs, Ve, V1, V2, VO;
     double      u, v;
     int         pp;
@@ -2475,7 +2473,6 @@ double                      ptol        /* => point equal tolerance, recommand s
 
     /* Initialize some variables */
 
-    ITLIM = 4;
     top = ptol;
     toc = 1.e-6;
     ktol = 0.0001;
@@ -2496,7 +2493,6 @@ double                      ptol        /* => point equal tolerance, recommand s
     /* Do knot removal on degree 1 curve */
 
     mintol = std::min(Eg, Ep);
-    bigerr = 10.0*mintol;
     cur2.CopyFrom (cur1);
     cur2.RemoveKnotsBounded (60.0*mintol, 0, 0);
 
@@ -2843,7 +2839,6 @@ double                      ptol        /* => point equal tolerance, recommand s
 
             kk = kk+1;
             }
-        mmm = mm;     /* save it */
         mm = k2-1;    /* new high index for number of points and parameters */
         nn = km-p-1;  /* new high index of control points */
 
@@ -3620,7 +3615,7 @@ double          tolerance   // => fitting tolerance
     const double    top = 1.0e-02, toc = 1.0e-03;
     MSBsplineStatus status = MSB_SUCCESS;
     bool            apr;
-    int             k, l, nc, mc, nh, mh, mk, nsp, mlt, c, i, j, m = numPoints - 1, ps = iterDegree, pr = reqDegree;
+    int             k, l, nc, mc, nh, mh, mk, nsp, mlt, i, j, m = numPoints - 1, ps = iterDegree, pr = reqDegree;
     double          *U, d, ltop, ltoc;
     DPoint3d        R;
     DVec3d          As, Ae;
@@ -3639,7 +3634,6 @@ double          tolerance   // => fitting tolerance
 
     ltop = d*top;
     ltoc = toc;
-    c    = -1;
 
     /* Get tangents or derivatives */
 
@@ -3672,7 +3666,7 @@ double          tolerance   // => fitting tolerance
         D[1] = Ae;
 
         wd[0] = -1.0;  wd[1] = -1.0;
-        I[0]  = 0;     I[1]  = m;     c = 1;
+        I[0]  = 0;     I[1]  = m;
         }
 
     bvector<double> u (m+1), us (m+1), er (m+1), wp (m+1), knt;
