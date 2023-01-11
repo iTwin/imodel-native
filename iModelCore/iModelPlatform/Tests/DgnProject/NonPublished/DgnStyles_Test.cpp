@@ -437,6 +437,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
 
     ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
     seedFilePath = m_db->GetDbFileName();
+    m_db->CloseDb();
     }
 
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
@@ -510,6 +511,7 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
 
     ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
     seedFilePath = m_db->GetDbFileName();
+    m_db->CloseDb();
     }
 
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
