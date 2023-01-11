@@ -432,17 +432,11 @@ void AddPolygon (size_t collectionIndex, bvector<DPoint3d> &xyz)
         if (directConstruction)
             {
             double area = vu_area (node);
-            VuP insideNode, outsideNode;
+            VuP outsideNode;
             if (area > 0.0)
-                {
-                insideNode = node;
                 outsideNode = vu_vsucc(node);
-                }
             else
-                {
                 outsideNode = node;
-                insideNode = vu_vsucc(node);
-                }
         
             vu_setMaskAroundFace (outsideNode, VU_EXTERIOR_EDGE);
             }
