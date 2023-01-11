@@ -111,28 +111,19 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeGuid CreateHierarchy(ECPresentationManager::Impl& mgr, RequestWithRulesetImplParams const& params, NavNodeCR node, int index, NodesHierarchy& hierarchy)
+static BeGuid CreateHierarchy(NodesHierarchy& hierarchy, NavNodeCR node, int index, std::function<NavNodeCPtr(NavNodeCR)> const& parentGetter)
     {
-    BeGuid parentId;
-    if (!node.GetParentNodeId().IsValid())
+    auto parent = parentGetter(node);
+    if (!parent.IsValid())
         {
         hierarchy.AddRootNode(node, index);
         }
-    else
+    else if (!hierarchy.NodeExits(parent->GetNodeId()))
         {
-        // see if parent is already in the hierarchy
-        if (hierarchy.NodeExits(node.GetParentNodeId()))
-            {
-            parentId = node.GetParentNodeId();
-            }
-        else
-            {
-            // get the parent and put it into the hierarchy
-            auto parent = mgr.GetParent(NodeParentRequestImplParams::Create(NodeParentRequestParams(params, node), params));
-            parentId = CreateHierarchy(mgr, params, *parent, index, hierarchy);
-            }
+        // get the parent and put it into the hierarchy
+        CreateHierarchy(hierarchy, *parent, index, parentGetter);
         }
-    hierarchy.AddChildNode(parentId, node, index);
+    hierarchy.AddChildNode(parent.IsValid() ? parent->GetNodeId() : BeGuid(), node, index);
     return node.GetNodeId();
     }
 
@@ -212,18 +203,18 @@ static void MarkLeaves(NodesPathElement& path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NodesPathElement> NodePathsHelper::CreateHierarchy(ECPresentationManager::Impl& manager, NodePathsFromFilterTextRequestImplParams const& params, bvector<NavNodeCPtr> const& nodes)
+bvector<NodesPathElement> NodePathsHelper::CreateHierarchy(bvector<NavNodeCPtr> const& nodes, std::function<NavNodeCPtr(NavNodeCR)> const& parentGetter, Utf8StringCR matchText)
     {
-    auto hierarchyRequestParams = RequestWithRulesetImplParams::Create(params);
     int nodeIndex = 0;
     NodesHierarchy hierarchy;
     for (NavNodeCPtr node : nodes)
-        ::CreateHierarchy(manager, hierarchyRequestParams, *node, nodeIndex++, hierarchy);
+        ::CreateHierarchy(hierarchy, *node, nodeIndex++, parentGetter);
 
     size_t index = 0;
     bvector<NodesPathElement> paths;
     for (auto const& root : hierarchy.GetRoots())
-        paths.push_back(GetPath(*root.first, hierarchy.GetChildren(), index++, params.GetFilterText().c_str(), nullptr));
+        paths.push_back(GetPath(*root.first, hierarchy.GetChildren(), index++, matchText.c_str(), nullptr));
+
     return paths;
     }
 
@@ -249,7 +240,7 @@ bvector<NodesPathElement> NodePathsHelper::MergePaths(std::vector<NodesPathEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodesPathElement NodePathsHelper::FindNode(ECPresentationManager::Impl& manager, NodeByInstanceKeyRequestImplParams const& params)
+static NodesPathElement FindNode(ECPresentationManager::Impl& manager, NodeByInstanceKeyRequestImplParams const& params)
     {
     auto diagnostics = Diagnostics::Scope::Create("Find node");
 
@@ -257,7 +248,7 @@ NodesPathElement NodePathsHelper::FindNode(ECPresentationManager::Impl& manager,
     if (!nodes.IsValid())
         return NodesPathElement();
 
-    auto instanceKeysProvider = manager.CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams::Create(params));
+    auto instanceKeysProvider = manager.CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams::Create(NodeInstanceKeysRequestParams(params, nullptr), params));
     if (!instanceKeysProvider)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to create node instance keys provider. Returning invalid result.");
 
@@ -292,7 +283,7 @@ NodesPathElement NodePathsHelper::CreateNodePath(ECPresentationManager::Impl& ma
     auto parentEl = FindNode(manager, NodeByInstanceKeyRequestImplParams::Create(params.GetConnection(), params.GetCancellationToken(), params, params.GetInstanceKeyPath().front()));
     if (!parentEl.GetNode().IsValid())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "Requested ECInstance keys path not found in hierarchy");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Requested ECInstance keys path not found in hierarchy");
         return NodesPathElement();
         }
 

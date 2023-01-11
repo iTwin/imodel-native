@@ -33,9 +33,9 @@ private:
     ECPRESENTATION_EXPORT void EnsureDataSourceExists(BeGuidCR dataSourceId);
     ECPRESENTATION_EXPORT void EnsureHierarchyLevelExists(BeGuidCR dataSourceId);
     ECPRESENTATION_EXPORT void EnsureRulesetExists(Utf8StringCR rulesetId);
-    ECPRESENTATION_EXPORT bool ShouldTakeHierarchyLevelFromMemory(Utf8CP rulesetId, BeGuidCR parentId, bool isPhysical) const;
+    ECPRESENTATION_EXPORT bool ShouldTakeHierarchyLevelFromMemory(Utf8CP rulesetId, BeGuidCR parentId) const;
     ECPRESENTATION_EXPORT bool ShouldTakeDataSourceFromMemory(BeGuidCR dataSourceId, BeGuidCR hierarchyLevelId) const;
-    ECPRESENTATION_EXPORT bool HierarchyLevelExistInMemory(Utf8CP rulesetId, BeGuidCR parentId, bool isPhysical) const;
+    ECPRESENTATION_EXPORT bool HierarchyLevelExistInMemory(Utf8CP rulesetId, BeGuidCR parentId) const;
     ECPRESENTATION_EXPORT void InitializeMemoryCache();
     bool IsMemoryCacheInitialized() const {return nullptr != m_memoryCache;}
     ECPRESENTATION_EXPORT void LoadRootHierarchyLevels(Utf8StringCR rulesetId);
@@ -43,18 +43,19 @@ private:
 protected:
     // IHierarchyCache
     ECPRESENTATION_EXPORT NavNodePtr _GetNode(BeGuidCR nodeId) const override;
-    ECPRESENTATION_EXPORT NodeVisibility _GetNodeVisibility(BeGuidCR nodeId) const override;
-    ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(BeGuidCR nodeId) const override;
+    ECPRESENTATION_EXPORT NodeVisibility _GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
+    ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
+    ECPRESENTATION_EXPORT NavNodePtr _GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
+    ECPRESENTATION_EXPORT BeGuid _GetVirtualParentNodeId(BeGuidCR nodeId) const override;
 
-    ECPRESENTATION_EXPORT HierarchyLevelIdentifier _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const override;
+    ECPRESENTATION_EXPORT BeGuid _FindHierarchyLevelId(Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentNodeId, BeGuidCR removalId) const override;
 #ifdef wip_enable_display_label_postprocessor
     ECPRESENTATION_EXPORT bvector<DataSourceInfo> _FindDataSources(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, int partsToGet) const override;
 #endif
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(DataSourceIdentifier const&, RulesetVariables const&, int partsToGet) const override;
-    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(BeGuidCR nodeId, int partsToGet) const override;
 
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(NavNodesProviderContextR context, CombinedHierarchyLevelIdentifier const&, bool) const override;
-    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR context, HierarchyLevelIdentifier const&, bool) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(NavNodesProviderContextR context, BeGuidCR, bool) const override;
 
     ECPRESENTATION_EXPORT std::unique_ptr<DirectNodesIterator> _GetCachedDirectNodesIterator(NavNodesProviderContextCR, DataSourceIdentifier const&) const override;
 
@@ -64,25 +65,22 @@ protected:
 
     ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, int partsToUpdate) override;
 
-    ECPRESENTATION_EXPORT void _MakePhysical(NavNodeCR) override;
-    ECPRESENTATION_EXPORT void _MakeVirtual(NavNodeCR) override;
-    ECPRESENTATION_EXPORT void _MakeHidden(NavNodeCR) override;
+    ECPRESENTATION_EXPORT void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override;
+    ECPRESENTATION_EXPORT void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override;
 
-    ECPRESENTATION_EXPORT bool _IsInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&) const override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(HierarchyLevelIdentifier const&, RulesetVariables const&) const override;
-    ECPRESENTATION_EXPORT bool _IsInitialized(DataSourceIdentifier const&, RulesetVariables const&) const override;
+    ECPRESENTATION_EXPORT bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
+    ECPRESENTATION_EXPORT bool _IsHierarchyLevelInitialized(BeGuidCR, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
+    ECPRESENTATION_EXPORT bool _IsDataSourceInitialized(BeGuidCR) const override;
 
     ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint(bool) override;
     BeMutex& _GetMutex()  override { return m_mutex; }
     ECPRESENTATION_EXPORT std::shared_ptr<IHierarchyLevelLocker> _CreateHierarchyLevelLocker(CombinedHierarchyLevelIdentifier const& identifier) override;
 
     // INavNodeLocater
-    ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key, RulesetVariables const& variables) const override;
+    ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key) const override;
 
     // INavNodesCache
     ECPRESENTATION_EXPORT void _OnRulesetUsed(PresentationRuleSetCR ruleset) override;
-    ECPRESENTATION_EXPORT void _OnRulesetVariablesUsed(RulesetVariables const& variables, Utf8StringCR rulesetId) override;
-
     ECPRESENTATION_EXPORT BeGuid _FindPhysicalHierarchyLevelId(CombinedHierarchyLevelIdentifier const& identifier) const override;
     ECPRESENTATION_EXPORT bool _IsHierarchyLevelLocked(CombinedHierarchyLevelIdentifier const&) const override;
 

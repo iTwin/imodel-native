@@ -22,8 +22,6 @@ $(o)ContentItemBuilder$(oext):              $(SourceDirectory)Content/ContentIte
 
 $(o)ContentProviders$(oext):                $(SourceDirectory)Content/ContentProviders.cpp $(ECPresentationDependencies)
 
-$(o)ContentQuery$(oext):                    $(SourceDirectory)Content/ContentQuery.cpp $(ECPresentationDependencies)
-
 $(o)ContentQueryBuilder$(oext):             $(SourceDirectory)Content/ContentQueryBuilder.cpp $(ECPresentationDependencies)
 
 $(o)ContentQueryContracts$(oext):           $(SourceDirectory)Content/ContentQueryContracts.cpp $(ECPresentationDependencies)
@@ -105,6 +103,8 @@ $(o)ECSchemaHelper$(oext):                  $(SourceDirectory)Shared/ECSchemaHel
 $(o)ExtendedData$(oext):                    $(SourceDirectory)Shared/ExtendedData.cpp $(ECPresentationDependencies)
 
 $(o)ImageHelper$(oext):                     $(SourceDirectory)Shared/ImageHelper.cpp $(ECPresentationDependencies)
+
+$(o)InstanceFilterDefinition$(oext):        $(SourceDirectory)Shared/InstanceFilterDefinition.cpp $(ECPresentationDependencies)
 
 $(o)RelatedClass$(oext):                    $(SourceDirectory)Shared/RelatedClass.cpp $(ECPresentationDependencies)
 

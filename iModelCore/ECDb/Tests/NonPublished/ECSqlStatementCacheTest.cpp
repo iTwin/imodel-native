@@ -319,20 +319,26 @@ TEST_F(ECSqlStatementCacheTests, PrepareFailure)
     ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatementCache cache(10);
+    CachedECSqlStatementPtr stmt;
+    ECSqlStatus status;
 
     //try get with wrong ECSQL
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, "SELECT * FROM blabla");
+    stmt = cache.GetPreparedStatement(m_ecdb, "SELECT * FROM blabla", false, &status);
     ASSERT_TRUE(stmt == nullptr);
     ASSERT_EQ(1, cache.Size()) << "ECSqlStatements are added to the cache even if preparation fails";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, status);
 
     //get with a valid ECSQL
-    cache.GetPreparedStatement(m_ecdb, "SELECT * FROM ecsql.PSA");
+    stmt = cache.GetPreparedStatement(m_ecdb, "SELECT * FROM ecsql.PSA", false, &status);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(2, cache.Size());
+    ASSERT_EQ(ECSqlStatus::Success, status);
 
     //try get with wrong ECSQL again -> adds a new statement to the cache
-    ASSERT_EQ(2, cache.Size());
-    stmt = cache.GetPreparedStatement(m_ecdb, "SELECT * FROM blabla");
+    stmt = cache.GetPreparedStatement(m_ecdb, "SELECT * FROM blabla", false, &status);
     ASSERT_TRUE(stmt == nullptr);
-    ASSERT_EQ(3, cache.Size());
+    ASSERT_EQ(3, cache.Size()); 
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, status);
     }
 
 //---------------------------------------------------------------------------------------

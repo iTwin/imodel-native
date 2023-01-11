@@ -28,8 +28,7 @@ protected:
             m_parent->OnVariableUsed(variableId);
         }
 public:
-    UsedRulesetVariablesListener() : m_parent(nullptr) {}
-    UsedRulesetVariablesListener(UsedRulesetVariablesListener const& other) : m_variableIds(other.m_variableIds), m_parent(nullptr) {}
+    UsedRulesetVariablesListener(bset<Utf8String> variableIds = {}) : m_parent(nullptr), m_variableIds(variableIds) {}
     bset<Utf8String> const& GetVariableIds() const {BeMutexHolder lock(m_mutex); return m_variableIds;}
     void SetParent(IUsedRulesetVariablesListener* parent) {m_parent = parent;}
 };
@@ -64,25 +63,25 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Iterate node instance keys");
 
-        if (node.GetInstanceKeysSelectQuery().IsNull())
+        if (node.GetInstanceKeysSelectQuery() == nullptr)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, "Node has no instance keys query assigned - nothing to iterate over.");
             return;
             }
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();
         CachedECSqlStatementPtr statement = m_context->GetConnection().GetStatementCache().GetPreparedStatement(m_context->GetConnection().GetECDb().Schemas(),
-            m_context->GetConnection().GetDb(), node.GetInstanceKeysSelectQuery()->ToString().c_str());
+            m_context->GetConnection().GetDb(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str());
         if (statement.IsNull())
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
             }
 
         if (SUCCESS != node.GetInstanceKeysSelectQuery()->BindValues(*statement))
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind values for instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), node.GetInstanceKeysSelectQuery()->GetQueryString().c_str()));
             }
 
         while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement))
@@ -100,30 +99,30 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Checking if node contains given instance key");
 
-        if (node.GetInstanceKeysSelectQuery().IsNull())
+        if (node.GetInstanceKeysSelectQuery() == nullptr)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, "Node has no instance keys query assigned - nothing to iterate over.");
             return false;
             }
 
-        ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+        auto query = ComplexQueryBuilder::Create();
         query->SelectAll();
-        query->From(*StringGenericQuery::Create(*node.GetInstanceKeysSelectQuery()), "keys");
+        query->From(*node.GetInstanceKeysSelectQuery(), "keys");
         query->Where("[keys].[ECClassId] = ? AND [keys].[ECInstanceId] = ?", { std::make_shared<BoundQueryId>(instanceKey.GetClassId()), std::make_shared<BoundQueryId>(instanceKey.GetInstanceId()) });
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();
         CachedECSqlStatementPtr statement = m_context->GetConnection().GetStatementCache().GetPreparedStatement(m_context->GetConnection().GetECDb().Schemas(),
-            m_context->GetConnection().GetDb(), query->ToString().c_str());
+            m_context->GetConnection().GetDb(), query->GetQuery()->GetQueryString().c_str());
         if (statement.IsNull())
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare instance keys check query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), query->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), query->GetQuery()->GetQueryString().c_str()));
             }
 
-        if (SUCCESS != query->BindValues(*statement))
+        if (SUCCESS != query->GetQuery()->BindValues(*statement))
             {
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind values for instance keys query. Error: '%s'. Query: %s",
-                m_context->GetConnection().GetDb().GetLastError().c_str(), query->ToString().c_str()));
+                m_context->GetConnection().GetDb().GetLastError().c_str(), query->GetQuery()->GetQueryString().c_str()));
             }
 
         return BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement);
@@ -152,7 +151,8 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR rul
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContextCR other)
     : m_ruleset(other.m_ruleset), m_rulesetVariables(std::make_unique<RulesetVariables>(*other.m_rulesetVariables)), m_relatedPathsCache(other.m_relatedPathsCache),
-    m_ecexpressionsCache(other.m_ecexpressionsCache), m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken)
+    m_ecexpressionsCache(other.m_ecexpressionsCache), m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken),
+    m_usedVariablesListener(other.m_usedVariablesListener)
     {
     Init();
 
@@ -234,25 +234,22 @@ IUsedRulesetVariablesListener& RulesDrivenProviderContext::GetUsedVariablesListe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::SetUsedVariablesListener(RulesDrivenProviderContextCR other, bool makeCopy)
+void RulesDrivenProviderContext::InitUsedVariablesListener(bset<Utf8String> const& parentVariables, IUsedRulesetVariablesListener* parentListener)
     {
-    if (makeCopy && other.m_usedVariablesListener.IsValid())
-        {
-        m_usedVariablesListener = new UsedRulesetVariablesListener(*other.m_usedVariablesListener);
-        m_usedVariablesListener->SetParent(other.m_usedVariablesListener.get());
-        return;
-        }
-
-    m_usedVariablesListener = other.m_usedVariablesListener;
+    m_usedVariablesListener = new UsedRulesetVariablesListener(parentVariables);
+    m_usedVariablesListener->SetParent(parentListener);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<Utf8String> RulesDrivenProviderContext::GetRelatedVariablesIds() const
+bset<Utf8String> const& RulesDrivenProviderContext::GetRelatedVariablesIds() const
     {
     if (m_usedVariablesListener.IsNull())
-        return bset<Utf8String>();
+        {
+        static bset<Utf8String> const s_empty;
+        return s_empty;
+        }
     return m_usedVariablesListener->GetVariableIds();
     }
 

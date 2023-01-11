@@ -13,7 +13,7 @@
             "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest/iModelPlatformTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=BeJsValueTest.RapidJson"
+                "--gtest_filter=VersionCompareTestFixture.ChangedElementsManagerTest2_ChangedModels"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -39,7 +39,7 @@
             "program": "${env:OutRoot}Winx64/Product/BeSQLite-Gtest/BeSQLiteTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=BeSQLiteDb.CheckProfileVersion"
+                "--gtest_filter=BeSQLiteDbTests.MaxBlobSize"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

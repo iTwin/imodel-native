@@ -228,14 +228,14 @@ $(o)wrppm$(oext)                    : $(turboJpegSrcDir)wrppm.c             ${Mu
 
     # the block below could be move to sharedmki\nasm.mki if we need to reuse it.
     # ----------------------------------------------------------------------
-    nasmBaseDir = $(SrcRoot)bsitools/nasm_2.10/
+    nasmBaseDir = $(BuildToolCache)/nasm/
 
     %if (("x86" == $(TARGET_PROCESSOR_ARCHITECTURE)) || ("WinRTx86" == $(TARGET_PROCESSOR_ARCHITECTURE)))
-        nasmCmd = $(nasmBaseDir)winX86/nasm.exe
+        nasmCmd = $(nasmBaseDir)nasm.exe
         nasmOpts=-fwin32 -DWIN32
         nasmIncs + -I$(turboJpegSrcDir)simd/i386/
     %elif (("x64" == $(TARGET_PROCESSOR_ARCHITECTURE)) || ("WinRTx64" == $(TARGET_PROCESSOR_ARCHITECTURE)))
-        nasmCmd=$(nasmBaseDir)winX86/nasm.exe
+        nasmCmd=$(nasmBaseDir)nasm.exe
         nasmOpts=-fwin64 -DWIN64 -D__x86_64__
         nasmIncs + -I$(turboJpegSrcDir)simd/x86_64/
     %else
@@ -244,7 +244,7 @@ $(o)wrppm$(oext)                    : $(turboJpegSrcDir)wrppm.c             ${Mu
 
     %ifnofile $(nasmCmd)
         %error Cannot find nasmCmd; expecting it at $(nasmCmd) \
-               Did you forget to add <RequiredRepository>Bsitools-Nasm_x.xx</RequiredRepository> to your part dependency?
+               Did you forget to add a ToolPart with UPack nasm to your part dependency?
     %endif
 
     .asm.obj:
@@ -502,8 +502,3 @@ CreateBuildContext:
 $(BuildContext)Delivery/jpeg-turbo-license.txt : $(turboJpegSrcDir)LICENSE.md
     $(LinkFirstDepToFirstTarget)
 
-# If Windows platform, need to add nasm notice.
-%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x86" || $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
-    $(BuildContext)Delivery/nasm-license.txt : $(nasmBaseDir)nasm-notice.txt
-        $(LinkFirstDepToFirstTarget)
-%endif

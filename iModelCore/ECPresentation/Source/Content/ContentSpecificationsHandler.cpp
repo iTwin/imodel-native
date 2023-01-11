@@ -93,7 +93,7 @@ ContentSpecificationsHandler::PropertyAppendResult ContentSpecificationsHandler:
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Append property `%s`", prop.GetName().c_str()));
     if (!appender.Supports(prop, overrides))
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Appender skipped the property.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Appender skipped the property.");
         return false;
         }
 
@@ -238,7 +238,7 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
             ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
             }
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
     // then determine actual related class paths for every specification
     auto paths = FindRelatedPropertyPaths(GetContext(), params.GetSourceClassInfo().GetSelectClass(), params.GetInstanceFilteringParams(), params.GetSourceClassInfo().GetRelatedInstancePaths(), flatSpecs);
@@ -277,7 +277,7 @@ ContentSpecificationsHandler::PropertyAppendResult ContentSpecificationsHandler:
             ECPropertyCP ecProperty = propertiesClass.GetPropertyP(propertySpec->GetPropertyName().c_str());
             if (nullptr == ecProperty)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Requested property `%s` was not found - skipping.", propertySpec->GetPropertyName().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested property `%s` was not found - skipping.", propertySpec->GetPropertyName().c_str()));
                 continue;
                 }
             properties.push_back(ecProperty);
@@ -305,7 +305,7 @@ static bool UpdatePaths(ContentSpecificationsHandler::PropertyAppendResult const
         {
         // relationship path in related content field was replaced while appending the field - have
         // to also replace the path in our paths list
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Replaced path from `%s` to `%s`.", DiagnosticsHelpers::CreateRelatedClassPathStr(propertyAppendResult.GetReplacedSelectToPropertyPath()->prev).c_str(),
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Replaced path from `%s` to `%s`.", DiagnosticsHelpers::CreateRelatedClassPathStr(propertyAppendResult.GetReplacedSelectToPropertyPath()->prev).c_str(),
             DiagnosticsHelpers::CreateRelatedClassPathStr(propertyAppendResult.GetReplacedSelectToPropertyPath()->curr).c_str()));
 
         auto replaceIter = std::find_if(paths.begin(), paths.end(), [&](RelatedClassPathCR replacedPath) {return replacedPath == propertyAppendResult.GetReplacedSelectToPropertyPath()->prev;});
@@ -367,7 +367,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
         inputFilteringParams = QueryBuilderHelpers::CreateInputFilter(GetContext().GetConnection(), params.GetSourceClassInfo(), params.GetRecursiveFilteringInfo(), *params.GetSpecificationInput());
         if (!inputFilteringParams)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Input filter results in no content. No need to handle related properties.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Input filter results in no content. No need to handle related properties.");
             return bvector<RelatedClassPath>();
             }
         }
@@ -377,7 +377,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
 
     bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> specPathsList = _GetRelatedPropertyPaths(RelatedPropertyPathsParams(params.GetSourceClassInfo(),
         filteringParams, params.GetRelatedPropertySpecs(), params.GetScopeCategorySpecifications()));
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " related property paths", (uint64_t)specPathsList.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " related property paths", (uint64_t)specPathsList.size()));
     ThrowIfCancelled(m_context.GetCancellationToken());
 
     // then iterate over every path and append properties
@@ -385,7 +385,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
     for (auto const& specPaths : specPathsList)
         {
         auto appendScope = Diagnostics::Scope::Create(Utf8PrintfString("Append related properties from %s", DiagnosticsHelpers::CreateRuleIdentifier(*specPaths->GetSpecification().GetSource().back()).c_str()));
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " related property paths.", (uint64_t)specPaths->GetPaths().size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " related property paths.", (uint64_t)specPaths->GetPaths().size()));
 
         RelatedPropertiesSpecificationCR spec = specPaths->GetSpecification().GetFlattened();
         for (auto const& path : specPaths->GetPaths())
@@ -420,7 +420,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
                     &specPaths->GetSpecification().GetScope().GetCategories());
                 if (appender.IsNull())
                     {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Properties appender was not created for requested path, continue to other paths");
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Properties appender was not created for requested path, continue to other paths");
                     continue;
                     }
 
@@ -433,13 +433,13 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
 
             if (!shouldIncludePath)
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Did not append any properties. As a result, not including navigation properties and relationship path.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Did not append any properties. As a result, not including navigation properties and relationship path.");
                 continue;
                 }
 
             // append this path
             paths.push_back(pathFromSelectToPropertyClass);
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Appended related properties relationship path `%s`.", DiagnosticsHelpers::CreateRelatedClassPathStr(pathFromSelectToPropertyClass).c_str()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Appended related properties relationship path `%s`.", DiagnosticsHelpers::CreateRelatedClassPathStr(pathFromSelectToPropertyClass).c_str()));
             }
         }
     return paths;
@@ -562,7 +562,7 @@ static void FilterSimpleContentSources(bvector<ContentSource>& filteredSources, 
     bvector<ECInstanceId> const& inputIds = specificationInput.GetInstanceIds(*firstContentSource.GetPathFromInputToSelectClass().front().GetSourceClass());
     Utf8String relationshipJoinTarget = pathPrefix.empty() ? "related" : pathPrefix.back().GetTargetClass().GetAlias();
 
-    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    auto query = ComplexQueryBuilder::Create();
     query->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ClassId",
         Utf8PrintfString("[relationship].[%sECClassId]", isForward ? "Target" : "Source").c_str(), false)));
     query->From(SelectClass<ECClass>(*firstContentSource.GetPathFromInputToSelectClass().front().GetSourceClass(), "related", false));
@@ -574,11 +574,11 @@ static void FilterSimpleContentSources(bvector<ContentSource>& filteredSources, 
     query->Where(ValuesFilteringHelper(targetClassIds).Create(Utf8PrintfString("[relationship].[%sECClassId]", isForward ? "Target" : "Source").c_str(), false));
 
     CachedECSqlStatementPtr stmt = context.GetConnection().GetStatementCache().GetPreparedStatement(context.GetConnection().GetECDb().Schemas(),
-        context.GetConnection().GetDb(), query->ToString().c_str());
+        context.GetConnection().GetDb(), query->GetQuery()->GetQueryString().c_str());
     if (stmt.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare simple data sources query");
 
-    query->BindValues(*stmt);
+    query->GetQuery()->BindValues(*stmt);
 
     bset<ECClassId> filteredTargetClassIds;
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*stmt))
@@ -598,16 +598,16 @@ static void FilterSimpleContentSources(bvector<ContentSource>& filteredSources, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<size_t> ExecuteAndResetInstanceFilteringQuery(GenericQueryPtr& query, IConnectionCR connection)
+static bvector<size_t> ExecuteAndResetInstanceFilteringQuery(PresentationQueryBuilderPtr& query, IConnectionCR connection)
     {
     CachedECSqlStatementPtr stmt = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(),
-        connection.GetDb(), query->ToString().c_str());
+        connection.GetDb(), query->GetQuery()->GetQueryString().c_str());
     if (stmt.IsNull())
         {
         query = nullptr;
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare instance filter query");
         }
-    query->BindValues(*stmt);
+    query->GetQuery()->BindValues(*stmt);
 
     bvector<size_t> indexes;
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*stmt))
@@ -623,7 +623,7 @@ static bvector<size_t> ExecuteAndResetInstanceFilteringQuery(GenericQueryPtr& qu
 static void FilterComplexContentSources(bvector<ContentSource>& filteredSources, bvector<ContentSource const*> const& complexContentSources, IParsedInput const& specificationInput,
     Utf8StringCR instanceFilter, ContentSpecificationsHandler::Context& context)
     {
-    GenericQueryPtr query;
+    PresentationQueryBuilderPtr query;
     uint64_t unionSize = 0;
     for (size_t i = 0; i < complexContentSources.size(); ++i)
         {
@@ -641,7 +641,7 @@ static void FilterComplexContentSources(bvector<ContentSource>& filteredSources,
         InstanceFilteringParams filteringParams(context.GetSchemaHelper().GetECExpressionsCache(), filteringExpressionContext.get(),
             instanceFilter.c_str(), inputFilter.get());
 
-        ComplexGenericQueryPtr q = ComplexGenericQuery::Create();
+        auto q = ComplexQueryBuilder::Create();
         q->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("Index", std::to_string(i).c_str(), false)));
         q->From(source.GetSelectClass());
         QueryBuilderHelpers::ApplyInstanceFilter(*q, filteringParams);
@@ -649,7 +649,7 @@ static void FilterComplexContentSources(bvector<ContentSource>& filteredSources,
             q->Join(relatedInstancePath);
         q->Limit(1);
 
-        QueryBuilderHelpers::SetOrUnion<GenericQuery>(query, ComplexGenericQuery::Create()->SelectAll().From(*q));
+        QueryBuilderHelpers::SetOrUnion(query, ComplexQueryBuilder::Create()->SelectAll().From(*q));
         ++unionSize;
 
         if ((unionSize % 500) == 499)
@@ -809,7 +809,8 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in ContentModifier rule was not found", modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str())); // TODO: rule ref
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
+                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
                 continue;
                 }
             infos->push_back(RuleApplicationInfo(*ecClass, true));
@@ -819,7 +820,8 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(labelOverride->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in InstanceLabelOverride rule was not found", labelOverride->GetClassName().c_str())); // TODO: rule ref
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in %s was not found",
+                    labelOverride->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*labelOverride).c_str()));
                 continue;
                 }
             infos->push_back(RuleApplicationInfo(*ecClass, true));
@@ -829,7 +831,8 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in sorting rule was not found", sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str())); // TODO: rule ref
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
+                    sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*sortingRule).c_str()));
                 continue;
                 }
             infos->push_back(RuleApplicationInfo(*ecClass, sortingRule->GetIsPolymorphic()));
@@ -955,10 +958,10 @@ static std::unique_ptr<RecursiveQueryInfo const> CreateRecursiveFilteringInfo(bv
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpecificationCR specification, IParsedInput const& input)
     {
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " input classes.", (uint64_t)input.GetClasses().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " input classes.", (uint64_t)input.GetClasses().size()));
     if (input.GetClasses().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, "Specification has no effect due to empty input.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, "Specification has no effect due to empty input.");
         return;
         }
 
@@ -968,17 +971,17 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
         // the class should be handled polymorphically if this is a "class" request rather than "instance" request
         selectClasses.push_back(SelectClassWithExcludes<ECClass>(*inputClass, "this", false));
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " select classes.", (uint64_t)selectClasses.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " select classes.", (uint64_t)selectClasses.size()));
 
     bvector<ContentSource> contentSources = _BuildContentSource(selectClasses, specification);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
 
     for (ContentSource const& src : contentSources)
         {
         ThrowIfCancelled(m_context.GetCancellationToken());
         if (!IsECClassAccepted(specification, src.GetSelectClass().GetClass()))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Skipping content source for `%s` - it doesn't match specification requirements.", src.GetSelectClass().GetClass().GetFullName()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Skipping content source for `%s` - it doesn't match specification requirements.", src.GetSelectClass().GetClass().GetFullName()));
             continue;
             }
         AppendContent(src, specification, &input, "", nullptr);
@@ -991,10 +994,10 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSpecificationCR specification, IParsedInput const& input)
     {
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " input classes.", (uint64_t)input.GetClasses().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " input classes.", (uint64_t)input.GetClasses().size()));
     if (input.GetClasses().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, "Specification has no effect due to empty input.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, "Specification has no effect due to empty input.");
         return;
         }
 
@@ -1007,15 +1010,15 @@ void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSp
         auto classScope = Diagnostics::Scope::Create(Utf8PrintfString("Handling input class `%s`", ecClass->GetFullName()));
 
         bvector<RelatedClassPath> paths = GetRelatedClassPaths(GetContext(), *ecClass, input, specification, skipContentWithInstancesCheck, groupByInputKey);
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Input class has %" PRIu64 " related classes.", (uint64_t)paths.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Input class has %" PRIu64 " related classes.", (uint64_t)paths.size()));
 
         bvector<ContentSource> contentSources = _BuildContentSource(paths, specification);
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
 
         if (!skipContentWithInstancesCheck)
             {
             contentSources = FilterContentSourcesWithInstances(contentSources, input, specification.GetInstanceFilter(), GetContext());
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " content sources after filtering-out content sources without instances", (uint64_t)contentSources.size()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " content sources after filtering-out content sources without instances", (uint64_t)contentSources.size()));
             }
 
         std::unique_ptr<RecursiveQueryInfo const> recursiveInfo = CreateRecursiveFilteringInfo(contentSources, specification);
@@ -1040,7 +1043,7 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
     size_t iterationsCount = inputSelectClasses.size() / MAX_COMPOUND_STATEMENTS_COUNT + 1;
     for (size_t iteration = 0; iteration < iterationsCount; ++iteration)
         {
-        UnionGenericQueryPtr unionQuery = UnionGenericQuery::Create({});
+        auto unionQuery = UnionQueryBuilder::Create({});
         size_t offset = iteration * MAX_COMPOUND_STATEMENTS_COUNT;
         size_t end = offset + MAX_COMPOUND_STATEMENTS_COUNT;
         if (end > inputSelectClasses.size())
@@ -1049,7 +1052,7 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
             {
             SelectClassWithExcludes<ECClass> const& selectClass = inputSelectClasses[i];
 
-            ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+            auto query = ComplexQueryBuilder::Create();
             auto contract = SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId"));
             query->SelectContract(*contract);
             query->From(selectClass);
@@ -1064,11 +1067,11 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
             }
 
         CachedECSqlStatementPtr statement = context.GetConnection().GetStatementCache().GetPreparedStatement(
-            context.GetConnection().GetECDb().Schemas(), context.GetConnection().GetDb(), unionQuery->ToString().c_str());
+            context.GetConnection().GetECDb().Schemas(), context.GetConnection().GetDb(), unionQuery->GetQuery()->GetQueryString().c_str());
         if (statement.IsNull())
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare actual classes with instances query");
 
-        unionQuery->BindValues(*statement);
+        unionQuery->GetQuery()->BindValues(*statement);
 
         while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement))
             {
@@ -1105,16 +1108,16 @@ void ContentSpecificationsHandler::HandleSpecification(ContentInstancesOfSpecifi
         selectClass.GetDerivedExcludedClasses() = excludedClasses;
         return selectClass;
         });
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " select classes.", (uint64_t)selectClasses.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " select classes.", (uint64_t)selectClasses.size()));
 
     if (specification.ShouldHandlePropertiesPolymorphically())
         {
         selectClasses = FindActualSelectClassesWithInstances(selectClasses, specification.GetInstanceFilter(), GetContext());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " select classes after filtering-out classes without instances.", (uint64_t)selectClasses.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " select classes after filtering-out classes without instances.", (uint64_t)selectClasses.size()));
         }
 
     bvector<ContentSource> contentSources = _BuildContentSource(selectClasses, specification);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
 
     for (ContentSource const& src : contentSources)
         {

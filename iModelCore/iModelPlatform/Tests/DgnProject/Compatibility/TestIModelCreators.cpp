@@ -5,6 +5,8 @@
 #include "TestIModelCreators.h"
 #include "Profiles.h"
 #include "TestDomain.h"
+#include <DgnPlatform/FunctionalDomain.h>
+#include <DgnPlatform/PhysicalMaterialDomain.h>
 
 USING_NAMESPACE_BENTLEY_EC
 //---------------------------------------------------------------------------------------
@@ -52,7 +54,7 @@ DgnDbPtr TestIModelCreator::CreateNewTestFile(Utf8StringCR fileName)
 
     CreateDgnDbParams createParam(fileName.c_str());
     DbResult stat = BE_SQLITE_OK;
-    DgnDbPtr bim = DgnDb::CreateDgnDb(&stat, filePath, createParam);
+    DgnDbPtr bim = DgnDb::CreateIModel(&stat, filePath, createParam);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("Failed to create new test file '%s'.", filePath.GetNameUtf8().c_str());
@@ -86,6 +88,101 @@ BentleyStatus TestIModelCreator::ImportSchemas(DgnDbR dgndb, std::vector<SchemaI
     return ERROR;
     }
 
+/*static*/ BentleyStatus TestIModelCreator::LoadDomainsAndSchemas(DgnDbR dgndb)
+    {
+    // Create a read context and set the schema locator
+    auto schemaContext = ECSchemaReadContext::CreateContext(false, true);
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+
+    auto importSchema = [&dgndb, &schemaContext](WCharCP schemaFilePath)
+        {
+        // Read the latest schema xml from the file path supplied
+        ECSchemaPtr schema;
+        if (ECSchema::ReadFromXmlFile(schema, schemaFilePath, *schemaContext) != SchemaReadStatus::Success)
+            return ERROR;
+
+        // Write the schema to a xml string
+        Utf8String xmlString;
+        schema->WriteToXmlString(xmlString, ECVersion::Latest);
+
+        // Import the schema into the DgnDb object
+        return ImportSchema(dgndb, SchemaItem(xmlString));
+        };
+
+    // Register domains and import it's latest schema
+    for (const auto& domainName : std::vector<std::wstring>{FUNCTIONAL_DOMAIN_ECSCHEMA_PATH, PHYSICAL_MATERIAL_DOMAIN_ECSCHEMA_PATH})
+        {
+        auto status = ERROR;
+        if (domainName == FUNCTIONAL_DOMAIN_ECSCHEMA_PATH)
+            status = DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+        else if (domainName == PHYSICAL_MATERIAL_DOMAIN_ECSCHEMA_PATH)
+            status = DgnDomains::RegisterDomain(PhysicalMaterialDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+
+        if (status == SUCCESS)
+            {
+            auto schemaPathName = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+            schemaPathName.AppendToPath(domainName.c_str());
+
+            if (importSchema(schemaPathName.GetName()) != SUCCESS)
+                {
+                LOG.errorv("Failed to import Domain schema");
+                return ERROR;
+                }
+            }
+        }
+
+    // Add non domain schemas
+    for (const auto& schemaName : std::vector<WCharCP>{L"ECSchemas/Standard/Bentley_Standard_CustomAttributes.01.13.ecschema.xml",
+                                                       L"ECSchemas/Standard/SIUnitSystemDefaults.01.00.ecschema.xml",
+                                                       L"ECSchemas/Standard/SchemaUpgradeCustomAttributes.01.00.00.ecschema.xml"})
+        {
+        auto nonDomainSchemaPathName = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+        nonDomainSchemaPathName.AppendToPath(schemaName);
+        if (importSchema(nonDomainSchemaPathName.GetName()) != SUCCESS)
+            {
+            LOG.errorv("Failed to import non-Domain Schema %s", schemaName);
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*static*/ BentleyStatus TestIModelCreator::UnregisterDomainsForTest()
+    {
+    if ((DgnDomains::UnRegisterDomain(FunctionalDomain::GetDomain()) != SUCCESS)
+        || (DgnDomains::UnRegisterDomain(PhysicalMaterialDomain::GetDomain()) != SUCCESS))
+        return ERROR;
+    return SUCCESS;
+    }
+
+/*static*/ BentleyStatus TestIModelCreator::RegisterDomainsForTest()
+    {
+    if ((DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No) != SUCCESS)
+        || (DgnDomains::RegisterDomain(PhysicalMaterialDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No) != SUCCESS))
+        return ERROR;
+    return SUCCESS;
+    }
+
+BentleyStatus TestIModelCreator::_UpgradeSchemas() const
+    {
+    auto status = BE_SQLITE_OK;
+    for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(DgnDbProfile::Get().GetCreatedDataFolder(), m_fileName.c_str(), true))
+        {
+        if (testFile.GetInitialDgnDbVersion().CompareTo(DgnDbProfile::Get().GetExpectedVersion()) == 0)
+            {
+            auto dgnDbPtr = DgnDb::OpenIModelDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            if (dgnDbPtr == nullptr || status != BE_SQLITE_OK)
+                return ERROR;
+            if (TestIModelCreator::LoadDomainsAndSchemas(*dgnDbPtr) != SUCCESS)
+                return ERROR;
+            }
+        }
+    if (UnregisterDomainsForTest() != SUCCESS)
+        return ERROR;
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -109,7 +206,7 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
         params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
         DgnDbPtr bim = nullptr;
         DbResult stat = BE_SQLITE_OK;
-        DgnDb::OpenDgnDb(&stat, targetPath, params);
+        DgnDb::OpenIModelDb(&stat, targetPath, params);
         if (BE_SQLITE_OK != stat)
             {
             LOG.errorv("Failed to create new upgraded test file '%s': Upgrading the old test file failed: %s", targetPath.GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
@@ -140,7 +237,7 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
 
 
         DbResult stat = BE_SQLITE_OK;
-        DgnDbPtr bim = DgnDb::OpenDgnDb(&stat, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        DgnDbPtr bim = DgnDb::OpenIModelDb(&stat, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         if (BE_SQLITE_OK != stat)
             {
             LOG.errorv("Failed to upgrade schema in test file '%s': Could not open the test file read-write: %s", testFile.GetSeedPath().GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
@@ -166,6 +263,21 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
             return ERROR;
             }
         }
+
+    auto status = BE_SQLITE_OK;
+    for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(DgnDbProfile::Get().GetCreatedDataFolder(), TESTIMODEL_EC32ENUMS_PROFILEUPGRADED, true))
+        {
+        if (testFile.GetInitialDgnDbVersion().CompareTo(DgnDbProfile::Get().GetExpectedVersion()) == 0)
+            {
+            auto dgnDbPtr = DgnDb::OpenIModelDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            if (dgnDbPtr == nullptr || status != BE_SQLITE_OK)
+                return ERROR;
+            if (TestIModelCreator::LoadDomainsAndSchemas(*dgnDbPtr) != SUCCESS)
+                return ERROR;
+            }
+        }
+    if (UnregisterDomainsForTest() != SUCCESS)
+        return ERROR;
     return SUCCESS;
     }
 

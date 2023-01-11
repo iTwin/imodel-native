@@ -40,7 +40,7 @@ private:
             {
             if (!arg.IsECValue())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("All arguments in `Set` function should be primitive, got: %d. Skipping", (int)arg.GetValueType()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("All arguments in `Set` function should be primitive, got: %d. Skipping", (int)arg.GetValueType()));
                 continue;
                 }
 
@@ -197,14 +197,14 @@ private:
         {
         if (2 != args.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECInstanceMethodSymbolsProvider::IsOfClass: WrongNumberOfArguments. Expected 2, actually: %" PRIu64, (uint64_t)args.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, Utf8PrintfString("ECInstanceMethodSymbolsProvider::IsOfClass: WrongNumberOfArguments. Expected 2, actually: %" PRIu64, (uint64_t)args.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         Utf8CP schemaname, classname;
         if (!SystemSymbolProvider::ExtractArg(classname, args[0])|| !SystemSymbolProvider::ExtractArg(schemaname, args[1]))
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECInstanceMethodSymbolsProvider::IsOfClass class name or schema name is not a string");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "ECInstanceMethodSymbolsProvider::IsOfClass class name or schema name is not a string");
             return ExpressionStatus::UnknownError;
             }
 
@@ -218,7 +218,7 @@ private:
                 }
             }
 
-        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECInstanceMethodSymbolsProvider::IsOfClass: Result: %s", evalResult.ToString().c_str()).c_str());
+        ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("ECInstanceMethodSymbolsProvider::IsOfClass: Result: %s", evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 protected:
@@ -290,14 +290,14 @@ private:
         {
         if (2 != args.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("NodeSymbolsProvider::IsOfClass: WrongNumberOfArguments. Expected 2, actually: %" PRIu64, (uint64_t)args.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, Utf8PrintfString("NodeSymbolsProvider::IsOfClass: WrongNumberOfArguments. Expected 2, actually: %" PRIu64, (uint64_t)args.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (nullptr == context)
             {
             evalResult.InitECValue().SetBoolean(false);
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "NodeSymbolsProvider::IsOfClass: Result: false (context == nullptr)" );
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, "NodeSymbolsProvider::IsOfClass: Result: false (context == nullptr)" );
             return ExpressionStatus::Success;
             }
 
@@ -305,14 +305,14 @@ private:
         if (ctx.m_node.IsNull() || !ctx.m_connection.IsOpen())
             {
             evalResult.InitECValue().SetBoolean(false);
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "NodeSymbolsProvider::IsOfClass: Result: false (node is null or connection is closed)");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, "NodeSymbolsProvider::IsOfClass: Result: false (node is null or connection is closed)");
             return ExpressionStatus::Success;
             }
 
         Utf8CP schemaname, classname;
         if (!SystemSymbolProvider::ExtractArg(classname, args[0]) || !SystemSymbolProvider::ExtractArg(schemaname, args[1]))
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "NodeSymbolsProvider::IsOfClass: UnknownError. Invalid class name or schema name");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "NodeSymbolsProvider::IsOfClass: UnknownError. Invalid class name or schema name");
             return ExpressionStatus::UnknownError;
             }
 
@@ -339,7 +339,7 @@ private:
                 break;
                 }
             }
-        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("NodeSymbolsProvider::IsOfClass(%s, %s) = %s", classname, schemaname, evalResult.ToString().c_str()).c_str());
+        ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("NodeSymbolsProvider::IsOfClass(%s, %s) = %s", classname, schemaname, evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 protected:
@@ -408,20 +408,16 @@ protected:
             if (node.GetType().Equals(NAVNODE_TYPE_ECInstancesNode))
                 {
                 if (nullptr == node.GetKey()->AsECInstanceNodeKey() || node.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty())
-                    {
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::ECExpressions, LOG_ERROR, "ECInstance node is not associated with any ECInstance");
-                    }
-                else
-                    {
-                    // TODO: returning first instance key - what if node groups multiple instances???
-                    ECClassInstanceKeyCR key = node.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front();
-                    context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(key.GetId().GetValueUnchecked())));
-                    context.AddSymbol(*ValueSymbol::Create("BriefcaseId", ECValue(CommonTools::ToBase36String(CommonTools::GetBriefcaseId(key.GetId())).c_str(), false)));
-                    context.AddSymbol(*ValueSymbol::Create("LocalId", ECValue(CommonTools::ToBase36String(CommonTools::GetLocalId(key.GetId())).c_str(), false)));
-                    context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(true)));
-                    context.AddSymbol(*PropertySymbol::Create("ECInstance", *NodeECInstanceContextEvaluator::Create(m_context.m_connection, node)));
-                    didAddECInstanceSymbols = true;
-                    }
+                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "ECInstance node is not associated with any ECInstance");
+
+                // TODO: returning first instance key - what if node groups multiple instances???
+                ECClassInstanceKeyCR key = node.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front();
+                context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(key.GetId().GetValueUnchecked())));
+                context.AddSymbol(*ValueSymbol::Create("BriefcaseId", ECValue(CommonTools::ToBase36String(CommonTools::GetBriefcaseId(key.GetId())).c_str(), false)));
+                context.AddSymbol(*ValueSymbol::Create("LocalId", ECValue(CommonTools::ToBase36String(CommonTools::GetLocalId(key.GetId())).c_str(), false)));
+                context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(true)));
+                context.AddSymbol(*PropertySymbol::Create("ECInstance", *NodeECInstanceContextEvaluator::Create(m_context.m_connection, node)));
+                didAddECInstanceSymbols = true;
                 }
 
             if (!didAddECInstanceSymbols)
@@ -453,24 +449,23 @@ private:
     Utf8String m_rulesetId;
     INavNodeLocaterCP m_locater;
     NavNodeKeyCP m_key;
-    RulesetVariables const& m_variables;
     SymbolExpressionContextPtr m_context;
     INodeLabelCalculator const& m_nodeLabelCalculator;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key, RulesetVariables const& variables, INodeLabelCalculator const& nodeLabelCalculator)
-        : m_rootContext(rootContext), m_connection(connection), m_rulesetId(rulesetId), m_locater(locater), m_key(key), m_context(nullptr), m_variables(variables), m_nodeLabelCalculator(nodeLabelCalculator)
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key, INodeLabelCalculator const& nodeLabelCalculator)
+        : m_rootContext(rootContext), m_connection(connection), m_rulesetId(rulesetId), m_locater(locater), m_key(key), m_context(nullptr), m_nodeLabelCalculator(nodeLabelCalculator)
         {}
 public:
     static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection,
-        Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key, RulesetVariables const& variables, INodeLabelCalculator const& nodeLabelCalculator)
+        Utf8String rulesetId, INavNodeLocaterCP locater, NavNodeKeyCP key,  INodeLabelCalculator const& nodeLabelCalculator)
         {
-        return new NodeContextEvaluator(rootContext, connection, rulesetId, locater, key, variables, nodeLabelCalculator);
+        return new NodeContextEvaluator(rootContext, connection, rulesetId, locater, key, nodeLabelCalculator);
         }
     virtual ExpressionContextPtr _GetContext() override
         {
         if (m_context.IsValid())
             return m_context;
 
-        NavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_rulesetId, *m_key, m_variables) : nullptr;
+        NavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_rulesetId, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstancesNodeKey const* instancesNodeKey = m_key->AsECInstanceNodeKey();
@@ -513,13 +508,13 @@ private:
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetStringVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetStringVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetStringVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "RulesetVariablesSymbolsProvider::GetStringVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
@@ -535,13 +530,13 @@ private:
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetIntVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetIntVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
@@ -557,19 +552,19 @@ private:
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
         if (nullptr == methodContext)
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: UnknownError (nullptr == methodContext)");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: UnknownError (nullptr == methodContext)");
             return ExpressionStatus::UnknownError;
             }
 
@@ -594,13 +589,13 @@ private:
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetBoolVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetBoolVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetBoolVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "RulesetVariablesSymbolsProvider::GetBoolVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
@@ -615,13 +610,13 @@ private:
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::HasVariable: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::HasVariable: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::HasVariable: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(LOG_ERROR, "RulesetVariablesSymbolsProvider::HasVariable: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
@@ -691,21 +686,21 @@ private:
             }
         else
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid relationship direction specified. Expected 'Forward' or 'Backward', got: '%s'", direction));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid relationship direction specified. Expected 'Forward' or 'Backward', got: '%s'", direction));
             return ExpressionStatus::UnknownError;
             }
 
         Utf8String relationshipSchemaName, relationshipClassName;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, relationshipName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse specified relationship name: '%s'", relationshipName));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse specified relationship name: '%s'", relationshipName));
             return ExpressionStatus::UnknownError;
             }
 
         Utf8String relatedClassSchemaName, relatedClassName;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, className))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse specified class name: '%s'", className));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse specified class name: '%s'", className));
             return ExpressionStatus::UnknownError;
             }
 
@@ -735,7 +730,7 @@ private:
 
         if (3 != args.size())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Wrong number of arguments. Expected 3, got: %" PRIu64, (uint64_t)args.size()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Wrong number of arguments. Expected 3, got: %" PRIu64, (uint64_t)args.size()));
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
@@ -743,7 +738,7 @@ private:
             {
             if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid type of argument %" PRIu64 " - expected a string", (uint64_t)i));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid type of argument %" PRIu64 " - expected a string", (uint64_t)i));
                 return ExpressionStatus::WrongType;
                 }
             }
@@ -773,13 +768,13 @@ private:
             if (BE_SQLITE_ROW == QueryExecutorHelper::Step(stmt))
                 {
                 evalResult.InitECValue() = ECValue(stmt.GetValueText(0));
-                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
+                ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
                 }
             }
 
         evalResult.InitECValue().SetToNull();
-        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
+        ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
 
@@ -875,7 +870,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
 
     // SelectedNode
     rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(), params.GetRulesetId(),
-    params.GetNodeLocater(), params.GetSelectedNodeKey(), params.GetRulesetVariables(), params.GetNodeLabelCalculator())));
+        params.GetNodeLocater(), params.GetSelectedNodeKey(), params.GetNodeLabelCalculator())));
 
     // Content-specific
     rootCtx->GetSymbolsContext().AddSymbol(*ValueSymbol::Create("ContentDisplayType", ECValue(params.GetContentDisplayType().c_str())));
@@ -987,18 +982,25 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context)
     {
+    auto scope = Diagnostics::Scope::Create("EvaluateECExpression");
+
     NodePtr node = GetNodeFromExpression(expression.c_str());
+    if (node.IsNull())
+        {
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: %s", expression.c_str()));
+        return false;
+        }
 
     ValueResultPtr valueResult;
     if (ExpressionStatus::Success != node->GetValue(valueResult, context))
         {
-        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECExpressionsHelper::EvaluateECExpression: Could not get node value");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to evaluate ECExpression: %s", expression.c_str()));
         return false;
         }
 
     if (ExpressionStatus::Success != valueResult->GetECValue(result))
         {
-        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECExpressionsHelper::EvaluateECExpression: Could not get ECValue from value result");
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Could not get ECValue from value result");
         return false;
         }
 
@@ -1319,21 +1321,21 @@ private:
             }
         else
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid relationship direction. Expected 'Forward' or 'Backward', got: '%s'", info.Direction.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid relationship direction. Expected 'Forward' or 'Backward', got: '%s'", info.Direction.c_str()));
             return ERROR;
             }
 
         Utf8String relationshipSchemaAndClassName = args.GetArgument(0)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelationshipNames.SchemaName, info.RelationshipNames.ClassName, relationshipSchemaAndClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse relationship name: '%s'", relationshipSchemaAndClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse relationship name: '%s'", relationshipSchemaAndClassName.c_str()));
             return ERROR;
             }
 
         Utf8String relatedSchemaAndClassName = args.GetArgument(2)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelatedClassNames.SchemaName, info.RelatedClassNames.ClassName, relatedSchemaAndClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
             return ERROR;
             }
 
@@ -1350,7 +1352,7 @@ private:
         Utf8String relatedSchemaAndClassName = args.GetArgument(0)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelatedClassName.SchemaName, info.RelatedClassName.ClassName, relatedSchemaAndClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse related class name: '%s'", relatedSchemaAndClassName.c_str()));
             return ERROR;
             }
 
@@ -1358,7 +1360,7 @@ private:
         LambdaNodeCP lambda = dynamic_cast<LambdaNodeCP>(secondArg);
         if (nullptr == lambda)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Expecting second argument to be a lambda");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Expecting second argument to be a lambda");
             return ERROR;
             }
         info.RelatedClassAlias = lambda->GetSymbolName();
@@ -1427,7 +1429,7 @@ private:
             return HandleHasRelatedInstanceSpecialCaseWith3Args(node);
         if (2 == args->GetArgumentCount())
             return HandleHasRelatedInstanceSpecialCaseWith2Args(node);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
         return false;
         }
 
@@ -1499,7 +1501,7 @@ private:
             return HandleGetRelatedValueSpecialCaseWith4Args(node);
         if (3 == args->GetArgumentCount())
             return HandleGetRelatedValueSpecialCaseWith3Args(node);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 3 or 4, got: %" PRIu64, args->GetArgumentCount()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 3 or 4, got: %" PRIu64, args->GetArgumentCount()));
         return false;
         }
 
@@ -1560,7 +1562,7 @@ private:
             return HandleGetRelatedInstancesCountSpecialCaseWith3Args(node);
         if (2 == args->GetArgumentCount())
             return HandleGetRelatedInstancesCountSpecialCaseWith2Args(node);
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2 or 3, got: %" PRIu64, args->GetArgumentCount()));
         return false;
         }
 
@@ -1582,12 +1584,12 @@ private:
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Missing arguments");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Missing arguments");
             return false;
             }
         if (1 != args->GetArgumentCount())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1, got: %" PRIu64, args->GetArgumentCount()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1, got: %" PRIu64, args->GetArgumentCount()));
             return false;
             }
 
@@ -1603,7 +1605,7 @@ private:
         {
         if (m_currentValueListMethodNode.IsNull() && m_currentValueListIdentNode.IsNull())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "`AnyMatch` may only be used on value lists");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "`AnyMatch` may only be used on value lists");
             return false;
             }
 
@@ -1629,12 +1631,12 @@ private:
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Missing arguments");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Missing arguments");
             return false;
             }
         if (2 != args->GetArgumentCount())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2, got: %" PRIu64, args->GetArgumentCount()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2, got: %" PRIu64, args->GetArgumentCount()));
             return false;
             }
 
@@ -1656,18 +1658,18 @@ private:
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Missing arguments");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Missing arguments");
             return false;
             }
         if (1 != args->GetArgumentCount() && 2 != args->GetArgumentCount())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1 or 2, got: %" PRIu64, args->GetArgumentCount()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 1 or 2, got: %" PRIu64, args->GetArgumentCount()));
             return false;
             }
         PrimaryListNodeCP listNode = dynamic_cast<PrimaryListNodeCP>(args->GetArgument(0));
         if (nullptr == listNode || 2 != listNode->GetNumberOfOperators())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("First argument should be property accessor, e.g. 'this.MyProperty'. Got: '%s'", args->GetArgument(0)->ToExpressionString().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("First argument should be property accessor, e.g. 'this.MyProperty'. Got: '%s'", args->GetArgument(0)->ToExpressionString().c_str()));
             return false;
             }
         IdentNodeCP ident = dynamic_cast<IdentNodeCP>(listNode->GetOperatorNode(0));
@@ -1969,7 +1971,7 @@ private:
                 }
             }
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, "Only an EQUALS operation or function calls are allowed in lambda expression");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, "Only an EQUALS operation or function calls are allowed in lambda expression");
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -2076,8 +2078,8 @@ private:
         }
 
 public:
-    bool StartArrayIndex(NodeCR) override {DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_ERROR, LOG_ERROR, "Array indexes not supported"); return false;}
-    bool EndArrayIndex(NodeCR) override {DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_ERROR, LOG_ERROR, "Array indexes not supported"); return false;}
+    bool StartArrayIndex(NodeCR) override {DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_WARNING, LOG_ERROR, "Array indexes not supported"); return false;}
+    bool EndArrayIndex(NodeCR) override {DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_WARNING, LOG_ERROR, "Array indexes not supported"); return false;}
     bool StartArguments(NodeCR) override
         {
         if (m_ignoreNextArguments)
@@ -2314,7 +2316,7 @@ QueryClauseAndBindings ECExpressionsHelper::ConvertToECSql(Utf8StringCR expressi
     NodePtr node = GetNodeFromExpression(copy.c_str());
     if (node.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
         return QueryClauseAndBindings();
         }
 
@@ -2338,7 +2340,7 @@ bvector<Utf8String> ECExpressionsHelper::GetUsedClasses(Utf8StringCR expression)
     NodePtr node = GetNodeFromExpression(expression.c_str());
     if (node.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: '%s'", expression.c_str()));
         return empty;
         }
 

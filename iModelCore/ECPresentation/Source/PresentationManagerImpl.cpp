@@ -85,7 +85,7 @@ static PresentationRuleSetPtr FindRuleset(IRulesetLocaterManager const& locaters
     PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(locaters, connection, rulesetId);
     if (!ruleset.IsValid())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Ruleset with ID '%s' not found", rulesetId));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Ruleset with ID '%s' not found", rulesetId));
         return nullptr;
         }
     return ruleset;
@@ -476,7 +476,7 @@ static HierarchyRequestImplParams CreateHierarchyRequestParams(ImplTaskParams<TD
 struct RulesDrivenECPresentationManagerImpl::NavNodeLocater
 {
 private:
-    RulesDrivenECPresentationManagerImpl& m_manager;
+    RulesDrivenECPresentationManagerImpl const& m_manager;
     RequestWithRulesetImplParams m_params;
 
 private:
@@ -516,13 +516,10 @@ private:
                 }
 
             if (found)
-                break;
+                return curr;
             }
 
-        if (!found)
-            return nullptr;
-
-        return NodesFinalizer(nodes->GetProvider()->GetContextR()).Finalize(*curr);
+        return nullptr;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -545,7 +542,10 @@ private:
         }
 
 public:
-    NavNodeLocater(RulesDrivenECPresentationManagerImpl& manager, RequestWithRulesetImplParams params)
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodeLocater(RulesDrivenECPresentationManagerImpl const& manager, RequestWithRulesetImplParams params)
         : m_manager(manager), m_params(params)
         {}
 
@@ -559,23 +559,16 @@ public:
         std::shared_ptr<INavNodesCache> nodesCache = m_manager.GetHierarchyCache(m_params.GetConnection().GetId());
         VALID_HIERARCHY_CACHE_PRECONDITION(nodesCache, nullptr);
 
-        IUserSettings& userSettings = m_manager.GetUserSettings(m_params.GetRulesetId().c_str());
-        RulesetVariables variables(m_params.GetRulesetVariables());
-        variables.Merge(userSettings);
-
-        NavNodeCPtr node = nodesCache->LocateNode(m_params.GetConnection(), m_params.GetRulesetId(), nodeKey, variables);
+        NavNodeCPtr node = nodesCache->LocateNode(m_params.GetConnection(), m_params.GetRulesetId(), nodeKey);
         if (node.IsValid())
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Node taken from cache");
-            node = m_manager.FinalizeNode(m_params, *node);
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Node taken from cache");
+            return node;
             }
-        else
-            {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Node not found in cache.");
-            auto locateScope = Diagnostics::Scope::Create("Load & Locate");
-            node = LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr);
-            }
-        return node;
+
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Node not found in cache.");
+        auto locateScope = Diagnostics::Scope::Create("Load & Locate");
+        return LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr);
         }
 };
 
@@ -628,12 +621,12 @@ protected:
             RootNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetRootNodeSpecifications(params);
             if (!specs.empty())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Creating root nodes provider using %" PRIu64 " specifications.", (uint64_t)specs.size()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Creating root nodes provider using %" PRIu64 " specifications.", (uint64_t)specs.size()));
                 provider = WithDeprecatedPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs), MapSpecs(specs));
                 }
             else
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, "Creating empty root nodes provider (found 0 specifications).");
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, "Creating empty root nodes provider (found 0 specifications).");
                 }
             }
         else
@@ -642,13 +635,13 @@ protected:
             ChildNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetChildNodeSpecifications(params);
             if (!specs.empty())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Creating child nodes provider for parent %s using %" PRIu64 " specifications.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Creating child nodes provider for parent %s using %" PRIu64 " specifications.",
                     DiagnosticsHelpers::CreateNodeIdentifier(*parent).c_str(), (uint64_t)specs.size()));
                 provider = WithDeprecatedPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs, *parent), MapSpecs(specs));
                 }
             else
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Creating empty child nodes provider for parent %s (found 0 specifications).",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Creating empty child nodes provider for parent %s (found 0 specifications).",
                     DiagnosticsHelpers::CreateNodeIdentifier(*parent).c_str()));
                 }
             }
@@ -685,7 +678,7 @@ protected:
         PresentationRuleSetPtr ruleset = FindRuleset(m_manager.GetLocaters(), connection, rulesetId);
         if (!ruleset.IsValid())
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Ruleset '%s' not found. Returning NULL.", rulesetId));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Ruleset '%s' not found. Returning NULL.", rulesetId));
             return nullptr;
             }
 
@@ -701,7 +694,6 @@ protected:
         cache->OnRulesetUsed(*ruleset);
         std::unique_ptr<RulesetVariables> rulesetVariables = std::make_unique<RulesetVariables>(variables);
         rulesetVariables->Merge(settings);
-        cache->OnRulesetVariablesUsed(*rulesetVariables, rulesetId);
 
         // set up the nodes provider context
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, TargetTree_MainTree, parentNode,
@@ -933,15 +925,27 @@ NavNodesProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateNodesProv
     {
     auto scope = Diagnostics::Scope::Create("Create nodes provider context");
 
+    // locate the parent node if it's passed by key
+    NavNodeCPtr parentNode = params.GetParentNode();
+    if (parentNode.IsNull() && params.GetParentNodeKey())
+        {
+        parentNode = NavNodeLocater(*this, RequestWithRulesetImplParams::Create(params)).LocateNode(*params.GetParentNodeKey());
+        if (parentNode.IsNull())
+            throw InvalidArgumentException("Node for given parent node key does not exist");
+        }
+
     // get the nodes cache
     if (nullptr == cache)
-        cache = m_nodesCachesManager->GetCache(params.GetConnection().GetId(), params.GetParentNode() ? params.GetParentNode()->GetNodeId() : BeGuid());
+        cache = m_nodesCachesManager->GetCache(params.GetConnection().GetId(), parentNode.IsValid() ? parentNode->GetNodeId() : BeGuid());
     if (nullptr == cache)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Failed to find the hierarchy cache for given connection: '%s'.", params.GetConnection().GetId().c_str()));
 
     // create the nodes provider context
-    return m_nodesProviderContextFactory->Create(params.GetConnection(), params.GetRulesetId().c_str(),
-        params.GetParentNode(), cache, params.GetCancellationToken(), params.GetRulesetVariables());
+    NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(params.GetConnection(), params.GetRulesetId().c_str(),
+        parentNode.get(), cache, params.GetCancellationToken(), params.GetRulesetVariables());
+    if (context.IsValid())
+        context->SetInstanceFilter(params.GetInstanceFilter());
+    return context;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -951,12 +955,14 @@ void RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRulesetImplPa
     {
     auto scope = Diagnostics::Scope::Create("Finalize node");
 
-    auto parentNode = node.GetParentNodeId().IsValid() ? m_nodesCachesManager->GetCache(params.GetConnection().GetId())->GetNode(node.GetParentNodeId()) : nullptr;
+    auto hierarchyCache = m_nodesCachesManager->GetCache(params.GetConnection().GetId());
+    auto parentNodeId = hierarchyCache->GetVirtualParentNodeId(node.GetNodeId());
+    auto parentNode = parentNodeId.IsValid() ? hierarchyCache->GetNode(parentNodeId) : nullptr;
     auto contextParams = CreateHierarchyRequestParams(params, parentNode.get());
     auto context = CreateNodesProviderContext(contextParams);
     if (context.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to create context for finalizing node.");
-    
+
     NodesFinalizer(*context).Finalize(node);
     }
 
@@ -973,14 +979,17 @@ NavNodePtr RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRuleset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl::_CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams const& params) const
+std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl::_CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const& params) const
     {
     auto scope = Diagnostics::Scope::Create("Create nodes instance keys provider");
 
-    auto context = CreateNodesProviderContext(CreateHierarchyRequestParams(params));
+    auto hierarchyParams = CreateHierarchyRequestParams(params);
+    hierarchyParams.SetInstanceFilter(params.GetInstanceFilter());
+
+    auto context = CreateNodesProviderContext(hierarchyParams);
     if (context.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create context. Returning NULL.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create context. Returning NULL.");
         return nullptr;
         }
 
@@ -990,13 +999,13 @@ std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(NavNodesProviderContextR context, PageOptionsCP pageOptions)
+NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(NavNodesProviderContextR context, PageOptionsCP pageOptions) const
     {
     auto scope = Diagnostics::Scope::Create("Create data source");
 
-    if (context.GetPhysicalParentNode().IsValid() && !context.GetPhysicalParentNode()->HasChildren())
+    if (context.GetVirtualParentNode().IsValid() && NodesFinalizer(context).HasSimilarNodeInHierarchy(*context.GetVirtualParentNode()))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_WARNING, LOG_INFO, "Requested children for node that has none. Returning empty data source.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Parent node has similar ancestor - returning empty data source");
         return nullptr;
         }
 
@@ -1008,19 +1017,19 @@ NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(
         // it's more efficient to create a new provider
         provider = context.GetNodesCache().GetCombinedHierarchyLevel(context, context.GetHierarchyLevelIdentifier());
         if (provider.IsValid())
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Found provider in persistent cache");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Found provider in persistent cache");
         }
 
     // create the provider
     if (provider.IsNull())
         {
         provider = m_nodesProviderFactory->Create(context);
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Created a new provider");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Created a new provider");
         }
 
     // post-process
     provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Provider post-processed");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Provider post-processed");
 
     provider->SetPageOptions(CreateProviderPageOptions(pageOptions));
     return NavNodesDataSource::Create(*provider);
@@ -1029,14 +1038,14 @@ NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const& params)
+NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const& params) const
     {
     auto scope = Diagnostics::Scope::Create("Create data source");
 
     NavNodesProviderContextPtr context = CreateNodesProviderContext(params);
     if (context.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create context. Returning NULL.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create context. Returning NULL.");
         return nullptr;
         }
 
@@ -1049,30 +1058,75 @@ NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static Diagnostics::Scope::Holder CreateScopeForHierarchyRequest(HierarchyRequestParams const& params, Utf8CP requestIdentifier)
+    {
+    if (params.GetParentNode())
+        return Diagnostics::Scope::Create(Utf8PrintfString("Get child %s for parent %s", requestIdentifier, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+
+    if (params.GetParentNodeKey())
+        return Diagnostics::Scope::Create(Utf8PrintfString("Get child %s for parent %s", requestIdentifier, DiagnosticsHelpers::CreateNodeKeyIdentifier(*params.GetParentNodeKey()).c_str()));
+
+    return Diagnostics::Scope::Create(Utf8PrintfString("Get root %s", requestIdentifier));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ReportNodesResponse(WithPageOptions<HierarchyRequestParams> const& params, INavNodesDataSourceCR ds)
+    {
+    auto pageStart = (uint64_t)params.GetPageOptions().GetPageStart();
+    auto dsSizeWithOffset = (uint64_t)(params.GetPageOptions().GetPageStart() + ds.GetSize());
+    if (params.GetParentNode())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") child nodes for parent %s",
+            pageStart, dsSizeWithOffset, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+        }
+    else if (params.GetParentNodeKey())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") child nodes for parent %s",
+            pageStart, dsSizeWithOffset, DiagnosticsHelpers::CreateNodeKeyIdentifier(*params.GetParentNodeKey()).c_str()));
+        }
+    else
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") root nodes",
+            pageStart, dsSizeWithOffset));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params)
     {
-    Diagnostics::Scope::Holder scope;
-    if (params.GetParentNode())
-        scope = Diagnostics::Scope::Create(Utf8PrintfString("Get child nodes for parent %s", DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
-    else
-        scope = Diagnostics::Scope::Create("Get root nodes");
+    auto scope = CreateScopeForHierarchyRequest(params, "nodes");
 
     INavNodesDataSourcePtr source = GetCachedDataSource(params);
     if (source.IsNull())
         source = EmptyDataSource<NavNodePtr>::Create();
 
+    ReportNodesResponse(params, *source);
+    return PreloadedDataSource<NavNodePtr>::Create(*source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ReportNodesCountResponse(WithPageOptions<HierarchyRequestParams> const& params, size_t nodesCount)
+    {
     if (params.GetParentNode())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") child nodes for parent %s",
-            (uint64_t)params.GetPageOptions().GetPageStart(), (uint64_t)(params.GetPageOptions().GetPageStart() + source->GetSize()), DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, Utf8PrintfString("Returning %" PRIu64 " for parent %s",
+            (uint64_t)nodesCount, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
+        }
+    else if (params.GetParentNodeKey())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, Utf8PrintfString("Returning %" PRIu64 " for parent %s",
+            (uint64_t)nodesCount, DiagnosticsHelpers::CreateNodeKeyIdentifier(*params.GetParentNodeKey()).c_str()));
         }
     else
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") root nodes",
-            (uint64_t)params.GetPageOptions().GetPageStart(), (uint64_t)(params.GetPageOptions().GetPageStart() + source->GetSize())));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, Utf8PrintfString("Returning %" PRIu64, (uint64_t)nodesCount));
         }
-
-    return PreloadedDataSource<NavNodePtr>::Create(*source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1080,25 +1134,11 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetNodes(WithPageO
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t RulesDrivenECPresentationManagerImpl::_GetNodesCount(HierarchyRequestImplParams const& params)
     {
-    Diagnostics::Scope::Holder scope;
-    if (params.GetParentNode())
-        scope = Diagnostics::Scope::Create(Utf8PrintfString("Get child nodes count for parent %s", DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
-    else
-        scope = Diagnostics::Scope::Create("Get root nodes count");
+    auto scope = CreateScopeForHierarchyRequest(params, "nodes count");
 
     INavNodesDataSourcePtr source = GetCachedDataSource(params);
     size_t size = source.IsValid() ? source->GetSize() : 0;
-
-    if (params.GetParentNode())
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64 " for parent %s",
-            (uint64_t)size, DiagnosticsHelpers::CreateNodeIdentifier(*params.GetParentNode()).c_str()));
-        }
-    else
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64, (uint64_t)size));
-        }
-
+    ReportNodesCountResponse(params, size);
     return size;
     }
 
@@ -1109,13 +1149,10 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestIm
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Get parent for node %s", DiagnosticsHelpers::CreateNodeIdentifier(params.GetNode()).c_str()));
 
-    if (!params.GetNode().GetParentNodeId().IsValid())
-        return nullptr;
-
     std::shared_ptr<NodesCache> cache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
     VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
 
-    auto node = cache->GetNode(params.GetNode().GetParentNodeId());
+    auto node = cache->GetPhysicalParentNode(params.GetNode().GetNodeId(), params.GetRulesetVariables(), params.GetInstanceFilter().get());
     if (node.IsValid())
         FinalizeNode(RequestWithRulesetImplParams::Create(params), *node);
 
@@ -1125,23 +1162,14 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestIm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetNode(NodeByKeyRequestImplParams const& params)
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Get node for key %s", DiagnosticsHelpers::CreateNodeKeyIdentifier(params.GetNodeKey()).c_str()));
-    return NavNodeLocater(*this, RequestWithRulesetImplParams::Create(params)).LocateNode(params.GetNodeKey());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImplParams const& params, std::shared_ptr<INavNodesCache> cache)
+void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImplParams const& params, std::shared_ptr<INavNodesCache> cache) const
     {
     ThrowIfCancelled(params.GetCancellationToken());
 
     NavNodesProviderContextPtr context = CreateNodesProviderContext(params, cache);
     if (context.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create context - stopping hierarchy traversal.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create context - stopping hierarchy traversal.");
         return;
         }
 
@@ -1164,15 +1192,15 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     std::shared_ptr<NodesCache> nodesCache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
     VALID_HIERARCHY_CACHE_PRECONDITION(nodesCache, result);
 
-    // create a savepoint to avoid commiting any changes while we're creating the hierarchy
+    // create a savepoint to avoid committing any changes while we're creating the hierarchy
     auto cacheSavepoint = nodesCache->CreateSavepoint(true);
 
-    if (!nodesCache->IsInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables()))
+    if (!nodesCache->IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables(), nullptr))
         {
         NavNodesProviderContextPtr rootNodesContext = CreateNodesProviderContext(CreateHierarchyRequestParams(params), nodesCache);
         if (rootNodesContext.IsNull())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create root nodes context. Returning empty list.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create root nodes context. Returning empty list.");
             return result;
             }
         INavNodesDataSourceCPtr rootNodes = GetCachedDataSource(*rootNodesContext, nullptr);
@@ -1187,7 +1215,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     NavNodesProviderContextPtr undeterminedChildNodesContext = CreateNodesProviderContext(CreateHierarchyRequestParams(params), nodesCache);
     if (undeterminedChildNodesContext.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create undetermined child nodes context. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create undetermined child nodes context. Returning empty list.");
         return result;
         }
     NavNodesProviderCPtr provider = nodesCache->GetUndeterminedNodesProvider(*undeterminedChildNodesContext);
@@ -1204,7 +1232,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     NavNodesProviderContextPtr filteredNodesContext = CreateNodesProviderContext(CreateHierarchyRequestParams(params), nodesCache);
     if (filteredNodesContext.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create filtered nodes context. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create filtered nodes context. Returning empty list.");
         return result;
         }
     NavNodesProviderPtr filteredProvider = nodesCache->GetFilteredNodesProvider(*filteredNodesContext, params.GetFilterText().c_str());
@@ -1258,7 +1286,7 @@ private:
         }
 
 public:
-    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, ContentProviderContextCR context)
+    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl const& manager, ContentProviderContextCR context)
         : m_context(context)
         {
         auto locaterParams = RequestWithRulesetImplParams::Create(context.GetConnection(), &context.GetCancelationToken(),
@@ -1277,7 +1305,7 @@ public:
         ContentRuleInstanceKeysContainer instanceSpecs;
         if (!m_nodeInstanceKeysProvider)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_WARNING, "Failed to create node instance keys provider. Returning empty list.");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_WARNING, "Failed to create node instance keys provider. Returning empty list.");
             return instanceSpecs;
             }
         for (ContentRuleInputKeys& spec : specs)
@@ -1300,7 +1328,7 @@ ContentProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateContentPro
     PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, key.GetRulesetId().c_str());
     if (!ruleset.IsValid())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Ruleset '%s' not found. Returning NULL.", key.GetRulesetId().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Ruleset '%s' not found. Returning NULL.", key.GetRulesetId().c_str()));
         return nullptr;
         }
 
@@ -1309,7 +1337,6 @@ ContentProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateContentPro
     if (nullptr == nodesCache)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Failed to find the hierarchy cache for given connection: '%s'. Returning NULL.", connection.GetId().c_str()));
     nodesCache->OnRulesetUsed(*ruleset); // make sure latest ruleset version is used in cache
-    nodesCache->OnRulesetVariablesUsed(*variables, ruleset->GetRuleSetId());
 
     // get caches
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
@@ -1330,7 +1357,7 @@ ContentProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateContentPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCP cancelationToken, ContentProviderKey const& key, RulesetVariables const& variables)
+SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCP cancelationToken, ContentProviderKey const& key, RulesetVariables const& variables) const
     {
     auto scope = Diagnostics::Scope::Create("Get content provider");
 
@@ -1343,7 +1370,7 @@ SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContent
     SpecificationContentProviderPtr provider = m_contentCache->GetProvider(key, *rulesetVariables);
     if (provider.IsValid())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Found cached provider. Adopt and return.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found cached provider. Adopt and return.");
         provider->Adopt(connection, cancelationToken);
         return provider;
         }
@@ -1352,7 +1379,7 @@ SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContent
     auto context = CreateContentProviderContext(connection, key, std::move(rulesetVariables), cancelationToken);
     if (context.IsNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, "Failed to create context. Returning NULL.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create context. Returning NULL.");
         return nullptr;
         }
 
@@ -1360,7 +1387,7 @@ SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContent
     NodeLabelCalculator nodeLabelCalculator(context->GetSchemaHelper(), *m_connections, connection, key.GetRulesetId(), context->GetRulesPreprocessor(), variables, context->GetECExpressionsCache(), *m_nodesFactory);
     IRulesPreprocessor::ContentRuleParameters params(key.GetInputNodeKeys(), key.GetPreferredDisplayType(), key.GetSelectionInfo(), nodeLabelCalculator, &context->GetNodesLocater());
     ContentRuleInputKeysContainer specs = context->GetRulesPreprocessor().GetContentSpecifications(params);
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Creating content provider using %" PRIu64 " specifications.", (uint64_t)specs.size()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Creating content provider using %" PRIu64 " specifications.", (uint64_t)specs.size()));
 
     // create the provider
     ContentRulesSpecificationsInputHandler inputHandler(*this, *context);
@@ -1381,7 +1408,7 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), params.GetConnection(), params.GetRulesetId().c_str());
     if (!ruleset.IsValid())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Ruleset '%s' not found. Returning empty list.", params.GetRulesetId().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Ruleset '%s' not found. Returning empty list.", params.GetRulesetId().c_str()));
         return bvector<SelectClassInfo>();
         }
 
@@ -1397,7 +1424,6 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
 
     RulesetVariables rulesetVariables(params.GetRulesetVariables());
     rulesetVariables.Merge(settings);
-    nodesCache->OnRulesetVariablesUsed(rulesetVariables, ruleset->GetRuleSetId());
 
     // get connection-related caches
     RelatedPathsCache& relatedPathsCache = m_ecdbCaches->GetRelatedPathsCache(params.GetConnection());
@@ -1410,7 +1436,7 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
         *ruleset, preferredDisplayType, rulesetVariables, *nodesCache, *m_nodesFactory);
     locaterContext.SetContentFlagsCalculator([contentFlags = params.GetContentFlags()](int){return contentFlags | (int)ContentFlags::DescriptorOnly;});
     auto result = ContentClassesLocater(locaterContext).Locate(params.GetInputClasses());
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64 " content classes.", (uint64_t)result.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Returning %" PRIu64 " content classes.", (uint64_t)result.size()));
     return result;
     }
 
@@ -1427,17 +1453,17 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
     ContentProviderCPtr provider = GetContentProvider(params.GetConnection(), params.GetCancellationToken(), key, params.GetRulesetVariables());
     if (provider.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content provider. Returning NULL.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content provider. Returning NULL.");
         return nullptr;
         }
 
     auto descriptor = provider->GetContentDescriptor();
     if (!descriptor)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_DEBUG, "Returning NULL content descriptor (given specifications didn't result in any content).");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_INFO, "Returning NULL content descriptor (given specifications didn't result in any content).");
         return nullptr;
         }
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_DEBUG, Utf8PrintfString("Returning descriptor with %" PRIu64 " content classes and %" PRIu64 " fields.",
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_INFO, Utf8PrintfString("Returning descriptor with %" PRIu64 " content classes and %" PRIu64 " fields.",
         (uint64_t)descriptor->GetSelectClasses().size(), (uint64_t)descriptor->GetVisibleFields().size()));
     return descriptor;
     }
@@ -1445,7 +1471,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(ContentRequestImplParams const& params)
+SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(ContentRequestImplParams const& params) const
     {
     ContentDescriptorCR descriptor = params.GetContentDescriptor();
     ContentProviderKey key(params.GetConnection().GetId(), descriptor.GetRuleset().GetRuleSetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
@@ -1463,19 +1489,19 @@ ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(WithPageOptions<Co
     SpecificationContentProviderPtr provider = GetContentProvider(params);
     if (provider.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content provider. Returning NULL.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content provider. Returning NULL.");
         return nullptr;
         }
 
     auto providerDescriptor = provider->GetContentDescriptor();
     if (nullptr == providerDescriptor)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content descriptor. Returning NULL.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content descriptor. Returning NULL.");
         return nullptr;
         }
     if (providerDescriptor != &params.GetContentDescriptor())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Received a modified descriptor, cloning provider.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Received a modified descriptor, cloning provider.");
         provider = provider->Clone();
         provider->SetContentDescriptor(params.GetContentDescriptor());
         }
@@ -1486,7 +1512,7 @@ ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(WithPageOptions<Co
     ContentPtr content = Content::Create(params.GetContentDescriptor(), *ContentSetDataSource::Create(*provider));
     initializationScope = nullptr;
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_DEBUG, Utf8PrintfString("Returning content with [%" PRIu64 ", %" PRIu64 ") records.",
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_INFO, Utf8PrintfString("Returning content with [%" PRIu64 ", %" PRIu64 ") records.",
         (uint64_t)params.GetPageOptions().GetPageStart(), params.GetContentDescriptor().MergeResults() ? 1 : (uint64_t)(params.GetPageOptions().GetPageStart() + content->GetContentSet().GetSize())));
     return content;
     }
@@ -1501,19 +1527,19 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(ContentRequestIm
     SpecificationContentProviderPtr provider = GetContentProvider(params);
     if (provider.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content provider. Returning 0.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content provider. Returning 0.");
         return 0;
         }
 
     auto providerDescriptor = provider->GetContentDescriptor();
     if (nullptr == providerDescriptor)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content descriptor. Returning NULL.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content descriptor. Returning NULL.");
         return 0;
         }
     if (providerDescriptor != &params.GetContentDescriptor())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Received a modified descriptor, cloning provider.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Received a modified descriptor, cloning provider.");
         provider = provider->Clone();
         provider->SetContentDescriptor(params.GetContentDescriptor());
         }
@@ -1522,7 +1548,7 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(ContentRequestIm
     size_t size = provider->GetFullContentSetSize();
     queryCountScope = nullptr;
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_DEBUG, Utf8PrintfString("Returning %" PRIu64, (uint64_t)size));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_INFO, Utf8PrintfString("Returning %" PRIu64, (uint64_t)size));
     return size;
     }
 
@@ -1547,7 +1573,7 @@ LabelDefinitionCPtr RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(KeySe
     ContentDescriptorCPtr descriptor = GetContentDescriptor(descriptorParams);
     if (descriptor.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content descriptor");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content descriptor");
         return nullptr;
         }
 
@@ -1555,7 +1581,7 @@ LabelDefinitionCPtr RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(KeySe
     ContentCPtr content = GetContent(contentParams);
     if (content.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content");
         return nullptr;
         }
 
@@ -1563,7 +1589,7 @@ LabelDefinitionCPtr RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(KeySe
     if (item.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Content contains invalid record. Returning invalid label.");
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_DEBUG, Utf8PrintfString("Returning '%s'", item->GetDisplayLabelDefinition().GetDisplayValue().c_str()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_INFO, Utf8PrintfString("Returning '%s'", item->GetDisplayLabelDefinition().GetDisplayValue().c_str()));
     return &item->GetDisplayLabelDefinition();
     }
 
@@ -1577,21 +1603,21 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
     ContentDescriptor::Field const* field = params.GetContentDescriptor().FindField(params.GetDistinctFieldMatcher());
     if (field == nullptr)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, "Descriptor doesn't contain requested field");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, "Descriptor doesn't contain requested field");
         return nullptr;
         }
 
     SpecificationContentProviderCPtr contentProvider = GetContentProvider(ContentRequestImplParams::Create(params));
     if (contentProvider.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content provider");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content provider");
         return nullptr;
         }
 
     auto providerDescriptor = contentProvider->GetContentDescriptor();
     if (nullptr == providerDescriptor)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Failed to get content descriptor");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content descriptor");
         return nullptr;
         }
 
@@ -1599,12 +1625,12 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
     IDataSourceCPtr<DisplayValueGroupCPtr> values = contentProvider->GetDistinctValues(*field);
     if (values.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Got invalid data source");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Got invalid data source");
         return nullptr;
         }
 
     auto pagedValues = PagingDataSource<DisplayValueGroupCPtr>::Create(*values, params.GetPageOptions().GetPageStart(), params.GetPageOptions().GetPageSize());
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_DEBUG, Utf8PrintfString("Returning a distinct values range of [%" PRIu64 ", %" PRIu64 ").",
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_INFO, Utf8PrintfString("Returning a distinct values range of [%" PRIu64 ", %" PRIu64 ").",
         (uint64_t)params.GetPageOptions().GetPageStart(), (uint64_t)(params.GetPageOptions().GetPageStart() + pagedValues->GetSize())));
     return pagedValues;
     }
@@ -1663,14 +1689,14 @@ HierarchyComparePositionPtr RulesDrivenECPresentationManagerImpl::_CompareHierar
     PresentationRuleSetPtr lhsRuleset = FindRuleset(GetLocaters(), params.GetConnection(), params.GetLhsRulesetId().c_str());
     if (!lhsRuleset.IsValid())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("LHS ruleset '%s' not found. Returning.", params.GetLhsRulesetId().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("LHS ruleset '%s' not found. Returning.", params.GetLhsRulesetId().c_str()));
         return nullptr;
         }
 
     PresentationRuleSetPtr rhsRuleset = FindRuleset(GetLocaters(), params.GetConnection(), params.GetRhsRulesetId().c_str());
     if (!rhsRuleset.IsValid())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("RHS ruleset '%s' not found. Returning.", params.GetRhsRulesetId().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("RHS ruleset '%s' not found. Returning.", params.GetRhsRulesetId().c_str()));
         return nullptr;
         }
 

@@ -153,7 +153,7 @@ BeFileName DgnDbTestFixture::CopyDb(WCharCP inputFileName, WCharCP outputFileNam
 void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needTxns)
     {
     DbResult result = BE_SQLITE_OK;
-    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
+    db = DgnDb::OpenIModelDb(&result, name, DgnDb::OpenParams(mode));
     ASSERT_TRUE( db.IsValid() ) << WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result).c_str();
     ASSERT_EQ( BE_SQLITE_OK , result );
     if (mode == DgnDb::OpenMode::ReadWrite && needTxns)

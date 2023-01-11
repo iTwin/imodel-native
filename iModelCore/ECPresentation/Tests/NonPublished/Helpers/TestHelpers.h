@@ -78,7 +78,7 @@ struct InstanceInputAndResult
 +===============+===============+===============+===============+===============+======*/
 struct RulesEngineTestHelpers
     {
-    typedef std::function<void(ComplexNavigationQueryR)> ComplexQueryHandler;
+    typedef std::function<void(ComplexQueryBuilderR)> ComplexQueryHandler;
 
     static void InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8String, Utf8String>> const& schemas);
 
@@ -101,17 +101,18 @@ struct RulesEngineTestHelpers
     static PresentationQueryContractFieldPtr CreateDisplayLabelField(ECSchemaHelper const&, SelectClass<ECClass> const&,
         bvector<RelatedClassPath> const& = {}, bvector<InstanceLabelOverrideValueSpecification const*> const& = {});
     static PresentationQueryContractFieldPtr CreateNullDisplayLabelField();
-    static ComplexNavigationQueryPtr CreateMultiECInstanceNodesQuery(ECClassCR ecClass, NavigationQueryR instanceNodesQuery);
-    static NavigationQueryPtr CreateECInstanceNodesQueryForClasses(ECSchemaHelper const&, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
-    static ComplexNavigationQueryPtr CreateECInstanceNodesQueryForClass(ECSchemaHelper const&, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
-    static NavigationQueryPtr CreateQuery(NavigationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
-    static NavigationQueryPtr CreateQuery(NavigationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static ComplexQueryBuilderPtr CreateMultiECInstanceNodesQuery(ECClassCR ecClass, PresentationQueryBuilderR instanceNodesQuery);
+    static PresentationQueryBuilderPtr CreateECInstanceNodesQueryForClasses(ECSchemaHelper const&, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static ComplexQueryBuilderPtr CreateECInstanceNodesQueryForClass(ECSchemaHelper const&, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
+    static PresentationQueryBuilderPtr CreateQuery(NavigationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static PresentationQueryBuilderPtr CreateQuery(NavigationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
 
     static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel = nullptr, Utf8CP expectedImageId = nullptr);
     static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false);
     static void ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder = false);
     static void ValidateNodesPagination(std::function<NodesResponse(PageOptionsCR)> getter, bvector<NavNodeCPtr> const& expectedNodes);
-    static void ValidateNodeInstances(ECDbCR connection, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
+    static void ValidateNodeInstances(ECDbCR, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
+    static void ValidateNodeInstances(INodeInstanceKeysProvider const&, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
     static void ValidateNodeGroupedValues(NavNodeCR node, bvector<ECValue> const& groupedValues);
     static NavNodesContainer GetValidatedNodes(std::function<NodesResponse()> getter);
     static NavNodesContainer GetValidatedNodes(std::function<NodesResponse(PageOptionsCR)> nodesGetter, std::function<NodesCountResponse()> countGetter);
@@ -119,7 +120,7 @@ struct RulesEngineTestHelpers
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ContentDescriptor::Field&);
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ECN::ECClassCR, ContentDescriptor::Property, IPropertyCategorySupplierR);
 
-    static void CacheNode(IHierarchyCacheR cache, NavNodeR node);
+    static void CacheNode(IHierarchyCacheR cache, NavNodeR node, BeGuidCR parentNodeId = BeGuid());
 
     static void ImportSchema(ECDbR, std::function<void(ECSchemaR)> const& schemaBuilder);
     static bvector<ECEntityClassP> CreateNDerivedClasses(ECSchemaR schema, ECEntityClassCR baseClass, int numberOfChildClasses);
@@ -231,7 +232,7 @@ private:
     bmap<NavNodeKeyCP, NavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
 
 protected:
-    NavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR key, RulesetVariables const&) const override
+    NavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodes.find(&key);
         if (m_nodes.end() != iter)

@@ -2,13 +2,14 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { copyFile, dbFileName, iModelJsNative } from "./utils";
+import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
 import { openDgnDb } from ".";
 import * as path from "path";
 import * as os from "os";
+import * as fs from "fs-extra";
 import { ProfileOptions } from "@itwin/core-common";
 
 // Crash reporting on linux is gated by the presence of this env variable.
@@ -32,7 +33,7 @@ describe("basic tests", () => {
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function
-    expect(() => (iModelJsNative as any).storeObjectInVault()).to.throw("Argument 0");
+    expect(() => (iModelJsNative as any).addFontWorkspace()).to.throw("Argument 0");
 
     // now try methods
     const db = new iModelJsNative.DgnDb() as any;
@@ -42,10 +43,6 @@ describe("basic tests", () => {
     // from Node
     expect(() => db.nonsense()).to.throw("not a function");
   });
-
-  it("testImportSchemas", () => {
-
-  })
 
   it("testTileVersionInfo", () => {
     const ver = iModelJsNative.getTileVersionInfo();
@@ -96,6 +93,31 @@ describe("basic tests", () => {
     assert.isTrue(bisProps.version === "01.00.15"); // PR references 01.00.15, so importing PR will cause it to upgrade.
   })
 
+  it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
+    const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
+    const db = openDgnDb(testFileName);
+    const assetsDir = path.join(getAssetsDir(), 'ImportSchemaTests');
+    const test100Path = path.join(assetsDir, "Test.01.00.00.ecschema.xml");
+
+    // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
+    // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
+    let bisProps = db.getSchemaProps("BisCore");
+    let result = db.importSchemas([test100Path]);
+    assert.equal(result, DbResult.BE_SQLITE_OK);
+    assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
+
+    let testRefProps = db.getSchemaProps("TestRef");
+    assert.equal(testRefProps.version, "01.00.00", "TestRef after Test 1.0.0 import");
+
+    // TestRef is updated to version 1.0.1 even though Test only references 1.0.0
+    // local directory has higher precedence than the db
+    const subAssetsDir = path.join(assetsDir, "LocalReferences");
+    const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
+    result = db.importSchemas([test101Path]);
+    assert.equal(result, DbResult.BE_SQLITE_OK);
+    assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
+  })
+
   it("testSchemaExport", () => {
     const xml = dgndb.schemaToXmlString("BisCore", IModelJsNative.ECVersion.V2_0);
     assert.isString(xml);
@@ -142,6 +164,19 @@ describe("basic tests", () => {
     assert.isTrue(undefined === props.find((nvpair) => nvpair.name === "dynamic3"));
 
     // iModelJsNative.NativeDevTools.signal(3);
+  });
+
+  it("WAL mode", () => {
+    const withWal = new  iModelJsNative.DgnDb();
+    const tempDbName = path.join(getOutputDir(), "testWal.bim");
+    if (fs.existsSync(tempDbName))
+      fs.removeSync(tempDbName);
+
+    withWal.createIModel(tempDbName, {rootSubject: {name: "wal"}});
+    withWal.enableWalMode();
+    withWal.performCheckpoint();
+    withWal.setAutoCheckpointThreshold(2000);
+    withWal.closeIModel();
   });
 
   it("testGetSchemaProps", async () => {

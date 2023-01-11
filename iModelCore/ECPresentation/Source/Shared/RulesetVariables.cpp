@@ -196,10 +196,11 @@ void RulesetVariables::Merge(RulesetVariables const& otherVariables)
     m_serializedVariables.clear();
     for (auto otherVariablesIter = otherVariables.GetJsonDocument().MemberBegin(); otherVariables.GetJsonDocument().MemberEnd() != otherVariablesIter; ++otherVariablesIter)
         {
+        rapidjson::Value value(otherVariablesIter->value, variables.GetAllocator());
         if (variables.HasMember(otherVariablesIter->name))
-            continue;
-
-        variables.AddMember(rapidjson::Value(otherVariablesIter->name, variables.GetAllocator()).Move(), rapidjson::Value(otherVariablesIter->value, variables.GetAllocator()).Move(), variables.GetAllocator());
+            variables[otherVariablesIter->name] = value;
+        else
+            variables.AddMember(rapidjson::Value(otherVariablesIter->name, variables.GetAllocator()), value, variables.GetAllocator());
         }
     }
 

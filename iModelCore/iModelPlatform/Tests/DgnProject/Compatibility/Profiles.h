@@ -117,6 +117,11 @@ struct Profile : NonCopyableClass
         std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileName, bool logFoundFiles) const;
         BeFileName GetPathForNewTestFile(Utf8StringCR testFileName) const { return GetFolderForNewTestFile().AppendToPath(BeFileName(testFileName)); }
         BeFileName GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) const;
+
+        //! Checks if the supplied test file is created for the current test run and not pulled.
+        //! @param[in]  testFile  Test file to check
+        //! @return True if the test file was created for current test run. False might mean that the test file was pulled.
+        bool IsFileCreatedForCurrentTestRun(const TestFile& testFile) const;
     };
 
 //======================================================================================

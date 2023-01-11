@@ -96,6 +96,16 @@ export class NativeLibrary {
   }
 }
 
+/** WAL checkpoint mode
+ * @internal
+ */
+export const enum WalCheckpointMode {
+  Passive=0,  /* Do as much as possible w/o blocking */
+  Full=1,     /* Wait for writers, then checkpoint */
+  Restart=2,  /* Like FULL but wait for for readers */
+  Truncate=3,  /* Like RESTART but also truncate WAL */
+}
+
 /** Possible outcomes of generateElementGraphics.
 * Must be kept in sync with Dgn::Tile::Graphics::TileGraphicsStatus.
 * @internal
@@ -160,11 +170,6 @@ export declare namespace IModelJsNative {
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
   function setCrashReportProperty(name: string, value: string | undefined): void;
   function getCrashReportProperties(): NameValuePair[];
-  function storeObjectInVault(obj: any, id: string): void;
-  function getObjectFromVault(id: string): any;
-  function dropObjectFromVault(id: string): void;
-  function addReferenceToObjectInVault(id: string): void;
-  function getObjectRefCountFromVault(id: string): number;
   function clearLogLevelCache(): void;
   function addFontWorkspace(fileName: LocalFileName, container?: CloudContainer): boolean;
   function addGcsWorkspaceDb(dbNames: string, container?: CloudContainer, priority?: number): boolean;
@@ -373,6 +378,9 @@ export declare namespace IModelJsNative {
     saveChanges(): void;
     saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal: Uint8Array | undefined): void;
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    enableWalMode(yesNo?: boolean): void;
+    performCheckpoint(mode?: WalCheckpointMode): void;
+    setAutoCheckpointThreshold(frames: number): void;
   }
 
   /** The result of DgnDb.inlineGeometryParts.
@@ -582,6 +590,9 @@ export declare namespace IModelJsNative {
     public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems:Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public enableWalMode(yesNo?: boolean): void;
+    public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
 
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
@@ -682,7 +693,7 @@ export declare namespace IModelJsNative {
     constructor();
     public getAccessString(): string;
     public getPropertyName(): string;
-    public getOriginPropertyName(): string;
+    public getOriginPropertyName(): string | undefined;
     public getRootClassAlias(): string;
     public getRootClassName(): string;
     public getRootClassTableSpace(): string;
@@ -690,7 +701,6 @@ export declare namespace IModelJsNative {
     public isEnum(): boolean;
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
-    public hasOriginProperty(): boolean;
   }
 
   class ECSqlValue {
@@ -792,6 +802,9 @@ export declare namespace IModelJsNative {
     public saveChanges(): void;
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public enableWalMode(yesNo?: boolean): void;
+    public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
   }
 
   class SqliteStatement implements IDisposable {
@@ -1150,7 +1163,7 @@ export declare namespace IModelJsNative {
     public clearRulesets(): ECPresentationManagerResponse<void>;
     public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<string>>, cancel: () => void };
     public getUpdateInfo(): ECPresentationManagerResponse<any>;
-    public updateHierarchyState(db: DgnDb, rulesetId: string, changeType: "nodesExpanded" | "nodesCollapsed", serializedKeys: string): ECPresentationManagerResponse<void>;
+    public updateHierarchyState(db: DgnDb, rulesetId: string, stateChanges: Array<{ nodeKey: undefined | object, isExpanded?: boolean, instanceFilters?: string[] }>): ECPresentationManagerResponse<void>;
     public dispose(): void;
   }
 

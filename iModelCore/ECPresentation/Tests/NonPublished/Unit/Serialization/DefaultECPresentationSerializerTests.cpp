@@ -515,7 +515,6 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
         "Type": "Delete",
         "Node": {
             "NodeId": "00000000-0000-0000-0000-000000000000",
-            "ParentNodeId": "00000000-0000-0000-0000-000000000000",
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
@@ -564,7 +563,6 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
         "Type": "Insert",
         "Node": {
             "NodeId": "00000000-0000-0000-0000-000000000000",
-            "ParentNodeId": "00000000-0000-0000-0000-000000000000",
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
@@ -617,7 +615,6 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
         "Type": "Update",
         "Node": {
             "NodeId": "00000000-0000-0000-0000-000000000000",
-            "ParentNodeId": "00000000-0000-0000-0000-000000000000",
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
@@ -670,7 +667,6 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
         "Type": "Delete",
         "Node": {
             "NodeId": "00000000-0000-0000-0000-000000000000",
-            "ParentNodeId": "00000000-0000-0000-0000-000000000000",
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
@@ -708,13 +704,16 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
 //---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationRootLevel)
     {
-    HierarchyUpdateRecord updateRecord("ruleset-id", "db-file-name", nullptr, 2);
+    HierarchyUpdateRecord updateRecord("ruleset-id", "db-file-name", nullptr, std::make_unique<InstanceFilterDefinition>("instance-filter"), 2);
 
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
     expected.Parse(R"({
         "NodesCount": 2,
         "RulesetId": "ruleset-id",
+        "InstanceFilter": {
+            "Expr": "instance-filter"
+        },
         "ECDbFileName": "db-file-name"
         })");
 
@@ -731,7 +730,7 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationC
     auto node = TestNodesHelper::CreateCustomNode(*m_connection, "TestType", "TestLabel", "");
     node->GetKey()->GetHashPath().clear();
 
-    HierarchyUpdateRecord updateRecord("ruleset-id", "db-file-name", node.get(), 2);
+    HierarchyUpdateRecord updateRecord("ruleset-id", "db-file-name", node.get(), nullptr, 2);
 
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
@@ -760,7 +759,7 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationW
     node->SetHasChildren(false);
     node->GetKey()->GetHashPath().clear();
 
-    HierarchyUpdateRecord updateRecord("ruleset-id", "db-file-name", nullptr, 2, {HierarchyUpdateRecord::ExpandedNode(*node, 2)});
+    HierarchyUpdateRecord updateRecord("ruleset-id", "db-file-name", nullptr, nullptr, 2, {HierarchyUpdateRecord::ExpandedNode(*node, 2)});
 
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
@@ -769,7 +768,6 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationW
         "ExpandedNodes": [{
             "Node": {
                 "NodeId": "00000000-0000-0000-0000-000000000000",
-                "ParentNodeId": "00000000-0000-0000-0000-000000000000",
                 "Key": {
                     "Type": "TestType",
                     "SpecificationIdentifier": "",
@@ -1062,14 +1060,16 @@ TEST_F(DefaultECPresentationSerializerTests, RelatedContentFieldSerialization)
                 "Name": "TestSchema:PropertyTestClassB",
                 "Label": "PropertyTestClassB"
             },
+            "TargetClassAlias": "primary_instance",
             "IsTargetPolymorphic": true,
+            "IsTargetOptional": true,
             "RelationshipInfo": {
                 "Id": "%s",
                 "Name": "TestSchema:TestClassAHasTestClassB",
                 "Label": "TestClassAHasTestClassB"
             },
             "IsRelationshipPolymorphic": true,
-            "IsRelationshipForward": false
+            "RelationshipAlias": "rel"
         }],
         "NestedFields": [{
             "Name": "/DisplayLabel/",
@@ -1731,7 +1731,6 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
     expected.Parse(R"({
         "Node": {
             "NodeId": "00000000-0000-0000-0000-000000000000",
-            "ParentNodeId": "00000000-0000-0000-0000-000000000000",
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
@@ -1760,7 +1759,6 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
             {
             "Node": {
                 "NodeId": "00000000-0000-0000-0000-000000000000",
-                "ParentNodeId": "00000000-0000-0000-0000-000000000000",
                 "Key": {
                     "Type": "TestType",
                     "SpecificationIdentifier": "",
@@ -1890,6 +1888,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
                     "Label": "PropertyTestClassA"
                     },
                 "IsTargetPolymorphic": true,
+                "IsTargetOptional": true,
                 "RelationshipInfo": {
                     "Id": "",
                     "Name": "TestSchema:TestClassAHasTestClassB",
@@ -1912,13 +1911,13 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
                         "Label": "PropertyTestClassB"
                         },
                     "IsTargetPolymorphic": true,
+                    "IsTargetOptional": true,
                     "RelationshipInfo": {
                         "Id": "",
                         "Name": "TestSchema:TestClassAHasTestClassB",
                         "Label": "TestClassAHasTestClassB"
                         },
-                    "IsRelationshipPolymorphic": true,
-                    "IsRelationshipForward": false
+                    "IsRelationshipPolymorphic": true
                     }]
                 ],
             "NavigationPropertyClasses": [],
@@ -2231,7 +2230,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
     {
     ECClassInstanceKey primaryKey(GetClassA(), ECInstanceId((uint64_t)1));
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance("test ruleset id"), 
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance("test ruleset id"),
         RulesetVariables(), *NavNodeKeyListContainer::Create(bvector<NavNodeKeyCPtr>{}));
 
     rapidjson::Document values(rapidjson::kObjectType);

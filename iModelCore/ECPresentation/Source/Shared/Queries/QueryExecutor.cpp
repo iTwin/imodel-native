@@ -36,14 +36,14 @@ QueryExecutor::QueryExecutor(IConnectionCR connection)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryExecutor::QueryExecutor(IConnectionCR connection, PresentationQueryBase const& query)
+QueryExecutor::QueryExecutor(IConnectionCR connection, PresentationQuery const& query)
     : m_connection(connection), m_query(&query), m_readStarted(false), m_readFinished(false), m_step(true)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryExecutor::SetQuery(PresentationQueryBase const& query)
+void QueryExecutor::SetQuery(PresentationQuery const& query)
     {
     if (m_query == &query)
         return;
@@ -57,7 +57,7 @@ void QueryExecutor::SetQuery(PresentationQueryBase const& query)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBase const* QueryExecutor::GetQuery() const {return m_query;}
+PresentationQuery const* QueryExecutor::GetQuery() const {return m_query;}
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -71,17 +71,24 @@ void QueryExecutor::Reset()
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CachedECSqlStatementPtr GetStatement(IConnectionCR connection, PresentationQueryBase const& query)
+static CachedECSqlStatementPtr GetStatement(IConnectionCR connection, PresentationQuery const& query)
     {
     auto scope = Diagnostics::Scope::Create("Prepare statement");
 
     Savepoint txn(connection.GetDb(), "QueryExecutor::ReadRecords");
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, txn.IsActive(), "Failed to start a transaction");
 
-    Utf8CP queryString = query.ToString().c_str();
-    CachedECSqlStatementPtr statement = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), queryString);
+    Utf8CP queryString = query.GetQueryString().c_str();
+    ECSqlStatus status;
+    CachedECSqlStatementPtr statement = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), queryString, false, &status);
     if (statement.IsNull())
         {
+        if (status.IsSQLiteError() && status.GetSQLiteError() == BE_SQLITE_INTERRUPT)
+            {
+            // this might happen due to cancellation, which is not a failure
+            throw DbConnectionInterruptException();
+            }
+
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare query. Error: '%s'. Query: %s",
             connection.GetDb().GetLastError().c_str(), queryString));
         }
@@ -132,7 +139,7 @@ DbResult QueryExecutor::Step(ECSqlStatement& statement)
     {
     Diagnostics::Scope::Holder scope;
     if (!m_readStarted)
-        scope = Diagnostics::Scope::Create(Utf8PrintfString("First step: `%s`", m_query->ToString().c_str()));
+        scope = Diagnostics::Scope::Create(Utf8PrintfString("First step: `%s`", m_query->GetQueryString().c_str()));
 
     m_readStarted = true;
 
@@ -150,7 +157,7 @@ DbResult QueryExecutor::Step(ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t QueryExecutorHelper::ReadUInt64(IConnectionCR connection, GenericQueryCR query)
+uint64_t QueryExecutorHelper::ReadUInt64(IConnectionCR connection, PresentationQueryCR query)
     {
     static GenericQueryResultReader<uint64_t> s_uintReader([](ECSqlStatementCR stmt)
         {
@@ -163,7 +170,7 @@ uint64_t QueryExecutorHelper::ReadUInt64(IConnectionCR connection, GenericQueryC
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String QueryExecutorHelper::ReadText(IConnectionCR connection, GenericQueryCR query)
+Utf8String QueryExecutorHelper::ReadText(IConnectionCR connection, PresentationQueryCR query)
     {
     static GenericQueryResultReader<Utf8String> s_textReader([](ECSqlStatementCR stmt)
         {
@@ -176,12 +183,12 @@ Utf8String QueryExecutorHelper::ReadText(IConnectionCR connection, GenericQueryC
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryExecutorStatus QueryExecutorHelper::ExecuteQuery(IConnectionCR connection, PresentationQueryBase const& query,
+QueryExecutorStatus QueryExecutorHelper::ExecuteQuery(IConnectionCR connection, PresentationQuery const& query,
     IQueryResultAccumulator& accumulator, ICancelationTokenCR cancellationToken)
     {
     CachedECSqlStatementPtr statement = GetStatement(connection, query);
 
-    auto firstStepScope = Diagnostics::Scope::Create(Utf8PrintfString("First step: `%s`", query.ToString().c_str()));
+    auto firstStepScope = Diagnostics::Scope::Create(Utf8PrintfString("First step: `%s`", query.GetQueryString().c_str()));
     QueryResultAccumulatorStatus rowStatus = QueryResultAccumulatorStatus::Continue;
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*statement))
         {

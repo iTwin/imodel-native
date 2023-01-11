@@ -380,6 +380,13 @@ enum DbTxnState {
     BE_SQLITE_TXN_WRITE = 2,
 };
 
+enum class WalCheckpointMode {
+    Passive=0,  /* Do as much as possible w/o blocking */
+    Full=1,     /* Wait for writers, then checkpoint */
+    Restart=2,  /* Like FULL but wait for for readers */
+    Truncate=3, /* Like RESTART but also truncate WAL */
+};
+
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -389,6 +396,12 @@ struct ProfileVersion : BeVersion
 public:
     ProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : BeVersion(major, minor, sub1, sub2) {}
     explicit ProfileVersion(Utf8CP json) {FromJson(json);}
+    bool operator==(BeVersionCR rhs) const { return CompareTo(rhs) == 0; }
+    bool operator!=(BeVersionCR rhs) const { return CompareTo(rhs) != 0; }
+    bool operator<(BeVersionCR rhs) const { return CompareTo(rhs) < 0; }
+    bool operator<=(BeVersionCR rhs) const { return CompareTo(rhs) <= 0; }
+    bool operator>(BeVersionCR rhs) const { return CompareTo(rhs) > 0; }
+    bool operator>=(BeVersionCR rhs) const { return CompareTo(rhs) >= 0; }
     BE_SQLITE_EXPORT Utf8String ToJson() const;
     BE_SQLITE_EXPORT void FromJson(Utf8CP);
 };
@@ -3186,6 +3199,13 @@ public:
     //! Set one of the internal SQLite limits for this database. See documentation at sqlite3_limit for argument details.
     BE_SQLITE_EXPORT int SetLimit(DbLimits id, int newVal) const;
     BE_SQLITE_EXPORT int GetLimit(DbLimits id) const;
+
+    BE_SQLITE_EXPORT DbResult EnableWalMode(bool yesNo);
+
+    // perform a checkpoint operation if this database is in WAL mode
+    BE_SQLITE_EXPORT DbResult PerformCheckpoint(WalCheckpointMode mode, int* pnLog = nullptr, int* pnCkpt = nullptr);
+    // Set auto checkpoint frame threshold after which sqlite will perform checkpoint automatically
+    BE_SQLITE_EXPORT DbResult SetAutoCheckpointThreshold(int frames);
 
     //! Add a DbFunction to this Db for use in SQL. See sqlite3_create_function for return values. The DbFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.

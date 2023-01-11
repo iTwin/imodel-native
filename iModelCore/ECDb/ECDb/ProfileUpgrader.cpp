@@ -36,7 +36,7 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_UnitSystem " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-    
+
     stat = ecdb.ExecuteDdl(TABLEDDL_Phenomenon);
     if (BE_SQLITE_OK != stat)
         {
@@ -452,7 +452,7 @@ DbResult ProfileUpgrader_4002::FixMetaSchemaClassMapCAXml(ECDbCR ecdb)
         LOG.error("ECDb profile upgrade failed: Failed to execute SQL to find malformed ClassMap CA XML on ECDbMeta.ClassHasAllBaseClasses.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-    
+
     BeInt64Id caId = stmt.GetValueId<BeInt64Id>(0);
     Utf8String caXml(stmt.GetValueText(1));
     stmt.Finalize();
@@ -505,7 +505,7 @@ DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
 //static
 DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "Profile schema import");
+    ECDB_PERF_LOG_SCOPE("Profile schema import");
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     // Don't add ecdb as schema locater so that referenced schemas of the profile schemas
     // get a chance to be upgraded as well (in case there are newer versions of them in the assets folder)

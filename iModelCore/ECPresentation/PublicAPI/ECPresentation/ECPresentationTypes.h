@@ -14,12 +14,14 @@ ECPRESENTATION_TYPEDEFS(IConnectionManager)
 ECPRESENTATION_TYPEDEFS(IConnection)
 ECPRESENTATION_REFCOUNTED_PTR(IConnection)
 
+ECPRESENTATION_TYPEDEFS(PresentationQuery)
 ECPRESENTATION_TYPEDEFS(IRulesPreprocessor)
 ECPRESENTATION_REFCOUNTED_PTR(IRulesPreprocessor)
 ECPRESENTATION_TYPEDEFS(PageOptions)
 ECPRESENTATION_TYPEDEFS(RelatedClass)
 ECPRESENTATION_TYPEDEFS(KeySet)
 ECPRESENTATION_REFCOUNTED_PTR(KeySet)
+ECPRESENTATION_TYPEDEFS(InstanceFilterDefinition)
 
 ECPRESENTATION_TYPEDEFS(NavNodeKey)
 ECPRESENTATION_REFCOUNTED_PTR(NavNodeKey)
@@ -47,9 +49,6 @@ ECPRESENTATION_TYPEDEFS(IECPropertyFormatter)
 
 ECPRESENTATION_TYPEDEFS(ICancelationToken)
 ECPRESENTATION_REFCOUNTED_PTR(ICancelationToken)
-
-ECPRESENTATION_TYPEDEFS(PresentationQueryBase)
-ECPRESENTATION_REFCOUNTED_PTR(PresentationQueryBase)
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -540,8 +539,11 @@ private:
     bvector<RelatedClassPath> m_relatedInstances;
 
 public:
-    InstanceFilterDefinition(Utf8String expression, ECClassCP selectClass, bvector<RelatedClassPath> relatedInstances)
-        : m_expression(expression), m_selectClass(selectClass), m_relatedInstances(relatedInstances)
+    InstanceFilterDefinition(Utf8String expression)
+        : m_expression(expression), m_selectClass(nullptr)
+        {}
+    InstanceFilterDefinition(Utf8String expression, ECClassCR selectClass, bvector<RelatedClassPath> relatedInstances)
+        : m_expression(expression), m_selectClass(&selectClass), m_relatedInstances(relatedInstances)
         {}
 
     bool Equals(InstanceFilterDefinition const& other) const {return m_selectClass == other.m_selectClass && m_expression.Equals(other.m_expression) && m_relatedInstances == other.m_relatedInstances;}
@@ -551,6 +553,9 @@ public:
     ECClassCP GetSelectClass() const {return m_selectClass;}
     bvector<RelatedClassPath> const& GetRelatedInstances() const {return m_relatedInstances;}
     Utf8StringCR GetExpression() const {return m_expression;}
+
+    rapidjson::Document ToInternalJson(rapidjson::Document::AllocatorType* = nullptr) const;
+    static std::unique_ptr<InstanceFilterDefinition> FromInternalJson(RapidJsonValueCR, IConnectionCR);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

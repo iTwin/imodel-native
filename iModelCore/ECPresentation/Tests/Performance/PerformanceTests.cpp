@@ -14,7 +14,8 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEngineTests::SetUpTestCase()
     {
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE, NativeLogging::LOG_INFO);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity(LOGGER_NAMESPACE, NativeLogging::LOG_INFO);
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,7 +130,7 @@ Utf8String RulesEngineSingleProjectTests::GetRulesetId() const
 Timer::Timer(Utf8CP name)
     : StopWatch(name ? name : BeTest::GetNameOfCurrentTest(), true)
     {
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Started:  %s", GetDescription());
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Started:  %s", GetDescription());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -148,6 +149,6 @@ void Timer::Finish()
         return;
         }
 
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Finished: %s. Elapsed: %.2f", GetDescription(), GetCurrentSeconds());
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Finished: %s. Elapsed: %.2f", GetDescription(), GetCurrentSeconds());
     Stop();
     }

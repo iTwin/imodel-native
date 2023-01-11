@@ -168,7 +168,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     dgndbFilePath.AppendToPath(destFileName);
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedFilePath, dgndbFilePath, false));
     DbResult status;
-    m_db = DgnDb::OpenDgnDb(&status, dgndbFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    m_db = DgnDb::OpenIModelDb(&status, dgndbFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ApplyPragmas(*m_db);
     EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
     ASSERT_TRUE(m_db.IsValid());

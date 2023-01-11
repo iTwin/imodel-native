@@ -307,7 +307,7 @@ TEST_F(ContentPerformanceAnalysis, Run)
         bvector<ECClassInstanceKey> allElementKeys;
         for (auto const& entry : groupedElementKeys)
             ContainerHelpers::Push(allElementKeys, ContainerHelpers::TransformContainer<bvector<ECClassInstanceKey>>(entry.second, [ecClass = entry.first](ECInstanceId const& id){return ECClassInstanceKey(ecClass, id); }));
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Dataset has %" PRIu64 " elements", (uint64_t)allElementKeys.size());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Dataset has %" PRIu64 " elements", (uint64_t)allElementKeys.size());
 
         // then we query properties for each of them
         ElementPropertiesLoadPerformanceMetricsStorage individualElementPropertiesLoadMetrics;
@@ -320,7 +320,7 @@ TEST_F(ContentPerformanceAnalysis, Run)
         reporter.Record(REPORT_FIELD_TotalElementsCount, Json::Value((uint64_t)allElementKeys.size()));
         reporter.Record(REPORT_FIELD_AvgTimeToLoadInstanceProperties, Json::Value((uint64_t)!allElementKeys.empty() ? (totalTimeToLoadProperties / allElementKeys.size()) : 0));
         individualElementPropertiesLoadMetrics.Save(reporter);
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Loaded properties for all elements individually in %.2f s", totalTimeToLoadProperties);
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded properties for all elements individually in %.2f s", totalTimeToLoadProperties);
 
         // create a consolidated descriptor
         StopWatch createDescriptorTime("", true);
@@ -328,7 +328,7 @@ TEST_F(ContentPerformanceAnalysis, Run)
             "", (int)ContentFlags::DescriptorOnly, *KeySet::Create(allElementKeys))).get();
         double timeToCreateDescriptor = createDescriptorTime.GetCurrent().ToSeconds();
         reporter.Record(REPORT_FIELD_TimeToCreateConsolidatedDescriptor, timeToCreateDescriptor);
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Created consolidated content descriptor with %d properties in %.2f s",
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Created consolidated content descriptor with %d properties in %.2f s",
             (int)GetTotalFieldsCount(descriptorResponse.GetResult()->GetVisibleFields()), timeToCreateDescriptor);
 
         // create content classes list
@@ -337,7 +337,7 @@ TEST_F(ContentPerformanceAnalysis, Run)
             "", 0, bvector<ECClassCP>{ project.Schemas().GetClass("BisCore", "Element") })).get();
         double timeToGetContentClasses = createContentClassesTime.GetCurrent().ToSeconds();
         reporter.Record(REPORT_FIELD_TimeToGetContentClasses, timeToGetContentClasses);
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Created %" PRIu64 " content classes in %.2f s",
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Created %" PRIu64 " content classes in %.2f s",
             (uint64_t)contentClassesResponse.GetResult().size(), timeToGetContentClasses);
 
         // query content for each class separately
@@ -352,7 +352,7 @@ TEST_F(ContentPerformanceAnalysis, Run)
             }
         fullContentLoadMetrics.Save(reporter);
         pagedContentLoadMetrics.Save(reporter);
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Loaded all content in %.2f s", fullContentLoadMetrics.GetTotalTime());
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("    Loaded all content in pages in %.2f s", pagedContentLoadMetrics.GetTotalTime());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all content in %.2f s", fullContentLoadMetrics.GetTotalTime());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all content in pages in %.2f s", pagedContentLoadMetrics.GetTotalTime());
         });
     }

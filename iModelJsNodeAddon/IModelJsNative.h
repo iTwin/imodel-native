@@ -361,31 +361,6 @@ struct JsInterop {
         bool m_needsVectorExceptionHandler;
         };
 
-    // An indirect reference to an ObjectReference. Keeps the ObjectReference alive. Can be redeemed.
-    //  only on the main thread. Can be copied on other threads.
-    struct ObjectReferenceClaimCheck
-        {
-        private:
-        friend struct JsInterop;
-
-        Utf8String m_id;
-
-        explicit ObjectReferenceClaimCheck(std::string const&);
-
-        public:
-        ObjectReferenceClaimCheck();
-        ~ObjectReferenceClaimCheck();
-        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck const&);
-        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck&&);
-        ObjectReferenceClaimCheck& operator=(ObjectReferenceClaimCheck const&);
-
-        bool operator<(ObjectReferenceClaimCheck const&) const;
-
-        Utf8StringCR GetId() const {return m_id;}
-
-        void Dispose();
-        };
-
     BE_JSON_NAME(accessName)
     BE_JSON_NAME(accessToken)
     BE_JSON_NAME(alias)
@@ -420,6 +395,7 @@ struct JsInterop {
     BE_JSON_NAME(forceUseId)
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
+    BE_JSON_NAME(httpTimeout)
     BE_JSON_NAME(id)
     BE_JSON_NAME(index)
     BE_JSON_NAME(localFileName)
@@ -467,7 +443,7 @@ private:
     static void GetRowAsJson(BeJsValue json, BeSQLite::EC::ECSqlStatement &);
     static void RegisterOptionalDomains();
     static void InitializeSolidKernel();
-    static void AddSchemaSearchPaths(ECSchemaReadContextPtr schemaContext);
+    static void AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext);
 public:
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
     static void GetECValuesCollectionAsJson(BeJsValue json, ECN::ECValuesCollectionCR);
@@ -475,7 +451,7 @@ public:
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, BeJsConst jsonInstance);
     static void InitLogging();
     static void Initialize(BeFileNameCR, Napi::Env, BeFileNameCR);
-    static DgnDbPtr CreateDgnDb(Utf8StringCR filename, BeJsConst props);
+    static DgnDbPtr CreateIModel(Utf8StringCR filename, BeJsConst props);
     static DgnDbStatus GetECClassMetaData(BeJsValue results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     static DgnDbStatus GetSchemaItem(BeJsValue results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
@@ -696,7 +672,7 @@ template<typename OBJ>
 struct BeObjectWrap : Napi::ObjectWrap<OBJ>
 {
 protected:
-    BeObjectWrap(Napi::CallbackInfo const& info) : Napi::ObjectWrap<OBJ>(info) {}
+    BeObjectWrap(NapiInfoCR info) : Napi::ObjectWrap<OBJ>(info) {}
 
     // Every derived class must call this function on the first line of its destructor
     static void SetInDestructor()
@@ -714,17 +690,5 @@ protected:
 };
 
 DgnDb* extractDgnDbFromNapiValue(Napi::Value);
-
-enum struct ChangeSetKind
-    {
-        NotSpecified      = -1,
-        Regular           = 0,
-        Schema            = 1 << 0, // ChangeSet contains minor schema changes
-        Definition        = 1 << 1,
-        SpatialData       = 1 << 2,
-        SheetsAndDrawings = 1 << 3,
-        ViewsAndModels    = 1 << 4,
-        GlobalProperties  = 1 << 5
-    };
 
 } // namespace IModelJsNative

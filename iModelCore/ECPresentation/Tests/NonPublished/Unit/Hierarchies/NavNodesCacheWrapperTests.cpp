@@ -14,18 +14,19 @@ struct NodesCacheWrapperTests : NodesCacheTests
     std::shared_ptr<NodesCacheWrapper> CreateWrapper(NodesCache& cache, BeGuidCR parentId = BeGuid());
     std::shared_ptr<NodesCacheWrapper> CreateWrapper(BeGuidCR parentId = BeGuid());
 
-    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> GetDataSourceInfo(IHierarchyCacheCR cache, Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentId, RulesetVariables const& variables = RulesetVariables())
+    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> GetDataSourceInfo(IHierarchyCacheCR cache, Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentId, RulesetVariables const& variables = RulesetVariables(), InstanceFilterDefinitionCP instanceFilter = nullptr)
         {
-        HierarchyLevelIdentifier hlIdentifier = cache.FindHierarchyLevel(connectionId, rulesetId, virtualParentId, BeGuid());
-        EXPECT_TRUE(hlIdentifier.IsValid());
-        DataSourceIdentifier dsIdentifier = cache.FindDataSource(DataSourceIdentifier(hlIdentifier.GetId(), {0}), variables).GetIdentifier();
+        BeGuid hlId = cache.FindHierarchyLevelId(connectionId, rulesetId, virtualParentId, BeGuid());
+        EXPECT_TRUE(hlId.IsValid());
+        HierarchyLevelIdentifier hlIdentifier(hlId, connectionId, rulesetId, virtualParentId, BeGuid());
+        DataSourceIdentifier dsIdentifier = cache.FindDataSource(DataSourceIdentifier(hlId, { 0 }, instanceFilter ? std::make_unique<InstanceFilterDefinition>(*instanceFilter) : nullptr), variables).GetIdentifier();
         EXPECT_TRUE(dsIdentifier.IsValid());
         return bpair<HierarchyLevelIdentifier, DataSourceIdentifier>(hlIdentifier, dsIdentifier);
         }
 
     NavNodePtr CacheNewNode(IHierarchyCacheR cache, DataSourceIdentifier const& dsIdentifier, Utf8CP label, NavNodeKeyCP parentKey = nullptr)
         {
-        TestNodesFactory factory(*m_connection, "specificationIdentifier", "ruleset-id");
+        TestNodesFactory factory(*m_connection, "specificationIdentifier", TEST_RULESET_ID);
         auto node = factory.CreateCustomNode(parentKey, label, "description", "imageid", "TestType");
         cache.Cache(*node, dsIdentifier, 0, NodeVisibility::Visible);
         return node;
@@ -59,16 +60,16 @@ std::shared_ptr<NodesCache> NodesCacheWrapperTests::_CreateNodesCache(IConnectio
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheWrapperTests, FindHierarchyLevel_ReturnsHierarchyLevelFromPersistedCache)
+TEST_F(NodesCacheWrapperTests, FindHierarchyLevelId_ReturnsHierarchyLevelFromPersistedCache)
     {
     // cache hierarchy level
-    auto hlInfo = CacheHierarchyLevel(m_connection->GetId(), "ruleset_id");
+    auto hlInfo = CacheHierarchyLevel(m_connection->GetId(), TEST_RULESET_ID);
 
     auto wrapper = CreateWrapper();
 
-    HierarchyLevelIdentifier cachedLevel = wrapper->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", BeGuid(), BeGuid());
-    EXPECT_TRUE(cachedLevel.IsValid());
-    EXPECT_EQ(hlInfo.GetId(), cachedLevel.GetId());
+    BeGuid cachedLevelId = wrapper->FindHierarchyLevelId(m_connection->GetId().c_str(), TEST_RULESET_ID, BeGuid(), BeGuid());
+    EXPECT_TRUE(cachedLevelId.IsValid());
+    EXPECT_EQ(hlInfo.GetId(), cachedLevelId);
     EXPECT_TRUE(nullptr == wrapper->GetMemoryCache());
     }
 
@@ -78,12 +79,12 @@ TEST_F(NodesCacheWrapperTests, FindHierarchyLevel_ReturnsHierarchyLevelFromPersi
 TEST_F(NodesCacheWrapperTests, FindDataSource_ReturnsDataSourceFromPersistedCache)
     {
     // cache hierarchy level
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID);
     auto node = CacheNewNode(*m_cache, rootInfo.second, "RootNode");
 
     auto wrapper = CreateWrapper();
 
-    DataSourceInfo cacheDataSource = wrapper->FindDataSource(DataSourceIdentifier(rootInfo.first.GetId(), {0}), RulesetVariables(), 0);
+    DataSourceInfo cacheDataSource = wrapper->FindDataSource(rootInfo.second, RulesetVariables(), 0);
     EXPECT_TRUE(cacheDataSource.GetIdentifier().IsValid());
     EXPECT_EQ(rootInfo.second.GetId(), cacheDataSource.GetIdentifier().GetId());
     EXPECT_TRUE(nullptr == wrapper->GetMemoryCache());
@@ -95,14 +96,14 @@ TEST_F(NodesCacheWrapperTests, FindDataSource_ReturnsDataSourceFromPersistedCach
 TEST_F(NodesCacheWrapperTests, ReturnsRootDataSourceFromPersistedCache)
     {
     // cache hierarchy level
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID);
 
     auto wrapper = CreateWrapper();
 
     NavNodesProviderPtr cacheDataSource = wrapper->GetCombinedHierarchyLevel(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.first.GetCombined());
     EXPECT_TRUE(cacheDataSource.IsValid());
 
-    cacheDataSource = wrapper->GetHierarchyLevel(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.first);
+    cacheDataSource = wrapper->GetHierarchyLevel(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.first.GetId());
     EXPECT_TRUE(cacheDataSource.IsValid());
 
     auto iterator = wrapper->GetCachedDirectNodesIterator(*CreateContext(wrapper, rootInfo.first.GetCombined()), rootInfo.second);
@@ -117,7 +118,7 @@ TEST_F(NodesCacheWrapperTests, ReturnsRootDataSourceFromPersistedCache)
 TEST_F(NodesCacheWrapperTests, GetNode_ReturnsNodeFromPersistedCache)
     {
     // cache hierarchy level
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID);
     auto node = CacheNewNode(*m_cache, rootInfo.second, "RootNode");
 
     auto wrapper = CreateWrapper();
@@ -135,18 +136,18 @@ TEST_F(NodesCacheWrapperTests, CacheHierarchyLevelAndPersist)
     {
     auto wrapper = CreateWrapper();
 
-    auto hlInfo = CacheHierarchyLevel(*wrapper, m_connection->GetId(), "ruleset_id");
+    auto hlInfo = CacheHierarchyLevel(*wrapper, m_connection->GetId(), TEST_RULESET_ID);
 
-    HierarchyLevelIdentifier cachedHierarchyLevel = m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", BeGuid(), BeGuid());
-    EXPECT_FALSE(cachedHierarchyLevel.IsValid());
+    BeGuid cachedHierarchyLevelId = m_cache->FindHierarchyLevelId(m_connection->GetId().c_str(), TEST_RULESET_ID, BeGuid(), BeGuid());
+    EXPECT_FALSE(cachedHierarchyLevelId.IsValid());
 
-    cachedHierarchyLevel = wrapper->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", BeGuid(), BeGuid());
-    EXPECT_TRUE(cachedHierarchyLevel.IsValid());
+    cachedHierarchyLevelId = wrapper->FindHierarchyLevelId(m_connection->GetId().c_str(), TEST_RULESET_ID, BeGuid(), BeGuid());
+    EXPECT_TRUE(cachedHierarchyLevelId.IsValid());
 
     wrapper = nullptr;
 
-    cachedHierarchyLevel = m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", BeGuid(), BeGuid());
-    EXPECT_TRUE(cachedHierarchyLevel.IsValid());
+    cachedHierarchyLevelId = m_cache->FindHierarchyLevelId(m_connection->GetId().c_str(), TEST_RULESET_ID, BeGuid(), BeGuid());
+    EXPECT_TRUE(cachedHierarchyLevelId.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,20 +155,20 @@ TEST_F(NodesCacheWrapperTests, CacheHierarchyLevelAndPersist)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheWrapperTests, CacheDataSourceAndPersist)
     {
-    CacheHierarchyLevel(*m_cache, m_connection->GetId(), "ruleset_id");
+    CacheHierarchyLevel(*m_cache, m_connection->GetId(), TEST_RULESET_ID);
 
     auto wrapper = CreateWrapper();
 
-    auto rootInfo = CacheDataSource(*wrapper, m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(*wrapper, m_connection->GetId(), TEST_RULESET_ID);
 
-    HierarchyLevelIdentifier cachedHierarchyLevel = m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", BeGuid(), BeGuid());
-    EXPECT_TRUE(cachedHierarchyLevel.IsValid());
+    BeGuid cachedHierarchyLevelId = m_cache->FindHierarchyLevelId(m_connection->GetId().c_str(), TEST_RULESET_ID, BeGuid(), BeGuid());
+    EXPECT_TRUE(cachedHierarchyLevelId.IsValid());
 
     DataSourceInfo cachedDataSource = m_cache->FindDataSource(rootInfo.second, RulesetVariables());
     EXPECT_FALSE(cachedDataSource.GetIdentifier().IsValid());
 
-    cachedHierarchyLevel = wrapper->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", BeGuid(), BeGuid());
-    EXPECT_TRUE(cachedHierarchyLevel.IsValid());
+    cachedHierarchyLevelId = wrapper->FindHierarchyLevelId(m_connection->GetId().c_str(), TEST_RULESET_ID, BeGuid(), BeGuid());
+    EXPECT_TRUE(cachedHierarchyLevelId.IsValid());
     cachedDataSource = wrapper->FindDataSource(rootInfo.second, RulesetVariables());
     EXPECT_TRUE(cachedDataSource.GetIdentifier().IsValid());
 
@@ -182,7 +183,7 @@ TEST_F(NodesCacheWrapperTests, CacheDataSourceAndPersist)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheWrapperTests, CacheNodeAndPersist)
     {
-    auto rootInfo = CacheDataSource(*m_cache, m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(*m_cache, m_connection->GetId(), TEST_RULESET_ID);
 
     auto wrapper = CreateWrapper();
 
@@ -207,7 +208,7 @@ TEST_F(NodesCacheWrapperTests, CacheNodeAndPersist)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheWrapperTests, UpdateDataSourceAndPersist)
     {
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID);
 
     auto wrapper = CreateWrapper();
 
@@ -242,12 +243,12 @@ TEST_F(NodesCacheWrapperTests, UpdateDataSourceAndPersist)
 TEST_F(NodesCacheWrapperTests, CacheAdditionalDataSourceForRootHierarchyLevel)
     {
     RulesetVariables variables({ RulesetVariableEntry("var_id", "var_value") });
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", BeGuid(), true, variables);
+    auto rootInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, BeGuid(), { 0 }, true, variables);
 
     auto wrapper = CreateWrapper();
 
     RulesetVariables otherVariables({ RulesetVariableEntry("var_id", "other_value") });
-    auto otherDataSource = CacheDataSource(*wrapper, m_connection->GetId(), "ruleset_id", BeGuid(), true, otherVariables);
+    auto otherDataSource = CacheDataSource(*wrapper, m_connection->GetId(), TEST_RULESET_ID, BeGuid(), { 0 }, true, otherVariables);
 
     DataSourceInfo cachedDataSource = m_cache->FindDataSource(otherDataSource.second, otherVariables);
     EXPECT_FALSE(cachedDataSource.GetIdentifier().IsValid());
@@ -269,7 +270,7 @@ TEST_F(NodesCacheWrapperTests, CacheAdditionalDataSourceForRootHierarchyLevel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheWrapperTests, CacheNodeForPersistedRootDataSourceWithNodes)
     {
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID);
     auto node = CacheNewNode(*m_cache, rootInfo.second, "RootNode1");
 
     auto wrapper = CreateWrapper();
@@ -292,15 +293,15 @@ TEST_F(NodesCacheWrapperTests, CacheNodeForPersistedRootDataSourceWithNodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheWrapperTests, CacheMultiLevelHierarchyAndPersist)
     {
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id");
+    auto rootInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID);
     auto node = CacheNewNode(*m_cache, rootInfo.second, "RootNode", {});
 
     auto wrapper = CreateWrapper();
 
-    auto childInfo = CacheDataSource(*wrapper, m_connection->GetId(), "ruleset_id", node->GetNodeId());
+    auto childInfo = CacheDataSource(*wrapper, m_connection->GetId(), TEST_RULESET_ID, node->GetNodeId());
     auto childNode = CacheNewNode(*wrapper, childInfo.second, "ChildNode", node->GetKey().get());
 
-    auto grandchildInfo = CacheDataSource(*wrapper, m_connection->GetId(), "ruleset_id", childNode->GetNodeId());
+    auto grandchildInfo = CacheDataSource(*wrapper, m_connection->GetId(), TEST_RULESET_ID, childNode->GetNodeId());
     auto grandchildNode = CacheNewNode(*wrapper, grandchildInfo.second, "GrandchildNode", childNode->GetKey().get());
 
     DataSourceInfo childDataSourceInfo = m_cache->FindDataSource(childInfo.second, RulesetVariables());
@@ -310,14 +311,14 @@ TEST_F(NodesCacheWrapperTests, CacheMultiLevelHierarchyAndPersist)
 
     wrapper = nullptr;
 
-    auto cachedChildInfo = GetDataSourceInfo(*m_cache, m_connection->GetId().c_str(), "ruleset_id", node->GetNodeId());
+    auto cachedChildInfo = GetDataSourceInfo(*m_cache, m_connection->GetId().c_str(), TEST_RULESET_ID, node->GetNodeId());
     auto childIterator = m_cache->GetCachedDirectNodesIterator(*CreateContext(cachedChildInfo.first.GetCombined()), cachedChildInfo.second);
     ASSERT_TRUE(nullptr != childIterator);
     ASSERT_EQ(1, childIterator->NodesCount());
     EXPECT_TRUE(childIterator->NextNode()->Equals(*childNode));
     EXPECT_TRUE(childIterator->NextNode().IsNull());
 
-    auto cachedGrandchildInfo = GetDataSourceInfo(*m_cache, m_connection->GetId().c_str(), "ruleset_id", childNode->GetNodeId());
+    auto cachedGrandchildInfo = GetDataSourceInfo(*m_cache, m_connection->GetId().c_str(), TEST_RULESET_ID, childNode->GetNodeId());
     auto grandchildIterator = m_cache->GetCachedDirectNodesIterator(*CreateContext(cachedGrandchildInfo.first.GetCombined()), cachedGrandchildInfo.second);
     ASSERT_TRUE(nullptr != grandchildIterator);
     ASSERT_EQ(1, grandchildIterator->NodesCount());

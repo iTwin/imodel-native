@@ -74,6 +74,33 @@ TEST_F(Utf8PrintfStringTests, Ctor_PositionalFormatWithMixedTypes_FormattedStrin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8PrintfString TestUtf8PrintfStringVaList(Utf8CP fmt, ...)
+    {
+    va_list args;
+    va_start(args, fmt);
+    auto str = Utf8PrintfString::CreateFromVaList(fmt, args);
+    va_end(args);
+    return str;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(Utf8PrintfStringTests, FormatsLongString)
+    {
+    Utf8String source1(4096 / 2, 'x');
+    Utf8String source2(4096 / 2 + 1, 'y');
+
+    Utf8String expected;
+    expected.append(source1).append(source2);
+
+    EXPECT_STREQ(expected.c_str(), Utf8PrintfString("%s%s", source1.c_str(), source2.c_str()).c_str());
+    EXPECT_STREQ(expected.c_str(), TestUtf8PrintfStringVaList("%s%s", source1.c_str(), source2.c_str()).c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 #if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894638
 TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     {

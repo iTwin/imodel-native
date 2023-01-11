@@ -68,22 +68,16 @@ protected:
     virtual rapidjson::Document _AsJson(ContextR, ECInstanceChangeResult const&, rapidjson::Document::AllocatorType*) const = 0;
 
     virtual void _NavNodeKeyAsJson(ContextR, NavNodeKey const&, RapidJsonDocumentR) const = 0;
-    virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR, JsonValueCR) const = 0;
-    virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR, RapidJsonValueCR) const = 0;
-    virtual NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(JsonValueCR) const = 0;
-    virtual NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(RapidJsonValueCR) const = 0;
+    virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR, BeJsConst) const = 0;
+    virtual NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(BeJsConst) const = 0;
     virtual void _AsJson(ContextR, ECInstancesNodeKey const&, RapidJsonDocumentR) const = 0;
-    virtual ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, JsonValueCR) const = 0;
-    virtual ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, RapidJsonValueCR) const = 0;
+    virtual ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, BeJsConst) const = 0;
     virtual void _AsJson(ContextR, ECClassGroupingNodeKey const&, RapidJsonDocumentR) const = 0;
-    virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR, JsonValueCR) const = 0;
-    virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR, RapidJsonValueCR) const = 0;
+    virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR, BeJsConst) const = 0;
     virtual void _AsJson(ContextR, ECPropertyGroupingNodeKey const&, RapidJsonDocumentR) const = 0;
-    virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR, JsonValueCR) const = 0;
-    virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR, RapidJsonValueCR) const = 0;
+    virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR, BeJsConst) const = 0;
     virtual void _AsJson(ContextR, LabelGroupingNodeKey const&, RapidJsonDocumentR) const = 0;
-    virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(JsonValueCR) const = 0;
-    virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR) const = 0;
+    virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst) const = 0;
 
     virtual rapidjson::Document _AsJson(ContextR, NavNode const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _AsJson(ContextR, NodesPathElement const&, rapidjson::Document::AllocatorType*) const = 0;
@@ -93,7 +87,7 @@ protected:
     virtual rapidjson::Document _AsJson(ContextR, LabelDefinition::CompositeRawValue const&, rapidjson::Document::AllocatorType*) const = 0;
 
     virtual rapidjson::Document _AsJson(ContextR, KeySet const&, rapidjson::Document::AllocatorType*) const = 0;
-    virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, JsonValueCR) const = 0;
+    virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, BeJsConst) const = 0;
 
     virtual rapidjson::Value _AsJson(ContextR, ECEnumerationCR, rapidjson::Document::AllocatorType&) const = 0;
 
@@ -103,6 +97,9 @@ protected:
     virtual rapidjson::Value _AsJson(ContextR, RelatedClassPathCR, rapidjson::Document::AllocatorType&) const = 0;
 
     virtual rapidjson::Value _AsJson(ContextR, SelectionInfo const&, rapidjson::Document::AllocatorType&) const = 0;
+
+    virtual rapidjson::Document _AsJson(ContextR, InstanceFilterDefinitionCR, rapidjson::Document::AllocatorType*) const = 0;
+    virtual std::unique_ptr<InstanceFilterDefinition> _GetInstanceFilterFromJson(IConnectionCR, BeJsConst) const = 0;
 
 public:
     virtual ~IECPresentationSerializer() {}
@@ -156,22 +153,16 @@ public:
     rapidjson::Document AsJson(ContextR ctx, DisplayValueGroupCR value, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, value, allocator);}
 
     rapidjson::Document AsJson(ContextR ctx, NavNodeKey const& navNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    NavNodeKeyPtr GetNavNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const {return _GetNavNodeKeyFromJson(connection, json);}
-    NavNodeKeyPtr GetNavNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const {return _GetNavNodeKeyFromJson(connection, json);}
-    NavNodeKeyPtr GetBaseNavNodeKeyFromJson(JsonValueCR json) const {return _GetBaseNavNodeKeyFromJson(json);}
-    NavNodeKeyPtr GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const {return _GetBaseNavNodeKeyFromJson(json);}
+    NavNodeKeyPtr GetNavNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const {return _GetNavNodeKeyFromJson(connection, json);}
+    NavNodeKeyPtr GetBaseNavNodeKeyFromJson(BeJsConst json) const {return _GetBaseNavNodeKeyFromJson(json);}
     rapidjson::Document AsJson(ContextR ctx, ECInstancesNodeKey const& ecInstanceNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    ECInstancesNodeKeyPtr GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const {return _GetECInstanceNodeKeyFromJson(connection, json);}
-    ECInstancesNodeKeyPtr GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const {return _GetECInstanceNodeKeyFromJson(connection, json);}
+    ECInstancesNodeKeyPtr GetECInstanceNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const {return _GetECInstanceNodeKeyFromJson(connection, json);}
     rapidjson::Document AsJson(ContextR ctx, ECClassGroupingNodeKey const& groupingNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    ECClassGroupingNodeKeyPtr GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const {return _GetECClassGroupingNodeKeyFromJson(connection, json);}
-    ECClassGroupingNodeKeyPtr GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const {return _GetECClassGroupingNodeKeyFromJson(connection, json);}
+    ECClassGroupingNodeKeyPtr GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const {return _GetECClassGroupingNodeKeyFromJson(connection, json);}
     rapidjson::Document AsJson(ContextR ctx, ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    ECPropertyGroupingNodeKeyPtr GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const {return _GetECPropertyGroupingNodeKeyFromJson(connection, json);}
-    ECPropertyGroupingNodeKeyPtr GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const {return _GetECPropertyGroupingNodeKeyFromJson(connection, json);}
+    ECPropertyGroupingNodeKeyPtr GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const {return _GetECPropertyGroupingNodeKeyFromJson(connection, json);}
     rapidjson::Document AsJson(ContextR ctx, LabelGroupingNodeKey const& labelGroupingNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
-    LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
+    LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(BeJsConst json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
 
     rapidjson::Document AsJson(ContextR ctx, LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, labelDefinition, allocator);}
     rapidjson::Document AsJson(ContextR ctx, LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, value, allocator); }
@@ -181,7 +172,10 @@ public:
     rapidjson::Document AsJson(ContextR ctx, ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, key, allocator);}
 
     rapidjson::Document AsJson(ContextR ctx, KeySet const& keySet, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, keySet, allocator);}
-    KeySetPtr GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const {return _GetKeySetFromJson(connection, json);}
+    KeySetPtr GetKeySetFromJson(IConnectionCR connection, BeJsConst json) const {return _GetKeySetFromJson(connection, json);}
+
+    rapidjson::Document AsJson(ContextR ctx, InstanceFilterDefinitionCR instanceFilter, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, instanceFilter, allocator);}
+    std::unique_ptr<InstanceFilterDefinition> GetInstanceFilterFromJson(IConnectionCR connection, BeJsConst json) const {return _GetInstanceFilterFromJson(connection, json);}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

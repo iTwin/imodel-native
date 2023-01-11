@@ -7,6 +7,7 @@
 #include "DgnDbECInstanceChangeEventSource.h"
 #include "ECPresentationSerializer.h"
 #include "UpdateRecordsHandler.h"
+#include "UiStateProvider.h"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
@@ -60,7 +61,7 @@ public:
     static ParseResult<TValue> CreateSuccess(TValue value)
         {
         ParseResult result;
-        result.m_value = std::make_unique<TValue>(value);
+        result.m_value = std::make_unique<TValue>(std::forward<TValue>(value));
         return result;
         }
     static ParseResult<TValue> CreateError(Utf8String error)
@@ -75,7 +76,7 @@ public:
     TValue& GetValue() {return *m_value;}
     TValue const& GetValue() const {return *m_value;}
 };
-template<typename TValue> static ParseResult<TValue> CreateParseResult(TValue value) {return ParseResult<TValue>::CreateSuccess(value);}
+template<typename TValue> static ParseResult<TValue> CreateParseResult(TValue value) {return ParseResult<TValue>::CreateSuccess(std::forward<TValue>(value));}
 template<typename TValue> static ParseResult<TValue> CreateParseError(Utf8String error) {return ParseResult<TValue>::CreateError(error);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -410,13 +411,25 @@ ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& lo
     return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
     }
 
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static BeJsConst ToBeJsConst(rapidjson::Value const& value)
+    {
+    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
+    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
+    // a read-write `BeJsValue` for all the operations.
+    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
+    return BeJsConst(value, s_staticRapidJsonAllocator);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static NativeLogging::SEVERITY ParseSeverityFromJson(RapidJsonValueCR json)
     {
     if (json.IsBool())
-        return json.GetBool() ? NativeLogging::LOG_DEBUG : NativeLogging::LOG_ERROR;
+        return json.GetBool() ? NativeLogging::LOG_INFO : NativeLogging::LOG_ERROR;
 
     if (json.IsString())
         {
@@ -427,7 +440,7 @@ static NativeLogging::SEVERITY ParseSeverityFromJson(RapidJsonValueCR json)
         if (0 == strcmp("info", json.GetString()))
             return NativeLogging::LOG_INFO;
         if (0 == strcmp("debug", json.GetString()))
-            return NativeLogging::LOG_DEBUG;
+            return NativeLogging::LOG_TRACE;
         if (0 == strcmp("trace", json.GetString()))
             return NativeLogging::LOG_TRACE;
         }
@@ -619,7 +632,7 @@ static ParseResult<RulesetVariables> ParseRulesetVariablesFromJson(RapidJsonValu
     if (!json[attributeName].IsArray())
         return CreateParseError<RulesetVariables>(Utf8PrintfString("Expected `%s` to be an array", attributeName));
 
-    return CreateParseResult(IModelJsECPresentationSerializer::GetRulesetVariablesFromJson(json[attributeName]));
+    return CreateParseResult(IModelJsECPresentationSerializer::GetRulesetVariablesFromJson(ToBeJsConst(json[attributeName])));
     }
 
 #define PRESENTATION_JSON_ATTRIBUTE_RulesetParams_RulesetId         "rulesetId"
@@ -657,7 +670,7 @@ static ParseResult<ECClassInstanceKey> ParseECInstanceKeyFromJson(IConnectionCR 
     if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName) || !json[PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName].IsString())
         return CreateParseError<ECClassInstanceKey>(Utf8PrintfString("Expected `%s." PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName "` to be a string", attributeName));
 
-    ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(connection, json[PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName]);
+    ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(connection, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName]));
     if (!ecClass)
         return CreateParseError<ECClassInstanceKey>(Utf8PrintfString("`%s." PRESENTATION_JSON_ATTRIBUTE_ECInstanceKey_ClassName "` specifies an invalid class", attributeName));
 
@@ -694,16 +707,37 @@ static WithAsyncTaskParams<TBaseParams> CreateAsyncParams(TBaseParams baseParams
     return params;
     }
 
+#define PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter "instanceFilter"
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ParseResult<std::unique_ptr<InstanceFilterDefinition>> ParseHierarchyLevelInstanceFilterFromJson(IConnectionCR connection, RapidJsonValueCR json)
+    {
+    if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter))
+        return CreateParseResult<std::unique_ptr<InstanceFilterDefinition>>(ECPresentationManager::GetSerializer().GetInstanceFilterFromJson(connection, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_InstanceFilter])));
+    return CreateParseResult<std::unique_ptr<InstanceFilterDefinition>>(nullptr);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
+    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
+
     auto rulesetParams = ParseRulesetParamsFromJson(paramsJson);
     if (rulesetParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, rulesetParams.GetError());
 
-    auto params = HierarchyRequestParams(rulesetParams.GetValue(), nullptr);
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(*connection, paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
+
+    auto params = HierarchyRequestParams(rulesetParams.GetValue());
+    params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+
     return manager.GetNodesCount(CreateAsyncParams(params, db, paramsJson)).then([](NodesCountResponse response)
         {
         return ECPresentationResult(rapidjson::Value((int64_t)*response), true);
@@ -715,15 +749,25 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPre
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
+    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
+
     auto rulesetParams = ParseRulesetParamsFromJson(paramsJson);
     if (rulesetParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, rulesetParams.GetError());
+
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(*connection, paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
     auto pageParams = ParsePageOptionsFromJson(paramsJson);
     if (pageParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, pageParams.GetError());
 
-    auto params = HierarchyRequestParams(rulesetParams.GetValue(), nullptr);
+    auto params = HierarchyRequestParams(rulesetParams.GetValue());
+    params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse response)
             {
@@ -744,7 +788,7 @@ static ParseResult<NavNodeKeyCPtr> ParseParentNodeKeyFromJson(IConnectionCR conn
     if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey) || !json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey].IsObject())
         return CreateParseError<NavNodeKeyCPtr>("Expected `" PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "` to be a string");
 
-    NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey]);
+    NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey]));
     if (key.IsNull())
         return CreateParseError<NavNodeKeyCPtr>("`" PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "` contains invalid value");
 
@@ -768,23 +812,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
     if (parentKeyParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
 
-    auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(*connection, paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
-    return manager.GetNode(CreateAsyncParams(NodeByKeyRequestParams(rulesetParams.GetValue(), *parentKeyParams.GetValue()), connection->GetECDb(), paramsJson))
-        .then([&manager, &db, rulesetParams = rulesetParams.GetValue(), diagnostics](NodeResponse parentNodeResponse) -> folly::Future<ECPresentationResult>
+    auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
+    params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+
+    return manager.GetNodesCount(CreateAsyncParams(params, connection->GetECDb(), paramsJson))
+        .then([](NodesCountResponse nodesCountResponse)
             {
-            auto scope = diagnostics->Hold();
-
-            auto const& parentNode = *parentNodeResponse;
-            if (parentNode.IsNull())
-                return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
-
-            auto params = HierarchyRequestParams(rulesetParams, parentNode.get());
-            return manager.GetNodesCount(CreateAsyncParams(params, db))
-                .then([](NodesCountResponse childrenCountResponse)
-                    {
-                    return ECPresentationResult(rapidjson::Value((int64_t)*childrenCountResponse), true);
-                    });
+            return ECPresentationResult(rapidjson::Value((int64_t)*nodesCountResponse), true);
             });
     }
 
@@ -809,27 +847,21 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     if (parentKeyParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
 
-    auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
+    auto instanceFilterParam = ParseHierarchyLevelInstanceFilterFromJson(*connection, paramsJson);
+    if (instanceFilterParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
-    return manager.GetNode(CreateAsyncParams(NodeByKeyRequestParams(rulesetParams.GetValue(), *parentKeyParams.GetValue()), connection->GetECDb(), paramsJson))
-        .then([&manager, &db, rulesetParams = rulesetParams.GetValue(), pageParams = pageParams.GetValue(), diagnostics](NodeResponse parentNodeResponse) -> folly::Future<ECPresentationResult>
+    auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
+    params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+
+    return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
+        .then([](NodesResponse nodesResponse)
             {
-            auto scope = diagnostics->Hold();
-
-            auto const& parentNode = *parentNodeResponse;
-            if (parentNode.IsNull())
-                return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
-
-            auto params = HierarchyRequestParams(rulesetParams, parentNode.get());
-            return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db), pageParams))
-                .then([](NodesResponse childNodesResponse)
-                    {
-                    rapidjson::Document json;
-                    json.SetArray();
-                    for (NavNodeCPtr const& node : *childNodesResponse)
-                        PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
-                    return ECPresentationResult(std::move(json), true);
-                    });
+            rapidjson::Document json;
+            json.SetArray();
+            for (NavNodeCPtr const& node : *nodesResponse)
+                PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
+            return ECPresentationResult(std::move(json), true);
             });
     }
 
@@ -953,74 +985,13 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetFilteredNodesPaths(E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassCP GetECClassByFullName(Utf8CP fullName, ECDbCR db)
-    {
-    bvector<Utf8String> parts;
-    BeStringUtilities::Split(fullName, ":.", parts);
-    return (parts.size() == 2) ? db.Schemas().GetClass(parts[0], parts[1]) : nullptr;
-    }
-
-#define PRESENTATION_JSON_ATTRIBUTE_RelatedClass_SourceClassName            "sourceClassName"
-#define PRESENTATION_JSON_ATTRIBUTE_RelatedClass_TargetClassName            "targetClassName"
-#define PRESENTATION_JSON_ATTRIBUTE_RelatedClass_RelationshipName           "relationshipName"
-#define PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship  "isPolymorphicRelationship"
-#define PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsForwardRelationship      "isForwardRelationship"
-#define PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass   "isPolymorphicTargetClass"
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static RelatedClass GetRelatedClassFromJson(RapidJsonValueCR json, ECDbCR db, bool defaultIsPolymorphicValue = false)
-    {
-    RelatedClass invalid;
-    if (!json.IsObject())
-        return invalid;
-
-    Utf8CP sourceClassName = json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_SourceClassName].IsString() ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_SourceClassName].GetString() : "";
-    Utf8CP targetClassName = json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_TargetClassName].IsString() ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_TargetClassName].GetString() : "";
-    Utf8CP relationshipName = json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_RelationshipName].IsString() ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_RelationshipName].GetString() : "";
-
-    ECClassCP sourceClass = GetECClassByFullName(sourceClassName, db);
-    ECClassCP targetClass = GetECClassByFullName(targetClassName, db);
-    ECClassCP relationship = GetECClassByFullName(relationshipName, db);
-    if (!sourceClass || !targetClass || !relationship || !relationship->IsRelationshipClass())
-        return invalid;
-
-    bool isForwardRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsForwardRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsForwardRelationship].GetBool() : false;
-    bool isPolymorphicRelationship = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicRelationship].GetBool() : defaultIsPolymorphicValue;
-    bool isPolymorphicTargetClass = json.HasMember(PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass) ? json[PRESENTATION_JSON_ATTRIBUTE_RelatedClass_IsPolymorphicTargetClass].GetBool() : defaultIsPolymorphicValue;
-
-    return RelatedClass(*sourceClass, SelectClass<ECRelationshipClass>(*relationship->GetRelationshipClassCP(), "", isPolymorphicRelationship),
-        isForwardRelationship, SelectClass<ECClass>(*targetClass, "", isPolymorphicTargetClass));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static RelatedClassPath GetRelatedClassPathFromJson(RapidJsonValueCR json, ECDbCR db, bool defaultIsPolymorphicValue = false)
-    {
-    RelatedClassPath path;
-    if (!json.IsArray())
-        return path;
-
-    for (rapidjson::SizeType i = 0; i < json.Size(); ++i)
-        {
-        RelatedClass rc = GetRelatedClassFromJson(json[i], db, defaultIsPolymorphicValue);
-        if (rc.IsValid())
-            path.push_back(rc);
-        }
-    return path;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static std::unique_ptr<IContentFieldMatcher> CreatePropertyFieldMatcher(RapidJsonValueCR classNameJson, RapidJsonValueCR propertyNameJson, RelatedClassPathCR pathFromSelectToPropertyClass, ECDbCR db)
     {
     Utf8CP className = classNameJson.IsString() ? classNameJson.GetString() : "";
     Utf8CP propertyName = propertyNameJson.IsString() ? propertyNameJson.GetString() : "";
     if (*className && *propertyName)
         {
-        ECClassCP propertyClass = GetECClassByFullName(className, db);
+        ECClassCP propertyClass = IModelJsECPresentationSerializer::GetClassFromFullName(db, ToBeJsConst(rapidjson::Value(rapidjson::StringRef(className))));
         ECPropertyCP prop = propertyClass ? propertyClass->GetPropertyP(propertyName) : nullptr;
         if (prop)
             return std::make_unique<PropertiesContentFieldMatcher>(*prop, pathFromSelectToPropertyClass);
@@ -1054,7 +1025,7 @@ static bvector<std::unique_ptr<IContentFieldMatcher>> CreateFieldMatchersFromJso
         {
         RelatedClassPath pathFromSelectToPropertyClass;
         if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_FieldMatcher_PathFromSelectToPropertyClass))
-            pathFromSelectToPropertyClass = GetRelatedClassPathFromJson(json[PRESENTATION_JSON_ATTRIBUTE_FieldMatcher_PathFromSelectToPropertyClass], db);
+            pathFromSelectToPropertyClass = IModelJsECPresentationSerializer::GetRelatedClassPathFromJson(db, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_FieldMatcher_PathFromSelectToPropertyClass]));
 
         if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_FieldMatcher_Properties) && json[PRESENTATION_JSON_ATTRIBUTE_FieldMatcher_Properties].IsArray())
             {
@@ -1113,7 +1084,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSources(ECPre
     RapidJsonValueCR requestedClassesJson = paramsJson[PRESENTATION_JSON_ATTRIBUTE_Classes];
     for (rapidjson::SizeType i = 0; i < requestedClassesJson.Size(); ++i)
         {
-        ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, requestedClassesJson[i]);
+        ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, ToBeJsConst(requestedClassesJson[i]));
         if (ecClass == nullptr)
             return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString(PRESENTATION_JSON_ATTRIBUTE_Classes "[%" PRIu64 "].className", (uint64_t)i));
 
@@ -1179,7 +1150,7 @@ static ParseResult<Nullable<int>> ParseContentFlagsFromJson(RapidJsonValueCR par
 static ParseResult<KeySetPtr> ParseKeysFromJson(IConnectionCR connection, RapidJsonValueCR paramsJson)
     {
     auto keys = paramsJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_Keys)
-        ? IModelJsECPresentationSerializer::GetKeySetFromJson(connection, paramsJson[PRESENTATION_JSON_ATTRIBUTE_Keys])
+        ? IModelJsECPresentationSerializer::GetKeySetFromJson(connection, ToBeJsConst(paramsJson[PRESENTATION_JSON_ATTRIBUTE_Keys]))
         : KeySet::Create();
     return CreateParseResult(keys);
     }
@@ -1195,66 +1166,7 @@ static ParseResult<KeySetPtr> ParseKeysFromJson(IConnectionCR connection, RapidJ
 #define PRESENTATION_JSON_ATTRIBUTE_VALUE_DescriptorOverridesFieldsSelectorTypeInclude  "include"
 #define PRESENTATION_JSON_ATTRIBUTE_VALUE_DescriptorOverridesFieldsSelectorTypeExclude  "exclude"
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsSelectorFields             "fields"
-
 #define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter                   "instanceFilter"
-#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName    "selectClassName"
-#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression         "expression"
-#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances   "relatedInstances"
-#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty     "pathFromSelectToPropertyClass"
-#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired         "isRequired"
-#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias              "alias"
-#define PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias  "relationshipAlias"
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ParseResult<bvector<RelatedClassPath>> ParseInstanceFilterRelatedInstances(RapidJsonValueCR filterJson, ECDbCR db)
-    {
-    if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances))
-        return CreateParseResult(bvector<RelatedClassPath>());
-
-    RapidJsonValueCR instancesJson = filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances];
-    if (!instancesJson.IsArray())
-         return CreateParseError<bvector<RelatedClassPath>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelatedInstances "` to be an array");
-
-    bvector<RelatedClassPath> instances; 
-    for (rapidjson::SizeType i = 0; i < instancesJson.Size(); ++i)
-        {
-        RapidJsonValueCR instanceDef = instancesJson[i];
-        if (!instanceDef.IsObject() || !instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty))
-            continue;
-
-        RelatedClassPath pathToProperty = GetRelatedClassPathFromJson(instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterPathToProperty], db, true);
-        if (pathToProperty.empty())
-            continue;
-
-        bool hasAlias = false;
-        if (instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias) && instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias].IsString())
-            {
-            Utf8String alias = instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterAlias].GetString();
-            pathToProperty.back().GetTargetClass().SetAlias(alias);
-            hasAlias = true;
-            }
-
-        if (instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias) && instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias].IsString())
-            {
-            Utf8String alias = instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterRelationshipAlias].GetString();
-            pathToProperty.back().GetRelationship().SetAlias(alias);
-            }
-
-        if (!hasAlias)
-            continue;
-
-        if (instanceDef.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired))
-            {
-            bool isRequired = instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired].IsBool() ? instanceDef[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterIsRequired].GetBool() : false;
-            pathToProperty.back().SetIsTargetOptional(!isRequired);
-            }
-
-        instances.push_back(pathToProperty);
-        }
-    return CreateParseResult(instances);
-    }
 
 /*=================================================================================**//**
 * @bsiclass
@@ -1284,9 +1196,9 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> fieldsDilterExpression, Nullable<TSortingParams> sortParams, 
+    DescriptorOverrides(Nullable<Utf8String> displayType, Nullable<int> contentFlags, Nullable<Utf8String> fieldsDilterExpression, Nullable<TSortingParams> sortParams,
         TFieldsSelector fieldsSelector, std::shared_ptr<InstanceFilterDefinition> instanceFilter)
-        : m_displayType(displayType), m_contentFlags(contentFlags), m_fieldsFilterExpression(fieldsDilterExpression), m_sortParams(sortParams), 
+        : m_displayType(displayType), m_contentFlags(contentFlags), m_fieldsFilterExpression(fieldsDilterExpression), m_sortParams(sortParams),
         m_fieldsSelector(fieldsSelector), m_instanceFilter(instanceFilter)
         {}
 
@@ -1302,7 +1214,7 @@ private:
 
             return CreateParseResult<Nullable<Utf8String>>(Utf8String(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFieldsFilterExpression].GetString()));
             }
-                                                                                                                                      
+
         // deprecated property
         if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression))
             {
@@ -1318,37 +1230,11 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static ParseResult<std::shared_ptr<InstanceFilterDefinition>> ParseInstanceFilter(ECDbCR db, RapidJsonValueCR json)
+    static ParseResult<std::unique_ptr<InstanceFilterDefinition>> ParseInstanceFilter(IConnectionCR connection, RapidJsonValueCR json)
         {
         if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter))
-            {
-            RapidJsonValueCR filterJson = json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter];
-            if (!filterJson.IsObject())
-                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to be an object");
-
-            if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression))
-                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "`");
-
-            if (!filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression].IsString())
-                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression "` to be a string");
-
-            Utf8String expression = filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterExpression].GetString();
-
-            if (!filterJson.HasMember(PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName))
-                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter "` to have member `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "`");
-
-            ECClassCP selectClass = GetECClassByFullName(filterJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName].GetString(), db);
-            if (!selectClass)
-                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesFilterExpression "." PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilterSelectClassName "` to be full name of a valid class");
-
-            ParseResult<bvector<RelatedClassPath>> relatedInstances = ParseInstanceFilterRelatedInstances(filterJson, db);
-            if (relatedInstances.HasError())
-                return CreateParseError<std::shared_ptr<InstanceFilterDefinition>>(relatedInstances.GetError());
-
-            return CreateParseResult<std::shared_ptr<InstanceFilterDefinition>>(std::make_shared<InstanceFilterDefinition>(expression, selectClass, relatedInstances.GetValue()));
-            }
-
-        return CreateParseResult<std::shared_ptr<InstanceFilterDefinition>>(nullptr);
+            return CreateParseResult(ECPresentationManager::GetSerializer().GetInstanceFilterFromJson(connection, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverridesInstanceFilter])));
+        return CreateParseResult<std::unique_ptr<InstanceFilterDefinition>>(nullptr);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1451,7 +1337,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static ParseResult<DescriptorOverrides> ParseFromJson(ECDbCR db, RapidJsonValueCR json)
+    static ParseResult<DescriptorOverrides> ParseFromJson(IConnectionCR connection, RapidJsonValueCR json)
         {
         auto displayType = ParseDisplayTypeFromJson(json);
         if (displayType.HasError())
@@ -1465,20 +1351,20 @@ public:
         if (fieldsFilterExpression.HasError())
             return CreateParseError<DescriptorOverrides>(fieldsFilterExpression.GetError());
 
-        auto sortingParams = ParseSortingParams(db, json);
+        auto sortingParams = ParseSortingParams(connection.GetECDb(), json);
         if (sortingParams.HasError())
             return CreateParseError<DescriptorOverrides>(sortingParams.GetError());
 
-        auto fieldsSelector = ParseFieldsSelector(db, json);
+        auto fieldsSelector = ParseFieldsSelector(connection.GetECDb(), json);
         if (fieldsSelector.HasError())
             return CreateParseError<DescriptorOverrides>(fieldsSelector.GetError());
 
-        auto instanceFilter = ParseInstanceFilter(db, json);
+        auto instanceFilter = ParseInstanceFilter(connection, json);
         if (instanceFilter.HasError())
             return CreateParseError<DescriptorOverrides>(instanceFilter.GetError());
 
         return CreateParseResult(DescriptorOverrides(displayType.GetValue(), contentFlags.GetValue(), fieldsFilterExpression.GetValue(),
-            sortingParams.GetValue(), fieldsSelector.GetValue(), instanceFilter.GetValue()));
+            sortingParams.GetValue(), fieldsSelector.GetValue(), std::move(instanceFilter.GetValue())));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1604,7 +1490,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
     if (keys.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, keys.GetError());
 
-    auto descriptorOverrides = DescriptorOverrides::ParseFromJson(db, paramsJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides]);
+    auto descriptorOverrides = DescriptorOverrides::ParseFromJson(*connection, paramsJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides]);
     if (descriptorOverrides.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, descriptorOverrides.GetError());
 
@@ -1657,7 +1543,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPre
     if (keys.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, keys.GetError());
 
-    auto descriptorOverrides = DescriptorOverrides::ParseFromJson(db, paramsJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides]);
+    auto descriptorOverrides = DescriptorOverrides::ParseFromJson(*connection, paramsJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides]);
     if (descriptorOverrides.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, descriptorOverrides.GetError());
 
@@ -1707,7 +1593,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(
     if (keys.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, keys.GetError());
 
-    auto descriptorOverrides = DescriptorOverrides::ParseFromJson(db, paramsJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides]);
+    auto descriptorOverrides = DescriptorOverrides::ParseFromJson(*connection, paramsJson[PRESENTATION_JSON_ATTRIBUTE_DescriptorOverrides]);
     if (descriptorOverrides.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, descriptorOverrides.GetError());
 

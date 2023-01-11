@@ -137,6 +137,7 @@ private:
     mutable IProvidersIndexAllocatorPtr m_providersIndexAllocator;
     bset<ArtifactsCapturer*> m_artifactsCapturers;
     std::function<void(NavNodesProviderContextR)> m_onHierarchyLevelLoaded;
+    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
 
     // optimization flags
     OptimizationFlagsContainer m_optFlags;
@@ -155,7 +156,6 @@ private:
     ChildNodeRuleCP m_childNodeRule;
 
     // ECDb context
-    mutable NavigationQueryBuilder* m_queryBuilder;
     ECDbUsedClassesListenerWrapper* m_usedClassesListener;
 
     // hierarchy locking
@@ -185,7 +185,7 @@ public:
     void SetPhysicalParentNode(NavNodeCP node) {m_physicalParentNode = node;}
     NavNodeCPtr GetVirtualParentNode() const {return m_virtualParentNode;}
     void SetVirtualParentNode(NavNodeCP node) {m_virtualParentNode = node;}
-    NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, NavNodeCP parentNode, bool allowFromCache) const;
+    NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, NavNodeCP parentNode) const;
     CombinedHierarchyLevelIdentifier GetHierarchyLevelIdentifier() const;
     ECPRESENTATION_EXPORT bvector<RulesetVariableEntry> GetRelatedRulesetVariables() const;
     IProvidersIndexAllocator& GetProvidersIndexAllocator() const;
@@ -198,6 +198,9 @@ public:
     BeGuidCR GetRemovalId() const {return m_removalId;}
     std::function<void(NavNodesProviderContextR)> const& GetHierarchyLevelLoadedCallback() const {return m_onHierarchyLevelLoaded;}
     void SetHierarchyLevelLoadedCallback(std::function<void(NavNodesProviderContextR)> cb) {m_onHierarchyLevelLoaded = cb;}
+    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilterPtr() const {return m_instanceFilter;}
+    InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter.get();}
+    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
 
     // page options
     void SetPageOptions(std::shared_ptr<PageOptions> value) {m_pageOptions = value;}
@@ -226,7 +229,6 @@ public:
     // ECDb context
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, IECDbUsedClassesListener*);
     ECPRESENTATION_EXPORT void SetQueryContext(NavNodesProviderContextCR other);
-    NavigationQueryBuilder& GetQueryBuilder() const;
     IUsedClassesListener* GetUsedClassesListener() const;
 
     // hierarchy locking
@@ -314,19 +316,6 @@ enum HasChildrenFlag
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct DataSourceRelatedVariablesUpdater
-    {
-    NavNodesProviderContextCR m_context;
-    DataSourceIdentifier m_dsIdentifier;
-    RulesetVariables m_relatedVariablesBefore;
-
-    DataSourceRelatedVariablesUpdater(NavNodesProviderContextCR context, DataSourceIdentifier);
-    ~DataSourceRelatedVariablesUpdater();
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 struct NodesInitializationState
 {
 private:
@@ -399,10 +388,6 @@ private:
 protected:
     ECPRESENTATION_EXPORT NavNodesProvider(NavNodesProviderContextR context);
     void InitializeNodes();
-    bool ShouldReturnChildNodes(NavNodeR node) const;
-    NavNodesProviderPtr CreateProvider(NavNodeR node) const;
-    void EvaluateChildrenArtifacts(NavNodeR) const;
-    void EvaluateThisNodeArtifacts(NavNodeCR) const;
     bool IsInitialized() const {return m_nodesInitialized;}
 
 protected:
@@ -490,6 +475,7 @@ DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledFullNodesLoadContext, IsFullNodesLoadDi
 DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledPostProcessingContext, IsPostProcessingDisabled, SetDisablePostProcessing, bool, true);
 DEFINE_OPTIMIZATION_FLAG_CONTEXT(MaxNodesToLoadContext, GetMaxNodesToLoad, SetMaxNodesToLoad, size_t, 0);
 
+struct DataSourceRelatedVariablesTracker;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -499,13 +485,15 @@ struct CachingNavNodesProviderBase : TBaseProvider
 private:
     mutable HierarchyLevelIdentifier m_hierarchyLevelIdentifier;
     mutable DataSourceIdentifier m_datasourceIdentifier;
+    std::unique_ptr<DataSourceRelatedVariablesTracker> m_variablesTracker;
 
 private:
     HierarchyLevelIdentifier const& GetOrCreateHierarchyLevelIdentifier() const;
     ECPRESENTATION_EXPORT DataSourceIdentifier const& GetOrCreateDataSourceIdentifier(bool* createdNew = nullptr) const;
 
 protected:
-    CachingNavNodesProviderBase(NavNodesProviderContextR context) : TBaseProvider(context) {}
+    ECPRESENTATION_EXPORT CachingNavNodesProviderBase(NavNodesProviderContextR);
+    ECPRESENTATION_EXPORT ~CachingNavNodesProviderBase();
     ECPRESENTATION_EXPORT void UpdateDataSourceDirectNodesCount(DataSourceIdentifier const&, size_t value);
     ECPRESENTATION_EXPORT void UpdateDataSourceHasNodesFlag(DataSourceIdentifier const&, bool value);
     ECPRESENTATION_EXPORT void UpdateDataSourceTotalNodesCount(DataSourceIdentifier const&, size_t totalNodesCount);
@@ -642,6 +630,10 @@ struct NodesCreatingMultiNavNodesProvider : MultiNavNodesProvider
 
 private:
     ECPRESENTATION_EXPORT std::unique_ptr<DirectNodesIterator> GetDirectNodesIterator() const;
+    bool ShouldReturnChildNodes(NavNodeR node) const;
+    void EvaluateChildrenArtifacts(NavNodeR) const;
+    void EvaluateThisNodeArtifacts(NavNodeCR) const;
+    NavNodesProviderPtr CreateProvider(NavNodeR node) const;
 
 protected:
     NodesCreatingMultiNavNodesProvider(NavNodesProviderContextR context)
@@ -756,13 +748,13 @@ private:
     HasChildrenFlag AnyChildSpecificationReturnsNodes(NavNodeR parentNode) const;
     bool HasSimilarNodeInHierarchy(NavNodeCR, NavNodeCR parentNode, int suppressCount) const;
     bool HasSimilarNodeInHierarchy(NavNodeCR, BeGuidCR parentNodeId, int suppressCount) const;
-    bool HasSimilarNodeInHierarchy(NavNodeCR, int suppressCount = -1) const;
+    bool HasSimilarNodeInHierarchy(NavNodeCR, int suppressCount) const;
 
 public:
     NodesFinalizer(NavNodesProviderContextR context)
         : m_context(&context)
         {}
-
+    ECPRESENTATION_EXPORT bool HasSimilarNodeInHierarchy(NavNodeCR) const;
     ECPRESENTATION_EXPORT void DetermineChildren(NavNodeR) const;
     ECPRESENTATION_EXPORT void Customize(NavNodeR) const;
 
@@ -900,15 +892,13 @@ struct QueryBasedNodesProvider : CachingNavNodesProviderBase<NodesCreatingMultiN
     struct NodeCounts;
 
 private:
-    NavigationQueryCPtr m_query;
+    PresentationQueryBuilderCPtr m_query;
     mutable bmap<ECClassId, bool> m_usedClassIds;
     size_t m_offset;
     DataSourceIdentifier m_parentDatasourceIdentifier;
 
 private:
-    QueryBasedNodesProvider(NavNodesProviderContextR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier)
-        : T_Super(context), m_query(&query), m_usedClassIds(usedClassIds), m_offset(0), m_parentDatasourceIdentifier(parentDatasourceIdentifier)
-        {}
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextR, PresentationQueryBuilderCR, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier);
     NodeCounts QueryNodeCounts() const;
     BentleyStatus InitializePartialProviders(bvector<PageNodeCounts> const&);
 
@@ -924,12 +914,12 @@ protected:
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextR context,
-        NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>(), DataSourceIdentifier parentDatasourceIdentifier = {})
+        PresentationQueryBuilderCR query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>(), DataSourceIdentifier parentDatasourceIdentifier = {})
         {
         return CallOnCreated(*new QueryBasedNodesProvider(context, query, usedClassIds, parentDatasourceIdentifier));
         }
     bmap<ECClassId, bool> const& GetUsedClassIds() const {return m_usedClassIds;}
-    void SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const&);
+    void SetQuery(PresentationQueryBuilderCP query, bmap<ECClassId, bool> const&);
     void SetOffset(size_t value) {m_offset = value;}
 };
 
@@ -946,7 +936,8 @@ private:
 
 private:
     ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextR context, ChildNodeSpecificationCR specification);
-    bvector<NavigationQueryPtr> CreateQueries(ChildNodeSpecificationCR specification) const;
+    std::unique_ptr<NavigationQueryBuilder> CreateQueryBuilder(IUsedClassesListener&) const;
+    QuerySet CreateQueries(NavigationQueryBuilderCR) const;
 
 protected:
     Utf8CP _GetName() const override {return "Query-based specification nodes provider";}

@@ -212,3 +212,15 @@ TEST_F(RulesetVariablesTests, DoesNotContainVariablesIfMembersHaveDifferentValue
     EXPECT_FALSE(variables2.Contains(variables1));
     EXPECT_FALSE(variables1.Contains(variables2));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesetVariablesTests, EmptyVariablesMatchVariablesWithoutValues)
+    {
+    RulesetVariables variables{ RulesetVariableEntry("v", rapidjson::Value()) };
+    RulesetVariables empty;
+
+    EXPECT_TRUE(variables.Contains(empty));
+    EXPECT_TRUE(empty.Contains(variables));
+    }
