@@ -371,7 +371,7 @@ bvector<BeFileName> DirectoryRuleSetLocater::_GetRuleSetFileNames() const
         {
         if (!directory.DoesPathExist())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Requested rulesets directory does not exist: '%s'", directory.GetNameUtf8().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_WARNING, Utf8PrintfString("Requested rulesets directory does not exist: '%s'", directory.GetNameUtf8().c_str()));
             continue;
             }
 
@@ -397,7 +397,7 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
         {
         if (!file.DoesPathExist())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Requested ruleset file does not exist: '%s'", file.GetNameUtf8().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_WARNING, Utf8PrintfString("Requested ruleset file does not exist: '%s'", file.GetNameUtf8().c_str()));
             continue;
             }
 
@@ -415,7 +415,7 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
                 ruleset = PresentationRuleSet::ReadFromJsonFile(file);
             else
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Detected a file with non-ruleset extension: '%s'", file.GetNameUtf8().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_INFO, Utf8PrintfString("Detected a file with non-ruleset extension: '%s'", file.GetNameUtf8().c_str()));
                 continue;
                 }
 
@@ -423,11 +423,11 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
                 {
                 m_cache[file] = ruleset;
                 OnRulesetCreated(*ruleset);
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Loaded ruleset '%s' from file: '%s'", ruleset->GetRuleSetId().c_str(), file.GetNameUtf8().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_INFO, Utf8PrintfString("Loaded ruleset '%s' from file: '%s'", ruleset->GetRuleSetId().c_str(), file.GetNameUtf8().c_str()));
                 }
             else
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to load ruleset from file: '%s'", file.GetNameUtf8().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to load ruleset from file: '%s'", file.GetNameUtf8().c_str()));
                 }
             }
 

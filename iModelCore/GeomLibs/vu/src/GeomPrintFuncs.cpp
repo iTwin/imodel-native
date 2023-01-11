@@ -34,23 +34,17 @@ void GeomPrintFuncs::EmitString (char const *pString)
 
 void GeomPrintFuncs::EmitInt (int value)
     {
-    char buffer[100];
-    sprintf (buffer, "%i", value);
-    EmitString (buffer);
+    EmitString (Utf8PrintfString("%i", value).c_str());
     }
 
 void GeomPrintFuncs::EmitDouble (double value)
     {
-    char buffer[100];
-    sprintf (buffer, "%g", value);
-    EmitString (buffer);
+    EmitString (Utf8PrintfString("%g", value).c_str());
     }
 
 void GeomPrintFuncs::EmitHex (int value)
     {
-    char buffer[100];
-    sprintf (buffer, "%x", value);
-    EmitString (buffer);
+    EmitString (Utf8PrintfString("%x", value).c_str());
     }
 
 void GeomPrintFuncs::EmitLineBreak ()

@@ -248,7 +248,7 @@ static NodesPathElement FindNode(ECPresentationManager::Impl& manager, NodeByIns
     if (!nodes.IsValid())
         return NodesPathElement();
 
-    auto instanceKeysProvider = manager.CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams::Create(NodeInstanceKeysRequestParams(params, ""), params));
+    auto instanceKeysProvider = manager.CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams::Create(NodeInstanceKeysRequestParams(params, nullptr), params));
     if (!instanceKeysProvider)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to create node instance keys provider. Returning invalid result.");
 
@@ -283,7 +283,7 @@ NodesPathElement NodePathsHelper::CreateNodePath(ECPresentationManager::Impl& ma
     auto parentEl = FindNode(manager, NodeByInstanceKeyRequestImplParams::Create(params.GetConnection(), params.GetCancellationToken(), params, params.GetInstanceKeyPath().front()));
     if (!parentEl.GetNode().IsValid())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "Requested ECInstance keys path not found in hierarchy");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Requested ECInstance keys path not found in hierarchy");
         return NodesPathElement();
         }
 

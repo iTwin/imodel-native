@@ -180,7 +180,6 @@ TEST_F(BeIdSetTests, ChunkedArray) {
     EXPECT_EQ(ddl, "This is a Test;This is another test;This is a 3rd test");
 }
 
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -203,107 +202,178 @@ struct TestChangeTracker : BeSQLite::ChangeTracker
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
-struct BeSQliteTestFixture : public ::testing::Test
-    {
-    protected:
-
-        static std::unique_ptr<Db> Create(Utf8CP fileName)
-            {
-            BeFileName outputPath;
-            BeTest::GetHost().GetOutputRoot(outputPath);
-            outputPath.AppendUtf8(fileName);
-            if (outputPath.DoesPathExist())
+struct BeSQliteTestFixture : public ::testing::Test {
+protected:
+    static std::unique_ptr<Db> Create(Utf8CP fileName) {
+        BeFileName outputPath;
+        BeTest::GetHost().GetOutputRoot(outputPath);
+        outputPath.AppendUtf8(fileName);
+        if (outputPath.DoesPathExist())
                 outputPath.BeDeleteFile();
 
-            std::unique_ptr<Db> db = std::unique_ptr<Db>(new Db());
-            if (db->CreateNewDb(outputPath) != BE_SQLITE_OK)
+        std::unique_ptr<Db> db = std::unique_ptr<Db>(new Db());
+        if (db->CreateNewDb(outputPath) != BE_SQLITE_OK)
                 return nullptr;
 
-            db->SaveChanges();
-            return db;
-            }
+        db->SaveChanges();
+        return db;
+    }
 
-        static BeFileNameStatus Clone(Utf8CP existingFile, Utf8CP out, bool override =true)
-            {
-            BeFileName existingFilePath;
-            BeTest::GetHost().GetOutputRoot(existingFilePath);
-            existingFilePath.AppendUtf8(existingFile);
-            if (!existingFilePath.DoesPathExist())
+    static BeFileNameStatus Clone(Utf8CP existingFile, Utf8CP out, bool override = true) {
+        BeFileName existingFilePath;
+        BeTest::GetHost().GetOutputRoot(existingFilePath);
+        existingFilePath.AppendUtf8(existingFile);
+        if (!existingFilePath.DoesPathExist())
                 return BeFileNameStatus::FileNotFound;
 
-            BeFileName outputPathB;
-            BeTest::GetHost().GetOutputRoot(outputPathB);
-            outputPathB.AppendUtf8(out);
+        BeFileName outputPathB;
+        BeTest::GetHost().GetOutputRoot(outputPathB);
+        outputPathB.AppendUtf8(out);
 
-            if (outputPathB.DoesPathExist())
+        if (outputPathB.DoesPathExist())
                 if (!override)
                     return BeFileNameStatus::AlreadyExists;
-                else
-                    {
+                else {
                     BeFileNameStatus r = outputPathB.BeDeleteFile();
                     if (r != BeFileNameStatus::Success)
                         return r;
-                    }
-
-            return BeFileName::BeCopyFile(existingFilePath, outputPathB);
-            }
-        static std::unique_ptr<Db> Open(Utf8CP fileName, Db::OpenMode openMode)
-            {
-            BeFileName outputPath;
-            BeTest::GetHost().GetOutputRoot(outputPath);
-            outputPath.AppendUtf8(fileName);
-            if (!outputPath.DoesPathExist())
-                return nullptr;
-
-            std::unique_ptr<Db> db = std::unique_ptr<Db>(new Db());
-            if (db->OpenBeSQLiteDb(outputPath, Db::OpenParams(openMode)) != BE_SQLITE_OK)
-                return nullptr;
-
-            return db;
-            }
-
-        static std::unique_ptr<Db> OpenReadWrite(Utf8CP fileName)
-            {
-            return Open(fileName, Db::OpenMode::ReadWrite);
-            }
-        static std::unique_ptr<Db> OpenReadOnly(Utf8CP fileName)
-            {
-            return Open(fileName, Db::OpenMode::Readonly);
-            }
-        static int GetRowCount(DbR db, Utf8CP tableName)
-            {
-            auto stmt = db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s", tableName));
-            stmt->Step();
-            return  stmt->GetValueInt(0);
-            }
-        static std::unique_ptr< BeSQLite::ChangeSet> Capture(DbR db, std::function<bool(DbR,void*)> task, void* userObj)
-            {
-            TestChangeTracker tracker(db);
-            tracker.EnableTracking(true);
-            if (!task(db, userObj))
-                {
-                tracker.EnableTracking(false);
-                return nullptr;
                 }
 
-            if (!tracker.HasChanges())
+        return BeFileName::BeCopyFile(existingFilePath, outputPathB);
+    }
+    static std::unique_ptr<Db> Open(Utf8CP fileName, Db::OpenMode openMode) {
+        BeFileName outputPath;
+        BeTest::GetHost().GetOutputRoot(outputPath);
+        outputPath.AppendUtf8(fileName);
+        if (!outputPath.DoesPathExist())
                 return nullptr;
 
-            std::unique_ptr< BeSQLite::ChangeSet> changeset = std::unique_ptr< BeSQLite::ChangeSet>(new TestChangeSet());
-            if (BE_SQLITE_OK != changeset->FromChangeTrack(tracker))
+        std::unique_ptr<Db> db = std::unique_ptr<Db>(new Db());
+        if (db->OpenBeSQLiteDb(outputPath, Db::OpenParams(openMode)) != BE_SQLITE_OK)
                 return nullptr;
 
-            return changeset;
-            }
-    public:
-        BeSQliteTestFixture():
-            ::testing::Test()
-            {
-            BeFileName tempDir;
-            BeTest::GetHost().GetTempDir(tempDir);
-            BeSQLiteLib::Initialize(tempDir);
-            }
+        return db;
+    }
+
+    static std::unique_ptr<Db> OpenReadWrite(Utf8CP fileName) {
+        return Open(fileName, Db::OpenMode::ReadWrite);
+    }
+    static std::unique_ptr<Db> OpenReadOnly(Utf8CP fileName) {
+        return Open(fileName, Db::OpenMode::Readonly);
+    }
+    static int GetRowCount(DbR db, Utf8CP tableName) {
+        auto stmt = db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s", tableName));
+        stmt->Step();
+        return stmt->GetValueInt(0);
+    }
+    static std::unique_ptr<BeSQLite::ChangeSet> Capture(DbR db, std::function<bool(DbR, void*)> task, void* userObj) {
+        TestChangeTracker tracker(db);
+        tracker.EnableTracking(true);
+        if (!task(db, userObj)) {
+                tracker.EnableTracking(false);
+                return nullptr;
+        }
+
+        if (!tracker.HasChanges())
+                return nullptr;
+
+        std::unique_ptr<BeSQLite::ChangeSet> changeset = std::unique_ptr<BeSQLite::ChangeSet>(new TestChangeSet());
+        if (BE_SQLITE_OK != changeset->FromChangeTrack(tracker))
+                return nullptr;
+
+        return changeset;
+    }
+
+public:
+    BeSQliteTestFixture() : ::testing::Test() {
+        BeFileName tempDir;
+        BeTest::GetHost().GetTempDir(tempDir);
+        BeSQLiteLib::Initialize(tempDir);
+    }
+};
+
+struct DisableAsserts {
+    DisableAsserts() { BeTest::SetFailOnAssert(false); }
+    ~DisableAsserts() { BeTest::SetFailOnAssert(true); }
+};
+
+TEST_F(BeSQliteTestFixture, WAL_basic_test) {
+    DisableAsserts _notused;
+    auto getFileSize = [](Utf8CP name) {
+        BeFileName fileName(name);
+        uint64_t sz = 0;
+        auto status = fileName.GetFileSize(sz);
+        return BeFileNameStatus::Success == status ? sz : -1;
     };
+    auto getJournalMode = [](Db& db) {
+        Statement stmt;
+        stmt.Prepare(db, "pragma journal_mode");
+        stmt.Step();
+        return Utf8String(stmt.GetValueText(0));
+    };
+    Utf8String dbFileName;
+    auto db1 = Create("first.db");
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table test(i)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(1024))"));
+    dbFileName = db1->GetDbFileName();
+    ASSERT_EQ(BE_SQLITE_OK, db1->SaveChanges());
+
+    ASSERT_STREQ("delete", getJournalMode(*db1).c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, db1->EnableWalMode(true));
+    ASSERT_STREQ("wal", getJournalMode(*db1).c_str());
+
+    // insert many rows to force auto checkpoint
+    for (int i = 0; i < 5000; i++)
+        ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(1024))"));
+
+    // open a reader from read/write connection. SaveChanges() will not do auto checkpoint because
+    // there is a reader from the same connection which writing to file.
+    auto stmt = db1->GetCachedStatement("select * from test");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(BE_SQLITE_OK, db1->SaveChanges());
+
+    // open a readonly second connection just to lock the WAL file from being checkpointed.
+    auto db2 = Open("first.db", Db::OpenMode::Readonly);
+    auto stmt2 = db2->GetCachedStatement("select * from test");
+    for (int i = 0; i < 3000; i++)
+        ASSERT_EQ(BE_SQLITE_ROW, stmt2->Step());
+
+    // wal file must have grown larger after new inserted rows.
+    Utf8String walFile = dbFileName + Utf8String("-wal");
+    auto walFileSize = getFileSize(walFile.c_str());
+    ASSERT_EQ(6892792, walFileSize);
+
+    // main db size should small as the all the above data was written in wal file.
+    auto dbSize = getFileSize(dbFileName.c_str());
+    ASSERT_EQ(36864, dbSize);
+
+    // auto checkpoint will not happen as there is active reader db1
+    stmt = nullptr;
+    db1->CloseDb();
+
+    // closing reader later will ensure WAL file is not checkpointed
+    stmt2 = nullptr;
+    db2->CloseDb();
+
+    dbSize = getFileSize(dbFileName.c_str());
+    ASSERT_EQ(36864, dbSize);
+
+    // Perform an explicit checkpoint. Note this will only work if there are no active readers
+    int pnLog = -1, pnCkpt = -1;
+    db2 = Open("first.db", Db::OpenMode::ReadWrite);
+    ASSERT_EQ(BE_SQLITE_OK, db2->PerformCheckpoint(WalCheckpointMode::Truncate, &pnLog, &pnCkpt));
+    ASSERT_EQ(0, pnLog);
+    ASSERT_EQ(0, pnCkpt);
+    db2->CloseDb();
+
+    // After checkpoint the main db file must grow larger and WAL file is deleted
+    dbSize = getFileSize(dbFileName.c_str());
+    ASSERT_EQ(6881280, dbSize);
+
+    walFileSize = getFileSize(walFile.c_str());
+    ASSERT_EQ(-1, walFileSize);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -546,7 +616,7 @@ TEST_F(BeSQliteTestFixture, Trace)
     auto cancel_row = db1->GetTraceRowEvent().AddListener([&](TraceContext const& ctx) { nRow++; });
     auto cancel_close = db1->GetTraceCloseEvent().AddListener([&](SqlDbP, Utf8CP) { nClose++; });
     db1->ConfigTraceEvents(DbTrace::Profile| DbTrace::Stmt | DbTrace::Row | DbTrace::Close, true);
-    
+
     db1->ExecuteSql("create table test(Id integer primary key, c0);");
     Statement stmt;
     stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
@@ -563,7 +633,7 @@ TEST_F(BeSQliteTestFixture, Trace)
     ASSERT_EQ(nStmt, 3);
     ASSERT_EQ(nProfile, 3);
     ASSERT_EQ(nRow, 1);
-    
+
     db1->SaveChanges();
     db1->CloseDb();
 
@@ -635,7 +705,7 @@ TEST_F(BeSQliteTestFixture, ReadonlyNoCommit)
 TEST_F(BeSQliteTestFixture, SerializeMainDb)
     {
     auto db = Create("first.db");
-    
+
     db->ExecuteSql("create table test1(Id integer primary key, c0);");
     auto snapshot0 = db->Serialize();
     ASSERT_EQ(snapshot0.Size(), 36864);
@@ -666,7 +736,7 @@ TEST_F(BeSQliteTestFixture, SerializeMainDb)
 TEST_F(BeSQliteTestFixture, SerializeTempDb)
     {
     auto db = Create("first.db");
-    
+
     db->ExecuteSql("create table temp.test(Id integer primary key, c0);");
     db->ExecuteSql("create table test(Id integer primary key, c0);");
 

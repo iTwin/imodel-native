@@ -199,14 +199,14 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     BeXmlNodeP ruleSetNode;
     if ((BEXML_Success != xmlDom.SelectNode(ruleSetNode, "/" PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == ruleSetNode))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid XML: Missing a top-level `%s` node", PRESENTATION_RULE_SET_XML_NODE_NAME));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid XML: Missing a top-level `%s` node", PRESENTATION_RULE_SET_XML_NODE_NAME));
         return false;
         }
 
     // required:
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue(m_ruleSetId, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString(INVALID_XML, PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString(INVALID_XML, PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID));
         return false;
         }
 
@@ -301,18 +301,18 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString, stringSize / sizeof(Utf8Char));
     if (BEXML_Success != xmlStatus)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, "Failed to read XML from string. Is XML valid?");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, "Failed to read XML from string. Is XML valid?");
         return NULL;
         }
 
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
     if (ruleSet->ReadXml(*xmlDom.get()))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, "Successfully read presentation rules");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, "Successfully read presentation rules");
         return ruleSet;
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, "Failed to read presentation rules from XML.");
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, "Failed to read presentation rules from XML.");
     return NULL;
     }
 
@@ -327,18 +327,18 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (BeFileNameCR xmlFil
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, xmlFilePath.c_str());
     if (xmlStatus != BEXML_Success || !xmlDom.IsValid())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, "Failed to read XML from file. Is XML valid?");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, "Failed to read XML from file. Is XML valid?");
         return NULL;
         }
 
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
     if (ruleSet->ReadXml(*xmlDom.get()))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, "Successfully read presentation rules");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, "Successfully read presentation rules");
         return ruleSet;
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, "Failed to read presentation rules from XML.");
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, "Failed to read presentation rules from XML.");
     return NULL;
     }
 
@@ -387,7 +387,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
         {
         if (SUCCESS != Version::FromString(m_schemaVersion, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].asCString()))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
                 "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].ToString().c_str(),
                 "version string in format {major}.{minor}.{patch}"));
             m_schemaVersion = GetCurrentRulesetSchemaVersion();
@@ -399,7 +399,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
         Version rulesetVersion;
         if (SUCCESS != Version::FromString(rulesetVersion, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].asCString()))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
                 "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].ToString().c_str(),
                 "version string in format {major}.{minor}.{patch}"));
             }
@@ -488,11 +488,11 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
     if (!json.isNull() && ruleSet->ReadJson(json))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Successfully read: %s", ruleSet->WriteToJsonValue().ToString().c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Successfully read: %s", ruleSet->WriteToJsonValue().ToString().c_str()));
         return ruleSet;
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to read: ", json.ToString().c_str()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to read: ", json.ToString().c_str()));
     return nullptr;
     }
 

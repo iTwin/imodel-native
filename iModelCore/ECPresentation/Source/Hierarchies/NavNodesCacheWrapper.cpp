@@ -165,7 +165,7 @@ NavNodePtr NodesCacheWrapper::_GetNode(BeGuidCR nodeId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeVisibility NodesCacheWrapper::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+NodeVisibility NodesCacheWrapper::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
         return m_memoryCache->GetNodeVisibility(nodeId, contextVariables, instanceFilter);
@@ -176,7 +176,7 @@ NodeVisibility NodesCacheWrapper::_GetNodeVisibility(BeGuidCR nodeId, RulesetVar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodePtr NodesCacheWrapper::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+NavNodePtr NodesCacheWrapper::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
         return m_memoryCache->GetPhysicalParentNode(nodeId, contextVariables, instanceFilter);
@@ -198,7 +198,7 @@ BeGuid NodesCacheWrapper::_GetVirtualParentNodeId(BeGuidCR nodeId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<uint64_t> NodesCacheWrapper::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+bvector<uint64_t> NodesCacheWrapper::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     if (IsMemoryCacheInitialized() && NodesCacheHelpers::NodeExists(m_memoryCache->GetDb(), nodeId))
         return m_memoryCache->GetNodeIndex(hierarchyLevelId, nodeId, contextVariables, instanceFilter);
@@ -390,7 +390,7 @@ void NodesCacheWrapper::_Update(DataSourceInfo const& dataSourceInfo, int partsT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheWrapper::_MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter)
+void NodesCacheWrapper::_MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter)
     {
     InitializeMemoryCache();
     m_memoryCache->MakeVirtual(nodeId, contextVariables, instanceFilter);
@@ -402,7 +402,7 @@ void NodesCacheWrapper::_MakeVirtual(BeGuidCR nodeId, RulesetVariables const& co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheWrapper::_MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter)
+void NodesCacheWrapper::_MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter)
     {
     InitializeMemoryCache();
     m_memoryCache->MakeHidden(nodeId, contextVariables, instanceFilter);
@@ -414,7 +414,7 @@ void NodesCacheWrapper::_MakeHidden(BeGuidCR nodeId, RulesetVariables const& con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCacheWrapper::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& identifier, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+bool NodesCacheWrapper::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& identifier, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     if (IsMemoryCacheInitialized() && ShouldTakeHierarchyLevelFromMemory(identifier.GetRulesetId().c_str(), identifier.GetPhysicalParentNodeId()))
         return m_memoryCache->IsCombinedHierarchyLevelInitialized(identifier, contextVariables, instanceFilter);
@@ -425,7 +425,7 @@ bool NodesCacheWrapper::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCacheWrapper::_IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+bool NodesCacheWrapper::_IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     if (IsMemoryCacheInitialized() && m_hierarchyLevelsFromDisk.end() == m_hierarchyLevelsFromDisk.find(id) && NodesCacheHelpers::HierarchyLevelExists(m_memoryCache->GetDb(), id))
         return m_memoryCache->IsHierarchyLevelInitialized(id, contextVariables, instanceFilter);

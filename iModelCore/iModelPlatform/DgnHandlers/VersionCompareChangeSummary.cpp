@@ -1669,7 +1669,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
     bool cloneDb = WantTargetState() && !m_wantBriefcaseRoll;
     m_targetDb = cloneDb
         ? CloneDb(m_dbFilename, m_tempLocation)
-        : DgnDb::OpenDgnDb(&openStatus, m_dbFilename, params);
+        : DgnDb::OpenIModelDb(&openStatus, m_dbFilename, params);
 
     if (!m_targetDb.IsValid())
         {
@@ -1799,7 +1799,7 @@ DgnDbPtr    VersionCompareChangeSummary::CloneDb(BeFileNameCR dbFilename, BeFile
 
     // If the file was copied before, act on it instead of re-copying each time we compare revisions
     // Open the target db using the temporary filename
-    DgnDbPtr targetDb = DgnDb::OpenDgnDb(&result, tempFilename, params);
+    DgnDbPtr targetDb = DgnDb::OpenIModelDb(&result, tempFilename, params);
     if (!targetDb.IsValid())
         return nullptr;
 
@@ -1828,7 +1828,7 @@ StatusInt   VersionCompareChangeSummary::RollTargetDb(bvector<DgnRevisionPtr> co
     BeSQLite::DbResult result;
 	DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
     params.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(changesetsCP, RevisionProcessOption::Merge);
-    m_targetDb = DgnDb::OpenDgnDb(&result, filename, params);
+    m_targetDb = DgnDb::OpenIModelDb(&result, filename, params);
     BeAssert(result == BeSQLite::BE_SQLITE_OK && m_targetDb.IsValid());
 
     // Presentation rules need to know about the reopened Db

@@ -84,7 +84,7 @@ bool GTestFileOps::WriteByteArrayToTextFile(bvector<Byte> &bytes, WCharCP direct
         static uint32_t maxBytesOnLine = 120;
         for (size_t i = 0; i < bytes.size (); i++)
             {
-            sprintf (string, "%d", bytes[i]);
+            snprintf (string, sizeof(string), "%d", bytes[i]);
             uint32_t newBytes = (uint32_t)strlen(string);
             if (newBytes + 1 + bytesOnLine > maxBytesOnLine)
                 {

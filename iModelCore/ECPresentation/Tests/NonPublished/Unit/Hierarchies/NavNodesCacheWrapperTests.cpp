@@ -14,12 +14,12 @@ struct NodesCacheWrapperTests : NodesCacheTests
     std::shared_ptr<NodesCacheWrapper> CreateWrapper(NodesCache& cache, BeGuidCR parentId = BeGuid());
     std::shared_ptr<NodesCacheWrapper> CreateWrapper(BeGuidCR parentId = BeGuid());
 
-    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> GetDataSourceInfo(IHierarchyCacheCR cache, Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentId, RulesetVariables const& variables = RulesetVariables(), Utf8StringCR instanceFilter = {})
+    bpair<HierarchyLevelIdentifier, DataSourceIdentifier> GetDataSourceInfo(IHierarchyCacheCR cache, Utf8CP connectionId, Utf8CP rulesetId, BeGuidCR virtualParentId, RulesetVariables const& variables = RulesetVariables(), InstanceFilterDefinitionCP instanceFilter = nullptr)
         {
         BeGuid hlId = cache.FindHierarchyLevelId(connectionId, rulesetId, virtualParentId, BeGuid());
         EXPECT_TRUE(hlId.IsValid());
         HierarchyLevelIdentifier hlIdentifier(hlId, connectionId, rulesetId, virtualParentId, BeGuid());
-        DataSourceIdentifier dsIdentifier = cache.FindDataSource(DataSourceIdentifier(hlId, { 0 }, instanceFilter), variables).GetIdentifier();
+        DataSourceIdentifier dsIdentifier = cache.FindDataSource(DataSourceIdentifier(hlId, { 0 }, instanceFilter ? std::make_unique<InstanceFilterDefinition>(*instanceFilter) : nullptr), variables).GetIdentifier();
         EXPECT_TRUE(dsIdentifier.IsValid());
         return bpair<HierarchyLevelIdentifier, DataSourceIdentifier>(hlIdentifier, dsIdentifier);
         }

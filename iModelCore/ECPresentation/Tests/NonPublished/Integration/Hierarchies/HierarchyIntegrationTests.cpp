@@ -5814,7 +5814,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // make sure we have 3 nodes: 1 class grouping node and 2 instance nodes
     ASSERT_EQ(3, nodes.GetSize());
-    VerifyClassGroupingNode(*nodes[0], "", { instanceB }, classB, true);
+    VerifyClassGroupingNode(*nodes[0], nullptr, { instanceB }, classB, true);
     VerifyNodeInstance(*nodes[1], *instanceA);
     VerifyNodeInstance(*nodes[2], *instanceC);
 
@@ -5869,7 +5869,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // make sure we have 3 nodes: 1 class grouping node and 2 instance nodes
     ASSERT_EQ(3, nodes.GetSize());
-    VerifyClassGroupingNode(*nodes[0], "", { instanceB }, classA, true);
+    VerifyClassGroupingNode(*nodes[0], nullptr, { instanceB }, classA, true);
     VerifyNodeInstance(*nodes[1], *instanceA);
     VerifyNodeInstance(*nodes[2], *instanceC);
 
@@ -6069,8 +6069,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
 
     // make sure we have 2 class grouping nodes - A and B
     ASSERT_EQ(2, nodes.GetSize());
-    VerifyClassGroupingNode(*nodes[0], "", { instanceC }, classA, true);
-    VerifyClassGroupingNode(*nodes[1], "", { instanceC }, classB, true);
+    VerifyClassGroupingNode(*nodes[0], nullptr, { instanceC }, classA, true);
+    VerifyClassGroupingNode(*nodes[1], nullptr, { instanceC }, classB, true);
 
     // make sure the class grouping nodes have correct children
     DataContainer<NavNodeCPtr> aNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -6161,7 +6161,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
 
     // make sure we have 1 A property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance }, { ECValue() });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6199,7 +6199,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
 
     // make sure we have 1 instance property grouping node with changed ImageId
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance }, { ECValue() });
     EXPECT_STREQ("changedImageId", nodes[0]->GetImageId().c_str());
     }
 
@@ -6243,7 +6243,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], "", { baseInstance, derivedInstance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { baseInstance, derivedInstance }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6294,7 +6294,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance1, instance2 }, { ECValue(), ECValue("") });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance1, instance2 }, { ECValue(), ECValue("") });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6375,7 +6375,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], "", { classBInstance, classCInstance }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*classAInstance).GetId()) });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { classBInstance, classCInstance }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*classAInstance).GetId()) });
     ASSERT_STREQ("InstanceA", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6384,7 +6384,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nodes[0].get())).get(); }
         );
     ASSERT_EQ(2, bChildren.GetSize());
-    VerifyPropertyGroupingNode(*bChildren[0], "", { classCInstance }, { ECValue() });
+    VerifyPropertyGroupingNode(*bChildren[0], nullptr, { classCInstance }, { ECValue() });
     VerifyNodeInstance(*bChildren[1], *classBInstance);
 
     // make sure the property grouping node has 1 child
@@ -6432,7 +6432,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance1, instance2 }, { ECValue("My Value") });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance1, instance2 }, { ECValue("My Value") });
     ASSERT_STREQ("My Value", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
@@ -6489,10 +6489,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // make sure we have 2 property grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance1 }, { ECValue(3) });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance1 }, { ECValue(3) });
     ASSERT_STREQ("A", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue(1) });
+    VerifyPropertyGroupingNode(*nodes[1], nullptr, { instance2 }, { ECValue(1) });
     ASSERT_STREQ("Z", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6537,10 +6537,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // make sure we have 2 property grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance1 }, { ECValue("Three") });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance1 }, { ECValue("Three") });
     ASSERT_STREQ("1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue("One") });
+    VerifyPropertyGroupingNode(*nodes[1], nullptr, { instance2 }, { ECValue("One") });
     ASSERT_STREQ("3", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6596,7 +6596,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6660,7 +6660,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue(5) });
+    VerifyPropertyGroupingNode(*childNodes[0], nullptr, { instanceB }, { ECValue(5) });
     ASSERT_STREQ("5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6750,7 +6750,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // expect 1 child property grouping node with label of instanceC
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceC).GetId()) });
+    VerifyPropertyGroupingNode(*childNodes[0], nullptr, { instanceB }, { ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceC).GetId()) });
     EXPECT_STREQ("Label 3", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // request for grandchildren
@@ -6839,7 +6839,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // expect 1 child property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceC }, { ECValue(5) });
+    VerifyPropertyGroupingNode(*childNodes[0], nullptr, { instanceC }, { ECValue(5) });
     ASSERT_STREQ("5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -6920,7 +6920,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes1.GetSize());
-    VerifyPropertyGroupingNode(*childNodes1[0], "", { instanceC, instanceD }, { ECValue(5) });
+    VerifyPropertyGroupingNode(*childNodes1[0], nullptr, { instanceC, instanceD }, { ECValue(5) });
     ASSERT_STREQ("5", childNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 child instance nodes under the grouping node
@@ -6977,19 +6977,19 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // Assert
     ASSERT_EQ(5, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[1], nullptr, { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], "", { instance3 }, { ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[2], nullptr, { instance3 }, { ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], "", { instance1 }, { ECValue(-0.1) });
+    VerifyPropertyGroupingNode(*nodes[3], nullptr, { instance1 }, { ECValue(-0.1) });
     EXPECT_STREQ("-0.10", nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[4], "", { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[4], nullptr, { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[4]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -7033,19 +7033,19 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     ASSERT_EQ(5, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], "", { instance3 }, { ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[1], nullptr, { instance3 }, { ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], "", { instance1 }, { ECValue(-0.1) });
+    VerifyPropertyGroupingNode(*nodes[2], nullptr, { instance1 }, { ECValue(-0.1) });
     EXPECT_STREQ("-0.10", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], "", { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[3], nullptr, { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[4], "", { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[4], nullptr, { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[4]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -7089,16 +7089,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     ASSERT_EQ(4, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], "", { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[1], nullptr, { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], "", { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[2], nullptr, { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], "", { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[3], nullptr, { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -7142,16 +7142,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     ASSERT_EQ(4, nodes.GetSize());
 
-    VerifyPropertyGroupingNode(*nodes[0], "", { instance5 }, { ECValue() });
+    VerifyPropertyGroupingNode(*nodes[0], nullptr, { instance5 }, { ECValue() });
     EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[1], "", { instance2 }, { ECValue(-1.0) });
+    VerifyPropertyGroupingNode(*nodes[1], nullptr, { instance2 }, { ECValue(-1.0) });
     EXPECT_STREQ("-1.00", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[2], "", { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
+    VerifyPropertyGroupingNode(*nodes[2], nullptr, { instance1, instance3 }, { ECValue(-0.1), ECValue(-0.101) });
     EXPECT_STREQ("-0.10", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*nodes[3], "", { instance4 }, { ECValue(-0.01) });
+    VerifyPropertyGroupingNode(*nodes[3], nullptr, { instance4 }, { ECValue(-0.01) });
     EXPECT_STREQ("-0.01", nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -8013,7 +8013,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(7) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], nullptr, { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(7) }
     EXPECT_STREQ(CommonStrings::RULESENGINE_OTHER, nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8065,7 +8065,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], nullptr, { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8117,7 +8117,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4.5) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], nullptr, { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(4.5) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8169,7 +8169,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue((int64_t)4) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], nullptr, { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue((int64_t)4) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8221,7 +8221,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*nodes[0], "", { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(DateTime(2017, 5, 30)) }
+    VerifyPropertyRangeGroupingNode(*nodes[0], nullptr, { instance }); // TODO: range grouping nodes don't have grouped values? { ECValue(DateTime(2017, 5, 30)) }
     EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
@@ -8301,7 +8301,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyRangeGroupingNode(*childNodes[0], "", { instanceA }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
+    VerifyPropertyRangeGroupingNode(*childNodes[0], nullptr, { instanceA }); // TODO: range grouping nodes don't have grouped values? { ECValue(4) }
     EXPECT_STREQ("1 - 5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // request grandchildren
@@ -8514,7 +8514,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingWorksCorrectlyWi
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instanceB }, { ECValue() });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instanceB }, { ECValue() });
 
     // the node should have 1 B child node
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -8826,7 +8826,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue() });
+    VerifyPropertyGroupingNode(*childNodes[0], nullptr, { instanceB }, { ECValue() });
 
     // the child node should have 1 B child node
     DataContainer<NavNodeCPtr> grandChildNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -8902,7 +8902,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingNodesByMultiStep
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { a }, { ECValue("test") });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { a }, { ECValue("test") });
     EXPECT_STREQ("test", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // the child node should have 1 B child node
@@ -9002,7 +9002,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
         );
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyPropertyGroupingNode(*childNodes[0], "", { instanceB }, { ECValue() });
+    VerifyPropertyGroupingNode(*childNodes[0], nullptr, { instanceB }, { ECValue() });
 
     // the child node should have 1 B child node
     DataContainer<NavNodeCPtr> grandChildNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -9708,7 +9708,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(2.) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(2.) });
     EXPECT_STREQ("2.00", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -9760,7 +9760,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(2.5) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(2.5) });
     EXPECT_STREQ("2.50", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -9816,7 +9816,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2, instance3 }, { ECValue(0.00546), ECValue(0.00798), ECValue(0.00899) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2, instance3 }, { ECValue(0.00546), ECValue(0.00798), ECValue(0.00899) });
     EXPECT_STREQ("0.01", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 3 children nodes
@@ -9870,10 +9870,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance2 }, { ECValue(2.504f) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance2 }, { ECValue(2.504f) });
     EXPECT_STREQ("2.50", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance1 }, { ECValue(2.505f) });
+    VerifyPropertyGroupingNode(*rootNodes[1], nullptr, { instance1 }, { ECValue(2.505f) });
     EXPECT_STREQ("2.51", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -9932,7 +9932,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(2.59999999) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(2.59999999) });
     EXPECT_STREQ("2.60", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -9985,10 +9985,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance2 }, { ECValue(2.594) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance2 }, { ECValue(2.594) });
     EXPECT_STREQ("2.59", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance1 }, { ECValue(2.595) });
+    VerifyPropertyGroupingNode(*rootNodes[1], nullptr, { instance1 }, { ECValue(2.595) });
     EXPECT_STREQ("2.60", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10042,7 +10042,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10089,7 +10089,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.121, 1.121, 1.121)), ECValue(DPoint3d::From(1.122, 1.122, 1.122)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.121, 1.121, 1.121)), ECValue(DPoint3d::From(1.122, 1.122, 1.122)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10137,10 +10137,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.11, 1.11, 1.11)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.11, 1.11, 1.11)) });
     EXPECT_STREQ("X: 1.11 Y: 1.11 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10195,10 +10195,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.11, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.11, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.11 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10253,10 +10253,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.12, 1.11, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.12, 1.11, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.11 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10311,10 +10311,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.11)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.11)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    VerifyPropertyGroupingNode(*rootNodes[1], "", { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
@@ -10368,7 +10368,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.119, 1.12, 1.12)), ECValue(DPoint3d::From(1.124, 1.12, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.119, 1.12, 1.12)), ECValue(DPoint3d::From(1.124, 1.12, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10415,7 +10415,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.119, 1.12)), ECValue(DPoint3d::From(1.12, 1.124, 1.12)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.119, 1.12)), ECValue(DPoint3d::From(1.12, 1.124, 1.12)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10462,7 +10462,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
         );
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.119)), ECValue(DPoint3d::From(1.12, 1.12, 1.124)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.119)), ECValue(DPoint3d::From(1.12, 1.12, 1.124)) });
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
@@ -10516,7 +10516,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
         );
     ASSERT_EQ(1, rootNodes.GetSize());
 
-    VerifyPropertyGroupingNode(*rootNodes[0], "", { instance1, instance2 }, { ECValue(DateTime(2019, 11, 28)) });
+    VerifyPropertyGroupingNode(*rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DateTime(2019, 11, 28)) });
     EXPECT_STREQ("2019-11-28T00:00:00.000Z", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("dateTime", rootNodes[0]->GetLabelDefinition().GetTypeName().c_str());
 
@@ -13925,7 +13925,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreateChildGroupingNodeW
         [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get();}
     );
     ASSERT_EQ(1, groupingNodesA.GetSize());
-    VerifyClassGroupingNode(*groupingNodesA[0], "", { a }, classA, true);
+    VerifyClassGroupingNode(*groupingNodesA[0], nullptr, { a }, classA, true);
 
     DataContainer<NavNodeCPtr> instanceNodesA = RulesEngineTestHelpers::GetValidatedNodes(
         [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA[0].get()), pageOptions)).get();},
@@ -13946,14 +13946,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreateChildGroupingNodeW
         [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), instanceNodesB[0].get())).get(); }
     );
     ASSERT_EQ(1, groupingNodesA2.GetSize());
-    VerifyClassGroupingNode(*groupingNodesA2[0], "", { a }, classA, true);
+    VerifyClassGroupingNode(*groupingNodesA2[0], nullptr, { a }, classA, true);
 
     DataContainer<NavNodeCPtr> noInstanceNodesA = RulesEngineTestHelpers::GetValidatedNodes(
         [&](PageOptionsCR pageOptions){return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA2[0].get()), pageOptions)).get(); },
         [&](){return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), groupingNodesA2[0].get())).get(); }
     );
     ASSERT_EQ(0, noInstanceNodesA.GetSize());
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14085,4 +14084,61 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, OrdersMultipleNodesWithN
     VerifyNodeInstances(*rootNodes[1], { a3 });
     VerifyNodeInstances(*rootNodes[2], { a4 });
     VerifyNodeInstances(*rootNodes[3], { a2 });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CorrectlyHandlesChildrenArtifactsInChildLevelHideExpression, R"*(
+    <ECEntityClass typeName="A"/>
+    <ECEntityClass typeName="B"/>
+    <ECEntityClass typeName="C"/>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, CorrectlyHandlesChildrenArtifactsInChildLevelHideExpression)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    //expected returned instances
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    auto rootRule = new RootNodeRule();
+    rules->AddPresentationRule(*rootRule);
+    auto rootSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), true);
+    rootRule->AddSpecification(*rootSpec);
+
+    auto childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    rules->AddPresentationRule(*childRule);
+    auto childSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classB->GetFullName(), true);
+    childSpec->SetHideExpression("NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.isVisibleChild)");
+    childRule->AddSpecification(*childSpec);
+
+    auto grandChildRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classB->GetName().c_str(), classB->GetSchema().GetName().c_str()), 1, false);
+    rules->AddPresentationRule(*grandChildRule);
+    auto grandChildSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classC->GetFullName(), true);
+    grandChildRule->AddSpecification(*grandChildSpec);
+
+    bmap<Utf8String, Utf8String> artifactDefinitions;
+    artifactDefinitions.Insert("isVisibleChild", "TRUE");
+    grandChildRule->AddCustomizationRule(*new NodeArtifactsRule("", artifactDefinitions));
+
+    // verify
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            ExpectedHierarchyDef(CreateInstanceNodeValidator({ b }),
+                {
+                CreateInstanceNodeValidator({ c })
+                }),
+            }),
+        });
     }
