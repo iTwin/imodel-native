@@ -326,18 +326,24 @@ describe("basic tests", () => {
 
   it.only("testGetECClassMetaData custom attributes", async () => {
     assert.isTrue(dgndb.isOpen());
-    expect(dgndb.getECClassMetaData("BisCore", "ISubModeledElement")).to.equal({
-      "description":
-        "An interface that can be mixed-into a bis:Element to indicate that it can be sub-modeled by a finer-grained bis:Model." +
-        " This interface is mutually exclusive with bis:IParentElement.",
-      "label": "Sub-Modeled Element",
-      "modifier": "Abstract",
-      "schemaItemType": "EntityClass",
-      "customAttributes": {
-        "IsMixin": {
-          "AppliesToEntityClass": "Element"
+    console.log();
+    const result = dgndb.getECClassMetaData("BisCore", "ISubModeledElement");
+    assert(result.result);
+    const classMetaData = JSON.parse(result.result);
+    expect(classMetaData).to.deep.equal({
+      ecclass: "BisCore:ISubModeledElement",
+      description:
+        "An interface which indicates that an Element can be broken down or described by a (sub) Model.  " +
+        "This interface is mutually exclusive with IParentElement.",
+      modifier: "Abstract",
+      displayLabel: "Modellable Element",
+      baseClasses: [],
+      customAttributes: [{
+        ecclass: "CoreCustomAttributes:IsMixin",
+        properties: {
+          AppliesToEntityClass: "Element"
         }
-      }
+      }]
     });
   });
 });
