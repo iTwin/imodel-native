@@ -15,23 +15,21 @@ pr:
 
 resources:
   repositories:
-    - repository: iTwinjs-core
+    - repository: itwinjs-core
       type: github
       name: iTwin/itwinjs-core
       endpoint: iTwin
     - repository: imodeljs-build-pipeline-scripts
       type: git
       name: iModelTechnologies/imodeljs-build-pipeline-scripts
-      ref: nick/use-python
     - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
       endpoint: github.com_imodel-native
-      ref: imodel02-PR-validation #temp ref until merge
 
 extends:
   template: /build/templates/PR_Validation_Pipeline.yml@imodel-native-internal
   parameters:
     otherRepo: imodel-native-internal
-    iTwinRepo: iTwinjs-core
+    iTwinRepo: itwinjs-core
     scriptsRepo: imodeljs-build-pipeline-scripts
