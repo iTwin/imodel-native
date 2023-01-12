@@ -3144,7 +3144,7 @@ int                     nFullCircleIsoparametrics
     {
     int                 nPoles = curveP->params.numPoles;
     double              angle;
-    DPoint3d            *poleP, *endP, *firstPoleP, *lastPoleP;
+    DPoint3d            *poleP, *endP, *lastPoleP;
     DVec3d              normal, lastNormal;
 
     if (curveP->rational)
@@ -3152,7 +3152,7 @@ int                     nFullCircleIsoparametrics
 
     angle = 0.0;
 
-    firstPoleP = lastPoleP = curveP->poles;
+    lastPoleP = curveP->poles;
     for (poleP = lastPoleP + 1, endP = lastPoleP + nPoles; poleP < endP; poleP++)
        {
        normal.NormalizedDifference (*lastPoleP, *poleP);

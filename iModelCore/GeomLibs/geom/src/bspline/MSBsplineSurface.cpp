@@ -1337,7 +1337,7 @@ double              tol
     const double WMAX = 200.0;
     bool rmf, wfl, rat = false;
     int krm, i, j, k, l, row, col, ii, jj, first, last, off, fout, n, m, r, s,
-            ru = 0, su = 0, rv = 0, sv = 0, ns, ms;
+            ru = 0, su = 0, rv = 0, sv = 0, ns;
     int p, q, noremu = 0, noremv = 0;
     double *UQ = pSurf->uKnots, *VQ = pSurf->vKnots, lam = 0, oml = 0, wmin, wmax, pmax, al, be, bu = 0, bv = 0, wi, wj; 
     
@@ -1348,7 +1348,6 @@ double              tol
     r = pSurf->uParams.NumberAllocatedKnots () - 1;
     s = pSurf->vParams.NumberAllocatedKnots () - 1;
     ns = n;
-    ms = m;
     int num = pSurf->uParams.numPoles * pSurf->vParams.numPoles;
     bvector<DPoint4d> polesWeighted (num);
         
@@ -1985,7 +1984,6 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
     int         uDegree, vDegree;
     int         iKnot, iMult, mult;
     double      knot;
-    bool        bOverSaturatedUKnot = false, bOverSaturatedVKnot = false;
 
     uDegree = uParams.order - 1;
     vDegree = vParams.order - 1;
@@ -1997,7 +1995,6 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
         // flatten first u-knot if oversaturated
         if (uKnots[uDegree + 1] - uKnots[uDegree] < RELATIVE_BSPLINE_KNOT_TOLERANCE)
             {
-            bOverSaturatedUKnot = true;
             knot = uKnots[0];
             for (iKnot = 1; iKnot <= r && uKnots[iKnot] - knot < RELATIVE_BSPLINE_KNOT_TOLERANCE; iKnot++)
                 uKnots[iKnot] = knot;
@@ -2006,7 +2003,6 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
         // flatten last u-knot if oversaturated
         if (uKnots[r - uDegree] - uKnots[r - uDegree - 1] < RELATIVE_BSPLINE_KNOT_TOLERANCE)
             {
-            bOverSaturatedUKnot = true;
             knot = uKnots[r];
             for (iKnot = r - 1; iKnot >= 0 && knot - uKnots[iKnot] < RELATIVE_BSPLINE_KNOT_TOLERANCE; iKnot--)
                 uKnots[iKnot] = knot;
@@ -2021,7 +2017,6 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
                 {
                 for (iMult = 1; iMult < mult; iMult++)
                     uKnots[iKnot + iMult] = knot;
-                bOverSaturatedUKnot = true;
                 }
             }
         }
@@ -2031,7 +2026,6 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
         // flatten first v-knot if oversaturated
         if (vKnots[vDegree + 1] - vKnots[vDegree] < RELATIVE_BSPLINE_KNOT_TOLERANCE)
             {
-            bOverSaturatedVKnot = true;
             knot = vKnots[0];
             for (iKnot = 1; iKnot <= s && vKnots[iKnot] - knot < RELATIVE_BSPLINE_KNOT_TOLERANCE; iKnot++)
                 vKnots[iKnot] = knot;
@@ -2040,7 +2034,6 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
         // flatten last v-knot if oversaturated
         if (vKnots[s - vDegree] - vKnots[s - vDegree - 1] < RELATIVE_BSPLINE_KNOT_TOLERANCE)
             {
-            bOverSaturatedVKnot = true;
             knot = vKnots[s];
             for (iKnot = s - 1; iKnot >= 0 && knot - vKnots[iKnot] < RELATIVE_BSPLINE_KNOT_TOLERANCE; iKnot--)
                 vKnots[iKnot] = knot;
@@ -2055,7 +2048,6 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
                 {
                 for (iMult = 1; iMult < mult; iMult++)
                     vKnots[iKnot + iMult] = knot;
-                bOverSaturatedVKnot = true;
                 }
             }
         }

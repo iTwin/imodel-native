@@ -613,16 +613,12 @@ void EndObject () override
     }
 void AddProperty (char const *name, int value) override
     {
-    char s[128];
-    sprintf (s, " :%s:%d", name, value);
-    AddToString (s);
+    AddToString (Utf8PrintfString(" :%s:%d", name, value).c_str());
     }
 
 void AddProperty (char const *name, size_t value) override
     {
-    char s[128];
-    sprintf (s, " (%s %d)", name, (int)value);
-    AddToString (s);
+    AddToString (Utf8PrintfString(" (%s %d)", name, (int)value).c_str());
     }
 };
 
@@ -640,9 +636,7 @@ void EndObject () override
     }
 void AddProperty (char const *name, int value) override
     {
-    char s[128];
-    sprintf (s, " %s=\"%d\"", name, value);
-    AddToString (s);
+    AddToString (Utf8PrintfString(" %s=\"%d\"", name, value).c_str());
     }
 
 };

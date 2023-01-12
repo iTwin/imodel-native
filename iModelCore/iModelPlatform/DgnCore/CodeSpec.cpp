@@ -553,11 +553,17 @@ void DgnCode::ToJson(BeJsValue val) const {
     val[json_value()] = m_value.GetUtf8();
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db) {
+/**
+ * Convert a JSON CodeScopeProps to a DgnCode.
+ * @note the specId may be supplied as either an ElementId or a classname.
+ * @note if `validateScope` is true, the scopeId value may either be an ElementId or FederationGuid of the scope element.
+ * If it is not valid, or does not refer to an existing element, an exception is thrown. If `validateScope` is false, the scopeId value is saved verbatim.
+ */
+DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db, bool validateScope) {
     DgnCode val;
+    val.m_value = value[json_value()].asString();
+    val.m_scope = value[json_scope()].asString();
+
     auto specJson = value[json_spec()];
     val.m_specId = CodeSpecId(specJson.asUInt64());
     if (!val.m_specId.IsValid()) {
@@ -566,7 +572,29 @@ DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db) {
         auto specPtr = db.CodeSpecs().GetCodeSpec(specJson.asCString());
         val.m_specId = specPtr.IsValid() ? specPtr->GetCodeSpecId() : CodeSpec::GetNullCodeSpecId();
     }
-    val.m_scope = value[json_scope()].asString();
-    val.m_value = value[json_value()].asString();
+
+    if (validateScope) {
+        // ensure that the scope refers to the ElementId of an existing element. The json may have an ElementId or FederationGuid
+
+        // Note: this is necessary since GetId64 parses strings that start with number successfully and can get confused with Guids.
+        // ElementIds in JSON must start with "0x"
+        Utf8StringCR scopeStr = val.m_scope;
+        auto validId = scopeStr[0] == '0' && (scopeStr[1] == 'x' || scopeStr[1] == 'X');
+
+        auto scopeJson = value[json_scope()];
+        auto scopeId = scopeJson.GetId64<DgnElementId>();
+        if (!validId || !db.Elements().ElementExists(scopeId)) {
+            BeGuid scopeFederationGuid;
+            DgnElementCPtr scopeEl;
+            if (BentleyStatus::SUCCESS == scopeFederationGuid.FromString(scopeJson.asCString()))
+                scopeEl = db.Elements().QueryElementByFederationGuid(scopeFederationGuid);
+            if (!scopeEl.IsValid())
+                throw std::invalid_argument("invalid code scope"); // the value didn't refer to an element either by ElementId or FederationGuid
+
+            scopeId = scopeEl->GetElementId();
+        }
+        val.m_scope = scopeId.ToHexStr();
+    }
+
     return val;
 }

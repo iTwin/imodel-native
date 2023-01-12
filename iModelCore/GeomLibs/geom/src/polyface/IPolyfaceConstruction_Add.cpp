@@ -3041,18 +3041,10 @@ bool capped
         pointIndexA1 = FindOrAddPoint (pointA[i]);
         pointIndexB1 = FindOrAddPoint (xyzB1);
         double du = 0.0;
-        size_t visibiltyTestIndex;
-        if (i == 0)
-            {
-            visibiltyTestIndex = n - 1;
-            }
-        else
+        if (i > 0)
             {
             du = pointA[i-1].Distance (pointA[i]);
             accumulatedDistance += du;
-            visibiltyTestIndex = i + 1;
-            if (i == n - 1)
-                visibiltyTestIndex = 0;
             }
 
         if (i > 0 && i < n - 1)
