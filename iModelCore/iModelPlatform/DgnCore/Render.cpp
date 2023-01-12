@@ -412,7 +412,7 @@ GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, GraphicTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture) : m_key(key)
+Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, DgnDbR db, SystemCR sys) : m_key(key)
     {
 // #define DEBUG_JSON_CONTENT
 #if defined(DEBUG_JSON_CONTENT)
@@ -463,7 +463,7 @@ Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, 
         }
 
     auto const& texMap = asset.GetPatternMap();
-    TexturePtr texture(pTexture);
+    TexturePtr texture;
     if (texture.IsNull() && texMap.IsValid() && texMap.GetTextureId().IsValid() && texMap.IsPatternEnabled())
         texture = sys._GetTexture(texMap.GetTextureId(), db);
 

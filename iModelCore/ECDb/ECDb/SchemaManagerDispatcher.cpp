@@ -1003,6 +1003,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
     #ifndef NDEBUG
+    #ifdef DEBUG_DUMP_SCHEMA_IMPORTS
     /*
     In Debug builds, the environment variable can be set to a directory path to
     dump existing and incoming schemas to for every ImportSchemas call.
@@ -1015,6 +1016,7 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         DumpSchemasToFile(dumpSchemaDir, m_ecdb.Schemas().GetSchemas(true), "existing");
         DumpSchemasToFile(dumpSchemaDir, schemas, "incoming");
         }
+    #endif
     #endif
 
     if (!GetECDb().GetImpl().GetIdFactory().Reset())
