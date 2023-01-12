@@ -9,6 +9,8 @@
 #include "DbMappingManager.h"
 #include "RemapManager.h"
 #include <ECObjects/SchemaComparer.h>
+#include <re2/re2.h>
+#include <numeric>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -124,108 +126,150 @@ struct SchemaPolicies final
         bool IsOptedIn(SchemaPolicy const*&, SchemaPolicy::Type) const;
     };
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct TransformData final: NonCopyableClass {
+    struct Task final{
+        private:
+            Utf8String m_sql;
+            Utf8String m_description;
+            mutable bool m_executed;
+
+        public:
+            Task(Utf8String const& description, Utf8String const& sql) :m_description(description), m_sql(sql), m_executed(false){}
+            Task(Task&& rhs) : m_sql(std::move(rhs.m_sql)),m_description(std::move(rhs.m_description)), m_executed(std::move(rhs.m_executed)){}
+            Task(Task const& rhs) : m_sql(rhs.m_sql),m_description(rhs.m_description), m_executed(rhs.m_executed){}
+            Task& operator=(Task&& rhs);
+            Task& operator=(Task& rhs);
+            Utf8StringCR GetSql() const { return m_sql; }
+            Utf8StringCR GetDescription() const { return m_description; }
+            bool IsExecuted() const { return m_executed;  }
+            DbResult Execute(ECDbCR conn) const;
+            bool Validate(ECDbCR conn) const;
+    };
+    private:
+        std::vector<Task> m_transforms;
+    public:
+        void Append(Utf8StringCR description, Utf8String sql);
+        DbResult Execute(ECDbCR conn) const;
+        bool Validate(ECDbCR conn) const;
+        bool IsEmpty() const { return m_transforms.empty(); }
+        void ForEach(std::function<bool(Task const&)> cb);
+};
+
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SqlTypeDetector {
+    private:
+        std::unique_ptr<RE2> m_alterTableRegEx;
+        std::unique_ptr<RE2> m_createIndexRegEx;
+        std::unique_ptr<RE2> m_createTableRegEx;
+        std::unique_ptr<RE2> m_createViewRegEx;
+        std::unique_ptr<RE2> m_dataDeleteRegEx;
+        std::unique_ptr<RE2> m_dataInsertRegEx;
+        std::unique_ptr<RE2> m_dataUpdateRegEx;
+        std::unique_ptr<RE2> m_deleteRegEx;
+        std::unique_ptr<RE2> m_dropIndexRegEx;
+        std::unique_ptr<RE2> m_dropTableRegEx;
+        std::unique_ptr<RE2> m_insertRegEx;
+        std::unique_ptr<RE2> m_pragmaRegEx;
+        std::unique_ptr<RE2> m_sysDeleteRegEx;
+        std::unique_ptr<RE2> m_sysInsertRegEx;
+        std::unique_ptr<RE2> m_sysUpdateRegEx;
+        std::unique_ptr<RE2> m_updateRegEx;
+
+        static const std::vector<std::string> GetDataTables (DbCR conn);
+        static const std::vector<std::string> GetSystemTables (DbCR conn);
+        static std::string Join(std::vector<std::string> const& v, const std::string sep);
+        static void Validate(RE2 const& re);
+        void SetupRegex(DbCR conn, bool useDataCRUD);
+    public:
+        explicit SqlTypeDetector(DbCR conn, bool useDataCRUD) { SetupRegex(conn, useDataCRUD); }
+        bool IsAlterTable(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_alterTableRegEx); }
+        bool IsCreateIndex(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_createIndexRegEx); }
+        bool IsCreateTable(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_createTableRegEx); }
+        bool IsCreateView(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_createViewRegEx); }
+        bool IsDataDelete(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_dataDeleteRegEx); }
+        bool IsDataDml(Utf8CP sql) const { return IsDataInsert(sql) || IsDataUpdate(sql) || IsDataDelete(sql); }
+        bool IsDataInsert(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_dataInsertRegEx); }
+        bool IsDataUpdate(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_dataUpdateRegEx); }
+        bool IsDdl(Utf8CP sql) const { return IsAlterTable(sql) || IsDropTable(sql) || IsDropIndex(sql) || IsCreateIndex(sql) || IsCreateTable(sql) || IsCreateView(sql); }
+        bool IsDelete(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_deleteRegEx); }
+        bool IsDml(Utf8CP sql) const { return IsInsert(sql) || IsUpdate(sql) || IsDelete(sql); }
+        bool IsDropIndex(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_dropIndexRegEx); }
+        bool IsDropTable(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_dropTableRegEx); }
+        bool IsInsert(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_insertRegEx); }
+        bool IsPragma(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_pragmaRegEx); }
+        bool IsSysDelete(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_sysDeleteRegEx); }
+        bool IsSysDml(Utf8CP sql) const { return IsSysInsert(sql) || IsSysUpdate(sql) || IsSysDelete(sql); }
+        bool IsSysInsert(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_sysInsertRegEx); }
+        bool IsSysUpdate(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_sysUpdateRegEx); }
+        bool IsUpdate(Utf8CP sql) const { return RE2::PartialMatch(sql, *m_updateRegEx); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct DataChangeSqlListener final {
+
+    private:
+        ECDbCR m_conn;
+        mutable std::vector<Utf8String> m_dataChangeSql;
+        mutable std::vector<Utf8String> m_unknownSql;
+        mutable cancel_callback_type m_cancelCb;
+        SqlTypeDetector m_sqlDetector;
+    public:
+        DataChangeSqlListener(DataChangeSqlListener const&) = delete;
+        DataChangeSqlListener& operator =(DataChangeSqlListener const&) = delete;
+        explicit DataChangeSqlListener(ECDbCR conn);
+        ~DataChangeSqlListener();
+        DbResult Start(bool emptyCaptureBuffer = true) const;
+        void Stop() const;
+        std::vector<Utf8String> const& GetDataChangeSqlList() const { return  m_dataChangeSql; }
+        std::vector<Utf8String> const& GetUnknownSqlList() const { return m_unknownSql; }
+};
+
 struct MainSchemaManager;
-struct SchemaImportContext;
 
-//=======================================================================================
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct DataTransformTask {
-    private:
-        Utf8String m_description;
-    public:
-        explicit DataTransformTask(Utf8CP description):m_description(description){}
-        virtual BentleyStatus Execute(ECDbCR ecdb) const { return ERROR;}
-        Utf8StringCR GetDescription() const { return m_description;}
-        virtual ~DataTransformTask(){}
-};
-
-//=======================================================================================
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct GroupDataTransformTask final : DataTransformTask {
-    private:
-        Utf8String m_sql;
-        bvector<std::unique_ptr<DataTransformTask>> m_taskGroup;
-    public:
-        explicit GroupDataTransformTask(Utf8CP description):DataTransformTask(description){}
-        virtual BentleyStatus Execute(ECDbCR ecdb) const override {
-            if (!m_taskGroup.empty()) {
-                LOG.infov("Executing data transform task group: %s", GetDescription().c_str());
-                for(auto& task: m_taskGroup){
-                    if (task->Execute(ecdb)!= SUCCESS) {
-                        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "TransformTask failed: %s ", task->GetDescription().c_str());
-                        return ERROR;
-                    }
-                }
-            }
-            return SUCCESS;
-        }
-
-        void AddTask(std::unique_ptr<DataTransformTask> task) {
-            m_taskGroup.push_back(std::move(task));
-        }
-        virtual ~GroupDataTransformTask(){}
-};
-
-//=======================================================================================
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct SqlDataTransformTask final : DataTransformTask {
-    private:
-        Utf8String m_sql;
-    public:
-        explicit SqlDataTransformTask(Utf8CP description, Utf8CP sql):DataTransformTask(description), m_sql(sql){}
-        virtual BentleyStatus Execute(ECDbCR ecdb) const override {
-            LOG.infov("Executing data transform task: %s", GetDescription().c_str());
-            auto rc = ecdb.TryExecuteSql(m_sql.c_str());
-            if (rc != BE_SQLITE_OK) {
-                Utf8String msg = SqlPrintfString("SqlTransformTask failed: %s - %s: %s", m_sql.c_str(), GetDescription().c_str(), BeSQLiteLib::GetLogError(rc).c_str()).GetUtf8CP();
-                ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, msg.c_str());
-                LOG.error(msg.c_str());
-                BeAssert(false && "transform query failed");
-                return ERROR;
-            }
-            return SUCCESS;
-        }
-        virtual ~SqlDataTransformTask(){}
-};
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaImportContext final
     {
     private:
-        ECDbCR m_ecdb;
-        SchemaManager::SchemaImportOptions m_options;
-        ClassMapLoadContext m_loadContext;
         bset<ECN::ECClassId> m_classMapsToSave;
-        FkRelationshipMappingInfo::Collection m_fkRelMappingInfos;
-        SchemaPolicies m_schemaPolicies;
         bset<Utf8CP, CompareIUtf8Ascii> m_builtinSchemaNames;
-        GroupDataTransformTask m_transformTask;
+        ClassMapLoadContext m_loadContext;
+        ECDbCR m_ecdb;
+        FkRelationshipMappingInfo::Collection m_fkRelMappingInfos;
+        SchemaManager::SchemaImportOptions m_options;
+        SchemaPolicies m_schemaPolicies;
+        TransformData m_transformData;
         RemapManager m_remapManager;
 
     public:
-        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb),m_transformTask("Schema import data transform task"), m_options(options), m_builtinSchemaNames(ProfileManager::GetECDbSchemaNames()), m_remapManager(ecdb) {}
-        SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
-        RemapManager& RemapManager() { return m_remapManager; }
-
-        FkRelationshipMappingInfo::Collection& GetFkRelationshipMappingInfos() { return m_fkRelMappingInfos; }
-
-        ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
-        void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
+        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options)
+            : m_ecdb(ecdb),
+                m_options(options),
+                m_builtinSchemaNames(ProfileManager::GetECDbSchemaNames()),
+				m_remapManager(ecdb){}
+        bool AllowDataTransform();
         bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
-
+        bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
+        ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
+        ECDbCR GetECDb() const { return m_ecdb; }
+        FkRelationshipMappingInfo::Collection& GetFkRelationshipMappingInfos() { return m_fkRelMappingInfos; }
+        IssueDataSource const& Issues() const { return m_ecdb.GetImpl().Issues(); }
+        MainSchemaManager const& GetSchemaManager() const;
+        RemapManager& RemapManager() { return m_remapManager; }
+        SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
         SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
-
-        bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
-
-        MainSchemaManager const& GetSchemaManager() const;
-        ECDbCR GetECDb() const { return m_ecdb; }
-        IssueDataSource const& Issues() const { return m_ecdb.GetImpl().Issues(); }
-        GroupDataTransformTask& GetDataTransfrom() {return m_transformTask; }
+        TransformData& GetDataTransform() {return m_transformData; }
+        void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

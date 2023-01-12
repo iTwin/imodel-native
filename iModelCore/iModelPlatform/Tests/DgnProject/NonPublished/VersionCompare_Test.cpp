@@ -137,7 +137,7 @@ void VersionCompareTestFixture::SetUpTestCase()
     m_db->ResetBriefcaseId(BeBriefcaseId(2));
 
     // Import DgnPlatformTest schema containing the test element and such
-    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
+    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
 
     m_defaultModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "VersionCompareTestModel");

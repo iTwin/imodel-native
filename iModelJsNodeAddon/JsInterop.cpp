@@ -882,7 +882,7 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames)
+DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames, bool allowDataTransformDuringSchemaUpdate)
     {
     if (0 == schemaFileNames.size())
         return BE_SQLITE_NOTFOUND;
@@ -914,7 +914,7 @@ DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& 
     if (0 == schemas.size())
         return BE_SQLITE_NOTFOUND;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status = dgndb.ImportSchemas(schemas, allowDataTransformDuringSchemaUpdate); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 
@@ -924,7 +924,7 @@ DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& serializedXmlSchemas)
+DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& serializedXmlSchemas, bool allowDataTransformDuringSchemaUpdate)
     {
     if (0 == serializedXmlSchemas.size())
         return BE_SQLITE_NOTFOUND;
@@ -950,7 +950,7 @@ DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& se
     if (0 == schemas.size())
         return BE_SQLITE_NOTFOUND;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status = dgndb.ImportSchemas(schemas, allowDataTransformDuringSchemaUpdate); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 
@@ -962,7 +962,7 @@ DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& se
 //---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
     {
-    return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //---------------------------------------------------------------------------------------

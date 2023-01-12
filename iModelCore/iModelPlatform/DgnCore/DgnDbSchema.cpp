@@ -332,7 +332,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params) {
     BisCoreDomain::GetDomain().SetCreateParams(params);
     // BisCoreDomain is the only domain that requires the create params. They are passed through BisCoreDomain::_OnSchemaImported() -> DgnDb::OnBisCoreSchemaImported()
 
-    SchemaStatus status = Domains().ImportSchemas();
+    SchemaStatus status = Domains().ImportSchemas(SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     if (SchemaStatus::Success != status) {
         BeAssert(false);
         return SchemaStatusToDbResult(status, false /*=isUpgrade*/);
@@ -546,8 +546,17 @@ ProfileState DgnDb::_CheckProfileVersion() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
+BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
     {
+    if (GetBriefcaseId().IsBriefcase())
+        {
+        if (!((DgnDb::OpenParams&)params).GetAllowDataTransformDuringSchemaUpdate())
+            {
+            LOG.error("Open IModel need to upgrade profile which requires IModel lock. Get IModel lock and then set 'AllowChangesThatRequireIModelLock' to true in OpenParams for this operation to continue.");
+            return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
+            }
+        }
+
     if (AreTxnsEnabled())
         Txns().EnableTracking(true);
 
@@ -557,7 +566,7 @@ BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
+BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade(Db::OpenParams const& params)
     {
     if (!AreTxnsEnabled())
         return BE_SQLITE_OK;
@@ -574,9 +583,9 @@ BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_UpgradeProfile()
+DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
     {
-    DbResult result = T_Super::_UpgradeProfile();
+    DbResult result = T_Super::_UpgradeProfile(params);
     if (BE_SQLITE_OK != result)
         return result;
 
@@ -599,7 +608,7 @@ DbResult DgnDb::_UpgradeProfile()
     return SaveDgnDbProfileVersion(m_profileVersion);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*-------`--------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
@@ -609,7 +618,23 @@ BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
+// SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
+//     {
+//     bvector<ECN::ECSchemaCP> schemasToImport;
+//     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
+//     if (status != SchemaStatus::Success)
+//         {
+//         BeAssert(false && "One or more schemas are incompatible.");
+//         return status;
+//         }
+
+//     return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::None);
+//     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool allowDataTransformDuringSchemaUpdate)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
@@ -619,7 +644,9 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
         return status;
         }
 
-    return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::None);
+    return Domains().DoImportSchemas(schemasToImport, allowDataTransformDuringSchemaUpdate ?
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade:
+        SchemaManager::SchemaImportOptions::None);
     }
 
 /*---------------------------------------------------------------------------------**//**

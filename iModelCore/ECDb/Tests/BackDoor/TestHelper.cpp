@@ -76,7 +76,7 @@ BentleyStatus TestHelper::RunSchemaImportOneAtATime(std::vector<SchemaItem> cons
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TestHelper::ImportSchemas(std::vector<SchemaItem> const& schemas) const
+BentleyStatus TestHelper::ImportSchemas(std::vector<SchemaItem> const& schemas, SchemaManager::SchemaImportOptions options) const
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     //not all ECDb schemas are included in the ECDb file by default. So add the path to the ECDb
@@ -94,7 +94,7 @@ BentleyStatus TestHelper::ImportSchemas(std::vector<SchemaItem> const& schemas) 
         }
 
     Savepoint sp(const_cast<ECDb&>(m_ecdb), "ECSchema Import");
-    if (SUCCESS == m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
+    if (SUCCESS == m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), options))
         {
         sp.Commit();
         return SUCCESS;
@@ -163,7 +163,7 @@ BentleyStatus TestHelper::ImportSchema(ECN::ECSchemaPtr testSchema, SchemaManage
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String TestHelper::ECSqlToSql(Utf8CP ecsql) const
     {
-    ECSqlStatement stmt; 
+    ECSqlStatement stmt;
     if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, ecsql))
         {
         return Utf8String(stmt.GetNativeSql());
@@ -193,7 +193,7 @@ JsonValue TestHelper::ExecuteSelectECSql(Utf8CP ecsql) const
     ECSqlStatement stmt;
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
         return JsonValue(Json::nullValue);
-    
+
     return ExecutePreparedECSql(stmt);
     }
 
@@ -242,7 +242,7 @@ BeVersion TestHelper::GetOriginalECXmlVersion(Utf8CP schemaName) const
     ECSqlStatement stmt;
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT OriginalECXmlVersionMajor,OriginalECXmlVersionMinor FROM meta.ECSchemaDef WHERE Name=?"))
         return BeVersion();
-    
+
     stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No);
     if (stmt.Step() != BE_SQLITE_ROW)
         return BeVersion();
@@ -303,7 +303,7 @@ Column TestHelper::GetPropertyMapColumn(AccessString const& propAccessString) co
     EXPECT_EQ(1, propMap.GetColumns().size());
     if (propMap.GetColumns().size() == 1)
         return propMap.GetColumns()[0];
-     
+
     return Column();
     }
 
@@ -819,7 +819,7 @@ ECObjectsStatus ECInstancePopulator::CopyStruct(IECInstanceR source, ECValuesCol
 
         auto& location = propertyValue.GetValueAccessor().DeepestLocationCR();
 
-        //auto property = location.GetECProperty(); 
+        //auto property = location.GetECProperty();
         //BeAssert(property != nullptr);
         if (location.GetArrayIndex() >= 0)
             {

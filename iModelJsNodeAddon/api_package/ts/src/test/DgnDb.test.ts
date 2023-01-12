@@ -3,14 +3,14 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
-import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { assert, expect } from "chai";
 import { openDgnDb } from ".";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs-extra";
-import { ProfileOptions } from "@itwin/core-common";
+import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
@@ -85,7 +85,7 @@ describe("basic tests", () => {
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
-    const result = db.importSchemas([schemaPath]);
+    const result = db.importSchemas([schemaPath] , /* allowDataTransformDuringSchemaUpdate = */false );
     assert.isTrue(result === DbResult.BE_SQLITE_OK);
 
     const prProps = db.getSchemaProps("PresentationRules");
@@ -102,7 +102,7 @@ describe("basic tests", () => {
     // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
     let bisProps = db.getSchemaProps("BisCore");
-    let result = db.importSchemas([test100Path]);
+    let result = db.importSchemas([test100Path], /* allowDataTransformDuringSchemaUpdate = */false );
     assert.equal(result, DbResult.BE_SQLITE_OK);
     assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
 
@@ -113,7 +113,7 @@ describe("basic tests", () => {
     // local directory has higher precedence than the db
     const subAssetsDir = path.join(assetsDir, "LocalReferences");
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
-    result = db.importSchemas([test101Path]);
+    result = db.importSchemas([test101Path], /* allowDataTransformDuringSchemaUpdate = */false );
     assert.equal(result, DbResult.BE_SQLITE_OK);
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
   })
@@ -323,4 +323,134 @@ describe("basic tests", () => {
       }
     });
   });
-});
+
+  it("import schema", async () => {
+    let t = 0;
+    const generateIntProp = (propCount: number, prefix: string = "P") => {
+      let xml = "";
+      for (let i = 0; i < Math.max(propCount, 1);  ++i) {
+        xml += `<ECProperty propertyName="${prefix}${i}" typeName="int"/>\n`
+
+      }
+      return xml;
+    }
+    console.log(`FileName: ${dgndb.getFilePath()}`);
+    const generateSchema = (classPropCount: number, structPropCount: number) => {
+     const schemaXml = `<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="SchemaVersionTest" alias="vt" version="01.00.0${t++}" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+          <ECStructClass typeName="ChangeInfoStruct" modifier="None">
+            ${generateIntProp(structPropCount)}
+          </ECStructClass>
+          <ECEntityClass typeName="TestElement">
+            <BaseClass>bis:GeometricElement2d</BaseClass>
+            <ECStructProperty propertyName="structProp" typeName="ChangeInfoStruct" />
+            ${generateIntProp(classPropCount)}
+          </ECEntityClass>
+      </ECSchema>`
+      return schemaXml;
+    };
+    const testFile = dbFileName.replace("test.bim", "test-schema-import.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+    fs.copyFileSync(dbFileName, testFile);
+    const db = openDgnDb(testFile);
+    db.saveChanges();
+
+    // import a schema with changes that only required SchemaLock
+    let rc = await db.importXmlSchemas([generateSchema(20,1)], /* allowDataTransformDuringSchemaUpdate = */ false);
+    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.saveChanges();
+
+    const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 18 << 24)
+
+    // import should fail when allowDataTransformDuringSchemaUpdate flag is set to false which will fail the operation if data transform is required.
+    rc = await db.importXmlSchemas([generateSchema(20,20)], /* allowDataTransformDuringSchemaUpdate = */ false);
+    assert.equal(rc, BE_SQLITE_ERROR_DataTransformRequired);
+
+    // import should be successful when allowDataTransformDuringSchemaUpdate flag is set to true so it can transform data if required.
+    rc = await db.importXmlSchemas([generateSchema(20,20)], /* allowDataTransformDuringSchemaUpdate = */ true);
+    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.saveChanges();
+
+    db.closeIModel();
+  });
+
+  it("ecsql query", async () => {
+    const query = async (ecsql: string) => {
+      const request: DbQueryRequest = {
+        kind: DbRequestKind.ECSql,
+        query: ecsql
+      };
+      return new Promise<DbQueryResponse>((resolve) => {
+        dgndb.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbQueryResponse);
+        });
+      });
+    };
+    const resp = await query("SELECT ECInstanceId FROM Bis.Element LIMIT 5");
+    assert(resp.status == DbResponseStatus.Done);
+    assert(resp.rowCount === 5);
+    assert(resp.error === "");
+    assert(resp.data[0], "0x1");
+    assert(resp.data[1], "0xe");
+    assert(resp.data[2], "0x10");
+    assert(resp.data[3], "0x11");
+    assert(resp.data[4], "0x13");
+  });
+
+  it("blob query", async () => {
+    const query = async (className: string, accessString: string, instanceId: Id64String, range?: BlobRange) => {
+      const request: DbBlobRequest = {
+        kind: DbRequestKind.BlobIO,
+        className,
+        accessString,
+        instanceId,
+        range
+      };
+      return new Promise<DbBlobResponse>((resolve) => {
+        dgndb.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbBlobResponse);
+        });
+      });
+    };
+    const resp = await query("Bis.GeometricElement3d", "GeometryStream", "0x39");
+    assert(resp.status == DbResponseStatus.Done);
+    assert(resp.rawBlobSize == 201);
+    assert(resp.data instanceof Uint8Array)
+    assert(resp.data?.length == 201);
+    assert(Buffer.from(resp.data!).toString("base64") === "yQCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQgBAf8VDEgAAAsAAACoAAAAYmcwMDAxZmIQASMUAAoADgAHBUIACgUQCAAHDAUIiAYAfAAEAAYAAAC2dX71ziceQHxSG5uae5m8PEMbZw/wtDwABSgoAAC8DXhGH+CTPLgNKAkXBNC8CQggAAC2vz2w0buqDRAIwDy3MigAJAAAGC1EVPsh+b8JCCQJQAEAAAAAAAAA");
+  });
+
+  it("blob query with range", async () => {
+    const query = async (className: string, accessString: string, instanceId: Id64String, range?: BlobRange) => {
+      const request: DbBlobRequest = {
+        kind: DbRequestKind.BlobIO,
+        className,
+        accessString,
+        instanceId,
+        range
+      };
+      return new Promise<DbBlobResponse>((resolve) => {
+        dgndb.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbBlobResponse);
+        });
+      });
+    };
+    const resp = await query("Bis.GeometricElement3d", "GeometryStream", "0x39", { offset: 5, count: 10 });
+    assert(resp.status == DbResponseStatus.Done);
+    assert(resp.rawBlobSize == 201);
+    assert(resp.data instanceof Uint8Array)
+    assert(resp.data?.length == 10);
+    assert(Buffer.from(resp.data!).toString("base64") === "AAYAAPgAAAABAA==");
+  });
+
+  it("testSimpleDbQueries", () => {
+    assert.isTrue(dgndb.isOpen());
+    assert.isFalse(dgndb.isReadonly());
+    assert.isFalse(dgndb.isRedoPossible());
+    expect(() => dgndb.deleteElement("0x33333")).to.throw("missing id");
+  });
+
+``});

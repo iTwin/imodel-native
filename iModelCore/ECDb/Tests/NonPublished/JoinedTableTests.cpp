@@ -19,7 +19,7 @@ struct JoinedTableTestFixture : ECDbTestFixture
         ECInstanceId InsertTestInstance(ECDbCR ecdb, Utf8CP ecsql);
         ECInstanceId InsertForeignKeyRelationship(ECDbCR ecdb, Utf8CP rel, ECInstanceId navId, ECInstanceId ecId)
             {
-            Statement stmt;            
+            Statement stmt;
             EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb,
                                    "SELECT 'UPDATE [' || S.Alias || '].[' || C.Name || '] SET ['  || P.Name || '].[Id] = ? WHERE ECInstanceId = ?' FROM ec_Property P "
                                    "       INNER JOIN ec_Class R ON R.Id = P.NavigationRelationshipClassId "
@@ -1004,12 +1004,12 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PolymorphicFilter)
         "        <BaseClass>Goo</BaseClass>"
         "        <ECProperty propertyName='C1' typeName='long'/>"
         "        <ECProperty propertyName='D1' typeName='string'/>"
-        "    </ECEntityClass>"        
+        "    </ECEntityClass>"
         "   <ECEntityClass typeName='Doo' >"
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='E' typeName='long'/>"
         "        <ECProperty propertyName='F' typeName='string'/>"
-        "    </ECEntityClass>"        
+        "    </ECEntityClass>"
         "</ECSchema>");
 
     ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
@@ -1060,8 +1060,8 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PolymorphicFilter)
 
     prepareAndMatchSql("SELECT * FROM +ALL ts.Doo", {
         "+[ts_Foo].ECClassId=73"
-        }, ECSqlStatus::Success);        
-    }    
+        }, ECSqlStatus::Success);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1090,7 +1090,7 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PrimaryJoinTerm)
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='E' typeName='long'/>"
         "        <ECProperty propertyName='F' typeName='string'/>"
-        "    </ECEntityClass>"        
+        "    </ECEntityClass>"
         "</ECSchema>");
 
     ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
@@ -1117,7 +1117,7 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PrimaryJoinTerm)
         "+[ts_Doo].[FooId]=[ts_Foo].[Id]"
         }, ECSqlStatus::Success);
     prepareAndMatchSql("SELECT * FROM (SELECT * FROM +ts.Goo JOIN +[ts].[Doo] ON Goo.ECInstanceId=Doo.ECInstanceId)", {
-        "+[ts_Doo].[FooId]=[ts_Foo].[Id]", 
+        "+[ts_Doo].[FooId]=[ts_Foo].[Id]",
         "+[ts_Goo].[FooId]=[ts_Foo].[Id]"
         }, ECSqlStatus::Success);
     prepareAndMatchSql("SELECT * FROM +(SELECT * FROM ts.Goo)", {}, ECSqlStatus::InvalidECSql);
@@ -1596,7 +1596,7 @@ Utf8String JoinedTableTestFixture::ToInsertECSql(ECDbCR ecdb, Utf8CP className)
     {
     ECN::ECClassCP ecClass = ecdb.Schemas().GetClass("JoinedTableTest", className);
     EXPECT_TRUE(ecClass != nullptr);
-    
+
    // CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT ec_Class")
 
     Utf8String insertECSql = "INSERT INTO ";
@@ -1663,7 +1663,7 @@ void JoinedTableTestFixture::VerifyInsertedInstance(ECDbR ecdb, Utf8CP ecsql, EC
     ASSERT_EQ(targetClassId.GetValue(), stmt.GetValueInt64(5)) << "Get TargetClassId failed : " << ecsql;
     }
 //---------------------------------------------------------------------------------------
-//           Foo  (JoinedTablePerDirectSubclass)  
+//           Foo  (JoinedTablePerDirectSubclass)
 //            |
 //           Goo
 //
@@ -1805,7 +1805,7 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
     }
 
 //---------------------------------------------------------------------------------------
-//           Foo  (JoinedTablePerDirectSubclass)  
+//           Foo  (JoinedTablePerDirectSubclass)
 //            |
 //           Goo
 //
@@ -1946,7 +1946,7 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
     }
 
 //---------------------------------------------------------------------------------------
-//           Foo  (JoinedTablePerDirectSubclass)  
+//           Foo  (JoinedTablePerDirectSubclass)
 //     _______|______
 //    |              |
 //   Goo            Boo
@@ -2108,7 +2108,7 @@ TEST_F(JoinedTableTestFixture, RelationshipBetweenSubClasses)
 
 
 //---------------------------------------------------------------------------------------
-//        Roo(Standalone Class)                  Foo  (JoinedTablePerDirectSubclass)  
+//        Roo(Standalone Class)                  Foo  (JoinedTablePerDirectSubclass)
 //                                                |
 //                                               Goo
 //
@@ -2261,8 +2261,8 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass)
 
 //---------------------------------------------------------------------------------------
 //                  Foo  (JoinedTablePerDirectSubclass)            Roo(Standalone Class)
-//                   |                                                                  
-//                  Goo                                                                 
+//                   |
+//                  Goo
 //
 //------ Relationship of a class having JoinedTable strategy with standalone class ------
 //      Roo <- RooHasFoo(REFERENCING) -> Foo
@@ -2412,13 +2412,13 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass1)
 
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-//                 IFace  (JoinedTablePerDirectSubclass)          Body(Standalone Class) 
-//                   |                                                                  
-//                  Foo                                                                 
-//                   |                                                                  
-//                  Goo                              Goo<>Body                          
-//                   |                               Boo<>Body                          
-//                  Boo                                                                 
+//                 IFace  (JoinedTablePerDirectSubclass)          Body(Standalone Class)
+//                   |
+//                  Foo
+//                   |
+//                  Goo                              Goo<>Body
+//                   |                               Boo<>Body
+//                  Boo
 //------ Relationship of a class having JoinedTable strategy with standalone class ------
 //      IFace <- IFaceHasBody(REFERENCING) -> Body
 //      IFace <- IFaceHasManyBody(REFERENCING) -> Body
@@ -2521,7 +2521,7 @@ TEST_F(JoinedTableTestFixture, PolymorphicRelationshipWithStandAloneClass)
     {
     EC::ECInstanceId IFaceHasBodyInstanceId1;
     EC::ECInstanceId IFaceHasBodyInstanceId2;
- 
+
     Utf8String ecsql;
     IFaceHasBodyInstanceId1 = InsertForeignKeyRelationship(db, "IFaceHasBody", gooInstanceId1, bodyInstanceId1);
     IFaceHasBodyInstanceId2 = InsertForeignKeyRelationship(db, "IFaceHasBody", booInstanceId1, bodyInstanceId2);
@@ -3162,7 +3162,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PolymorphicUpdate)
     // Create and populate a sample project
     SetUpNestedStructArrayDb();
 
-    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
+    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed.
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -3501,7 +3501,7 @@ TEST_F(JoinedTableTestFixture, UpgradingOverflowECInstances_RootClassGetNewPrope
             </ECSchema>)xml");
 
     ReopenECDb();
-    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     ASSERT_EQ(10, count("ts.b0"));
     ASSERT_EQ(9, count("ts.b1"));
@@ -3763,7 +3763,7 @@ TEST_F(JoinedTableTestFixture, UpgradingOverflowECInstances_DerivedClassGetNewPr
         </ECSchema>)xml");
 
     ReopenECDb();
-    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     ecsql("insert into ts.b5(a,b,c,d,e,f,z0) values(1,2,3,4,5,6,101)", BE_SQLITE_DONE);
     ecsql("insert into ts.b6(a,b,c,d,e,f,g,z0) values(1,2,3,4,5,6,7,102)", BE_SQLITE_DONE);
     ecsql("insert into ts.b7(a,b,c,d,e,f,g,h,z0) values(1,2,3,4,5,6,7,8,103)", BE_SQLITE_DONE);
@@ -3852,7 +3852,7 @@ TEST_F(JoinedTableTestFixture, UpgradingOverflowECInstances_DerivedClassGetNewPr
         </ECSchema>)xml");
 
     ReopenECDb();
-    ASSERT_EQ(SUCCESS, ImportSchema(v3));
+    ASSERT_EQ(SUCCESS, ImportSchema(v3, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     ecsql("insert into ts.b5(a,b,c,d,e,f,z0) values(1,2,3,4,5,6,101)", BE_SQLITE_DONE);
     ecsql("insert into ts.b6(a,b,c,d,e,f,g,z0) values(1,2,3,4,5,6,7,102)", BE_SQLITE_DONE);
     ecsql("insert into ts.b7(a,b,c,d,e,f,g,h,z0) values(1,2,3,4,5,6,7,8,103)", BE_SQLITE_DONE);

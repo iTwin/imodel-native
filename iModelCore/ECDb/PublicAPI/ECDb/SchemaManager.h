@@ -5,6 +5,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <Bentley/BeEvent.h>
+#include <functional>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -16,8 +17,40 @@ enum class SchemaChangeType {
     SchemaChangesetApply
 };
 
+//! Schema change event notify about event that led to schema change.
+using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
 
-using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType> ;
+
+//=======================================================================================
+//! Options for how to refer to an ECSchema when looking it up using the SchemaManager
+//! @ingroup ECDbGroup
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaImportResult final
+    {
+    enum Status
+        {
+        OK = BE_SQLITE_OK,
+        ERROR = BE_SQLITE_ERROR,
+        ERROR_DATA_TRANSFORM_REQUIRED = BE_SQLITE_ERROR_DataTransformRequired,
+        ERROR_READONLY = BE_SQLITE_READONLY,
+        };
+
+    private:
+        Status m_status;
+
+    public:
+        SchemaImportResult(Status status):m_status(status){}
+        bool IsOk() const {return m_status == Status::OK; }
+        operator BentleyStatus() const { return IsOk() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR; }
+        operator Status() const { return m_status; }
+        operator int() const { return static_cast<int>(m_status); }
+        bool operator == (SchemaImportResult const& r) const { return r.m_status == m_status; }
+        bool operator != (SchemaImportResult const& r) const { return r.m_status != m_status; }
+        bool operator == (Status r) const { return r == m_status; }
+        bool operator != (Status r) const { return r != m_status; }
+    };
+
 
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
@@ -179,8 +212,8 @@ struct DropSchemaResult {
         DropSchemaResult(Status status):m_status(status){}
         DropSchemaResult(Status status, InstanceFinder::SearchResults && results):m_status(status), m_searchResults(std::move(results)){}
         DropSchemaResult(Status status, bvector<Utf8String> && referencedBy):m_status(status),m_referencedBy(std::move(referencedBy)){}
-        DropSchemaResult(DropSchemaResult && rhs): 
-            m_searchResults(std::move(rhs.m_searchResults)), 
+        DropSchemaResult(DropSchemaResult && rhs):
+            m_searchResults(std::move(rhs.m_searchResults)),
             m_referencedBy(std::move(rhs.m_referencedBy)),
             m_status(rhs.m_status){}
         DropSchemaResult& operator =(DropSchemaResult&& rhs) {
@@ -190,7 +223,7 @@ struct DropSchemaResult {
                 m_status = std::move(rhs.m_status);
             }
             return *this;
-        }            
+        }
         bvector<Utf8String> const& GetReferencedBySchemas() const {return m_referencedBy;}
         InstanceFinder::SearchResults const& GetInstances() const {return m_searchResults;}
         Status GetStatus() const { return m_status;}
@@ -201,22 +234,22 @@ struct DropSchemaResult {
         ECDB_EXPORT Utf8CP GetStatusAsString() const;
 };
 //=======================================================================================
-//! The SchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
-//! Clients can import @ref ECN::ECSchema "ECSchemas" into or retrieve @ref ECN::ECSchema "ECSchemas" or 
+//! The SchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file".
+//! Clients can import @ref ECN::ECSchema "ECSchemas" into or retrieve @ref ECN::ECSchema "ECSchemas" or
 //! individual @ref ECN::ECClass "ECClasses" from the %ECDb file using the %SchemaManager.
 //!
 //! ###Incremental Loading of ECClasses
 //! SchemaManager supports incremental loading of ECClasses. So unlike with ECObjects calling
-//! SchemaManager::GetClass doesn't load the rest of the ECN::ECSchema. 
-//! When incrementally loading ECClasses you shouldn't use ECN::ECSchema::GetClass because 
+//! SchemaManager::GetClass doesn't load the rest of the ECN::ECSchema.
+//! When incrementally loading ECClasses you shouldn't use ECN::ECSchema::GetClass because
 //! the ECN::ECSchema might not be fully populated yet. Always use the respective SchemaManager
 //! methods instead.
 //!
 //! ####Details
-//! 
+//!
 //! (which you don't need to be aware of if you consistently use the SchemaManager API to get ECClasses)
 //!
-//! * SchemaManager::GetSchema with <c>ensureAllClassesLoaded=false</c> 
+//! * SchemaManager::GetSchema with <c>ensureAllClassesLoaded=false</c>
 //!     * Returns the ECSchema with only those ECClasses that have been loaded previously already. If
 //!       no ECClasses have been loaded previously, the returned ECSchema is empty.
 //! * SchemaManager::GetClass
@@ -229,11 +262,11 @@ struct DropSchemaResult {
 //!     * same as for regular classes
 //!     * loads the ECClasses specified in the constraints of the relationship class
 //!       (but @b not their derived ECClasses)
-//!        
+//!
 //! ### %SchemaManager is an %IECSchemaLocater
 //! SchemaManager also implements ECN::IECSchemaLocater so it can be used to locate ECSchemas
 //! already stored in the %ECDb file when reading an ECSchema from disk, for example:
-//! 
+//!
 //!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
 //!     ecSchemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
 //!     ECN::SchemaKey schemaKey("foo", 1, 0);
@@ -252,9 +285,10 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         enum class SchemaImportOptions
             {
             None                                        = 0,        //! binary 0000
-            DoNotFailSchemaValidationForLegacyIssues    = 1 << 0,   //! binary 0001. Not needed by regular caller
-            DisallowMajorSchemaUpgrade                  = 1 << 1,   //! binary 0010. If specified, schema upgrades where the major version has changed, are not supported.
-            DoNotFailForDeletionsOrModifications        = 1 << 2    //! binary 0100. This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
+            DoNotFailSchemaValidationForLegacyIssues    = 1 << 0,   //! Not needed by regular caller
+            DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
+            DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
+            AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
             };
 
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -304,7 +338,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @param[in] schemas  List of ECSchemas to import, including all referenced ECSchemas.
         //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
         //!                     (the method detects that they are already imported, and simply skips them)
-        //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext. 
+        //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext.
         //!                     If any duplicates are found in @p schemas an error will returned.
         //! @param [in] token Token required to perform ECSchema imports if the
         //! the ECDb file was set-up with the option "ECSchema import token validation".
@@ -313,7 +347,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const { return ImportSchemas(schemas, SchemaImportOptions::None, token); }
+        SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const { return ImportSchemas(schemas, SchemaImportOptions::None, token); }
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
@@ -325,7 +359,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @param[in] schemas  List of ECSchemas to import, including all referenced ECSchemas.
         //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
         //!                     (the method detects that they are already imported, and simply skips them)
-        //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext. 
+        //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext.
         //!                     If any duplicates are found in @p schemas an error will returned.
         //! @param [in] options Schema import options
         //! @param [in] token Token required to perform ECSchema imports if the
@@ -335,7 +369,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token = nullptr) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.
@@ -369,7 +403,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @param[in] tableSpace Table space containing the class - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return The retrieved ECClass or nullptr if not found
         ECDB_EXPORT ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
-        
+
         //! Gets the ECClass for the specified name.
         //! @param[in] qualifiedClassName Name of the class in qualified form which is schema-name-or-alias[.|:]class-name
         //! @param[in] tableSpace Table space containing the class - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
@@ -470,7 +504,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
-        //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 
+        //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code.
         //! No code should depend on these views.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus CreateClassViewsInDb() const;
@@ -481,7 +515,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
-        //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 
+        //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code.
         //! No code should depend on these views.
         //! @param[in] ecclassids List of ECClassIds of those ECClasses for which to create ECClass views.
         //! @note ECClass views can only be created for ECEntityClasses and ECRelationshipClasses and only if they are mapped
@@ -494,6 +528,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         //! Called after any schema changes are applied or if apply process failed
         ECDB_EXPORT SchemaChangeEvent& OnAfterSchemaChanges() const;
+
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Truncates and repopulates ECDb's cache tables.
         //! @remarks ECDb maintains a few cache tables that cache meta data for performance reasons.
@@ -501,7 +536,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! <b>this method does not have to be called</b>. ECDb maintains the cache tables autonomously.
         //! @return SUCCESS or ERROR
         BentleyStatus RepopulateCacheTables() const;
-        
+
         //! Automatically upgrade any existing ECInstance if required after ECSchema import.
         //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas)
         //! <b>this method does not have to be called</b>.

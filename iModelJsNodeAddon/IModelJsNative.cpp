@@ -973,6 +973,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         SchemaUpgradeOptions::DomainUpgradeOptions domainOptions = SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades;
         BeSQLite::Db::ProfileUpgradeOptions profileOptions = BeSQLite::Db::ProfileUpgradeOptions::None;
+        bool allowDataTransformDuringSchemaUpdate = false;
+
         if (!ARGUMENT_IS_EMPTY(2)) {
             Napi::Object upgradeOptions = info[2].As<Napi::Object>();
 
@@ -987,10 +989,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             if (!valProfile.IsUndefined() && !valProfile.IsNull()) {
                 profileOptions = (BeSQLite::Db::ProfileUpgradeOptions) valProfile.Uint32Value();
             }
+
+            Napi::Boolean valAllowDataTransformDuringSchemaUpdate;
+            valAllowDataTransformDuringSchemaUpdate = upgradeOptions.Get("allowDataTransformDuringSchemaUpdate").ToBoolean();
+            if (!valAllowDataTransformDuringSchemaUpdate.IsUndefined() && !valAllowDataTransformDuringSchemaUpdate.IsNull()) {
+                allowDataTransformDuringSchemaUpdate = valAllowDataTransformDuringSchemaUpdate.Value();
+            }
         }
+
         SchemaUpgradeOptions schemaUpgradeOptions(domainOptions);
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
         openParams.SetProfileUpgradeOptions(profileOptions);
+        openParams.SetAllowDataTransformDuringSchemaUpdate(allowDataTransformDuringSchemaUpdate);
 
         if (info[3].IsObject()) {
             auto props = BeJsConst(info[3].As<Napi::Object>());
@@ -1774,7 +1784,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        DbResult result = JsInterop::ImportSchemasDgnDb(GetDgnDb(), schemaFileNames);
+        REQUIRE_ARGUMENT_BOOL(1, allowDataTransformDuringSchemaUpdate);
+        DbResult result = JsInterop::ImportSchemasDgnDb(GetDgnDb(), schemaFileNames, allowDataTransformDuringSchemaUpdate);
         return Napi::Number::New(Env(), (int)result);
         }
 
@@ -1782,7 +1793,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, serializedXmlSchemas);
-        DbResult result = JsInterop::ImportXmlSchemas(GetDgnDb(), serializedXmlSchemas);
+        REQUIRE_ARGUMENT_BOOL(1, allowDataTransformDuringSchemaUpdate);
+        DbResult result = JsInterop::ImportXmlSchemas(GetDgnDb(), serializedXmlSchemas, allowDataTransformDuringSchemaUpdate);
         return Napi::Number::New(Env(), (int)result);
         }
 

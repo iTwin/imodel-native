@@ -243,7 +243,7 @@ struct SchemaWriter final
         static BentleyStatus ReloadSchemas(Context& ctx);
 
     public:
-        static BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
+        static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
         static DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportContext& schemaImportCtx, bool logIssue);
     };
 

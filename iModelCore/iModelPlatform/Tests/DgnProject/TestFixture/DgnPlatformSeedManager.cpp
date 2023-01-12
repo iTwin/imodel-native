@@ -70,7 +70,7 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         DgnDbTestUtils::InsertCameraView(*model, info.viewName.c_str());
 
     if (info.options.testDomain)
-        EXPECT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
+        EXPECT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     db->SaveChanges();
     return info;

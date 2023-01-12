@@ -26,7 +26,7 @@ private:
     DbResult ReadProfileVersion() const;
 
     DbResult CreateProfileTables() const;
-    //! @param onProfileCreation true if this method is called during profile creation. false if 
+    //! @param onProfileCreation true if this method is called during profile creation. false if
     //! called during profile upgrade
     DbResult AssignProfileVersion(bool onProfileCreation) const;
 
@@ -50,16 +50,16 @@ public:
     //! is not up-to-date).
     //! @remarks In case an upgrade was necessary and the upgrade was successful,
     //! the outermost transaction is committed. In case of
-    //! error, the outermost transaction is rolled back. 
+    //! error, the outermost transaction is rolled back.
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    DbResult UpgradeProfile() const;
+    DbResult UpgradeProfile(Db::OpenParams const& params) const;
 
-    //! Returns the profile version of the current file. 
+    //! Returns the profile version of the current file.
     //! Note this method must only be called after having called CheckProfileVersion, CreateProfile or UpgradeProfile.
     ProfileVersion const& GetProfileVersion() const { BeAssert(!m_profileVersion.IsEmpty()); return m_profileVersion; }
 
     static bset<Utf8CP, CompareIUtf8Ascii> GetECDbSchemaNames()
-        { 
+        {
         bset<Utf8CP, CompareIUtf8Ascii> names;
         names.insert("ECDbChange");
         names.insert("ECDbFileInfo");

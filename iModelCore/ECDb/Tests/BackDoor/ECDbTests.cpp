@@ -369,5 +369,29 @@ void PrintTo(ECSqlStatus stat, std::ostream* os)
                 break;
         }
     }
+void PrintTo(SchemaImportResult rc, std::ostream* os)
+    {
+    switch ((SchemaImportResult::Status)rc)
+        {
+            case SchemaImportResult::ERROR:
+                *os << "SchemaImportResult::ERROR";
+                return;
 
+            case SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED:
+                *os << "SchemaImportResult::ERROR_IMODEL_LOCK_FAILED";
+                return;
+
+            case SchemaImportResult::ERROR_READONLY:
+                *os << "SchemaImportResult::ERROR_READONLY";
+                return;
+
+            case SchemaImportResult::OK:
+                *os << "SchemaImportResult::OK";
+                return;
+
+            default:
+                *os << "Unhandled SchemaImportResult::Status. Adjust the PrintTo method";
+                break;
+        }
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

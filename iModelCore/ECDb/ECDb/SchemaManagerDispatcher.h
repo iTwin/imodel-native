@@ -40,7 +40,7 @@ protected:
     ClassMap* AddClassMap(std::unique_ptr<ClassMap>) const;
 
 public:
-    TableSpaceSchemaManager(ECDbCR ecdb, DbTableSpace const& tableSpace) 
+    TableSpaceSchemaManager(ECDbCR ecdb, DbTableSpace const& tableSpace)
         : m_ecdb(ecdb), m_tableSpace(tableSpace), m_reader(*this), m_dbSchema(*this), m_lightweightCache(*this) {}
 
     virtual ~TableSpaceSchemaManager() {}
@@ -185,9 +185,9 @@ private:
     ECDbSystemSchemaHelper m_systemSchemaHelper;
     mutable SchemaChangeEvent m_onBeforeSchemaChanged;
     mutable SchemaChangeEvent m_onAfterSchemaCHanged;
-    BentleyStatus ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
+    SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
 
-    BentleyStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
+    SchemaImportResult MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
     BentleyStatus DoMapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ClassMappingInfo const&) const;
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
@@ -203,14 +203,13 @@ private:
 
     static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
 
-    static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb);
-
+    static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
 public:
     explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb) {}
     ~MainSchemaManager() {}
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
-    BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*) const;
+    SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ECN::ECClassCR) const;
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;

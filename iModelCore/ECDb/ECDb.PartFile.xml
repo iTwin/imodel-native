@@ -26,6 +26,7 @@
         <SubPart PartName="GeomlibsSerialization" PartFile="iModelCore/GeomLibs/geomlibs" />
         <SubPart PartName="BeJsonCpp"       PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinSQLiteEC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iTwinSQLiteEC$(shlibext)</Assemblies>

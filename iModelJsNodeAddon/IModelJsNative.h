@@ -492,8 +492,8 @@ public:
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
-    static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames);
-    static DbResult ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const &serializedXmlSchemas);
+    static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames,bool allowDataTransformDuringSchemaUpdate);
+    static DbResult ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const &serializedXmlSchemas, bool allowDataTransformDuringSchemaUpdate);
     static DbResult ImportFunctionalSchema(DgnDbR);
     static DgnRevisionPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);
     static bvector<DgnRevisionPtr> GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);

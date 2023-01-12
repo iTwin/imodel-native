@@ -162,13 +162,13 @@ ProfileState ECDb::_CheckProfileVersion() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_UpgradeProfile()
+DbResult ECDb::_UpgradeProfile(Db::OpenParams const& params)
     {
-    DbResult stat = Db::_UpgradeProfile();
+    DbResult stat = Db::_UpgradeProfile(params);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return m_pimpl->GetProfileManager().UpgradeProfile();
+    return m_pimpl->GetProfileManager().UpgradeProfile(params);
     }
 
 //--------------------------------------------------------------------------------------

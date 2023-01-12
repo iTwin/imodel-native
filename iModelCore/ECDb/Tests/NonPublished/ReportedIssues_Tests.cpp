@@ -26,7 +26,7 @@ TEST_F(ReportedIssuesTestFixture, VerticalPartitionShouldNeverIncludeOverflowTab
                 <ClassMap xmlns="ECDbMap.02.00.00">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
-            </ECCustomAttributes>    
+            </ECCustomAttributes>
             <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="true"/>
             <ECProperty propertyName="CodeValue" typeName="string"/>
             <ECProperty propertyName="UserLabel" typeName="string"/>
@@ -37,7 +37,7 @@ TEST_F(ReportedIssuesTestFixture, VerticalPartitionShouldNeverIncludeOverflowTab
             <BaseClass>Element</BaseClass>
             <ECCustomAttributes>
                 <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
-            </ECCustomAttributes>            
+            </ECCustomAttributes>
         </ECEntityClass>
     </ECSchema>)xml");
     auto functional = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -50,7 +50,7 @@ TEST_F(ReportedIssuesTestFixture, VerticalPartitionShouldNeverIncludeOverflowTab
                     <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 </ShareColumns>
-            </ECCustomAttributes>            
+            </ECCustomAttributes>
         </ECEntityClass>
         <ECEntityClass typeName="FunctionalComponentElement" modifier="Abstract">
             <BaseClass>FunctionalElement</BaseClass>
@@ -219,7 +219,7 @@ TEST_F(ReportedIssuesTestFixture, VerticalPartitionShouldNeverIncludeOverflowTab
                 <IsMixin xmlns="CoreCustomAttributes.01.00.03">
                     <AppliesToEntityClass>DEVICE</AppliesToEntityClass>
                 </IsMixin>
-            </ECCustomAttributes>        
+            </ECCustomAttributes>
             <ECProperty propertyName="ACTUATOR_TYPE" typeName="string"/>
             <ECProperty propertyName="ALARM_LIMIT_HH" typeName="string"/>
             <ECProperty propertyName="ALARM_LIMIT_LL" typeName="string"/>
@@ -280,7 +280,7 @@ TEST_F(ReportedIssuesTestFixture, VerticalPartitionShouldNeverIncludeOverflowTab
 
     BeFileName filePath(R"(D:\temp\final2.ecdb)");
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("union_err.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchemas({bisCore,functional,processFunctional}));
+    ASSERT_EQ(SUCCESS, ImportSchemas({bisCore,functional,processFunctional}, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT PAINT_CODE from pfunc.CONTROL_VALVE"));
