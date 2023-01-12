@@ -91,22 +91,24 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE BoundQueryIdSet : BoundQueryValue
 {
 private:
-    BeSQLite::IdSet<BeInt64Id> m_set;
+    std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> m_set;
 protected:
     ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
     ECPRESENTATION_EXPORT rapidjson::Document _ToJson(rapidjson::Document::AllocatorType*) const override;
 public:
-    BoundQueryIdSet(BeSQLite::IdSet<BeInt64Id>&& set) : m_set(std::move(set)) {}
+    BoundQueryIdSet(BeSQLite::IdSet<BeInt64Id>&& set) : m_set(std::make_shared<BeSQLite::IdSet<BeInt64Id>>(std::move(set))) {}
     template<typename TId> BoundQueryIdSet(bvector<TId> const& vec)
         {
+        m_set = std::make_shared<BeSQLite::IdSet<BeInt64Id>>();
         for (auto const& id : vec)
-            m_set.insert(id);
+            m_set->insert(id);
         }
     BoundQueryIdSet(bvector<BeSQLite::EC::ECInstanceKey> const& vec)
         {
+        m_set = std::make_shared<BeSQLite::IdSet<BeInt64Id>>();
         for (BeSQLite::EC::ECInstanceKey const& key : vec)
-            m_set.insert(key.GetInstanceId());
+            m_set->insert(key.GetInstanceId());
         }
 };
 
@@ -116,7 +118,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE BoundECValueSet : BoundQueryValue
 {
 private:
-    std::unique_ptr<BeSQLite::VirtualSet> m_set;
+    std::shared_ptr<BeSQLite::VirtualSet> m_set;
 protected:
     ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
@@ -132,7 +134,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE BoundRapidJsonValueSet : BoundQueryValue
 {
 private:
-    std::unique_ptr<BeSQLite::VirtualSet> m_set;
+    std::shared_ptr<BeSQLite::VirtualSet> m_set;
 protected:
     ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
