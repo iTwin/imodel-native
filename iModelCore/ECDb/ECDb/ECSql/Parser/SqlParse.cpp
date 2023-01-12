@@ -209,6 +209,7 @@ namespace connectivity
                             {OSQLParseNode::searched_when_clause_list, "searched_when_clause_list"},
                             {OSQLParseNode::searched_when_clause, "searched_when_clause"},
                             {OSQLParseNode::select_statement, "select_statement"},
+                            {OSQLParseNode::opt_extract_value, "opt_extract_value"},
                             {OSQLParseNode::select_sublist, "select_sublist"},
                             {OSQLParseNode::selection, "selection"},
                             {OSQLParseNode::single_select_statement, "single_select_statement"},

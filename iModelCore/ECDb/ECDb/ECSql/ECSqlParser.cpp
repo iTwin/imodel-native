@@ -750,16 +750,73 @@ BentleyStatus ECSqlParser::ParseColumnRefAsPropertyNameExp(std::unique_ptr<Prope
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode, bool forceIntoPropertyNameExp) const
-    {
-    if (!SQL_ISRULE(parseNode, column_ref))
-        {
+BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode, bool forceIntoPropertyNameExp) const {
+    if (!SQL_ISRULE(parseNode, column_ref)) {
         BeAssert(false && "Wrong grammar");
         return ERROR;
-        }
-
-    return ParseExpressionPath(exp, parseNode->getFirst(), forceIntoPropertyNameExp);
     }
+
+    std::unique_ptr<ValueExp> lhsExp;
+    const auto rc =  ParseExpressionPath(lhsExp, parseNode->getFirst(), forceIntoPropertyNameExp);
+    if (rc != SUCCESS) {
+        return rc;
+    }
+
+    const auto opt_extract_value = parseNode->getLast();
+    if (!SQL_ISRULE(opt_extract_value, opt_extract_value)) {
+        BeAssert(false && "Wrong grammar");
+        return ERROR;
+    }
+
+    const auto isExtractProp  = (opt_extract_value->count() != 0);
+    if (isExtractProp) {
+        if (lhsExp->GetType() != Exp::Type::PropertyName) {
+            Issues().Report(
+                IssueSeverity::Error, 
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL, 
+                "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
+            return ERROR;
+        }
+    }
+
+    if (lhsExp->GetType() == Exp::Type::PropertyName) {
+        auto lhsPropExp = lhsExp->GetAsCP<PropertyNameExp>();
+        if (InstanceValueExp::IsInstancePath(lhsPropExp->GetPropertyPath())) {
+            if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetPropertyPath())) {
+                Issues().Report(
+                    IssueSeverity::Error, 
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL, 
+                    "Invalid grammar. Instance exp must be follow syntax '[<alias>.]$'");
+                return ERROR;
+            }
+            if (!isExtractProp) {
+                exp = std::make_unique<ExtractInstanceValueExp>(lhsPropExp->GetPropertyPath());
+                return SUCCESS;
+            } else {
+                std::unique_ptr<ValueExp> rhsExp;
+                const auto rc =  ParseExpressionPath(rhsExp, opt_extract_value->getFirst(), false);
+                if (rc != SUCCESS) {
+                    return rc;
+                }
+                if (rhsExp->GetType() != Exp::Type::PropertyName) {
+                    Issues().Report(
+                        IssueSeverity::Error, 
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL, 
+                        "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
+                    return ERROR;
+                }
+                auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
+                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath());
+                return SUCCESS;
+            }
+        }
+    }
+    exp = std::move(lhsExp);
+    return SUCCESS;
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

@@ -90,5 +90,68 @@ struct PropertyNameExp final : ValueExp
  
     };
 
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct InstanceValueExp : ValueExp {
+private:
+    PropertyPath m_instancePath;
+    size_t m_classIdExpIdx;
+    size_t m_instIdExpIdx;
+    
+public:
+    explicit InstanceValueExp(Type, PropertyPath);
+    virtual ~InstanceValueExp(){}
+    PropertyNameExp const& GetClassIdPropExp() const { return *GetChild<PropertyNameExp>(m_classIdExpIdx);}
+    PropertyNameExp const& GetInstanceIdPropExp() const{ return *GetChild<PropertyNameExp>(m_instIdExpIdx);}
+    PropertyPath const& GetInstancePath() const {return m_instancePath; }
+    static bool IsInstancePath(PropertyPath const& path) {
+        return path.Size() == 0 ?  false: path.Last().GetName().Equals("$");
+    }
+    static bool IsValidSourcePath(PropertyPath const&);
+    static Utf8CP GetInstanceAlias(PropertyPath const&);
+};
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ExtractPropertyValueExp final : InstanceValueExp {
+    private:
+        PropertyPath m_targetPath;
+        void _ToECSql(ECSqlRenderContext& ctx) const override{
+            ctx.AppendToECSql(GetInstancePath().ToString().c_str());
+            ctx.AppendToECSql(" -> ");
+            ctx.AppendToECSql(m_targetPath.ToString().c_str());
+        }
+        Utf8String _ToString() const override { return "";}
+    public:
+        ExtractPropertyValueExp(
+            PropertyPath instancePath, 
+            PropertyPath targetPath): 
+                InstanceValueExp(Type::ExtractProperty, instancePath), m_targetPath(targetPath) {
+            SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
+        }
+        PropertyPath const& GetTargetPath() const { return m_targetPath; }
+        virtual ~ExtractPropertyValueExp(){}
+};
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ExtractInstanceValueExp final : InstanceValueExp {
+    private:
+        void _ToECSql(ECSqlRenderContext& ctx) const override{
+            ctx.AppendToECSql(GetInstancePath().ToString().c_str());
+        }
+        Utf8String _ToString() const override { return ""; }
+
+    public:
+        ExtractInstanceValueExp(
+            PropertyPath instancePath): 
+                InstanceValueExp(Type::ExtractInstance, instancePath) {
+                SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
+            }
+        virtual ~ExtractInstanceValueExp(){}
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -1815,10 +1815,65 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractPropertyValueExp const& exp) {
+    NativeSqlBuilder builder;
+    NativeSqlBuilder::List classIdSql;
+    NativeSqlBuilder::List instanceIdSql;
+
+    auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
+    if (rc != ECSqlStatus::Success) {
+        return rc;
+    }
+    
+    rc = PrepareValueExp(instanceIdSql, ctx, exp.GetInstanceIdPropExp());
+    if (rc != ECSqlStatus::Success) {
+        return rc;
+    }
+    
+    builder.AppendFormatted("extract_prop(%s,%s,'%s')", 
+        classIdSql.front().GetSql().c_str(),
+        instanceIdSql.front().GetSql().c_str(), 
+        exp.GetTargetPath().ToString().c_str());
+
+    nativeSqlSnippets.push_back(std::move(builder));
+    return ECSqlStatus::Success;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractInstanceValueExp const& exp) {
+    NativeSqlBuilder builder;
+    NativeSqlBuilder::List classIdSql;
+    NativeSqlBuilder::List instanceIdSql;
+
+    auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
+    if (rc != ECSqlStatus::Success) {
+        return rc;
+    }
+    
+    rc = PrepareValueExp(instanceIdSql, ctx, exp.GetInstanceIdPropExp());
+    if (rc != ECSqlStatus::Success) {
+        return rc;
+    }
+    
+    builder.AppendFormatted("extract_inst(%s,%s)", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str());
+    nativeSqlSnippets.push_back(std::move(builder));
+    return ECSqlStatus::Success;
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
 ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const& exp)
     {
     switch (exp.GetType())
         {
+            case Exp::Type::ExtractProperty:
+                return PrepareExtractPropertyExp(nativeSqlSnippets, ctx, exp.GetAs<ExtractPropertyValueExp>());
+            case Exp::Type::ExtractInstance:
+                return PrepareExtractInstanceExp(nativeSqlSnippets, ctx, exp.GetAs<ExtractInstanceValueExp>());
             case Exp::Type::BetweenRangeValue:
                 return PrepareBetweenRangeValueExp(nativeSqlSnippets, ctx, exp.GetAs<BetweenRangeValueExp>());
             case Exp::Type::BinaryValue:

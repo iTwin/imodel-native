@@ -10,7 +10,8 @@
 #include "ECDbLogger.h"
 #include <chrono>
 #include <type_traits>
-
+#include <unordered_map>
+#include <set>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define LOG (ECDbLogger::Get())
@@ -91,6 +92,7 @@ struct CompareIUtf8Ascii
 struct FNV1HashBuilder final {
     private:
         uint64_t m_hashCode;
+        static char inline AsciiTolower(char c) { return ((c >= 'A') && (c <= 'Z')) ? (c - 'A' + 'a') : c; }
     public:
         FNV1HashBuilder(): m_hashCode(14695981039346656037ull){}
         void UpdateBytes(uint8_t const* bytes, size_t sz) {
@@ -100,8 +102,18 @@ struct FNV1HashBuilder final {
                 m_hashCode *= 1099511628211u;
             }
         }
+        void UpdateNoCaseAsciiChars(char const* bytes, size_t sz) {
+            for (size_t i = 0; i< sz; ++i) {
+                UpdateChar(AsciiTolower(bytes[i]));
+            }
+        }
+        void Reset() { m_hashCode = 14695981039346656037ull; }
         void UpdateString(Utf8StringCR str) {UpdateBytes((uint8_t const*)str.c_str(), str.length());}
         void UpdateCharCP(Utf8CP str) {UpdateBytes((uint8_t const*)str, strlen(str));}
+        void UpdateCharCP(Utf8CP str, size_t sz) {UpdateBytes((uint8_t const*)str, sz);}
+        void UpdateNoCaseAsciiString(Utf8StringCR str) {UpdateNoCaseAsciiCharCP(str.c_str(), str.length());}
+        void UpdateNoCaseAsciiCharCP(Utf8CP str) {UpdateNoCaseAsciiCharCP(str, strlen(str));}
+        void UpdateNoCaseAsciiCharCP(Utf8CP str, size_t sz) {UpdateNoCaseAsciiChars(str, sz);}
         void UpdateUInt64(uint64_t v) {UpdateBytes((uint8_t const*)&v, sizeof(v));}
         void UpdateInt64(int64_t v) {UpdateBytes((uint8_t const*)&v, sizeof(v));}
         void UpdateUInt32(uint32_t v) {UpdateBytes((uint8_t const*)&v, sizeof(v));}
@@ -119,6 +131,54 @@ struct FNV1HashBuilder final {
 };
 
 ///=======================================================================================
+// Use with std::unordered_map/unordered_set
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct NoCaseAsciiStrHash final {
+    size_t operator ()(const Utf8String& val ) const {
+        FNV1HashBuilder builder;
+        builder.UpdateNoCaseAsciiString(val);
+        return static_cast<size_t>(builder.GetHashCode());
+    }
+    size_t operator ()(Utf8CP val) const {
+        FNV1HashBuilder builder;
+        builder.UpdateNoCaseAsciiCharCP(val);
+        return static_cast<size_t>(builder.GetHashCode());
+    }
+};
+///=======================================================================================
+// Use with std::unordered_map/unordered_set
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct  NoCaseAsciiStrEqual final {
+    bool operator ()(const Utf8String& lhs,const Utf8String& rhs ) const {
+        return lhs.size() == rhs.size() && lhs.EqualsIAscii(rhs);
+    }
+    bool operator ()(Utf8CP lhs, Utf8CP rhs ) const {
+        return BeStringUtilities::StricmpAscii(lhs, rhs) == 0;
+    }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsistruct
+//---------------------------------------------------------------------------------------
+struct InMemoryPropertyExistMap final{
+    private:
+        std::vector<std::unique_ptr<std::string>> m_cachedPropNames;
+        std::unordered_map<const char*, std::set<uint64_t>, NoCaseAsciiStrHash, NoCaseAsciiStrEqual> m_propMap;
+
+    private:
+        void Insert(ECN::ECClassId classId, Utf8CP propertyName);
+
+    public:
+        InMemoryPropertyExistMap(){}
+        ~InMemoryPropertyExistMap(){}
+        DbResult Build(ECDbCR ecdb, bool onlyTopLevelProperty);
+        bool Empty() const { return m_cachedPropNames.empty();}
+        bool Exist(ECN::ECClassId classId, Utf8CP propertyName) const;
+};
+
+///=======================================================================================
 // @bsistruct
 //+===============+===============+===============+===============+===============+======
 struct PerfLogScope final {
@@ -132,7 +192,6 @@ struct PerfLogScope final {
         void Dispose() { m_disposed = true; PERFLOG_FINISH(m_module, m_method);}
         ~PerfLogScope() { if (!m_disposed) Dispose(); }
 };
-
 #define ECDB_PERF_LOG_SCOPE_BEGIN(NAME,DESC) PerfLogScope __perfScope_##NAME("ECDb",DESC)
 #define ECDB_PERF_LOG_SCOPE_END(NAME) __perfScope_##NAME.Dispose()
 #define ECDB_PERF_LOG_SCOPE(DESC) ECDB_PERF_LOG_SCOPE_BEGIN(main,DESC)
