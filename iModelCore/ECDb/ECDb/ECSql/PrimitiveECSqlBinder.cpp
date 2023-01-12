@@ -258,13 +258,13 @@ IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
     return NoopECSqlBinder::Get();
     }
 
-// --------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
+ECSqlStatus PrimitiveECSqlBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    m_virtualCopy = idSet;
-    return _BindInt64((int64_t) &m_virtualCopy);
+    LOG.error("Type mismatch. Cannot bind virtual set to primitive parameter.");
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
