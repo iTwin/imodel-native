@@ -2764,8 +2764,8 @@ static bool AreRelated(IConnectionCR connection, DataSourceFilter::RelatedInstan
     if (!stmt.IsValid())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare 'are keys related to given RelatedInstanceInfo' query");
 
-    VirtualECInstanceIdSet relationshipInfoIdsSet(relationshipInfo.m_instanceKeys);
-    VirtualECInstanceIdSet inputIdsSet(keys);
+    std::shared_ptr<VirtualECInstanceIdSet> relationshipInfoIdsSet = std::make_shared<VirtualECInstanceIdSet>(relationshipInfo.m_instanceKeys);
+    std::shared_ptr<VirtualECInstanceIdSet> inputIdsSet = std::make_shared<VirtualECInstanceIdSet>(keys);
     int bindingIndex = 1;
 
     for (auto i = 0; i < relationshipInfo.m_relationshipClassIds.size(); ++i)
