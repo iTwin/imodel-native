@@ -903,6 +903,22 @@ Napi::String JsInterop::InsertCodeSpec(DgnDbR db, Utf8StringCR name, BeJsConst j
     return Napi::String::New(Env(), codeSpec->GetCodeSpecId().ToHexStr());
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::UpdateCodeSpec(DgnDbR db, CodeSpecId codeSpecId, BeJsConst jsonProperties)
+{
+    CodeSpecPtr codeSpec = db.CodeSpecs().GetForEdit(codeSpecId);
+    if (!codeSpec.IsValid())
+        throwBadRequest();
+
+    codeSpec->FromPropertiesJson(jsonProperties);
+
+    DgnDbStatus status = db.CodeSpecs().Update(*codeSpec);
+    if (DgnDbStatus::Success != status)
+        throwDgnDbStatus(status);
+}
+
 struct SetNapiObjOnModel {
     DgnModelR  m_model;
     SetNapiObjOnModel(DgnModelR model, NapiObjectCP obj) : m_model(model) {BeAssert(nullptr==model.m_napiObj); model.m_napiObj = obj;}

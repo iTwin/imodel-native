@@ -60,6 +60,14 @@ DgnDbStatus CodeSpec::Insert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CodeSpec::Update()
+{
+    return GetDgnDb().CodeSpecs().Update(*this);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CodeSpec::CloneCodeForImport(DgnCodeR code, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
     {
     code = importer.IsBetweenDbs() ? srcElem.GetCode() : DgnCode();
@@ -157,6 +165,38 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnCodeSpecs::Update(CodeSpecR codeSpec)
+{
+    if (!codeSpec.GetCodeSpecId().IsValid())
+        return DgnDbStatus::InvalidId;
+
+    // Changes to CodeSpec Name not supported
+    codeSpec.m_name.Trim();
+    if (QueryCodeSpecId(codeSpec.GetName().c_str()) != codeSpec.GetCodeSpecId())
+        return DgnDbStatus::InvalidName;
+
+    auto id = codeSpec.GetCodeSpecId();
+    Utf8String propsStr = codeSpec.SerializeProperties();
+
+    Statement stmt(m_dgndb, "UPDATE " BIS_TABLE(BIS_CLASS_CodeSpec) " SET JsonProperties = ? WHERE Id = ?");
+    stmt.BindText(1, propsStr, Statement::MakeCopy::No);
+    stmt.BindId(2, id);
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return DgnDbStatus::WriteError;
+
+    BeDbMutexHolder _v(m_mutex);
+    // now drop the old codeSpec from the pool. The next request will load the updated codeSpec.
+    auto found = std::find_if(m_loadedCodeSpecs.begin(), m_loadedCodeSpecs.end(), [&id](CodeSpecPtr const& arg) { return arg->GetCodeSpecId() == id; });
+    if (m_loadedCodeSpecs.end() != found)
+        m_loadedCodeSpecs.erase(found);
+
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, outResult);
@@ -233,8 +273,29 @@ CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecPtr DgnCodeSpecs::GetForEdit(CodeSpecId codeSpecId) 
+    { 
+    CodeSpecCPtr orig = GetCodeSpec(codeSpecId); 
+    return orig.IsValid() ? orig->CopyForEdit() : nullptr; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpec::CodeSpec(CreateParams const& params) : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec) {
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecPtr CodeSpec::CopyForEdit() const
+    {
+    CodeSpec::CreateParams createParams(GetDgnDb(), m_name.c_str(), m_codeSpecId, m_scopeSpec);
+
+    CodeSpecPtr newCodeSpec(new CodeSpec(createParams));
+    newCodeSpec->m_specProperties.From(m_specProperties);
+    return newCodeSpec;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

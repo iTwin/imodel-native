@@ -1715,6 +1715,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return JsInterop::InsertCodeSpec(GetDgnDb(), name, jsonProperties);
     }
 
+    void UpdateCodeSpec(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, codeSpecIdStr);
+        CodeSpecId codeSpecId(BeInt64Id::FromString(codeSpecIdStr.c_str()).GetValueUnchecked());
+        REQUIRE_ARGUMENT_ANY_OBJ(1, jsonProperties);
+        return JsInterop::UpdateCodeSpec(GetDgnDb(), codeSpecId, jsonProperties);
+    }
+
     Napi::Value InsertModel(NapiInfoCR info) {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, modelProps);
@@ -2344,6 +2352,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
+            InstanceMethod("updateCodeSpec", &NativeDgnDb::UpdateCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),
             InstanceMethod("insertElementAspect", &NativeDgnDb::InsertElementAspect),
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
