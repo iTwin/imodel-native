@@ -213,13 +213,13 @@ bool RenderingAsset::TextureMap::IsPatternEnabled() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenderingAsset::TextureMap RenderingAsset::GetPatternMap() const
+RenderingAsset::TextureMap RenderingAsset::GetTextureMap(TextureMap::Type type, Utf8CP typeName) const
     {
     auto maps = GetValue(RENDER_MATERIAL_Map);
     if (maps.isNull())
-        return TextureMap(maps, TextureMap::Type::Pattern); // return invalid value
+        return TextureMap(maps, type); // return invalid value
 
-    return TextureMap(maps[RENDER_MATERIAL_MAP_Pattern], TextureMap::Type::Pattern);
+    return TextureMap(maps[typeName], type);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -462,13 +462,42 @@ Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, 
         m_reflectColor = m_specularColor;       // Linked...
         }
 
-    auto const& texMap = asset.GetPatternMap();
-    TexturePtr texture;
-    if (texture.IsNull() && texMap.IsValid() && texMap.GetTextureId().IsValid() && texMap.IsPatternEnabled())
-        texture = sys._GetTexture(texMap.GetTextureId(), db);
+    auto const& patternMap = asset.GetPatternMap();
+    auto const& normalMap = asset.GetNormalMap();
+    auto havePatternMap = patternMap.IsValid() && patternMap.IsPatternEnabled() && patternMap.GetTextureId().IsValid();
+    auto haveNormalMap = normalMap.IsValid() && normalMap.IsPatternEnabled() && normalMap.GetTextureId().IsValid();
+    if (!havePatternMap && !haveNormalMap)
+      return;
 
-    if (texture.IsValid())
-        m_textureMapping = TextureMapping(*texture, texMap.GetTextureMapParams());
+    // Make sure we can obtain the needed texture(s).
+    TexturePtr patternTexture;
+    if (havePatternMap) {
+      patternTexture = sys._GetTexture(patternMap.GetTextureId(), db);
+      havePatternMap = patternTexture.IsValid();
+    }
+
+    TexturePtr normalTexture;
+    if (haveNormalMap) {
+      normalTexture = sys._GetTexture(normalMap.GetTextureId(), db);
+      haveNormalMap = normalTexture.IsValid();
+    }
+
+    if (!haveNormalMap && !havePatternMap)
+      return;
+
+    Nullable<TextureMapping::NormalMapParams> normalMapParams;
+    if (haveNormalMap) {
+      double normalScale = asset.GetNormalScale();
+      bool invertGreen = 0 != (normalMap.GetUint32(RENDER_MATERIAL_NormalFlags) & RenderingAsset::TextureMap::NormalFlags::InvertGreen);
+      TextureCP pNormalTexture = havePatternMap ? normalTexture.get() : nullptr;
+      normalMapParams = TextureMapping::NormalMapParams(pNormalTexture, normalScale, invertGreen);
+    }
+
+    // MicroStation's material editor permits the texture mapping mode, scales, etc etc to be configured per map, but
+    // making changes to any one map affects all maps.
+    // We will assume all of the maps have the same parameters. We've only got one set of UVs anyway.
+    auto textureMapParams = havePatternMap ? patternMap.GetTextureMapParams() : normalMap.GetTextureMapParams();
+    m_textureMapping = TextureMapping(havePatternMap ? *patternTexture : *normalTexture, textureMapParams, normalMapParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
