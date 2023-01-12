@@ -1343,7 +1343,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
     stmt.Finalize();
     
-    //verify 4.0.0.2 upgrade
+    //verify 4.0.0.3 upgrade
     Db benchmarkFile;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
 
@@ -1351,7 +1351,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     //verify that ECDbMeta schema was upgraded to version 4.0.1
     //and ECDbSystem schema was upgraded to version 5.0.1
     ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT Name,VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name IN ('CoreCustomAttributes','ECDbFileInfo','ECDbMeta','ECDbSystem') ORDER BY Name"));
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT Name,VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name IN ('CoreCustomAttributes','ECDbFileInfo','ECDbMeta','ECDbSystem', 'ECDbMap') ORDER BY Name"));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
     EXPECT_STREQ("CoreCustomAttributes", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(1, ecsqlStmt.GetValueInt(1));
@@ -1363,25 +1363,36 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
     EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
+
+    EXPECT_STREQ("ECDbMap", ecsqlStmt.GetValueText(0));
+    EXPECT_EQ(2, ecsqlStmt.GetValueInt(1));
+    EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
+    EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
+    ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
+
     EXPECT_STREQ("ECDbMeta", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(4, ecsqlStmt.GetValueInt(1));
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
     EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
+
     EXPECT_STREQ("ECDbSystem", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(5, ecsqlStmt.GetValueInt(1));
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
-    EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
+    EXPECT_EQ(2, ecsqlStmt.GetValueInt(3));
     ecsqlStmt.Finalize();
 
     //verify that extended types were added to ECDbSystem classes
     ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT p.ExtendedTypeName, p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id JOIN meta.ECSchemaDef s ON s.ECInstanceId=c.Schema.Id WHERE s.Name='ECDbSystem' AND p.PrimitiveType=?"));
     ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.BindInt(1, PrimitiveType::PRIMITIVETYPE_Long));
     int rowCount = 0;
+    
+    // Vector of Expected Extended Type Names to compare against
+    std::vector<Utf8String> testValues = { "Id", "ClassId", "NavId", "NavRelClassId", "SourceId", "SourceClassId", "TargetId", "TargetClassId" };
     while (BE_SQLITE_ROW == ecsqlStmt.Step())
         {
+        EXPECT_STREQ(testValues[rowCount].c_str(), ecsqlStmt.GetValueText(0)) << "Expected ExtendedTypeName for property: "  << ecsqlStmt.GetValueText(1);
         rowCount++;
-        EXPECT_STREQ("Id", ecsqlStmt.GetValueText(0)) << "Expected ExtendedTypeName for property: "  << ecsqlStmt.GetValueText(1);
         }
     ASSERT_EQ(8, rowCount) << "Expected number of id properties in ECDbSystem schema";
     ecsqlStmt.Finalize();
