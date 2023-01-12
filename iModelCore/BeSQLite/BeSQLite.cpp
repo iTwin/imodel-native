@@ -1999,6 +1999,7 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
 
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
+    m_isCloudDb = params.m_fromContainer;
 
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
@@ -2790,9 +2791,21 @@ static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
     }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/** return true if this database is using WAL mode. */
+bool Db::IsWalMode() const {
+    // CloudSqlite always uses WAL mode (and produces an error if you attempt to query the journal mode)
+    if (m_isCloudDb)
+        return true;
+
+    Statement stmt;
+    stmt.Prepare(*this, "pragma journal_mode");
+    stmt.Step();
+    return 0 == strncmp("wal", stmt.GetValueText(0), 3);
+};
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     if (IsDbOpen())
         return BE_SQLITE_ERROR_AlreadyOpen;
@@ -2825,12 +2838,17 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
 
     // set the tempfileBase from open params
     m_tempfileBase = params.m_tempfileBase;
+    m_isCloudDb = params.m_fromContainer;
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
-    if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive) {
+    // for writeable databases in WAL mode with DEFERRED defaultTxn mode, promote it to IMMEDIATE mode so there can only
+    // be one writer. Without WAL mode we can't do that because the (single) writer would block readers.
+    if (IsWriteable() && m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Deferred && IsWalMode()) {
+        m_dbFile->m_defaultTxn.SetTxnMode(BeSQLiteTxnMode::Immediate);
+    } else if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive) {
         rc = TryExecuteSql("PRAGMA locking_mode=\"EXCLUSIVE\"");
         BeAssert(rc == BE_SQLITE_OK);
     }

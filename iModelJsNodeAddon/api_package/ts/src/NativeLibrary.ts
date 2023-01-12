@@ -379,6 +379,9 @@ export declare namespace IModelJsNative {
     saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal: Uint8Array | undefined): void;
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     enableWalMode(yesNo?: boolean): void;
+    /** perform a checkpoint if this db is in WAL mode. Otherwise this function does nothing.
+     * @param mode the checkpoint mode. Default is `Truncate`.
+     */
     performCheckpoint(mode?: WalCheckpointMode): void;
     setAutoCheckpointThreshold(frames: number): void;
   }

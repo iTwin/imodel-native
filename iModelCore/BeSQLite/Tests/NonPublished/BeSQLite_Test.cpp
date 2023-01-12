@@ -305,12 +305,6 @@ TEST_F(BeSQliteTestFixture, WAL_basic_test) {
         auto status = fileName.GetFileSize(sz);
         return BeFileNameStatus::Success == status ? sz : -1;
     };
-    auto getJournalMode = [](Db& db) {
-        Statement stmt;
-        stmt.Prepare(db, "pragma journal_mode");
-        stmt.Step();
-        return Utf8String(stmt.GetValueText(0));
-    };
     Utf8String dbFileName;
     auto db1 = Create("first.db");
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table test(i)"));
@@ -318,10 +312,10 @@ TEST_F(BeSQliteTestFixture, WAL_basic_test) {
     dbFileName = db1->GetDbFileName();
     ASSERT_EQ(BE_SQLITE_OK, db1->SaveChanges());
 
-    ASSERT_STREQ("delete", getJournalMode(*db1).c_str());
+    ASSERT_FALSE(db1->IsWalMode());
 
     ASSERT_EQ(BE_SQLITE_OK, db1->EnableWalMode(true));
-    ASSERT_STREQ("wal", getJournalMode(*db1).c_str());
+    ASSERT_TRUE(db1->IsWalMode());
 
     // insert many rows to force auto checkpoint
     for (int i = 0; i < 5000; i++)

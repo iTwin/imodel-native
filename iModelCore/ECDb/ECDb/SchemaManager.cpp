@@ -558,7 +558,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, ECClass
 InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet&& classIds) {
     ECSqlStatementCache stmtCache(20);
     const auto rootClasses = InstanceFinder::GetRootEntityAndRelationshipClasses(ecdb);
-    IdSet<BeInt64Id> classIdSet(std::move(classIds));
+    std::shared_ptr<IdSet<BeInt64Id>> classIdSet = std::make_shared<IdSet<BeInt64Id>>(std::move(classIds));
     std::map<ECClassId, std::vector<ECInstanceKey>> entityKeyMap;
     std::map<ECClassId, std::vector<LinkTableRelation>> linkTableKeyMap;
     std::map<ECClassId, std::vector<ForignKeyRelation>> foreignKeyMap;
@@ -570,7 +570,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
         const std::string entitySql = "SELECT ECClassId, ECInstanceId FROM " + std::string(entityClass->GetFullName()) + " WHERE InVirtualSet(?, ECClassId)";
         auto entityStmt = stmtCache.GetPreparedStatement(ecdb, entitySql.c_str());
         auto& entityKeys = entityKeyMap[entityClass->GetId()];
-        entityStmt->BindIdSet(1, classIdSet);
+        entityStmt->BindVirtualSet(1, classIdSet);
         while (entityStmt->Step() == BE_SQLITE_ROW) {
             entityKeys.emplace_back(ECInstanceKey(entityStmt->GetValueId<ECClassId>(0), entityStmt->GetValueId<ECInstanceId>(1)));
             recordedEntities.insert(entityKeys.back());
@@ -583,7 +583,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
             auto& relationKeys = linkTableKeyMap[entityClass->GetId()];
             const std::string linkTableSql = "SELECT ECClassId, ECInstanceId, SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId FROM " + std::string(entityClass->GetFullName()) + " WHERE InVirtualSet(:idset, SourceECClassId) OR InVirtualSet(:idset, TargetECClassId)";
             auto linkTableStmt = stmtCache.GetPreparedStatement(ecdb, linkTableSql.c_str());
-            linkTableStmt->BindIdSet(1, classIdSet);
+            linkTableStmt->BindVirtualSet(1, classIdSet);
             while (linkTableStmt->Step() == BE_SQLITE_ROW) {
                 auto relationKey = ECInstanceKey(linkTableStmt->GetValueId<ECClassId>(0), linkTableStmt->GetValueId<ECInstanceId>(1));
                 if (recordedEntities.find(relationKey) != recordedEntities.end())
@@ -609,7 +609,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
         std::string navPropSql = SqlPrintfString("SELECT aa.ECClassId, aa.ECInstanceId, cc.ECClassId, aa.%s.Id FROM %s aa JOIN %s cc ON cc.ECInstanceId=aa.%s.Id WHERE InVirtualSet(?, cc.ECClassId)",
             navProp->GetName().c_str(), navProp->GetClass().GetFullName(), otherClass->GetFullName(), navProp->GetName().c_str()).GetUtf8CP();
         auto navPropStmt = stmtCache.GetPreparedStatement(ecdb, navPropSql.c_str());
-        navPropStmt->BindIdSet(1, classIdSet);
+        navPropStmt->BindVirtualSet(1, classIdSet);
         auto& relationKeys = foreignKeyMap[rel->GetId()];
         while (navPropStmt->Step() == BE_SQLITE_ROW) {
             auto thisEnd = ECInstanceKey(navPropStmt->GetValueId<ECClassId>(0), navPropStmt->GetValueId<ECInstanceId>(1));
