@@ -79,6 +79,11 @@ protected:
     virtual void _AsJson(ContextR, LabelGroupingNodeKey const&, RapidJsonDocumentR) const = 0;
     virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst) const = 0;
 
+    virtual rapidjson::Document _AsJson(ContextR, PresentationQuery const&, rapidjson::Document::AllocatorType*) const = 0;
+    virtual std::unique_ptr<PresentationQuery> _GetPresentationQueryFromJson(BeJsConst) const = 0;
+
+    virtual rapidjson::Document _AsJson(ContextR, BoundQueryValuesList const&, rapidjson::Document::AllocatorType*) const = 0;
+
     virtual rapidjson::Document _AsJson(ContextR, NavNode const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _AsJson(ContextR, NodesPathElement const&, rapidjson::Document::AllocatorType*) const = 0;
 
@@ -163,6 +168,11 @@ public:
     ECPropertyGroupingNodeKeyPtr GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, BeJsConst json) const {return _GetECPropertyGroupingNodeKeyFromJson(connection, json);}
     rapidjson::Document AsJson(ContextR ctx, LabelGroupingNodeKey const& labelGroupingNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(BeJsConst json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
+
+    rapidjson::Document AsJson(ContextR ctx, PresentationQuery const& presentationQuery, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, presentationQuery, allocator); };
+    std::unique_ptr<PresentationQuery> GetPresentationQueryFromJson(BeJsConst json) const {return _GetPresentationQueryFromJson(json);}
+
+    rapidjson::Document AsJson(ContextR ctx, BoundQueryValuesList const& boundQueryValuesList, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, boundQueryValuesList, allocator); };
 
     rapidjson::Document AsJson(ContextR ctx, LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, labelDefinition, allocator);}
     rapidjson::Document AsJson(ContextR ctx, LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, value, allocator); }

@@ -7,6 +7,7 @@
 #include "NavNodesHelper.h"
 #include "../Shared/ExtendedData.h"
 #include "../Shared/ValueHelpers.h"
+#include "../Shared/Queries/PresentationQuery.h"
 
 // Member names of the serialized NavNode JSON object
 #define NAVNODE_NodeId              "NodeId"

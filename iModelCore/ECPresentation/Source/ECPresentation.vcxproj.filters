@@ -399,6 +399,9 @@
     <ClInclude Include="..\PublicAPI\ECPresentation\ECPresentationErrors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECPresentation\PresentationQuery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Connection.cpp">

@@ -28,40 +28,6 @@ enum PresentationQueryClauses
     CLAUSE_All       = CLAUSE_Select | CLAUSE_From | CLAUSE_Where | CLAUSE_OrderBy | CLAUSE_Limit | CLAUSE_Union | CLAUSE_Except | CLAUSE_GroupBy | CLAUSE_Having | CLAUSE_JoinUsing,
     };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct PresentationQuery
-{
-private:
-    Utf8String m_query;
-    BoundQueryValuesList m_bindings;
-
-public:
-    PresentationQuery() {}
-    PresentationQuery(Utf8StringCR query, BoundQueryValuesList bindings = {})
-        : m_query(query), m_bindings(bindings)
-        {}
-    std::unique_ptr<PresentationQuery> Clone() const
-        {
-        return std::make_unique<PresentationQuery>(GetQueryString(), GetBindings());
-        }
-    bool IsEqual(PresentationQuery const& other) const
-        {
-        return GetQueryString().Equals(other.GetQueryString())
-            && GetBindings() == other.GetBindings();
-        }
-    Utf8StringCR GetQueryString() const {return m_query;}
-    Utf8StringR GetQueryString() {return m_query;}
-    BoundQueryValuesList const& GetBindings() const {return m_bindings;}
-    BoundQueryValuesList& GetBindings() {return m_bindings;}
-
-    BentleyStatus BindValues(ECSqlStatement& stmt) const {return GetBindings().Bind(stmt);}
-
-    ECPRESENTATION_EXPORT rapidjson::Document ToJson(rapidjson::Document::AllocatorType* = nullptr) const;
-    ECPRESENTATION_EXPORT static std::unique_ptr<PresentationQuery> FromJson(RapidJsonValueCR);
-};
-
 struct NavigationQueryResultParameters;
 
 /*=================================================================================**//**

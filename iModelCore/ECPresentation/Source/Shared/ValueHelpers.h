@@ -76,7 +76,7 @@ public:
 
     static ECClassInstanceKey GetECClassInstanceKey(BeSQLite::EC::SchemaManagerCR, ECInstanceKeyCR);
 
-    static Utf8String GetECValueTypeName(ECN::ECValueCR);
+    static Utf8String GetECValueTypeName(ECN::PrimitiveType);
 
     static Utf8String PadNumbersInString(Utf8StringCR str);
     static Utf8String GuidToString(BeGuidCR guid);

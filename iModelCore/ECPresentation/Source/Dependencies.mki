@@ -26,7 +26,8 @@ ECPresentationPublicHeaders     = $(PublicApiDirectory)ECPresentation.h         
                                   $(PublicApiDirectory)UserSettings.h                                     \
                                   $(PublicApiDirectory)RulesetVariables.h                                 \
                                   $(PublicApiDirectory)ECInstanceChangeEvents.h                           \
-                                  $(PublicApiDirectory)IUiStateProvider.h
+                                  $(PublicApiDirectory)IUiStateProvider.h                                 \
+                                  $(PublicApiDirectory)PresentationQuery.h
 
 ECPresentationInternalHeaders   = $(SourceDirectory)Content/ContentCache.h                                \
                                   $(SourceDirectory)Content/ContentClassesLocater.h                       \

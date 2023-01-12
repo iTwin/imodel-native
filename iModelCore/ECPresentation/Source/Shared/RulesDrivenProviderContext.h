@@ -22,11 +22,11 @@ struct UsedRulesetVariablesListener;
 struct INodeInstanceKeysProvider
 {
 protected:
-    virtual void _IterateInstanceKeys(NavNodeCR, std::function<bool(ECInstanceKey)>) const = 0;
+    virtual void _IterateInstanceKeys(NavNodeKeyCR, std::function<bool(ECInstanceKey)>) const = 0;
     virtual bool _ContainsInstanceKey(NavNodeCR, ECInstanceKeyCR) const = 0;
 public:
     virtual ~INodeInstanceKeysProvider() {}
-    void IterateInstanceKeys(NavNodeCR node, std::function<bool(ECInstanceKey)> cb) const { _IterateInstanceKeys(node, cb); }
+    void IterateInstanceKeys(NavNodeKeyCR nodeKey, std::function<bool(ECInstanceKey)> cb) const { _IterateInstanceKeys(nodeKey, cb); }
     bool ContainsInstanceKey(NavNodeCR node, ECInstanceKeyCR instanceKey) const { return _ContainsInstanceKey(node, instanceKey); }
 };
 

@@ -159,7 +159,7 @@ LabelDefinition const& LabelDefinition::SetECValue(ECValueCR value, Utf8CP displ
         return *this;
 
     m_displayValue = nullptr != displayValue ? displayValue : value.ToString().c_str();
-    m_typeName = ValueHelpers::GetECValueTypeName(value);
+    m_typeName = ValueHelpers::GetECValueTypeName(value.GetPrimitiveType());
     m_rawValue = std::make_unique<SimpleRawValue>(ValueHelpers::GetJsonFromECValue(value, nullptr));
     return *this;
     }

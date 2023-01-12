@@ -801,9 +801,9 @@ ECClassInstanceKey ValueHelpers::GetECClassInstanceKey(SchemaManagerCR schemas, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ValueHelpers::GetECValueTypeName(ECValueCR value)
+Utf8String ValueHelpers::GetECValueTypeName(PrimitiveType type)
     {
-    switch (value.GetPrimitiveType())
+    switch (type)
         {
         case PRIMITIVETYPE_Binary:
             return "binary";

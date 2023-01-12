@@ -1941,7 +1941,7 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, LabelGroupingNodeChildren
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3, propertyGroupingNode2->GetNodeId());
 
     NavNodePtr labelGroupingNode = nodesFactory.CreateDisplayLabelGroupingNode(propertyGroupingNode3->GetKey().get(), "test", 1);
-    labelGroupingNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
+    labelGroupingNode->GetKey()->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode, propertyGroupingNode3->GetNodeId());
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification, *labelGroupingNode);

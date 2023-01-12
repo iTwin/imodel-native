@@ -33,6 +33,7 @@ private:
     Utf8String m_type;
     bvector<Utf8String> m_hashPath;
     Utf8String m_specificationIdentifier;
+    std::unique_ptr<PresentationQuery const> m_instanceKeysSelectQuery;
 
 private:
     static bvector<Utf8String> CreateHashPath(Utf8StringCR connectionIdentifier, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
@@ -42,9 +43,9 @@ protected:
     static Utf8String GetConnectionIdentifier(IConnectionCR connection) {return connection.IsOpen() ? connection.GetDb().GetDbGuid().ToString() : "";}
 
 protected:
-    NavNodeKey(Utf8String type, Utf8String specificationIdentifier, bvector<Utf8String> hashPath)
-        : m_type(type), m_specificationIdentifier(specificationIdentifier), m_hashPath(hashPath)
-        {}
+    ECPRESENTATION_EXPORT NavNodeKey(NavNodeKey const& other);
+    ECPRESENTATION_EXPORT NavNodeKey(Utf8String type, Utf8String specificationIdentifier, bvector<Utf8String> hashPath);
+    ECPRESENTATION_EXPORT ~NavNodeKey();
     ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const;
     virtual bool _IsSimilar(NavNodeKey const& other) const {return m_type.Equals(other.m_type);}
     virtual ECInstancesNodeKey const* _AsECInstanceNodeKey() const {return nullptr;}
@@ -103,6 +104,9 @@ public:
         }
     //! Create a key from the supplied JSON.
     ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR, BeJsConst);
+
+    ECPRESENTATION_EXPORT PresentationQuery const* GetInstanceKeysSelectQuery() const;
+    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const>);
 };
 
 //=======================================================================================
