@@ -154,6 +154,9 @@ describe("elementDependency", () => {
 
     mockTxn.fmtElem = (_cn: string, id: Id64String) => { return db.getElement({ id }).code.value!; };
 
+    const csid = db.insertCodeSpec("test", { spec: {}, scopeSpec: {} });
+    db.updateCodeSpec(csid, { spec: { codeSpecKind: 2 }, scopeSpec: {} });
+
     const p2id = db.insertElement(makeSubject("p2"));
     const p3id = db.insertElement(makeSubject("p3"));
     const e1id = db.insertElement(makeSubject("e1", { id: p2id, relClassName: "BisCore.ElementOwnsChildElements" }));

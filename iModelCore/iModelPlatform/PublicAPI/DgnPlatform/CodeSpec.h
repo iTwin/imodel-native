@@ -117,6 +117,11 @@ struct EXPORT_VTABLE_ATTRIBUTE CodeSpec : RefCountedBase, NonCopyableClass {
     friend struct dgn_CodeSpecHandler::CodeSpec;
 
 public:
+    enum class Kind : uint32_t {
+        RepositorySpecific = 1,     //!< Code-uniqueness checked in light of a single repository. Element-referencing based on ElementIds.
+        BusinessRelated = 2,        //!< Universe of code-uniqueness for associated codes span multiple repositories. Element-referencing based on FederationGuids.
+    };
+
     struct CreateParams {
         DgnDbR m_dgndb;
         CodeSpecId m_id;
@@ -132,6 +137,7 @@ public:
     BE_JSON_NAME(spec);
     BE_JSON_NAME(version);
     BE_JSON_NAME(isManagedWithDgnDb);
+    BE_JSON_NAME(codeSpecKind);
 
 private:
     DgnDbR m_dgndb;
@@ -145,13 +151,14 @@ private:
     void ReadProperties(Utf8StringCR jsonStr);
     Utf8String SerializeProperties() const;
 
-    void ToPropertiesJson(BeJsValue) const;
-    void FromPropertiesJson(BeJsConst);
+    void ToPropertiesJson(BeJsValue) const;    
     CodeSpecPtr CloneForImport(DgnDbStatus* status, DgnImportContext& importer) const;
 
     static DgnDbStatus Insert(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope, CodeSpecId codeSpecId = CodeSpecId());
 
 public:
+    DGNPLATFORM_EXPORT void FromPropertiesJson(BeJsConst);
+
     DgnDbR GetDgnDb() const { return m_dgndb; }
     CodeSpecId GetCodeSpecId() const { return m_codeSpecId; }
     Utf8StringCR GetName() const { return m_name; }
@@ -160,9 +167,14 @@ public:
     void SetRegistrySuffix(Utf8CP registrySuffix) {if (registrySuffix && *registrySuffix) m_specProperties[json_registrySuffix()] = registrySuffix;}
 
     //! Return true if the codes associated with this CodeSpec are managed along with the DgnDb. Return false if the codes associated with this CodeSpec are managed by an external service.
+    //! @deprecated Use GetKind instead
     bool IsManagedWithDgnDb() const { return m_specProperties[json_isManagedWithDgnDb()].asBool(true); }
     //! Set whether the codes associated with this CodeSpec are managed along with the DgnDb or by an external service.
+    //! @deprecated Use SetKind instead
     void SetIsManagedWithDgnDb(bool isManagedWithDgnDb) { m_specProperties[json_isManagedWithDgnDb()] = isManagedWithDgnDb; }
+
+    Kind GetKind() const { return (Kind)m_specProperties[json_codeSpecKind()].asUInt((uint32_t)Kind::RepositorySpecific); }
+    void SetKind(Kind codeSpecKind) { m_specProperties[json_codeSpecKind()] = (uint32_t)codeSpecKind; }
 
     //! Return the CodeSpecId of the NullCodeSpec
     static CodeSpecId GetNullCodeSpecId() { return CodeSpecId((uint64_t)1LL); }
@@ -170,7 +182,14 @@ public:
     //! Return true if the specified CodeSpec is the NullCodeSpec
     bool IsNullCodeSpec() const { return GetCodeSpecId() == GetNullCodeSpecId(); }
 
+    //! Make a writable copy of this CodeSpec so that the copy may be edited.
+    //! @return a CodeSpecPtr that holds the editable copy of this codeSpec.
+    //! @note This method may only be used on a CodeSpec this is the readonly persistent element returned by CodeSpecs::GetCodeSpec, and then
+    //! only one editing copy of this codeSpec at a time may exist. If another copy is extant, this method will return an invalid CodeSpecPtr.
+    DGNPLATFORM_EXPORT CodeSpecPtr CopyForEdit() const;
+
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
+    DGNPLATFORM_EXPORT DgnDbStatus Update();
 
     DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec = CodeScopeSpec::CreateRepositoryScope());
     DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, BeJsConst jsonProperties);

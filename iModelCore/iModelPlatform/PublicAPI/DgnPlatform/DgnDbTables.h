@@ -518,6 +518,15 @@ public:
     //! @return The result of the insert operation.
     //! @remarks If successful, this method will assign a valid CodeSpecId to the supplied CodeSpec
     DGNPLATFORM_EXPORT DgnDbStatus Insert(CodeSpecR codeSpec);
+
+    //! Update Json Properties of an existing CodeSpec to the table.
+    //! @param[in]  codeSpec The existing entry to update.
+    //! @return The result of the update operation.
+    DGNPLATFORM_EXPORT DgnDbStatus Update(CodeSpecR codeSpec);
+
+    //! Get an editable copy of a CodeSpec by CodeSpecId.
+    //! @return Invalid if the CodeSpec does not exist, or if it cannot be edited.
+    DGNPLATFORM_EXPORT CodeSpecPtr GetForEdit(CodeSpecId codeSpecId);
 };
 
 //=======================================================================================

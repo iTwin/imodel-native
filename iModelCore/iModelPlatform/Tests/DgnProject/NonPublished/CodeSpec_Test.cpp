@@ -38,6 +38,15 @@ struct DgnCodeSpecsTest : public DgnDbTestFixture
         return codeSpec;
         }
 
+    CodeSpecCPtr Get(CodeSpecId id)
+        {
+        return GetDgnDb().CodeSpecs().GetCodeSpec(id);
+        }
+
+    CodeSpecPtr GetForEdit(CodeSpecId id)
+        {
+        return GetDgnDb().CodeSpecs().GetForEdit(id);
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,6 +94,15 @@ TEST_F (DgnCodeSpecsTest, CodeSpecs)
     auto badAuth = Create("CodeSpec1", false);
     EXPECT_EQ(DgnDbStatus::DuplicateName, badAuth->Insert());
     EXPECT_FALSE(badAuth->GetCodeSpecId().IsValid());
+
+    // Change some properties on a CodeSpec
+    auto codeSpec1Ptr = GetForEdit(codeSpec1Id);
+    EXPECT_EQ(codeSpec1Ptr->GetKind(), CodeSpec::Kind::RepositorySpecific);
+    codeSpec1Ptr->SetKind(CodeSpec::Kind::BusinessRelated);
+    codeSpec1Ptr->Update();
+
+    auto codeSpec1CPtr = Get(codeSpec1Id);
+    EXPECT_EQ(codeSpec1CPtr->GetKind(), CodeSpec::Kind::BusinessRelated);
     }
 
 

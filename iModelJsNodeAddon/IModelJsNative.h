@@ -479,6 +479,7 @@ public:
     static void UpdateLinkTableRelationship(DgnDbR db, Napi::Object props);
     static void DeleteLinkTableRelationship(DgnDbR db, Napi::Object props);
     static Napi::String InsertCodeSpec(DgnDbR db, Utf8StringCR name, BeJsConst jsonProperties);
+    static void UpdateCodeSpec(DgnDbR db, CodeSpecId codeSpecId, BeJsConst jsonProperties);
     static Napi::String InsertModel(DgnDbR db, Napi::Object);
     static void UpdateModel(DgnDbR db, Napi::Object props);
     static DgnDbStatus UpdateModelGeometryGuid(DgnDbR db, DgnModelId modelId);
