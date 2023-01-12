@@ -324,7 +324,7 @@ describe("basic tests", () => {
     });
   });
 
-  it.only("testGetECClassMetaData custom attributes", async () => {
+  it("testGetECClassMetaData custom attributes", async () => {
     assert.isTrue(dgndb.isOpen());
     console.log();
     const result = dgndb.getECClassMetaData("BisCore", "ISubModeledElement");
