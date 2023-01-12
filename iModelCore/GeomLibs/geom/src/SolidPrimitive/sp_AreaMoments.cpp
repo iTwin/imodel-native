@@ -403,7 +403,9 @@ bool AddBetween (DEllipse3d ellipseA, DEllipse3d ellipseB, double f0, double f1)
     {
     DPoint3d XA, XB, X;
     DVec3d  dXAdu, dXBdu, dXdv, dXdu, ddXA, ddXB;
+#ifndef NDEBUG
     double checksum = 0.0;
+#endif
     double u, v, wu, wv, detJ;
     DMatrix4d products = DMatrix4d::FromZero ();
     for (int i = 0; m_lineGauss.GetEval (i, f0, f1, u, wu); i++)
@@ -417,10 +419,12 @@ bool AddBetween (DEllipse3d ellipseA, DEllipse3d ellipseB, double f0, double f1)
             dXdu.Interpolate (dXAdu, v, dXBdu);
             detJ = dXdu.CrossProductMagnitude (dXdv);
             products.AddSymmetricScaledOuterProduct (X, detJ * wu * wv);
+#ifndef NDEBUG
             checksum += wu * wv;
+#endif
             }
         }
-    assert (DoubleOps::AlmostEqual (checksum, f1 - f0));
+    BeAssert (DoubleOps::AlmostEqual (checksum, f1 - f0));
     m_products.Add (products);        
     return true;
     

@@ -104,6 +104,8 @@ $(o)ExtendedData$(oext):                    $(SourceDirectory)Shared/ExtendedDat
 
 $(o)ImageHelper$(oext):                     $(SourceDirectory)Shared/ImageHelper.cpp $(ECPresentationDependencies)
 
+$(o)InstanceFilterDefinition$(oext):        $(SourceDirectory)Shared/InstanceFilterDefinition.cpp $(ECPresentationDependencies)
+
 $(o)RelatedClass$(oext):                    $(SourceDirectory)Shared/RelatedClass.cpp $(ECPresentationDependencies)
 
 $(o)RulesDrivenProviderContext$(oext):      $(SourceDirectory)Shared/RulesDrivenProviderContext.cpp $(ECPresentationDependencies)

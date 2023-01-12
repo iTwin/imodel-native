@@ -7,6 +7,26 @@
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct Utf8StringVirtualSet final : VirtualSet
+    {
+    private:
+        std::function<bool(Utf8CP)> m_predicate;
+
+        bool _IsInSet(int nVals, DbValue const* values) const override
+            {
+            BeAssert(nVals == 1);
+            return m_predicate(values[0].GetValueText());
+            }
+
+    public:
+        explicit Utf8StringVirtualSet(std::function<bool(Utf8CP)> const& predicate) : VirtualSet(), m_predicate(predicate) {}
+
+        ~Utf8StringVirtualSet() {}
+    };
+
 struct ECSqlStatementFunctionTestFixture : ECDbTestFixture
     {
     //---------------------------------------------------------------------------------------
@@ -621,13 +641,13 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     ASSERT_EQ(perClassRowCount, (int) allIds.size());
     }
 
-    IdSet<BeInt64Id> idSet;
+    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>();
     ASSERT_TRUE(0 < perClassRowCount);
-    idSet.insert(allIds[0]);
+    idSet->insert(allIds[0]);
     ASSERT_TRUE(4 < perClassRowCount);
-    idSet.insert(allIds[4]);
+    idSet->insert(allIds[4]);
     ASSERT_TRUE(6 < perClassRowCount);
-    idSet.insert(allIds[6]);
+    idSet->insert(allIds[6]);
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE I<>? AND InVirtualSet(?, ECInstanceId)"));
@@ -635,40 +655,40 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0));
 
     statement.Reset();
     statement.ClearBindings();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindIdSet(2, idSet));
-
-    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
-
-    statement.Reset();
-    statement.ClearBindings();
-
-    idSet.clear();
-    ASSERT_TRUE(1 < perClassRowCount);
-    idSet.insert(allIds[1]);
-    ASSERT_TRUE(3 < perClassRowCount);
-    idSet.insert(allIds[3]);
 
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0));
+
+    statement.Reset();
+    statement.ClearBindings();
+
+    idSet->clear();
+    ASSERT_TRUE(1 < perClassRowCount);
+    idSet->insert(allIds[1]);
+    ASSERT_TRUE(3 < perClassRowCount);
+    idSet->insert(allIds[3]);
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0));
 
     statement.Reset();
     statement.ClearBindings();
     
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindIdSet(2, idSet));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0));
 
     statement.Reset();
     statement.ClearBindings();
@@ -683,7 +703,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     statement.ClearBindings();
 
     //now binding an empty virtual set
-    idSet.clear();
+    idSet->clear();
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
@@ -694,7 +714,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     statement.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindIdSet(2, idSet));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0)) << statement.GetECSql() << " with empty id set";
@@ -705,39 +725,145 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
 
     statement.Reset();
     statement.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindIdSet(1, idSet));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding an id set in parentheses";
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding an id set in parentheses";
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0)) << "Step with binding an id set in parentheses";
 
     statement.Reset();
     statement.ClearBindings();
 
-    idSet.clear();
+    idSet->clear();
     ASSERT_TRUE(1 < perClassRowCount);
-    idSet.insert(allIds[1]);
+    idSet->insert(allIds[1]);
     ASSERT_TRUE(3 < perClassRowCount);
-    idSet.insert(allIds[3]);
+    idSet->insert(allIds[3]);
 
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
 
     statement.Reset();
     statement.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindIdSet(1, idSet));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding an id set in parentheses";
-    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding an id set in parentheses";
+    ASSERT_EQ((int) idSet->size(), statement.GetValueInt(0)) << "Step with binding an id set in parentheses";
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(1023, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet('HELLO', 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(3.3, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(2+?, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(?+?, 1);")) << "First parameter should not be Primitive type";
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT InVirtualSet(?, 1)"));
+    // Bind nothing
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+
+    // Bind NULL value
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind Boolean value;
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindBoolean(1, false));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind Double value
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindDouble(1, 1.2));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind Int value
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, 15));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind Int64 value
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindInt64(1, 15));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind Point2d value
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindPoint2d(1, DPoint2d::From(2, 3)));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind Point3d value
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindPoint3d(1, DPoint3d::From(2, 3, 4)));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind Text value
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindText(1, "str", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind empty VirtualSet IdSet
+    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>();
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind non-empty VirtualSet IdSet
+    idSet->insert(BeInt64Id(1));
+    idSet->insert(BeInt64Id(5));
+    idSet->insert(BeInt64Id(10));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(1, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
+
+    // Bind string VirtualSet
+    std::shared_ptr<Utf8StringVirtualSet> stringSet = std::make_shared<Utf8StringVirtualSet>([] (Utf8CP name) { return "tempstring"; });
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, stringSet));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(1, statement.GetValueInt(0));
+    statement.Reset();
+    statement.ClearBindings();
     }
 
 

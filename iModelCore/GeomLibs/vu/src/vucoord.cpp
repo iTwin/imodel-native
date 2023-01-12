@@ -2098,7 +2098,7 @@ VuSetP pGraph
         VU_SET_LOOP (pCurr, pGraph)
             {
             /* Only start at INTERIOR UNVISITED */
-            if (!vu_getMask (pCurr, visitMask))
+            if (!vu_getMask (pCurr, seedMask))
                 {
                 VuP pSearchNode;
                 vu_arrayAdd (pStack, pCurr);

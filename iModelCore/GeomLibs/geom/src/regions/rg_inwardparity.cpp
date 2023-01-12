@@ -160,7 +160,7 @@ int                 noisy
         */
         pTempStack = pStack0;
         pStack0 = pStack1;
-        pStack1 = pStack0;
+        pStack1 = pTempStack;
         if (noisy)
             GEOMAPI_PRINTF(" stack swap # %d\n", ++swapCount);
         }

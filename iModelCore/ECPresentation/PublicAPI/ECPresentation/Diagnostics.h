@@ -29,9 +29,11 @@ enum class DiagnosticsCategory
 
     Hierarchies,
     HierarchiesCache,
-    HierarchiesUpdate,
 
     Content,
+
+    Update,
+    HierarchiesUpdate,
     ContentUpdate,
     };
 
@@ -160,12 +162,11 @@ struct Diagnostics
         std::weak_ptr<Scope> GetParentScope() const {return m_parentScope;}
         uint64_t GetElapsedTime() const {return (m_end ? m_end : BeTimeUtilities::GetCurrentTimeAsUnixMillis()) - m_start;}
 
-        ECPRESENTATION_EXPORT bool IsEnabled(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity) const;
-        ECPRESENTATION_EXPORT void Log(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg);
-        ECPRESENTATION_EXPORT void DevLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
-        ECPRESENTATION_EXPORT void EditorLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
-        ECPRESENTATION_EXPORT void SetCapturedAttributes(bvector<Utf8CP> const& attributes);
-        ECPRESENTATION_EXPORT void AddValueToArrayAttribute(Utf8CP name, Utf8String value, bool unique);
+        void Log(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg);
+        void DevLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
+        void EditorLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
+        void SetCapturedAttributes(bvector<Utf8CP> const& attributes);
+        void AddValueToArrayAttribute(Utf8CP name, Utf8String value, bool unique);
     };
 
 private:
@@ -183,7 +184,6 @@ public:
 
 #define DIAGNOSTICS_LOG(category, devSeverity, editorSeverity, msg)     Diagnostics::Log(category, devSeverity, editorSeverity, msg);
 #define DIAGNOSTICS_DEV_LOG(category, severity, msg)                    Diagnostics::DevLog(category, severity, msg);
-#define DIAGNOSTICS_EDITOR_LOG(category, severity, msg)                 Diagnostics::EditorLog(category, severity, msg);
 #define DIAGNOSTICS_ASSERT_SOFT(category, condition, failureMsg)        { if (!(condition)) { BeAssert(false); Diagnostics::DevLog(category, LOG_ERROR, failureMsg); } }
 #define DIAGNOSTICS_HANDLE_FAILURE(category, msg)                       { Diagnostics::DevLog(category, LOG_ERROR, msg); throw InternalError(msg); }
 

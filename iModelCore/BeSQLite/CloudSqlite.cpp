@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 // default for "nRequests" to SQLite apis (number of simultaneous HTTP connections). 6 is the maximum from Chrome.
 static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
 // default for "httpTimeout" to SQLite apis (time in seconds to wait without a response before considering an http request as timed out).
-static const int DEFAULT_HTTP_TIMEOUT = 60; 
+static const int DEFAULT_HTTP_TIMEOUT = 60;
 
 Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP container) {
     if (nullptr == container)
@@ -45,6 +45,7 @@ DbResult CloudVdb::Open(Utf8StringCR alias, Utf8StringCR vfsName) {
     params.m_rawSQLite = true;
     params.m_skipFileCheck = true;
     params.m_startDefaultTxn = DefaultTxn::No;
+    params.m_fromContainer = true;
     Utf8String vfsParam = "vfs=" + vfsName;
     params.AddQueryParam(vfsParam.c_str());
 
@@ -411,7 +412,7 @@ CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int n
     if (nRequest <= 0)
         nRequest = DEFAULT_MAX_HTTP_CONNECTIONS;
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_NREQUEST, nRequest);
-    if (httpTimeout <= 0) 
+    if (httpTimeout <= 0)
         httpTimeout = DEFAULT_HTTP_TIMEOUT;
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_HTTPTIMEOUT, httpTimeout);
     return CloudResult();

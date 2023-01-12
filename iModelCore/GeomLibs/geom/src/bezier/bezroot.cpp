@@ -589,6 +589,8 @@ int             order
 )
     {
     static int      sbPreferAnalytic = 0;
+
+#ifdef DEBUG_UNIVARIATE_ROOTS
     double testRoot[100];
     int numTestRoot;
     static double sErrorCount = 0;
@@ -637,13 +639,19 @@ int             order
                 }
             }
         }
+#endif
+
     bool    stat =  bsiBezier_univariateRootsOptionalAnalytic (pRootArray, pNumRoot, pA, order, 0 != sbPreferAnalytic);
+
+#ifdef DEBUG_UNIVARIATE_ROOTS
     if (*pNumRoot == 0)
         sNumRoot0++;
     else if (*pNumRoot == 1)
         sNumRoot1++;
     else
         sNumRootX += *pNumRoot;
+#endif
+
     return stat;
     }
 

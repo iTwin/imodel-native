@@ -121,7 +121,7 @@ double param1                           // => end parameter on curve
     BeAssert(baseCount == curvePoints.size());
     DPoint3d curvePoint0, surfacePoint0, curvePoint1, surfacePoint1;
     double delta = param1 - param0;
-    double u, u0, u1;
+    double u, u0;
     double baseStep, localStep;
     int i, j, numJ, newNumJ;
     bool    bAddBasePoint;
@@ -135,7 +135,6 @@ double param1                           // => end parameter on curve
     static int sMaxJ = 2048;
     static double sMinParamStep = 1.0e-5;
     double curveError, surfaceError;
-    double curveError0, surfaceError0;
     if (curveTol <= 0.0)
         curveTol = sDefaultCurveTol;
     if (surfaceTol <= 0.0)
@@ -179,14 +178,9 @@ double param1                           // => end parameter on curve
         {
         baseCount = surfacePoints.size ();
         u0 = param0 + (i - 1) * baseStep;
-        u1 = param0 + i * baseStep;
-        if (i == minPoints - 1)
-            u1 = param1;
         numJ = 2;
-        curveError0 = 1.0e20;
-        surfaceError0 = 1.0e20;
         countFactor   = 1.0;
-        for (;; surfaceError0 = surfaceError, curveError0 = curveError)
+        for (;;)
             {
             localStep = baseStep / numJ;
             for (j = 1; j <= numJ; j++)
@@ -274,7 +268,6 @@ const MSBsplineSurface *surface
     static int sMaxJ = 2048;
     static double sMinParamStep = 1.0e-5;
     double surfaceError;
-    double surfaceError0;
 
     if (surfaceTol <= 0.0)
         surfaceTol = sDefaultSurfaceTol;
@@ -315,14 +308,10 @@ const MSBsplineSurface *surface
         {
         baseCount = surfacePoints.size();
         double u0 = (i - 1) * baseStep;
-        double u1 = i * baseStep;
-        if (i == minPoints - 1)
-            u1 = 1.0;
         numJ = 2;
 
-        surfaceError0 = 1.0e20;
         countFactor   = 1.0;
-        for (;; surfaceError0 = surfaceError)
+        for (;;)
             {
             localStep = baseStep / numJ;
             for (j = 1; j <= numJ; j++)
@@ -1434,7 +1423,7 @@ const MSBsplineSurface      *pSurface,
 int                         horizontal
 )
     {
-    int             prev, curr, next, numSpans, bufSize, numPoints;
+    int             prev, curr, next, bufSize, numPoints;
     double          scanHeight, near1;
     DPoint2d        *p;
     BsurfBoundary   *currBound, *endB;
@@ -1494,7 +1483,7 @@ int                         horizontal
         }
     else if (pSurface->numBounds > 0)
         {
-        numSpans = bufSize = 0;
+        bufSize = 0;
         near1 = 1.0 - fc_epsilon;
         if (!pSurface->holeOrigin)
             {

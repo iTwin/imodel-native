@@ -41,8 +41,8 @@ public:
         {}
     void AddExpandedNode(NavNodeKeyCPtr key) {m_state->GetHierarchyLevelState(key.get()).SetIsExpanded(true);}
     void RemoveExpandedNode(NavNodeKeyCPtr key) {m_state->GetHierarchyLevelState(key.get()).SetIsExpanded(false);}
-    void SetInstanceFilter(NavNodeCP parentNode, Utf8String instanceFilter) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters({ instanceFilter });}
-    void SetInstanceFilters(NavNodeCP parentNode, bvector<Utf8String> instanceFilters) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters(instanceFilters);}
+    void SetInstanceFilter(NavNodeCP parentNode, std::shared_ptr<InstanceFilterDefinition const> instanceFilter) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters({ instanceFilter });}
+    void SetInstanceFilters(NavNodeCP parentNode, bvector<std::shared_ptr<InstanceFilterDefinition const>> instanceFilters) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters(instanceFilters);}
 };
 
 /*=================================================================================**//**
@@ -5115,11 +5115,11 @@ TEST_F(HierarchyUpdateTests, UpdateFilteredRootHierarchyLevel)
 
     // set up hierarchy level instance filter
     Utf8CP filter = "this.Prop = 1";
-    m_uiState->SetInstanceFilter(nullptr, filter);
+    m_uiState->SetInstanceFilter(nullptr, std::make_unique<InstanceFilterDefinition>(filter));
 
     // validate hierarchy pre-update
     auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
-    params.SetInstanceFilter(filter);
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filter));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a1 }),
@@ -5218,7 +5218,7 @@ TEST_F(HierarchyUpdateTests, UpdateFilteredChildHierarchyLevel)
         {
         NavNodeKeyCP parentKey = p.GetParentNode() ? p.GetParentNode()->GetKey().get() : p.GetParentNodeKey() ? p.GetParentNodeKey() : nullptr;
         if (parentKey && ContainerHelpers::Contains(parentKey->AsECInstanceNodeKey()->GetInstanceKeys(), [&](auto const& k){return k.GetClass()->GetName().Equals("A");}))
-            p.SetInstanceFilter(filter);
+            p.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filter));
         };
 
     // validate hierarchy pre-update
@@ -5231,7 +5231,7 @@ TEST_F(HierarchyUpdateTests, UpdateFilteredChildHierarchyLevel)
             }),
         });
 
-    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), std::make_unique<InstanceFilterDefinition>(filter));
     m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
 
     // add an instance that doesn't match the filter
@@ -5289,7 +5289,7 @@ TEST_F(HierarchyUpdateTests, UpdateFilteredChildHierarchyLevel)
     EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5348,7 +5348,7 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenF
         {
         NavNodeKeyCP parentKey = p.GetParentNode() ? p.GetParentNode()->GetKey().get() : p.GetParentNodeKey() ? p.GetParentNodeKey() : nullptr;
         if (parentKey && ContainerHelpers::Contains(parentKey->AsECInstanceNodeKey()->GetInstanceKeys(), [&](auto const& k){return k.GetClass()->GetName().Equals("A");}))
-            p.SetInstanceFilter(filter);
+            p.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filter));
         };
 
     // validate hierarchy pre-update
@@ -5361,7 +5361,7 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenF
             }),
         });
 
-    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), std::make_unique<InstanceFilterDefinition>(filter));
     m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
 
     // remove the instance matching the filter
@@ -5371,10 +5371,10 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenF
     // validate hierarchy post-update
     ValidateHierarchy(params, aChildrenFilterSetter,
         {
-        // notes: 
+        // notes:
         // - even though 'a' has 'hide if no children' flag and has no children, we still show it
         //   or otherwise there would be no way to clear the filter and get it back
-        // - even though the node has no children, it still has the 'has children' flag set to 
+        // - even though the node has no children, it still has the 'has children' flag set to
         //   'true' - we don't know the filter for 'a' node when creating it
         ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }), true,
             {
@@ -5449,7 +5449,7 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenF
         {
         NavNodeKeyCP parentKey = p.GetParentNode() ? p.GetParentNode()->GetKey().get() : p.GetParentNodeKey() ? p.GetParentNodeKey() : nullptr;
         if (parentKey && ContainerHelpers::Contains(parentKey->AsECInstanceNodeKey()->GetInstanceKeys(), [&](auto const& k){return k.GetClass()->GetName().Equals("A"); }))
-            p.SetInstanceFilter(filter);
+            p.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filter));
         };
 
     // validate hierarchy pre-update
@@ -5461,7 +5461,7 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenF
             }),
         });
 
-    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), std::make_unique<InstanceFilterDefinition>(filter));
     m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
 
     // insert an instance matching the filter
@@ -5561,7 +5561,7 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredHierarchyLevelWhenNodesUnderVirtualP
             && &parentKey->AsECPropertyGroupingNodeKey()->GetECClass() == classA;
         if (isParentAInstanceNode || isParentAPropertyGroupingNode)
             {
-            p.SetInstanceFilter(filter);
+            p.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filter));
             }
         };
 
@@ -5575,7 +5575,7 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredHierarchyLevelWhenNodesUnderVirtualP
             }),
         });
 
-    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), filter);
+    m_uiState->SetInstanceFilter(hierarchy[0].node.get(), std::make_unique<InstanceFilterDefinition>(filter));
     m_uiState->AddExpandedNode(hierarchy[0].node->GetKey());
 
     // insert an instance matching the filter
@@ -5661,11 +5661,11 @@ TEST_F(HierarchyUpdateTests, UpdatesHierarchyLevelWhenNodesUnderFilteredParentAr
 
     // set up hierarchy level instance filter
     Utf8CP filter = "this.Prop = 1";
-    m_uiState->SetInstanceFilter(nullptr, filter);
-    
+    m_uiState->SetInstanceFilter(nullptr, std::make_unique<InstanceFilterDefinition>(filter));
+
     // validate hierarchy pre-update
     auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
-    params.SetInstanceFilter(filter);
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filter));
     auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),
@@ -5733,9 +5733,9 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyLevelFilteredWithMultipleFilters)
     rules->AddPresentationRule(*rootRule);
 
     // set up hierarchy level instance filter
-    Utf8CP filter1 = "this.Prop = 1";
-    Utf8CP filter2 = "this.Prop = 2";
-    m_uiState->SetInstanceFilters(nullptr, { filter1, filter2, ""});
+    auto filter1 = std::make_shared<InstanceFilterDefinition>("this.Prop = 1");
+    auto filter2 = std::make_shared<InstanceFilterDefinition>("this.Prop = 2");
+    m_uiState->SetInstanceFilters(nullptr, { filter1, filter2, nullptr });
 
     // validate hierarchy pre-update
     auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
@@ -5751,8 +5751,8 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyLevelFilteredWithMultipleFilters)
         {
         CreateInstanceNodeValidator({ a2 }),
         });
-    
-    params.SetInstanceFilter("");
+
+    params.SetInstanceFilter(nullptr);
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a1 }),
@@ -5776,7 +5776,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyLevelFilteredWithMultipleFilters)
         CreateInstanceNodeValidator({ a2 }),
         });
 
-    params.SetInstanceFilter("");
+    params.SetInstanceFilter(nullptr);
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a1 }),
@@ -5788,17 +5788,17 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyLevelFilteredWithMultipleFilters)
     EXPECT_EQ(3, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
-    EXPECT_STREQ(filter1, m_updateRecordsHandler->GetRecords()[0].GetInstanceFilter().c_str());
+    EXPECT_EQ(*filter1, *m_updateRecordsHandler->GetRecords()[0].GetInstanceFilter());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
 
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[1].GetParentNode().IsNull());
-    EXPECT_STREQ(filter2, m_updateRecordsHandler->GetRecords()[1].GetInstanceFilter().c_str());
+    EXPECT_EQ(*filter2, *m_updateRecordsHandler->GetRecords()[1].GetInstanceFilter());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
 
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[2].GetParentNode().IsNull());
-    EXPECT_STREQ("", m_updateRecordsHandler->GetRecords()[2].GetInstanceFilter().c_str());
+    EXPECT_EQ(nullptr, m_updateRecordsHandler->GetRecords()[2].GetInstanceFilter());
     EXPECT_EQ(3, m_updateRecordsHandler->GetRecords()[2].GetNodesCount());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetExpandedNodes().size());
 
@@ -5822,7 +5822,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyLevelFilteredWithMultipleFilters)
         CreateInstanceNodeValidator({ a2 }),
         });
 
-    params.SetInstanceFilter("");
+    params.SetInstanceFilter(nullptr);
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a1 }),
@@ -5835,17 +5835,17 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyLevelFilteredWithMultipleFilters)
     EXPECT_EQ(3, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
-    EXPECT_STREQ(filter1, m_updateRecordsHandler->GetRecords()[0].GetInstanceFilter().c_str());
+    EXPECT_EQ(*filter1, *m_updateRecordsHandler->GetRecords()[0].GetInstanceFilter());
     EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
 
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[1].GetParentNode().IsNull());
-    EXPECT_STREQ(filter2, m_updateRecordsHandler->GetRecords()[1].GetInstanceFilter().c_str());
+    EXPECT_EQ(*filter2, *m_updateRecordsHandler->GetRecords()[1].GetInstanceFilter());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
 
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[2].GetParentNode().IsNull());
-    EXPECT_STREQ("", m_updateRecordsHandler->GetRecords()[2].GetInstanceFilter().c_str());
+    EXPECT_EQ(nullptr, m_updateRecordsHandler->GetRecords()[2].GetInstanceFilter());
     EXPECT_EQ(4, m_updateRecordsHandler->GetRecords()[2].GetNodesCount());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetExpandedNodes().size());
     }

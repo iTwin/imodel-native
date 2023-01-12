@@ -1233,12 +1233,12 @@ DbResult ECSqlUpdatePreparedStatement::Step()
     if (m_isNoopInSqlite)
         return BE_SQLITE_DONE;
 
-    IdSet<BeInt64Id> idSet;
+    m_idSet = std::make_shared<IdSet<BeInt64Id>>();
     if (m_whereClauseSelector != nullptr)
         {
         while (BE_SQLITE_ROW == m_whereClauseSelector->Step())
             {
-            idSet.insert(m_whereClauseSelector->GetValue(0).GetId<BeInt64Id>());
+            m_idSet->insert(m_whereClauseSelector->GetValue(0).GetId<BeInt64Id>());
             }
 
         m_whereClauseSelector->Reset();
@@ -1255,7 +1255,7 @@ DbResult ECSqlUpdatePreparedStatement::Step()
                 return BE_SQLITE_ERROR;
                 }
 
-            if (ECSqlStatus::Success != binder->BindVirtualSet(idSet))
+            if (ECSqlStatus::Success != binder->BindVirtualSet(m_idSet))
                 {
                 BeAssert(false);
                 return BE_SQLITE_ERROR;

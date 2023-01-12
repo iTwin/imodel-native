@@ -85,7 +85,7 @@ ICurvePrimitivePtr CreateBasePartialSpiralWithPreciseBearingCurvatureLengthCurva
     double distanceTolBig = 1.0e-7 * targetPartialLength;
     double distanceTolSmall = 1.0e-12 * targetPartialLength;
     double maxLocalFraction = 2.0;      // when extrapolating from prior iterates, allow modest amount of out-of-interval step.   (default to length ratio if this fails)
-    double curvature1, radius1, length1, fraction0;
+    double curvature1, radius1, length1;
     double bearing0 = 0.0;
     // (fraction0) is the approximate fraction for curvatureA
     // (fraction1, radius1, length1) are the construction parameters for the full spiral
@@ -93,14 +93,12 @@ ICurvePrimitivePtr CreateBasePartialSpiralWithPreciseBearingCurvatureLengthCurva
     // The actual fractions for the partial spiral are determined by search for precise requested curvatures.
     if (fabs (curvatureA) > fabs (curvatureB))
         {
-        fraction0 = curvatureB / curvatureA;
         curvature1 = curvatureA;
         radius1    = 1.0 / curvatureA;
         length1    = targetPartialLength * curvatureA / (curvatureA - curvatureB);
         }
     else
         {
-        fraction0 = curvatureA / curvatureB;
         curvature1 = curvatureB;
         radius1    = 1.0 / curvatureB;
         length1    = targetPartialLength * curvatureB / (curvatureB - curvatureA);

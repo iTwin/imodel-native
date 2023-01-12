@@ -1106,7 +1106,7 @@ double                  processTol
     {
     bool            shift, mixed = false, lastClosed = false, currentClosed;
     int             i, j, rational, status = SUCCESS, numU, numV, numPoints;
-    double          *wPts = NULL, *wPoles = NULL, length, relativeTol, step, param;
+    double          *wPts = NULL, *wPoles = NULL, length, step, param;
     DPoint3d        *pPts = NULL, *pPoles = NULL, *pointsP;
     MSBsplineCurve  ruleCurves[2];
 
@@ -1115,7 +1115,7 @@ double                  processTol
         {
         if (processCurves)
             {
-            length = 0.0; relativeTol = 0.005;
+            length = 0.0;
             if (fabs(processTol) < 1.0e-15)
                 return  ERROR;
             else if (processTol < 0.0)
@@ -1178,7 +1178,6 @@ double                  processTol
         if (processCurves)
             {
             length = 0.0;
-            relativeTol = 0.005;
             numPoints = (int) (1.0 / processTol);
             if (numPoints < 2) numPoints = 2;
             pointsP = (DPoint3d*)malloc ((numPoints+2) * sizeof(DPoint3d));
