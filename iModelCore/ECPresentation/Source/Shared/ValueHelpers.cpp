@@ -801,7 +801,7 @@ ECClassInstanceKey ValueHelpers::GetECClassInstanceKey(SchemaManagerCR schemas, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ValueHelpers::GetECValueTypeName(PrimitiveType type)
+Utf8String ValueHelpers::PrimitiveTypeAsString(PrimitiveType type)
     {
     switch (type)
         {

@@ -95,7 +95,6 @@ NavNodePtr TestNodesHelper::CreateLabelGroupingNode(IConnectionCR connection, Ut
 NavNodePtr TestNodesHelper::CreateCustomNode(IConnectionCR connection, Utf8CP type, Utf8CP label, Utf8CP description)
     {
     NavNodePtr node = s_testNodesFactory.CreateCustomNode(connection, "", nullptr, *LabelDefinition::Create(label), description, "", type, nullptr);
-    node->GetKey()->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     return node;
     }
 

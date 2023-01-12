@@ -99,16 +99,6 @@ bvector<Utf8String> NavNodeKey::CreateHashPath(Utf8StringCR connectionIdentifier
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQuery const* NavNodeKey::GetInstanceKeysSelectQuery() const { return m_instanceKeysSelectQuery.get(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodeKey::SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const> query) { m_instanceKeysSelectQuery = std::move(query); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool ECInstancesNodeKey::_IsSimilar(NavNodeKey const& other) const
     {
     if (!NavNodeKey::_IsSimilar(other))
@@ -274,18 +264,6 @@ bvector<Utf8String> LabelGroupingNodeKey::CreateHashPath(Utf8StringCR connection
         AddStringToHash(h, instanceKeysSelectQuery->GetQueryString());
     return CombineHashes(parentKey ? parentKey->GetHashPath() : bvector<Utf8String>(), h.GetHashString());
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKey::NavNodeKey(Utf8String type, Utf8String specificationIdentifier, bvector<Utf8String> hashPath)
-    : m_type(type), m_specificationIdentifier(specificationIdentifier), m_hashPath(hashPath)
-    {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKey::~NavNodeKey() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

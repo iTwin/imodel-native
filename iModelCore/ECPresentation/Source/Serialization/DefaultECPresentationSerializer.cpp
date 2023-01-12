@@ -699,11 +699,10 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Bound
     {
     rapidjson::Document json(allocator);
     json.SetArray();
-    auto boundQueryValueSerializer = DefaultBoundQueryValueSerializer();
-    for (size_t i = 0; i < boundQueryValuesList.size(); ++i)
+    DefaultBoundQueryValueSerializer valuesSerializer;
+    for (auto const& value : boundQueryValuesList)
         {
-        auto const& value = boundQueryValuesList.at(i);
-        json.PushBack(value->ToJson(boundQueryValueSerializer, &json.GetAllocator()), json.GetAllocator());
+        json.PushBack(value->ToJson(valuesSerializer, &json.GetAllocator()), json.GetAllocator());
         }
     return json;
     }
@@ -771,7 +770,9 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    key->SetInstanceKeysSelectQuery(std::move(GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"])));
+    std::unique_ptr<PresentationQuery> instanceKeysSelectQuery = GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"]);
+    if (nullptr != instanceKeysSelectQuery)
+        key->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
     return key;
     }
 

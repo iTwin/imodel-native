@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/ECPresentationManager.h>
+#include <ECPresentation/DefaultECPresentationSerializer.h>
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/Profiler.h>
 #include "../Shared/ExtendedData.h"
@@ -16,7 +17,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_SUFFIX            L"-hierarchies"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR     35
+#define NAVNODES_CACHE_DB_VERSION_MAJOR     36
 #define NAVNODES_CACHE_DB_VERSION_MINOR     0
 
 #define NAVNODES_CACHE_LockWaitTime 200
@@ -1199,10 +1200,11 @@ static void BindInstanceKeysSelectQuery(Statement& stmt, int bindingIndex, NavNo
     if (key.GetInstanceKeysSelectQuery() != nullptr)
         {
         ECPresentationSerializerContext ctx;
-        stmt.BindText(bindingIndex++, BeRapidJsonUtilities::ToString(ECPresentationManager::GetSerializer().AsJson(ctx, *key.GetInstanceKeysSelectQuery(), nullptr)), Statement::MakeCopy::Yes);
+        DefaultECPresentationSerializer serializer;
+        stmt.BindText(bindingIndex, BeRapidJsonUtilities::ToString(serializer.AsJson(ctx, *key.GetInstanceKeysSelectQuery(), nullptr)), Statement::MakeCopy::Yes);
         }
     else
-        stmt.BindNull(bindingIndex++);
+        stmt.BindNull(bindingIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1241,7 +1243,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindText(bindingIndex++, key.GetType(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, key.GetSpecificationIdentifier(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
-        BindInstanceKeysSelectQuery(*stmt, bindingIndex, key);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
 
         CacheNodeInstanceKeys(node.GetNodeId(), key.AsECInstanceNodeKey()->GetInstanceKeys());
@@ -1265,7 +1267,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindUInt64(bindingIndex++, key.AsECClassGroupingNodeKey()->GetGroupedInstancesCount());
         BindOptionalInstanceKeys(*stmt, bindingIndex++, key.AsECClassGroupingNodeKey()->GetGroupedInstanceKeys());
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
-        BindInstanceKeysSelectQuery(*stmt, bindingIndex, key);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     else if (key.AsECPropertyGroupingNodeKey())
@@ -1288,7 +1290,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindUInt64(bindingIndex++, key.AsECPropertyGroupingNodeKey()->GetGroupedInstancesCount());
         BindOptionalInstanceKeys(*stmt, bindingIndex++, key.AsECPropertyGroupingNodeKey()->GetGroupedInstanceKeys());
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
-        BindInstanceKeysSelectQuery(*stmt, bindingIndex, key);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     else if (key.AsLabelGroupingNodeKey())
@@ -1308,7 +1310,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindUInt64(bindingIndex++, key.AsLabelGroupingNodeKey()->GetGroupedInstancesCount());
         BindOptionalInstanceKeys(*stmt, bindingIndex++, key.AsLabelGroupingNodeKey()->GetGroupedInstanceKeys());
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
-        BindInstanceKeysSelectQuery(*stmt, bindingIndex, key);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     else
@@ -1326,7 +1328,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindText(bindingIndex++, key.GetType(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, key.GetSpecificationIdentifier(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
-        BindInstanceKeysSelectQuery(*stmt, bindingIndex, key);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     }

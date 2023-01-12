@@ -1134,7 +1134,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Node
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetECValueTypeName(PrimitiveType type)
+static Utf8String PrimitiveTypeAsString(PrimitiveType type)
     {
     switch (type)
         {
@@ -1370,7 +1370,7 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryECValue
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("type", "ECValue", json.GetAllocator());
-    json.AddMember("valueType", rapidjson::Value(GetECValueTypeName(boundQueryECValue.GetValue().GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("valueType", rapidjson::Value(PrimitiveTypeAsString(boundQueryECValue.GetValue().GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("value", GetJsonFromECValue(boundQueryECValue.GetValue(), &json.GetAllocator()), json.GetAllocator());
     return json;
     }
@@ -1412,7 +1412,7 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundECValueSet c
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("type", "ValueSet", json.GetAllocator());
-    json.AddMember("valueType", rapidjson::Value(values.empty() ? 0 : GetECValueTypeName((*values.begin()).GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("valueType", rapidjson::Value(values.empty() ? 0 : PrimitiveTypeAsString((*values.begin()).GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
     rapidjson::Value valuesJson;
     valuesJson.SetArray();
     for (auto const& value : values)
@@ -1430,7 +1430,7 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundRapidJsonVal
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("type", "ValueSet", json.GetAllocator());
-    json.AddMember("valueType", rapidjson::Value(GetECValueTypeName(set.GetValuesType()).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("valueType", rapidjson::Value(PrimitiveTypeAsString(set.GetValuesType()).c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("value", rapidjson::Value(set.GetValuesJson(), json.GetAllocator()), json.GetAllocator());
     return json;
     }
@@ -1438,7 +1438,7 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundRapidJsonVal
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(BeJsConst const &json)
+std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(BeJsConst const json)
     {
     if (!json.isObject() || !json.hasMember("type"))
         return nullptr;

@@ -36,7 +36,7 @@ BentleyStatus BoundQueryValuesList::Bind(ECSqlStatement& stmt) const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJsConst const& json)
+std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJsConst const json)
     {
     if (!json.isObject() || !json.hasMember("type"))
         return nullptr;
@@ -123,7 +123,7 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundECValueSet co
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("type", "value-set", json.GetAllocator());
-    json.AddMember("value-type", rapidjson::Value(values.empty() ? 0 : ValueHelpers::GetECValueTypeName((*values.begin()).GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value-type", rapidjson::Value(values.empty() ? 0 : ValueHelpers::PrimitiveTypeAsString((*values.begin()).GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("value-type", values.empty() ? 0 : (int)(*values.begin()).GetPrimitiveType(), json.GetAllocator());
     rapidjson::Value valuesJson;
     valuesJson.SetArray();
@@ -2110,10 +2110,10 @@ BentleyStatus BoundQueryValuesList::FromJson(IBoundQueryValueSerializer &seriali
 
     if (!json.isArray())
         return ERROR;
-    auto thing = json.Stringify(StringifyFormat::Indented);
+
     for (uint32_t i = 0; i < json.size(); ++i)
         {
-        auto value = BoundQueryValue::FromJson(serializer, json[i]);
+        auto value = serializer._FromJson(json[i]);
         if (value)
             push_back(std::move(value));
         }
