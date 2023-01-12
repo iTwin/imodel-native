@@ -694,8 +694,6 @@ private:
     Params      m_params;
     Nullable<NormalMapParams> m_normalMap;
 public:
-    // ###TODO remove this constructor
-    TextureMapping(TextureCR texture, Params const& params) : m_texture(&texture), m_params(params) { }
     TextureMapping(TextureCR texture, Params const& params, Nullable<NormalMapParams> const& normalMap)
       : m_texture(&texture), m_params(params), m_normalMap(normalMap) { }
 
@@ -862,8 +860,6 @@ struct Material : RefCounted<NonCopyableClass>
         void SetSpecular(double val) {m_specular = val;} //<! Set surface specular reflectivity
         void SetRefract(double val) {m_refract = val;} //<! Set index of refraction
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
-        void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping;}
-        void MapTexture(TextureCR texture, TextureMapping::Params const& params) {MapTexture(TextureMapping(texture, params));}
         void SetKey(MaterialKeyCR key) { m_key = key; }
         void SetBaseId(RenderMaterialId baseId) { m_baseId = baseId; }
     };
