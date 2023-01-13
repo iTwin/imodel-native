@@ -5466,27 +5466,29 @@ Utf8String BeSQLiteLib::GetLogError(DbResult rc) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
     switch (code) {
-        case BE_SQLITE_ERROR_FileExists:                    return "BE_SQLITE_ERROR_FileExists";
-        case BE_SQLITE_ERROR_AlreadyOpen:                   return "BE_SQLITE_ERROR_AlreadyOpen";
-        case BE_SQLITE_ERROR_NoPropertyTable:               return "BE_SQLITE_ERROR_NoPropertyTable";
-        case BE_SQLITE_ERROR_FileNotFound:                  return "BE_SQLITE_ERROR_FileNotFound";
-        case BE_SQLITE_ERROR_NoTxnActive:                   return "BE_SQLITE_ERROR_NoTxnActive";
-        case BE_SQLITE_ERROR_BadDbProfile:                  return "BE_SQLITE_ERROR_BadDbProfile";
-        case BE_SQLITE_ERROR_InvalidProfileVersion:         return "BE_SQLITE_ERROR_InvalidProfileVersion";
-        case BE_SQLITE_ERROR_ProfileUpgradeFailed:          return "BE_SQLITE_ERROR_ProfileUpgradeFailed";
-        case BE_SQLITE_ERROR_ProfileTooOld:                 return "BE_SQLITE_ERROR_ProfileTooOld";
-        case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:     return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
-        case BE_SQLITE_ERROR_ProfileTooNew:                 return "BE_SQLITE_ERROR_ProfileTooNew";
-        case BE_SQLITE_ERROR_ChangeTrackError:              return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_InvalidRevisionVersion:        return "BE_SQLITE_ERROR_InvalidRevisionVersion";
-        case BE_SQLITE_ERROR_SchemaUpgradeRequired:         return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
-        case BE_SQLITE_ERROR_SchemaUpgradeRecommended:      return "BE_SQLITE_ERROR_SchemaUpgradeRecommended";
-        case BE_SQLITE_ERROR_SchemaTooNew:                  return "BE_SQLITE_ERROR_SchemaTooNew";
-        case BE_SQLITE_ERROR_SchemaTooOld:                  return "BE_SQLITE_ERROR_SchemaTooOld";
-        case BE_SQLITE_ERROR_DataTransformRequired:         return "BE_SQLITE_ERROR_DataTransformRequired";
-        case BE_SQLITE_ERROR_SchemaUpgradeFailed:           return "BE_SQLITE_ERROR_SchemaUpgradeFailed";
-        case BE_SQLITE_ERROR_SchemaImportFailed:            return "BE_SQLITE_ERROR_SchemaImportFailed";
-        case BE_SQLITE_ERROR_NOTOPEN:                       return "BE_SQLITE_ERROR_NOTOPEN";
+        case BE_SQLITE_ERROR_DataTransformRequired:       return "BE_SQLITE_ERROR_DataTransformRequired";
+        case BE_SQLITE_ERROR_FileExists:                  return "BE_SQLITE_ERROR_FileExists";
+        case BE_SQLITE_ERROR_AlreadyOpen:                 return "BE_SQLITE_ERROR_AlreadyOpen";
+        case BE_SQLITE_ERROR_NoPropertyTable:             return "BE_SQLITE_ERROR_NoPropertyTable";
+        case BE_SQLITE_ERROR_FileNotFound:                return "BE_SQLITE_ERROR_FileNotFound";
+        case BE_SQLITE_ERROR_NoTxnActive:                 return "BE_SQLITE_ERROR_NoTxnActive";
+        case BE_SQLITE_ERROR_BadDbProfile:                return "BE_SQLITE_ERROR_BadDbProfile";
+        case BE_SQLITE_ERROR_InvalidProfileVersion:       return "BE_SQLITE_ERROR_InvalidProfileVersion";
+        case BE_SQLITE_ERROR_ProfileUpgradeFailed:        return "BE_SQLITE_ERROR_ProfileUpgradeFailed";
+        case BE_SQLITE_ERROR_ProfileTooOldForReadWrite:   return "BE_SQLITE_ERROR_ProfileTooOldForReadWrite";
+        case BE_SQLITE_ERROR_ProfileTooOld:               return "BE_SQLITE_ERROR_ProfileTooOld";
+        case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:   return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
+        case BE_SQLITE_ERROR_ProfileTooNew:               return "BE_SQLITE_ERROR_ProfileTooNew";
+        case BE_SQLITE_ERROR_ChangeTrackError:            return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_InvalidChangeSetVersion:      return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
+        case BE_SQLITE_ERROR_SchemaUpgradeRequired:       return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
+        case BE_SQLITE_ERROR_SchemaTooNew:                return "BE_SQLITE_ERROR_SchemaTooNew";
+        case BE_SQLITE_ERROR_SchemaTooOld:                return "BE_SQLITE_ERROR_SchemaTooOld";
+        case BE_SQLITE_ERROR_SchemaLockFailed:            return "BE_SQLITE_ERROR_SchemaLockFailed";
+        case BE_SQLITE_ERROR_SchemaImportFailed:          return "BE_SQLITE_ERROR_SchemaImportFailed";
+        case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes: return "BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes";
+        case BE_SQLITE_ERROR_SchemaUpgradeRecommended:    return "BE_SQLITE_ERROR_SchemaUpgradeRecommended";
+        case BE_SQLITE_ERROR_NOTOPEN:                     return "BE_SQLITE_ERROR_NOTOPEN";
     };
 
     int rc = (int)code;
@@ -5528,7 +5530,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
             case BE_SQLITE_IOERR_NOMEM:        zName = "BE_SQLITE_IOERR_NOMEM";       break;
             case BE_SQLITE_IOERR_ACCESS:       zName = "BE_SQLITE_IOERR_ACCESS";      break;
             case BE_SQLITE_IOERR_CHECKRESERVEDLOCK:
-                                        zName = "BE_SQLITE_IOERR_CHECKRESERVEDLOCK"; break;
+                                         zName = "BE_SQLITE_IOERR_CHECKRESERVEDLOCK"; break;
             case BE_SQLITE_IOERR_LOCK:         zName = "BE_SQLITE_IOERR_LOCK";        break;
             case BE_SQLITE_IOERR_CLOSE:        zName = "BE_SQLITE_IOERR_CLOSE";       break;
             case BE_SQLITE_IOERR_DIR_CLOSE:    zName = "BE_SQLITE_IOERR_DIR_CLOSE";   break;
@@ -5559,16 +5561,16 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
             case BE_SQLITE_CONSTRAINT_UNIQUE:  zName = "BE_SQLITE_CONSTRAINT_UNIQUE"; break;
             case BE_SQLITE_CONSTRAINT_TRIGGER: zName = "BE_SQLITE_CONSTRAINT_TRIGGER";break;
             case BE_SQLITE_CONSTRAINT_FOREIGNKEY:
-                                        zName = "BE_SQLITE_CONSTRAINT_FOREIGNKEY";   break;
+                                         zName = "BE_SQLITE_CONSTRAINT_FOREIGNKEY";   break;
             case BE_SQLITE_CONSTRAINT_CHECK:   zName = "BE_SQLITE_CONSTRAINT_CHECK";  break;
             case BE_SQLITE_CONSTRAINT_PRIMARYKEY:
-                                        zName = "BE_SQLITE_CONSTRAINT_PRIMARYKEY";   break;
+                                         zName = "BE_SQLITE_CONSTRAINT_PRIMARYKEY";   break;
             case BE_SQLITE_CONSTRAINT_NOTNULL: zName = "BE_SQLITE_CONSTRAINT_NOTNULL";break;
             case BE_SQLITE_CONSTRAINT_COMMITHOOK:
-                                        zName = "BE_SQLITE_CONSTRAINT_COMMITHOOK";   break;
+                                         zName = "BE_SQLITE_CONSTRAINT_COMMITHOOK";   break;
             case BE_SQLITE_CONSTRAINT_VTAB:    zName = "BE_SQLITE_CONSTRAINT_VTAB";   break;
             case BE_SQLITE_CONSTRAINT_FUNCTION:
-                                        zName = "BE_SQLITE_CONSTRAINT_FUNCTION";     break;
+                                         zName = "BE_SQLITE_CONSTRAINT_FUNCTION";     break;
             case BE_SQLITE_CONSTRAINT_ROWID:   zName = "BE_SQLITE_CONSTRAINT_ROWID";  break;
             case BE_SQLITE_MISMATCH:           zName = "BE_SQLITE_MISMATCH";          break;
             case BE_SQLITE_MISUSE:             zName = "BE_SQLITE_MISUSE";            break;
@@ -5581,7 +5583,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
             case BE_SQLITE_NOTICE:             zName = "BE_SQLITE_NOTICE";            break;
             case BE_SQLITE_NOTICE_RECOVER_WAL: zName = "BE_SQLITE_NOTICE_RECOVER_WAL";break;
             case BE_SQLITE_NOTICE_RECOVER_ROLLBACK:
-                                        zName = "BE_SQLITE_NOTICE_RECOVER_ROLLBACK"; break;
+                                         zName = "BE_SQLITE_NOTICE_RECOVER_ROLLBACK"; break;
             case BE_SQLITE_WARNING:            zName = "BE_SQLITE_WARNING";           break;
             case BE_SQLITE_WARNING_AUTOINDEX:  zName = "BE_SQLITE_WARNING_AUTOINDEX"; break;
             case BE_SQLITE_DONE:               zName = "BE_SQLITE_DONE";              break;
@@ -5600,6 +5602,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
     switch(rc) {
+        case BE_SQLITE_ERROR_DataTransformRequired:         return "failed to import schema as it require data transform";
         case BE_SQLITE_ERROR_FileExists:                    return "attempt to create a new file when a file by that name already exists";
         case BE_SQLITE_ERROR_AlreadyOpen:                   return "attempt to open a BeSQLite::Db that is already in use somewhere";
         case BE_SQLITE_ERROR_NoPropertyTable:               return "attempt to open a BeSQLite::Db that doesn't have a property table";
@@ -5612,14 +5615,15 @@ Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:     return "profile of file is too new for read-write access";
         case BE_SQLITE_ERROR_ProfileTooNew:                 return "profile of file is too new";
         case BE_SQLITE_ERROR_ChangeTrackError:              return "attempt to commit with active changetrack";
-        case BE_SQLITE_ERROR_InvalidRevisionVersion:        return "invalid version of the changeset file";
+        case BE_SQLITE_ERROR_InvalidChangeSetVersion:       return "invalid version of the changeset file";
         case BE_SQLITE_ERROR_SchemaUpgradeRequired:         return "the schemas found in the database need to be upgraded";
         case BE_SQLITE_ERROR_SchemaUpgradeRecommended:      return "recommended that the schemas found in the database be upgraded";
         case BE_SQLITE_ERROR_SchemaTooNew:                  return "the schemas found in the database are too new, upgrade application";
         case BE_SQLITE_ERROR_SchemaTooOld:                  return "the schema found in the database are too old";
-        case BE_SQLITE_ERROR_DataTransformRequired:         return "failed to import schema as it require data transform.";
+        case BE_SQLITE_ERROR_SchemaLockFailed:              return "failed to acquire schema lock for upgrade";
         case BE_SQLITE_ERROR_SchemaUpgradeFailed:           return "failed to upgrade schemas";
         case BE_SQLITE_ERROR_SchemaImportFailed:            return "failed to import schemas";
+        case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes:   return "error acquiring locks or codes";
         case BE_SQLITE_ERROR_NOTOPEN:                       return "db not open";
     };
     return sqlite3_errstr(rc);
