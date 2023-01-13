@@ -1423,7 +1423,7 @@ const MSBsplineSurface      *pSurface,
 int                         horizontal
 )
     {
-    int             prev, curr, next, bufSize, numPoints;
+    int             prev, curr, next, numPoints;
     double          scanHeight, near1;
     DPoint2d        *p;
     BsurfBoundary   *currBound, *endB;
@@ -1483,8 +1483,6 @@ int                         horizontal
         }
     else if (pSurface->numBounds > 0)
         {
-        bufSize = 0;
-        near1 = 1.0 - fc_epsilon;
         if (!pSurface->holeOrigin)
             {
             pFractionArray->push_back ( 0.0);
