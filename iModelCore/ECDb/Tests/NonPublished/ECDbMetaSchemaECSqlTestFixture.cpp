@@ -2028,9 +2028,33 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
     }
 
-    {
+    /*{
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT c.Name FROM meta.CustomAttribute ca JOIN meta.ECClassDef c USING meta.CustomAttributeClassHasInstance"));
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            printf("%s\n", stmt.GetValueText(0));
+            }
+        //ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }*/
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT c.Name, XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.ECClassDef c JOIN meta.CustomAttribute ca ON ca.Class.Id=c.ECInstanceId"));
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            printf("%s -> %s\n", stmt.GetValueText(0),stmt.GetValueText(1));
+            }
+        //ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }
+
+    {
+        printf("JSON TablePerHierarchySelect\n");
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            WITH cte0(json) AS (SELECT XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.CustomAttribute ca)
+            SELECT json FROM cte0 WHERE json_extract(json, '$.ClassMap.MapStrategy') = 'TablePerHierarchy'
+            )stmt"));
         while (BE_SQLITE_ROW == stmt.Step())
             {
             printf("%s\n", stmt.GetValueText(0));
@@ -2039,8 +2063,12 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
     }
 
     {
+        printf("JSON TablePerHierarchySelect\n");
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.ECClassDef c JOIN meta.CustomAttribute ca ON ca.Class.Id=c.ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            WITH cte0(classId, json) AS (SELECT c.Name, XmlCAToJson(ca.Class.Id, ca.Instance) as json FROM meta.CustomAttribute ca JOIN meta.ECClassDef c ON ca.Class.Id=c.ECInstanceId)
+            SELECT classId, json FROM cte0 WHERE json_extract(json, '$.ClassMap.MapStrategy') = 'TablePerHierarchy'
+            )stmt"));
         while (BE_SQLITE_ROW == stmt.Step())
             {
             printf("%s\n", stmt.GetValueText(0));
