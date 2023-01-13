@@ -1007,13 +1007,18 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
     In Debug builds, the environment variable can be set to a directory path to
     dump existing and incoming schemas to for every ImportSchemas call.
     */
-    const char* const schemaImportDumpTo = getenv("ECDB_SCHEMAIMPORT_DUMP_TO");
-    if (schemaImportDumpTo != NULL)
+    Utf8CP envVarName = "ECDB_SCHEMAIMPORT_DUMP_TO";
+    size_t requiredSize;
+    if (getenv_s(&requiredSize, NULL, 0, envVarName) == 0 && requiredSize != 0)
         {
         BeFileName dumpSchemaDir;
-        dumpSchemaDir.AssignUtf8(schemaImportDumpTo);
-        DumpSchemasToFile(dumpSchemaDir, m_ecdb.Schemas().GetSchemas(true), "existing");
-        DumpSchemasToFile(dumpSchemaDir, schemas, "incoming");
+        std::vector<char> chars(requiredSize);
+        if (getenv_s(&requiredSize, chars.data(), requiredSize, envVarName) == 0)
+            {
+            dumpSchemaDir.AssignUtf8(chars.data());
+            DumpSchemasToFile(dumpSchemaDir, m_ecdb.Schemas().GetSchemas(true), "existing");
+            DumpSchemasToFile(dumpSchemaDir, schemas, "incoming");
+            }
         }
     #endif
 
