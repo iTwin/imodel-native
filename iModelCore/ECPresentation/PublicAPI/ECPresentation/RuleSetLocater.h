@@ -343,6 +343,29 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct TempRulesetRegistration
+{
+private:
+    IRulesetLocaterManager& m_rulesetsManager;
+    RefCountedPtr<SimpleRuleSetLocater> m_tempLocater;
+
+public:
+    TempRulesetRegistration(IRulesetLocaterManager& mgr, PresentationRuleSetR ruleset)
+        : m_rulesetsManager(mgr)
+        {
+        m_tempLocater = SimpleRuleSetLocater::Create();
+        m_tempLocater->AddRuleSet(ruleset);
+        m_rulesetsManager.RegisterLocater(*m_tempLocater);
+        }
+    ~TempRulesetRegistration()
+        {
+        m_rulesetsManager.UnregisterLocater(*m_tempLocater);
+        }
+};
+
+//=======================================================================================
 //! Ruleset locaters' manager which keeps all locaters and sends ruleset requests based
 //! on ruleset locater priorities.
 //! @ingroup GROUP_RulesDrivenPresentation
