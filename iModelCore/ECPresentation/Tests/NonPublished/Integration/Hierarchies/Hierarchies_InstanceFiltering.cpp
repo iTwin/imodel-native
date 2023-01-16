@@ -56,7 +56,7 @@ static void ValidateDescriptor(ContentDescriptorCR actualDescriptor, bvector<Fie
     EXPECT_EQ(expectedFields.size(), actualDescriptor.GetVisibleFields().size());
     for (size_t i = 0; i < actualDescriptor.GetVisibleFields().size(); ++i)
         {
-        auto const& actualField = actualDescriptor.GetVisibleFields().at(i);
+        auto actualField = actualDescriptor.GetVisibleFields().at(i);
         auto const& fieldValidator = expectedFields[i];
         if (fieldValidator)
             fieldValidator(*actualField);
