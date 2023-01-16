@@ -596,7 +596,92 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
-   }  
+   }
+    {
+    // Test Case 1 : CTE with one bind parameter
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+        WITH RECURSIVE
+            cte (x) AS (
+                VALUES(:test1)
+                UNION ALL 
+                SELECT x + 1 FROM cte WHERE x < 3)
+        SELECT x from cte)"));
+
+    EXPECT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    stmt.BindInt(1, 1);
+    for (auto i = 1; i <= 3; ++i)
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(i, stmt.GetValueInt(0));
+        }
+    stmt.Finalize();
+    }
+    {
+    // Test Case 2 : CTE with 2 bind parameters
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+        WITH RECURSIVE
+            cte (x, y) AS (
+                VALUES(:test1, :test2)
+                UNION ALL 
+                SELECT x + 1, y + 2 FROM cte WHERE x < 4 and y < 6)
+        SELECT * from cte)"));
+
+    EXPECT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_STREQ("y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    stmt.BindInt(1, 1);
+    stmt.BindInt(2, 2);
+    for (const auto& testValues : std::vector<std::pair<int, int>> {{1, 2}, {2, 4}, {3, 6}})
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(testValues.first, stmt.GetValueInt(0));
+        EXPECT_EQ(testValues.second, stmt.GetValueInt(1));
+        }
+    stmt.Finalize();
+    }
+    {
+    // Test Case 3 : CTE with 1 bind parameters and 1 literal
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+        WITH RECURSIVE
+            cte (x, y) AS (
+                VALUES(:test1, 200)
+                UNION ALL 
+                SELECT x + 1, y FROM cte WHERE x < 3)
+        SELECT * from cte)"));
+
+    EXPECT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_STREQ("y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    stmt.BindInt(1, 1);
+    for (const auto& testValues : std::vector<int>{1, 2, 3})
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(testValues, stmt.GetValueInt(0));
+        EXPECT_EQ(200, stmt.GetValueInt(1));
+        }
+    stmt.Finalize();
+    }
+    {
+    // Test Case 4 : CTE with one bind parameter
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+        WITH RECURSIVE
+            cte (x) AS (
+                SELECT ECInstanceId FROM meta.ECSchemaDef WHERE ECInstanceId = :test1
+                UNION ALL 
+                SELECT x + 1 FROM cte WHERE x < 3)
+        SELECT x from cte)"));
+
+    EXPECT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    stmt.BindInt(1, 1);
+    for (auto i = 1; i <= 3; ++i)
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(i, stmt.GetValueInt(0));
+        }
+    stmt.Finalize();
+    }
 }
 
 //---------------------------------------------------------------------------------------
