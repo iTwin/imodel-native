@@ -66,6 +66,10 @@ protected:
             return m_nodesCountHandler(params);
         return 0;
         }
+    ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) override
+        {
+        return nullptr;
+        }
     NavNodeCPtr _GetParent(NodeParentRequestImplParams const& params) override
         {
         if (m_getParentHandler)

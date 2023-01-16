@@ -118,6 +118,28 @@ public:
 };
 
 //=======================================================================================
+//! Params for a hierarchy level descriptor request.
+// @bsiclass
+//=======================================================================================
+struct HierarchyLevelDescriptorRequestParams : RequestWithRulesetParams
+{
+private:
+    NavNodeKeyCPtr m_parentNodeKey;
+public:
+    HierarchyLevelDescriptorRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeKeyCP parentNodeKey)
+        : RequestWithRulesetParams(rulesetParams), m_parentNodeKey(parentNodeKey)
+        {}
+    HierarchyLevelDescriptorRequestParams(RequestWithRulesetParams&& rulesetParams, NavNodeKeyCP parentNodeKey)
+        : RequestWithRulesetParams(std::move(rulesetParams)), m_parentNodeKey(parentNodeKey)
+        {}
+    HierarchyLevelDescriptorRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, NavNodeKeyCP parentNodeKey)
+        : RequestWithRulesetParams(rulesetId, rulesetVariables), m_parentNodeKey(parentNodeKey)
+        {}
+    NavNodeKeyCP GetParentNodeKey() const {return m_parentNodeKey.get();}
+    void SetParentNodeKey(NavNodeKeyCP value) {m_parentNodeKey = value;}
+};
+
+//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct NodeByInstanceKeyRequestParams : HierarchyRequestParams

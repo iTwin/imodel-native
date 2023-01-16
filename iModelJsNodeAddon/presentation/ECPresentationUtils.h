@@ -128,6 +128,7 @@ struct ECPresentationUtils
     static folly::Future<ECPresentationResult> GetRootNodes(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetChildrenCount(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetChildren(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
+    static folly::Future<ECPresentationResult> GetHierarchyLevelDescriptor(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetNodesPaths(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetFilteredNodesPaths(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> CompareHierarchies(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
