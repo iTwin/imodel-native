@@ -369,6 +369,7 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
     SaveDb();
+    CloseDb();
 
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
@@ -693,6 +694,7 @@ TEST_F(SchemaVersionTestFixture, ModifyingDomainSchema)
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
     SaveDb();
+    CloseDb();
 
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
@@ -703,6 +705,7 @@ TEST_F(SchemaVersionTestFixture, ModifyingDomainSchema)
     SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::No);
 
     SaveDb();
+    CloseDb();
     BackupTestFile();
 
     m_db = DgnDb::OpenIModelDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));

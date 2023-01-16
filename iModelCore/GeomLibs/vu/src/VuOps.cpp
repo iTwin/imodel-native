@@ -453,7 +453,6 @@ Options_vu_createTrianglated const &optionsIn
     static double s_defaultCount = 10.0;
     //static double s_graphRelTol = 1.0e-10;
     VuSetP      graph = vu_newVuSet (0);
-    StatusInt status = SUCCESS;
     int    maxPerFace = 3;
 
     static double s_shortEdgeToleranceFactor = 1.0e-8;
@@ -477,12 +476,10 @@ Options_vu_createTrianglated const &optionsIn
 
     if (s_maxEdge * options.meshXLength < dx)
         {
-        status = ERROR;
         options.meshXLength = dx / s_maxEdge;
         }
     if (s_maxEdge * options.meshYLength < dy)
         {
-        status = ERROR;
         options.meshYLength = dy / s_maxEdge;
         }
     
