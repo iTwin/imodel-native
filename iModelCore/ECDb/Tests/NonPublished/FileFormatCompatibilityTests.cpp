@@ -2251,14 +2251,14 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
     {
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Name, Id, EnumValues FROM ec_Enumeration ORDER BY Name"));
-    bmap<BeInt64Id, BeJsDocument> enumValues;
+    bmap<BeInt64Id, Json::Value> enumValues;
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Utf8CP enumName = stmt.GetValueText(0);
-        BeJsDocument& json = enumValues[stmt.GetValueId<BeInt64Id>(1)];
+        Json::Value& json = enumValues[stmt.GetValueId<BeInt64Id>(1)];
         ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(json, stmt.GetValueText(2)));
 
-        bool hadError = json.ForEachArrayMemberValue([&](BeJsValue::ArrayIndex, BeJsValue enumValue)
+        for (Json::Value& enumValue : json)
             {
             if (enumValue.isMember("StringValue"))
                 enumValue["Name"] = ECNameValidation::EncodeToValidName(enumValue["StringValue"].asCString());
@@ -2271,15 +2271,12 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
 
             if (enumValue.isMember("DisplayLabel"))
                 enumValue["Description"] = enumValue["DisplayLabel"].asCString();
-            return false;
-            });
-        ASSERT_FALSE(hadError);
-
+            }
         stmt.Finalize();
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE ec_Enumeration SET EnumValues=? WHERE Id=?"));
-        for (auto const& kvPair : enumValues)
+        for (bpair<BeInt64Id, Json::Value> const& kvPair : enumValues)
             {
-            ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, kvPair.second.Stringify(), Statement::MakeCopy::Yes));
+            ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, kvPair.second.ToString(), Statement::MakeCopy::Yes));
             ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(2, kvPair.first));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Reset();
