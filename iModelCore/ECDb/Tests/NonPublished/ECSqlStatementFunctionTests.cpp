@@ -866,5 +866,20 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
     statement.ClearBindings();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementFunctionTestFixture, ECJsonFunction) {
+    ASSERT_EQ(SUCCESS, SetupECDb("ECJsonFunc.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
 
+    ECSqlStatement stmt; 
+    stmt.Prepare(m_ecdb, "SELECT ec_json(ECInstanceId, ECClassId) FROM meta.ECClassDef LIMIT 1");
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        if (stmt.IsValueNull(0)) {
+            continue;
+        }
+        auto json = stmt.GetValueText(0);
+        ASSERT_STREQ(json, R"j({"ECInstanceId":"0x49","ECClassId":"ECDbMeta.ECClassDef","Schema":{"Id":"0x8","RelECClassId":"ECDbMeta.SchemaOwnsClasses"},"Name":"_UnderBar","Description":"The class name and all the properties of this class contain under bar in start in middle or at the end.","Type":0.0,"Modifier":0.0})j");
+    }
+}
 END_ECDBUNITTESTS_NAMESPACE

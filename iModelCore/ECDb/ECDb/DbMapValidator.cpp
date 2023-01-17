@@ -95,6 +95,20 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateViews() const {
+    ViewManager::ClassList failedViews;
+    ViewManager::ClassList validViews;
+    if (!GetECDb().GetImpl().GetViewManager().ValidateViews(failedViews, validViews, true)) {
+        for (auto failedView : failedViews) {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Detected invalid views definitions for %s.", failedView->GetFullName());
+        }
+        return ERROR;
+    }
+    return SUCCESS;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::Initialize() const
     {
     if (SUCCESS != GetDbSchema().LoadIndexDefs())
@@ -195,7 +209,10 @@ BentleyStatus DbMapValidator::Validate() const
     if (SUCCESS != CheckDuplicateDataPropertyMap())
         return ERROR;
 
-    return ValidateCustomAttributeTable();
+    if (SUCCESS != ValidateCustomAttributeTable())
+        return ERROR;
+
+    return ValidateViews();
     }
 
 //---------------------------------------------------------------------------------------

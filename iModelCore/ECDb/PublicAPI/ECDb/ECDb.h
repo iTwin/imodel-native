@@ -313,6 +313,15 @@ public:
     //! @return Schema manager
     ECDB_EXPORT SchemaManager const& Schemas() const;
 
+    //! Update data in refresh view. This operation can fail for one or more views. User must call save changes 
+    //! before calling this function so in case it fail user can call discard changes to throw away all changes.
+    //! This is no savepoint in refresh views call and so user is responsible to undo any changes in cause it fail.
+    //! Reason of failure can be unique index on persisted view where query did return a duplicate value for unique
+    //! key properties. Avoid using unique-index or not null properties like constrains on table that define p
+    //! persisted views which can cause runtime-failure.
+    //! @return success if everything  
+    ECDB_EXPORT BentleyStatus RefreshViews() const;
+
     //! Gets the schema locator for schemas stored in this ECDb file.
     //! @return This ECDb file's schema locater
     ECDB_EXPORT ECN::IECSchemaLocaterR GetSchemaLocater() const;

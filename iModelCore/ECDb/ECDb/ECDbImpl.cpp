@@ -20,6 +20,7 @@ PragmaManager& ECDb::Impl::GetPragmaManager() const
 ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
     {
     m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
+    m_viewManager = std::make_unique<ViewManager> (ecdb);
     // set default logger
     IssueDataSource::AppendLogSink(m_issueReporter, "ECDb");
     }
@@ -86,7 +87,7 @@ bool IdFactory::Reset() const {
     m_relationshipConstraintIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraint, COL_DEFAULTNAME_Id);
     m_relationshipConstraintClassIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraintClass, COL_DEFAULTNAME_Id);
     m_schemaIdSeq = IdSequence::Create(m_ecdb, TABLE_Schema, COL_DEFAULTNAME_Id);
-    m_schemaReferencIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
+    m_schemaReferenceIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
     m_tableIdSeq = IdSequence::Create(m_ecdb, TABLE_Table, COL_DEFAULTNAME_Id);
     m_unitIdSeq = IdSequence::Create(m_ecdb, TABLE_Unit, COL_DEFAULTNAME_Id);
     m_unitSystemIdSeq = IdSequence::Create(m_ecdb, TABLE_UnitSystem, COL_DEFAULTNAME_Id);
@@ -115,7 +116,7 @@ bool IdFactory::IsValid() const {
         m_relationshipConstraintIdSeq != nullptr &&
         m_relationshipConstraintClassIdSeq != nullptr &&
         m_schemaIdSeq != nullptr &&
-        m_schemaReferencIdSeq != nullptr &&
+        m_schemaReferenceIdSeq != nullptr &&
         m_tableIdSeq != nullptr &&
         m_unitIdSeq != nullptr &&
         m_unitSystemIdSeq != nullptr;
@@ -395,6 +396,10 @@ void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
 
+    if (m_viewManager != nullptr) {
+        m_viewManager->ClearCache();
+    }
+
     // this event allows consuming code to free anything that relies on the ECDb cache (like ECSchemas, ECSqlStatements etc)
     for (auto listener : m_ecdbCacheClearListeners)
         listener->_OnBeforeClearECDbCache();
@@ -491,6 +496,10 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_instanceOfFunc = InstanceOfFunc::Create(m_ecdb);
     if (m_instanceOfFunc != nullptr)
         m_ecdb.AddFunction(*m_instanceOfFunc);
+
+    m_ecJsonFunc = ECJsonFunction::Create(m_ecdb);
+    if (m_ecJsonFunc != nullptr)
+        m_ecdb.AddFunction(*m_ecJsonFunc);
    }
 
 //---------------------------------------------------------------------------------------
@@ -521,6 +530,12 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
         {
         m_ecdb.RemoveFunction(*m_instanceOfFunc);
         m_instanceOfFunc = nullptr;
+        }
+
+    if (m_ecJsonFunc != nullptr)
+        {
+        m_ecdb.RemoveFunction(*m_ecJsonFunc);
+        m_ecJsonFunc = nullptr;
         }
     }
 
@@ -702,5 +717,11 @@ DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAs
     return BE_SQLITE_OK;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::RefreshViews() const {
+   return GetViewManager().RefreshViews();
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -62,6 +62,7 @@
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
+#include "ViewManager.h"
 
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"

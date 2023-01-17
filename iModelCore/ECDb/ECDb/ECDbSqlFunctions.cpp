@@ -5,6 +5,60 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECJsonFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 2) {
+        ctx.SetResultError("ec_json(I,I]) expect two args");
+        return;
+    }
+   DbValue const& instanceIdVal = args[0];
+    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    DbValue const& classIdVal = args[1];
+    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
+    ECN::ECClassId classId(classIdVal.GetValueUInt64());
+
+    auto classP = m_ecdb.Schemas().GetClass(classId);
+    if (classP == nullptr) {
+        return;
+    }
+
+    const Utf8String sql = "SELECT * FROM " + classP->GetECSqlName() + " WHERE ECInstanceId=?";
+    auto stmt = m_statementCache.GetPreparedStatement(m_ecdb, sql.c_str());
+    if (stmt.IsNull()) {
+        return;
+    }
+    stmt->BindId(1, instanceId);
+    if (stmt->Step() != BE_SQLITE_ROW) {
+        return;
+    }
+    
+    QueryJsonAdaptor adaptor(m_ecdb);
+    adaptor.SetAbbreviateBlobs(true);
+    adaptor.SetConvertClassIdsToClassNames(true);
+    adaptor.UseJsNames(false);
+
+    BeJsDocument doc;
+    if (adaptor.RenderRow(doc, *stmt, false) != SUCCESS) {
+        return;
+    }
+
+    const auto json = doc.Stringify();
+    ctx.SetResultText(json.c_str(), (int)json.size(), Context::CopyData::Yes);
+} 
+///---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<ECJsonFunction> ECJsonFunction::Create(ECDbCR db) { 
+    return std::unique_ptr<ECJsonFunction>(new ECJsonFunction(db));
+}
+
 //=======================================================================================
 ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, DbValueType::TextVal), m_db(&db) 
     {

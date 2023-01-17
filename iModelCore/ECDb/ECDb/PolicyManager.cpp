@@ -123,6 +123,20 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
         return Policy::CreateNotSupported(notSupportedMessage);
         }
 
+    if (ViewDef::HasViewDef(assertion.GetClassMap().GetClass()))
+        {
+        ViewManager::WritePolicy policy;
+        assertion.GetClassMap().GetECDb().GetImpl().GetViewManager().GetWritePolicy(policy, assertion.GetClassMap().GetClass());            
+        if (policy == ViewManager::WritePolicy::Readonly) 
+            {
+            Utf8String notSupportedMessage;
+            notSupportedMessage.Sprintf("ECClass '%s' is declared as ec-view. Therefore only ECSQL SELECT statements can be used against the class.",
+                                        className.c_str());
+
+            return Policy::CreateNotSupported(notSupportedMessage);
+            }
+        }
+
     if (!assertion.IsPolymorphicClassExpression())
         {
         if (ecClass.GetClassModifier() == ECClassModifier::Abstract)

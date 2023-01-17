@@ -80,6 +80,7 @@ struct ECSqlStatement::Impl final
         int GetColumnCount() const;
         IECSqlValue const& GetValue(int columnIndex) const;
 
+        bool IsReadonly() const;
         Utf8CP GetECSql() const;
         Utf8CP GetNativeSql() const;
         ECDb const* GetECDb() const;

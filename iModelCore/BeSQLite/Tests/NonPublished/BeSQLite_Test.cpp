@@ -492,6 +492,33 @@ TEST_F(BeSQliteTestFixture, regexp_extract_basic) {
         ASSERT_STRCASEEQ( "villa, amiyah", test(R"(REGEXP_EXTRACT('amiyah, villa', '^(\w+)\s*,\s*(\w+)$', '\2, \1'))").c_str());
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, data_version) {
+    auto db = Create("first.db");
+    // Create() already call saveChanges() twice
+    ASSERT_EQ(db->GetDataVersion(), 2ull);
+    db->ExecuteSql("create table foo(strCol, intCol, binCol)") ;
+    db->ExecuteSql("insert into foo values ('hello, world', 1023, X'123abc')") ;
+    db->ExecuteSql("insert into foo values ('world', 2033, null)") ;
+    db->ExecuteSql("insert into foo values ('every, one', 2445, null)") ;
+    db->ExecuteSql("insert into foo values (null, null, null)") ;
+
+    ASSERT_EQ(db->GetDataVersion(), 2ull);
+    db->SaveChanges(); // should increment data version
+    ASSERT_EQ(db->GetDataVersion(), 3ull);
+    db->SaveChanges(); // nothing changed
+    ASSERT_EQ(db->GetDataVersion(), 3ull);    
+    db->ExecuteSql("insert into foo values ('every, one', 2445, null)") ;
+    db->SaveChanges(); // should increment data version
+    ASSERT_EQ(db->GetDataVersion(), 4ull);    
+    db->ExecuteSql("insert into foo values ('every, one', 24415, null)") ;
+    db->SaveChanges(); // should increment data version
+    ASSERT_EQ(db->GetDataVersion(), 5ull);    
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -805,6 +832,19 @@ TEST_F(BeSQliteTestFixture, Profiler)
     ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
     ASSERT_EQ(100, stats->GetValueInt(0));
     ASSERT_STREQ( "insert into test (id,c0) values(?,?)", stats->GetValueText(1));;
+
+    ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
+    ASSERT_EQ(100, stats->GetValueInt(0));
+    ASSERT_STREQ( "SELECT RawSize,length(Data) FROM be_Prop WHERE Namespace=? AND Name=? AND Id=? AND SubId=?", stats->GetValueText(1));;
+
+    ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
+    ASSERT_EQ(100, stats->GetValueInt(0));
+    ASSERT_STREQ( "SELECT RawSize,Data FROM be_Prop WHERE Namespace=? AND Name=? AND Id=? AND SubId=?", stats->GetValueText(1));;
+
+
+    ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
+    ASSERT_EQ(101, stats->GetValueInt(0));
+    ASSERT_STREQ( "INSERT OR REPLACE INTO be_Prop (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) VALUES(?,?,?,?,?,?,?,?)", stats->GetValueText(1));;
 
     ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
     ASSERT_EQ(100, stats->GetValueInt(0));

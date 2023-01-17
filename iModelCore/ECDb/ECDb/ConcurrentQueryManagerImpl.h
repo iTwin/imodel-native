@@ -107,7 +107,7 @@ public:
     QueryJsonAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this;}
     QueryJsonAdaptor& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
     QueryJsonAdaptor& UseJsNames(bool v) { m_useJsName = v; return *this; }
-    BentleyStatus RenderRow(BeJsValue rowJson, ECSqlStatement const& stmt) const;
+    BentleyStatus RenderRow(BeJsValue rowJson, ECSqlStatement const& stmt, bool asArray = true) const;
     void GetMetaData(QueryProperty::List& list, ECSqlStatement const& stmt) const;
 };
 

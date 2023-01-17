@@ -404,7 +404,8 @@ public:
         Joined = 1, //! Joined Table cannot exist without a primary table
         Existing = 2, 
         Overflow = 3, //! Overflow table cannot exist without a primary or joined table
-        Virtual = 4 //for abstract classes not using TPH and mixins
+        Virtual = 4, //for abstract classes not using TPH and mixins
+        Temp = 6, // Not supported yet. Tell ECDb to make sure table available at run time
         };
 
     struct LinkNode final

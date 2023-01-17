@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ECSchema schemaName="ClassView" alias="ecdbview" version="1.0.0"
+    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <!--
+            Persistence method determine where data is stored. 
+                Permanent: data go into regular table.
+                Temporay:  data go into a temp table 
+        -->
+    <ECEnumeration typeName="PersistenceMethod" backingTypeName="string" isStrict="true">
+        <ECEnumerator name="Permanent" value="Permanent" displayLabel="Permanent"/>
+    </ECEnumeration>
+    <!--
+            Refresh method determine how view data is updated
+                Recompute: delete and reinsert data. 
+        -->
+    <ECEnumeration typeName="RefreshMethod" backingTypeName="string" isStrict="true">
+        <ECEnumerator name="Recompute" value="Recompute" displayLabel="Recompute"/>
+    </ECEnumeration>
+
+    <!-- Data is store in a table either permanently or temporay -->
+    <ECCustomAttributeClass typeName="PersistedView" modifier="Sealed" appliesTo="EntityClass,RelationshipClass">
+        <ECProperty propertyName="PersistenceMethod" typeName="PersistenceMethod" description=""/>
+        <ECProperty propertyName="RefreshMethod" typeName="RefreshMethod" description=""/>
+        <ECProperty propertyName="Query" typeName="string" description=""/>
+        <ECArrayProperty propertyName="PropertyMaps" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+    </ECCustomAttributeClass>
+
+    <!-- View class is replaced by view query when used in ECSql -->
+    <ECCustomAttributeClass typeName="TransientView" modifier="Sealed" appliesTo="EntityClass,RelationshipClass">
+        <ECProperty propertyName="Query" typeName="string" description=""/>
+    </ECCustomAttributeClass>
+</ECSchema>

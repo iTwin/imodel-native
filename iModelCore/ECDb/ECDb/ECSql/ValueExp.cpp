@@ -900,6 +900,12 @@ void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
             SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
             return;
             }
+        //return type is always string
+        if (m_functionName.EqualsI("ec_json"))
+            {
+            SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
+            return;
+            }    
         //return type depends on argument type
         if (!m_functionName.EqualsI("avg") && !m_functionName.EqualsI("total"))
             {

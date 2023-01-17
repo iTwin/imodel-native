@@ -469,6 +469,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
     //! @return ECSQL statement string
         ECDB_EXPORT Utf8CP GetECSql() const;
 
+        //! Check if ecsql statement can make any direct changes to database file.
+        //! @return return true if statement does not make any direct changes to database file.
+        ECDB_EXPORT bool IsReadonly() const;
+
         //! Gets the SQLite SQL statement to which this ECSQL statement was translated to internally.
         //! @remarks Results in an error if the ECSqlStatement has not been prepared yet
         //! @return SQLite SQL statement

@@ -2084,23 +2084,46 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, ECSqlStatement const& stmt) const {
-    rowJson.SetEmptyArray();
+BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, ECSqlStatement const& stmt, bool asArray) const {
     const int count = stmt.GetColumnCount();
-    int consecutiveNulls = 0;
-    for (int columnIndex = 0; columnIndex < count; columnIndex++) {
-        IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
-        if (ecsqlValue.IsNull()) {
-            ++consecutiveNulls;
-            continue;
-        }
+    if (asArray) {
+        rowJson.SetEmptyArray();
+        int consecutiveNulls = 0;
+        for (int columnIndex = 0; columnIndex < count; columnIndex++) {
+            IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
+            if (ecsqlValue.IsNull()) {
+                ++consecutiveNulls;
+                continue;
+            }
 
-        while (consecutiveNulls > 0) {
-            rowJson.appendValue().SetNull();
-            --consecutiveNulls;
+            while (consecutiveNulls > 0) {
+                rowJson.appendValue().SetNull();
+                --consecutiveNulls;
+            }
+            if (SUCCESS != RenderRootProperty(rowJson.appendValue(), ecsqlValue))
+                return ERROR;
         }
-        if (SUCCESS != RenderRootProperty(rowJson.appendValue(), ecsqlValue))
-            return ERROR;
+    } else {
+        rowJson.SetEmptyObject();
+        for (int columnIndex = 0; columnIndex < count; columnIndex++) {
+            IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
+            if (ecsqlValue.IsNull()) {
+                continue;
+            }
+            auto memberProp = stmt.GetColumnInfo(columnIndex).GetProperty();
+            if (memberProp == nullptr) {
+                return ERROR;
+            }
+            if (m_useJsName) {
+                Utf8String memberName = memberProp->GetName();  
+                ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
+                    return ERROR;
+            } else {
+                if (SUCCESS != RenderRootProperty(rowJson[memberProp->GetName()], ecsqlValue))
+                    return ERROR;
+            }
+        }
     }
     return SUCCESS;
 }

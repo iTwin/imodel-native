@@ -31,6 +31,32 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
         return nullptr;
     }
 
+    // Expand transient ECSql class to its query.
+    Utf8String expandedECSql;
+    if (!ecdb.GetImpl().GetViewManager().Loading() && (
+        parseTree->getKnownRuleID() == OSQLParseNode::select_statement || 
+        parseTree->getKnownRuleID() == OSQLParseNode::cte   || 
+        parseTree->getKnownRuleID() == OSQLParseNode::manipulative_statement)) {
+
+        if (ecdb.GetImpl().GetViewManager().HasTransientViews()) {
+            const auto n = ecdb.GetImpl().GetViewManager().SubstituteTransientViews(expandedECSql, ecsql);
+            if (n > 0) {
+                ecsql = expandedECSql.c_str();
+                parseTree = parser.parseTree(error, ecsql);
+                if (parseTree == nullptr || !error.empty()) {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
+                    return nullptr;
+                }
+
+                if (!parseTree->isRule()) {
+                    BeAssert(false && "ECSQL grammar has changed, but parser wasn't adopted.");
+                    Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL grammar has changed, but parser wasn't adopted.");
+                    return nullptr;
+                }
+            }
+        }
+    }
+
     std::unique_ptr<Exp> exp = nullptr;
     switch (parseTree->getKnownRuleID()) {
         case OSQLParseNode::pragma: {

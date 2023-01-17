@@ -9,6 +9,7 @@
 #include "ChangeManager.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
+#include "ViewManager.h"
 #include <atomic>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -20,11 +21,11 @@ struct IdFactory final: NonCopyableClass {
     struct IdSequence final: NonCopyableClass {
         private:
             mutable std::atomic<uint64_t> m_id;
-            bool m_isIntializedFromTable;
+            bool m_isInitializedFromTable;
         public:
-            explicit IdSequence(uint64_t id, bool isIntializedFromTable) :m_id(id), m_isIntializedFromTable(isIntializedFromTable){}
-            BeInt64Id NextId() const { BeAssert(m_isIntializedFromTable); return BeInt64Id(++m_id); }
-            bool IsIntializedFromTable() const { return m_isIntializedFromTable; }
+            explicit IdSequence(uint64_t id, bool isInitializedFromTable) :m_id(id), m_isInitializedFromTable(isInitializedFromTable){}
+            BeInt64Id NextId() const { BeAssert(m_isInitializedFromTable); return BeInt64Id(++m_id); }
+            bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
             static std::unique_ptr<IdSequence> Create(ECDbCR db, Utf8CP tableName, Utf8CP idColumnName);
     };
 
@@ -47,7 +48,7 @@ struct IdFactory final: NonCopyableClass {
         mutable std::unique_ptr<IdSequence> m_relationshipConstraintIdSeq;
         mutable std::unique_ptr<IdSequence> m_relationshipConstraintClassIdSeq;
         mutable std::unique_ptr<IdSequence> m_schemaIdSeq;
-        mutable std::unique_ptr<IdSequence> m_schemaReferencIdSeq;
+        mutable std::unique_ptr<IdSequence> m_schemaReferenceIdSeq;
         mutable std::unique_ptr<IdSequence> m_tableIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitSystemIdSeq;
@@ -72,7 +73,7 @@ struct IdFactory final: NonCopyableClass {
         IdSequence& RelationshipConstraint() const { return *m_relationshipConstraintIdSeq; }
         IdSequence& RelationshipConstraintClass() const { return *m_relationshipConstraintClassIdSeq; }
         IdSequence& Schema() const { return *m_schemaIdSeq; }
-        IdSequence& SchemaReference() const { return *m_schemaReferencIdSeq; }
+        IdSequence& SchemaReference() const { return *m_schemaReferenceIdSeq; }
         IdSequence& Table() const { return *m_tableIdSeq; }
         IdSequence& Unit() const { return *m_unitIdSeq; }
         IdSequence& UnitSystem() const { return *m_unitSystemIdSeq; }
@@ -141,6 +142,7 @@ private:
     mutable BeGuid m_id;
     ProfileManager m_profileManager;
     std::unique_ptr<SchemaManager> m_schemaManager;
+    std::unique_ptr<ViewManager> m_viewManager;
     ChangeManager m_changeManager;
     SettingsManager m_settingsManager;
     StatementCache m_sqliteStatementCache;
@@ -151,6 +153,7 @@ private:
     mutable ClearCacheCounter m_clearCacheCounter;
     bvector<IECDbCacheClearListener*> m_ecdbCacheClearListeners;
     IssueDataSource m_issueReporter;
+    mutable std::unique_ptr<ECJsonFunction> m_ecJsonFunc;
     mutable std::unique_ptr<ClassNameFunc> m_classNameFunc;
     mutable std::unique_ptr<ClassIdFunc> m_classIdFunc;
     mutable std::unique_ptr<InstanceOfFunc> m_instanceOfFunc;
@@ -207,6 +210,7 @@ private:
 public:
     ~Impl() { m_sqliteStatementCache.Empty(); }
     EC::ECSqlConfig& GetECSqlConfig() const { return m_ecSqlConfig; }
+    ViewManager const& GetViewManager() const {return *m_viewManager;}
     bvector<DbFunction*> GetSqlFunctions() const;
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
     ECDb::SettingsManager const& GetSettingsManager() const { return m_settingsManager; }
@@ -214,6 +218,7 @@ public:
     CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
     BeBriefcaseBasedIdSequence const& GetInstanceIdSequence() const { return m_idSequenceManager.GetSequence(s_instanceIdSequenceKey); }
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
+    BentleyStatus RefreshViews() const;
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
     PragmaManager& GetPragmaManager() const;

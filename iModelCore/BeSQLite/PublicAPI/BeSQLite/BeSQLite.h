@@ -2397,6 +2397,8 @@ protected:
     Savepoint m_defaultTxn;
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
+    PropertySpec m_dataVerionSpec;
+    mutable int64_t m_totalRowsChanged;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
@@ -2429,6 +2431,9 @@ protected:
     BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetBLVCache();
     BE_SQLITE_EXPORT DbTrace ConfigTraceEvents(DbTrace, bool) const;
     BE_SQLITE_EXPORT void DisableAllTraceEvents() const;
+    int64_t GetTotalChanges() const;
+    uint64_t GetDataVersion() const;
+    DbResult UpdateDataVersion(bool isCommit);
     void AddDataUpdateCallback(DataUpdateCallback&) const;
     void RemoveDataUpdateCallback() const;
     static int TraceCallback(unsigned, void*, void*, void*);
@@ -3127,6 +3132,9 @@ public:
 
     //! Get the GUID of this Db.
     BE_SQLITE_EXPORT BeGuid GetDbGuid() const;
+
+    //! Get locally maintained data version which is incremented on every commit. This method work if there is only one writer.
+    BE_SQLITE_EXPORT uint64_t GetDataVersion() const { return m_dbFile->GetDataVersion();}
 
     //! Get the (local) BeBriefcaseId of this Db. Every copy of the Db must have a unique BeBriefcaseId.
     BeBriefcaseId GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}

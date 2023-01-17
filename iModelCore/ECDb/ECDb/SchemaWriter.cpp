@@ -419,6 +419,17 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
         return ERROR;
         }
 
+    if (ViewDef::HasViewDef(ecClass))
+        {
+        const auto rc = ViewDef::Validate(ctx.GetECDb(), ecClass, ViewDef::ValidationMethod::MetaData, true);
+        if (rc == ViewDef::ValidationResult::Error)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECClass '%s'. It has view definition custom attribute but not configured correctly.", ecClass.GetECSqlName().c_str());
+            // BeAssert(false && "Failed to import ECClass. It has view definition custom attribute but not configured correctly.");
+            return ERROR;
+            }
+        }
+
     //now import actual ECClass
     CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Class "(SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType,Id) VALUES(?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
@@ -3030,6 +3041,17 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
         {
         LOG.debugv("SchemaWriter::UpdateClass - failed to UpdateCustomAttributes for %s", newClass.GetFullName());
         return ERROR;
+        }
+
+    if (ViewDef::HasViewDef(newClass))
+        {
+        const auto rc = ViewDef::Validate(ctx.GetECDb(), newClass, ViewDef::ValidationMethod::MetaData, true);
+        if (rc == ViewDef::ValidationResult::Error)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to update ECClass '%s'. It has view definition custom attribute but not configured correctly.", newClass.GetECSqlName().c_str());
+            BeAssert(false && "Failed to import ECClass. It has view definition custom attribute but not configured correctly.");
+            return ERROR;
+            }
         }
     return SUCCESS;
     }

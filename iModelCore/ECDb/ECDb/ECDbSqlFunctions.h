@@ -9,6 +9,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define ECSQLFUNC_Changes "Changes"
 #define SQLFUNC_ChangedValue "ChangedValue"
+#define SQLFUNC_ECJSON "ec_json"
 #define SQLFUNC_ChangedValueStateToOpCode "ChangedValueStateToOpCode"
 #define SQLFUNC_StrToGuid "StrToGuid"
 #define SQLFUNC_GuidToStr "GuidToStr"
@@ -175,4 +176,25 @@ struct ChangedValueSqlFunction final : ScalarFunction
         void ClearCache() { m_statementCache.Empty(); }
     };
 
+//=======================================================================================
+//! TEXT ec_json(ECInstanceId INTEGER, ECClassId INTEGER)
+//!
+//! @note Internal to allow extract a instance a JSON 
+// @bsiclass
+//=======================================================================================
+struct ECJsonFunction final : ScalarFunction
+    {
+    private:
+        ECDbCR m_ecdb;
+        ECSqlStatementCache m_statementCache;
+
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        explicit ECJsonFunction(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ECJSON, 2, DbValueType::TextVal), m_ecdb(ecdb), m_statementCache(5) {}
+        ~ECJsonFunction() {}
+
+        void ClearCache() { m_statementCache.Empty(); }
+        static std::unique_ptr<ECJsonFunction> Create(ECDbCR db);
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

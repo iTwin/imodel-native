@@ -904,7 +904,8 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
-            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10), m_regexFunc(RegExpFunc::Create()),m_regexExtractFunc(RegExpExtractFunc::Create())
+            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10), m_regexFunc(RegExpFunc::Create()),m_regexExtractFunc(RegExpExtractFunc::Create()),
+            m_dataVerionSpec("data_version","be_sqlite", PropertySpec::Mode::Normal,PropertySpec::Compress::No), m_totalRowsChanged(0)
     {
     m_inCommit = false;
     m_allowImplicitTxns = false;
@@ -917,6 +918,55 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
     }
 
 BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DbFile::GetDataVersion() const {
+    uint64_t ver = 1;
+    uint32_t sz;
+    if (QueryPropertySize(sz, m_dataVerionSpec) != BE_SQLITE_OK && sz != sizeof(uint64_t)) {
+        return ver;
+    }
+    if (QueryProperty(&ver, sizeof(ver), m_dataVerionSpec) != BE_SQLITE_OK) {
+        return ver;
+    }
+    return ver;
+}
+
+int64_t DbFile::GetTotalChanges() const {
+    return sqlite3_total_changes64(m_sqlDb);
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::UpdateDataVersion(bool isCommit) {
+    if (!isCommit || this->m_readonly)
+        return BE_SQLITE_OK;
+
+    const auto totalRowChanged = GetTotalChanges();
+    const auto rowChangedSinceLastCommit = totalRowChanged - m_totalRowsChanged;
+    m_totalRowsChanged = GetTotalChanges();
+    const auto ver = GetDataVersion() + 1;
+    auto saveDataVersion = [&]() {
+        const auto rc =  SaveProperty(m_dataVerionSpec, nullptr,  (void*)&ver, sizeof(ver));
+        m_totalRowsChanged = GetTotalChanges();
+        return rc;
+    };
+
+    if (m_tracker.IsValid()) {
+        if (m_tracker->HasChanges()) {
+            return saveDataVersion();
+        }
+        return BE_SQLITE_OK;
+    }
+
+    if (rowChangedSinceLastCommit > 0) {
+        return saveDataVersion();
+    }
+
+    return BE_SQLITE_OK;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1091,6 +1141,9 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // save briefcase local values again after _OnCommit. It can cause additional changes
     SaveCachedBlvs(isCommit);
+
+    // increment data version if needed.
+    UpdateDataVersion(isCommit);
 
     // attempt the commit/release or rollback
     DbResult rc = BE_SQLITE_OK;

@@ -22,7 +22,7 @@ struct DbMapValidator final
         DbMapValidator& operator=(DbMapValidator const&) = delete;
 
         BentleyStatus Initialize() const;
-
+        BentleyStatus ValidateViews() const;
         BentleyStatus ValidateDbSchema() const;
         BentleyStatus ValidateDbTable(DbTable const&) const;
         BentleyStatus ValidateDbColumn(DbColumn const&, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const;

@@ -94,6 +94,20 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool ECSqlStatement::Impl::IsReadonly() const {
+    ECSqlStatus stat = FailIfNotPrepared("Cannot call IsReadonly on on unprepared ECSqlStatement.");
+    if (!stat.IsSuccess())
+        return sal_False;
+
+    if (GetPreparedStatementP()->GetType() == ECSqlType::Select) {
+        return GetPreparedStatementP<ECSqlSelectPreparedStatement>()->GetSqliteStatement().IsReadonly();
+    }
+    return false;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 uint64_t ECSqlStatement::Impl::GetHashCode() const {
     if (m_hash64.IsNull()){
         if (m_preparedStatement != nullptr && m_preparedStatement->GetECSql() != nullptr) {
