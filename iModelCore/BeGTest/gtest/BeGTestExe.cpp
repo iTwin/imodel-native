@@ -28,6 +28,7 @@ struct GtestOptions
     bool umdh           = false; // Whether or not to perform Memory Leak analysis.  Windows-only
     int timeout         = 1800; // in seconds.  The default is 1800 seconds (30 minutes)
     Utf8String gtest_filter;  // String containing the semi-colon separated list of gtest filters.  Can be passed verbatim to gtest.
+    Utf8String bsitools_path; // Absolute path of bsitools directory
     };
 
 static void TryParseInput(int argc, char** argv, GtestOptions& options)
@@ -47,6 +48,8 @@ static void TryParseInput(int argc, char** argv, GtestOptions& options)
                 options.gtest_filter = tokens[1];
             else if (0 == strcmp(tokens[0].c_str(), "--timeout"))
                 options.timeout = atoi(tokens[1].c_str());
+            else if (0 == strcmp(tokens[0].c_str(), "--bsitools_path"))
+                options.bsitools_path = tokens[1];
             }
 
         }
@@ -305,12 +308,8 @@ static void runUmdh(BeGTestHost& host, GtestOptions options)
     Utf8String gflagsSet;
     BeStringUtilities::WCharToUtf8(gflagsSet, host.m_programPath.c_str());
 
-    CharCP winSdkDir = WinGetEnv("SrcRoot");
-
-    BeFileName gflagsPath(winSdkDir);
-    gflagsPath.AppendToPath(L"bsitools")
-        .AppendToPath(L"winX86")
-        .AppendToPath(L"gflags.exe");
+    BeFileName gflagsPath(options.bsitools_path);
+    gflagsPath.AppendToPath(L"gflags.exe");
 
     Utf8String setGflags;
     BeStringUtilities::WCharToUtf8(setGflags, gflagsPath.c_str());
@@ -323,11 +322,8 @@ static void runUmdh(BeGTestHost& host, GtestOptions options)
     BeFileName pathSnapshotPath(currentDirectory);
     pathSnapshotPath.AppendToPath(L"FirstSnapshot.log");
 
-    BeFileName umdhPath(winSdkDir);
-        umdhPath.AppendToPath(L"bsitools")
-        .AppendToPath(L"winX86")
-        .AppendToPath(L"umdh.exe");
-
+    BeFileName umdhPath(options.bsitools_path);
+        umdhPath.AppendToPath(L"umdh.exe");
 
     Utf8String umdhPathJoin;
     BeStringUtilities::WCharToUtf8(umdhPathJoin, umdhPath.c_str());
