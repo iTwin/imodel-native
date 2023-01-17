@@ -1328,7 +1328,7 @@ void DgnElement::_FromJson(BeJsConst props) {
 
     auto code = props[json_code()];
     if (!code.isNull())
-        m_code = DgnCode::FromJson(code, m_dgndb);
+        m_code = DgnCode::FromJson(code, m_dgndb, true);
 
     // support partial update, only update m_federationGuid if props has member
     if (props.hasMember(json_federationGuid())) {
@@ -1348,7 +1348,7 @@ void DgnElement::_FromJson(BeJsConst props) {
             m_userLabel.clear(); // allow undefined to clear an existing value
     }
 
-         // support partial update, only update m_parent if props has member
+    // support partial update, only update m_parent if props has member
     if (props.hasMember(json_parent())) {
         auto parent = props[json_parent()];
         m_parent.FromJson(m_dgndb, parent); // RelatedElement::FromJson also clears for undefined
@@ -1392,7 +1392,6 @@ void DgnElement::_FromJson(BeJsConst props) {
 DgnElement::CreateParams::CreateParams(DgnDbR db, BeJsConst val) : m_dgndb(db) {
     m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(val[DgnElement::json_classFullName()], db.GetClassLocater());
     m_modelId.FromJson(val[DgnElement::json_model()]);
-    m_code = DgnCode::FromJson(val[DgnElement::json_code()], db);
     m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
     m_userLabel = val[DgnElement::json_userLabel()].asString();
 

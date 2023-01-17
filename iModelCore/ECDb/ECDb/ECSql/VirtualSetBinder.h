@@ -3,38 +3,41 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
+
 #include "ECSqlBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-struct IdECSqlBinder;
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct NavigationPropertyECSqlBinder final : public ECSqlBinder
+struct VirtualSetBinder final : public ECSqlBinder
     {
-    friend struct ECSqlBinderFactory;
-
     private:
-        std::unique_ptr<IdECSqlBinder> m_idBinder = nullptr;
-        std::unique_ptr<IdECSqlBinder> m_relECClassIdBinder = nullptr;
+        std::shared_ptr<VirtualSet> m_virtualSet;
 
-        NavigationPropertyECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
-        BentleyStatus Initialize(ECSqlPrepareContext&, SqlParamNameGenerator&);
+        void _OnClearBindings() override { m_virtualSet.reset(); }
 
+        int GetSqlParameterIndex() const
+            { 
+            BeAssert(GetMappedSqlParameterNames().size() == 1); 
+            BeAssert(!GetMappedSqlParameterNames()[0].empty());
+            return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+            }
+    public:
         ECSqlStatus _BindNull() override;
         ECSqlStatus _BindBoolean(bool value) override;
-        ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy) override;
+        ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
         ECSqlStatus _BindZeroBlob(int blobSize) override;
-        ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
         ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
+        ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
         ECSqlStatus _BindDouble(double value) override;
         ECSqlStatus _BindInt(int value) override;
         ECSqlStatus _BindInt64(int64_t value) override;
-        ECSqlStatus _BindPoint2d(DPoint2dCR) override;
-        ECSqlStatus _BindPoint3d(DPoint3dCR) override;
-        ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
-        ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override { return ECSqlStatus::Error; }
+        ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
+        ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
+        ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+        ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override;
 
         IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
         IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
@@ -42,8 +45,8 @@ struct NavigationPropertyECSqlBinder final : public ECSqlBinder
         IECSqlBinder& _AddArrayElement() override;
 
     public:
-        ~NavigationPropertyECSqlBinder() {}
+        VirtualSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
+        ~VirtualSetBinder() { OnClearBindings(); };
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

@@ -2399,7 +2399,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
         Placement3d().ToJson(BeJsValue{placementJson});
         inPropsJson["placement"] = placementJson;
         inPropsJson["federationGuid"] = "00000000-0000-0000-0000-000000000000";
-        DgnCode().ToJson(inPropsJson["code"]);
+        DgnCode::CreateEmpty().ToJson(inPropsJson["code"]);
         Json::Value geomJson;
         ECN::ECJsonUtilities::IGeometryToJson(geomJson, *inGeom);
         inPropsJson["geomProp"] = geomJson;

@@ -2990,18 +2990,18 @@ public:
         if (m_binder == nullptr)
             THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
         if (info.Length() == 0)
-            THROW_JS_TYPE_EXCEPTION("BindIdSet requires an argument");
+            THROW_JS_TYPE_EXCEPTION("BindVirtualSet requires an argument");
 
         REQUIRE_ARGUMENT_STRING_ARRAY(0, hexVector);
-        IdSet<BeInt64Id> idSet;
+        std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>();
         for (Utf8String hexString : hexVector)
         {
             BeInt64Id id;
             if (SUCCESS != BeInt64Id::FromString(id, hexString.c_str()))
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
-            idSet.insert(id);
+            idSet->insert(id);
         }
-        ECSqlStatus stat = m_binder->BindIdSet(idSet);
+        ECSqlStatus stat = m_binder->BindVirtualSet(idSet);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
@@ -5095,6 +5095,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 *result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetChildren", requestId))
                 *result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetNodesDescriptor", requestId))
+                *result = ECPresentationUtils::GetHierarchyLevelDescriptor(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetNodePaths", requestId))
                 *result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetFilteredNodePaths", requestId))

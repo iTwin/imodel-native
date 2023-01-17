@@ -163,10 +163,10 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IdECSqlBinder::_BindIdSet(IdSet<BeInt64Id> const& idSet)
+ECSqlStatus IdECSqlBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    m_virtualCopy = idSet;
-    return _BindInt64((int64_t) &m_virtualCopy);
+    LOG.error("Type mismatch. Cannot bind virtual set value to Id parameter.");
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
