@@ -709,7 +709,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOn
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[Prop])", { std::make_shared<BoundRapidJsonValueSet>(groupingValues, PRIMITIVETYPE_Integer) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[Prop])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Integer, groupingValues)) }));
 
         ComplexQueryBuilderPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
         grouped->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
@@ -754,7 +754,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this");
         nested->From(selectClass);
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[Prop])", { std::make_shared<BoundRapidJsonValueSet>(groupingValues, PRIMITIVETYPE_Integer) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[Prop])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Integer, groupingValues)) }));
 
         ComplexQueryBuilderPtr grouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
         grouped->OrderBy(GetLabelGroupingNodesOrderByClause().c_str());
@@ -1780,7 +1780,7 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, FirstLevelPropertyGroupin
         nested->SelectContract(*contract, "this");
         nested->From(*classB, false, "this");
         nested->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, "c", true)));
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Long, groupingValuesA)) }));
 
         ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
@@ -1834,8 +1834,8 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, SecondLevelPropertyGroupi
         nested->SelectContract(*contract, "this");
         nested->From(*classB, false, "this");
         nested->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, "c", true)));
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesB, PRIMITIVETYPE_String) }));
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_String, groupingValuesB)) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Long, groupingValuesA)) }));
 
         ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
@@ -1897,9 +1897,9 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, ThirdLevelPropertyGroupin
         nested->SelectContract(*contract, "this")
             .From(selectClass)
             .Join(relatedInstanceClass)
-            .Where(QueryClauseAndBindings("InVirtualSet(?, [c].[PropC])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesC, PRIMITIVETYPE_Integer) }))
-            .Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesB, PRIMITIVETYPE_String) }))
-            .Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
+            .Where(QueryClauseAndBindings("InVirtualSet(?, [c].[PropC])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Integer, groupingValuesC)) }))
+            .Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_String, groupingValuesB)) }))
+            .Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Long, groupingValuesA)) }));
 
         ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectContract(*contract, "this")
@@ -1968,9 +1968,9 @@ TEST_F (NavigationQueryBuilderMultiLevelGroupingTests, LabelGroupingNodeChildren
         nested->From(selectClass);
         nested->Join(relatedInstanceClass);
         SetLabelGroupingNodeChildrenWhereClause(*nested);
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [c].[PropC])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesC, PRIMITIVETYPE_Integer) }));
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesB, PRIMITIVETYPE_String) }));
-        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundRapidJsonValueSet>(groupingValuesA, PRIMITIVETYPE_Long) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [c].[PropC])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Integer, groupingValuesC)) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropB])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_String, groupingValuesB)) }));
+        nested->Where(QueryClauseAndBindings("InVirtualSet(?, [this].[PropA])", { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(PRIMITIVETYPE_Long, groupingValuesA) ) }));
 
         ComplexQueryBuilderPtr sorted = ComplexQueryBuilder::Create();
         sorted->SelectContract(*contract, "this")

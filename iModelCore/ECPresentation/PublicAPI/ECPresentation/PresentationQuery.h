@@ -14,7 +14,6 @@ struct BoundQueryECValue;
 struct BoundQueryId;
 struct BoundQueryIdSet;
 struct BoundECValueSet;
-struct BoundRapidJsonValueSet;
 struct BoundQueryValue;
 
 /*=================================================================================**//**
@@ -27,7 +26,6 @@ struct IBoundQueryValueSerializer
     virtual rapidjson::Document _ToJson(BoundQueryId const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const = 0;
-    virtual rapidjson::Document _ToJson(BoundRapidJsonValueSet const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const) = 0;
     };
 
@@ -40,7 +38,6 @@ struct DefaultBoundQueryValueSerializer : IBoundQueryValueSerializer
     rapidjson::Document _ToJson(BoundQueryId const&, rapidjson::Document::AllocatorType*) const override;
     rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const override;
     rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const override;
-    rapidjson::Document _ToJson(BoundRapidJsonValueSet const&, rapidjson::Document::AllocatorType*) const override;
     std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const) override;
     };
 
@@ -51,21 +48,6 @@ struct PrimitiveECValueHasher
     {
     size_t operator()(ECValueCR value) const;
     };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ECValueVirtualSet : BeSQLite::VirtualSet
-{
-private:
-    std::unordered_set<ECValue, PrimitiveECValueHasher> m_values;
-public:
-    ECValueVirtualSet(bvector<ECValue> values);
-    std::unordered_set<ECValue, PrimitiveECValueHasher> const& GetValues() const { return m_values; }
-    bool Equals(ECValueVirtualSet const& otherSet) const;
-    void Insert(ECValue value);
-    bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const;
-};
 
 /*=================================================================================**//**
 * @bsiclass
@@ -170,27 +152,8 @@ protected:
 public:
     ECPRESENTATION_EXPORT BoundECValueSet(bvector<ECValue>);
     ECPRESENTATION_EXPORT BoundECValueSet(BoundECValueSet const& other);
-    std::unique_ptr<BeSQLite::VirtualSet> const& GetSet() const { return m_set; }
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE BoundRapidJsonValueSet : BoundQueryValue
-{
-private:
-    std::unique_ptr<BeSQLite::VirtualSet> m_set;
-protected:
-    ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
-    ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
-    rapidjson::Document _ToJson(IBoundQueryValueSerializer const& serializer, rapidjson::Document::AllocatorType* alloc) const override
-        {
-        return serializer._ToJson(*this, alloc);
-        }
-public:
-    ECPRESENTATION_EXPORT BoundRapidJsonValueSet(RapidJsonValueCR values, PrimitiveType type);
-    ECPRESENTATION_EXPORT BoundRapidJsonValueSet(BoundRapidJsonValueSet const& other);
-    std::unique_ptr<BeSQLite::VirtualSet> const& GetSet() const { return m_set; }
+    ECPRESENTATION_EXPORT Nullable<PrimitiveType> GetValueType() const;
+    ECPRESENTATION_EXPORT void ForEachValue(std::function<void(ECValue const&)> const& cb) const;
 };
 
 /*=================================================================================**//**
@@ -246,8 +209,7 @@ public:
     Utf8StringR GetQueryString() { return m_query; }
     BoundQueryValuesList const& GetBindings() const { return m_bindings; }
     BoundQueryValuesList& GetBindings() { return m_bindings; }
-
-    BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt) const { return GetBindings().Bind(stmt); }
+    ECPRESENTATION_EXPORT BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt) const;
 };
 
 /*=================================================================================**//**
@@ -256,49 +218,6 @@ public:
 struct RapidJsonValueComparer
     {
     bool operator() (rapidjson::Value const* left, rapidjson::Value const* right) const;
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct RapidJsonValueSet : BeSQLite::VirtualSet
-    {
-    private:
-        PrimitiveType m_type;
-        rapidjson::Document m_jsonValues;
-        bset<rapidjson::Value*, RapidJsonValueComparer> m_keys;
-
-    public:
-        RapidJsonValueSet(RapidJsonValueCR values, PrimitiveType type) : m_type(type)
-            {
-            m_jsonValues.SetArray();
-            for (rapidjson::SizeType i = 0; i < values.Size(); i++)
-                {
-                if (PRIMITIVETYPE_Point2d == m_type || PRIMITIVETYPE_Point3d == m_type)
-                    {
-                    if (values[i].IsString())
-                        m_jsonValues.PushBack(rapidjson::Value(values[i], m_jsonValues.GetAllocator()), m_jsonValues.GetAllocator());
-                    else if (values[i].IsObject())
-                        m_jsonValues.PushBack(rapidjson::Value(BeRapidJsonUtilities::ToString(values[i]).c_str(), m_jsonValues.GetAllocator()), m_jsonValues.GetAllocator());
-                    else
-                        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected Point value type to be a JSON object or JSON string. Actual: %d", (int)values[i].GetType()));
-                    }
-                else
-                    m_jsonValues.PushBack(rapidjson::Value(values[i], m_jsonValues.GetAllocator()), m_jsonValues.GetAllocator());
-                m_keys.insert(&m_jsonValues[i]);
-                }
-            }
-        RapidJsonValueSet(RapidJsonValueSet const& other)
-            : m_type(other.m_type)
-            {
-            m_jsonValues.CopyFrom(other.m_jsonValues, m_jsonValues.GetAllocator());
-            for (rapidjson::SizeType i = 0; i < m_jsonValues.Size(); i++)
-                m_keys.insert(&m_jsonValues[i]);
-            }
-        PrimitiveType GetValuesType() const { return m_type; }
-        RapidJsonDocumentCR GetValuesJson() const { return m_jsonValues; }
-        bool Equals(RapidJsonValueSet const& otherSet) const;
-        bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override;
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -593,6 +593,24 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR js
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECValue> ValueHelpers::GetECValueSetFromJson(PrimitiveType type, RapidJsonValueCR json)
+    {
+    bvector<ECValue> ecValues;
+    for (rapidjson::SizeType i = 0; i < json.Size(); i++)
+        {
+        ECValue value = GetECValueFromJson(type, json[i]);
+        if (value.IsNull())
+            ecValues.push_back(ECValue(type));
+        else
+            ecValues.push_back(value);
+        
+        }
+    return ecValues;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);

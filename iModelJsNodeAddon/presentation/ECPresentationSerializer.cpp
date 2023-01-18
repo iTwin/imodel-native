@@ -1337,6 +1337,24 @@ ECValue GetECValueFromJson(PrimitiveType type, RapidJsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECValue> GetECValueSetFromJson(PrimitiveType type, RapidJsonValueCR json)
+{
+    bvector<ECValue> ecValues;
+    for (rapidjson::SizeType i = 0; i < json.Size(); i++)
+    {
+        ECValue value = GetECValueFromJson(type, json[i]);
+        if (value.IsNull())
+            ecValues.push_back(ECValue(type));
+        else
+            ecValues.push_back(value);
+
+    }
+    return ecValues;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, BoundQueryValuesList const& boundQueryValuesList, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -1408,30 +1426,22 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryIdSet c
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundECValueSet const& boundECValueSet, rapidjson::Document::AllocatorType* allocator) const
     {
-    auto const& values = static_cast<ECValueVirtualSet const*>(boundECValueSet.GetSet().get())->GetValues();
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("type", "ValueSet", json.GetAllocator());
-    json.AddMember("valueType", rapidjson::Value(values.empty() ? 0 : PrimitiveTypeAsString((*values.begin()).GetPrimitiveType()).c_str(), json.GetAllocator()), json.GetAllocator());
+
+    Nullable<PrimitiveType> valueType = boundECValueSet.GetValueType();
+    if (valueType.IsNull())
+        json.AddMember("valueType", rapidjson::Value(), json.GetAllocator());
+    else
+        json.AddMember("valueType", rapidjson::Value(PrimitiveTypeAsString(*valueType.get()).c_str(), json.GetAllocator()), json.GetAllocator());
+
     rapidjson::Value valuesJson;
     valuesJson.SetArray();
-    for (auto const& value : values)
+    boundECValueSet.ForEachValue([&](ECValue const& value) {
         valuesJson.PushBack(GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
+        });
     json.AddMember("value", valuesJson, json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundRapidJsonValueSet const& boundRapidJsonValueSet, rapidjson::Document::AllocatorType* allocator) const
-    {
-    auto const& set = static_cast<RapidJsonValueSet const&>(*boundRapidJsonValueSet.GetSet());
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "ValueSet", json.GetAllocator());
-    json.AddMember("valueType", rapidjson::Value(PrimitiveTypeAsString(set.GetValuesType()).c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("value", rapidjson::Value(set.GetValuesJson(), json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
@@ -1456,12 +1466,15 @@ std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(Be
         }
     if (0 == strcmp("ValueSet", type))
         {
+        bvector<ECValue> ecValues;
         Utf8String valueType = json["valueType"].asCString();
         if (valueType.empty())
             return std::make_unique<BoundECValueSet>(bvector<ECValue>());
-        rapidjson::Document doc;
-        doc.Parse(json["value"].Stringify().c_str());
-        return std::make_unique<BoundRapidJsonValueSet>(doc, (PrimitiveType)ParsePrimitiveType(valueType));
+
+        rapidjson::Document values;
+        values.Parse(json["value"].Stringify().c_str());
+        return std::make_unique<BoundECValueSet>(GetECValueSetFromJson((PrimitiveType)ParsePrimitiveType(valueType), values));
+        
         }
     if (0 == strcmp("Id", type))
         {

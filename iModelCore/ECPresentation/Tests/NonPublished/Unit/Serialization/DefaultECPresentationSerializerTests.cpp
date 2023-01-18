@@ -518,11 +518,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
-                "PathFromRoot": [],
-                "InstanceKeysSelectQuery": {
-                    "Query": "",
-                    "Bindings": []
-                }
+                "PathFromRoot": []
             },
             "Description": "",
             "ImageId": "",
@@ -570,11 +566,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
-                "PathFromRoot": [],
-                "InstanceKeysSelectQuery": {
-                    "Query": "",
-                    "Bindings": []
-                }
+                "PathFromRoot": []
             },
             "Description": "",
             "ImageId": "",
@@ -626,11 +618,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
-                "PathFromRoot": [],
-                "InstanceKeysSelectQuery": {
-                    "Query": "",
-                    "Bindings": []
-                }
+                "PathFromRoot": []
             },
             "Description": "Updated Description",
             "ImageId": "",
@@ -682,11 +670,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
-                "PathFromRoot": [],
-                "InstanceKeysSelectQuery": {
-                    "Query": "",
-                    "Bindings": []
-                }
+                "PathFromRoot": []
             },
             "Description": "",
             "ImageId": "",
@@ -754,11 +738,7 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationC
         "Parent": {
             "Type": "TestType",
             "SpecificationIdentifier": "",
-            "PathFromRoot": [],
-            "InstanceKeysSelectQuery": {
-                "Query": "",
-                "Bindings": []
-            }
+            "PathFromRoot": []
         },
         "NodesCount": 2,
         "RulesetId": "ruleset-id",
@@ -791,11 +771,7 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationW
                 "Key": {
                     "Type": "TestType",
                     "SpecificationIdentifier": "",
-                    "PathFromRoot": [],
-                    "InstanceKeysSelectQuery": {
-                        "Query": "",
-                        "Bindings": []
-                    }
+                    "PathFromRoot": []
                 },
                 "Description": "",
                 "ImageId": "",
@@ -1431,7 +1407,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceChangeResultSerialization
 TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
     {
     NavNodeKeyPtr key = NavNodeKey::Create("TypeName", "Spec", {"123", "abc"});
-    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>("query"));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1439,11 +1414,7 @@ TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
     expected.Parse(R"({
         "Type": "TypeName",
         "SpecificationIdentifier": "Spec",
-        "PathFromRoot": ["123", "abc"],
-        "InstanceKeysSelectQuery": {
-            "Query": "query",
-            "Bindings": []
-        }
+        "PathFromRoot": ["123", "abc"]
         })");
 
     ASSERT_EQ(expected, actual)
@@ -1475,7 +1446,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
         ECClassInstanceKey(GetClassA(), ECInstanceId((uint64_t)123)),
         ECClassInstanceKey(GetClassB(), ECInstanceId((uint64_t)456))
         }, "Spec", {"123", "abc"});
-    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1484,10 +1454,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
         "Type": "ECInstancesNode",
         "SpecificationIdentifier": "Spec",
         "PathFromRoot": ["123", "abc"],
-        "InstanceKeysSelectQuery": {
-            "Query": "",
-            "Bindings": []
-        },
         "InstanceKeys": [{
             "ECClassId": "",
             "ECInstanceId": "123"
@@ -1531,7 +1497,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
 TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization)
     {
     ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*GetClassA(), true, "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     //Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1540,10 +1505,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
         "Type": "ECClassGroupingNode",
         "SpecificationIdentifier": "Spec",
         "PathFromRoot": ["123", "abc"],
-        "InstanceKeysSelectQuery": {
-            "Query": "",
-            "Bindings": []
-        },
         "ECClassId": "",
         "GroupedInstancesCount": 456
         })");
@@ -1584,7 +1545,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
 TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationNoGroupingValue)
     {
     ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", rapidjson::Value(rapidjson::kArrayType), "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1593,10 +1553,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
         "Type": "ECPropertyGroupingNode",
         "SpecificationIdentifier": "Spec",
         "PathFromRoot": ["123", "abc"],
-        "InstanceKeysSelectQuery": {
-            "Query": "",
-            "Bindings": []
-        },
         "ECClassId": "",
         "PropertyName": "PropertyNameText",
         "GroupedInstancesCount": 456,
@@ -1644,7 +1600,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     groupingValues.PushBack(rapidjson::StringRef("GroupingValue1"), groupingValues.GetAllocator());
     groupingValues.PushBack(rapidjson::Value(123), groupingValues.GetAllocator());
     ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", groupingValues, "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1653,10 +1608,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
         "Type": "ECPropertyGroupingNode",
         "SpecificationIdentifier": "Spec",
         "PathFromRoot": ["123", "abc"],
-        "InstanceKeysSelectQuery": {
-            "Query": "",
-            "Bindings": []
-        },
         "ECClassId": "",
         "PropertyName": "PropertyNameText",
         "GroupingValues": ["GroupingValue1", 123],
@@ -1701,7 +1652,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
 TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     {
     LabelGroupingNodeKeyPtr key = LabelGroupingNodeKey::Create("LabelText", "Spec", {"123", "abc"}, 456);
-    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1710,10 +1660,6 @@ TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
         "Type": "DisplayLabelGroupingNode",
         "SpecificationIdentifier": "Spec",
         "PathFromRoot": ["123", "abc"],
-        "InstanceKeysSelectQuery": {
-            "Query": "",
-            "Bindings": []
-        },
         "Label": "LabelText",
         "GroupedInstancesCount": 456
         })");
@@ -1788,11 +1734,7 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
             "Key": {
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
-                "PathFromRoot": [],
-                "InstanceKeysSelectQuery": {
-                    "Query": "",
-                    "Bindings": []
-                }
+                "PathFromRoot": []
             },
             "Description": "",
             "ImageId": "",
@@ -1820,11 +1762,7 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
                 "Key": {
                     "Type": "TestType",
                     "SpecificationIdentifier": "",
-                    "PathFromRoot": [],
-                    "InstanceKeysSelectQuery": {
-                        "Query": "",
-                        "Bindings": []
-                    }
+                    "PathFromRoot": []
                 },
                 "Description": "",
                 "ImageId": "",
@@ -1865,7 +1803,6 @@ TEST_F(DefaultECPresentationSerializerTests, KeySetSerialization)
         ECClassInstanceKey(*GetClassB(), ECInstanceId((uint64_t)2))
         });
     auto key = NavNodeKey::Create("TypeName", "Spec", { "123", "abc" });
-    key->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(""));
     keySet->Add(*key);
 
     // Serialize
@@ -1877,11 +1814,7 @@ TEST_F(DefaultECPresentationSerializerTests, KeySetSerialization)
         "NodeKeys": [{
             "Type": "TypeName",
             "SpecificationIdentifier": "Spec",
-            "PathFromRoot": ["123", "abc"],
-            "InstanceKeysSelectQuery": {
-                "Query": "",
-                "Bindings": []
-            }
+            "PathFromRoot": ["123", "abc"]
             }]
         })");
     expected["InstanceKeys"].AddMember(rapidjson::Value(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator()), rapidjson::Value(rapidjson::kArrayType), expected.GetAllocator());

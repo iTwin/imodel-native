@@ -46,6 +46,7 @@ public:
     static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, BeSQLite::EC::IECSqlValue const&);
     static ECN::ECValue GetECValueFromString(ECN::PrimitiveType, Utf8StringCR);
     ECPRESENTATION_EXPORT static ECN::ECValue GetECValueFromJson(ECN::PrimitiveType, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static bvector<ECN::ECValue> GetECValueSetFromJson(ECN::PrimitiveType, RapidJsonValueCR);
 
     static rapidjson::Document GetECInstanceKeyAsJson(ECInstanceKeyCR, rapidjson::MemoryPoolAllocator<>* = nullptr);
     static Utf8String GetECInstanceKeyAsJsonString(ECInstanceKeyCR);

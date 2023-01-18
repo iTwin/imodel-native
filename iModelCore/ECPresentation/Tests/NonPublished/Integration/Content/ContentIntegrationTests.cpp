@@ -15642,10 +15642,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRulesetVariables, R"*(
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRuleset, R"*(
     <ECEntityClass typeName="A" />
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRulesetVariables)
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRuleset)
     {
     // set up data set
     ECClassCP classA = GetClass("A");
@@ -15657,7 +15657,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
     m_locater->AddRuleSet(*nodeRules);
 
     RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
-    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "GetVariableBoolValue(\"show_nodes\")", classA->GetFullName(), false));
+    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "", classA->GetFullName(), false));
 
     nodeRules->AddPresentationRule(*nodeRule);
 
@@ -15671,39 +15671,31 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
     contentRules->AddPresentationRule(*contentRule);
 
     // request nodes
-    RulesetVariables variables({ RulesetVariableEntry("show_nodes", true) });
-    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), variables))); });
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), RulesetVariables()))); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
 
     // request
     KeySetPtr input = KeySet::Create(bvector<NavNodeKeyCPtr>{rootNodes[0]->GetKey()});
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), variables, nullptr, (int)ContentFlags::KeysOnly, *input)));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::KeysOnly, *input)));
     ASSERT_TRUE(descriptor.IsValid());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-    ASSERT_EQ(1, contentSet[0]->GetKeys().size());
-    EXPECT_EQ(contentSet[0]->GetKeys()[0], RulesEngineTestHelpers::GetInstanceKey(*a));
-
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ a.get() }, *content);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRulesetVariables, R"*(
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRuleset, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Property" typeName="int" />
     </ECEntityClass>
-    <ECEntityClass typeName="B">
-        <ECProperty propertyName="Property" typeName="int" />
-    </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRulesetVariables)
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRuleset)
     {
     // set up data set
     ECClassCP classA = GetClass("A");
@@ -15716,8 +15708,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
     m_locater->AddRuleSet(*nodeRules);
 
     RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
-    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "GetVariableBoolValue(\"show_nodes\")", Utf8PrintfString("% s:A, B", GetSchema()->GetName().c_str()), false));
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), "A", "", "", "");;
+    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), false));
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classA->GetName(), "", "", "");;
     nodeRules->AddPresentationRule(*groupingRule);
     groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
 
@@ -15733,26 +15725,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
     contentRules->AddPresentationRule(*contentRule);
 
     // request nodes
-    RulesetVariables variables({ RulesetVariableEntry("show_nodes", true) });
-    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), variables))); });
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), RulesetVariables()))); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
 
     // request
     KeySetPtr input = KeySet::Create(bvector<NavNodeKeyCPtr>{rootNodes[0]->GetKey()});
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), variables, nullptr, (int)ContentFlags::KeysOnly, *input)));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::KeysOnly, *input)));
     ASSERT_TRUE(descriptor.IsValid());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(2, contentSet.GetSize());
-    ASSERT_EQ(1, contentSet[0]->GetKeys().size());
-    EXPECT_EQ(contentSet[0]->GetKeys()[0], RulesEngineTestHelpers::GetInstanceKey(*instance1));
-    ASSERT_EQ(1, contentSet[1]->GetKeys().size());
-    EXPECT_EQ(contentSet[1]->GetKeys()[0], RulesEngineTestHelpers::GetInstanceKey(*instance2));
-
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ instance1.get(), instance2.get() }, * content);
     }
 
