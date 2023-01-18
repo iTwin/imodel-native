@@ -34,10 +34,6 @@ BentleyStatus BoundQueryValuesList::Bind(ECSqlStatement& stmt) const
     return SUCCESS;
     }
 
-BentleyStatus PresentationQuery::BindValues(BeSQLite::EC::ECSqlStatement& stmt) const {
-    return GetBindings().Bind(stmt); 
-    }
-
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1991,7 +1987,7 @@ bool StringQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) con
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BoundQueryValuesList::FromJson(IBoundQueryValueSerializer &serializer, BeJsConst json)
+BentleyStatus BoundQueryValuesList::FromJson(IBoundQueryValueSerializer& serializer, BeJsConst json)
     {
     clear();
 
@@ -2108,8 +2104,6 @@ size_t PrimitiveECValueHasher::operator()(ECValueCR value) const
     return hash;
     };
 
-
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -2151,7 +2145,8 @@ public:
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<PrimitiveType> BoundECValueSet::GetValueType() const {
+Nullable<PrimitiveType> BoundECValueSet::GetValueType() const 
+    {
     auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
 
     for (ECValue const& value : values)
@@ -2159,123 +2154,19 @@ Nullable<PrimitiveType> BoundECValueSet::GetValueType() const {
         if (value.IsPrimitive())
             return value.GetPrimitiveType();
         }
+
     return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb) const {
+void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb) const 
+    {
     auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
+
     for (auto const& value : values)
         cb(value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJsConst const json)
-    {
-    if (!json.isObject() || !json.hasMember("type"))
-        return nullptr;
-    Utf8CP type = json["type"].asCString();
-    if (0 == strcmp("ec-value", type))
-        {
-        rapidjson::Document doc;    // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
-        doc.Parse(json["value"].Stringify().c_str());
-        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), doc);
-        return std::make_unique<BoundQueryECValue>(std::move(value));
-        }
-    if (0 == strcmp("value-set", type))
-        {
-        bvector<ECValue> ecValues;
-        int valueType = json["value-type"].GetInt();
-        if (0 == valueType)
-            return std::make_unique<BoundECValueSet>(bvector<ECValue>());
-
-        rapidjson::Document values;
-        values.Parse(json["value"].Stringify().c_str());
-        return std::make_unique<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson((PrimitiveType)valueType, values));
-        }
-    if (0 == strcmp("id", type))
-        {
-        return std::make_unique<BoundQueryId>(json["value"].asCString());
-        }
-    if (0 == strcmp("id-set", type))
-        {
-        BeJsConst idsJson = json["value"];
-        bvector<BeInt64Id> ids;
-        for (rapidjson::SizeType i = 0; i < idsJson.size(); ++i)
-            ids.push_back(BeInt64Id::FromString(idsJson[i].asCString()));
-        return std::make_unique<BoundQueryIdSet>(ids);
-        }
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryECValue const& boundQueryECValue, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "ec-value", json.GetAllocator());
-    json.AddMember("value-type", (int)boundQueryECValue.GetValue().GetPrimitiveType(), json.GetAllocator());
-    json.AddMember("value", ValueHelpers::GetJsonFromECValue(boundQueryECValue.GetValue(), &json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryId const& boundQueryId, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "id", json.GetAllocator());
-    json.AddMember("value", rapidjson::Value(boundQueryId.GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryIdSet const& boundQueryIdSet, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "id-set", json.GetAllocator());
-    rapidjson::Value idsJson;
-    idsJson.SetArray();
-    for (auto const& id : boundQueryIdSet.GetSet())
-        idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("value", idsJson, json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundECValueSet const& boundECValueSet, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "value-set", json.GetAllocator());
-
-    Nullable<PrimitiveType> valueType = boundECValueSet.GetValueType();
-    if (valueType.IsNull())
-        json.AddMember("value-type", rapidjson::Value(), json.GetAllocator());
-    else
-        json.AddMember("value-type", rapidjson::Value((int)*valueType.get()), json.GetAllocator());
-    
-    rapidjson::Value valuesJson;
-    valuesJson.SetArray();
-
-    boundECValueSet.ForEachValue([&](ECValue const& value) {
-        valuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
-        });
-    json.AddMember("value", valuesJson, json.GetAllocator());
-    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**

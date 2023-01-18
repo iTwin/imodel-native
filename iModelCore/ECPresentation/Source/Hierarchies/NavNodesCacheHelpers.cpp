@@ -226,7 +226,7 @@ static NavNodeKeyPtr CreateNodeKeyFromStatement(Statement& stmt, IConnectionCR c
             return ECClassInstanceKey(connection.GetECDb().Schemas().GetClass(k.GetClassId()), k.GetInstanceId());
             });
         auto nodeKey = ECInstancesNodeKey::Create(classInstanceKeys, specificationIdentifier, hashPath);
-        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey.get());
+        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey);
         return nodeKey;
         }
     if (0 == strcmp(nodeType, NAVNODE_TYPE_ECClassGroupingNode))
@@ -234,7 +234,7 @@ static NavNodeKeyPtr CreateNodeKeyFromStatement(Statement& stmt, IConnectionCR c
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(stmt.GetValueId<ECClassId>(7));
         auto instanceKeys = stmt.IsColumnNull(12) ? nullptr : std::make_unique<bvector<ECInstanceKey>>(ValueHelpers::GetECInstanceKeysFromJsonString(stmt.GetValueText(12)));
         auto nodeKey = ECClassGroupingNodeKey::Create(*ecClass, stmt.GetValueBoolean(8), specificationIdentifier, hashPath, stmt.GetValueUInt64(11), std::move(instanceKeys));
-        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey.get());
+        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey);
         return nodeKey;
         }
     if (0 == strcmp(nodeType, NAVNODE_TYPE_ECPropertyGroupingNode))
@@ -245,18 +245,18 @@ static NavNodeKeyPtr CreateNodeKeyFromStatement(Statement& stmt, IConnectionCR c
         groupedValues.Parse(stmt.GetValueText(10));
         auto instanceKeys = stmt.IsColumnNull(12) ? nullptr : std::make_unique<bvector<ECInstanceKey>>(ValueHelpers::GetECInstanceKeysFromJsonString(stmt.GetValueText(12)));
         auto nodeKey = ECPropertyGroupingNodeKey::Create(*ecClass, stmt.GetValueText(9), groupedValues, specificationIdentifier, hashPath, stmt.GetValueUInt64(11), std::move(instanceKeys));
-        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey.get());
+        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey);
         return nodeKey;
         }
     if (0 == strcmp(nodeType, NAVNODE_TYPE_DisplayLabelGroupingNode))
         {
         auto instanceKeys = stmt.IsColumnNull(12) ? nullptr : std::make_unique<bvector<ECInstanceKey>>(ValueHelpers::GetECInstanceKeysFromJsonString(stmt.GetValueText(12)));
         auto nodeKey = LabelGroupingNodeKey::Create(stmt.GetValueText(2), specificationIdentifier, hashPath, stmt.GetValueUInt64(11), std::move(instanceKeys));
-        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey.get());
+        SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey);
         return nodeKey;
         }
     auto nodeKey = NavNodeKey::Create(nodeType, specificationIdentifier, hashPath);
-    SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey.get());
+    SetInstanceKeysSelectQueryFromStatement(stmt, *nodeKey);
     return nodeKey;
     }
 

@@ -102,4 +102,16 @@ protected:
     ECPRESENTATION_EXPORT std::unique_ptr<InstanceFilterDefinition> _GetInstanceFilterFromJson(IConnectionCR, BeJsConst) const override;
 };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct DefaultBoundQueryValueSerializer : IBoundQueryValueSerializer
+    {
+    rapidjson::Document _ToJson(BoundQueryECValue const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundQueryId const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const override;
+    std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const) override;
+    };
+
 END_BENTLEY_ECPRESENTATION_NAMESPACE

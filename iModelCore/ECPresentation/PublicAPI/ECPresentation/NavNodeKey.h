@@ -43,10 +43,9 @@ protected:
     static Utf8String GetConnectionIdentifier(IConnectionCR connection) {return connection.IsOpen() ? connection.GetDb().GetDbGuid().ToString() : "";}
 
 protected:
-    ECPRESENTATION_EXPORT NavNodeKey(NavNodeKey const& other);
-    ECPRESENTATION_EXPORT NavNodeKey(Utf8String type, Utf8String specificationIdentifier, bvector<Utf8String> hashPath)
+    NavNodeKey(NavNodeKey const& other);
+    NavNodeKey(Utf8String type, Utf8String specificationIdentifier, bvector<Utf8String> hashPath)
         : m_type(type), m_specificationIdentifier(specificationIdentifier), m_hashPath(hashPath) {}
-    ECPRESENTATION_EXPORT ~NavNodeKey() {}
     ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const;
     virtual bool _IsSimilar(NavNodeKey const& other) const {return m_type.Equals(other.m_type);}
     virtual ECInstancesNodeKey const* _AsECInstanceNodeKey() const {return nullptr;}
@@ -106,8 +105,8 @@ public:
     //! Create a key from the supplied JSON.
     ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR, BeJsConst);
 
-    ECPRESENTATION_EXPORT PresentationQuery const* GetInstanceKeysSelectQuery() const { return m_instanceKeysSelectQuery.get(); }
-    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const> query) { m_instanceKeysSelectQuery = std::move(query); }
+    PresentationQuery const* GetInstanceKeysSelectQuery() const { return m_instanceKeysSelectQuery.get(); }
+    void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const> query) { m_instanceKeysSelectQuery = std::move(query); }
 };
 
 //=======================================================================================

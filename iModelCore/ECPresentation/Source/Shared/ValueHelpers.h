@@ -77,12 +77,14 @@ public:
 
     static ECClassInstanceKey GetECClassInstanceKey(BeSQLite::EC::SchemaManagerCR, ECInstanceKeyCR);
 
-    static Utf8String PrimitiveTypeAsString(ECN::PrimitiveType);
+    static Utf8CP PrimitiveTypeAsString(ECN::PrimitiveType);
 
     static Utf8String PadNumbersInString(Utf8StringCR str);
     static Utf8String GuidToString(BeGuidCR guid);
 
     static Formatting::Format const* GetPresentationFormat(KindOfQuantityCR koq, ECPresentation::UnitSystem unitSystemGroup, std::map<std::pair<Utf8String, UnitSystem>, std::shared_ptr<Formatting::Format>> const& defaultFormats);
+
+    static rapidjson::Document ToRapidJson(BeJsConst json);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

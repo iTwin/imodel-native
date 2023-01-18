@@ -32,18 +32,6 @@ struct IBoundQueryValueSerializer
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct DefaultBoundQueryValueSerializer : IBoundQueryValueSerializer
-    {
-    rapidjson::Document _ToJson(BoundQueryECValue const&, rapidjson::Document::AllocatorType*) const override;
-    rapidjson::Document _ToJson(BoundQueryId const&, rapidjson::Document::AllocatorType*) const override;
-    rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const override;
-    rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const override;
-    std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const) override;
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 struct PrimitiveECValueHasher
     {
     size_t operator()(ECValueCR value) const;
@@ -60,11 +48,11 @@ protected:
     virtual rapidjson::Document _ToJson(IBoundQueryValueSerializer const& serializer, rapidjson::Document::AllocatorType* alloc) const = 0;
 public:
     virtual ~BoundQueryValue() {}
-    rapidjson::Document ToJson(IBoundQueryValueSerializer const& serializer, rapidjson::Document::AllocatorType* alloc) const { return _ToJson(serializer, alloc); };
     bool Equals(BoundQueryValue const& other) const { return _Equals(other); }
     bool operator==(BoundQueryValue const& other) const { return Equals(other); }
     bool operator!=(BoundQueryValue const& other) const { return !Equals(other); }
     BeSQLite::EC::ECSqlStatus Bind(BeSQLite::EC::ECSqlStatement& stmt, uint32_t index) const { return _Bind(stmt, index); }
+    rapidjson::Document ToJson(IBoundQueryValueSerializer const& serializer, rapidjson::Document::AllocatorType* alloc) const { return _ToJson(serializer, alloc); };
 };
 
 /*=================================================================================**//**
@@ -209,7 +197,7 @@ public:
     Utf8StringR GetQueryString() { return m_query; }
     BoundQueryValuesList const& GetBindings() const { return m_bindings; }
     BoundQueryValuesList& GetBindings() { return m_bindings; }
-    ECPRESENTATION_EXPORT BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt) const;
+    BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt) const { return GetBindings().Bind(stmt); }
 };
 
 /*=================================================================================**//**

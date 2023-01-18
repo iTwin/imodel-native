@@ -819,7 +819,7 @@ ECClassInstanceKey ValueHelpers::GetECClassInstanceKey(SchemaManagerCR schemas, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ValueHelpers::PrimitiveTypeAsString(PrimitiveType type)
+Utf8CP ValueHelpers::PrimitiveTypeAsString(PrimitiveType type)
     {
     switch (type)
         {
@@ -967,4 +967,16 @@ Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR k
         }
 
     return format;
+    }
+
+
+// TODO: This method should only be used while the transition from RapidJson/JsonValue to BeJsConst isn't finished. It should be deleted afterwards.
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ValueHelpers::ToRapidJson(BeJsConst json)
+    {
+    rapidjson::Document doc;
+    doc.Parse(json.Stringify().c_str());
+    return doc;
     }
