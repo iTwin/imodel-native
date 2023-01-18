@@ -783,10 +783,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ParseResult<NavNodeKeyCPtr> ParseParentNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json)
+static ParseResult<NavNodeKeyCPtr> ParseParentNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json, bool isRequired)
     {
-    if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey) || !json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey].IsObject())
-        return CreateParseError<NavNodeKeyCPtr>("Expected `" PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "` to be a string");
+    if (!json.HasMember(PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey))
+        {
+        if (isRequired)
+            return CreateParseError<NavNodeKeyCPtr>("Missing required `" PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "` attribute");
+        return CreateParseResult<NavNodeKeyCPtr>(nullptr);
+        }
+
+    if (!json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey].IsObject())
+        return CreateParseError<NavNodeKeyCPtr>("Expected `" PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "` to be an object");
 
     NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, ToBeJsConst(json[PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey]));
     if (key.IsNull())
@@ -808,7 +815,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
     if (rulesetParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, rulesetParams.GetError());
 
-    auto parentKeyParams = ParseParentNodeKeyFromJson(*connection, paramsJson);
+    auto parentKeyParams = ParseParentNodeKeyFromJson(*connection, paramsJson, true);
     if (parentKeyParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
 
@@ -843,7 +850,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     if (pageParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, pageParams.GetError());
 
-    auto parentKeyParams = ParseParentNodeKeyFromJson(*connection, paramsJson);
+    auto parentKeyParams = ParseParentNodeKeyFromJson(*connection, paramsJson, true);
     if (parentKeyParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
 
@@ -862,6 +869,36 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
             for (NavNodeCPtr const& node : *nodesResponse)
                 PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
             return ECPresentationResult(std::move(json), true);
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult> ECPresentationUtils::GetHierarchyLevelDescriptor(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
+    {
+    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");
+
+    auto rulesetParams = ParseRulesetParamsFromJson(paramsJson);
+    if (rulesetParams.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, rulesetParams.GetError());
+
+    auto parentKeyParams = ParseParentNodeKeyFromJson(*connection, paramsJson, false);
+    if (parentKeyParams.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
+
+    auto params = HierarchyLevelDescriptorRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
+    return manager.GetNodesDescriptor(CreateAsyncParams(params, db, paramsJson))
+        .then([formatter = &manager.GetFormatter()](NodesDescriptorResponse descriptorResponse)
+            {
+            auto const& descriptor = *descriptorResponse;
+            if (descriptor.IsNull())
+                return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+
+            ECPresentationSerializerContext serializerCtx(descriptor->GetUnitSystem(), formatter);
+            return ECPresentationResult(descriptor->AsJson(serializerCtx), true);
             });
     }
 
