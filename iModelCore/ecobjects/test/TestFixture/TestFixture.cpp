@@ -266,7 +266,9 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(BeJsDocument& jsonInput, BeFi
 
     file.Close();
 
-    return BeJsDocument(fileContent).hasParseError() ? ERROR : SUCCESS;
+    
+    jsonInput.Parse(fileContent);
+    return jsonInput.hasParseError() ? ERROR : SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
