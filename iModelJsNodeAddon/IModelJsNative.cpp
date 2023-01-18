@@ -5107,6 +5107,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 *result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetChildren", requestId))
                 *result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetNodesDescriptor", requestId))
+                *result = ECPresentationUtils::GetHierarchyLevelDescriptor(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetNodePaths", requestId))
                 *result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetFilteredNodePaths", requestId))

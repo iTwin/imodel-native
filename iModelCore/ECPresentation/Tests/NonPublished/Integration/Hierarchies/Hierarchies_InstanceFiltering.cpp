@@ -4,6 +4,98 @@
 *--------------------------------------------------------------------------------------------*/
 #include "HierarchyIntegrationTests.h"
 
+typedef std::function<void(ContentDescriptor::Category const&)> FieldCategoryValidator;
+typedef std::function<void(ContentDescriptor::Field const&)> FieldValidator;
+typedef std::function<void(ContentDescriptor const&)> DescriptorValidator;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static FieldValidator CreatePropertiesFieldValidator(FieldCategoryValidator category, bvector<ECPropertyCP> const& props)
+    {
+    return [=](ContentDescriptor::Field const& field)
+        {
+        EXPECT_TRUE(field.IsPropertiesField());
+        EXPECT_EQ(props.size(), field.AsPropertiesField()->GetProperties().size());
+        for (size_t i = 0; i < props.size(); ++i)
+            {
+            EXPECT_EQ(props[i], &field.AsPropertiesField()->GetProperties()[i].GetProperty());
+            }
+        };
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static FieldValidator CreatePropertiesFieldValidator(FieldCategoryValidator category, ECPropertyCR prop)
+    {
+    return CreatePropertiesFieldValidator(category, { &prop });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static FieldValidator CreatePropertiesFieldValidator(bvector<ECPropertyCP> const& props)
+    {
+    return CreatePropertiesFieldValidator(nullptr, props);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static FieldValidator CreatePropertiesFieldValidator(ECPropertyCR prop)
+    {
+    return CreatePropertiesFieldValidator(nullptr, prop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ValidateDescriptor(ContentDescriptorCR actualDescriptor, bvector<FieldValidator> const& expectedFields)
+    {
+    EXPECT_EQ(expectedFields.size(), actualDescriptor.GetVisibleFields().size());
+    for (size_t i = 0; i < actualDescriptor.GetVisibleFields().size(); ++i)
+        {
+        auto actualField = actualDescriptor.GetVisibleFields().at(i);
+        auto const& fieldValidator = expectedFields[i];
+        if (fieldValidator)
+            fieldValidator(*actualField);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DescriptorValidator CreateDescriptorValidator(bvector<FieldValidator> const& expectedFields)
+    {
+    return [=](ContentDescriptor const& descriptor)
+        {
+        ValidateDescriptor(descriptor, expectedFields);
+        };
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ValidateHierarchyLevelDescriptor(ECPresentationManagerR manager, AsyncHierarchyRequestParams const& params, DescriptorValidator const& expectedDescriptor)
+    {
+    auto parentNodeKey = params.GetParentNodeKey() ? params.GetParentNodeKey() : params.GetParentNode() ? params.GetParentNode()->GetKey().get() : nullptr;
+    auto descriptorParams = AsyncHierarchyLevelDescriptorRequestParams::Create(HierarchyLevelDescriptorRequestParams(params, parentNodeKey), params);
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(manager.GetNodesDescriptor(descriptorParams));
+    ASSERT_TRUE(descriptor.IsValid());
+    expectedDescriptor(*descriptor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static AsyncHierarchyRequestParams WithParentNode(AsyncHierarchyRequestParams const& in, NavNodeCP parentNode)
+    {
+    AsyncHierarchyRequestParams out(in);
+    out.SetParentNode(parentNode);
+    return out;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -37,6 +129,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ a1 }),
         CreateInstanceNodeValidator({ a2 }),
         });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("Prop")),
+        }));
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
@@ -132,6 +230,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b2 }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("PropA")),
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("PropB")),
+        }));
+
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.PropB = 2", *classB, bvector<RelatedClassPath>()));
     ValidateHierarchy(params,
@@ -180,6 +285,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b2 }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("PropB")),
+        }));
+
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.PropB = 2", *classB, bvector<RelatedClassPath>()));
     ValidateHierarchy(params,
@@ -187,6 +298,90 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b2 }),
         });
     }
+
+#ifdef FIXME_CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_WITH_RELATED_INSTANCES
+// https://github.com/iTwin/imodel-native/issues/110
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithInstanceNodesOfSpecificClassesSpecification_WithRelatedInstanceSpecification, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithInstanceNodesOfSpecificClassesSpecification_WithRelatedInstanceSpecification)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(1));});
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropB", ECValue(999));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a1, *b1);
+
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(2));});
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropB", ECValue(666));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b2);
+
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(3));});
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropB", ECValue(999));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a3, *b3);
+
+    IECInstancePtr a4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(4));});
+    IECInstancePtr b4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropB", ECValue(666));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a4, *b4);
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    auto rootRule = new RootNodeRule();
+    auto rootSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "b.PropB = 999",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() }),
+        }, {});
+    rootSpec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), "b", true));
+    rootRule->AddSpecification(*rootSpec);
+    rules->AddPresentationRule(*rootRule);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a3 }),
+        });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("PropA")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.PropA > 2"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a3 }),
+        });
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
@@ -247,6 +442,78 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ a2 }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithInstanceNodesOfSpecificClassesSpecification_WithExcludedClasses, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithInstanceNodesOfSpecificClassesSpecification_WithExcludedClasses)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(1));});
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(2));});
+
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(1));});
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(2));});
+
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(1));});
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("PropA", ECValue(2));});
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() }),
+        },
+        {
+        new MultiSchemaClass(classC->GetSchema().GetName(), true, bvector<Utf8String>{ classC->GetName() }),
+        }));
+    rules->AddPresentationRule(*rootRule);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a2 }),
+        CreateInstanceNodeValidator({ b1 }),
+        CreateInstanceNodeValidator({ b2 }),
+        });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator({ classA->GetPropertyP("PropA"), classB->GetPropertyP("PropA") }),
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("PropB")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.PropA = 2"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a2 }),
+        CreateInstanceNodeValidator({ b2 }),
         });
     }
 
@@ -314,14 +581,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("Prop")),
+        }));
+
     // verify getting child nodes with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
-    params.SetParentNode(hierarchy[0].node.get());
-    ValidateHierarchy(params,
+    ValidateHierarchy(WithParentNode(params, hierarchy[0].node.get()),
         {
         });
-    params.SetParentNode(hierarchy[1].node.get());
-    ValidateHierarchy(params,
+    ValidateHierarchy(WithParentNode(params, hierarchy[1].node.get()),
         {
         CreateInstanceNodeValidator({ b2 }),
         });
@@ -498,6 +769,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classD->GetPropertyP("Prop")),
+        }));
+
     // verify getting child nodes with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2", *classD, bvector<RelatedClassPath>()));
     params.SetParentNode(hierarchy[0].node.get());
@@ -590,6 +867,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classC->GetPropertyP("Prop")),
+        }));
+
     // verify getting child nodes with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2", *classC, bvector<RelatedClassPath>()));
     params.SetParentNode(hierarchy[0].node.get());
@@ -649,7 +932,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b2);
     IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c2);
-    
+
     IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
     IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a3, *b3);
@@ -749,6 +1032,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ a2 }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("Prop")),
+        }));
+
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
     ValidateHierarchy(params,
@@ -803,9 +1092,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(InstanceFiltering_FiltersWithSearchResultInstanceNodesSpecification_WhenFilterRequestsOneOfTheSelectClasses, R"*(
-    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="int" />
+    </ECEntityClass>
     <ECEntityClass typeName="B">
-        <ECProperty propertyName="Prop" typeName="int" />
+        <ECProperty propertyName="PropB" typeName="int" />
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithSearchResultInstanceNodesSpecification_WhenFilterRequestsOneOfTheSelectClasses)
@@ -815,8 +1106,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     ECClassCP classB = GetClass("B");
 
     IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
-    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
-    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropB", ECValue(1));});
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("PropB", ECValue(2));});
 
     // ruleset
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
@@ -840,8 +1131,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b2 }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("PropA")),
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("PropB")),
+        }));
+
     // verify with instance filter
-    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2", *classB, bvector<RelatedClassPath>()));
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.PropB = 2", *classB, bvector<RelatedClassPath>()));
     ValidateHierarchy(params,
         {
         CreateInstanceNodeValidator({ b2 }),
@@ -887,6 +1185,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b1 }),
         CreateInstanceNodeValidator({ b2 }),
         });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("Prop")),
+        }));
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2", *classB, bvector<RelatedClassPath>()));
@@ -995,7 +1299,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classA, false, { a1, a2 }),
             {
@@ -1011,6 +1315,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             CreateInstanceNodeValidator({ c })
             }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator({ classA->GetPropertyP("Prop"), classB->GetPropertyP("Prop"), classC->GetPropertyP("Prop") }),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[2].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop > 1"));
@@ -1128,7 +1442,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateLabelGroupingNodeValidator("1", { a11, a12, a13 }),
             {
@@ -1143,6 +1457,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             }),
         CreateInstanceNodeValidator({ a3 }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("LabelProp")),
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("FilterProp")),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilterProp = 1"));
@@ -1170,9 +1494,6 @@ DEFINE_SCHEMA(InstanceFiltering_FiltersLabelGroupingNodes_WhenFilterSpecifiesSel
         <ECProperty propertyName="LabelProp" typeName="string" />
         <ECProperty propertyName="FilterProp" typeName="int" />
     </ECEntityClass>
-    <ECEntityClass typeName="C">
-        <ECProperty propertyName="LabelProp" typeName="string" />
-    </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersLabelGroupingNodes_WhenFilterSpecifiesSelectClass)
     {
@@ -1190,7 +1511,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("LabelProp", ECValue("2")); instance.SetValue("FilterProp", ECValue(1));});
     IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("LabelProp", ECValue("2")); instance.SetValue("FilterProp", ECValue(2));});
-    
+
     IECInstancePtr b21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("LabelProp", ECValue("2")); instance.SetValue("FilterProp", ECValue(1));});
     IECInstancePtr b22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("LabelProp", ECValue("2")); instance.SetValue("FilterProp", ECValue(2));});
 
@@ -1213,7 +1534,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateLabelGroupingNodeValidator("1", { a11, a12, a13, b11, b12, b13 }),
             {
@@ -1237,6 +1558,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             CreateInstanceNodeValidator({ b3 }),
             }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator({ classA->GetPropertyP("LabelProp"), classB->GetPropertyP("LabelProp") }),
+        CreatePropertiesFieldValidator({ classA->GetPropertyP("FilterProp"), classB->GetPropertyP("FilterProp") }),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[2].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilterProp = 1", *classB, bvector<RelatedClassPath>()));
@@ -1287,14 +1619,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classA, true, { b1, b2 }),
             {
             CreateInstanceNodeValidator({ b1 }),
-            CreateInstanceNodeValidator({ b2 })
+            CreateInstanceNodeValidator({ b2 }),
             }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("Prop")),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
@@ -1350,7 +1690,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classA, true, { b1, b2, c1, c2 }),
             {
@@ -1360,6 +1700,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             CreateInstanceNodeValidator({ c2 }),
             }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("PropB")),
+        CreatePropertiesFieldValidator(*classC->GetPropertyP("PropC")),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.PropC = 1", *classC, bvector<RelatedClassPath>()));
@@ -1404,7 +1753,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ a1 }, ValueList{ ECValue(1) }),
             {
@@ -1415,6 +1764,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             CreateInstanceNodeValidator({ a2 }),
             }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("Prop")),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
@@ -1470,7 +1828,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ b1, c1 }, ValueList{ ECValue(1) }),
             {
@@ -1483,6 +1841,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             CreateInstanceNodeValidator({ c2 }),
             }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator({ classB->GetPropertyP("Prop"), classC->GetPropertyP("Prop") }),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1", *classC, bvector<RelatedClassPath>()));
@@ -1541,7 +1908,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params,
+    auto hierarchy = ValidateHierarchy(params,
         {
         ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ a1 }, ValueList{ ECValue(111) }),
             {
@@ -1553,6 +1920,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             CreateInstanceNodeValidator({ a3 }),
             }),
         });
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("GroupingProp")),
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("FilteringProp")),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilteringProp = 888"));
@@ -1610,6 +1987,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ a21, a22 }),
         CreateInstanceNodeValidator({ a3 }),
         });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("LabelProp")),
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("FilterProp")),
+        }));
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilterProp = 1"));
@@ -1679,6 +2063,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b3, c3 }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator({ classB->GetPropertyP("LabelProp"), classC->GetPropertyP("LabelProp") }),
+        CreatePropertiesFieldValidator({ classB->GetPropertyP("FilterProp"), classC->GetPropertyP("FilterProp") }),
+        }));
+
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.FilterProp = 1", *classB, bvector<RelatedClassPath>()));
     ValidateHierarchy(params,
@@ -1692,7 +2083,121 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchyInParentLevel, R"*(
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithCustomNodeSpecificationInParentLevelAndInstanceNodesOfSpecificClassesInChildLevel, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WithCustomNodeSpecificationInParentLevelAndInstanceNodesOfSpecificClassesInChildLevel)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1)); });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2)); });
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    auto rootSpec = new CustomNodeSpecification(1, false, "T_CUSTOM", "TestLabel", "", "");
+    rootSpec->SetHideNodesInHierarchy(true);
+    rootRule->AddSpecification(*rootSpec);
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"T_CUSTOM\"", 1, false);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*childRule);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        CreateInstanceNodeValidator({ a2 }),
+        });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("Prop")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a2 }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithInstanceNodesOfSpecificClassesInParentAndChildLevels, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WithInstanceNodesOfSpecificClassesInParentAndChildLevels)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classB->GetSchema().GetName(), true, bvector<Utf8String>{ classB->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*childRule);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ b1 }),
+        CreateInstanceNodeValidator({ b2 }),
+        });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("Prop")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ b2 }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithInstanceNodesOfSpecificClassesInParentLevelAndRelatedInstanceNodesInChildLevel, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
         <ECProperty propertyName="Prop" typeName="int" />
@@ -1706,7 +2211,7 @@ DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchyInParentLevel, R"
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchyInParentLevel)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WithInstanceNodesOfSpecificClassesInParentLevelAndRelatedInstanceNodesInChildLevel)
     {
     // dataset
     ECClassCP classA = GetClass("A");
@@ -1714,13 +2219,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
 
     IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
-    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1)); });
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a1, *b1);
 
     IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
-    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2)); });
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b2);
-    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(3));});
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(3)); });
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b3);
 
     // ruleset
@@ -1750,6 +2255,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b3 }),
         });
 
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("Prop")),
+        }));
+
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop > 2"));
     ValidateHierarchy(params,
@@ -1761,7 +2272,254 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchyInParentLevelWhenMultipleSpecsAreUsedForChildren, R"*(
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithRelatedInstanceNodesInParentLevelAndInstanceNodesOfSpecificClassesInChildLevel, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WithRelatedInstanceNodesInParentLevelAndInstanceNodesOfSpecificClassesInChildLevel)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a1, *b1);
+
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b2);
+
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRuleB = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRuleB->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRuleB);
+
+    ChildNodeRule* childRuleC = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classB->GetName().c_str(), classB->GetSchema().GetName().c_str()), 1, false);
+    childRuleC->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classC->GetSchema().GetName(), true, bvector<Utf8String>{ classC->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*childRuleC);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ c1 }),
+        CreateInstanceNodeValidator({ c2 }),
+        });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classC->GetPropertyP("Prop")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ c2 }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithRelatedInstanceNodesInParentAndChildLevels, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="bc" polymorphic="false">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="cb" polymorphic="false">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WithRelatedInstanceNodesInParentAndChildLevels)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a1, *b1);
+    IECInstancePtr c11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b1, *c11);
+    IECInstancePtr c12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b1, *c12);
+
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b2);
+    IECInstancePtr c21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c21);
+    IECInstancePtr c22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c22);
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRuleB = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRuleB->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRuleB);
+
+    ChildNodeRule* childRuleC = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classB->GetName().c_str(), classB->GetSchema().GetName().c_str()), 1, false);
+    childRuleC->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRuleC);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ c11 }),
+        CreateInstanceNodeValidator({ c12 }),
+        CreateInstanceNodeValidator({ c21 }),
+        CreateInstanceNodeValidator({ c22 }),
+        });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classC->GetPropertyP("Prop")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ c12 }),
+        CreateInstanceNodeValidator({ c22 }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithSearchResultInstanceNodesInParentLevelAndInstanceNodesOfSpecificClassesInChildLevel, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WithSearchResultInstanceNodesInParentLevelAndInstanceNodesOfSpecificClassesInChildLevel)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1)); });
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2)); });
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    auto rootRule = new RootNodeRule();
+    auto rootSpec = new SearchResultInstanceNodesSpecification(1, ChildrenHint::Unknown, true, false, false, false);
+    rootSpec->AddQuerySpecification(*new StringQuerySpecification(
+        Utf8PrintfString("select * from %s", classA->GetECSqlName().c_str()),
+        classA->GetSchema().GetName(),
+        classA->GetName()
+        ));
+    rootRule->AddSpecification(*rootSpec);
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classB->GetSchema().GetName(), true, bvector<Utf8String>{ classB->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*childRule);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ b1 }),
+        CreateInstanceNodeValidator({ b2 }),
+        });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("Prop")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 2"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ b2 }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WhenMultipleSpecsAreUsedForChildren, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
         <ECProperty propertyName="Prop" typeName="int" />
@@ -1775,7 +2533,7 @@ DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchyInParentLevelWhen
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchyInParentLevelWhenMultipleSpecsAreUsedForChildren)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WhenMultipleSpecsAreUsedForChildren)
     {
     // dataset
     ECClassCP classA = GetClass("A");
@@ -1828,6 +2586,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ b2 }),
         CreateInstanceNodeValidator({ b3 }),
         });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classB->GetPropertyP("Prop")),
+        }));
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 15"));
@@ -1976,6 +2740,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
             CreateInstanceNodeValidator({ b2 }),
             }),
         });
+
+    // validate hierarchy level filter descriptor
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("Prop")),
+        }));
 
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));

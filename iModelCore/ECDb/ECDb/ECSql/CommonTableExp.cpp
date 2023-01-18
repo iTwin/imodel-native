@@ -376,8 +376,8 @@ Exp::FinalizeParseStatus CommonTablePropertyNameExp::_FinalizeParsing(ECSqlParse
         return FinalizeParseStatus::NotCompleted;
 
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren) {
-        if (!GetTarget().GetExpression()->GetTypeInfo().IsNull())
-            SetTypeInfo(GetTarget().GetExpression()->GetTypeInfo());
+        if (auto targetTypeInfo = GetTarget().GetExpression()->GetTypeInfo(); !targetTypeInfo.IsNull() && !targetTypeInfo.IsUnset())
+            SetTypeInfo(targetTypeInfo);
         else {
             auto typeInfo = m_typeInfoCallBack(m_name);
             if(typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset) {

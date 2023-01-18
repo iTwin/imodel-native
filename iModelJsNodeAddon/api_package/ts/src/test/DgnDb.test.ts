@@ -453,4 +453,26 @@ describe("basic tests", () => {
     expect(() => dgndb.deleteElement("0x33333")).to.throw("missing id");
   });
 
-``});
+  it("testGetECClassMetaData custom attributes", async () => {
+    assert.isTrue(dgndb.isOpen());
+    console.log();
+    const result = dgndb.getECClassMetaData("BisCore", "ISubModeledElement");
+    assert(result.result);
+    const classMetaData = JSON.parse(result.result);
+    expect(classMetaData).to.deep.equal({
+      ecclass: "BisCore:ISubModeledElement",
+      description:
+        "An interface which indicates that an Element can be broken down or described by a (sub) Model.  " +
+        "This interface is mutually exclusive with IParentElement.",
+      modifier: "Abstract",
+      displayLabel: "Modellable Element",
+      baseClasses: [],
+      customAttributes: [{
+        ecclass: "CoreCustomAttributes:IsMixin",
+        properties: {
+          AppliesToEntityClass: "Element"
+        }
+      }]
+    });
+  });
+});

@@ -793,10 +793,7 @@ void JsInterop::GetECValuesCollectionAsJson(BeJsValue json, ECN::ECValuesCollect
           ECN::PrimitiveECPropertyCP propertyPtr = prop.GetValueAccessor().GetECProperty()->GetAsPrimitiveProperty();
           ECN::IECInstanceCR instance = prop.GetInstance();
           if(propertyPtr != nullptr)
-            {
-            Utf8CP propName = propertyPtr->GetName().c_str();
-            JsonEcInstanceWriter::WritePrimitiveValue(json, *propertyPtr, instance, propName);
-            }
+            JsonEcInstanceWriter::WritePrimitiveValue(json, *propertyPtr, instance, nullptr);
           }
         }
     }
