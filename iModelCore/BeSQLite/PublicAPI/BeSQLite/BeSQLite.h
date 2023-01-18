@@ -550,7 +550,6 @@ enum DbResult
     BE_SQLITE_OK_LOAD_PERMANENTLY     = (BE_SQLITE_OK         | (1<<8)),
 
     //! iModelPlatform custom errors
-    BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (1<<16)),  //!< Schema update need to update data.
     BE_SQLITE_ERROR_FileExists                  = (BE_SQLITE_IOERR | (1<<24)),  //!< Attempt to create a new file when a file by that name already exists
     BE_SQLITE_ERROR_AlreadyOpen                 = (BE_SQLITE_IOERR | (2<<24)),  //!< Attempt to open a BeSQLite::Db that is already in use somewhere.
     BE_SQLITE_ERROR_NoPropertyTable             = (BE_SQLITE_IOERR | (3<<24)),  //!< Attempt to open a BeSQLite::Db that doesn't have a property table.
@@ -573,7 +572,9 @@ enum DbResult
     BE_SQLITE_ERROR_SchemaImportFailed          = (BE_SQLITE_IOERR | (20<<24)), //!< Error importing the schemas into the database.
     BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
-    BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_IOERR | (23<<24)), //!< Db not open
+    BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)),  //!< Schema update need to update data.
+
+    BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
 };
 
 //=======================================================================================

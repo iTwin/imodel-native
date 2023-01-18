@@ -363,7 +363,7 @@ describe("basic tests", () => {
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     db.saveChanges();
 
-    const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 1 << 16);
+    const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 23 << 24);
 
     // import should fail when allowDataTransformDuringSchemaUpdate flag is set to false which will fail the operation if data transform is required.
     rc = await db.importXmlSchemas([generateSchema(20,20)], /* allowDataTransformDuringSchemaUpdate = */ false);
