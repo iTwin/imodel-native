@@ -94,26 +94,16 @@ TEST_F(ECDbValidityCheckTests, LoadAllSchemas) {
     ASSERT_NE(0, allSchemas.size());
 }
 
-TEST_F(ECDbValidityCheckTests, LoadAllSchemasFail) {
-	ASSERT_EQ(true, false);
-}
-
-TEST_F(ECDbValidityCheckTests, LoadAllClassMaps) {
-	ASSERT_EQ(true, false);
-}
-
 TEST_F(ECDbValidityCheckTests, ClassIdCheck) {
-    ASSERT_EQ(SUCCESS, SetupECDb("loadAllSchemas.bim"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ClassIdCheck.ecdb"));
 
-	  ECSqlStatement classDefStatement;
+	ECSqlStatement classDefStatement;
 
-  	// ASSERT_EQ(ECSqlStatus::Success, classDefStatement.Prepare(m_ecdb,
-    // SqlPrintfString("SELECT DISTINCT ec_classname(ECClassDef.ECInstanceId, 's.c') FROM meta.ClassHasAllBaseClasses INNER JOIN meta.ECClassDef ON ECClassDef.ECInstanceId = ClassHasAllBaseClasses.TargetECInstanceId WHERE ECClassDef.Type != %d AND ECClassDef.Type != %d AND ec_classname(ECClassDef.ECInstanceId, 's') != 'ECDbSystem'",
-		// ECClassType::CustomAttribute, ECClassType::Struct)));
+  	ASSERT_EQ(ECSqlStatus::Success, classDefStatement.Prepare(m_ecdb,
+    SqlPrintfString("SELECT DISTINCT ec_classname(ECClassDef.ECInstanceId, 's.c') FROM meta.ClassHasAllBaseClasses INNER JOIN meta.ECClassDef ON ECClassDef.ECInstanceId = ClassHasAllBaseClasses.TargetECInstanceId WHERE ECClassDef.Type != %d AND ECClassDef.Type != %d AND ec_classname(ECClassDef.ECInstanceId, 's') != 'ECDbSystem'",
+		ECClassType::CustomAttribute, ECClassType::Struct)));
 
-    ASSERT_EQ(ECSqlStatus::Success, classDefStatement.Prepare(m_ecdb, "SELECT ec_classname(ECInstanceId) FROM meta.ECClassDef"));
-
-	  std::vector<BentleyM0200::Utf8CP> classNames = {};
+	std::vector<BentleyM0200::Utf8String> classNames = {};
 
 	while(BE_SQLITE_ROW == classDefStatement.Step())
 		{
@@ -124,10 +114,20 @@ TEST_F(ECDbValidityCheckTests, ClassIdCheck) {
 		{
 		ECSqlStatement CheckStatement;
 		ASSERT_EQ(ECSqlStatus::Success, CheckStatement.Prepare(m_ecdb,
-    	SqlPrintfString("SELECT COUNT(*) FROM %s LEFT JOIN meta.ECClassDef on Element.ECClassId = ECClassDef.ECInstanceId WHERE ECClassDef.ECInstanceId IS NULL", classNames[i])));
+    	SqlPrintfString("SELECT COUNT(*) FROM %s as c LEFT JOIN meta.ECClassDef on c.ECClassId = ECClassDef.ECInstanceId WHERE ECClassDef.ECInstanceId IS NULL", classNames[i].c_str())));
 		ASSERT_EQ(BE_SQLITE_ROW, CheckStatement.Step());
 		ASSERT_EQ(0, CheckStatement.GetValueInt(0));
 		}
 	}
 
+TEST_F(ECDbValidityCheckTests, NavigationPropertyRelationshipIdCheck) {
+    ASSERT_EQ(SUCCESS, SetupECDb("ClassIdCheck.ecdb"));
+
+	ECSqlStatement navigationValidityCheck;
+
+  	ASSERT_EQ(ECSqlStatus::Success, navigationValidityCheck.Prepare(m_ecdb, "SELECT COUNT(*) FROM meta.ECPropertyDef as propdef LEFT JOIN meta.ECClassdef as classdef ON propdef.NavigationRelationshipClass.id = classdef.ECInstanceId WHERE propdef.NavigationRelationshipClass IS NOT NULL AND classdef.ECInstanceId IS NULL AND classdef.Type != 1"));
+
+	ASSERT_EQ(BE_SQLITE_ROW, navigationValidityCheck.Step());
+	ASSERT_EQ(0, navigationValidityCheck.GetValueInt(0));
+	}
 END_ECDBUNITTESTS_NAMESPACE
