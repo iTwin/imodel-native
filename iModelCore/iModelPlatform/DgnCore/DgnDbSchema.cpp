@@ -550,7 +550,7 @@ BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
     {
     if (GetBriefcaseId().IsBriefcase())
         {
-        if (!((DgnDb::OpenParams&)params).GetAllowDataTransformDuringSchemaUpdate())
+        if (!((const DgnDb::OpenParams&)params).GetAllowDataTransformDuringSchemaUpdate())
             {
             LOG.error("Open IModel need to upgrade profile which requires IModel lock. Get IModel lock and then set 'AllowChangesThatRequireIModelLock' to true in OpenParams for this operation to continue.");
             return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
