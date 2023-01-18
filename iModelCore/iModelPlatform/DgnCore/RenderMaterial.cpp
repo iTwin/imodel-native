@@ -217,7 +217,7 @@ RenderingAsset::TextureMap RenderingAsset::GetTextureMap(TextureMap::Type type, 
     {
     auto maps = GetValue(RENDER_MATERIAL_Map);
     if (maps.isNull())
-        return TextureMap(maps, type); // return invalid value
+        return TextureMap(maps, type); // return invalid value.
 
     return TextureMap(maps[typeName], type);
     }
