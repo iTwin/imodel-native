@@ -89,11 +89,20 @@ static void ValidateHierarchyLevelDescriptor(ECPresentationManagerR manager, Asy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ExpectThrowingHierarchyLevelDescriptor(ECPresentationManagerR manager, AsyncHierarchyRequestParams const& params)
+static void ExpectThrowingHierarchyLevelDescriptorRequest(ECPresentationManagerR manager, AsyncHierarchyRequestParams const& params)
     {
     auto parentNodeKey = params.GetParentNodeKey() ? params.GetParentNodeKey() : params.GetParentNode() ? params.GetParentNode()->GetKey().get() : nullptr;
     auto descriptorParams = AsyncHierarchyLevelDescriptorRequestParams::Create(HierarchyLevelDescriptorRequestParams(params, parentNodeKey), params);
     auto future = manager.GetNodesDescriptor(descriptorParams);
+    ASSERT_TRUE(future.wait().hasException());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectThrowingHierarchyLevelRequest(ECPresentationManagerR manager, AsyncHierarchyRequestParams const& params)
+    {
+    auto future = manager.GetNodes(params);
     ASSERT_TRUE(future.wait().hasException());
     }
 
@@ -135,7 +144,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     // verify without instance filter
     auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
-    ValidateHierarchy(params, 
+    ValidateHierarchy(params,
         ExpectedHierarchyListDef(true,
             {
             CreateInstanceNodeValidator({ a1 }),
@@ -2829,7 +2838,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Doesnt
         );
 
     // getting descriptor for the root hierarchy level should throw
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, params);
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, params);
+
+    // attempting to filter the hierarchy level should throw
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2898,8 +2911,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Doesnt
         );
 
     // getting descriptor for the child hierarchy levels should throw
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+
+    // attempting to filter the hierarchy level should throw
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2946,7 +2964,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Doesnt
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
-    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, 0, "", 
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection_Both, classA->GetSchema().GetName(), "", ""));
     rules->AddPresentationRule(*childRule);
 
@@ -2969,8 +2987,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Doesnt
         );
 
     // getting descriptor for the root hierarchy level should throw
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+
+    // attempting to filter the hierarchy level should throw
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3040,8 +3063,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Doesnt
         );
 
     // getting descriptor for the root hierarchy level should throw
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+
+    // attempting to filter the hierarchy level should throw
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3111,6 +3139,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Doesnt
         );
 
     // getting descriptor for the root hierarchy level should throw
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
-    ExpectThrowingHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, WithParentNode(params, hierarchy[1].node.get()));
+
+    // attempting to filter the hierarchy level should throw
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, WithParentNode(params, hierarchy[0].node.get()));
     }
