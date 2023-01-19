@@ -769,14 +769,11 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
 
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
-        .then([](NodesResponse response)
+        .then([](NodesResponse nodesResponse)
             {
-            rapidjson::Document json;
-            json.SetArray();
-            for (NavNodeCPtr const& node : *response)
-                PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
-            return ECPresentationResult(std::move(json), true);
-        });
+            ECPresentationSerializerContext ctx;
+            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse), true);
+            });
     }
 
 #define PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "nodeKey"
@@ -864,11 +861,8 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse nodesResponse)
             {
-            rapidjson::Document json;
-            json.SetArray();
-            for (NavNodeCPtr const& node : *nodesResponse)
-                PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
-            return ECPresentationResult(std::move(json), true);
+            ECPresentationSerializerContext ctx;
+            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse), true);
             });
     }
 
