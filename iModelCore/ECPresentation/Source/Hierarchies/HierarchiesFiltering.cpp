@@ -90,7 +90,11 @@ static bvector<ECClassCP> GetRelationshipPathTargetClasses(RepeatableRelationshi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void TraverseChildNodeSpecifications(PresentationRuleSpecificationVisitorR visitor, CustomNodeSpecificationCR specification, TraverseHierarchyRulesProps const& props)
+static void TraverseChildNodeSpecifications(
+    PresentationRuleSpecificationVisitorR visitor, 
+    CustomNodeSpecificationCR specification, 
+    TraverseHierarchyRulesProps const& props
+)
     {
     auto fakeParentNode = props.GetNodesFactory().CreateCustomNode(props.GetSchemaHelper().GetConnection(), specification.GetHash(), nullptr,
         *LabelDefinition::FromString(specification.GetLabel().c_str()), specification.GetDescription().c_str(), specification.GetImageId().c_str(),
@@ -103,7 +107,11 @@ static void TraverseChildNodeSpecifications(PresentationRuleSpecificationVisitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void TraverseChildNodeSpecifications(PresentationRuleSpecificationVisitorR visitor, InstanceNodesOfSpecificClassesSpecificationCR specification, TraverseHierarchyRulesProps const& props)
+static void TraverseChildNodeSpecifications(
+    PresentationRuleSpecificationVisitorR visitor, 
+    InstanceNodesOfSpecificClassesSpecificationCR specification, 
+    TraverseHierarchyRulesProps const& props
+)
     {
     auto targetClasses = props.GetSchemaHelper().GetECClassesFromClassList(specification.GetClasses(), false);
     auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(targetClasses, [&](auto const& targetClass)
@@ -118,7 +126,12 @@ static void TraverseChildNodeSpecifications(PresentationRuleSpecificationVisitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void TraverseChildNodeSpecifications(PresentationRuleSpecificationVisitorR visitor, RelatedInstanceNodesSpecificationCR specification, RepeatableRelationshipPathSpecification const& pathSpecification, TraverseHierarchyRulesProps const& props)
+static void TraverseChildNodeSpecifications(
+    PresentationRuleSpecificationVisitorR visitor, 
+    RelatedInstanceNodesSpecificationCR specification, 
+    RepeatableRelationshipPathSpecification const& pathSpecification, 
+    TraverseHierarchyRulesProps const& props
+)
     {
     auto targetClasses = GetRelationshipPathTargetClasses(pathSpecification, props.GetSchemaHelper());
     auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(targetClasses, [&](auto const& targetClass)
@@ -133,7 +146,11 @@ static void TraverseChildNodeSpecifications(PresentationRuleSpecificationVisitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void TraverseChildNodeSpecifications(PresentationRuleSpecificationVisitorR visitor, SearchResultInstanceNodesSpecificationCR specification, TraverseHierarchyRulesProps const& props)
+static void TraverseChildNodeSpecifications(
+    PresentationRuleSpecificationVisitorR visitor, 
+    SearchResultInstanceNodesSpecificationCR specification, 
+    TraverseHierarchyRulesProps const& props
+)
     {
     auto queryClasses = GetQuerySpecificationClasses(specification, props.GetSchemaHelper());
     auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(queryClasses, [&](auto const& queryClass)
@@ -206,6 +223,13 @@ public:
     bool DidFindAnyUnfilterableSpecifications() const {return m_hasIssues;}
 };
 
+#define ENSURE_NOT_VISITED(set, specCR) \
+    { \
+    if (set.end() != set.find(&specCR)) \
+        return; \
+    set.insert(&specCR); \
+    }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -214,6 +238,7 @@ struct HierarchicalUnfilterableSpecificationsDetector : PresentationRuleSpecific
 private:
     TraverseHierarchyRulesProps const& m_props;
     DirectUnfilterableSpecificationsDetector m_directDetector;
+    bset<ChildNodeSpecificationCP> m_visitedSpecs;
 private:
     bool ShouldTraverseChildNodeSpecifications(ChildNodeSpecificationCR spec) const
         {
@@ -227,26 +252,31 @@ private:
 protected:
     void _Visit(AllInstanceNodesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         m_directDetector._Visit(specification);
         }
     void _Visit(AllRelatedInstanceNodesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         m_directDetector._Visit(specification);
         }
     void _Visit(CustomNodeSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         m_directDetector._Visit(specification);
         if (ShouldTraverseChildNodeSpecifications(specification))
             TraverseChildNodeSpecifications(*this, specification, m_props);
         }
     void _Visit(InstanceNodesOfSpecificClassesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         m_directDetector._Visit(specification);
         if (ShouldTraverseChildNodeSpecifications(specification))
             TraverseChildNodeSpecifications(*this, specification, m_props);
         }
     void _Visit(RelatedInstanceNodesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         m_directDetector._Visit(specification);
         if (ShouldTraverseChildNodeSpecifications(specification))
             {
@@ -256,6 +286,7 @@ protected:
         }
     void _Visit(SearchResultInstanceNodesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         m_directDetector._Visit(specification);
         if (ShouldTraverseChildNodeSpecifications(specification))
             TraverseChildNodeSpecifications(*this, specification, m_props);
@@ -347,6 +378,7 @@ private:
     ContentRuleP m_contentRule;
     bool m_inputReset;
     bvector<RepeatableRelationshipPathSpecification const*> m_pathPrefix;
+    bset<ChildNodeSpecificationCP> m_visitedSpecs;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -396,6 +428,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _Visit(CustomNodeSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         ENSURE_SUPPORTS_FILTERING(specification);
         if (specification.GetHideNodesInHierarchy())
             TraverseChildNodeSpecifications(*this, specification, m_props);
@@ -412,6 +445,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _Visit(InstanceNodesOfSpecificClassesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         ENSURE_SUPPORTS_FILTERING(specification);
 
         if (specification.GetHideNodesInHierarchy())
@@ -451,6 +485,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _Visit(RelatedInstanceNodesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         ENSURE_SUPPORTS_FILTERING(specification);
 
         if (m_inputReset)
@@ -524,6 +559,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _Visit(SearchResultInstanceNodesSpecification const& specification) override
         {
+        ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         ENSURE_SUPPORTS_FILTERING(specification);
 
         if (specification.GetHideNodesInHierarchy())
