@@ -609,6 +609,8 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         SELECT x from cte)"));
 
     EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+
     statement.BindInt(1, 1);
     for (auto i = 1; i <= 3; ++i)
         {
@@ -630,6 +632,9 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
     EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
     EXPECT_STREQ("y", statement.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_TRUE(statement.GetColumnInfo(1).GetDataType().IsPrimitive());
+
     statement.BindInt(1, 1);
     statement.BindInt(2, 2);
     for (const auto& testValues : std::vector<std::pair<int, int>> {{1, 2}, {2, 4}, {3, 6}})
@@ -653,6 +658,9 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
     EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
     EXPECT_STREQ("y", statement.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_TRUE(statement.GetColumnInfo(1).GetDataType().IsPrimitive());
+
     statement.BindInt(1, 1);
     for (const auto& testValues : std::vector<int>{1, 2, 3})
         {
@@ -674,6 +682,8 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         SELECT x from cte)"));
 
     EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+
     statement.BindInt(1, 1);
     for (auto i = 1; i <= 3; ++i)
         {
