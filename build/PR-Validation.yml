@@ -26,6 +26,7 @@ resources:
       type: github
       name: iTwin/imodel-native-internal
       endpoint: github.com_imodel-native
+      ref: imodel02-PR-validation
 
 extends:
   template: /build/templates/PR_Validation_Pipeline.yml@imodel-native-internal
