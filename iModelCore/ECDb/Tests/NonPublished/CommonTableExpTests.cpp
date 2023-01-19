@@ -632,6 +632,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
     EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
     EXPECT_STREQ("y", statement.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    
     EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
     EXPECT_TRUE(statement.GetColumnInfo(1).GetDataType().IsPrimitive());
 
@@ -658,6 +659,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
     EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
     EXPECT_STREQ("y", statement.GetColumnInfo(1).GetProperty()->GetName().c_str());
+
     EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
     EXPECT_TRUE(statement.GetColumnInfo(1).GetDataType().IsPrimitive());
 
