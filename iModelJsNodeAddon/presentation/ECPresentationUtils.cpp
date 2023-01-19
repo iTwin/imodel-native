@@ -14,15 +14,30 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& e)
+ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& ew)
     {
-    if (e.is_compatible_with<CancellationException>())
+    if (!ew)
+        return ECPresentationResult(ECPresentationStatus::Error, "Invalid exception");
+    try
+        {
+        ew.throwException();
+        }
+    catch (CancellationException const&)
+        {
         return ECPresentationResult(ECPresentationStatus::Canceled, "");
-
-    if (e.is_compatible_with<InvalidArgumentException>())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what().c_str()));
-
-    return ECPresentationResult(ECPresentationStatus::Error, Utf8String(e.what().c_str()));
+        }
+    catch (InvalidArgumentException const& e)
+        {
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what()));
+        }
+    catch (std::runtime_error const& e)
+        {
+        return ECPresentationResult(ECPresentationStatus::Error, Utf8String(e.what()));
+        }
+    catch (...)
+        {
+        return ECPresentationResult(ECPresentationStatus::Error, "Unknown exception");
+        }
     }
 
 /*=================================================================================**//**
