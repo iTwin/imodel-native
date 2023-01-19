@@ -502,7 +502,7 @@ DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
 DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
     ECDB_PERF_LOG_SCOPE("Profile schema import");
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(false, true);
     // Don't add ecdb as schema locater so that referenced schemas of the profile schemas
     // get a chance to be upgraded as well (in case there are newer versions of them in the assets folder)
 
@@ -518,7 +518,7 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    schemaKey = SchemaKey("ECDbMeta", 4, 0, 1);
+    schemaKey = SchemaKey("ECDbMeta", 4, 0, 2);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 

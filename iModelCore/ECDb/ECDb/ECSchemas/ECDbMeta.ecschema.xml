@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- =====================================================================================
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
+* See COPYRIGHT.md in the repository root for full copyright notice.
 ========================================================================================== -->
-<ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <!--<ECSchemaReference name='ClassView' version='01.00.00' alias='ecdbview' />-->
 
     <ECEntityClass typeName="ECSchemaDef" description="ECSchema" displayLabel="ECSchema" modifier="Sealed">
         <ECCustomAttributes>
@@ -534,4 +535,88 @@
         <ECEnumerator name="String" value="2305" displayLabel="String" />
         <ECEnumerator name="IGeometry" value="2561" displayLabel="IGeometry" />
     </ECEnumeration>
+    <ECEntityClass typeName="CustomAttribute" description="" displayLabel="" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_CustomAttribute</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ContainerId"  typeName="int"/>
+        <ECProperty propertyName="ContainerType"  typeName="int"/>
+        <ECProperty propertyName="Ordinal"  typeName="int"/>
+        <ECProperty propertyName="Instance"  typeName="string"/>
+        <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstance" direction="backward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CustomAttributeClassHasInstance" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
+            <Class class="ECClassDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
+            <Class class="CustomAttribute"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
+            <Class class="ECPropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
+            <Class class="PropertyCustomAttribute"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
+        <ECCustomAttributes>
+            <TransientView xmlns="ClassView.01.00.00">
+                <Query>SELECT ca.[ClassId] [ClassId], [ca].[ContainerId] [ContainerId],[ca].[Ordinal] [Ordinal], [ca].[Instance] [InstanceXml] FROM [meta].[CustomAttribute] [ca] WHERE [ca].[ContainerType] = 992</Query>
+            </TransientView>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Property" relationshipName="PropertyHasCustomAttribute" direction="backward"/>
+        <ECProperty propertyName="ClassId" typeName="int" />
+        <ECProperty propertyName="ContainerId"  typeName="int"/>
+        <ECProperty propertyName="Ordinal"  typeName="int"/>
+        <ECProperty propertyName="InstanceXml"  typeName="string"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ClassHasCustomAttribute" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
+            <Class class="ECClassDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
+            <Class class="ClassCustomAttribute"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="ClassCustomAttribute" description="" displayLabel="" modifier="Abstract">
+        <ECCustomAttributes>
+            <TransientView xmlns="ClassView.01.00.00">
+                <Query>SELECT ca.[ClassId] [ClassId], [ca].[ContainerId] [ContainerId],[ca].[Ordinal] [Ordinal], [ca].[Instance] [InstanceXml] FROM [meta].[CustomAttribute] [ca] WHERE [ca].[ContainerType] = 30</Query>
+            </TransientView>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Class" relationshipName="ClassHasCustomAttribute" direction="backward"/>
+        <ECProperty propertyName="ClassId" typeName="int" />
+        <ECProperty propertyName="ContainerId"  typeName="int"/>
+        <ECProperty propertyName="Ordinal"  typeName="int"/>
+        <ECProperty propertyName="InstanceXml"  typeName="string"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="SchemaHasCustomAttribute" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
+            <Class class="SchemaCustomAttribute"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="SchemaCustomAttribute" description="" displayLabel="" modifier="Abstract">
+        <ECCustomAttributes>
+            <TransientView xmlns="ClassView.01.00.00">
+                <Query>SELECT ca.[ClassId] [ClassId], [ca].[ContainerId] [ContainerId],[ca].[Ordinal] [Ordinal], [ca].[Instance] [InstanceXml] FROM [meta].[CustomAttribute] [ca] WHERE [ca].[ContainerType] = 1</Query>
+            </TransientView>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaHasCustomAttribute" direction="backward"/>
+        <ECProperty propertyName="ClassId" typeName="int" />
+        <ECProperty propertyName="ContainerId"  typeName="int"/>
+        <ECProperty propertyName="Ordinal"  typeName="int"/>
+        <ECProperty propertyName="InstanceXml"  typeName="string"/>
+    </ECEntityClass> -->
 </ECSchema>

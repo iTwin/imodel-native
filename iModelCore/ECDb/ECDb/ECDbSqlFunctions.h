@@ -18,6 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
+#define SQLFUNC_XmlCAToJson "XmlCAToJson"
 //=======================================================================================
 //! S ClassName(I)
 // @bsiclass
@@ -135,6 +136,21 @@ struct HexToId final : ScalarFunction
         ~HexToId() {}
 
         static HexToId& GetSingleton();
+    };
+//=======================================================================================
+//! S XmlCAToJson(S)
+// @bsiclass
+//=======================================================================================
+struct XmlCAToJson final : ScalarFunction
+    {
+    private:
+        SchemaManager const* m_schemaManager;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        XmlCAToJson(SchemaManager const& schemaManager) : ScalarFunction(SQLFUNC_XmlCAToJson, 2, DbValueType::TextVal), m_schemaManager(&schemaManager) {}
+        ~XmlCAToJson() {}
+        static std::unique_ptr<XmlCAToJson> Create(SchemaManager const& schemaManager);
     };
 
 //=======================================================================================

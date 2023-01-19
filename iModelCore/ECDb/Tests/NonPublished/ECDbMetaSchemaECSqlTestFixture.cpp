@@ -2000,4 +2000,81 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyOverrides)
     verifyPropertyOverride(m_ecdb, m_ecdb.Schemas().GetClass("TestSchema", "MN"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    ASSERT_EQ(SUCCESS, SetupECDb("metaschema_customattributes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="CAClass" modifier="Sealed" appliesTo="EntityClass">
+            <ECProperty propertyName="CAProp" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <CAClass>
+                    <CAProp>Test</CAProp>
+                </CAClass>
+           </ECCustomAttributes>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM meta.CustomAttribute"));
+        //printf("%s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    /*{
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT c.Name FROM meta.CustomAttribute ca JOIN meta.ECClassDef c USING meta.CustomAttributeClassHasInstance"));
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            printf("%s\n", stmt.GetValueText(0));
+            }
+        //ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }*/
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT c.Name, XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.ECClassDef c JOIN meta.CustomAttribute ca ON ca.Class.Id=c.ECInstanceId"));
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            printf("%s -> %s\n", stmt.GetValueText(0),stmt.GetValueText(1));
+            }
+        //ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }
+
+    {
+        printf("JSON TablePerHierarchySelect\n");
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            WITH cte0(json) AS (SELECT XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.CustomAttribute ca)
+            SELECT json FROM cte0 WHERE json_extract(json, '$.ClassMap.MapStrategy') = 'TablePerHierarchy'
+            )stmt"));
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            printf("%s\n", stmt.GetValueText(0));
+            }
+        //ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }
+
+    {
+        printf("JSON TablePerHierarchySelect\n");
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            WITH cte0(classId, json) AS (SELECT c.Name, XmlCAToJson(ca.Class.Id, ca.Instance) as json FROM meta.CustomAttribute ca JOIN meta.ECClassDef c ON ca.Class.Id=c.ECInstanceId)
+            SELECT classId, json FROM cte0 WHERE json_extract(json, '$.ClassMap.MapStrategy') = 'TablePerHierarchy'
+            )stmt"));
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            printf("%s\n", stmt.GetValueText(0));
+            }
+        //ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

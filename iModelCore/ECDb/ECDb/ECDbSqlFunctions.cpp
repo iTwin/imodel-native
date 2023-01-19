@@ -594,4 +594,67 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
     ctx.SetResultError(SqlPrintfString("SQL function " SQLFUNC_ChangedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType));
     }
 
+//************************************************************************************
+// XmlCAToJson
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<XmlCAToJson> XmlCAToJson::Create(SchemaManager const& schemaManager) { return std::unique_ptr<XmlCAToJson>(new XmlCAToJson(schemaManager));}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    if(nArgs != 2)
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: invalid number of arguments. Expect 1 argument.");
+        return;
+        }
+
+    DbValue const& idValue = args[0];
+    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    ECClassId caClassId = idValue.GetValueId<ECClassId>();
+    ECClassCP caClass = m_schemaManager->GetClass(caClassId);
+    if(caClass == nullptr)
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: could not find custom attribute's class.");
+        return;
+        }
+
+    DbValue const& xmlValue = args[1];
+    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    Utf8CP caXml = xmlValue.GetValueText();
+
+    ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
+    IECInstancePtr deserializedCa = nullptr;
+    if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to read custom attribute xml.");
+        return;
+        }
+
+    Json::Value caJson;
+    if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(caJson, *deserializedCa, nullptr, false))
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to serialize instance to json.");
+        return;
+        }
+
+    Utf8String strVal = caJson.ToString();
+    const int len = (int) strlen(strVal.c_str());
+    ctx.SetResultText(strVal.c_str(), len, Context::CopyData::Yes);
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

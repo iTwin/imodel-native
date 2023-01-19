@@ -500,6 +500,10 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_ecJsonFunc = ECJsonFunction::Create(m_ecdb);
     if (m_ecJsonFunc != nullptr)
         m_ecdb.AddFunction(*m_ecJsonFunc);
+
+    m_xmlCAToJsonFunc = XmlCAToJson::Create(m_ecdb.Schemas());
+    if (m_xmlCAToJsonFunc != nullptr)
+        m_ecdb.AddFunction(*m_xmlCAToJsonFunc);
    }
 
 //---------------------------------------------------------------------------------------
@@ -536,6 +540,12 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
         {
         m_ecdb.RemoveFunction(*m_ecJsonFunc);
         m_ecJsonFunc = nullptr;
+        }
+
+    if (m_xmlCAToJsonFunc != nullptr)
+        {
+        m_ecdb.RemoveFunction(*m_xmlCAToJsonFunc);
+        m_xmlCAToJsonFunc = nullptr;
         }
     }
 
