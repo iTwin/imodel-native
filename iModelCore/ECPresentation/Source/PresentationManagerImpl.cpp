@@ -9,6 +9,7 @@
 #include "Shared/Queries/QueryExecutor.h"
 #include "Shared/Queries/QueryBuilder.h"
 #include "Shared/CustomizationHelper.h"
+#include "Shared/NodeLabelCalculator.h"
 #include "Shared/RulesPreprocessor.h"
 #include "Shared/UsedClassesListener.h"
 #include "Content/ContentProviders.h"
@@ -16,10 +17,10 @@
 #include "Hierarchies/NavNodeProviders.h"
 #include "Hierarchies/NavNodesDataSource.h"
 #include "Hierarchies/HierarchiesComparer.h"
+#include "Hierarchies/HierarchiesFiltering.h"
 #include "Hierarchies/NavNodesCacheWrapper.h"
 #include "PresentationManagerImpl.h"
 #include "UpdateHandler.h"
-#include "Shared/NodeLabelCalculator.h"
 
 #define VALID_HIERARCHY_CACHE_PRECONDITION(cache, resultOnFailure) \
     if (nullptr == cache) \
@@ -488,7 +489,7 @@ private:
         if (path.size() <= depth)
             return nullptr;
 
-        NavNodesDataSourcePtr nodes = m_manager.GetCachedDataSource(CreateHierarchyRequestParams(m_params, parentNode));
+        auto nodes = m_manager.GetCachedDataSource(CreateHierarchyRequestParams(m_params, parentNode));
         if (nodes.IsNull())
             return nullptr;
 
@@ -614,6 +615,13 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create nodes provider");
         NavNodeCPtr parent = context.GetVirtualParentNode();
+
+        if (parent.IsValid() && NodesFinalizer(context).HasSimilarNodeInHierarchy(*parent))
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Parent node has similar ancestor - returning empty data source");
+            return EmptyNavNodesProvider::Create(context);
+            }
+
         NavNodesProviderPtr provider;
         if (parent.IsNull())
             {
@@ -999,15 +1007,9 @@ std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(NavNodesProviderContextR context, PageOptionsCP pageOptions) const
+RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl::GetCachedDataSource(NavNodesProviderContextR context, PageOptionsCP pageOptions) const
     {
     auto scope = Diagnostics::Scope::Create("Create data source");
-
-    if (context.GetVirtualParentNode().IsValid() && NodesFinalizer(context).HasSimilarNodeInHierarchy(*context.GetVirtualParentNode()))
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Parent node has similar ancestor - returning empty data source");
-        return nullptr;
-        }
 
     NavNodesProviderPtr provider;
     if (!pageOptions || pageOptions->GetPageStart() == 0)
@@ -1032,13 +1034,21 @@ NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Provider post-processed");
 
     provider->SetPageOptions(CreateProviderPageOptions(pageOptions));
-    return NavNodesDataSource::Create(*provider);
+
+    auto source = ProviderBasedNodesDataSource::Create(*provider);
+    source->SetSupportsFiltering(HierarchiesFilteringHelper::SupportsFiltering(
+        context.GetVirtualParentNode().get(),
+        TraverseHierarchyRulesProps(context.GetNodesFactory(), context.GetRulesPreprocessor(), context.GetSchemaHelper()),
+        nullptr
+        ));
+
+    return source;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const& params) const
+RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl::GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const& params) const
     {
     auto scope = Diagnostics::Scope::Create("Create data source");
 
@@ -1072,10 +1082,10 @@ static Diagnostics::Scope::Holder CreateScopeForHierarchyRequest(HierarchyReques
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ReportNodesResponse(WithPageOptions<HierarchyRequestParams> const& params, INavNodesDataSourceCR ds)
+static void ReportNodesResponse(WithPageOptions<HierarchyRequestParams> const& params, NavNodesDataSource const* ds)
     {
     auto pageStart = (uint64_t)params.GetPageOptions().GetPageStart();
-    auto dsSizeWithOffset = (uint64_t)(params.GetPageOptions().GetPageStart() + ds.GetSize());
+    auto dsSizeWithOffset = (uint64_t)(params.GetPageOptions().GetPageStart() + (ds ? ds->GetSize() : 0));
     if (params.GetParentNode())
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, Utf8PrintfString("Returning [%" PRIu64 ", %" PRIu64 ") child nodes for parent %s",
@@ -1096,16 +1106,12 @@ static void ReportNodesResponse(WithPageOptions<HierarchyRequestParams> const& p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params)
+NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params)
     {
     auto scope = CreateScopeForHierarchyRequest(params, "nodes");
-
-    INavNodesDataSourcePtr source = GetCachedDataSource(params);
-    if (source.IsNull())
-        source = EmptyDataSource<NavNodePtr>::Create();
-
-    ReportNodesResponse(params, *source);
-    return PreloadedDataSource<NavNodePtr>::Create(*source);
+    NavNodesDataSourcePtr source = GetCachedDataSource(params);
+    ReportNodesResponse(params, source.get());
+    return source;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1136,7 +1142,7 @@ size_t RulesDrivenECPresentationManagerImpl::_GetNodesCount(HierarchyRequestImpl
     {
     auto scope = CreateScopeForHierarchyRequest(params, "nodes count");
 
-    INavNodesDataSourcePtr source = GetCachedDataSource(params);
+    NavNodesDataSourcePtr source = GetCachedDataSource(params);
     size_t size = source.IsValid() ? source->GetSize() : 0;
     ReportNodesCountResponse(params, size);
     return size;
@@ -1153,352 +1159,6 @@ static Diagnostics::Scope::Holder CreateScopeForHierarchyRequest(HierarchyLevelD
     return Diagnostics::Scope::Create(Utf8PrintfString("Get root %s", requestIdentifier));
     }
 
-//===================================================================================
-// TODO: handle unsupported filtering situations (https://github.com/iTwin/itwinjs-core/issues/4863)
-// @bsiclass
-//===================================================================================
-struct HierarchySpecsToContentRulesetConverter : PresentationRuleSpecificationVisitor
-{
-    struct ChainedSpecificationsContext
-    {
-    private:
-        std::function<void()> m_restoreState;
-    private:
-        static std::function<void()> CreateStateRestoreFunc(HierarchySpecsToContentRulesetConverter& converter)
-            {
-            return [
-                &converter,
-                wasInputReset = converter.m_inputReset,
-                wasPathPrefix = converter.m_pathPrefix
-            ]()
-                {
-                converter.m_inputReset = wasInputReset;
-                converter.m_pathPrefix = wasPathPrefix;
-                };
-            }
-    public:
-        ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, InstanceNodesOfSpecificClassesSpecification const&)
-            : m_restoreState(CreateStateRestoreFunc(converter))
-            {
-            converter.m_inputReset = true;
-            converter.m_pathPrefix.clear();
-            }
-        ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, SearchResultInstanceNodesSpecification const&)
-            : m_restoreState(CreateStateRestoreFunc(converter))
-            {
-            converter.m_inputReset = true;
-            converter.m_pathPrefix.clear();
-            }
-        ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, RelatedInstanceNodesSpecification const& spec, RepeatableRelationshipPathSpecification const& path)
-            : m_restoreState(CreateStateRestoreFunc(converter))
-            {
-            converter.m_pathPrefix.push_back(&path);
-            }
-        ~ChainedSpecificationsContext()
-            {
-            if (m_restoreState)
-                m_restoreState();
-            }
-    };
-
-private:
-    NavNodesFactoryCR m_nodesFactory;
-    IRulesPreprocessorR m_rulesPreprocessor;
-    ECSchemaHelper const& m_schemaHelper;
-
-    PresentationRuleSetPtr m_ruleset;
-    ContentRuleP m_contentRule;
-    bool m_inputReset;
-    bvector<RepeatableRelationshipPathSpecification const*> m_pathPrefix;
-
-private:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentRuleR GetInProgressContentRule()
-        {
-        if (m_ruleset.IsNull())
-            {
-            // will set the id when returning the ruleset
-            m_ruleset = PresentationRuleSet::CreateInstance("");
-            }
-        if (!m_contentRule)
-            {
-            // ruleset takes ownership of the rule
-            m_contentRule = new ContentRule();
-            m_ruleset->AddPresentationRule(*m_contentRule);
-            }
-        return *m_contentRule;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ChildNodeSpecificationCP> GetChildSpecifications(bvector<NavNodeCPtr> const& parentNodes) const
-        {
-        VectorSet<ChildNodeSpecificationCP> childSpecs;
-        for (auto const& parentNode : parentNodes)
-            {
-            ContainerHelpers::TransformContainer(
-                childSpecs,
-                m_rulesPreprocessor.GetChildNodeSpecifications(IRulesPreprocessor::ChildNodeRuleParameters(*parentNode, TargetTree_MainTree)),
-                [](auto const& ruleSpec) -> ChildNodeSpecificationCP {return &ruleSpec.GetSpecification();});
-            }
-        return ContainerHelpers::TransformContainer<bvector<ChildNodeSpecificationCP>>(childSpecs);
-        }
-
-protected:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void _Visit(AllInstanceNodesSpecification const& specification) override
-        {
-        throw InternalError(Utf8PrintfString("%s does not support filtering",
-            DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void _Visit(AllRelatedInstanceNodesSpecification const& specification) override
-        {
-        throw InternalError(Utf8PrintfString("%s does not support filtering",
-            DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * Custom node itself doesn't represent any instances, but we may need to handle its child
-    * specifications if the custom node specification has 'hide nodes in hierarchy' flag
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void _Visit(CustomNodeSpecification const& specification) override
-        {
-        if (specification.GetHideNodesInHierarchy())
-            {
-            auto fakeParentNode = m_nodesFactory.CreateCustomNode(m_schemaHelper.GetConnection(), specification.GetHash(), nullptr,
-                *LabelDefinition::FromString(specification.GetLabel().c_str()), specification.GetDescription().c_str(), specification.GetImageId().c_str(),
-                specification.GetNodeType().c_str(), nullptr);
-            auto childSpecs = GetChildSpecifications({ fakeParentNode });
-            for (auto const& childSpec : childSpecs)
-                childSpec->Accept(*this);
-            return;
-            }
-        // custom node rule always gets filtered-out as it doesn't represent an instance
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * When the specification has 'hide nodes in hierarchy' flag, we want to find target classes,
-    * find child node specifications for them and handle each of them individually. Otherwise
-    * we can just translate `InstanceNodesOfSpecificClassesSpecification` to `ContentInstancesOfSpecificClassesSpecification`.
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void _Visit(InstanceNodesOfSpecificClassesSpecification const& specification) override
-        {
-        if (specification.GetHideNodesInHierarchy())
-            {
-            auto targetClasses = m_schemaHelper.GetECClassesFromClassList(specification.GetClasses(), false);
-            auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(targetClasses, [&](auto const& targetClass)
-                {
-                return m_nodesFactory.CreateECInstanceNode(m_schemaHelper.GetConnection(), "", nullptr, targetClass.GetClass().GetId(), ECInstanceId(), *LabelDefinition::Create());
-                });
-            auto childSpecs = GetChildSpecifications(fakeParentNodes);
-            ChainedSpecificationsContext chained(*this, specification);
-            for (auto const& childSpec : childSpecs)
-                childSpec->Accept(*this);
-            return;
-            }
-
-        auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
-            1000,
-            false,
-            specification.GetInstanceFilter(),
-            ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(specification.GetClasses(), [](auto srcP){return new MultiSchemaClass(*srcP);}),
-            ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(specification.GetExcludedClasses(), [](auto srcP){return new MultiSchemaClass(*srcP);}),
-            true
-            );
-        for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
-            contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
-        GetInProgressContentRule().AddSpecification(*contentSpec);
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * This is the most complex case caused by the 'hide nodes in hierarchy' flag. 
-    * 
-    * If it's not  present, then we can simply convert `RelatedInstanceNodesSpecification` 
-    * to `ContentRelatedInstancesSpecification`.
-    * 
-    * If it there, we have to find the specifications that are producing visible nodes. If all hidden
-    * hierarchy levels was made using the `RelatedInstanceNodesSpecification`, we can simply create a
-    * merged relationship path - that allows us to filter targets based on input keys. If there's either
-    * `InstanceNodesOfSpecificClassesSpecification` or `SearchResultInstanceNodesSpecification` - we can't
-    * use the keys anymore, at which point we only look at the target classes and create 
-    * `ContentInstancesOfSpecificClassesSpecification` rather than `ContentRelatedInstancesSpecification`.
-    * 
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void _Visit(RelatedInstanceNodesSpecification const& specification) override
-        {
-        if (m_inputReset)
-            {
-            // we get here if either `InstanceNodesOfSpecificClassesSpecification` or `SearchResultInstanceNodesSpecification` was detected
-            // when traversing hidden hierarchy levels
-            for (auto const& pathSpec : specification.GetRelationshipPaths())
-                {
-                if (pathSpec->GetSteps().empty())
-                    continue;
-
-                // find target classes for this specification
-                VectorSet<ECClassCP> targetClasses;
-                auto const& lastStep = pathSpec->GetSteps().back();
-                auto relationshipClass = m_schemaHelper.GetECClass(lastStep->GetRelationshipClassName().c_str());
-                if (!relationshipClass || !relationshipClass->IsRelationshipClass())
-                    continue;
-                auto targetClass = lastStep->GetTargetClassName().size() ? m_schemaHelper.GetECClass(lastStep->GetTargetClassName().c_str()) : nullptr;
-                if (targetClass)
-                    {
-                    targetClasses.push_back(targetClass);
-                    }
-                else
-                    {
-                    if (lastStep->GetRelationDirection() == RequiredRelationDirection_Both || lastStep->GetRelationDirection() == RequiredRelationDirection_Forward)
-                        ContainerHelpers::Push(targetClasses, m_schemaHelper.GetRelationshipConstraintClasses(*relationshipClass->GetRelationshipClassCP(), ECRelatedInstanceDirection::Forward, ""));
-                    if (lastStep->GetRelationDirection() == RequiredRelationDirection_Both || lastStep->GetRelationDirection() == RequiredRelationDirection_Backward)
-                        ContainerHelpers::Push(targetClasses, m_schemaHelper.GetRelationshipConstraintClasses(*relationshipClass->GetRelationshipClassCP(), ECRelatedInstanceDirection::Backward, ""));
-                    }
-
-                if (specification.GetHideNodesInHierarchy())
-                    {
-                    // if the nodes are hidden - fake a parent node, find child specifications and recurse
-                    auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(targetClasses, [&](auto const& targetClass)
-                        {
-                        return m_nodesFactory.CreateECInstanceNode(m_schemaHelper.GetConnection(), "", nullptr, targetClass->GetId(), ECInstanceId(), *LabelDefinition::Create());
-                        });
-                    auto childSpecs = GetChildSpecifications(fakeParentNodes);
-                    ChainedSpecificationsContext chained(*this, specification, *pathSpec);
-                    for (auto const& childSpec : childSpecs)
-                        childSpec->Accept(*this);
-                    }
-                else
-                    {
-                    // create a `ContentInstancesOfSpecificClassesSpecification` for the target classes
-                    auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
-                        1000,
-                        false,
-                        specification.GetInstanceFilter(),
-                        ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(targetClasses, [](auto targetClass)
-                            {
-                            return new MultiSchemaClass(targetClass->GetSchema().GetName(), true, { targetClass->GetName() });
-                            }),
-                        bvector<MultiSchemaClass*>(),
-                        true
-                        );
-                    for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
-                        contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
-                    GetInProgressContentRule().AddSpecification(*contentSpec);
-                    }
-                }
-            }
-
-        // In case we had a chain of hidden `RelatedInstanceNodesSpecification` specifications, we accumulate their paths. At this point
-        // we have to merge the steps into a single path prefix.
-        bvector<RepeatableRelationshipStepSpecification> prefixSteps;
-        for (auto pathPrefixCP : m_pathPrefix)
-            {
-            for (auto const& step : pathPrefixCP->GetSteps())
-                prefixSteps.push_back(*step);
-            }
-
-        // The specification may have multiple paths - we have to prefix all of them
-        bvector<RepeatableRelationshipPathSpecification*> paths;
-        ContainerHelpers::TransformContainer(
-            paths,
-            specification.GetRelationshipPaths(),
-            [&](auto const& srcPath)
-                {
-                bvector<RepeatableRelationshipStepSpecification*> steps;
-                for (auto const& prefixStep : prefixSteps)
-                    steps.push_back(new RepeatableRelationshipStepSpecification(prefixStep));
-                for (auto const& pathStep : srcPath->GetSteps())
-                    steps.push_back(new RepeatableRelationshipStepSpecification(*pathStep));
-                return new RepeatableRelationshipPathSpecification(steps);
-                }
-            );
-
-        auto contentSpec = new ContentRelatedInstancesSpecification(1000, false, specification.GetInstanceFilter(), paths);
-        for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
-            contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
-        GetInProgressContentRule().AddSpecification(*contentSpec);
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * Similar to `InstanceNodesOfSpecificClassesSpecification`
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void _Visit(SearchResultInstanceNodesSpecification const& specification) override
-        {
-        VectorSet<ECClassCP> queryClasses;
-        for (auto const& querySpec : specification.GetQuerySpecifications())
-            {
-            ECClassCP queryClass = m_schemaHelper.GetECClass(querySpec->GetSchemaName().c_str(), querySpec->GetClassName().c_str());
-            if (queryClass)
-                queryClasses.push_back(queryClass);
-            }
-
-        if (specification.GetHideNodesInHierarchy())
-            {
-            auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(queryClasses, [&](auto const& queryClass)
-                {
-                return m_nodesFactory.CreateECInstanceNode(m_schemaHelper.GetConnection(), "", nullptr, queryClass->GetId(), ECInstanceId(), *LabelDefinition::Create());
-                });
-            auto childSpecs = GetChildSpecifications(fakeParentNodes);
-            ChainedSpecificationsContext chained(*this, specification);
-            for (auto const& childSpec : childSpecs)
-                childSpec->Accept(*this);
-            return;
-            }
-
-        auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
-            1000,
-            false,
-            "",
-            ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(
-                queryClasses,
-                [](auto queryClass)
-                    {
-                    return new MultiSchemaClass(queryClass->GetSchema().GetName(), true, { queryClass->GetName() });
-                    }
-                ),
-            bvector<MultiSchemaClass*>(),
-            true
-        );
-        for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
-            contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
-        GetInProgressContentRule().AddSpecification(*contentSpec);
-        }
-
-public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    HierarchySpecsToContentRulesetConverter(NavNodesFactoryCR nodesFactory, IRulesPreprocessorR rulesPreprocessor, ECSchemaHelper const& schemaHelper)
-        : m_contentRule(nullptr), m_rulesPreprocessor(rulesPreprocessor), m_nodesFactory(nodesFactory), m_schemaHelper(schemaHelper),
-        m_inputReset(false)
-        {}
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    PresentationRuleSetPtr GetRuleset()
-        {
-        GetInProgressContentRule(); // just to make sure we have the ruleset
-        PresentationRuleSetPtr ruleset = m_ruleset;
-        m_ruleset->SetRuleSetId(Utf8String("NodesDescriptor:").append(m_contentRule->GetHash()));
-        m_ruleset = nullptr;
-        m_contentRule = nullptr;
-        return ruleset;
-        }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1506,29 +1166,11 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetNodesDescriptor(
     {
     auto scope = CreateScopeForHierarchyRequest(params, "nodes descriptor");
 
-    bvector<ChildNodeSpecificationCP> nodeSpecs;
     auto context = CreateNodesProviderContext(HierarchyRequestImplParams::Create(HierarchyRequestParams(params, params.GetParentNodeKey()), params));
-    if (context->GetVirtualParentNode().IsNull())
-        {
-        IRulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-        ContainerHelpers::TransformContainer(
-            nodeSpecs,
-            context->GetRulesPreprocessor().GetRootNodeSpecifications(params),
-            [](auto const& ruleSpec){return &ruleSpec.GetSpecification();});
-        }
-    else
-        {
-        IRulesPreprocessor::ChildNodeRuleParameters params(*context->GetVirtualParentNode(), TargetTree_MainTree);
-        ContainerHelpers::TransformContainer(
-            nodeSpecs,
-            context->GetRulesPreprocessor().GetChildNodeSpecifications(params),
-            [](auto const& ruleSpec){return &ruleSpec.GetSpecification();});
-        }
-
-    HierarchySpecsToContentRulesetConverter contentRulesetFactory(context->GetNodesFactory(), context->GetRulesPreprocessor(), context->GetSchemaHelper());
-    for (auto spec : nodeSpecs)
-        spec->Accept(contentRulesetFactory);
-    auto ruleset = contentRulesetFactory.GetRuleset();
+    auto ruleset = HierarchiesFilteringHelper::CreateHierarchyLevelDescriptorRuleset(
+        context->GetVirtualParentNode().get(),
+        TraverseHierarchyRulesProps(context->GetNodesFactory(), context->GetRulesPreprocessor(), context->GetSchemaHelper())
+        );
     TempRulesetRegistration registerRuleset(*m_locaters, *ruleset);
 
     auto descriptorParams = ContentDescriptorRequestImplParams::Create(ContentDescriptorRequestParams(
@@ -1574,7 +1216,7 @@ void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImp
         return;
         }
 
-    INavNodesDataSourceCPtr nodes = GetCachedDataSource(*context, nullptr);
+    NavNodesDataSourceCPtr nodes = GetCachedDataSource(*context, nullptr);
     if (nodes.IsValid())
         {
         for (NavNodePtr node : *nodes)
@@ -1604,7 +1246,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
             DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create root nodes context. Returning empty list.");
             return result;
             }
-        INavNodesDataSourceCPtr rootNodes = GetCachedDataSource(*rootNodesContext, nullptr);
+        NavNodesDataSourceCPtr rootNodes = GetCachedDataSource(*rootNodesContext, nullptr);
         if (rootNodes.IsValid())
             {
             for (NavNodeCPtr node : *rootNodes)

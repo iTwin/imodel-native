@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include "ValueHelpers.h"
+#include "../RulesEngineTypes.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -918,7 +919,8 @@ static bvector<Utf8String> const& GetUnitSystemGroupNames(ECPresentation::UnitSy
 Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR koq, ECPresentation::UnitSystem unitSystemGroup, std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_ptr<Formatting::Format>> const& defaultFormats)
     {
     Formatting::Format const* format = nullptr;
-    for (Utf8StringCR unitSystemName : GetUnitSystemGroupNames(unitSystemGroup))
+    bvector<Utf8String> const& unitSystems = GetUnitSystemGroupNames(unitSystemGroup);
+    for (Utf8StringCR unitSystemName : unitSystems)
         {
         // find the first presentation format that uses one of the unit systems in the group
         auto formatIter = std::find_if(koq.GetPresentationFormats().begin(), koq.GetPresentationFormats().end(), [&unitSystemName](NamedFormatCR f)
@@ -933,20 +935,24 @@ Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR k
             break;
             }
         }
-    if (!format)
+
+    Formatting::Format const* defaultFormat = koq.GetDefaultPresentationFormat();
+    // find default format that matches one of the unit systems in the group
+    if (!format && defaultFormat->HasCompositeMajorUnit())
         {
-        Formatting::Format const* defaultFormat = koq.GetDefaultPresentationFormat();
-        if (defaultFormat->HasCompositeMajorUnit())
-            {
-            std::pair<Utf8String, UnitSystem> pair = std::make_pair(defaultFormat->GetCompositeMajorUnit()->GetPhenomenon()->GetName(), unitSystemGroup);
-            auto it = defaultFormats.find(pair);
-            if (it != defaultFormats.end())
-                format = it->second.get();
-            }
-        // if format based on requested unit systems group was not found, use default
-        if (!format)
-            format = defaultFormat;
+        std::pair<Utf8String, UnitSystem> pair = std::make_pair(defaultFormat->GetCompositeMajorUnit()->GetPhenomenon()->GetName(), unitSystemGroup);
+        auto it = defaultFormats.find(pair);
+        if (it != defaultFormats.end())
+            format = it->second.get();
         }
+
+    // if persistence unit matches one of the unit systems in the group, use it
+    if (!format && ContainerHelpers::Contains(unitSystems, [&](Utf8String const& unitSystemName) {return koq.GetPersistenceUnit()->GetUnitSystem()->GetName().EqualsI(unitSystemName); }))
+        format = koq.GetPersistenceFormat();
+
+    // if format based on requested unit systems group was not found, use default
+    if (!format)
+        format = defaultFormat;
 
     return format;
     }
