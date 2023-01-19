@@ -16149,5 +16149,5 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyOverrideRuleWithAst
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
-    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a1.get()}, * content);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a1.get()}, *content);
     }
