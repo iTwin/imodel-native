@@ -597,14 +597,8 @@ bvector<ECValue> ValueHelpers::GetECValueSetFromJson(PrimitiveType type, RapidJs
     {
     bvector<ECValue> ecValues;
     for (rapidjson::SizeType i = 0; i < json.Size(); i++)
-        {
-        ECValue value = GetECValueFromJson(type, json[i]);
-        if (value.IsNull())
-            ecValues.push_back(ECValue(type));
-        else
-            ecValues.push_back(value);
-        
-        }
+        ecValues.push_back(GetECValueFromJson(type, json[i]));
+
     return ecValues;
     }
 

@@ -918,9 +918,7 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsC
     {
     Utf8CP type = json["type"].asCString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, "", ParseNodeKeyHashPath(json["pathFromRoot"]));
-    std::unique_ptr<PresentationQuery> instanceKeysSelectQuery = GetPresentationQueryFromJson(json["instanceKeysSelectQuery"]);
-    if (!instanceKeysSelectQuery->GetQueryString().empty())
-        key->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
+    key->SetInstanceKeysSelectQuery(GetPresentationQueryFromJson(json["instanceKeysSelectQuery"]));
     return key;
     }
 
@@ -1405,39 +1403,41 @@ std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(Be
 
     Utf8CP type = json["type"].asCString();
     if (0 == strcmp(BOUNDQUERYVALUETYPE_ECValue, type))
-    {
+        {
         int valueType = ParsePrimitiveType(json["valueType"].asCString());
         if (0 == valueType)
             return nullptr;
 
         ECValue value = GetECValueFromJson((PrimitiveType)valueType, ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
         return std::make_unique<BoundQueryECValue>(std::move(value));
-    }
+        }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type))
-    {
-        Utf8CP valueType = json["valueType"].asCString();
-        if (!*valueType)
-            return std::make_unique<BoundECValueSet>(bvector<ECValue>());
+        {
+        bvector<ECValue> ecValues;
+        if (json["value"].empty())
+            return std::make_unique<BoundECValueSet>(ecValues);
 
-        int valueTypeInt = ParsePrimitiveType(valueType);
-        if (0 == valueTypeInt)
-            return std::make_unique<BoundECValueSet>(bvector<ECValue>());
+        int valueType = ParsePrimitiveType(json["valueType"].asCString());
+        if (0 == valueType)
+            {
+            ecValues.push_back(ECValue());
+            return std::make_unique<BoundECValueSet>(ecValues);
+            }
 
-        return std::make_unique<BoundECValueSet>(GetECValueSetFromJson((PrimitiveType)valueTypeInt, ToRapidJson(json["value"]))); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
-
-    }
+        return std::make_unique<BoundECValueSet>(GetECValueSetFromJson((PrimitiveType)valueType, ToRapidJson(json["value"]))); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_Id, type))
-    {
+        {
         return std::make_unique<BoundQueryId>(json["value"].asCString());
-    }
+        }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_IdSet, type))
-    {
+        {
         BeJsConst idsJson = json["value"];
         bvector<BeInt64Id> ids;
         for (rapidjson::SizeType i = 0; i < idsJson.size(); ++i)
             ids.push_back(BeInt64Id::FromString(idsJson[i].asCString()));
         return std::make_unique<BoundQueryIdSet>(ids);
-    }
+        }
     return nullptr;
 }
 
@@ -1512,6 +1512,9 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryIdSet c
 std::unique_ptr<PresentationQuery> IModelJsECPresentationSerializer::_GetPresentationQueryFromJson(BeJsConst json) const
     {
     Utf8CP queryString = json["query"].asCString();
+    if (!*queryString)
+        return nullptr;
+
     BoundQueryValuesList bindings;
     IModelJsBoundQueryValueSerializer serializer;
     bindings.FromJson(serializer, json["bindings"]);

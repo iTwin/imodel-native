@@ -50,9 +50,16 @@ std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJ
         }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type))
         {
+        bvector<ECValue> ecValues;
+        if (json["value"].empty())
+            return std::make_unique<BoundECValueSet>(ecValues);
+
         int valueType = json["value-type"].GetInt();
         if (0 == valueType)
-            return std::make_unique<BoundECValueSet>(bvector<ECValue>());
+            {
+            ecValues.push_back(ECValue());
+            return std::make_unique<BoundECValueSet>(ecValues);
+            }
         
         return std::make_unique<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson((PrimitiveType)valueType, ValueHelpers::ToRapidJson(json["value"]))); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
         }
@@ -878,9 +885,7 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    std::unique_ptr<PresentationQuery> instanceKeysSelectQuery = GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"]);
-    if (!instanceKeysSelectQuery->GetQueryString().empty())
-        key->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
+    key->SetInstanceKeysSelectQuery(GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"]));
     return key;
     }
 
@@ -890,6 +895,9 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
 std::unique_ptr<PresentationQuery> DefaultECPresentationSerializer::_GetPresentationQueryFromJson(BeJsConst json) const
     {
     Utf8CP queryString = json["Query"].asCString();
+    if (!*queryString)
+        return nullptr;
+
     BoundQueryValuesList bindings;
     DefaultBoundQueryValueSerializer serializer;
     bindings.FromJson(serializer, json["Bindings"]);

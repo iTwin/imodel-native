@@ -122,7 +122,7 @@ public:
         for (BeSQLite::EC::ECInstanceKey const& key : vec)
             m_set->insert(key.GetInstanceId());
         }
-    BeSQLite::IdSet<BeInt64Id> const& GetSet() const { return *m_set; }     //BTBT
+    BeSQLite::IdSet<BeInt64Id> const& GetSet() const { return *m_set; }
 };
 
 /*=================================================================================**//**
@@ -201,13 +201,5 @@ public:
     BoundQueryValuesList& GetBindings() { return m_bindings; }
     BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt) const { return GetBindings().Bind(stmt); }
 };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct RapidJsonValueComparer
-    {
-    bool operator() (rapidjson::Value const* left, rapidjson::Value const* right) const;
-    };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

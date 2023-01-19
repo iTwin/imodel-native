@@ -2011,45 +2011,6 @@ std::unique_ptr<PresentationQuery> StringQueryBuilder::_CreateQuery() const
     return std::make_unique<PresentationQuery>(*m_query);
     }
 
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RapidJsonValueComparer::operator() (rapidjson::Value const* left, rapidjson::Value const* right) const
-    {
-    if (left->IsNull())
-        return !right->IsNull();
-    if (right->IsNull())
-        return false;
-
-    switch (left->GetType())
-        {
-        case rapidjson::kFalseType:
-        case rapidjson::kTrueType:
-            {
-            return (int)left->GetBool() < (int)right->GetBool();
-            }
-        case rapidjson::kNumberType:
-            {
-            if (left->IsInt())
-                return left->GetInt() < right->GetInt();
-            if (left->IsInt64())
-                return left->GetInt64() < right->GetInt64();
-            if (left->IsDouble())
-                return (fabs(left->GetDouble() - right->GetDouble()) > 0.0000001 && (left->GetDouble() - right->GetDouble()) < 0);
-            }
-        case rapidjson::kStringType:
-            {
-            return strcmp(left->GetString(), right->GetString()) < 0;
-            }
-        case rapidjson::kObjectType:
-        case rapidjson::kArrayType:
-            {
-            return BeRapidJsonUtilities::ToString(*left).CompareTo(BeRapidJsonUtilities::ToString(*right));
-            }
-        }
-    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled rapidjson value type: %d", (int)left->GetType()));
-    };
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
