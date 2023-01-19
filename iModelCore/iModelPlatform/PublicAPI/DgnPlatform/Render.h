@@ -11,6 +11,7 @@
 #include "ClipVector.h"
 #include "RenderBRep.h"
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/Nullable.h>
 #include <cmath>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
@@ -676,17 +677,34 @@ struct TextureMapping
         DGNPLATFORM_EXPORT BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, ElevationDrapeParamsCP drapeParams = nullptr) const;
     };
 
+    struct NormalMapParams {
+      // If this is null, it means to use TextureMapping::m_texture as the normal map, and there is no pattern map.
+      TextureCPtr m_texture;
+      // Scale in [0.0,1.0] to apply to the values in the normal map at display time.
+      double m_scale;
+      // If true, the green channel needs to be inverted at display time.
+      bool m_invertGreen;
+
+      NormalMapParams(TextureCP texture=nullptr, double scale=1.0, bool invertGreen=false)
+        : m_texture(texture), m_scale(scale), m_invertGreen(invertGreen) { }
+    };
+
 private:
     TextureCPtr m_texture;
     Params      m_params;
+    Nullable<NormalMapParams> m_normalMap;
 public:
-    TextureMapping(TextureCR texture, Params const& params) : m_texture(&texture), m_params(params) { }
+    TextureMapping(TextureCR texture, Params const& params, Nullable<NormalMapParams> const& normalMap)
+      : m_texture(&texture), m_params(params), m_normalMap(normalMap) { }
+
     explicit TextureMapping(TextureCP texture=nullptr) : m_texture(texture) { }
     explicit TextureMapping(TextureCR texture) : TextureMapping(&texture) { }
 
     bool IsValid() const { return m_texture.IsValid(); }
     TextureCP GetTexture() const { return m_texture.get(); }
     Params const& GetParams() const { return m_params; }
+    NormalMapParams const* GetNormalMap() const { return IsValid() ? m_normalMap.get() : nullptr; }
+
     void SetTransform(Trans2x3 const& transform) { m_params.m_textureMat2x3 = transform; }
 };
 
@@ -829,7 +847,7 @@ struct Material : RefCounted<NonCopyableClass>
 
 
         explicit CreateParams(MaterialKeyCR key=MaterialKey()) : m_key(key) { }
-        DGNPLATFORM_EXPORT CreateParams(MaterialKeyCR key, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
+        DGNPLATFORM_EXPORT CreateParams(MaterialKeyCR key, RenderingAssetCR, DgnDbR, SystemCR);
 
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
@@ -842,8 +860,6 @@ struct Material : RefCounted<NonCopyableClass>
         void SetSpecular(double val) {m_specular = val;} //<! Set surface specular reflectivity
         void SetRefract(double val) {m_refract = val;} //<! Set index of refraction
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
-        void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping;}
-        void MapTexture(TextureCR texture, TextureMapping::Params const& params) {MapTexture(TextureMapping(texture, params));}
         void SetKey(MaterialKeyCR key) { m_key = key; }
         void SetBaseId(RenderMaterialId baseId) { m_baseId = baseId; }
     };
