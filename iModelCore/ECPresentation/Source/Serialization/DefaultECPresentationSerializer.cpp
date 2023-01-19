@@ -78,37 +78,9 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryECValue 
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    json.AddMember("type", "ec-value", json.GetAllocator());
+    json.AddMember("type", BOUNDQUERYVALUETYPE_ECValue, json.GetAllocator());
     json.AddMember("value-type", (int)boundQueryECValue.GetValue().GetPrimitiveType(), json.GetAllocator());
     json.AddMember("value", ValueHelpers::GetJsonFromECValue(boundQueryECValue.GetValue(), &json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryId const& boundQueryId, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "id", json.GetAllocator());
-    json.AddMember("value", rapidjson::Value(boundQueryId.GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryIdSet const& boundQueryIdSet, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "id-set", json.GetAllocator());
-    rapidjson::Value idsJson;
-    idsJson.SetArray();
-    for (auto const& id : boundQueryIdSet.GetSet())
-        idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("value", idsJson, json.GetAllocator());
     return json;
     }
 
@@ -119,7 +91,7 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundECValueSet co
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    json.AddMember("type", "value-set", json.GetAllocator());
+    json.AddMember("type", BOUNDQUERYVALUETYPE_ValueSet, json.GetAllocator());
 
     Nullable<PrimitiveType> valueType = boundECValueSet.GetValueType();
     if (valueType.IsNull())
@@ -134,6 +106,34 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundECValueSet co
         valuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
         });
     json.AddMember("value", valuesJson, json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryId const& boundQueryId, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", BOUNDQUERYVALUETYPE_Id, json.GetAllocator());
+    json.AddMember("value", rapidjson::Value(boundQueryId.GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryIdSet const& boundQueryIdSet, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", BOUNDQUERYVALUETYPE_IdSet, json.GetAllocator());
+    rapidjson::Value idsJson;
+    idsJson.SetArray();
+    for (auto const& id : boundQueryIdSet.GetSet())
+        idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", idsJson, json.GetAllocator());
     return json;
     }
 
@@ -879,7 +879,7 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
     std::unique_ptr<PresentationQuery> instanceKeysSelectQuery = GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"]);
-    if (nullptr != instanceKeysSelectQuery)
+    if (!instanceKeysSelectQuery->GetQueryString().empty())
         key->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
     return key;
     }
