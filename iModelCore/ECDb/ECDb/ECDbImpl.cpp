@@ -478,9 +478,6 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_ecdb.AddFunction(StrToGuid::GetSingleton());
     m_ecdb.AddFunction(IdToHex::GetSingleton());
     m_ecdb.AddFunction(HexToId::GetSingleton());
-    m_ecdb.AddFunction(MakeInstanceKeyFunc::GetSingleton());
-    m_ecdb.AddFunction(GetClassIdFunc::GetSingleton());
-    m_ecdb.AddFunction(GetInstanceIdFunc::GetSingleton());
 
     m_changeManager.RegisterSqlFunctions();
 
@@ -521,9 +518,6 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     m_ecdb.RemoveFunction(StrToGuid::GetSingleton());
     m_ecdb.RemoveFunction(IdToHex::GetSingleton());
     m_ecdb.RemoveFunction(HexToId::GetSingleton());
-    m_ecdb.RemoveFunction(MakeInstanceKeyFunc::GetSingleton());
-    m_ecdb.RemoveFunction(GetClassIdFunc::GetSingleton());
-    m_ecdb.RemoveFunction(GetInstanceIdFunc::GetSingleton());
 
     m_changeManager.UnregisterSqlFunction();
 

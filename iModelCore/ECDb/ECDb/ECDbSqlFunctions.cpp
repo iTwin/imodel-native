@@ -5,78 +5,6 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//============================[MakeInstanceKeyFunc]======================================
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void MakeInstanceKeyFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
-    if (nArgs == 2) {
-        auto const& classIdVal = args[0];
-        auto const& instanceIdVal = args[1];
-        if (classIdVal.GetValueType() == DbValueType::IntegerVal &&
-                instanceIdVal.GetValueType() == DbValueType::IntegerVal) {
-            const ECInstanceKey key(
-                classIdVal.GetValueId<ECN::ECClassId>(),
-                instanceIdVal.GetValueId<ECInstanceId>());
-            ctx.SetResultBlob(&key, sizeof(key));
-        }
-    }
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-MakeInstanceKeyFunc& MakeInstanceKeyFunc::GetSingleton() {
-    static MakeInstanceKeyFunc s_singleton;
-    return s_singleton;
-}
-
-//================================[GetClassIdFunc]=======================================
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void GetClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
-    if (nArgs == 1) {
-        auto const& instanceKeyVal = args[0];
-        if (instanceKeyVal.GetValueType() == DbValueType::BlobVal &&
-            instanceKeyVal.GetValueBytes() == sizeof(ECInstanceKey)) {
-            const auto id = reinterpret_cast<ECInstanceKey const*>(instanceKeyVal.GetValueBlob())->GetClassId();
-            ctx.SetResultInt64(static_cast<int64_t>(id.GetValueUnchecked()));
-        }
-    }
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-GetClassIdFunc& GetClassIdFunc::GetSingleton() {
-    static GetClassIdFunc s_singleton;
-    return s_singleton;
-}
-
-//=============================[GetInstanceIdFunc]=======================================
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void GetInstanceIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
-    if (nArgs == 1) {
-        auto const& instanceKeyVal = args[0];
-        if (instanceKeyVal.GetValueType() == DbValueType::BlobVal &&
-            instanceKeyVal.GetValueBytes() == sizeof(ECInstanceKey)) {
-            const auto id = reinterpret_cast<ECInstanceKey const*>(instanceKeyVal.GetValueBlob())->GetInstanceId();
-            ctx.SetResultInt64(static_cast<int64_t>(id.GetValueUnchecked()));
-        }
-    }
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-GetInstanceIdFunc& GetInstanceIdFunc::GetSingleton() {
-    static GetInstanceIdFunc s_singleton;
-    return s_singleton;
-}
-
 //================================[PropExistsFunc]=======================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -249,7 +177,7 @@ ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, Db
     m_options["s:c"] = FormatOptions::s_semicolon_c;
     m_options["a:c"] = FormatOptions::a_semicolon_c;
     m_options["s.c"] = FormatOptions::s_dot_c;
-    m_options["a.c"] = FormatOptions::a_dot_c;        
+    m_options["a.c"] = FormatOptions::a_dot_c;
     m_options["a"] = FormatOptions::a;
     m_options["s"] = FormatOptions::s;
     m_options["c"] = FormatOptions::c;
@@ -295,14 +223,14 @@ void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     auto stmt = m_db->GetCachedStatement(R"sql(
-        select 
+        select
                s.name  || ':' || c.name sn_semicolon_cn,
                s.alias || ':' || c.name sa_semicolon_cn,
                s.name                   sn,
                s.alias                  sa,
                c.name                   cn,
                s.name  || '.' || c.name sn_dot_cn,
-               s.alias || '.' || c.name sa_dot_cn 
+               s.alias || '.' || c.name sa_dot_cn
         from ec_class c join ec_schema s on c.SchemaId = s.Id where c.Id = ?)sql");
     if (stmt == nullptr)
         {
@@ -312,7 +240,7 @@ void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     stmt->BindUInt64(1, classId.GetValueUInt64());
     if (stmt->Step() != BE_SQLITE_ROW)
         return;
-    
+
     const auto strOut = stmt->GetValueText((int)fmt);
     const auto strSize = stmt->GetColumnBytes((int)fmt);
     ctx.SetResultText(strOut, strSize, DbFunction::Context::CopyData::Yes);
@@ -334,7 +262,7 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         ctx.SetResultError("ec_classid(X[,Y]) expect one or two args.");
         return;
         }
-    
+
     DbValue const& a0 = args[0];
     if (a0.GetValueType() != DbValueType::TextVal)
         return;
@@ -375,7 +303,7 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         schemaNameOrAlias = tokenFirst;
         className = tokenSecond;
         }
-    
+
     auto stmt = m_db->GetCachedStatement("select c.id from ec_class c join ec_schema s on c.SchemaId = s.Id where c.name= ?1 and (s.name =?2 or s.alias = ?2)");
     if (stmt == nullptr)
         {
@@ -449,7 +377,7 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
             auto className = BeStringUtilities::Strtok(nullptr, delimiters, &ctxTok);
             if (className == nullptr)
                 return;
-            
+
             auto stmt = m_db->GetCachedStatement("select c.id from ec_class c join ec_schema s on c.SchemaId = s.Id where c.name= ?1 and (s.name =?2 or s.alias = ?2)");
             if (stmt == nullptr)
                 {
@@ -502,7 +430,7 @@ StrToGuid& StrToGuid::GetSingleton()
 void StrToGuid::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultNull();
         return;
@@ -538,7 +466,7 @@ GuidToStr& GuidToStr::GetSingleton()
 void GuidToStr::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::BlobVal || v.GetValueBytes() != sizeof(BeGuid)) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::BlobVal || v.GetValueBytes() != sizeof(BeGuid))
         {
         ctx.SetResultNull();
         return;
@@ -569,7 +497,7 @@ IdToHex& IdToHex::GetSingleton()
 void IdToHex::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal)
         {
         ctx.SetResultNull();
         return;
@@ -600,7 +528,7 @@ HexToId& HexToId::GetSingleton()
 void HexToId::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultNull();
         return;
@@ -651,7 +579,7 @@ void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArg
         ctx.SetResultError(msg.c_str());
         return;
         }
-        
+
     ctx.SetResultInt(Enum::ToInt(opCode.Value()));
     }
 

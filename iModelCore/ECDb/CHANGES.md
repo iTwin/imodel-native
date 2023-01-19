@@ -7,7 +7,7 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.2` |
 | ECSQL   | `1.0.1.1` |
 
-## `12/13/2022`: Add support for runtime instance and property accessor in ECSQL (beta)
+## `1/19/2023`: Add support for runtime instance and property accessor in ECSQL (beta)
 
 Following has been added or modified tos support extraction of instance and property from current row.
 
