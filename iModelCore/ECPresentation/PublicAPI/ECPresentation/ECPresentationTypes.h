@@ -29,7 +29,6 @@ ECPRESENTATION_REFCOUNTED_PTR(NavNodeKey)
 ECPRESENTATION_TYPEDEFS(NavNode)
 ECPRESENTATION_REFCOUNTED_PTR(NavNode)
 ECPRESENTATION_TYPEDEFS(INavNodeLocater)
-ECPRESENTATION_TYPEDEFS(INavNodesFactory)
 ECPRESENTATION_REFCOUNTED_PTR(INavNodesFactory)
 ECPRESENTATION_TYPEDEFS(LabelDefinition)
 ECPRESENTATION_REFCOUNTED_PTR(LabelDefinition)
@@ -445,12 +444,22 @@ typedef RefCountedPtr<SimpleCancelationToken> SimpleCancelationTokenPtr;
 template <class T>
 struct VectorSet
 {
+    using value_type = typename bvector<T>::value_type;
+    using allocator_type = typename bvector<T>::allocator_type;
+    using pointer = typename bvector<T>::pointer;
+    using const_pointer = typename bvector<T>::const_pointer;
+    using reference = typename bvector<T>::reference;
+    using const_reference = typename bvector<T>::const_reference;
+    using size_type = typename bvector<T>::size_type;
+    using difference_type = typename bvector<T>::difference_type;
+    using iterator = typename bvector<T>::iterator;
+    using const_iterator = typename bvector<T>::const_iterator;
+
 private:
     bvector<T> m_vector;
     bset<T>    m_set;
+
 public:
-    using iterator = typename bvector<T>::iterator;
-    using const_iterator = typename bvector<T>::const_iterator;
     //! Iterator to start of vector
     iterator begin() { return m_vector.begin(); }
     //! Iterator to end of vector
@@ -464,13 +473,16 @@ public:
     //! Item at back of vector
     const T& back() const { return m_vector.back(); }
     //! Push back with uniqueness check
-    void push_back(const T& item) { if (m_set.insert(item).second) m_vector.push_back(item); }
+    void push_back(T item) { if (m_set.insert(item).second) m_vector.push_back(std::move(item)); }
+    //! Insert with uniqueness check
+    iterator insert(const_iterator const& where, T item) { return m_set.insert(item).second ? m_vector.insert(where, std::move(item)) : end(); }
     //! Is vector empty
     bool empty() const { return m_vector.empty(); }
     //! Vector size
     size_t size() const { return m_vector.size(); }
     //! Finds item in vector and returns iterator to it.
-    iterator find(const T& key) { return std::find(begin(), end(), key); }
+    iterator find(T const& key) { return std::find(begin(), end(), key); }
+    const_iterator find(T const& item) const { return std::find(begin(), end(), item); }
 };
 
 //=======================================================================================

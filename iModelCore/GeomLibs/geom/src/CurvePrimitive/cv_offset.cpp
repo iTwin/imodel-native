@@ -825,15 +825,13 @@ CurveVectorR collector
         curveC->FractionToPoint (0.0, tangentC0);
     DSegment3d segment;
     DEllipse3d arc;
-    bool done = false;
     if (curveB.TryGetLine (segment))
         {
         CollectOffsetSegment (tangentA1, segment, tangentC0, options, collector);
-        done = true;
         }
     else if (curveB.TryGetArc (arc))
         {
-        done = CollectOffsetCircularArc (tangentA1, arc, tangentC0, options, collector);
+        CollectOffsetCircularArc (tangentA1, arc, tangentC0, options, collector);
         }
 #ifdef primitiveSupport
     else

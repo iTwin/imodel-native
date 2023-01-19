@@ -2190,7 +2190,7 @@ BoundECValueSet::BoundECValueSet(BoundECValueSet const& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundECValueSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
-    return stmt.BindVirtualSet((int)index, *m_set);
+    return stmt.BindVirtualSet((int)index, m_set);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -98,6 +98,10 @@ protected:
         {
         return GetNodes(params.GetParentNode())->GetSize();
         }
+    ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) override
+        {
+        return nullptr;
+        }
     NavNodeCPtr _GetParent(NodeParentRequestImplParams const& params) override
         {
         auto iter = m_parentship.find(&params.GetNode());

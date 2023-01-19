@@ -2715,7 +2715,6 @@ double                          lowOffset,
 double                          highOffset
 )
     {
-    MTGNodeId mateId;
     DRange3d range;
     jmdlRG_freeEdgeRangeTree (pRG);
     rgXYRangeTree_initializeTree ((void**)&pRG->pEdgeRangeTree);
@@ -2725,7 +2724,6 @@ double                          highOffset
         if (jmdlRG_checkAbort (pRG, s_checkStopPeriod))
             return false;            
 
-        mateId = jmdlMTGGraph_getEdgeMate (pRG->pGraph, nodeId);
         if (   jmdlMTGGraph_getMask (pRG->pGraph, nodeId, MTG_DIRECTED_EDGE_MASK)
             && jmdlRG_getEdgeRange (pRG, &range, nodeId))
             {

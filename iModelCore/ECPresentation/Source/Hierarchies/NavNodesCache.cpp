@@ -2780,8 +2780,8 @@ static bool AreRelated(IConnectionCR connection, DataSourceFilter::RelatedInstan
     if (!stmt.IsValid())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare 'are keys related to given RelatedInstanceInfo' query");
 
-    VirtualECInstanceIdSet relationshipInfoIdsSet(relationshipInfo.m_instanceKeys);
-    VirtualECInstanceIdSet inputIdsSet(keys);
+    std::shared_ptr<VirtualECInstanceIdSet> relationshipInfoIdsSet = std::make_shared<VirtualECInstanceIdSet>(relationshipInfo.m_instanceKeys);
+    std::shared_ptr<VirtualECInstanceIdSet> inputIdsSet = std::make_shared<VirtualECInstanceIdSet>(keys);
     int bindingIndex = 1;
 
     for (auto i = 0; i < relationshipInfo.m_relationshipClassIds.size(); ++i)
@@ -3315,6 +3315,7 @@ protected:
             "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId]"
             " WHERE [hl].[Id] = ? "
             "       AND [dsn].[Visibility] = ? "
+            "       AND [ds].[InstanceFilter] IS ? "
             "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
         CachedStatementPtr stmt;
@@ -3324,6 +3325,7 @@ protected:
         int bindingIndex = 1;
         NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_hierarchyLevelId);
         stmt->BindInt(bindingIndex++, (int)NodeVisibility::Virtual);
+        NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
         stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
         return BE_SQLITE_ROW == stmt->Step();
         }
@@ -3341,8 +3343,9 @@ protected:
             "  JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
             "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId]"
             " WHERE [hl].[Id] = ? "
-            "    AND [dsn].[Visibility] != ? "
-            "    AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+            "       AND [dsn].[Visibility] != ? "
+            "       AND [ds].[InstanceFilter] IS ? "
+            "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
         CachedStatementPtr stmt;
         if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetDb().GetDbFile(), query))
@@ -3351,6 +3354,7 @@ protected:
         int bindingIndex = 1;
         NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_hierarchyLevelId);
         stmt->BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+        NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
         stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
         DbResult stepResult = stmt->Step();
@@ -3373,9 +3377,10 @@ protected:
             "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [dsn].[DataSourceId] "
             "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] "
             "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-            " WHERE  [hl].[Id] = ? "
-            "    AND [dsn].[Visibility] != ? "
-            "    AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
+            " WHERE [hl].[Id] = ? "
+            "       AND [dsn].[Visibility] != ? "
+            "       AND [ds].[InstanceFilter] IS ? "
+            "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
             " ORDER BY [ds].[Index], [dsn].[NodeIndex]";
         return query;
         }
@@ -3387,6 +3392,7 @@ protected:
         {
         NodesCacheHelpers::BindGuid(stmt, bindingIndex++, m_hierarchyLevelId);
         stmt.BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+        NodesCacheHelpers::BindInstanceFilter(stmt, bindingIndex++, GetContext().GetInstanceFilter());
         stmt.BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
         }
 
