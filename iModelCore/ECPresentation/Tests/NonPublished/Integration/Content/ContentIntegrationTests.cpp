@@ -16111,3 +16111,43 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SortingRule_OnlySortBaseCla
     ContentCPtr content = GetVerifiedContent(*descriptor);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b1.get(), b2.get(), b3.get(), a2.get(), a3.get(), a1.get()}, *content, true);
     }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyOverrideRuleWithAsteriskReturnsCorrectProperties, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="IntPropA" typeName="int"/>
+        <ECProperty propertyName="StringPropA" typeName="string"/>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyOverrideRuleWithAsteriskReturnsCorrectProperties)
+    {
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {
+        instance.SetValue("IntPropA", ECValue(1));
+        instance.SetValue("StringPropA", ECValue("string"));
+        });
+    KeySetPtr input = KeySet::Create(*a1);
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* contentRule = new ContentRule();
+    SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    spec->AddPropertyOverride(*new PropertySpecification("*", 1, "", nullptr, nullptr, new CustomRendererSpecification("Multiline")));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a1.get()}, * content);
+    }
