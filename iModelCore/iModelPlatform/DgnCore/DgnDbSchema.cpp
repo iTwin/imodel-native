@@ -618,22 +618,6 @@ BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-// SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
-//     {
-//     bvector<ECN::ECSchemaCP> schemasToImport;
-//     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
-//     if (status != SchemaStatus::Success)
-//         {
-//         BeAssert(false && "One or more schemas are incompatible.");
-//         return status;
-//         }
-
-//     return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::None);
-//     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool allowDataTransformDuringSchemaUpdate)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;

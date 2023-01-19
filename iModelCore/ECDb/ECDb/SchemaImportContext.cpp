@@ -475,17 +475,6 @@ std::string SqlTypeDetector::Join(std::vector<std::string> const& v, const std::
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void SqlTypeDetector::Validate(RE2 const& re) {
-    if (!re.ok()) {
-        LOG.errorv("REGEX: %s\n", re.pattern().c_str());
-        LOG.errorv("ERROR: %s\n", re.error().c_str());
-    }
-    BeAssert(re.ok());
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 void SqlTypeDetector::SetupRegex(DbCR conn, bool useDataCRUD) {
     RE2::Options opts;
     opts.set_never_capture(true);
@@ -530,23 +519,22 @@ void SqlTypeDetector::SetupRegex(DbCR conn, bool useDataCRUD) {
     m_sysUpdateRegEx = std::make_unique<RE2>(
         SqlPrintfString(R"(^\s*UPDATE\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?(%s)\]?))", sysTables.c_str()).GetUtf8CP(), opts);
 
-    Validate(*m_alterTableRegEx);
-    Validate(*m_alterTableRegEx);
-    Validate(*m_createIndexRegEx);
-    Validate(*m_createTableRegEx);
-    Validate(*m_createViewRegEx);
-    Validate(*m_dataDeleteRegEx);
-    Validate(*m_dataInsertRegEx);
-    Validate(*m_dataUpdateRegEx);
-    Validate(*m_deleteRegEx);
-    Validate(*m_dropIndexRegEx);
-    Validate(*m_dropTableRegEx);
-    Validate(*m_insertRegEx);
-    Validate(*m_pragmaRegEx);
-    Validate(*m_sysDeleteRegEx);
-    Validate(*m_sysInsertRegEx);
-    Validate(*m_sysUpdateRegEx);
-    Validate(*m_updateRegEx);
+    BeAssert(m_alterTableRegEx->ok());
+    BeAssert(m_dropTableRegEx->ok());
+    BeAssert(m_dropIndexRegEx->ok());
+    BeAssert(m_createTableRegEx->ok());
+    BeAssert(m_createIndexRegEx->ok());
+    BeAssert(m_createViewRegEx->ok());
+    BeAssert(m_pragmaRegEx->ok());
+    BeAssert(m_insertRegEx->ok());
+    BeAssert(m_deleteRegEx->ok());
+    BeAssert(m_updateRegEx->ok());
+    BeAssert(m_dataInsertRegEx->ok());
+    BeAssert(m_dataDeleteRegEx->ok());
+    BeAssert(m_dataUpdateRegEx->ok());
+    BeAssert(m_sysInsertRegEx->ok());
+    BeAssert(m_sysDeleteRegEx->ok());
+    BeAssert(m_sysUpdateRegEx->ok());
 }
 
 //***************************************************************************************

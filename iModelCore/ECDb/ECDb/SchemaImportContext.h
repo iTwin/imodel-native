@@ -184,7 +184,6 @@ struct SqlTypeDetector {
         static const std::vector<std::string> GetDataTables (DbCR conn);
         static const std::vector<std::string> GetSystemTables (DbCR conn);
         static std::string Join(std::vector<std::string> const& v, const std::string sep);
-        static void Validate(RE2 const& re);
         void SetupRegex(DbCR conn, bool useDataCRUD);
     public:
         explicit SqlTypeDetector(DbCR conn, bool useDataCRUD) { SetupRegex(conn, useDataCRUD); }
