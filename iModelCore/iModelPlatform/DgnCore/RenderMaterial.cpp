@@ -213,13 +213,13 @@ bool RenderingAsset::TextureMap::IsPatternEnabled() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenderingAsset::TextureMap RenderingAsset::GetPatternMap() const
+RenderingAsset::TextureMap RenderingAsset::GetTextureMap(TextureMap::Type type, Utf8CP typeName) const
     {
     auto maps = GetValue(RENDER_MATERIAL_Map);
     if (maps.isNull())
-        return TextureMap(maps, TextureMap::Type::Pattern); // return invalid value
+        return TextureMap(maps, type); // return invalid value.
 
-    return TextureMap(maps[RENDER_MATERIAL_MAP_Pattern], TextureMap::Type::Pattern);
+    return TextureMap(maps[typeName], type);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,6 +239,7 @@ void  RenderingAsset::SetColor(Utf8CP keyword, RgbFactor color)
 BentleyStatus RenderingAsset::Relocate(DgnImportContext& context)
     {
     auto patternMap = GetPatternMap();
+    // ###TODO why is this an error? A pattern map is not required.
     if (!patternMap.IsValid())
         return ERROR;
 
@@ -246,7 +247,10 @@ BentleyStatus RenderingAsset::Relocate(DgnImportContext& context)
     if (!newId.IsValid())
         return ERROR;
 
+    // ###TODO this writes to the wrong JSON property. Should be Map.Pattern.TextureId
     GetValueR(RENDER_MATERIAL_Map)[RENDER_MATERIAL_TextureId] = newId.ToHexStr();
+
+    // ###TODO relocate other maps, such as Normal.
     return SUCCESS;
     }
 
