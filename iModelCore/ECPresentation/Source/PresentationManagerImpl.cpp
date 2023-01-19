@@ -615,6 +615,13 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create nodes provider");
         NavNodeCPtr parent = context.GetVirtualParentNode();
+
+        if (parent.IsValid() && NodesFinalizer(context).HasSimilarNodeInHierarchy(*parent))
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Parent node has similar ancestor - returning empty data source");
+            return EmptyNavNodesProvider::Create(context);
+            }
+
         NavNodesProviderPtr provider;
         if (parent.IsNull())
             {
@@ -1003,12 +1010,6 @@ std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl:
 RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl::GetCachedDataSource(NavNodesProviderContextR context, PageOptionsCP pageOptions) const
     {
     auto scope = Diagnostics::Scope::Create("Create data source");
-
-    if (context.GetVirtualParentNode().IsValid() && NodesFinalizer(context).HasSimilarNodeInHierarchy(*context.GetVirtualParentNode()))
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Parent node has similar ancestor - returning empty data source");
-        return nullptr;
-        }
 
     NavNodesProviderPtr provider;
     if (!pageOptions || pageOptions->GetPageStart() == 0)
