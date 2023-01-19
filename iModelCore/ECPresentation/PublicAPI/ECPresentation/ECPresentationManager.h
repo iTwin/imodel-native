@@ -40,13 +40,6 @@ USING_NAMESPACE_BENTLEY_EC
 #define DEFAULT_REQUEST_PRIORITY            1000
 
 struct ECPresentationTasksManager;
-struct IECPresentationTask;
-
-// WIP
-struct ContentCache;
-
-//! A container of refcounted NavNode objects.
-typedef DataContainer<NavNodeCPtr> NavNodesContainer;
 
 //=======================================================================================
 // @bsiclass

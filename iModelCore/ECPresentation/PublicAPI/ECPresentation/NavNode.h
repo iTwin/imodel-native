@@ -9,6 +9,7 @@
 #include <ECPresentation/LabelDefinition.h>
 #include <ECPresentation/Connection.h>
 #include <ECPresentation/NavNodeKey.h>
+#include <ECPresentation/DataSource.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -45,12 +46,12 @@ private:
     Utf8String m_backColor;
     Utf8String m_fontStyle;
     Utf8String m_type;
-    bool m_determinedChildren;
-    bool m_hasChildren;
+    Nullable<bool> m_hasChildren;
     bool m_isChecked;
     bool m_isCheckboxVisible;
     bool m_isCheckboxEnabled;
     bool m_shouldAutoExpand;
+    Nullable<bool> m_supportsFiltering;
     std::unique_ptr<PresentationQuery const> m_instanceKeysSelectQuery;
 
 private:
@@ -114,12 +115,12 @@ public:
     void SetLabelDefinition(LabelDefinitionCR value) {m_labelDefinition = &value;}
 
     //! Set if this node has a children.
-    void SetHasChildren(bool value) {m_hasChildren = value; m_determinedChildren = true;}
+    void SetHasChildren(bool value) {m_hasChildren = value;}
     //! Does this node have children.
     ECPRESENTATION_EXPORT bool HasChildren() const;
     //! Does this node have determined whether it has children or not.
-    bool DeterminedChildren() const {return m_determinedChildren;}
-    void ResetHasChildren() {m_determinedChildren = false;}
+    bool DeterminedChildren() const {return m_hasChildren.IsValid();}
+    void ResetHasChildren() {m_hasChildren = nullptr;}
 
     //! Set if this node is checked.
     void SetIsChecked(bool value) {m_isChecked = value;}
@@ -137,6 +138,9 @@ public:
     void SetShouldAutoExpand(bool value) {m_shouldAutoExpand = value;}
     //! Should this node be auto-expanded.
     bool ShouldAutoExpand() const {return m_shouldAutoExpand;}
+    //! Does the node support hierarchy level filtering.
+    ECPRESENTATION_EXPORT bool SupportsFiltering() const;
+    void SetSupportsFiltering(bool value) {m_supportsFiltering = value;}
 
     ECPRESENTATION_EXPORT PresentationQuery const* GetInstanceKeysSelectQuery() const;
     ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const>);
@@ -148,6 +152,29 @@ public:
     //! Serialize the node to JSON
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
+};
+
+/*=================================================================================**//**
+* A container of refcounted NavNode objects.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct NavNodesContainer : DataContainer<NavNodeCPtr>
+{
+    DEFINE_T_SUPER(DataContainer<NavNodeCPtr>)
+
+private:
+    bool m_supportsFiltering;
+
+public:
+    //! Constructor. Creates an empty container.
+    NavNodesContainer() : T_Super(), m_supportsFiltering(false) {}
+
+    //! Constructor. Creates a container using the supplied data source.
+    NavNodesContainer(IDataSource<NavNodeCPtr> const& source) : T_Super(source), m_supportsFiltering(false) {}
+
+    //! Does the returned hierarchy level support filtering.
+    bool SupportsFiltering() const {return m_supportsFiltering;}
+    void SetSupportsFiltering(bool value) {m_supportsFiltering = value;}
 };
 
 //=======================================================================================

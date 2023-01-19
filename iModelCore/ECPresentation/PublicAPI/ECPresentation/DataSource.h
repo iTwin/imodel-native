@@ -158,20 +158,18 @@ struct PreloadedDataSource : IDataSource<T>
 {
 typedef typename IDataSource<T>::Iterator Iterator;
 private:
-    RefCountedPtr<VectorDataSource<T>> m_source;
+    bvector<T> m_items;
 private:
     PreloadedDataSource(IDataSource<T> const& source)
         {
-        bvector<T> items;
         for (auto const& item : source)
-            items.push_back(item);
-        m_source = VectorDataSource<T>::Create(items);
+            m_items.push_back(item);
         }
 protected:
-    T _Get(size_t index) const override {return m_source->Get(index);}
-    size_t _GetSize() const override {return m_source->GetSize();}
-    Iterator _CreateFrontIterator() const override {return m_source->begin();}
-    Iterator _CreateBackIterator() const override {return m_source->end();}
+    T _Get(size_t index) const override {return m_items[index];}
+    size_t _GetSize() const override {return m_items.size();}
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<typename bvector<T>::const_iterator, T>>(m_items.begin()));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<typename bvector<T>::const_iterator, T>>(m_items.end()));}
 public:
     static RefCountedPtr<PreloadedDataSource<T>> Create(IDataSource<T> const& source) {return new PreloadedDataSource(source);}
 };

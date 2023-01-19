@@ -105,6 +105,14 @@ namespace std
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+#ifndef ECPRESENTATION_ANONYMOUS_VARIABLE
+    #ifdef __COUNTER__
+        #define ECPRESENTATION_ANONYMOUS_VARIABLE(str) str ## __COUNTER__
+    #else
+        #define ECPRESENTATION_ANONYMOUS_VARIABLE(str) str ## __LINE__
+    #endif
+#endif
+
 // https://www.sqlite.org/limits.html#max_compound_select
 #define MAX_COMPOUND_STATEMENTS_COUNT       500
 
