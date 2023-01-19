@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +===============+===============+===============+===============+===============+======*/
 struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManagerImplBase
 {
-    typedef std::function<INavNodesDataSourcePtr(WithPageOptions<HierarchyRequestImplParams> const&)> Handler_GetNodes;
+    typedef std::function<NavNodesDataSourcePtr(WithPageOptions<HierarchyRequestImplParams> const&)> Handler_GetNodes;
     typedef std::function<size_t(HierarchyRequestImplParams const&)> Handler_GetNodesCount;
     typedef std::function<NavNodeCPtr(NodeParentRequestImplParams const&)> Handler_GetParent;
     typedef std::function<bvector<NavNodeCPtr>(NodePathsFromFilterTextRequestImplParams const&)> Handler_GetFilteredNodes;
@@ -54,7 +54,7 @@ protected:
         {
         return nullptr;
         }
-    INavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) override
+    NavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) override
         {
         if (m_nodesHandler)
             return m_nodesHandler(params);
@@ -65,6 +65,10 @@ protected:
         if (m_nodesCountHandler)
             return m_nodesCountHandler(params);
         return 0;
+        }
+    ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) override
+        {
+        return nullptr;
         }
     NavNodeCPtr _GetParent(NodeParentRequestImplParams const& params) override
         {

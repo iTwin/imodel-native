@@ -2388,9 +2388,7 @@ bool          clipZ
     DPoint2d trigPoints[2];
     DPoint4d hPoint;
     DPoint3d point;
-    //double *pPoint = (double *)&point;
     double alpha, beta, gamma, theta, fraction;
-    bool    goodPoint;
 
     clipSelect[0]   = clipX;
     clipSelect[1]   = clipY;
@@ -2427,7 +2425,6 @@ bool          clipZ
                         for (root = 0; root < numRoot; root++)
                             {
                             /* Clip against the other directons */
-                            goodPoint = true;
                             hPoint.SumOf(pConic->center, pConic->vector0, trigPoints[root].x, pConic->vector90, trigPoints[root].y);
 
                             if (hPoint.GetProjectedXYZ (point))
@@ -4502,7 +4499,7 @@ int        clipType
 
         if (numCritical > 0)
             {
-            double thetaMid, dtheta;
+            double thetaMid;
             //int numAccept = 0;
             for (i = 0; i < numCritical; i++)
                 {
@@ -4520,7 +4517,6 @@ int        clipType
             for (i = 1; i < numCritical; i++)
                 {
                 thetaMid = (pCriticalAngleArray[i-1].z + pCriticalAngleArray[i].z) * 0.5;
-                dtheta = pCriticalAngleArray[i].z - pCriticalAngleArray[i-1].z;
                 if (Angle::InSweepAllowPeriodShift (thetaMid, theta0, arcSweep))
                     {
                     DPoint4d midPoint;

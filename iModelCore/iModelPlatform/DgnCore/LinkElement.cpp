@@ -653,7 +653,8 @@ BentleyStatus LinkElement::DoRemoveAllFromSource(DgnDbR dgndb, DgnElementId sour
     BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECCrudWriteToken());
     BeAssert(stmt.IsValid());
 
-    stmt->BindInt64(1, (int64_t) &removeLinkIds);
+    std::shared_ptr<DgnElementIdSet> removeLinkIdsPtr = std::make_shared<DgnElementIdSet>(removeLinkIds);
+    stmt->BindVirtualSet(1, removeLinkIdsPtr);
 
     BeSQLite::DbResult stepStatus = stmt->Step();
     if (BeSQLite::DbResult::BE_SQLITE_DONE != stepStatus)
@@ -681,7 +682,8 @@ BentleyStatus LinkElement::DoPurgeOrphaned(DgnDbCR dgndb, Utf8CP schemaName, Utf
     BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECCrudWriteToken());
     BeAssert(stmt.IsValid());
 
-    stmt->BindInt64(1, (int64_t) &unusedIds);
+    std::shared_ptr<DgnElementIdSet> unusedIdsPtr = std::make_shared<DgnElementIdSet>(unusedIds);
+    stmt->BindVirtualSet(1, unusedIdsPtr);
 
     BeSQLite::DbResult stepStatus = stmt->Step();
     if (BeSQLite::DbResult::BE_SQLITE_DONE != stepStatus)

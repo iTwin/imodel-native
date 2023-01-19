@@ -279,6 +279,26 @@ SQLiteTraceScope::~SQLiteTraceScope() {
 
 END_BENTLEY_SQLITE_NAMESPACE
 
+/**
+ * Used by operations that require there be no active transaction. If there is an active
+ * default transaction, this class commits it in the ctor and restarts it in the dtor.
+ */
+struct SuspendDefaultTxn {
+    Savepoint* m_savepoint = nullptr;
+    SuspendDefaultTxn(Db& db) {
+        if (db.GetCurrentSavepointDepth() > 1)
+            return; // let operation fail
+
+        m_savepoint = db.GetSavepoint(0);
+        if (m_savepoint)
+            m_savepoint->Commit();
+    }
+    ~SuspendDefaultTxn() {
+        if (m_savepoint)
+            m_savepoint->Begin();
+    }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1979,6 +1999,7 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
 
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
+    m_isCloudDb = params.m_fromContainer;
 
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
@@ -2770,9 +2791,21 @@ static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
     }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/** return true if this database is using WAL mode. */
+bool Db::IsWalMode() const {
+    // CloudSqlite always uses WAL mode (and produces an error if you attempt to query the journal mode)
+    if (m_isCloudDb)
+        return true;
+
+    Statement stmt;
+    stmt.Prepare(*this, "pragma journal_mode");
+    stmt.Step();
+    return 0 == strncmp("wal", stmt.GetValueText(0), 3);
+};
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     if (IsDbOpen())
         return BE_SQLITE_ERROR_AlreadyOpen;
@@ -2805,12 +2838,17 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
 
     // set the tempfileBase from open params
     m_tempfileBase = params.m_tempfileBase;
+    m_isCloudDb = params.m_fromContainer;
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
-    if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive) {
+    // for writeable databases in WAL mode with DEFERRED defaultTxn mode, promote it to IMMEDIATE mode so there can only
+    // be one writer. Without WAL mode we can't do that because the (single) writer would block readers.
+    if (IsWriteable() && m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Deferred && IsWalMode()) {
+        m_dbFile->m_defaultTxn.SetTxnMode(BeSQLiteTxnMode::Immediate);
+    } else if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive) {
         rc = TryExecuteSql("PRAGMA locking_mode=\"EXCLUSIVE\"");
         BeAssert(rc == BE_SQLITE_OK);
     }
@@ -2940,6 +2978,30 @@ DbResult Db::OpenSecondaryConnection(Db& newConnection, OpenParams params) const
     return newConnection.OpenBeSQLiteDb(GetDbFileName(), params);
     }
 
+/** Perform a checkpoint operation if this database is in WAL mode. */
+DbResult Db::PerformCheckpoint(WalCheckpointMode mode, int* pnLog, int* pnCkpt) {
+    SuspendDefaultTxn noDefaultTxn(*this); // no transactions may be active to perform a checkpoint
+    return (DbResult) sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
+}
+
+/** Set the auto checkpoint threshold */
+DbResult Db::SetAutoCheckpointThreshold(int frames) {
+    return (DbResult) sqlite3_wal_autocheckpoint(GetSqlDb(), frames);
+}
+
+/** Turn on or off WAL journal mode */
+DbResult Db::EnableWalMode(bool yesNo) {
+    SuspendDefaultTxn noDefaultTxn(*this);
+    auto modeStr = yesNo ? "wal" : "delete";
+    auto sql = Utf8String("pragma journal_mode=").append(modeStr);
+    Statement stmt;
+    stmt.Prepare(*this, sql.c_str());
+    auto rc = stmt.Step();
+    if (rc != BE_SQLITE_ROW)
+        return rc;
+    auto mode = stmt.GetValueText(0);
+    return 0 == strncmp(modeStr, mode, strlen(modeStr)) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -6058,14 +6120,7 @@ DbResult Db::CheckDbIntegrity(BeFileNameCR dbFileName)
 
 /** vacuum this database. */
 DbResult Db::Vacuum(int newPageSizeInBytes) {
-    if (GetCurrentSavepointDepth() > 1) {
-        LOG.error("Cannot VACUUM from within nested transaction");
-        return BE_SQLITE_ERROR;
-    }
-    auto savepoint = GetSavepoint(0);
-    if (savepoint)
-        savepoint->Commit();
-
+    SuspendDefaultTxn noDefault(*this);
     if (newPageSizeInBytes > 0) {
         if (newPageSizeInBytes % 2 != 0 && newPageSizeInBytes < 512 && newPageSizeInBytes > 64 * 1024)
             return BE_SQLITE_ERROR;
@@ -6074,29 +6129,13 @@ DbResult Db::Vacuum(int newPageSizeInBytes) {
             return rc;
     }
 
-    auto rc = TryExecuteSql("vacuum");
-
-    if (savepoint)
-        savepoint->Begin();
-
-    return rc;
+    return TryExecuteSql("vacuum");
 }
 
 /** vacuum this database into a different destination file. */
 DbResult Db::VacuumInto(Utf8CP newFileName) {
-    if (GetCurrentSavepointDepth() > 1) {
-        LOG.error("Cannot VACUUM from within nested transaction");
-        return BE_SQLITE_ERROR;
-    }
-    auto savepoint = GetSavepoint(0);
-    if (savepoint)
-        savepoint->Commit();
-
-    auto rc = TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
-    if (savepoint)
-        savepoint->Begin();
-
-    return rc;
+    SuspendDefaultTxn noDefault(*this);
+    return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
 }
 
 /**

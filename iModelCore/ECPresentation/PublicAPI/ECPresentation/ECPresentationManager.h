@@ -40,13 +40,6 @@ USING_NAMESPACE_BENTLEY_EC
 #define DEFAULT_REQUEST_PRIORITY            1000
 
 struct ECPresentationTasksManager;
-struct IECPresentationTask;
-
-// WIP
-struct ContentCache;
-
-//! A container of refcounted NavNode objects.
-typedef DataContainer<NavNodeCPtr> NavNodesContainer;
 
 //=======================================================================================
 // @bsiclass
@@ -95,6 +88,7 @@ public:
     void SetTaskStartCallback(std::function<void()> cb) {m_taskStartCallback = cb;}
 };
 typedef WithAsyncTaskParams<HierarchyRequestParams> AsyncHierarchyRequestParams;
+typedef WithAsyncTaskParams<HierarchyLevelDescriptorRequestParams> AsyncHierarchyLevelDescriptorRequestParams;
 typedef WithAsyncTaskParams<NodePathFromInstanceKeyPathRequestParams> AsyncNodePathFromInstanceKeyPathRequestParams;
 typedef WithAsyncTaskParams<NodePathsFromInstanceKeyPathsRequestParams> AsyncNodePathsFromInstanceKeyPathsRequestParams;
 typedef WithAsyncTaskParams<NodePathsFromFilterTextRequestParams> AsyncNodePathsFromFilterTextRequestParams;
@@ -135,6 +129,7 @@ public:
 };
 typedef ECPresentationResponse<NavNodesContainer> NodesResponse;
 typedef ECPresentationResponse<size_t> NodesCountResponse;
+typedef ECPresentationResponse<ContentDescriptorCPtr> NodesDescriptorResponse;
 typedef ECPresentationResponse<NavNodeCPtr> NodeResponse;
 typedef ECPresentationResponse<NodesPathElement> NodePathElementResponse;
 typedef ECPresentationResponse<bvector<NodesPathElement>> NodePathsResponse;
@@ -352,11 +347,14 @@ public:
 
 /** @name Navigation
  *  @{ */
-    //! Retrieves the root nodes.
+    //! Retrieves nodes for requested hierarchy level.
     ECPRESENTATION_EXPORT folly::Future<NodesResponse> GetNodes(WithPageOptions<AsyncHierarchyRequestParams> const&);
 
-    //! Retrieves the number of root nodes.
+    //! Retrieves the total number of nodes in a hierarchy level.
     ECPRESENTATION_EXPORT folly::Future<NodesCountResponse> GetNodesCount(AsyncHierarchyRequestParams const&);
+
+    //! Get descriptor of a hierarchy level.
+    ECPRESENTATION_EXPORT folly::Future<NodesDescriptorResponse> GetNodesDescriptor(AsyncHierarchyLevelDescriptorRequestParams const&);
 
     //! Returns node paths from the provided node key paths.
     ECPRESENTATION_EXPORT folly::Future<NodePathsResponse> GetNodePaths(AsyncNodePathsFromInstanceKeyPathsRequestParams const&);

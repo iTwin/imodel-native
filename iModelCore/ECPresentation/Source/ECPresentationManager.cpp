@@ -330,7 +330,7 @@ IECPresentationSerializer const& ECPresentationManager::GetSerializer()
     {
     if (nullptr == s_serializer)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, "Attepting to use serializer, but it's not set. Using default.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Serialization, LOG_ERROR, "Attempting to use serializer, but it's not set. Using default.");
         SetSerializer(new DefaultECPresentationSerializer());
         }
     return *s_serializer;
@@ -476,7 +476,7 @@ static WithPageOptions<ImplTaskParams<TParams>> CreateImplRequestParams(WithPage
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<NodesResponse> ECPresentationManager::GetNodes(WithPageOptions<AsyncHierarchyRequestParams> const& params)
     {
-    auto diagnostics = Diagnostics::Scope::Create("Get child nodes");
+    auto diagnostics = Diagnostics::Scope::Create("Get nodes");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
     IConnectionCR connection = GetConnection(params.GetECDb());
@@ -487,10 +487,14 @@ folly::Future<NodesResponse> ECPresentationManager::GetNodes(WithPageOptions<Asy
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
-        INavNodesDataSourcePtr source = m_impl->GetNodes(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
-        if (source.IsValid())
-            return NavNodesContainer(*ConstNodesDataSource::Create(*source));
-        return NavNodesContainer();
+        auto source = m_impl->GetNodes(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
+        if (!source.IsValid())
+            return NavNodesContainer();
+
+        auto preloadedSource = PreloadedDataSource<NavNodeCPtr>::Create(*ConstNodesDataSource::Create(*source));
+        NavNodesContainer result(*preloadedSource);
+        result.SetSupportsFiltering(source->SupportsFiltering());
+        return result;
         }, CreateNodesTaskParams(*m_impl, connection, params));
     }
 
@@ -499,7 +503,7 @@ folly::Future<NodesResponse> ECPresentationManager::GetNodes(WithPageOptions<Asy
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<NodesCountResponse> ECPresentationManager::GetNodesCount(AsyncHierarchyRequestParams const& params)
     {
-    auto diagnostics = Diagnostics::Scope::Create("Get child nodes count");
+    auto diagnostics = Diagnostics::Scope::Create("Get nodes count");
     Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
 
     IConnectionCR connection = GetConnection(params.GetECDb());
@@ -512,6 +516,29 @@ folly::Future<NodesCountResponse> ECPresentationManager::GetNodesCount(AsyncHier
 
         return m_impl->GetNodesCount(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, CreateNodesTaskParams(*m_impl, connection, params));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<NodesDescriptorResponse> ECPresentationManager::GetNodesDescriptor(AsyncHierarchyLevelDescriptorRequestParams const& params)
+    {
+    auto diagnostics = Diagnostics::Scope::Create("Get nodes descriptor");
+    Diagnostics::SetCapturedAttributes({ DIAGNOSTICS_SCOPE_ATTRIBUTE_Rules });
+
+    IConnectionCR connection = GetConnection(params.GetECDb());
+
+    // FIXME: this will keep the  hierarchy level locked while we create the descriptor. we could unlock it as soon as we have the content ruleset.
+    auto taskParams = CreateNodesTaskParams(*m_impl, connection, AsyncHierarchyRequestParams::Create(HierarchyRequestParams(params, params.GetParentNodeKey()), params));
+    return m_tasksManager->CreateAndExecute<NodesDescriptorResponse>([&, params, connectionId = connection.GetId()](auto& task) mutable
+        {
+        CALL_TASK_START_CALLBACK(params);
+
+        IConnectionCR taskConnection = GetConnection(connectionId.c_str());
+        task.SetTaskConnection(taskConnection);
+
+        return m_impl->GetNodesDescriptor(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
+        }, taskParams);
     }
 
 /*---------------------------------------------------------------------------------**//**

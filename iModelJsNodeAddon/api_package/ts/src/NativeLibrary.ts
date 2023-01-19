@@ -96,6 +96,16 @@ export class NativeLibrary {
   }
 }
 
+/** WAL checkpoint mode
+ * @internal
+ */
+export const enum WalCheckpointMode {
+  Passive=0,  /* Do as much as possible w/o blocking */
+  Full=1,     /* Wait for writers, then checkpoint */
+  Restart=2,  /* Like FULL but wait for for readers */
+  Truncate=3,  /* Like RESTART but also truncate WAL */
+}
+
 /** Possible outcomes of generateElementGraphics.
 * Must be kept in sync with Dgn::Tile::Graphics::TileGraphicsStatus.
 * @internal
@@ -368,6 +378,12 @@ export declare namespace IModelJsNative {
     saveChanges(): void;
     saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal: Uint8Array | undefined): void;
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    enableWalMode(yesNo?: boolean): void;
+    /** perform a checkpoint if this db is in WAL mode. Otherwise this function does nothing.
+     * @param mode the checkpoint mode. Default is `Truncate`.
+     */
+    performCheckpoint(mode?: WalCheckpointMode): void;
+    setAutoCheckpointThreshold(frames: number): void;
   }
 
   /** The result of DgnDb.inlineGeometryParts.
@@ -577,6 +593,9 @@ export declare namespace IModelJsNative {
     public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems:Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public enableWalMode(yesNo?: boolean): void;
+    public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
 
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
@@ -786,6 +805,9 @@ export declare namespace IModelJsNative {
     public saveChanges(): void;
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public enableWalMode(yesNo?: boolean): void;
+    public performCheckpoint(mode?: WalCheckpointMode): void;
+    public setAutoCheckpointThreshold(frames: number): void;
   }
 
   class SqliteStatement implements IDisposable {

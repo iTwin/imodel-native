@@ -89,8 +89,7 @@ ECSqlStatus BoundQueryECValue::_Bind(ECSqlStatement& stmt, uint32_t index) const
         case PRIMITIVETYPE_Point3d: return stmt.BindPoint3d((int)index, m_value.GetPoint3d());
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled ECValue type: %d", (int)m_value.GetPrimitiveType()));
-    return ECSqlStatus::Error;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled ECValue type: %d", (int)m_value.GetPrimitiveType()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,7 +190,7 @@ rapidjson::Document BoundQueryIdSet::_ToJson(rapidjson::Document::AllocatorType*
     json.AddMember("type", "id-set", json.GetAllocator());
     rapidjson::Value idsJson;
     idsJson.SetArray();
-    for (auto const& id : m_set)
+    for (auto const& id : *m_set)
         idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("value", idsJson, json.GetAllocator());
     return json;
@@ -535,7 +534,7 @@ std::unique_ptr<PresentationQuery> PresentationQuery::FromJson(RapidJsonValueCR 
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilder::PresentationQueryBuilder() : m_isOuterQuery(true) {}
-PresentationQueryBuilder::PresentationQueryBuilder(PresentationQueryBuilder const& other) 
+PresentationQueryBuilder::PresentationQueryBuilder(PresentationQueryBuilder const& other)
     : m_isOuterQuery(other.m_isOuterQuery)
     {
     if (other.m_navigationResultParams != nullptr)
@@ -666,8 +665,7 @@ bool ComplexQueryBuilder::HasClause(PresentationQueryClauses clauses) const
     if (CLAUSE_Having == (CLAUSE_Having & clauses))
         return !m_havingClause.GetClause().empty();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled presentation query clause type: %d", (int)clauses));
-    return false;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled presentation query clause type: %d", (int)clauses));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1211,9 +1209,8 @@ static std::unique_ptr<JoinInfo> DetermineJoinTarget(bvector<std::shared_ptr<Sel
             return std::make_unique<JoinInfo>(fromClause.GetClass(), fromClause.GetAlias().empty() ? fromClause.GetClass().GetName() : fromClause.GetAlias(), true);
             }
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Tried to JOIN on a relationship whose neither target nor source exists in the FROM clause"
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Tried to JOIN on a relationship whose neither target nor source exists in the FROM clause"
         "Relationship: '%s'", joinClause.m_using.GetClass().GetFullName()));
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1278,8 +1275,7 @@ static Utf8String GetOppositeNavigationPropertyName(NavigationECPropertyCR navig
         return wasPreviousJoinForward ? "[TargetECInstanceId]" : "[SourceECInstanceId]";
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Previously joined class is not an Entity and not a Relationship class: '%s'", previouslyJoinedClass.GetFullName()));
-    return "[ECInstanceId]";
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Previously joined class is not an Entity and not a Relationship class: '%s'", previouslyJoinedClass.GetFullName()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1518,8 +1514,7 @@ Utf8String ComplexQueryBuilder::GetClause(PresentationQueryClauses clause) const
     if (CLAUSE_Having == (CLAUSE_Having & clause))
         return m_havingClause.GetClause();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid presentation query clause: '%d'", (int)clause));
-    return "";
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid presentation query clause: '%d'", (int)clause));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2131,8 +2126,7 @@ struct RapidJsonValueComparer
                 return BeRapidJsonUtilities::ToString(*left).CompareTo(BeRapidJsonUtilities::ToString(*right));
                 }
             }
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled rapidjson value type: %d", (int)left->GetType()));
-        return false;
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled rapidjson value type: %d", (int)left->GetType()));
         }
 };
 
@@ -2180,10 +2174,8 @@ public:
         }
     bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override
         {
-        if (nVals < 1)
+        if (nVals < 1 || nVals > 1)
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
-        if (nVals > 1)
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
 
         rapidjson::Document jsonValue;
         if (!vals[0].IsNull())
@@ -2240,7 +2232,7 @@ BoundRapidJsonValueSet::BoundRapidJsonValueSet(BoundRapidJsonValueSet const& oth
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundRapidJsonValueSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
-    return stmt.BindVirtualSet((int)index, *m_set);
+    return stmt.BindVirtualSet((int)index, m_set);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2322,7 +2314,7 @@ struct PrimitiveECValueHasher
             case PRIMITIVETYPE_IGeometry:
                 break;
             default:
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
             }
         return hash;
         }
@@ -2347,10 +2339,8 @@ public:
     void Insert(ECValue value) {m_values.insert(std::move(value));}
     bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override
         {
-        if (nVals < 1)
+        if (nVals < 1 || nVals > 1)
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
-        if (nVals > 1)
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
 
         if (m_values.empty())
             return false;
@@ -2386,7 +2376,7 @@ BoundECValueSet::BoundECValueSet(BoundECValueSet const& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundECValueSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
-    return stmt.BindVirtualSet((int)index, *m_set);
+    return stmt.BindVirtualSet((int)index, m_set);
     }
 
 /*---------------------------------------------------------------------------------**//**

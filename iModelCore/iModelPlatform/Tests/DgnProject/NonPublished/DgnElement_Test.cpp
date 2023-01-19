@@ -2399,7 +2399,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
         Placement3d().ToJson(BeJsValue{placementJson});
         inPropsJson["placement"] = placementJson;
         inPropsJson["federationGuid"] = "00000000-0000-0000-0000-000000000000";
-        DgnCode().ToJson(inPropsJson["code"]);
+        DgnCode::CreateEmpty().ToJson(inPropsJson["code"]);
         Json::Value geomJson;
         ECN::ECJsonUtilities::IGeometryToJson(geomJson, *inGeom);
         inPropsJson["geomProp"] = geomJson;
@@ -2434,7 +2434,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
 
         {
         BeSQLite::DbResult reopenStatus;
-        db = DgnDb::OpenDgnDb(&reopenStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        db = DgnDb::OpenIModelDb(&reopenStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
         ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, reopenStatus);
 
         auto el = db->Elements().GetElement(elId);

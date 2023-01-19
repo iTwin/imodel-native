@@ -618,8 +618,8 @@ void RunnableRequestQueue::ExecuteSynchronously(ConnectionCache& conns, std::uni
     runnableReq->OnDequeued();
     conns.GetSyncConnection().Execute([](QueryAdaptorCache& adaptorCache, RunnableRequestBase& runnableQuery) {
         QueryHelper::Execute(adaptorCache, runnableQuery);
-        }, std::move(runnableReq));
-    log_trace("%s executing query synchronously [id=%" PRIu32 "] ended.",GetTimestamp().c_str(), runnableReq->GetId());
+        log_trace("%s executing query synchronously [id=%" PRIu32 "] ended.",GetTimestamp().c_str(), runnableQuery.GetId());
+    }, std::move(runnableReq));
 }
 
 //---------------------------------------------------------------------------------------
@@ -1873,8 +1873,8 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
             case ECSqlParam::Type::Id:
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
-                IdSet<BeInt64Id> idSet(param.GetValueIdSet());
-                st = stmt.BindIdSet(index, idSet);
+                std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
+                st = stmt.BindVirtualSet(index, idSet);
                 break;
             }
             case ECSqlParam::Type::Integer:
@@ -1975,7 +1975,7 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
     if (m_ignorePriority != rhs.GetIgnorePriority())
         return false;
     if (m_ignoreDelay != rhs.GetIgnoreDelay())
-        return false;        
+        return false;
     return true;
 }
 
@@ -2048,7 +2048,7 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (val.isBoolMember(Config::JIgnoreDelay)) {
         const auto ignoreDelay = val[Config::JIgnoreDelay].asBool(defaultConfig.GetIgnoreDelay());
         config.SetIgnoreDelay(ignoreDelay);
-    }    
+    }
     if (val.isObjectMember(Config::JQuota)) {
         auto quota = defaultConfig.GetQuota();
         quota = QueryQuota::FromJs(val[Config::JQuota]);

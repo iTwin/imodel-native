@@ -16,7 +16,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_SUFFIX            L"-hierarchies"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR     34
+#define NAVNODES_CACHE_DB_VERSION_MAJOR     35
 #define NAVNODES_CACHE_DB_VERSION_MINOR     0
 
 #define NAVNODES_CACHE_LockWaitTime 200
@@ -355,14 +355,14 @@ static BeFileName GetCacheDbPath(BeFileNameCR directory, IConnectionCR connectio
     if (directory.IsEmpty())
         {
         path = BeFileName(connection.GetECDb().GetTempFileBaseName().c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Cache directory not set, using base path: '%s'", path.GetNameUtf8().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Cache directory not set, using base path: '%s'", path.GetNameUtf8().c_str()));
         }
     else
         {
         DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, directory.DoesPathExist(), Utf8PrintfString("Provided cache directory does not exist: '%s'", directory.GetNameUtf8().c_str()));
         path = directory;
         path.AppendToPath(BeFileName(connection.GetECDb().GetDbFileName()).GetFileNameAndExtension().c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Cache directory set, using base path: '%s'", path.GetNameUtf8().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Cache directory set, using base path: '%s'", path.GetNameUtf8().c_str()));
         }
     path.AppendString(NAVNODES_CACHE_DB_SUFFIX);
     return path;
@@ -391,14 +391,14 @@ DbResult NodesCache::DbFactory::CheckCacheCompatibility(BeSQLite::Db& db, IConne
         // if the existing cache version is too old, simply delete the old cache and create a new one
         db.CloseDb();
         result = BE_SQLITE_ERROR_ProfileTooOld;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Profile too old, deleted DB file");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Profile too old, deleted DB file");
         }
     else if (IsConnectionAndCacheOutOfSync(db, connection))
         {
         // if connection modification date does not match cached date delete cache (hierarchies may be out of sync)
         db.CloseDb();
         result = BE_SQLITE_ERROR_ProfileTooOld;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Cache is out-of-sync, deleted DB file");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Cache is out-of-sync, deleted DB file");
         }
     return result;
     }
@@ -437,7 +437,7 @@ DbResult NodesCache::DbFactory::OpenCacheDb(IConnectionCR connection, BeSQLite::
     if (BE_SQLITE_OK != result)
         return result;
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "DB opened for read-write successfully");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "DB opened for read-write successfully");
     return CheckCacheCompatibility(db, connection);
     }
 
@@ -640,22 +640,22 @@ DbResult NodesCache::DbFactory::InitializeDiskDb(Db& db, BeFileNameCR directory,
     if (tempCache)
         return CreateTempDiskDb(db, path, connection, cacheType);
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Using path '%s'", path.GetNameUtf8().c_str()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Using path '%s'", path.GetNameUtf8().c_str()));
 
     bool createNewCache = true;
 #ifdef NAVNODES_CACHE_DEBUG_REMOVE_DB
     // always create a new cache if debugging
     path.BeDeleteFile();
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Deleted the cache for debugging");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Deleted the cache for debugging");
 #else
     if (path.DoesPathExist())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("File exists: '%s'", path.GetNameUtf8().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("File exists: '%s'", path.GetNameUtf8().c_str()));
         DbResult result = OpenCacheDb(connection, db, path, DefaultTxn::No, InfiniteBusyRetry::Create());
         if (BE_SQLITE_OK == result)
             return BE_SQLITE_OK;
 
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, Utf8PrintfString("Failed to open the cache with result '%d'. Creating a new one.", (int)result));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Failed to open the cache with result '%d'. Creating a new one.", (int)result));
         // attempt to delete old cache file. Sets 'createNewCache' to false if old file could not be deleted
         createNewCache = DeleteSQLiteDbFile(path);
     }
@@ -670,7 +670,7 @@ DbResult NodesCache::DbFactory::InitializeDiskDb(Db& db, BeFileNameCR directory,
         }
 
     tempCache = true;
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_DEBUG, "Could not open or create main cache DB, switching to a temporary cache");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, "Could not open or create main cache DB, switching to a temporary cache");
     return CreateTempDiskDb(db, path, connection, cacheType);
     }
 
@@ -1527,7 +1527,7 @@ void NodesCache::CacheEmptyDataSource(DataSourceIdentifier& info, DataSourceFilt
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, dataSourceId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, info.GetHierarchyLevelId());
     NodesCacheHelpers::BindVectorIndex(*stmt, bindingIndex++, info.GetIndex(), false);
-    stmt->BindText(bindingIndex++, info.GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, info.GetInstanceFilter().get());
     stmt->BindText(bindingIndex++, filterStr.c_str(), Statement::MakeCopy::No);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, variablesId);
     stmt->BindText(bindingIndex++, specificationHash, Statement::MakeCopy::No);
@@ -1876,7 +1876,7 @@ DataSourceInfo NodesCache::_FindDataSource(DataSourceIdentifier const& identifie
         " WHERE [hl].[Id] = ? "
         "       AND [ds].[Index] IS ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
-        "       AND [ds].[InstanceFilter] = ?";
+        "       AND [ds].[InstanceFilter] IS ?";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -1886,7 +1886,7 @@ DataSourceInfo NodesCache::_FindDataSource(DataSourceIdentifier const& identifie
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, identifier.GetHierarchyLevelId());
     NodesCacheHelpers::BindVectorIndex(*stmt, bindingIndex++, identifier.GetIndex(), false);
     stmt->BindText(bindingIndex++, variables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
-    stmt->BindText(bindingIndex++, identifier.GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, identifier.GetInstanceFilter().get());
 
     if (BE_SQLITE_ROW != stmt->Step())
         return DataSourceInfo();
@@ -1902,7 +1902,7 @@ DataSourceInfo NodesCache::_FindDataSource(DataSourceIdentifier const& identifie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodePtr NodesCache::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+NavNodePtr NodesCache::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     static Utf8CP query =
         "SELECT [hl].[ParentNodeId], [parent_dsn].[Visibility] "
@@ -1911,7 +1911,7 @@ NavNodePtr NodesCache::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables 
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [n].[HierarchyLevelId] "
         // also need visibility of the parent
         "  LEFT JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] parent_dsn ON [parent_dsn].[NodeId] = [hl].[ParentNodeId] "
-        "  LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] parent_ds ON [parent_ds].[Id] = [parent_dsn].[DataSourceId] AND [parent_ds].[InstanceFilter] = ? "
+        "  LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] parent_ds ON [parent_ds].[Id] = [parent_dsn].[DataSourceId] AND [parent_ds].[InstanceFilter] IS ? "
         "  LEFT JOIN [" NODESCACHE_TABLENAME_Variables "] parent_dsv ON [parent_dsv].[Id] = [parent_ds].[VariablesId] AND " NODESCACHE_FUNCNAME_VariablesMatch "([parent_dsv].[Variables], ?) "
         " WHERE [n].[Id] = ?";
 
@@ -1925,7 +1925,7 @@ NavNodePtr NodesCache::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables 
         stmt->Reset();
 
         int bindingIndex = 1;
-        stmt->BindText(bindingIndex++, instanceFilter, Statement::MakeCopy::No);
+        NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, instanceFilter);
         stmt->BindText(bindingIndex++, contextVariables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
         NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, currId);
 
@@ -2006,7 +2006,7 @@ NavNodePtr NodesCache::_GetNode(BeGuidCR id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeVisibility NodesCache::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+NodeVisibility NodesCache::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
 
@@ -2017,7 +2017,7 @@ NodeVisibility NodesCache::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables 
         "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] "
         " WHERE [dsn].[NodeId] = ?"
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
-        "       AND [ds].[InstanceFilter] = ? ";
+        "       AND [ds].[InstanceFilter] IS ? ";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -2026,7 +2026,7 @@ NodeVisibility NodesCache::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables 
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, nodeId);
     stmt->BindText(bindingIndex++, contextVariables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
-    stmt->BindText(bindingIndex++, instanceFilter, Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, instanceFilter);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
@@ -2040,7 +2040,7 @@ NodeVisibility NodesCache::_GetNodeVisibility(BeGuidCR nodeId, RulesetVariables 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<uint64_t> NodesCache::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+bvector<uint64_t> NodesCache::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
 
@@ -2055,7 +2055,7 @@ bvector<uint64_t> NodesCache::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR 
         "  JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [dsn].[DataSourceId] "
         " WHERE [dsn].[NodeId] = ? "
-        "       AND [ds].[InstanceFilter] = ? "
+        "       AND [ds].[InstanceFilter] IS ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
     CachedStatementPtr stmt;
@@ -2065,7 +2065,7 @@ bvector<uint64_t> NodesCache::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR 
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, hierarchyLevelId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, nodeId);
-    stmt->BindText(bindingIndex++, instanceFilter, Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, instanceFilter);
     stmt->BindText(bindingIndex++, contextVariables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
     DbResult result = stmt->Step();
@@ -2132,7 +2132,8 @@ static BeGuid QueryExistingNode(Db& db, StatementCache& statements, BeGuidCR hie
             " WHERE     [ni].[ECClassId] = ? "
             "       AND [ni].[ECInstanceId] = ? "
             "       AND [n].[HierarchyLevelId] = ? "
-            "       AND [nk].[SpecificationIdentifier] = ? ";
+            "       AND [nk].[SpecificationIdentifier] = ? "
+            "       AND 1 == (SELECT COUNT(1) FROM [" NODESCACHE_TABLENAME_NodeInstances "] nic WHERE [nic].[NodeId] = [n].[Id])";
 
         if (BE_SQLITE_OK != statements.GetPreparedStatement(stmt, *db.GetDbFile(), instanceNodeLookupQuery))
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare existing node query (instance)");
@@ -2420,7 +2421,7 @@ void NodesCache::ResetDataSource(DataSourceIdentifier const& info)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeGuid NodesCache::GetNodeDataSourceId(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+BeGuid NodesCache::GetNodeDataSourceId(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     static Utf8CP query =
         "SELECT [ds].[Id] "
@@ -2429,7 +2430,7 @@ BeGuid NodesCache::GetNodeDataSourceId(BeGuidCR nodeId, RulesetVariables const& 
         "  JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         " WHERE [dsn].[NodeId] = ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
-        "       AND [ds].[InstanceFilter] = ? ";
+        "       AND [ds].[InstanceFilter] IS ? ";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -2438,7 +2439,7 @@ BeGuid NodesCache::GetNodeDataSourceId(BeGuidCR nodeId, RulesetVariables const& 
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, nodeId);
     stmt->BindText(bindingIndex++, contextVariables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
-    stmt->BindText(bindingIndex++, instanceFilter, Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, instanceFilter);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return BeGuid();
@@ -2475,7 +2476,7 @@ void NodesCache::ChangeVisibility(BeGuidCR nodeId, BeGuidCR dataSourceId, NodeVi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::_MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter)
+void NodesCache::_MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter)
     {
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
 
@@ -2495,7 +2496,7 @@ void NodesCache::_MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::_MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter)
+void NodesCache::_MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter)
     {
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
     BeGuid dataSourceId = GetNodeDataSourceId(nodeId, contextVariables, instanceFilter);
@@ -2505,7 +2506,7 @@ void NodesCache::_MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCache::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+bool NodesCache::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
 
@@ -2518,7 +2519,7 @@ bool NodesCache::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIden
         " FROM [" NODESCACHE_TABLENAME_Rulesets "] r "
         " CROSS JOIN [" PHYSICAL_HIERARCHY_LEVELS_TABLE_NAME "] phl ON [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_RulesetId "] = [r].[Id] "
         " LEFT JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[RulesetId] = [r].[Id] AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
-        " LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] AND [ds].[VariablesId] = [dsv].[Id] AND [ds].[InstanceFilter] = ? "
+        " LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] AND [ds].[VariablesId] = [dsv].[Id] AND [ds].[InstanceFilter] IS ? "
         " WHERE     [r].[Identifier] = ? "
         " GROUP BY [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_HierarchyLevelId "], [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "]";
 
@@ -2530,7 +2531,7 @@ bool NodesCache::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIden
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, info.GetPhysicalParentNodeId());
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, info.GetRemovalId());
     stmt->BindText(bindingIndex++, contextVariables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
-    stmt->BindText(bindingIndex++, instanceFilter, Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, instanceFilter);
     stmt->BindText(bindingIndex++, info.GetRulesetId().c_str(), Statement::MakeCopy::No);
 
     DbResult res = stmt->Step();
@@ -2554,7 +2555,7 @@ bool NodesCache::_IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIden
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCache::_IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& contextVariables, Utf8StringCR instanceFilter) const
+bool NodesCache::_IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     if (!id.IsValid())
         return false;
@@ -2567,7 +2568,7 @@ bool NodesCache::_IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables cons
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
         "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
         " WHERE [hl].[Id] = ? "
-        "       AND [ds].[InstanceFilter] = ? "
+        "       AND [ds].[InstanceFilter] IS ? "
         "GROUP BY [ds].[IsInitialized]";
 
     CachedStatementPtr stmt;
@@ -2577,7 +2578,7 @@ bool NodesCache::_IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables cons
     int bindingIndex = 1;
     stmt->BindText(bindingIndex++, contextVariables.GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, id);
-    stmt->BindText(bindingIndex++, instanceFilter, Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, instanceFilter);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
@@ -2763,8 +2764,8 @@ static bool AreRelated(IConnectionCR connection, DataSourceFilter::RelatedInstan
     if (!stmt.IsValid())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare 'are keys related to given RelatedInstanceInfo' query");
 
-    VirtualECInstanceIdSet relationshipInfoIdsSet(relationshipInfo.m_instanceKeys);
-    VirtualECInstanceIdSet inputIdsSet(keys);
+    std::shared_ptr<VirtualECInstanceIdSet> relationshipInfoIdsSet = std::make_shared<VirtualECInstanceIdSet>(relationshipInfo.m_instanceKeys);
+    std::shared_ptr<VirtualECInstanceIdSet> inputIdsSet = std::make_shared<VirtualECInstanceIdSet>(keys);
     int bindingIndex = 1;
 
     for (auto i = 0; i < relationshipInfo.m_relationshipClassIds.size(); ++i)
@@ -3298,6 +3299,7 @@ protected:
             "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId]"
             " WHERE [hl].[Id] = ? "
             "       AND [dsn].[Visibility] = ? "
+            "       AND [ds].[InstanceFilter] IS ? "
             "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
         CachedStatementPtr stmt;
@@ -3307,6 +3309,7 @@ protected:
         int bindingIndex = 1;
         NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_hierarchyLevelId);
         stmt->BindInt(bindingIndex++, (int)NodeVisibility::Virtual);
+        NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
         stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
         return BE_SQLITE_ROW == stmt->Step();
         }
@@ -3324,8 +3327,9 @@ protected:
             "  JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
             "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId]"
             " WHERE [hl].[Id] = ? "
-            "    AND [dsn].[Visibility] != ? "
-            "    AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+            "       AND [dsn].[Visibility] != ? "
+            "       AND [ds].[InstanceFilter] IS ? "
+            "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
         CachedStatementPtr stmt;
         if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetDb().GetDbFile(), query))
@@ -3334,6 +3338,7 @@ protected:
         int bindingIndex = 1;
         NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_hierarchyLevelId);
         stmt->BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+        NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
         stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
         DbResult stepResult = stmt->Step();
@@ -3356,9 +3361,10 @@ protected:
             "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [dsn].[DataSourceId] "
             "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [ds].[VariablesId] "
             "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-            " WHERE  [hl].[Id] = ? "
-            "    AND [dsn].[Visibility] != ? "
-            "    AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
+            " WHERE [hl].[Id] = ? "
+            "       AND [dsn].[Visibility] != ? "
+            "       AND [ds].[InstanceFilter] IS ? "
+            "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
             " ORDER BY [ds].[Index], [dsn].[NodeIndex]";
         return query;
         }
@@ -3370,6 +3376,7 @@ protected:
         {
         NodesCacheHelpers::BindGuid(stmt, bindingIndex++, m_hierarchyLevelId);
         stmt.BindInt(bindingIndex++, (int)NodeVisibility::Hidden);
+        NodesCacheHelpers::BindInstanceFilter(stmt, bindingIndex++, GetContext().GetInstanceFilter());
         stmt.BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
         }
 

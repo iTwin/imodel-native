@@ -333,6 +333,29 @@ struct SQLiteOps {
             JsInterop::throwSqlResult("error vacuuming", db.GetDbFileName(), status);
     }
 
+    void EnableWalMode(Napi::CallbackInfo const& info) {
+        Db& db = GetOpenedDb(info);
+        OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
+        auto status = db.EnableWalMode(yesNo);
+        if (BE_SQLITE_OK != status)
+            JsInterop::throwSqlResult("error changing WAL mode", db.GetDbFileName(), status);
+    }
+
+    void SetAutoCheckpointThreshold(Napi::CallbackInfo const& info) {
+        Db& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_INTEGER(0, frames);
+        auto status = db.SetAutoCheckpointThreshold(frames);
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error setting autoCheckpoint threshold", db.GetDbFileName(), status);
+    }
+    void PerformCheckpoint(Napi::CallbackInfo const& info) {
+        Db& db = GetOpenedDb(info);
+        OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
+        DbResult status = db.PerformCheckpoint((WalCheckpointMode)mode);
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error checkpointing", db.GetDbFileName(), status);
+    }
+
     void RestartDefaultTxn(NapiInfoCR info) {
         GetOpenedDb(info).RestartDefaultTxn();
     }
@@ -624,6 +647,9 @@ public:
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
+            InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
+            InstanceMethod("performCheckpoint", &SQLiteDb::PerformCheckpoint),
+            InstanceMethod("setAutoCheckpointThreshold", &SQLiteDb::SetAutoCheckpointThreshold),
         });
 
         exports.Set("SQLiteDb", t);
@@ -913,13 +939,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         m_dgndb = nullptr;
         }
 
-    void OpenDgnDb(BeFileNameCR dbname, DgnDb::OpenParams& openParams) {
+    void OpenIModelDb(BeFileNameCR dbname, DgnDb::OpenParams& openParams) {
         if (!openParams.IsReadonly())
             openParams.SetBusyRetry(new BeSQLite::BusyRetry(40, 500)); // retry 40 times, 1/2 second intervals (20 seconds total)
         NativeLogging::CategoryLogger("BeSQLite").infov(L"Opening DgnDb %ls", dbname.c_str());
 
         DbResult result;
-        auto dgndb = DgnDb::OpenDgnDb(&result, dbname, openParams);
+        auto dgndb = DgnDb::OpenIModelDb(&result, dbname, openParams);
         if (BE_SQLITE_OK != result)
             JsInterop::throwSqlResult("error opening iModel", dbname.GetNameUtf8().c_str(), result);
 
@@ -974,13 +1000,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
         addContainerParams(Value(), dbName, openParams, info[4]);
-        OpenDgnDb(BeFileName(dbName), openParams);
+        OpenIModelDb(BeFileName(dbName), openParams);
     }
 
     void CreateIModel(NapiInfoCR info)  {
         REQUIRE_ARGUMENT_STRING(0, filename);
         REQUIRE_ARGUMENT_ANY_OBJ(1, props);
-        SetDgnDb(*JsInterop::CreateDgnDb(filename, props)); // CreateDgnDb throws on errors
+        SetDgnDb(*JsInterop::CreateIModel(filename, props)); // CreateIModel throws on errors
     }
 
     Napi::Value GetECClassMetaData(NapiInfoCR info)
@@ -2384,6 +2410,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("writeAffectedElementDependencyGraphToFile", &NativeDgnDb::WriteAffectedElementDependencyGraphToFile),
             InstanceMethod("writeFullElementDependencyGraphToFile", &NativeDgnDb::WriteFullElementDependencyGraphToFile),
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
+            InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
+            InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
+            InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
@@ -2961,18 +2990,18 @@ public:
         if (m_binder == nullptr)
             THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
         if (info.Length() == 0)
-            THROW_JS_TYPE_EXCEPTION("BindIdSet requires an argument");
+            THROW_JS_TYPE_EXCEPTION("BindVirtualSet requires an argument");
 
         REQUIRE_ARGUMENT_STRING_ARRAY(0, hexVector);
-        IdSet<BeInt64Id> idSet;
+        std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>();
         for (Utf8String hexString : hexVector)
         {
             BeInt64Id id;
             if (SUCCESS != BeInt64Id::FromString(id, hexString.c_str()))
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
-            idSet.insert(id);
+            idSet->insert(id);
         }
-        ECSqlStatus stat = m_binder->BindIdSet(idSet);
+        ECSqlStatus stat = m_binder->BindVirtualSet(idSet);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
@@ -5066,6 +5095,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 *result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetChildren", requestId))
                 *result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetNodesDescriptor", requestId))
+                *result = ECPresentationUtils::GetHierarchyLevelDescriptor(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetNodePaths", requestId))
                 *result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetFilteredNodePaths", requestId))

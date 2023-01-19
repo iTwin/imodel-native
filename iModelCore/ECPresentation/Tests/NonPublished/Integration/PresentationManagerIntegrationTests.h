@@ -12,23 +12,43 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+template<typename THierarchyItem>
+struct HierarchyListDef : bvector<THierarchyItem>
+{
+private:
+    Nullable<bool> m_supportsFiltering;
+public:
+    HierarchyListDef() {}
+    HierarchyListDef(bvector<THierarchyItem> nodes) : bvector<THierarchyItem>(nodes) {}
+    HierarchyListDef(std::initializer_list<THierarchyItem> nodes) : bvector<THierarchyItem>(nodes) {}
+    HierarchyListDef(bool supportsFiltering, bvector<THierarchyItem> nodes) : bvector<THierarchyItem>(nodes), m_supportsFiltering(supportsFiltering) {}
+    HierarchyListDef(bool supportsFiltering, std::initializer_list<THierarchyItem> nodes) : bvector<THierarchyItem>(nodes), m_supportsFiltering(supportsFiltering) {}
+    Nullable<bool> const& SupportsFiltering() const {return m_supportsFiltering;}
+    void SetSupportsFiltering(Nullable<bool> value) {m_supportsFiltering = value;}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 template<typename TNode = NavNodeCPtr>
 struct HierarchyDef
     {
     TNode node;
     Nullable<bool> nodeHasChildren;
-    bvector<HierarchyDef<TNode>> children;
+    HierarchyListDef<HierarchyDef<TNode>> children;
     HierarchyDef(TNode n)
         : node(n), nodeHasChildren(false)
         {}
-    HierarchyDef(TNode n, bvector<HierarchyDef<TNode>> c)
+    HierarchyDef(TNode n, HierarchyListDef<HierarchyDef<TNode>> c)
         : node(n), children(c), nodeHasChildren(!c.empty())
         {}
-    HierarchyDef(TNode n, bool hasChildren, bvector<HierarchyDef<TNode>> c)
+    HierarchyDef(TNode n, bool hasChildren, HierarchyListDef<HierarchyDef<TNode>> c)
         : node(n), children(c), nodeHasChildren(hasChildren)
         {}
     };
+
 typedef HierarchyDef<std::function<void(NavNodeCR, HierarchyRequestParams const&)>> ExpectedHierarchyDef;
+typedef HierarchyListDef<ExpectedHierarchyDef> ExpectedHierarchyListDef;
 
 /*=================================================================================**//**
 * @bsiclass
@@ -67,16 +87,16 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
 
     Utf8String GetDefaultDisplayLabel(IECInstanceCR instance);
 
-    void VerifyNodeInstance(NavNodeCR node, IECInstanceCR instance, Utf8StringCR instanceFilter = "") { VerifyNodeInstances(node, { &instance }, instanceFilter); }
-    void VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances, Utf8StringCR instanceFilter = "");
-    void VerifyPropertyGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues);
-    void VerifyPropertyRangeGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
-    void VerifyClassGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass = nullptr, bool isPolymorphicGrouping = false);
-    void VerifyLabelGroupingNode(NavNodeCR node, Utf8StringCR instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
+    void VerifyNodeInstance(NavNodeCR node, IECInstanceCR instance, InstanceFilterDefinitionCP instanceFilter = nullptr) { VerifyNodeInstances(node, { &instance }, instanceFilter); }
+    void VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances, InstanceFilterDefinitionCP instanceFilter = nullptr);
+    void VerifyPropertyGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues);
+    void VerifyPropertyRangeGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
+    void VerifyClassGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass = nullptr, bool isPolymorphicGrouping = false);
+    void VerifyLabelGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
     void VerifyCustomNode(NavNodeCR node, Utf8StringCR type, Nullable<Utf8String> const& label);
 
-    bvector<HierarchyDef<>> ValidateHierarchy(AsyncHierarchyRequestParams params, std::function<void(AsyncHierarchyRequestParams&)> const& configureParams, bvector<ExpectedHierarchyDef> const& expectedHierarchy);
-    bvector<HierarchyDef<>> ValidateHierarchy(AsyncHierarchyRequestParams const& params, bvector<ExpectedHierarchyDef> const& expectedHierarchy);
+    HierarchyListDef<HierarchyDef<>> ValidateHierarchy(AsyncHierarchyRequestParams params, std::function<void(AsyncHierarchyRequestParams&)> const& configureParams, ExpectedHierarchyListDef const& expectedHierarchy);
+    HierarchyListDef<HierarchyDef<>> ValidateHierarchy(AsyncHierarchyRequestParams const& params, ExpectedHierarchyListDef const& expectedHierarchy);
     std::function<void(NavNodeCR, HierarchyRequestParams const&)> CreateInstanceNodeValidator(bvector<RefCountedPtr<IECInstance const>> const& expectedInstances);
     std::function<void(NavNodeCR, HierarchyRequestParams const&)> CreateClassGroupingNodeValidator(ECClassCR ecClass, bool isPolymorphic, bvector<RefCountedPtr<IECInstance const>> const& expectedInstances);
     std::function<void(NavNodeCR, HierarchyRequestParams const&)> CreateLabelGroupingNodeValidator(Utf8StringCR label, bvector<RefCountedPtr<IECInstance const>> const& expectedInstances);

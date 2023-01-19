@@ -36,6 +36,8 @@ $(o)PropertyInfoStore$(oext):               $(SourceDirectory)Content/PropertyIn
 
 $(o)HierarchiesComparer$(oext):             $(SourceDirectory)Hierarchies/HierarchiesComparer.cpp $(ECPresentationDependencies)
 
+$(o)HierarchiesFiltering$(oext):            $(SourceDirectory)Hierarchies/HierarchiesFiltering.cpp $(ECPresentationDependencies)
+
 $(o)NavigationQuery$(oext):                 $(SourceDirectory)Hierarchies/NavigationQuery.cpp $(ECPresentationDependencies)
 
 $(o)NavigationQueryBuilder$(oext):          $(SourceDirectory)Hierarchies/NavigationQueryBuilder.cpp $(ECPresentationDependencies)
@@ -103,6 +105,8 @@ $(o)ECSchemaHelper$(oext):                  $(SourceDirectory)Shared/ECSchemaHel
 $(o)ExtendedData$(oext):                    $(SourceDirectory)Shared/ExtendedData.cpp $(ECPresentationDependencies)
 
 $(o)ImageHelper$(oext):                     $(SourceDirectory)Shared/ImageHelper.cpp $(ECPresentationDependencies)
+
+$(o)InstanceFilterDefinition$(oext):        $(SourceDirectory)Shared/InstanceFilterDefinition.cpp $(ECPresentationDependencies)
 
 $(o)RelatedClass$(oext):                    $(SourceDirectory)Shared/RelatedClass.cpp $(ECPresentationDependencies)
 

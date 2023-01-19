@@ -307,12 +307,12 @@ void ECPresentationTasksScheduler::CheckTasks()
         // the running tasks; if it does - put it into the pending tasks list
         if (!CanExecute(*task))
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_DEBUG, Utf8PrintfString("Moved task `%s` to pending list", task->GetId().ToString().c_str()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_TRACE, Utf8PrintfString("Moved task `%s` to pending list", task->GetId().ToString().c_str()));
             m_pendingTasks.push_back(task);
             }
         else
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_DEBUG, Utf8PrintfString("Requesting task execute `%s`", task->GetId().ToString().c_str()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_TRACE, Utf8PrintfString("Requesting task execute `%s`", task->GetId().ToString().c_str()));
             ExecuteTask(*task);
             }
         }
@@ -417,7 +417,7 @@ static void CancelTasks(bset<IECPresentationTaskCPtr>& matchingTasks, TContainer
             // no cancelation token means the task is not cancelable
             if (task->GetCancelationToken() != nullptr)
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_DEBUG, Utf8PrintfString("Cancelling task `%s`", task->GetId().ToString().c_str()));
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_TRACE, Utf8PrintfString("Cancelling task `%s`", task->GetId().ToString().c_str()));
                 task->Cancel();
                 if (complete)
                     {
@@ -492,7 +492,7 @@ TasksCancelationResult ECPresentationTasksScheduler::_Restart(IECPresentationTas
         {
         if (!pred || pred(*task))
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_DEBUG, Utf8PrintfString("Restarting task `%s`", task->GetId().ToString().c_str()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_TRACE, Utf8PrintfString("Restarting task `%s`", task->GetId().ToString().c_str()));
             task->Restart();
             restartedTasks.push_back(task);
             }

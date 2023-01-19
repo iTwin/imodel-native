@@ -218,7 +218,7 @@ bool Profile::IsFileCreatedForCurrentTestRun(const TestFile& testFile) const
     createdDataFolder.AppendToPath(testFileDirectory.c_str());
     createdDataFolder.AppendToPath(BeFileName(testFile.GetName()).c_str());
 
-    // Check if the updated created data folder path matches the test file seed path 
+    // Check if the updated created data folder path matches the test file seed path
     return createdDataFolder.GetNameUtf8().Equals(testFile.GetSeedPath().GetNameUtf8());
     }
 
@@ -320,7 +320,7 @@ BentleyStatus DgnDbProfile::_Init() const
     temporaryDir.AppendUtf8("temp");
 
     CreateDgnDbParams temp("ProfileVersion");
-    DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, temporaryDir, temp);
+    DgnDbPtr db = DgnDb::CreateIModel(nullptr, temporaryDir, temp);
     if (db == nullptr)
         return ERROR;
 
@@ -333,9 +333,9 @@ BentleyStatus DgnDbProfile::_Init() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TestFile::TestFile(Utf8StringCR name, BeFileName const& path, BeFileName const& seedFilePath, ProfileVersion const& bedbVersion, ProfileVersion const& ecdbVersion, ProfileVersion const& dgndbVersion,
-                   ProfileVersion const& initialBeDbVersion, ProfileVersion const& initialECDbVersion, ProfileVersion const& initialDgnDbVersion) : 
+                   ProfileVersion const& initialBeDbVersion, ProfileVersion const& initialECDbVersion, ProfileVersion const& initialDgnDbVersion) :
     m_name(name), m_path(path), m_seedPath(seedFilePath), m_bedbVersion(bedbVersion), m_ecdbVersion(ecdbVersion), m_dgndbVersion(dgndbVersion),
-    m_initialBeDbVersion(initialBeDbVersion), m_initialECDbVersion(initialECDbVersion), m_initialDgnDbVersion(initialDgnDbVersion) 
+    m_initialBeDbVersion(initialBeDbVersion), m_initialECDbVersion(initialECDbVersion), m_initialDgnDbVersion(initialDgnDbVersion)
     {}
 
 //---------------------------------------------------------------------------------------

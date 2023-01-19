@@ -13,6 +13,7 @@ bool AffectedHierarchyLevelIdentifier::operator<(AffectedHierarchyLevelIdentifie
     STR_LESS_COMPARE(m_hierarchyLevelIdentifier.GetConnectionId().c_str(), other.m_hierarchyLevelIdentifier.GetConnectionId().c_str());
     STR_LESS_COMPARE(m_hierarchyLevelIdentifier.GetRulesetId().c_str(), other.m_hierarchyLevelIdentifier.GetRulesetId().c_str());
     PTR_VALUE_LESS_COMPARE(m_parentNodeKey.get(), other.m_parentNodeKey.get());
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -431,7 +432,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
     BeMutexHolder lock(m_mutex, BeMutexHolder::Lock::No);
 
     auto scope = Diagnostics::Scope::Create("Execute update tasks");
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, Utf8PrintfString("Total initial update tasks: %u", tasks.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Total initial update tasks: %u", tasks.size()));
 
     if (m_updateRecordsHandler)
         {
@@ -447,11 +448,11 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
             continue;
 
         auto taskScope = Diagnostics::Scope::Create(Utf8PrintfString("Task[%" PRIu64 "]: %s", i, task->GetName()));
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Task info: %s", task->GetPrintStr().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Task info: %s", task->GetPrintStr().c_str()));
 
         bvector<IUpdateTaskPtr> subTasks = task->Perform();
 
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, Utf8PrintfString("Task's execution resulted in %" PRIu64 " sub-tasks", (uint64_t)subTasks.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Task's execution resulted in %" PRIu64 " sub-tasks", (uint64_t)subTasks.size()));
 
         for (IUpdateTaskPtr const& subTask : subTasks)
             {
@@ -460,7 +461,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
             }
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, Utf8PrintfString("Total executed tasks: %" PRIu64, (uint64_t)i));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Total executed tasks: %" PRIu64, (uint64_t)i));
 
     if (m_updateRecordsHandler)
         m_updateRecordsHandler->Finish();
@@ -565,7 +566,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderContextPtr CreateProviderContext(Utf8StringCR rulesetId, NavNodeCP parent, Utf8StringCR instanceFilter = "") const
+    NavNodesProviderContextPtr CreateProviderContext(Utf8StringCR rulesetId, NavNodeCP parent, std::shared_ptr<InstanceFilterDefinition const> instanceFilter = nullptr) const
         {
         NavNodesProviderContextPtr providerContext = m_providerContextFactory.Create(m_connection, rulesetId.c_str(), parent, m_nodesCache, nullptr, RulesetVariables());
         if (providerContext.IsNull())
@@ -578,7 +579,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr CreateProvider(CombinedHierarchyLevelIdentifier const& identifier, std::shared_ptr<IHierarchyLevelLocker> locker, NavNodeCP parent, Utf8StringCR instanceFilter)
+    NavNodesProviderPtr CreateProvider(CombinedHierarchyLevelIdentifier const& identifier, std::shared_ptr<IHierarchyLevelLocker> locker, NavNodeCP parent, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
         {
         NavNodesProviderContextPtr providerContext = CreateProviderContext(identifier.GetRulesetId(), parent, instanceFilter);
         if (providerContext.IsNull())
@@ -593,7 +594,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr GetCachedProvider(CombinedHierarchyLevelIdentifier const& identifier, NavNodeCP parent, Utf8StringCR instanceFilter)
+    NavNodesProviderPtr GetCachedProvider(CombinedHierarchyLevelIdentifier const& identifier, NavNodeCP parent, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
         {
         NavNodesProviderContextPtr providerContext = CreateProviderContext(identifier.GetRulesetId(), parent, instanceFilter);
         if (providerContext.IsNull())
@@ -818,7 +819,7 @@ public:
         if (m_context.GetHandledHierarchies().end() != m_context.GetHandledHierarchies().find(identifier))
             {
             // no need to update hierarchy levels which are already updated
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_DEBUG, "Skipping update as this hierarchy level is already updated");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_TRACE, "Skipping update as this hierarchy level is already updated");
             return;
             }
 
@@ -863,7 +864,7 @@ public:
                 identifier.GetHierarchyLevelIdentifier().GetRulesetId(),
                 refreshedProvider->GetContext().GetConnection().GetECDb().GetDbFileName(),
                 parentNode.get(),
-                refreshedProvider->GetContext().GetInstanceFilter(),
+                refreshedProvider->GetContext().GetInstanceFilterPtr(),
                 refreshedProvider->GetNodesCount(),
                 expandedChildNodes
                 );

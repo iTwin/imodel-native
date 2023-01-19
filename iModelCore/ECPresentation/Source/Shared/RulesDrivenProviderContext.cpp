@@ -65,7 +65,7 @@ protected:
 
         if (node.GetInstanceKeysSelectQuery() == nullptr)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, "Node has no instance keys query assigned - nothing to iterate over.");
             return;
             }
 
@@ -101,7 +101,7 @@ protected:
 
         if (node.GetInstanceKeysSelectQuery() == nullptr)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Node has no instance keys query assigned - nothing to iterate over.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, "Node has no instance keys query assigned - nothing to iterate over.");
             return false;
             }
 

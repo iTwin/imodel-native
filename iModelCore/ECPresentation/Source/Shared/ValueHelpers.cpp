@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include "ValueHelpers.h"
+#include "../RulesEngineTypes.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -40,9 +41,8 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 
     if (nullptr == enumerator)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Failed to determine enumerator for `%s`, value `%s`",
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to determine enumerator for `%s`, value `%s`",
             enumeration->GetFullName().c_str(), rawValue.ToString().c_str()));
-        return ERROR;
         }
 
     displayValue = enumerator->GetDisplayLabel();
@@ -284,8 +284,7 @@ rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primit
         case PRIMITIVETYPE_IGeometry:
             return doc;
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
-    return doc;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -365,9 +364,8 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
             DateTime dt;
             double julianDays;
             if (SUCCESS != DateTime::FromString(dt, str.c_str()) || SUCCESS != dt.ToJulianDay(julianDays))
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()))
-            else
-                doc.SetDouble(julianDays);
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()))
+            doc.SetDouble(julianDays);
             return doc;
             }
         case PRIMITIVETYPE_Double:
@@ -387,8 +385,7 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
         case PRIMITIVETYPE_Point3d:
             return GetPoint3dJsonFromString(str, allocator);
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
-    return doc;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -441,7 +438,7 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValu
         case PRIMITIVETYPE_IGeometry:
             break;
         default:
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
         }
     return value;
     }
@@ -451,13 +448,10 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValu
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSqlValue const& sqlValue)
     {
-    ECValue value;
     if (VALUEKIND_Primitive != sqlValue.GetColumnInfo().GetDataType().GetTypeKind())
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Failed to convert IECSqlValue to ECValue - value is not primitive. Actual type: %d", (int)sqlValue.GetColumnInfo().GetDataType().GetTypeKind()));
-        value.SetIsNull(true);
-        return value;
-        }
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to convert IECSqlValue to ECValue - value is not primitive. Actual type: %d", (int)sqlValue.GetColumnInfo().GetDataType().GetTypeKind()));
+
+    ECValue value;
     if (sqlValue.IsNull())
         {
         value.SetIsNull(true);
@@ -502,7 +496,7 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSql
         case PRIMITIVETYPE_IGeometry:
             break;
         default:
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)primitiveType));
         }
     return value;
     }
@@ -533,7 +527,7 @@ ECValue ValueHelpers::GetECValueFromString(PrimitiveType valueType, Utf8StringCR
             {
             DateTime dt;
             if (SUCCESS != DateTime::FromString(dt, str.c_str()))
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()));
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()));
             return ECValue(dt);
             }
         }
@@ -592,7 +586,7 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR js
             value.SetPoint3d(GetPoint3dFromJson(json));
             break;
         default:
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
         }
     return value;
     }
@@ -638,8 +632,7 @@ rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjso
         case PRIMITIVETYPE_Point3d:
             return GetPoint3dJson(ecValue.GetPoint3d(), allocator);
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)ecValue.GetPrimitiveType()));
-    return doc;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)ecValue.GetPrimitiveType()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -926,7 +919,8 @@ static bvector<Utf8String> const& GetUnitSystemGroupNames(ECPresentation::UnitSy
 Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR koq, ECPresentation::UnitSystem unitSystemGroup, std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_ptr<Formatting::Format>> const& defaultFormats)
     {
     Formatting::Format const* format = nullptr;
-    for (Utf8StringCR unitSystemName : GetUnitSystemGroupNames(unitSystemGroup))
+    bvector<Utf8String> const& unitSystems = GetUnitSystemGroupNames(unitSystemGroup);
+    for (Utf8StringCR unitSystemName : unitSystems)
         {
         // find the first presentation format that uses one of the unit systems in the group
         auto formatIter = std::find_if(koq.GetPresentationFormats().begin(), koq.GetPresentationFormats().end(), [&unitSystemName](NamedFormatCR f)
@@ -941,20 +935,24 @@ Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR k
             break;
             }
         }
-    if (!format)
+
+    Formatting::Format const* defaultFormat = koq.GetDefaultPresentationFormat();
+    // find default format that matches one of the unit systems in the group
+    if (!format && defaultFormat->HasCompositeMajorUnit())
         {
-        Formatting::Format const* defaultFormat = koq.GetDefaultPresentationFormat();
-        if (defaultFormat->HasCompositeMajorUnit())
-            {
-            std::pair<Utf8String, UnitSystem> pair = std::make_pair(defaultFormat->GetCompositeMajorUnit()->GetPhenomenon()->GetName(), unitSystemGroup);
-            auto it = defaultFormats.find(pair);
-            if (it != defaultFormats.end())
-                format = it->second.get();
-            }
-        // if format based on requested unit systems group was not found, use default
-        if (!format)
-            format = defaultFormat;
+        std::pair<Utf8String, UnitSystem> pair = std::make_pair(defaultFormat->GetCompositeMajorUnit()->GetPhenomenon()->GetName(), unitSystemGroup);
+        auto it = defaultFormats.find(pair);
+        if (it != defaultFormats.end())
+            format = it->second.get();
         }
+
+    // if persistence unit matches one of the unit systems in the group, use it
+    if (!format && ContainerHelpers::Contains(unitSystems, [&](Utf8String const& unitSystemName) {return koq.GetPersistenceUnit()->GetUnitSystem()->GetName().EqualsI(unitSystemName); }))
+        format = koq.GetPersistenceFormat();
+
+    // if format based on requested unit systems group was not found, use default
+    if (!format)
+        format = defaultFormat;
 
     return format;
     }

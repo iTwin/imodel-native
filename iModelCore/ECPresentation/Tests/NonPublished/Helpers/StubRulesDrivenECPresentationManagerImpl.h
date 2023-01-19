@@ -40,6 +40,24 @@ struct StubNodeInstanceKeysProvider : INodeInstanceKeysProvider
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+struct VectorNodesDataSource : NavNodesDataSource
+{
+private:
+    RefCountedPtr<VectorDataSource<NavNodePtr>> m_vec;
+protected:
+    NavNodePtr _Get(size_t index) const override {return m_vec->Get(index);}
+    size_t _GetSize() const override {return m_vec->GetSize();}
+    Iterator _CreateFrontIterator() const override {return m_vec->begin();}
+    Iterator _CreateBackIterator() const override {return m_vec->end();}
+public:
+    VectorNodesDataSource(bvector<NavNodePtr> nodes)
+        : m_vec(VectorDataSource<NavNodePtr>::Create(nodes))
+        {}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 struct StubRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManagerImplBase
 {
     template<typename TNodePtr> struct NavNodeByIdComparer
@@ -57,17 +75,17 @@ private:
     std::function<std::unique_ptr<INodeInstanceKeysProvider>()> m_nodeInstanceKeysProviderFactory;
 
 private:
-    INavNodesDataSourcePtr GetNodes(NavNodeCP parent)
+    NavNodesDataSourcePtr GetNodes(NavNodeCP parent)
         {
         bpair<NavNodePtr, bvector<NavNodePtr>> pair;
         if (!FindPair(parent, pair))
-            return EmptyDataSource<NavNodePtr>::Create();
+            return nullptr;
 
         bvector<NavNodePtr> nodes;
         for (NavNodePtr node : pair.second)
             nodes.push_back(node.get()->Clone());
 
-        return VectorDataSource<NavNodePtr>::Create(nodes);
+        return new VectorNodesDataSource(nodes);
         }
     bool FindPair(NavNodeCP parent, bpair<NavNodePtr, bvector<NavNodePtr>>& p)
         {
@@ -90,13 +108,17 @@ protected:
             return m_nodeInstanceKeysProviderFactory();
         return std::make_unique<StubNodeInstanceKeysProvider>();
         }
-    INavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) override
+    NavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) override
         {
         return GetNodes(params.GetParentNode());
         }
     size_t _GetNodesCount(HierarchyRequestImplParams const& params) override
         {
         return GetNodes(params.GetParentNode())->GetSize();
+        }
+    ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) override
+        {
+        return nullptr;
         }
     NavNodeCPtr _GetParent(NodeParentRequestImplParams const& params) override
         {

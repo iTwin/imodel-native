@@ -228,7 +228,7 @@ void RevisionTestFixture::ProcessSchemaRevision(DgnRevisionCR revision, Revision
 
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revision, revisionProcessOption));
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
@@ -252,7 +252,7 @@ void RevisionTestFixture::BackupTestFile()
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb(fileName);
+    OpenIModelDb(fileName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -268,7 +268,7 @@ void RevisionTestFixture::RestoreTestFile(Db::OpenMode openMode /*= Db::OpenMode
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb(fileName, openMode);
+    OpenIModelDb(fileName, openMode);
     }
 
 //---------------------------------------------------------------------------------------
@@ -723,7 +723,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     CloseDgnDb();
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Reverse));
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_FALSE(m_db.IsValid()) << "Opening with schema changeset reverse parameters should fail.";
     BeTest::SetFailOnAssert(true);
     }
@@ -1034,7 +1034,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db->CloseDb();
     processRevisions = filterRevisions(revisionPtrs, 1, 6);
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, RevisionProcessOption::Merge);
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetChangesetId().c_str());
@@ -1043,7 +1043,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db->CloseDb();
     processRevisions = filterRevisions(revisionPtrs, 6, 5);
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, RevisionProcessOption::Reverse);
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     /*
@@ -1053,12 +1053,12 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     processRevisions = filterRevisions(revisionPtrs, 7, 9);
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, RevisionProcessOption::Merge);
     BeTest::SetFailOnAssert(false);
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     BeTest::SetFailOnAssert(true);
     ASSERT_FALSE(m_db.IsValid()) << "Could perform an invalid merge";
 
     openParams.GetSchemaUpgradeOptionsR().Reset();
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     /*
@@ -1068,7 +1068,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db->CloseDb();
     processRevisions = filterRevisions(revisionPtrs, 5, 6);
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, RevisionProcessOption::Merge);
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetChangesetId().c_str());
@@ -1077,7 +1077,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db->CloseDb();
     processRevisions = filterRevisions(revisionPtrs, 7, 9);
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, RevisionProcessOption::Merge);
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[9]->GetChangesetId().c_str());
@@ -1119,7 +1119,7 @@ TEST_F(RevisionTestFixture, TestMemoryLeak)
 
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
@@ -1156,7 +1156,7 @@ TEST_F(RevisionTestFixture, TestMemoryLeak)
     printf("Before opening Db pre-upgrade");
     getchar();
 
-    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     m_db->CloseDb();
@@ -1197,7 +1197,7 @@ TEST_F(RevisionTestFixture, MergeMemoryIssue)
 
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
@@ -1234,7 +1234,7 @@ TEST_F(RevisionTestFixture, MergeMemoryIssue)
     printf("Before opening Db pre-upgrade");
     getchar();
 
-    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     m_db->CloseDb();
@@ -1279,7 +1279,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
 
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
@@ -1307,7 +1307,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
     m_db->CloseDb();
 
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
-    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
     }
 
@@ -1389,7 +1389,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
     m_testFileName = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(startingFile.c_str(), m_testFileName.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb();
+    OpenIModelDb();
 
     bvector<BeFileName> revPathnames;
     BeFileListIterator fileList("D:\\temp\\Performance\\Failure\\DgnDbRev\\*.rev", false);
@@ -1436,7 +1436,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeSpecificRevision)
     m_testFileName = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(startingFile.c_str(), m_testFileName.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb();
+    OpenIModelDb();
 
     BeFileName revPathname("D:\\temp\\Performance\\Failure\\DgnDbRev\\41469a8668091298800aae142eae402e6ac95842.rev", true); // 77th merge
     Utf8String parentRevId = m_db->Revisions().GetParentRevisionId();

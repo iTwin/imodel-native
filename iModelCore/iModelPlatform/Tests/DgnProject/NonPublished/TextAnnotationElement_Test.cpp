@@ -47,6 +47,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
         {
         SetupSeedProject();
         dbPath = BeFileName(m_db->GetDbFileName());
+        m_db->CloseDb();
         }
 
     DgnModelId modelId;
@@ -59,7 +60,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
     //.............................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -99,7 +100,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
     //.............................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -157,7 +158,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
     //.............................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -189,7 +190,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
     //.............................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -219,6 +220,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
         {
         SetupSeedProject();
         dbPath = BeFileName(m_db->GetDbFileName());
+        m_db->CloseDb();
         }
 
     DgnModelId modelId;
@@ -231,7 +233,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     //..........................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -269,7 +271,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     //.............................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -327,7 +329,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     //.........................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -359,7 +361,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     //..........................................................................................
     {
     DbResult openStatus;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
@@ -385,7 +387,7 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
 //     BeFileName dbPath = BeFileName(m_db->GetDbFileName());
 
 //     DbResult openStatus;
-//     DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+//     DgnDbPtr db = DgnDb::OpenIModelDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
 
 //     DgnElementId textStyleId;
 //         {

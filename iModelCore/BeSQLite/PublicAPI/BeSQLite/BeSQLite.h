@@ -380,6 +380,13 @@ enum DbTxnState {
     BE_SQLITE_TXN_WRITE = 2,
 };
 
+enum class WalCheckpointMode {
+    Passive=0,  /* Do as much as possible w/o blocking */
+    Full=1,     /* Wait for writers, then checkpoint */
+    Restart=2,  /* Like FULL but wait for for readers */
+    Truncate=3, /* Like RESTART but also truncate WAL */
+};
+
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -2479,6 +2486,7 @@ public:
         DefaultTxn m_startDefaultTxn = DefaultTxn::Yes;
         ProfileUpgradeOptions m_profileUpgradeOptions = ProfileUpgradeOptions::None;
         bool m_rawSQLite = false;
+        bool m_fromContainer = false;
 
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.
         bool m_skipFileCheck = false;
@@ -2639,6 +2647,7 @@ protected:
     };
 
     DbFile* m_dbFile;
+    bool m_isCloudDb = false;
     StatementCache m_statements;
     DbEmbeddedFileTable m_embeddedFiles;
     mutable AppDataCollection m_appData;
@@ -3131,6 +3140,7 @@ public:
 
     //! Determine whether this Db was opened readonly.
     bool IsReadonly() const { return m_dbFile->m_readonly; }
+    bool IsWriteable() const { return !IsReadonly(); }
 
     //! Get the DbEmbeddedFileTable for this Db.
     BE_SQLITE_EXPORT DbEmbeddedFileTable& EmbeddedFiles();
@@ -3192,6 +3202,15 @@ public:
     //! Set one of the internal SQLite limits for this database. See documentation at sqlite3_limit for argument details.
     BE_SQLITE_EXPORT int SetLimit(DbLimits id, int newVal) const;
     BE_SQLITE_EXPORT int GetLimit(DbLimits id) const;
+
+    BE_SQLITE_EXPORT DbResult EnableWalMode(bool yesNo);
+    BE_SQLITE_EXPORT bool IsWalMode() const;
+
+
+    // perform a checkpoint operation if this database is in WAL mode
+    BE_SQLITE_EXPORT DbResult PerformCheckpoint(WalCheckpointMode mode, int* pnLog = nullptr, int* pnCkpt = nullptr);
+    // Set auto checkpoint frame threshold after which sqlite will perform checkpoint automatically
+    BE_SQLITE_EXPORT DbResult SetAutoCheckpointThreshold(int frames);
 
     //! Add a DbFunction to this Db for use in SQL. See sqlite3_create_function for return values. The DbFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.

@@ -39,6 +39,8 @@ protected:
     rapidjson::Document _AsJson(ContextR, LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType* allocator) const override;
+    rapidjson::Document _AsJson(ContextR, InstanceFilterDefinitionCR, rapidjson::Document::AllocatorType*) const override;
+    std::unique_ptr<InstanceFilterDefinition> _GetInstanceFilterFromJson(IConnectionCR, BeJsConst) const override;
 
     // Content:
     rapidjson::Value _AsJson(ContextR, SelectionInfo const&, rapidjson::Document::AllocatorType& allocator) const override;
@@ -92,10 +94,15 @@ protected:
 
 public:
     using IECPresentationSerializer::AsJson;
+
+    rapidjson::Document AsJson(ContextR, NavNodesContainer const&, rapidjson::Document::AllocatorType* = nullptr) const;
+
     static bvector<NavNodeKeyCPtr> GetNavNodeKeysFromSerializedJson(IConnectionCR, Utf8CP serializedJson);
-    static ECClassCP GetClassFromFullName(IConnectionCR connection, BeJsConst);
+    static ECClassCP GetClassFromFullName(ECDbCR, BeJsConst);
+    static ECClassCP GetClassFromFullName(IConnectionCR connection, BeJsConst stringJson) {return GetClassFromFullName(connection.GetECDb(), stringJson);}
     static KeySetPtr GetKeySetFromJson(IConnectionCR, BeJsConst);
     static RulesetVariables GetRulesetVariablesFromJson(BeJsConst);
+    static RelatedClassPath GetRelatedClassPathFromJson(ECDbCR, BeJsConst, bool defaultIsPolymorphicValue = false);
 };
 
 /*=================================================================================**//**

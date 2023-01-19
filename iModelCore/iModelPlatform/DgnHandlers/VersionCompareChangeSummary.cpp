@@ -720,13 +720,13 @@ RelationshipCacheEntry ChunkRelationshipQueryHelper::GetCurrentRelatedInstances(
     VCLOG.infov("ChunkRelationshipQueryHelper: Querying for relationship class: %s", path.m_relationshipClassId.ToHexStr().c_str());
 
     // Query all sources and targets for the related property paths that relate to the instance id
-    IdSet<BeInt64Id> ids;
+    std::shared_ptr<IdSet<BeInt64Id>> ids = std::make_shared<IdSet<BeInt64Id>>();
     for (auto const& instanceKey : instanceKeys)
-        ids.insert(instanceKey.GetInstanceId());
+        ids->insert(instanceKey.GetInstanceId());
 
     Utf8PrintfString ecsql("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM %s WHERE InVirtualSet(?, %s)", path.m_relationshipClassName.c_str(), whereSourceId.c_str());
     CachedECSqlStatementPtr stmt = GetCachedStatement(db, ecsql);
-    stmt->BindIdSet(1, ids);
+    stmt->BindVirtualSet(1, ids);
 
     RelationshipCacheEntry entry;
     while (stmt->Step() == DbResult::BE_SQLITE_ROW)
@@ -1354,9 +1354,9 @@ void ChangedElementFinder::QueryRelatedInstanceModelIds(DgnDbR db)
         return;
         }
 
-    BeSQLite::IdSet<ECInstanceId> ids;
+    std::shared_ptr<BeSQLite::IdSet<ECInstanceId>> ids = std::make_shared<BeSQLite::IdSet<ECInstanceId>>();
     for (auto const& related : m_relatedInstanceChanges)
-        ids.insert(related.first.GetInstanceId());
+        ids->insert(related.first.GetInstanceId());
 
     stmt.BindVirtualSet(1, ids);
 
@@ -1669,7 +1669,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
     bool cloneDb = WantTargetState() && !m_wantBriefcaseRoll;
     m_targetDb = cloneDb
         ? CloneDb(m_dbFilename, m_tempLocation)
-        : DgnDb::OpenDgnDb(&openStatus, m_dbFilename, params);
+        : DgnDb::OpenIModelDb(&openStatus, m_dbFilename, params);
 
     if (!m_targetDb.IsValid())
         {
@@ -1799,7 +1799,7 @@ DgnDbPtr    VersionCompareChangeSummary::CloneDb(BeFileNameCR dbFilename, BeFile
 
     // If the file was copied before, act on it instead of re-copying each time we compare revisions
     // Open the target db using the temporary filename
-    DgnDbPtr targetDb = DgnDb::OpenDgnDb(&result, tempFilename, params);
+    DgnDbPtr targetDb = DgnDb::OpenIModelDb(&result, tempFilename, params);
     if (!targetDb.IsValid())
         return nullptr;
 
@@ -1828,7 +1828,7 @@ StatusInt   VersionCompareChangeSummary::RollTargetDb(bvector<DgnRevisionPtr> co
     BeSQLite::DbResult result;
 	DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
     params.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(changesetsCP, RevisionProcessOption::Merge);
-    m_targetDb = DgnDb::OpenDgnDb(&result, filename, params);
+    m_targetDb = DgnDb::OpenIModelDb(&result, filename, params);
     BeAssert(result == BeSQLite::BE_SQLITE_OK && m_targetDb.IsValid());
 
     // Presentation rules need to know about the reopened Db

@@ -251,8 +251,8 @@ public:
 //! The combination of the three must be unique across all elements within a DgnDb.
 //! The meaning of a DgnCode is determined by the CodeSpec.
 //!
-//! The CodeSpecId must be non-null and identify a valid CodeSpec.
-//! The scope must not be null and identifies the uniqueness scope for the value.
+//! The CodeSpecId must be the ElementId of a valid CodeSpec.
+//! The scope must be the ElementId of a valid element that defines the uniqueness scope.
 //! The value may be null if the element does not have a name. The value may not be an empty string.
 //!
 //! @see CodeSpec
@@ -314,7 +314,7 @@ public:
     BE_JSON_NAME(scope)
     BE_JSON_NAME(value)
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
-    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR);
+    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR, bool validateScope);
 };
 
 typedef bset<DgnCode> DgnCodeSet;
@@ -336,12 +336,6 @@ public:
     //! @param[in] invalidChars the list of character that may NOT appear in name.
     //! @note names may also not start or end with a space.
     DGNPLATFORM_EXPORT static bool IsValidName(Utf8StringCR name, Utf8CP invalidChars);
-
-    //! Replace any instances of the invalid characters in the supplied name with a replacement character.
-    //! @param[in] name the name to validate
-    //! @param[in] invalidChars the list of invalid characters. All instances of these characters are replaced.
-    //! @param[in] replacement the character to substitute for any invalid characters in name.
-    DGNPLATFORM_EXPORT static void ReplaceInvalidCharacters(Utf8StringR name, Utf8CP invalidChars, Utf8Char replacement);
 };
 
 //=======================================================================================
