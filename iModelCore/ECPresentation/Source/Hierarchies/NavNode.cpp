@@ -274,8 +274,6 @@ NavNode::NavNode()
     {
     m_internalExtendedData.SetObject();
     m_nodeId.Invalidate();
-    m_determinedChildren = false;
-    m_hasChildren = false;
     m_isChecked = false;
     m_isCheckboxVisible = false;
     m_isCheckboxEnabled = false;
@@ -300,12 +298,12 @@ NavNode::NavNode(NavNodeCR other)
     m_backColor = other.m_backColor;
     m_fontStyle = other.m_fontStyle;
     m_type = other.m_type;
-    m_determinedChildren = other.m_determinedChildren;
     m_hasChildren = other.m_hasChildren;
     m_isChecked = other.m_isChecked;
     m_isCheckboxVisible = other.m_isCheckboxVisible;
     m_isCheckboxEnabled = other.m_isCheckboxEnabled;
     m_shouldAutoExpand = other.m_shouldAutoExpand;
+    m_supportsFiltering = other.m_supportsFiltering;
     if (other.m_instanceKeysSelectQuery)
         m_instanceKeysSelectQuery = other.m_instanceKeysSelectQuery->Clone();
     }
@@ -337,8 +335,17 @@ void NavNode::AddUsersExtendedData(Utf8CP key, ECValueCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNode::HasChildren() const
     {
-    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, m_determinedChildren, "Returning 'has children' flag without having it determined");
-    return m_hasChildren;
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, m_hasChildren.IsValid(), "Returning 'has children' flag without having it determined");
+    return *m_hasChildren;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NavNode::SupportsFiltering() const
+    {
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, m_supportsFiltering.IsValid(), "Returning 'supports filtering' flag without having it determined");
+    return *m_supportsFiltering;
     }
 
 /*---------------------------------------------------------------------------------**//**

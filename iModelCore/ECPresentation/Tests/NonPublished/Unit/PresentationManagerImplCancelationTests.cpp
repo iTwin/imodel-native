@@ -21,7 +21,7 @@ private:
     mutable int m_currCount;
     int m_targetCount;
 protected:
-    bool _IsCanceled() const override 
+    bool _IsCanceled() const override
         {
         m_currCount++;
         if (m_currCount >= m_targetCount)
@@ -29,7 +29,7 @@ protected:
         return false;
         }
 public:
-    CountCancelationToken(int index) 
+    CountCancelationToken(int index)
         : m_currCount(0), m_targetCount(index)
     {}
 };
@@ -253,13 +253,13 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetNodes)
     m_locater->AddRuleSet(*ruleset);
 
     TestCancelations<NavNodesContainer>(
-        [&](ICancelationTokenCR token) -> NavNodesContainer 
+        [&](ICancelationTokenCR token) -> NavNodesContainer
             {
-            INavNodesDataSourcePtr source = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables()));
+            NavNodesDataSourcePtr source = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables()));
             if (source.IsNull())
                 return NavNodesContainer();
             return NavNodesContainer(*ConstNodesDataSource::Create(*source));
-            }, 
+            },
         [](NavNodesContainer const& expectedResult, NavNodesContainer const& actualResult)-> void
             {
             EXPECT_EQ(expectedResult.GetSize(), actualResult.GetSize());
@@ -290,7 +290,7 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetNodesCount)
         [&](ICancelationTokenCR token) -> size_t
             {
             return m_impl->GetNodesCount(HierarchyRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables()));
-            }, 
+            },
         [](size_t const& expectedResult, size_t const& actualResult)-> void
             {
             EXPECT_EQ(expectedResult, actualResult);
@@ -323,14 +323,14 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetFilteredNodes)
         [&](ICancelationTokenCR token) -> bvector<NavNodeCPtr>
             {
             return  m_impl->GetFilteredNodes(NodePathsFromFilterTextRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables(), "a"));
-            }, 
+            },
         [](bvector<NavNodeCPtr> const& expectedResult, bvector<NavNodeCPtr> const& actualResult)-> void
             {
             ASSERT_EQ(expectedResult.size(), actualResult.size());
             for (int i = 0; i < expectedResult.size(); i++)
                 EXPECT_TRUE(expectedResult.at(i)->Equals(*actualResult.at(i)));
             }
-        ); 
+        );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -355,11 +355,11 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetContentDescripto
     m_locater->AddRuleSet(*ruleset);
 
     TestCancelations<ContentDescriptorCPtr>(
-        [&](ICancelationTokenCR token) -> ContentDescriptorCPtr 
+        [&](ICancelationTokenCR token) -> ContentDescriptorCPtr
             {
             return m_impl->GetContentDescriptor(ContentDescriptorRequestImplParams::Create(*m_connection, &token,
             ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create()));
-            }, 
+            },
         [](ContentDescriptorCPtr const& expectedResult, ContentDescriptorCPtr const& actualResult)-> void
             {
             ASSERT_TRUE(expectedResult.IsValid());
@@ -393,13 +393,13 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetContent)
         ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create()));
 
     TestCancelations<ContentCPtr>(
-        [&](ICancelationTokenCR token) -> ContentCPtr 
+        [&](ICancelationTokenCR token) -> ContentCPtr
             {
             ContentCPtr content = m_impl->GetContent(ContentRequestImplParams::Create(*m_connection, &token, *descriptor));
             if (content.IsNull())
                 return nullptr;
             return ContentCPtr(Content::Create(content->GetDescriptor(), *PreloadedDataSource<ContentSetItemCPtr>::Create(content->GetContentSet().GetDataSource())));
-            }, 
+            },
         [](ContentCPtr const& expectedResult, ContentCPtr const& actualResult)-> void
             {
             ValidateContentSets(*expectedResult, *actualResult);
@@ -432,10 +432,10 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetContentSetSize)
         ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create()));
 
     TestCancelations<size_t>(
-        [&](ICancelationTokenCR token) -> size_t 
+        [&](ICancelationTokenCR token) -> size_t
             {
             return m_impl->GetContentSetSize(ContentRequestImplParams::Create(*m_connection, &token, *descriptor));
-            }, 
+            },
         [](size_t const& expectedResult, size_t const& actualResult)-> void
             {
             EXPECT_EQ(expectedResult, actualResult);
@@ -451,7 +451,7 @@ DEFINE_SCHEMA(GetDisplayLabel, R"*(
         <ECProperty propertyName="MyProperty" typeName="string" />
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetDisplayLabel) 
+TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetDisplayLabel)
     {
     // set up data set
     ECClassCP classA = GetClass("A");
@@ -463,13 +463,13 @@ TEST_F(RulesDrivenECPresentationManagerImplCancelationTests, GetDisplayLabel)
     ruleset->AddPresentationRule(*rule);
     ruleset->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), "MyProperty"));
     m_locater->AddRuleSet(*ruleset);
-    auto keys = KeySet::Create({ ECClassInstanceKey(classA, ECInstanceId(BeInt64Id::FromString(instanceA->GetInstanceId().c_str()))) }); 
-   
+    auto keys = KeySet::Create({ ECClassInstanceKey(classA, ECInstanceId(BeInt64Id::FromString(instanceA->GetInstanceId().c_str()))) });
+
     TestCancelations<LabelDefinitionCPtr>(
-        [&](ICancelationTokenCR token) -> LabelDefinitionCPtr 
-            {   
+        [&](ICancelationTokenCR token) -> LabelDefinitionCPtr
+            {
             return m_impl->GetDisplayLabel(KeySetDisplayLabelRequestImplParams::Create(*m_connection, &token, ruleset->GetRuleSetId(), RulesetVariables(), *keys));
-            }, 
+            },
         [](LabelDefinitionCPtr const& expectedResult, LabelDefinitionCPtr const& actualResult)-> void
             {
             EXPECT_EQ(expectedResult->GetDisplayValue(), actualResult->GetDisplayValue());
