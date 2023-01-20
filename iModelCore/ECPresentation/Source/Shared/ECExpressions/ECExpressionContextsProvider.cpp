@@ -2047,7 +2047,6 @@ private:
             }
 
         Append(node.ToString());
-        auto operation = node.GetOperation();
         if (left.EndsWith(".ClassName"))
             m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
         }
