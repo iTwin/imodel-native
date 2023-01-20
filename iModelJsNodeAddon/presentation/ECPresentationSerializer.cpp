@@ -1057,8 +1057,29 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, NavN
         json.AddMember("isCheckboxEnabled", navNode.IsCheckboxEnabled(), json.GetAllocator());
     if (navNode.ShouldAutoExpand())
         json.AddMember("isExpanded", navNode.ShouldAutoExpand(), json.GetAllocator());
+    if (navNode.SupportsFiltering())
+        json.AddMember("supportsFiltering", true, json.GetAllocator());
     if (navNode.GetUsersExtendedData().GetJson().MemberCount() > 0)
         json.AddMember("extendedData", rapidjson::Value(navNode.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::AsJson(ContextR, NavNodesContainer const& nodes, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+
+    rapidjson::Value nodesJson(rapidjson::kArrayType);
+    for (auto const& node : nodes)
+        PUSH_JSON_IF_VALID(nodesJson, json.GetAllocator(), node);
+    json.AddMember("nodes", nodesJson, json.GetAllocator());
+
+    if (nodes.SupportsFiltering())
+        json.AddMember("supportsFiltering", true, json.GetAllocator());
+
     return json;
     }
 

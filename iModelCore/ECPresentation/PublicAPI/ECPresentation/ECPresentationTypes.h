@@ -83,7 +83,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
         return true; \
     if (nullptr != lhs && nullptr == rhs) \
         return false; \
-    return nullptr != lhs && nullptr != rhs && *lhs < *rhs; \
+    if (nullptr != lhs && nullptr != rhs && *lhs < *rhs) \
+        return true; \
     }
 
 /*=================================================================================**//**

@@ -41,6 +41,7 @@ ECPresentationInternalHeaders   = $(SourceDirectory)Content/ContentCache.h      
                                   $(SourceDirectory)Content/PropertyInfoStore.h                           \
                                   $(SourceDirectory)Hierarchies/DataSourceInfo.h                          \
                                   $(SourceDirectory)Hierarchies/HierarchiesComparer.h                     \
+                                  $(SourceDirectory)Hierarchies/HierarchiesFiltering.h                    \
                                   $(SourceDirectory)Hierarchies/NavigationQuery.h                         \
                                   $(SourceDirectory)Hierarchies/NavigationQueryBuilder.h                  \
                                   $(SourceDirectory)Hierarchies/NavigationQueryContracts.h                \

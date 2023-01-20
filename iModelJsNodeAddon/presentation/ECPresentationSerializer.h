@@ -97,6 +97,9 @@ protected:
 
 public:
     using IECPresentationSerializer::AsJson;
+
+    rapidjson::Document AsJson(ContextR, NavNodesContainer const&, rapidjson::Document::AllocatorType* = nullptr) const;
+
     static bvector<NavNodeKeyCPtr> GetNavNodeKeysFromSerializedJson(IConnectionCR, Utf8CP serializedJson);
     static ECClassCP GetClassFromFullName(ECDbCR, BeJsConst);
     static ECClassCP GetClassFromFullName(IConnectionCR connection, BeJsConst stringJson) {return GetClassFromFullName(connection.GetECDb(), stringJson);}

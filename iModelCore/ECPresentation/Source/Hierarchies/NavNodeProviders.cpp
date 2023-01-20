@@ -16,6 +16,7 @@
 #include "NavNodesDataSource.h"
 #include "NavNodesCache.h"
 #include "NavNodesHelper.h"
+#include "HierarchiesFiltering.h"
 
 //#define CHECK_ORDERED_QUERY_PLANS
 #ifdef CHECK_ORDERED_QUERY_PLANS
@@ -53,15 +54,23 @@ private:
     NavNodesProviderContext* m_context;
 
 private:
+    void EnsureFilteringSupported(ChildNodeSpecificationCR spec) const
+        {
+        // the hierarchy level was requested with an instance filter - ensure the specification supports filtering
+        if (m_context->GetInstanceFilter())
+            ENSURE_SUPPORTS_FILTERING(spec);
+        }
     void AddQueryBasedNodeProvider(ChildNodeSpecification const& specification)
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create nodes provider for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
+        EnsureFilteringSupported(specification);
         NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, specification);
         m_nodeProviders.push_back(provider);
         }
     void AddCustomNodeProvider(CustomNodeSpecification const& specification)
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create nodes provider for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
+        EnsureFilteringSupported(specification);
         NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, specification);
         m_nodeProviders.push_back(provider);
         }
@@ -689,6 +698,7 @@ NavNodePtr NodesFinalizer::Finalize(NavNodeR node) const
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Finalize node %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
     Customize(node);
     DetermineChildren(node);
+    DetermineFilteringSupport(node);
     return &node;
     }
 
@@ -789,6 +799,25 @@ void NodesFinalizer::DetermineChildren(NavNodeR node) const
         }
 
     node.SetHasChildren(HASCHILDREN_True == AnyChildSpecificationReturnsNodes(node));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesFinalizer::DetermineFilteringSupport(NavNodeR node) const
+    {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Determine filtering support for %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
+
+    NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(*m_context, node);
+    // we consider that this provider depends on a variable if we need the variable to determine
+    // if node supports filtering
+    childrenContext->InitUsedVariablesListener({}, &m_context->GetUsedVariablesListener());
+
+    node.SetSupportsFiltering(HierarchiesFilteringHelper::SupportsFiltering(
+        &node,
+        TraverseHierarchyRulesProps(childrenContext->GetNodesFactory(), childrenContext->GetRulesPreprocessor(), childrenContext->GetSchemaHelper()),
+        nullptr
+        ));
     }
 
 /*---------------------------------------------------------------------------------**//**
