@@ -2029,15 +2029,17 @@ private:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+--*/
-    bool TryHandleCompareDateTimeEquality(ComparisonNodeCR node, Utf8String left, Utf8String right)
+    bool TryHandleCompareDateTimeEquality(ComparisonNodeCR node)
         {
-        if (left.StartsWith("CompareDateTimes") && right.StartsWith("0"))
+        Utf8String left = node.GetLeftCP()->ToExpressionString();
+        Utf8String right = node.GetRightCP()->ToExpressionString();
+        if (left.StartsWith("CompareDateTimes") && right.Equals("0"))
             {
             m_ignoredNodes.insert(node.GetRightCP());
             WrapPreviousNode("ABS", "< (1.0 / 86400000)");
             return true;
             }
-        if (left.StartsWith("0") && right.StartsWith("CompareDateTimes"))
+        if (left.Equals("0") && right.StartsWith("CompareDateTimes"))
             {
             m_nodesStack.pop_back();
             m_ecsql = m_ecsql.substr(0, m_ecsql.length() - 1);
