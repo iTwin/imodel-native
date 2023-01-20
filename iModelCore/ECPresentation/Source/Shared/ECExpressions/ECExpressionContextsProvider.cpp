@@ -2029,23 +2029,34 @@ private:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+--*/
-    void HandleEqualtyNode(ComparisonNodeCR node)
+    bool TryHandleCompareDateTimeEquality(ComparisonNodeCR node, Utf8String left, Utf8String right)
         {
-        Utf8String left = node.GetLeftCP()->ToExpressionString();
-        Utf8String right = node.GetRightCP()->ToExpressionString();
         if (left.StartsWith("CompareDateTimes") && right.StartsWith("0"))
             {
             m_ignoredNodes.insert(node.GetRightCP());
-            return WrapPreviousNode("ABS", "< (1.0 / 86400000)");
+            WrapPreviousNode("ABS", "< (1.0 / 86400000)");
+            return true;
             }
         if (left.StartsWith("0") && right.StartsWith("CompareDateTimes"))
             {
             m_nodesStack.pop_back();
             m_ecsql = m_ecsql.substr(0, m_ecsql.length() - 1);
             Append("(1.0 / 86400000) >");
-            return Append("ABS");
+            Append("ABS");
+            return true;
             }
+        return false;
+        }
 
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleEqualtyNode(ComparisonNodeCR node)
+        {
+        Utf8String left = node.GetLeftCP()->ToExpressionString();
+        Utf8String right = node.GetRightCP()->ToExpressionString();
+        if (TryHandleCompareDateTimeEquality(node, left, right))
+            return;
         Append(node.ToString());
         if (left.EndsWith(".ClassName"))
             m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
