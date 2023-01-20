@@ -757,8 +757,9 @@ public:
     ECPRESENTATION_EXPORT bool HasSimilarNodeInHierarchy(NavNodeCR) const;
     ECPRESENTATION_EXPORT void DetermineChildren(NavNodeR) const;
     ECPRESENTATION_EXPORT void Customize(NavNodeR) const;
+    ECPRESENTATION_EXPORT void DetermineFilteringSupport(NavNodeR) const;
 
-    // DetermineChildren + Customize
+    // DetermineChildren + Customize + DetermineFilteringSupport
     ECPRESENTATION_EXPORT NavNodePtr Finalize(NavNodeR node) const;
 };
 

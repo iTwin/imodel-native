@@ -40,7 +40,7 @@ struct NavNodesDataSourceTests : ECPresentationTest, IECExpressionsCacheProvider
             std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache,
             s_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_provider = TestNodesProvider::Create(*m_context);
-        m_source = NavNodesDataSource::Create(*m_provider);
+        m_source = ProviderBasedNodesDataSource::Create(*m_provider);
         }
     virtual ECExpressionsCache& _Get(Utf8CP) override {return m_expressionsCache;}
     };
