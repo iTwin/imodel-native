@@ -2053,11 +2053,10 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleEqualtyNode(ComparisonNodeCR node)
         {
-        Utf8String left = node.GetLeftCP()->ToExpressionString();
-        Utf8String right = node.GetRightCP()->ToExpressionString();
-        if (TryHandleCompareDateTimeEquality(node, left, right))
+        if (TryHandleCompareDateTimeEquality(node))
             return;
         Append(node.ToString());
+        Utf8String left = node.GetLeftCP()->ToExpressionString();
         if (left.EndsWith(".ClassName"))
             m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
         }
