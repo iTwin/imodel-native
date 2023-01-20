@@ -560,6 +560,18 @@ TEST_F(ECExpressionsToECSqlConverterTests, CompareDateTimes_WrapsAndComparesArgu
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, CompareDateTimes_AddsRelativeErrorWhenComparingToZero)
+    {
+    auto clause1 = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) = 0", nullptr, nullptr);
+    EXPECT_STREQ("ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) < (1.0 / 86400000)", clause1.GetClause().c_str());
+
+    auto clause2 = m_helper.ConvertToECSql("0 = CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
+    EXPECT_STREQ("(1.0 / 86400000) > ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", clause2.GetClause().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, HandleParentheses_ConvertsOneCallInsideParentheses)
     {
     auto clause = m_helper.ConvertToECSql("(model.GetRelatedValue(\"BisCore:ModelModelsElement\", \"Forward\", \"BisCore:InformationPartitionElement\", \"Parent.Id\") = 1)", nullptr, nullptr);

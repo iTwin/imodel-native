@@ -1639,13 +1639,13 @@ private:
             DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expecting 2, got: %" PRIu64, args->GetArgumentCount()));
             return false;
             }
-
-        Append("(");
         NodePtr lhs = CreateCallNode("JULIANDAY", *args->GetArgument(0));
         NodePtr rhs = CreateCallNode("JULIANDAY", *args->GetArgument(1));
-        Node::CreateArithmetic(ExpressionToken::TOKEN_Minus, *lhs, *rhs)->Traverse(*this);
-        Append(")");
 
+        ECExpressionToECSqlConverter converter(m_fieldTypes, m_expressionContext);
+        QueryClauseAndBindings compareDateClause = converter.GetECSql(*Node::CreateArithmetic(ExpressionToken::TOKEN_Minus, *lhs, *rhs).get());
+        Append(Utf8PrintfString("(%s)", compareDateClause.GetClause().c_str()), m_nodesStack.size() > 0 && !m_nodesStack.back().Equals("ABS"));
+        
         m_ignoreNextArguments = true;
         return true;
         }
@@ -2031,9 +2031,23 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleEqualtyNode(ComparisonNodeCR node)
         {
-        Append(node.ToString());
-
         Utf8String left = node.GetLeftCP()->ToExpressionString();
+        Utf8String right = node.GetRightCP()->ToExpressionString();
+        if (left.StartsWith("CompareDateTimes") && right.StartsWith("0"))
+            {
+            m_ignoredNodes.insert(node.GetRightCP());
+            return WrapPreviousNode("ABS", "< (1.0 / 86400000)");
+            }
+        if (left.StartsWith("0") && right.StartsWith("CompareDateTimes"))
+            {
+            m_nodesStack.pop_back();
+            m_ecsql = m_ecsql.substr(0, m_ecsql.length() - 1);
+            Append("(1.0 / 86400000) >");
+            return Append("ABS");
+            }
+
+        Append(node.ToString());
+        auto operation = node.GetOperation();
         if (left.EndsWith(".ClassName"))
             m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
         }
