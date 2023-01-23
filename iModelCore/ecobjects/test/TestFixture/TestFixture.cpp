@@ -319,9 +319,10 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFil
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECTestUtility::JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b)
     {
-    auto astr = a.Stringify();
-    auto bstr = b.Stringify();
-    return astr == bstr;
+    // auto astr = a.Stringify();
+    // auto bstr = b.Stringify();
+    // return astr == bstr;
+    return a.isExactEqual(b);
     }
 
 //---------------------------------------------------------------------------------------
