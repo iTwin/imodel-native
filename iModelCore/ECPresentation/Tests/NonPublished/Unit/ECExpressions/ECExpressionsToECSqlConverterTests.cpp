@@ -562,11 +562,36 @@ TEST_F(ECExpressionsToECSqlConverterTests, CompareDateTimes_WrapsAndComparesArgu
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, CompareDateTimes_AddsRelativeErrorWhenComparingToZero)
     {
-    auto clause1 = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) = 0", nullptr, nullptr);
-    EXPECT_STREQ("ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) < (1.0 / 86400000)", clause1.GetClause().c_str());
-
-    auto clause2 = m_helper.ConvertToECSql("0 = CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
-    EXPECT_STREQ("(1.0 / 86400000) > ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", clause2.GetClause().c_str());
+    // Equal
+    auto equal = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) = 0", nullptr, nullptr);
+    EXPECT_STREQ("ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) < (1.0 / 86400000)", equal.GetClause().c_str());
+    auto equalR = m_helper.ConvertToECSql("0 = CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
+    EXPECT_STREQ("(1.0 / 86400000) > ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", equalR.GetClause().c_str());
+    // Not equal
+    auto notEqual = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) <> 0", nullptr, nullptr);
+    EXPECT_STREQ("ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) > (1.0 / 86400000)", notEqual.GetClause().c_str());
+    auto notEqualR = m_helper.ConvertToECSql("0 <> CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
+    EXPECT_STREQ("(1.0 / 86400000) < ABS(JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", notEqualR.GetClause().c_str());
+    // Less
+    auto less = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) < 0", nullptr, nullptr);
+    EXPECT_STREQ("(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) < -(1.0 / 86400000)", less.GetClause().c_str());
+    auto lessR = m_helper.ConvertToECSql("0 > CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
+    EXPECT_STREQ("-(1.0 / 86400000) > (JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", lessR.GetClause().c_str());
+    // Less equal
+    auto lessEq = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) <= 0", nullptr, nullptr);
+    EXPECT_STREQ("(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) <= (1.0 / 86400000)", lessEq.GetClause().c_str());
+    auto lessEqR = m_helper.ConvertToECSql("0 >= CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
+    EXPECT_STREQ("(1.0 / 86400000) >= (JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", lessEqR.GetClause().c_str());
+    // Greater
+    auto greater = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) > 0", nullptr, nullptr);
+    EXPECT_STREQ("(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) > (1.0 / 86400000)", greater.GetClause().c_str());
+    auto greaterR = m_helper.ConvertToECSql("0 < CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
+    EXPECT_STREQ("(1.0 / 86400000) < (JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", greaterR.GetClause().c_str());
+    // Greater equal
+    auto greaterEq = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2) >= 0", nullptr, nullptr);
+    EXPECT_STREQ("(JULIANDAY([this].[PropertyName]) - JULIANDAY(2)) >= -(1.0 / 86400000)", greaterEq.GetClause().c_str());
+    auto greaterEqR = m_helper.ConvertToECSql("0 <= CompareDateTimes(this.PropertyName, 2)", nullptr, nullptr);
+    EXPECT_STREQ("-(1.0 / 86400000) <= (JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", greaterEqR.GetClause().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

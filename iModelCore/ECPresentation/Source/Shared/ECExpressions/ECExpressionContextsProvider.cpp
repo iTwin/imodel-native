@@ -2036,14 +2036,25 @@ private:
         if (left.StartsWith("CompareDateTimes") && right.Equals("0"))
             {
             m_ignoredNodes.insert(node.GetRightCP());
-            WrapPreviousNode("ABS", "< (1.0 / 86400000)");
+            if (node.GetOperation() == TOKEN_Equal)
+                {
+                WrapPreviousNode("ABS", "< (1.0 / 86400000)");
+                return true;
+                }
+            WrapPreviousNode("ABS", "> (1.0 / 86400000)");
             return true;
             }
         if (left.Equals("0") && right.StartsWith("CompareDateTimes"))
             {
             m_nodesStack.pop_back();
             m_ecsql = m_ecsql.substr(0, m_ecsql.length() - 1);
-            Append("(1.0 / 86400000) >");
+            if (node.GetOperation() == TOKEN_Equal)
+                {
+                Append("(1.0 / 86400000) >");
+                Append("ABS");
+                return true;
+                }
+            Append("(1.0 / 86400000) <");
             Append("ABS");
             return true;
             }
@@ -2061,6 +2072,61 @@ private:
         Utf8String left = node.GetLeftCP()->ToExpressionString();
         if (left.EndsWith(".ClassName"))
             m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+--*/
+    bool TryHandleCompareDateTimeGreaterLess(ComparisonNodeCR node)
+        {
+        Utf8String left = node.GetLeftCP()->ToExpressionString();
+        Utf8String right = node.GetRightCP()->ToExpressionString();
+        if (left.StartsWith("CompareDateTimes") && right.Equals("0"))
+            {
+            Append(node.ToString());
+            switch (node.GetOperation())
+                {
+                case TOKEN_Greater:
+                case TOKEN_LessEqual:
+                    Append("(1.0 / 86400000)");
+                    break;
+                case TOKEN_GreaterEqual:
+                case TOKEN_Less:
+                    Append("-(1.0 / 86400000)");
+                    break;
+                }
+            m_ignoredNodes.insert(node.GetRightCP());
+            return true;
+            }
+        if (left.Equals("0") && right.StartsWith("CompareDateTimes"))
+            {
+            m_nodesStack.pop_back();
+            m_ecsql = m_ecsql.substr(0, m_ecsql.length() - 1);
+            switch (node.GetOperation())
+                {
+                case TOKEN_Greater:
+                case TOKEN_LessEqual:
+                    Append("-(1.0 / 86400000)");
+                    break;
+                case TOKEN_GreaterEqual:
+                case TOKEN_Less:
+                    Append("(1.0 / 86400000)");
+                    break;
+                }
+            Append(node.ToString());
+            return true;
+            }
+        return false;
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleGreaterLessNode(ComparisonNodeCR node)
+        {
+        if (TryHandleCompareDateTimeGreaterLess(node))
+            return;
+        Append(node.ToString());
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -2218,10 +2284,16 @@ public:
             case TOKEN_IntegerConstant:
             case TOKEN_FloatConst:
             case TOKEN_PointConst:
+                Append(node.ToString());
+                break;
             case TOKEN_Greater:
             case TOKEN_GreaterEqual:
             case TOKEN_Less:
             case TOKEN_LessEqual:
+                if (nullptr == dynamic_cast<ComparisonNodeCP>(&node))
+                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Got TOKEN_Greater, TOKEN_GreaterEqual, TOKEN_Less or TOKEN_LessEqual, but Node is not a ComparisonNode");
+                HandleGreaterLessNode(static_cast<ComparisonNodeCR>(node));
+                break;
             case TOKEN_Minus:
             case TOKEN_Plus:
             case TOKEN_Star:
