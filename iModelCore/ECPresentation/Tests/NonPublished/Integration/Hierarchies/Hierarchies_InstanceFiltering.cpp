@@ -2937,6 +2937,62 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Doesnt
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_DoesntSupportFilteringHierarchyLevelssFromInstanceNodesOfSpecificClassesSpecificationWithParentSymbolInInstanceFilter, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_DoesntSupportFilteringHierarchyLevelssFromInstanceNodesOfSpecificClassesSpecificationWithParentSymbolInInstanceFilter)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    auto rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    auto childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "parent.ECInstanceId <> NULL",
+        {
+        new MultiSchemaClass(classB->GetSchema().GetName(), true, bvector<Utf8String>{ classB->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*childRule);
+
+    // verify without instance filter, ensure the child hierarchy level is not filterable
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    auto hierarchy = ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            ExpectedHierarchyListDef(false,
+                {
+                CreateInstanceNodeValidator({ b })
+                })),
+        });
+
+    // getting descriptor for the "a" node should throw
+    params.SetParentNode(hierarchy[0].node.get());
+    ExpectThrowingHierarchyLevelDescriptorRequest(*m_manager, params);
+
+    // attempting to filter the hierarchy level should throw
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop = 1"));
+    ExpectThrowingHierarchyLevelRequest(*m_manager, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(InstanceFiltering_DoesntSupportFilteringHierarchyLevelsFromRelatedInstanceNodesSpecificationWithDeprecatedSkipRelatedLevel, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
