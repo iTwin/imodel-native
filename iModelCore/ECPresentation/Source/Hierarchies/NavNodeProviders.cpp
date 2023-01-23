@@ -16,6 +16,7 @@
 #include "NavNodesDataSource.h"
 #include "NavNodesCache.h"
 #include "NavNodesHelper.h"
+#include "HierarchiesFiltering.h"
 
 //#define CHECK_ORDERED_QUERY_PLANS
 #ifdef CHECK_ORDERED_QUERY_PLANS
@@ -53,15 +54,23 @@ private:
     NavNodesProviderContext* m_context;
 
 private:
+    void EnsureFilteringSupported(ChildNodeSpecificationCR spec) const
+        {
+        // the hierarchy level was requested with an instance filter - ensure the specification supports filtering
+        if (m_context->GetInstanceFilter())
+            ENSURE_SUPPORTS_FILTERING(spec);
+        }
     void AddQueryBasedNodeProvider(ChildNodeSpecification const& specification)
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create nodes provider for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
+        EnsureFilteringSupported(specification);
         NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, specification);
         m_nodeProviders.push_back(provider);
         }
     void AddCustomNodeProvider(CustomNodeSpecification const& specification)
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create nodes provider for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
+        EnsureFilteringSupported(specification);
         NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, specification);
         m_nodeProviders.push_back(provider);
         }
@@ -689,6 +698,7 @@ NavNodePtr NodesFinalizer::Finalize(NavNodeR node) const
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Finalize node %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
     Customize(node);
     DetermineChildren(node);
+    DetermineFilteringSupport(node);
     return &node;
     }
 
@@ -794,6 +804,25 @@ void NodesFinalizer::DetermineChildren(NavNodeR node) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void NodesFinalizer::DetermineFilteringSupport(NavNodeR node) const
+    {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Determine filtering support for %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
+
+    NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(*m_context, node);
+    // we consider that this provider depends on a variable if we need the variable to determine
+    // if node supports filtering
+    childrenContext->InitUsedVariablesListener({}, &m_context->GetUsedVariablesListener());
+
+    node.SetSupportsFiltering(HierarchiesFilteringHelper::SupportsFiltering(
+        &node,
+        TraverseHierarchyRulesProps(childrenContext->GetNodesFactory(), childrenContext->GetRulesPreprocessor(), childrenContext->GetSchemaHelper()),
+        nullptr
+        ));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentNode, int suppressCount) const
     {
     Utf8StringCR nodeHash = node.GetKey()->GetHash();
@@ -804,7 +833,7 @@ bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentN
         areNodesSimilar = (node.GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount() == parentNode.GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount());
         if (areNodesSimilar)
             {
-            if (node.GetInstanceKeysSelectQuery() == nullptr || parentNode.GetInstanceKeysSelectQuery() == nullptr)
+            if (node.GetKey()->GetInstanceKeysSelectQuery() == nullptr || parentNode.GetKey()->GetInstanceKeysSelectQuery() == nullptr)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "Grouping node has no instance keys select query.");
                 areNodesSimilar = false;
@@ -813,8 +842,8 @@ bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentN
                 {
                 // the query returns all rows that are only returned by one of the queries
                 auto query = UnionQueryBuilder::Create({
-                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*node.GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*parentNode.GetInstanceKeysSelectQuery())),
-                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*parentNode.GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*node.GetInstanceKeysSelectQuery())),
+                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*node.GetKey()->GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*parentNode.GetKey()->GetInstanceKeysSelectQuery())),
+                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*parentNode.GetKey()->GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*node.GetKey()->GetInstanceKeysSelectQuery())),
                     });
                 static GenericQueryResultReader<bool> s_rowsExistReader([](ECSqlStatementCR){return true;});
                 SetupCustomFunctionsContext fnContext(*m_context, query->GetExtendedData());
@@ -3248,11 +3277,6 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     NavNodeExtendedData targetExtendedData(target);
     NavNodeExtendedData sourceExtendedData(source);
 
-    target.SetInstanceKeysSelectQuery(UnionQueryBuilder::Create({
-        StringQueryBuilder::Create(*target.GetInstanceKeysSelectQuery()),
-        StringQueryBuilder::Create(*source.GetInstanceKeysSelectQuery()),
-        })->CreateQuery());
-
     bvector<ECClassInstanceKey> instanceKeys = target.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
     for (auto const& sourceInstanceKey : source.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys())
         {
@@ -3270,8 +3294,15 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     targetExtendedData.AddMergedNodeId(source.GetNodeId());
 
     NavNodeCPtr parent = context.GetVirtualParentNode();
-    target.SetNodeKey(*ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
-        parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys));
+    ECInstancesNodeKeyPtr nodeKey = ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
+        parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys);
+
+    nodeKey->SetInstanceKeysSelectQuery(UnionQueryBuilder::Create({
+        StringQueryBuilder::Create(*target.GetKey()->GetInstanceKeysSelectQuery()),
+        StringQueryBuilder::Create(*source.GetKey()->GetInstanceKeysSelectQuery()),
+        })->CreateQuery());
+
+    target.SetNodeKey(*nodeKey);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

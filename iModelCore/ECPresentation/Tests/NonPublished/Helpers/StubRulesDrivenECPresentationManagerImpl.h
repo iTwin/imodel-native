@@ -18,13 +18,13 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct StubNodeInstanceKeysProvider : INodeInstanceKeysProvider
     {
     private:
-        std::function<void(NavNodeCR, std::function<bool(ECInstanceKey)>)> m_iterate;
+        std::function<void(NavNodeKeyCR, std::function<bool(ECInstanceKey)>)> m_iterate;
         std::function<bool(NavNodeCR, ECInstanceKeyCR)> m_contains;
     protected:
-        void _IterateInstanceKeys(NavNodeCR node, std::function<bool(ECInstanceKey)> cb) const override
+        void _IterateInstanceKeys(NavNodeKeyCR nodeKey, std::function<bool(ECInstanceKey)> cb) const override
             {
             if (m_iterate)
-                m_iterate(node, cb);
+                m_iterate(nodeKey, cb);
             }
         bool _ContainsInstanceKey(NavNodeCR node, ECInstanceKeyCR key) const override
             {
@@ -33,9 +33,27 @@ struct StubNodeInstanceKeysProvider : INodeInstanceKeysProvider
             return false;
             }
     public:
-        void SetIterateFunc(std::function<void(NavNodeCR, std::function<bool(ECInstanceKey)>)> func) { m_iterate = func; }
+        void SetIterateFunc(std::function<void(NavNodeKeyCR, std::function<bool(ECInstanceKey)>)> func) { m_iterate = func; }
         void SetContainsFunc(std::function<bool(NavNodeCR, ECInstanceKeyCR)> func) { m_contains = func; }
     };
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct VectorNodesDataSource : NavNodesDataSource
+{
+private:
+    RefCountedPtr<VectorDataSource<NavNodePtr>> m_vec;
+protected:
+    NavNodePtr _Get(size_t index) const override {return m_vec->Get(index);}
+    size_t _GetSize() const override {return m_vec->GetSize();}
+    Iterator _CreateFrontIterator() const override {return m_vec->begin();}
+    Iterator _CreateBackIterator() const override {return m_vec->end();}
+public:
+    VectorNodesDataSource(bvector<NavNodePtr> nodes)
+        : m_vec(VectorDataSource<NavNodePtr>::Create(nodes))
+        {}
+};
 
 /*=================================================================================**//**
 * @bsiclass
@@ -57,17 +75,17 @@ private:
     std::function<std::unique_ptr<INodeInstanceKeysProvider>()> m_nodeInstanceKeysProviderFactory;
 
 private:
-    INavNodesDataSourcePtr GetNodes(NavNodeCP parent)
+    NavNodesDataSourcePtr GetNodes(NavNodeCP parent)
         {
         bpair<NavNodePtr, bvector<NavNodePtr>> pair;
         if (!FindPair(parent, pair))
-            return EmptyDataSource<NavNodePtr>::Create();
+            return nullptr;
 
         bvector<NavNodePtr> nodes;
         for (NavNodePtr node : pair.second)
             nodes.push_back(node.get()->Clone());
 
-        return VectorDataSource<NavNodePtr>::Create(nodes);
+        return new VectorNodesDataSource(nodes);
         }
     bool FindPair(NavNodeCP parent, bpair<NavNodePtr, bvector<NavNodePtr>>& p)
         {
@@ -90,7 +108,7 @@ protected:
             return m_nodeInstanceKeysProviderFactory();
         return std::make_unique<StubNodeInstanceKeysProvider>();
         }
-    INavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) override
+    NavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) override
         {
         return GetNodes(params.GetParentNode());
         }

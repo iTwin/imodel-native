@@ -487,10 +487,14 @@ folly::Future<NodesResponse> ECPresentationManager::GetNodes(WithPageOptions<Asy
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
-        INavNodesDataSourcePtr source = m_impl->GetNodes(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
-        if (source.IsValid())
-            return NavNodesContainer(*ConstNodesDataSource::Create(*source));
-        return NavNodesContainer();
+        auto source = m_impl->GetNodes(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
+        if (!source.IsValid())
+            return NavNodesContainer();
+
+        auto preloadedSource = PreloadedDataSource<NavNodeCPtr>::Create(*ConstNodesDataSource::Create(*source));
+        NavNodesContainer result(*preloadedSource);
+        result.SetSupportsFiltering(source->SupportsFiltering());
+        return result;
         }, CreateNodesTaskParams(*m_impl, connection, params));
     }
 

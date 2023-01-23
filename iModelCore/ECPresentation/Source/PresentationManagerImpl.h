@@ -140,7 +140,7 @@ protected:
 
 /** @name Navigation */
     virtual std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const&) const = 0;
-    virtual INavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) = 0;
+    virtual NavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) = 0;
     virtual size_t _GetNodesCount(HierarchyRequestImplParams const&) = 0;
     virtual ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) = 0;
     virtual NavNodeCPtr _GetParent(NodeParentRequestImplParams const&) = 0;
@@ -174,7 +174,7 @@ public:
 
 /** @name Navigation */
     std::unique_ptr<INodeInstanceKeysProvider> CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const& params) const {return _CreateNodeInstanceKeysProvider(params);}
-    INavNodesDataSourcePtr GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) {return _GetNodes(params);}
+    NavNodesDataSourcePtr GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) {return _GetNodes(params);}
     size_t GetNodesCount(HierarchyRequestImplParams const& params) {return _GetNodesCount(params);}
     ContentDescriptorCPtr GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const& params) {return _GetNodesDescriptor(params);}
     NavNodeCPtr GetParent(NodeParentRequestImplParams const& params) {return _GetParent(params);}
@@ -228,8 +228,8 @@ private:
 
 private:
     NavNodesProviderContextPtr CreateNodesProviderContext(HierarchyRequestImplParams const&, std::shared_ptr<INavNodesCache> = nullptr) const;
-    NavNodesDataSourcePtr GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const&) const;
-    NavNodesDataSourcePtr GetCachedDataSource(NavNodesProviderContextR, PageOptionsCP) const;
+    RefCountedPtr<ProviderBasedNodesDataSource> GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const&) const;
+    RefCountedPtr<ProviderBasedNodesDataSource> GetCachedDataSource(NavNodesProviderContextR, PageOptionsCP) const;
     void TraverseHierarchy(HierarchyRequestImplParams const&, std::shared_ptr<INavNodesCache>) const;
     ContentProviderContextPtr CreateContentProviderContext(IConnectionCR, ContentProviderKey const&, std::unique_ptr<RulesetVariables>, ICancelationTokenCP) const;
     SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCP, ContentProviderKey const&, RulesetVariables const& variables) const;
@@ -264,7 +264,7 @@ protected:
 
     // ECPresentationManager::Impl: Navigation
     ECPRESENTATION_EXPORT std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const&) const override;
-    ECPRESENTATION_EXPORT INavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) override;
+    ECPRESENTATION_EXPORT NavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) override;
     ECPRESENTATION_EXPORT size_t _GetNodesCount(HierarchyRequestImplParams const&) override;
     ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(NodeParentRequestImplParams const&) override;
