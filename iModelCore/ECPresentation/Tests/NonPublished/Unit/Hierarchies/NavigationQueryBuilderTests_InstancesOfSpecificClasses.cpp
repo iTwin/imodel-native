@@ -301,7 +301,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByLabel_Chi
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, true, false, "", RulesEngineTestHelpers::CreateClassNamesList({ classA, classB }), false);
 
     NavNodePtr parentNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateDisplayLabelGroupingNode(nullptr, "MyLabel", 1);
-    parentNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
+    parentNode->GetKey()->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -342,7 +342,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, true, true, false, "", RulesEngineTestHelpers::CreateClassNamesList({ classA, classB }), false);
 
     auto parentNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateECClassGroupingNode(nullptr, *classA, false, "MyLabel", {});
-    parentNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
+    parentNode->GetKey()->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -381,7 +381,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *classGroupingNode);
 
     auto labelGroupingNode = TestNodesFactory(GetConnection(), spec.GetHash(), "").CreateDisplayLabelGroupingNode(classGroupingNode->GetKey().get(), "Label Grouping Node", 1);
-    labelGroupingNode->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
+    labelGroupingNode->GetKey()->SetInstanceKeysSelectQuery(std::make_unique<PresentationQuery>(CHILD_INSTANCE_KEYS_QUERY));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode, classGroupingNode->GetNodeId());
 
     auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);
