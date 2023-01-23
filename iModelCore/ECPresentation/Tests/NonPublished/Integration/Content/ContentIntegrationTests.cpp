@@ -4191,7 +4191,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_UsesRelatedInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression, R"*(
     <ECEntityClass typeName="Model">
         <ECProperty propertyName="ModelName" typeName="string" />
     </ECEntityClass>
@@ -4205,7 +4205,7 @@ DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilterExpression)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression)
     {
     ECClassCP modelClass = GetClass("Model");
     ECClassCP elementClass = GetClass("Element");
@@ -4226,7 +4226,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilter
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), false, false);
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), true, true);
     spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Backward, modelClass->GetFullName())), "model"));
     rule->AddSpecification(*spec);
 
