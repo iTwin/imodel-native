@@ -1315,11 +1315,8 @@ private:
                 continue;
                 }
 
-            NavNodeCPtr nodePtr = m_nodesLocater->LocateNode(*key);
-            if (nodePtr.IsNull() || NavNodesHelper::IsCustomNode(*nodePtr))
-                continue;
 
-            m_nodeInstanceKeysProvider->IterateInstanceKeys(*nodePtr, [&](ECInstanceKey k)
+            m_nodeInstanceKeysProvider->IterateInstanceKeys(*key, [&](ECInstanceKey k)
                 {
                 instanceKeys.push_back(k);
                 return true;
