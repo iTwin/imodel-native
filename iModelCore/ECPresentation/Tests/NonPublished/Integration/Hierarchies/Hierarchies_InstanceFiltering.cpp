@@ -327,8 +327,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         });
     }
 
-#ifdef FIXME_CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_WITH_RELATED_INSTANCES
-// https://github.com/iTwin/imodel-native/issues/110
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -411,7 +409,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
         CreateInstanceNodeValidator({ a3 }),
         });
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
