@@ -73,6 +73,11 @@ protected:
     ECPRESENTATION_EXPORT virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR, BeJsConst) const override;
     ECPRESENTATION_EXPORT virtual void _AsJson(ContextR, LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
     ECPRESENTATION_EXPORT virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst) const override;
+    
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, PresentationQuery const&, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual std::unique_ptr<PresentationQuery> _GetPresentationQueryFromJson(BeJsConst) const override;
+
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, BoundQueryValuesList const&, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(ContextR, RelatedClassCR path, rapidjson::Document::AllocatorType&) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(ContextR, RelatedClassPathCR path, rapidjson::Document::AllocatorType&) const override;
@@ -96,5 +101,17 @@ protected:
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(ContextR, InstanceFilterDefinitionCR, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT std::unique_ptr<InstanceFilterDefinition> _GetInstanceFilterFromJson(IConnectionCR, BeJsConst) const override;
 };
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct DefaultBoundQueryValueSerializer : IBoundQueryValueSerializer
+    {
+    rapidjson::Document _ToJson(BoundQueryECValue const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundQueryId const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const override;
+    std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const) override;
+    };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

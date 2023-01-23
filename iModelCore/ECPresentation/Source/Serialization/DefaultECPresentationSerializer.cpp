@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/DefaultECPresentationSerializer.h>
-#include "../Shared/ValueHelpers.h"
 #include "../Shared/ECSchemaHelper.h"
 
 // Member names of the serialized NavNode JSON object
@@ -27,6 +26,123 @@
 #define NAVNODE_InternalData        "InternalData"
 #define NAVNODE_UsersExtendedData   "ExtendedData"
 #define NAVNODE_LabelDefinition     "LabelDefinition"
+
+// Type names of the serialized BoundQueryValue JSON object
+#define BOUNDQUERYVALUETYPE_ECValue         "ec-value"
+#define BOUNDQUERYVALUETYPE_ValueSet        "value-set"
+#define BOUNDQUERYVALUETYPE_Id              "id"
+#define BOUNDQUERYVALUETYPE_IdSet           "id-set"
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJsConst const json)
+    {
+    if (!json.isObject() || !json.hasMember("type"))
+        return nullptr;
+    Utf8CP type = json["type"].asCString();
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_ECValue, type))
+        {
+        rapidjson::Document doc;   
+        doc.Parse(json["value"].Stringify().c_str());
+        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), ValueHelpers::ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        return std::make_unique<BoundQueryECValue>(std::move(value));
+        }
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type))
+        {
+        bvector<ECValue> ecValues;
+        if (json["value"].empty())
+            return std::make_unique<BoundECValueSet>(ecValues);
+
+        int valueType = json["value-type"].GetInt();
+        if (0 == valueType)
+            {
+            ecValues.push_back(ECValue());
+            return std::make_unique<BoundECValueSet>(ecValues);
+            }
+        
+        return std::make_unique<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson((PrimitiveType)valueType, ValueHelpers::ToRapidJson(json["value"]))); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        }
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_Id, type))
+        {
+        return std::make_unique<BoundQueryId>(json["value"].asCString());
+        }
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_IdSet, type))
+        {
+        BeJsConst idsJson = json["value"];
+        bvector<BeInt64Id> ids;
+        for (rapidjson::SizeType i = 0; i < idsJson.size(); ++i)
+            ids.push_back(BeInt64Id::FromString(idsJson[i].asCString()));
+        return std::make_unique<BoundQueryIdSet>(ids);
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryECValue const& boundQueryECValue, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", BOUNDQUERYVALUETYPE_ECValue, json.GetAllocator());
+    json.AddMember("value-type", (int)boundQueryECValue.GetValue().GetPrimitiveType(), json.GetAllocator());
+    json.AddMember("value", ValueHelpers::GetJsonFromECValue(boundQueryECValue.GetValue(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundECValueSet const& boundECValueSet, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", BOUNDQUERYVALUETYPE_ValueSet, json.GetAllocator());
+
+    Nullable<PrimitiveType> valueType = boundECValueSet.GetValueType();
+    if (valueType.IsNull())
+        json.AddMember("value-type", rapidjson::Value(), json.GetAllocator());
+    else
+        json.AddMember("value-type", rapidjson::Value((int)*valueType), json.GetAllocator());
+
+    rapidjson::Value valuesJson;
+    valuesJson.SetArray();
+
+    boundECValueSet.ForEachValue([&](ECValue const& value) {
+        valuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
+        });
+    json.AddMember("value", valuesJson, json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryId const& boundQueryId, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", BOUNDQUERYVALUETYPE_Id, json.GetAllocator());
+    json.AddMember("value", rapidjson::Value(boundQueryId.GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryIdSet const& boundQueryIdSet, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("type", BOUNDQUERYVALUETYPE_IdSet, json.GetAllocator());
+    rapidjson::Value idsJson;
+    idsJson.SetArray();
+    for (auto const& id : boundQueryIdSet.GetSet())
+        idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", idsJson, json.GetAllocator());
+    return json;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -681,6 +797,34 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, ECIns
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, PresentationQuery const& presentationQuery,
+    rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("Query", rapidjson::Value(presentationQuery.GetQueryString().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Bindings", _AsJson(ctx, presentationQuery.GetBindings(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, BoundQueryValuesList const& boundQueryValuesList,
+    rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetArray();
+    DefaultBoundQueryValueSerializer valuesSerializer;
+    for (auto const& value : boundQueryValuesList)
+        json.PushBack(value->ToJson(valuesSerializer, &json.GetAllocator()), json.GetAllocator());
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void DefaultECPresentationSerializer::_NavNodeKeyAsJson(ContextR ctx, NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.SetObject();
@@ -692,6 +836,8 @@ void DefaultECPresentationSerializer::_NavNodeKeyAsJson(ContextR ctx, NavNodeKey
         pathJson.PushBack(rapidjson::Value(pathElement.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
     navNodeKeyBaseJson.AddMember("PathFromRoot", pathJson, navNodeKeyBaseJson.GetAllocator());
+    if (nullptr != navNodeKey.GetInstanceKeysSelectQuery())
+        navNodeKeyBaseJson.AddMember("InstanceKeysSelectQuery", _AsJson(ctx, *navNodeKey.GetInstanceKeysSelectQuery(), &navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -738,7 +884,24 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsCo
     {
     Utf8CP type = json["Type"].asCString();
     Utf8CP specificationIdentifier = json["SpecificationIdentifier"].asCString();
-    return NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    NavNodeKeyPtr key = NavNodeKey::Create(type, specificationIdentifier, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    key->SetInstanceKeysSelectQuery(GetPresentationQueryFromJson(json["InstanceKeysSelectQuery"]));
+    return key;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<PresentationQuery> DefaultECPresentationSerializer::_GetPresentationQueryFromJson(BeJsConst json) const
+    {
+    Utf8CP queryString = json["Query"].asCString();
+    if (!*queryString)
+        return nullptr;
+
+    BoundQueryValuesList bindings;
+    DefaultBoundQueryValueSerializer serializer;
+    bindings.FromJson(serializer, json["Bindings"]);
+    return std::make_unique<PresentationQuery>(queryString, bindings);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -71,6 +71,7 @@
     <ClInclude Include="..\PublicAPI\ECPresentation\LabelDefinition.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\NavNode.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\NavNodeKey.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\PresentationQuery.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\RuleSetLocater.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\RulesetVariables.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllInstanceNodesSpecification.h" />

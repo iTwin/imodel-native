@@ -519,7 +519,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
                 "PathFromRoot": []
-                },
+            },
             "Description": "",
             "ImageId": "",
             "ForeColor": "",
@@ -567,7 +567,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
                 "PathFromRoot": []
-                },
+            },
             "Description": "",
             "ImageId": "",
             "ForeColor": "",
@@ -619,7 +619,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
                 "PathFromRoot": []
-                },
+            },
             "Description": "Updated Description",
             "ImageId": "",
             "ForeColor": "",
@@ -671,7 +671,7 @@ TEST_F(DefaultECPresentationSerializerTests, ChangeRecordSerializationChangeType
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
                 "PathFromRoot": []
-                },
+            },
             "Description": "",
             "ImageId": "",
             "ForeColor": "",
@@ -739,7 +739,7 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationC
             "Type": "TestType",
             "SpecificationIdentifier": "",
             "PathFromRoot": []
-            },
+        },
         "NodesCount": 2,
         "RulesetId": "ruleset-id",
         "ECDbFileName": "db-file-name"
@@ -772,7 +772,7 @@ TEST_F(DefaultECPresentationSerializerTests, HierarchyUpdateRecordSerializationW
                     "Type": "TestType",
                     "SpecificationIdentifier": "",
                     "PathFromRoot": []
-                    },
+                },
                 "Description": "",
                 "ImageId": "",
                 "ForeColor": "",
@@ -1735,7 +1735,7 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
                 "Type": "TestType",
                 "SpecificationIdentifier": "",
                 "PathFromRoot": []
-                },
+            },
             "Description": "",
             "ImageId": "",
             "ForeColor": "",
@@ -1763,7 +1763,7 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
                     "Type": "TestType",
                     "SpecificationIdentifier": "",
                     "PathFromRoot": []
-                    },
+                },
                 "Description": "",
                 "ImageId": "",
                 "ForeColor": "",
@@ -1802,7 +1802,8 @@ TEST_F(DefaultECPresentationSerializerTests, KeySetSerialization)
         ECClassInstanceKey(*GetClassA(), ECInstanceId((uint64_t)1)),
         ECClassInstanceKey(*GetClassB(), ECInstanceId((uint64_t)2))
         });
-    keySet->Add(*NavNodeKey::Create("TypeName", "Spec", {"123", "abc"}));
+    auto key = NavNodeKey::Create("TypeName", "Spec", { "123", "abc" });
+    keySet->Add(*key);
 
     // Serialize
     rapidjson::Document actual = keySet->AsJson();

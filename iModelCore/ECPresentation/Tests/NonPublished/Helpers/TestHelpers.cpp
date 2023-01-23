@@ -686,7 +686,7 @@ NavNodesContainer RulesEngineTestHelpers::GetValidatedNodes(std::function<NodesR
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bset<ECInstanceKey> ReadNodeInstanceKeys(ECDbCR connection, NavNodeCR node)
     {
-    auto query = node.GetInstanceKeysSelectQuery();
+    auto query = node.GetKey()->GetInstanceKeysSelectQuery();
     ECSqlStatement stmt;
     if (!stmt.Prepare(connection, query->GetQueryString().c_str()).IsSuccess())
         {
@@ -754,7 +754,7 @@ void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR db, NavNodeCR node, bv
 void RulesEngineTestHelpers::ValidateNodeInstances(INodeInstanceKeysProvider const& instanceKeysProvider, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
     {
     bset<ECInstanceKey> nodeInstanceKeys;
-    instanceKeysProvider.IterateInstanceKeys(node, [&nodeInstanceKeys](ECInstanceKeyCR k)
+    instanceKeysProvider.IterateInstanceKeys(*node.GetKey(), [&nodeInstanceKeys](ECInstanceKeyCR k)
         {
         nodeInstanceKeys.insert(k);
         return true;

@@ -84,7 +84,7 @@ protected:
         NavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection(), specificationIdentifier, GetParentKey(), ecClassId, ecInstanceId, *LabelDefinition::FromString(displayLabel));
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery({ ECInstanceKey(ecClassId, ecInstanceId) }));
+            node->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery({ ECInstanceKey(ecClassId, ecInstanceId) }));
             NavNodesHelper::AddRelatedInstanceInfo(*node, statement.GetValueText(GetContract().GetIndex(Contract::RelatedInstanceInfoFieldName)));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
@@ -115,7 +115,7 @@ protected:
         NavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection(), specificationIdentifier, GetParentKey(), keys, *LabelDefinition::FromString(displayLabel));
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(keys));
+            node->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(keys));
             NavNodesHelper::AddRelatedInstanceInfo(*node, statement.GetValueText(GetContract().GetIndex(Contract::RelatedInstanceInfoFieldName)));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
@@ -170,7 +170,6 @@ protected:
         {
         if (m_inProgressNode.IsValid())
             {
-            m_inProgressNode->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(m_inProgressInstanceKeys));
             NavNodeExtendedData extendedData(*m_inProgressNode);
 #ifdef wip_skipped_instance_keys_performance_issue
             extendedData.SetSkippedInstanceKeys(m_inProgressSkippedInstanceKeys);
@@ -179,6 +178,7 @@ protected:
             InitNode(*m_inProgressNode);
             node = m_inProgressNode;
             node->SetNodeKey(*ECInstancesNodeKey::Create(GetConnection(), m_inProgressNode->GetKey()->GetSpecificationIdentifier(), GetParentKey(), m_inProgressInstanceKeys));
+            node->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(m_inProgressInstanceKeys));
             return true;
             }
         return false;
@@ -211,7 +211,7 @@ protected:
             groupedInstancesCount, instanceKeysSelectQuery.get(), std::move(groupedInstanceKeys));
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
+            node->GetKey()->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif
@@ -253,7 +253,7 @@ protected:
             groupedInstancesCount, instanceKeysSelectQuery.get());
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
+            node->GetKey()->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif
@@ -314,7 +314,7 @@ protected:
             groupedInstancesCount, instanceKeysSelectQuery.get());
         if (node.IsValid())
             {
-            node->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
+            node->GetKey()->SetInstanceKeysSelectQuery(std::move(instanceKeysSelectQuery));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
 #endif

@@ -29,7 +29,7 @@ protected:
     // Common:
     rapidjson::Document _AsJson(ContextR, KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const override;
     KeySetPtr _GetKeySetFromJson(IConnectionCR connection, BeJsConst json) const override;
-	rapidjson::Document _AsJson(ContextR, ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const override;
+    rapidjson::Document _AsJson(ContextR, ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, BeInt64Id const&, rapidjson::Document::AllocatorType*) const override;
     rapidjson::Document _AsJson(ContextR, ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Value _AsJson(ContextR, ECEnumerationCR enumeration, rapidjson::Document::AllocatorType& allocator) const override;
@@ -60,6 +60,7 @@ protected:
     void _AsJson(ContextR, ContentDescriptor::CalculatedPropertyField const&, RapidJsonDocumentR) const override {}
     rapidjson::Document _AsJson(ContextR, ContentFieldRenderer const& renderer, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, ContentFieldEditor const& editor, rapidjson::Document::AllocatorType* allocator) const override;
+    rapidjson::Document _AsJson(ContextR, BoundQueryValuesList const& boundQueryValuesList, rapidjson::Document::AllocatorType* allocator) const override;
     void _ParamsAsJson(ContextR, ContentFieldEditor::Params const&, RapidJsonDocumentR) const override {}
     void _AsJson(ContextR, FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const override;
     void _AsJson(ContextR, FieldEditorMultilineParams const& multilineParams, RapidJsonDocumentR paramsBaseJson) const override;
@@ -85,6 +86,8 @@ protected:
     LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst json) const override;
     rapidjson::Document _AsJson(ContextR, NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType* allocator) const override;
+    rapidjson::Document _AsJson(ContextR, PresentationQuery const& presentationQuery, rapidjson::Document::AllocatorType* allocator) const override;
+    std::unique_ptr<PresentationQuery> _GetPresentationQueryFromJson(BeJsConst) const override;
 
     // Update:
     rapidjson::Document _AsJson(ContextR, HierarchyChangeRecord const& changeRecord, rapidjson::Document::AllocatorType* allocator) const override;
@@ -129,6 +132,18 @@ struct DefaultClassSerializer : IECClassSerializer
 {
 protected:
 	virtual rapidjson::Document _SerializeECClass(ECClassCR, rapidjson::Document::AllocatorType&) override;
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct IModelJsBoundQueryValueSerializer : IBoundQueryValueSerializer
+{
+    rapidjson::Document _ToJson(BoundQueryECValue const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundQueryId const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundQueryIdSet const&, rapidjson::Document::AllocatorType*) const override;
+    rapidjson::Document _ToJson(BoundECValueSet const&, rapidjson::Document::AllocatorType*) const override;
+    std::unique_ptr<BoundQueryValue> _FromJson(BeJsConst const) override;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

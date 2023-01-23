@@ -594,6 +594,18 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR js
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECValue> ValueHelpers::GetECValueSetFromJson(PrimitiveType type, RapidJsonValueCR json)
+    {
+    bvector<ECValue> ecValues;
+    for (rapidjson::SizeType i = 0; i < json.Size(); i++)
+        ecValues.push_back(GetECValueFromJson(type, json[i]));
+
+    return ecValues;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
@@ -802,9 +814,9 @@ ECClassInstanceKey ValueHelpers::GetECClassInstanceKey(SchemaManagerCR schemas, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ValueHelpers::GetECValueTypeName(ECValueCR value)
+Utf8CP ValueHelpers::PrimitiveTypeAsString(PrimitiveType type)
     {
-    switch (value.GetPrimitiveType())
+    switch (type)
         {
         case PRIMITIVETYPE_Binary:
             return "binary";
@@ -955,4 +967,16 @@ Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR k
         format = defaultFormat;
 
     return format;
+    }
+
+
+// TODO: This method should only be used while the transition from RapidJson/JsonValue to BeJsConst isn't finished. It should be deleted afterwards.
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ValueHelpers::ToRapidJson(BeJsConst json)
+    {
+    rapidjson::Document doc;
+    doc.Parse(json.Stringify().c_str());
+    return doc;
     }

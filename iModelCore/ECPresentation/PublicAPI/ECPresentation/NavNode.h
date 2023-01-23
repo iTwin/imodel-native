@@ -20,8 +20,6 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 struct NavNodesHelper;
 struct NavNodesFactory;
 
-struct PresentationQuery;
-
 //=======================================================================================
 //! An abstract navigation node object. @ref NavNode objects are used to create a hierarchy
 //! for presentation-driven trees.
@@ -52,7 +50,6 @@ private:
     bool m_isCheckboxEnabled;
     bool m_shouldAutoExpand;
     Nullable<bool> m_supportsFiltering;
-    std::unique_ptr<PresentationQuery const> m_instanceKeysSelectQuery;
 
 private:
     void InitUsersExtendedData(rapidjson::Value const* source = nullptr);
@@ -141,9 +138,6 @@ public:
     //! Does the node support hierarchy level filtering.
     ECPRESENTATION_EXPORT bool SupportsFiltering() const;
     void SetSupportsFiltering(bool value) {m_supportsFiltering = value;}
-
-    ECPRESENTATION_EXPORT PresentationQuery const* GetInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const>);
 
     //! Get extended data injected into this node by API user
     ECPRESENTATION_EXPORT RapidJsonAccessor GetUsersExtendedData() const;
