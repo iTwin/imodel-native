@@ -198,10 +198,14 @@ public:
     void _Visit(InstanceNodesOfSpecificClassesSpecification const& spec) override
         {
         HandleCommonAttributes(spec);
+        if (spec.GetInstanceFilter().ContainsI("parent."))
+            REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to \"parent\" symbol being used in instance filter", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         }
     void _Visit(RelatedInstanceNodesSpecification const& spec) override
         {
         HandleCommonAttributes(spec);
+        if (spec.GetInstanceFilter().ContainsI("parent."))
+            REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to \"parent\" symbol being used in instance filter", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         if (spec.GetSkipRelatedLevel() != 0)
             REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to deprecated \"skip related level\" attribute", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         if (!spec.GetSupportedSchemas().empty())
