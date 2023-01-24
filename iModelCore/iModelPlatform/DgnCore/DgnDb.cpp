@@ -221,7 +221,7 @@ DbResult DgnDb::DisqualifyTypeIndexForBisCoreExternalSourceAspect()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     {
-    const auto& inParams = ((DgnDb::OpenParams const&)params);
+    auto const& inParams = ((DgnDb::OpenParams const&)params);
     SchemaUpgradeOptions const& schemaUpgradeOptions = inParams.GetSchemaUpgradeOptions();
 
     bvector<ECSchemaPtr> schemasToImport;
