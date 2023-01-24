@@ -5602,7 +5602,8 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
     switch(rc) {
-        case BE_SQLITE_ERROR_DataTransformRequired:         return "failed to import schema as it require data transform";
+        case BE_SQLITE_ERROR_DataTransformRequired:         return "failed to import schema: data transformation required";
+
         case BE_SQLITE_ERROR_FileExists:                    return "attempt to create a new file when a file by that name already exists";
         case BE_SQLITE_ERROR_AlreadyOpen:                   return "attempt to open a BeSQLite::Db that is already in use somewhere";
         case BE_SQLITE_ERROR_NoPropertyTable:               return "attempt to open a BeSQLite::Db that doesn't have a property table";
