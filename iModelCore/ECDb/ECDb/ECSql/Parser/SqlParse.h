@@ -70,27 +70,6 @@ namespace connectivity
         };
 
     //==========================================================================
-    // OSQLParseNodesContainer
-    // grabage collection of nodes
-    //==========================================================================
-    class OSQLParseNodesContainer
-        {
-        ::std::vector< OSQLParseNode* > m_aNodes;
-        public:
-            OSQLParseNodesContainer();
-            ~OSQLParseNodesContainer();
-
-            void push_back(OSQLParseNode* _pNode);
-            void erase(OSQLParseNode* _pNode);
-            bool empty() const;
-            void clear();
-            void clearAndDelete();
-            size_t size() const { return m_aNodes.size(); }
-            OSQLParseNode* front() const { return m_aNodes.front(); }
-        };
-
-
-    //==========================================================================
     //= OSQLParser
     //==========================================================================
     /** Parser for SQL92
@@ -166,7 +145,7 @@ namespace connectivity
             sal_Int16 buildPredicateRule(OSQLParseNode*& pAppend, OSQLParseNode* pLiteral, OSQLParseNode*& pCompare, OSQLParseNode* pLiteral2 = NULL);
 
             sal_Int16 buildLikeRule(OSQLParseNode*& pAppend, OSQLParseNode*& pLiteral, const OSQLParseNode* pEscape);
-   
+
             //#else
             //#endif
         };
