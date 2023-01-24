@@ -89,7 +89,7 @@ namespace connectivity
 
             // informations on the current parse action
             const IParseContext* m_pContext;
-            std::unique_ptr<OSQLParseNode> m_pParseTree;    // result from parsing
+            OSQLParseNode* m_pParseTree;    // result from parsing
             Utf8String m_sFieldName;    // current field name for a predicate
             Utf8String m_sErrorMessage;// current error msg
             RefCountedPtr< ::com::sun::star::beans::XPropertySet > m_xField;        // current field
@@ -100,7 +100,7 @@ namespace connectivity
             ~OSQLParser();
 
             // Parsing an SQLStatement
-            std::unique_ptr<OSQLParseNode> parseTree(Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational = sal_False);
+            OSQLParseNode* parseTree(Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational = sal_False);
 
             OSQLScanner* GetScanner() { return m_scanner.get(); }
             // Access to the context

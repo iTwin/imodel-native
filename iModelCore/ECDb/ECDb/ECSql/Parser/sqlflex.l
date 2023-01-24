@@ -724,7 +724,7 @@ OSQLParseNode* OSQLScanner::NewNode(const sal_Char* pNewValue, SQLNodeType eNode
 // -------------------------------------------------------------------------
 OSQLParseNode* OSQLScanner::NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
     {
-    return m_pGarbageCollector.NewNode(pNewValue.c_str(), eNodeType, nNodeID);
+    return m_pGarbageCollector.NewNode(_rNewValue.c_str(), eNodeType, nNodeID);
     }
 
 // -------------------------------------------------------------------------
