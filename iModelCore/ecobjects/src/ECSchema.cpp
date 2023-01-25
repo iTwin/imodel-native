@@ -1975,10 +1975,10 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 
             return targetUnit;
             };
-        auto comp = Formatting::CompositeValueSpec(*getTargetUnit(sourceComp->GetMajorUnit()),
-                                                    *getTargetUnit(sourceComp->GetMiddleUnit()),
-                                                    *getTargetUnit(sourceComp->GetMinorUnit()),
-                                                    *getTargetUnit(sourceComp->GetSubUnit()));
+        auto comp = Formatting::CompositeValueSpec(getTargetUnit(sourceComp->GetMajorUnit()),
+                                                   getTargetUnit(sourceComp->GetMiddleUnit()),
+                                                   getTargetUnit(sourceComp->GetMinorUnit()),
+                                                   getTargetUnit(sourceComp->GetSubUnit()));
         if (ECObjectsStatus::Success != status)
             return status;
 
