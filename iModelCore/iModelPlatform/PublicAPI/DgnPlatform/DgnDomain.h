@@ -123,8 +123,6 @@ public:
         m_revisionProcessOption = revisionOptions;
         }
 
-
-
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
     DomainUpgradeOptions GetDomainUpgradeOptions() const { return m_domainUpgradeOptions; }
 

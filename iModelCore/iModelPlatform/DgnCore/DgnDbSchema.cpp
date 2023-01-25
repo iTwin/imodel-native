@@ -552,7 +552,7 @@ BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
         {
         if (!((const DgnDb::OpenParams&)params).GetAllowDataTransformDuringSchemaUpdate())
             {
-            LOG.error("Open IModel need to upgrade profile which requires IModel lock. Get IModel lock and then set 'AllowChangesThatRequireIModelLock' to true in OpenParams for this operation to continue.");
+            LOG.error("Upgrading profile requires schema lock that is not held.");
             return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
             }
         }
@@ -608,7 +608,7 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
     return SaveDgnDbProfileVersion(m_profileVersion);
     }
 
-/*-------`--------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
@@ -618,7 +618,7 @@ BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool allowDataTransformDuringSchemaUpdate)
+SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool schemaLockHeld)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
@@ -628,7 +628,7 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool allow
         return status;
         }
 
-    return Domains().DoImportSchemas(schemasToImport, allowDataTransformDuringSchemaUpdate ?
+    return Domains().DoImportSchemas(schemasToImport, schemaLockHeld ?
         SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade:
         SchemaManager::SchemaImportOptions::None);
     }

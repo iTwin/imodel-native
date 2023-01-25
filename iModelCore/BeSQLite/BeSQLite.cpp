@@ -2947,7 +2947,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params) {
 
     rc = _OnDbOpened(params);
     if (BE_SQLITE_OK != rc) {
-        // Make sure only call AbandonChanges() only if connection is still open. Otherwise it causes crash.
+        // only call AbandonChanges() only if connection is still open. Otherwise it causes crash.
         if (IsDbOpen()) {
             AbandonChanges();
             CloseDb();
@@ -5603,7 +5603,6 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
 Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
     switch(rc) {
         case BE_SQLITE_ERROR_DataTransformRequired:         return "failed to import schema: data transformation required";
-
         case BE_SQLITE_ERROR_FileExists:                    return "attempt to create a new file when a file by that name already exists";
         case BE_SQLITE_ERROR_AlreadyOpen:                   return "attempt to open a BeSQLite::Db that is already in use somewhere";
         case BE_SQLITE_ERROR_NoPropertyTable:               return "attempt to open a BeSQLite::Db that doesn't have a property table";

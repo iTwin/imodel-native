@@ -243,7 +243,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     if (!upgrade)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
 
-    const auto requireProfileUpgrade = std::any_of(schemasToImport.begin(), schemasToImport.end(), [&](ECSchemaPtr schema) { return SchemaRequiresProfileUpgrade(*schema); });
+    auto const requireProfileUpgrade = std::any_of(schemasToImport.begin(), schemasToImport.end(), [&](ECSchemaPtr schema) { return SchemaRequiresProfileUpgrade(*schema); });
     if (requireProfileUpgrade)
         {
         DbResult rc = DoProfileUpgrade(params);
@@ -270,7 +270,6 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-// static
 DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
     {
     switch (status)
