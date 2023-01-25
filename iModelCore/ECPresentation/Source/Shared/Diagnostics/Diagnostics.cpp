@@ -90,7 +90,7 @@ Diagnostics::Message::Message(DiagnosticsCategory category, NativeLogging::SEVER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document Diagnostics::Message::_BuildJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document Diagnostics::Message::_BuildJson(rapidjson::Document::AllocatorType* allocator)
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -152,6 +152,7 @@ Diagnostics::Scope::Scope(std::shared_ptr<Scope> parentScope, Utf8String name, s
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Scope::Attach()
     {
+    BeMutexHolder lock(m_mutex);
     Diagnostics::SetCurrentScope(shared_from_this());
     m_end = 0;
     }
@@ -161,7 +162,9 @@ void Diagnostics::Scope::Attach()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Scope::Detach()
     {
-    m_end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    BeMutexHolder lock(m_mutex);
+    if (!m_isFinalized)
+        m_end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     Diagnostics::SetCurrentScope(m_parentScope.lock());
     }
 
@@ -180,11 +183,14 @@ Diagnostics::Options const& Diagnostics::Scope::GetOptions() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::AllocatorType* allocator)
     {
     BeMutexHolder lock(m_mutex);
 
-    uint64_t duration = GetElapsedTime();
+    m_isFinalized = true;
+    if (!m_end)
+        m_end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    uint64_t duration = m_end - m_start;
 
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -225,8 +231,6 @@ rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::Allocato
         return rapidjson::Document(rapidjson::kNullType);
 
     json.AddMember("scope", rapidjson::Value(m_name.c_str(), json.GetAllocator()), json.GetAllocator());
-
-    m_isFinalized = true;
 
     return json;
     }
