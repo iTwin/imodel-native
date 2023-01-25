@@ -216,19 +216,19 @@ DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
 JsonValue TestHelper::ExecutePreparedECSql(ECSqlStatement& stmt) const
     {
     if (!stmt.IsPrepared())
-        return JsonValue();
+        return JsonValue(Json::nullValue);
 
     LOG.debugv("ECSQL: %s | SQL: %s", stmt.GetECSql(), stmt.GetNativeSql());
 
-    JsonValue resultSet;
+    JsonValue resultSet(Json::arrayValue);
     JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Json::Value row;
         if (SUCCESS != adapter.GetRow(row))
-            return JsonValue();
+            return JsonValue(Json::nullValue);
 
-        resultSet.m_value.appendValue().From(row);
+        resultSet.m_value.append(row);
         }
 
     return resultSet;
