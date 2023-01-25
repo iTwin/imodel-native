@@ -548,13 +548,10 @@ ProfileState DgnDb::_CheckProfileVersion() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
     {
-    if (QueryProjectGuid().IsValid())
+    if (!params.m_allowDataTransformDuringSchemaUpdate)
         {
-        if (!params.m_allowDataTransformDuringSchemaUpdate)
-            {
-            LOG.error("Upgrading profile requires schema lock that is not held.");
-            return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
-            }
+        LOG.error("Upgrading profile requires schema lock that is not held.");
+        return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
         }
 
     if (AreTxnsEnabled())
