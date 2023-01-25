@@ -18,7 +18,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8Stri
 
     OSQLParser parser;
     Utf8String error;
-    std::unique_ptr<OSQLParseNode> parseNode(parser.parseTree(error, ecsql));
+    auto parseNode = parser.parseTree(error, ecsql);
     if (parseNode == nullptr)
         {
         if (!error.empty())

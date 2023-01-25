@@ -67,10 +67,10 @@ struct Diagnostics
     struct ILogItem
     {
     protected:
-        virtual rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) const = 0;
+        virtual rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) = 0;
     public:
         virtual ~ILogItem() {}
-        rapidjson::Document BuildJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _BuildJson(allocator);}
+        rapidjson::Document BuildJson(rapidjson::Document::AllocatorType* allocator = nullptr) {return _BuildJson(allocator);}
     };
 
     /*=================================================================================**//**
@@ -85,7 +85,7 @@ struct Diagnostics
         uint64_t m_timestamp;
         Utf8String m_message;
     protected:
-        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType* allocator) const override;
+        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType* allocator) override;
     public:
         Message(DiagnosticsCategory, NativeLogging::SEVERITY const* devSeverity, NativeLogging::SEVERITY const* editorSeverity, Utf8String message);
     };
@@ -145,7 +145,7 @@ struct Diagnostics
         void AddItem(std::shared_ptr<ILogItem>);
 
     protected:
-        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) const override;
+        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) override;
 
     public:
         Scope(std::shared_ptr<Scope> parentScope, Utf8String name, std::shared_ptr<Options> options);
@@ -160,7 +160,7 @@ struct Diagnostics
         Holder Hold() {return Holder(shared_from_this());}
 
         std::weak_ptr<Scope> GetParentScope() const {return m_parentScope;}
-        uint64_t GetElapsedTime() const {return (m_end ? m_end : BeTimeUtilities::GetCurrentTimeAsUnixMillis()) - m_start;}
+        uint64_t GetElapsedTime() const {BeMutexHolder lock(m_mutex); return (m_end ? m_end : BeTimeUtilities::GetCurrentTimeAsUnixMillis()) - m_start;}
 
         void Log(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg);
         void DevLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);

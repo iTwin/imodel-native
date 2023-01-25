@@ -1088,6 +1088,7 @@ static bvector<ContentSource> FindContentSourcesWithInstances(bvector<ContentSou
                     Utf8PrintfString("Failed to load ECClass with id - %s while getting content sources with instances.", classId.ToString().c_str()));
                 }
             ContentSource contentSourceCopy = inputContentSources[statement->GetValueUInt64(1)];
+            contentSourceCopy.SetPropertiesSourceOverride(nullptr);
             contentSourceCopy.GetSelectClass() = SelectClass<ECClass>(*ecclass, "this", false);
             result.push_back(contentSourceCopy);
             }
