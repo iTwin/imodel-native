@@ -990,10 +990,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
                 profileOptions = (BeSQLite::Db::ProfileUpgradeOptions) valProfile.Uint32Value();
             }
 
-            Napi::Boolean valAllowDataTransformDuringSchemaUpdate;
-            valAllowDataTransformDuringSchemaUpdate = upgradeOptions.Get("allowDataTransformDuringSchemaUpdate").ToBoolean();
-            if (!valAllowDataTransformDuringSchemaUpdate.IsUndefined() && !valAllowDataTransformDuringSchemaUpdate.IsNull()) {
-                allowDataTransformDuringSchemaUpdate = valAllowDataTransformDuringSchemaUpdate.Value();
+            Napi::Boolean valSchemaLockKept;
+            valSchemaLockKept = upgradeOptions.Get("schemaLockKept").ToBoolean();
+            if (!valSchemaLockKept.IsUndefined() && !valSchemaLockKept.IsNull()) {
+                allowDataTransformDuringSchemaUpdate = valSchemaLockKept.Value();
             }
         }
 

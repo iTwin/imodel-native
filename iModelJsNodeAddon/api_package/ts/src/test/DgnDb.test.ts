@@ -21,7 +21,7 @@ describe("basic tests", () => {
   let dgndb: IModelJsNative.DgnDb;
 
   before((done) => {
-    dgndb = openDgnDb(dbFileName);
+    dgndb = openDgnDb(dbFileName, {schemaLockKept: true} as any);
     done();
   })
 
@@ -79,7 +79,7 @@ describe("basic tests", () => {
   it("testSchemaImport", () => {
     const writeDbFileName = copyFile("testSchemaImport.bim", dbFileName);
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
-    const db = openDgnDb(writeDbFileName, {profile: ProfileOptions.Upgrade});
+    const db = openDgnDb(writeDbFileName, {profile: ProfileOptions.Upgrade, schemaLockKept: true} as any);
     assert.isTrue(db !== undefined);
     expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found"); // presentationrules alias is 'pr'.
     let bisProps = db.getSchemaProps("BisCore");

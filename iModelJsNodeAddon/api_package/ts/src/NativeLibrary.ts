@@ -525,8 +525,8 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
-    public importSchemas(schemaFileNames: string[], options: SchemaImportOptions): DbResult;
-    public importXmlSchemas(serializedXmlSchemas: string[], options: SchemaImportOptions): DbResult;
+    public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
+    public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties:{spec: any, scopeSpec: any}): Id64String;
