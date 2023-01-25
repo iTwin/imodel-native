@@ -631,7 +631,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
         "    </ECEntityClass>"
         "</ECSchema>";
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaXml2)));
-   auto jResult0 = BeJsDocument(R"({
+   auto jResult0 = Json::Value::From(R"({
    "entities" : [
       {
          "baseClass" : "TestSchema:A",
@@ -686,7 +686,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
          ]
       }
    ]})");
-    auto jResult1 = BeJsDocument(R"(
+    auto jResult1 = Json::Value::From(R"(
     {
     "entities" : [
         {
@@ -816,10 +816,10 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
         InstanceFinder::SearchResults::JsonFormatOptions opts(m_ecdb);
         opts.SetUseClassNameForBaseClass(true);
         opts.SetUseClassNameForInstanceKey(true);
-        BeJsDocument jsonValue;
+        Json::Value jsonValue;
         BeJsValue jsValue(jsonValue);
         results.ToJson(jsValue, &opts);
-        return jsonValue.Stringify();
+        return jsonValue.toStyledString();
     };
 
     auto testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -828,8 +828,8 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
     ASSERT_NE(testSchema1, nullptr);
     auto result0 = InstanceFinder::FindInstances(m_ecdb, testSchema->GetId(), false);
     auto result1 = InstanceFinder::FindInstances(m_ecdb, testSchema1->GetId(), false);
-    ASSERT_STREQ(toJson(result0).c_str(), jResult0.Stringify(Indented).c_str());
-    ASSERT_STREQ(toJson(result1).c_str(), jResult1.Stringify(Indented).c_str());
+    ASSERT_STREQ(toJson(result0).c_str(), jResult0.toStyledString().c_str());
+    ASSERT_STREQ(toJson(result1).c_str(), jResult1.toStyledString().c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -13173,7 +13173,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
         else
             {
             ASSERT_TRUE(format->HasNumeric()) << assertMessage;
-            BeJsDocument jval;
+            Json::Value jval;
             ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << assertMessage;
             ASSERT_EQ(numericSpec, JsonValue(jval)) << assertMessage;
             }
@@ -13182,7 +13182,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
             ASSERT_FALSE(format->HasComposite()) << assertMessage;
         else
             {
-            BeJsDocument jval;
+            Json::Value jval;
             ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << assertMessage;
             ASSERT_TRUE(format->HasComposite()) << assertMessage;
             ASSERT_EQ(compSpec, JsonValue(jval)) << assertMessage;
