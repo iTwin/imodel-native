@@ -1634,7 +1634,7 @@ TEST_F(DgnElementTests, ElementIterator)
         Utf8PrintfString userLabel("UserLabel%d", i);
         element->SetUserLabel(userLabel.c_str());
         Utf8PrintfString codeValue("CodeValue%d", i);
-        element->SetCode(CodeSpec::CreateCode(*m_db, "TestCodeSpec", codeValue));
+        element->SetCode(CodeSpec::CreateRepositoryScopedCode(*m_db, "TestCodeSpec", codeValue));
         ASSERT_TRUE(element->Insert().IsValid());
         }
 

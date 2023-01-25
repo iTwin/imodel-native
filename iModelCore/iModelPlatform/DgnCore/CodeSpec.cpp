@@ -1,24 +1,22 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecId DgnCodeSpecs::QueryCodeSpecId (Utf8CP name) const
-    {
-    Statement stmt (m_dgndb, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_CodeSpec) " WHERE Name=?");
-    stmt.BindText (1, name, Statement::MakeCopy::No);
+CodeSpecId DgnCodeSpecs::QueryCodeSpecId(Utf8CP name) const {
+    Statement stmt(m_dgndb, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_CodeSpec) " WHERE Name=?");
+    stmt.BindText(1, name, Statement::MakeCopy::No);
     return BE_SQLITE_ROW == stmt.Step() ? stmt.GetValueId<CodeSpecId>(0) : CodeSpecId();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecId DgnImportContext::_RemapCodeSpecId(CodeSpecId source)
-    {
+CodeSpecId DgnImportContext::_RemapCodeSpecId(CodeSpecId source) {
     if (!IsBetweenDbs())
         return source;
 
@@ -27,58 +25,51 @@ CodeSpecId DgnImportContext::_RemapCodeSpecId(CodeSpecId source)
         return dest;
 
     CodeSpecCPtr sourceCodeSpec = m_sourceDb.CodeSpecs().GetCodeSpec(source);
-    if (sourceCodeSpec.IsNull())
-        {
+    if (sourceCodeSpec.IsNull()) {
         BeDataAssert(false && "Missing source CodeSpec");
         return source;
-        }
+    }
 
     dest = m_destDb.CodeSpecs().QueryCodeSpecId(sourceCodeSpec->GetName().c_str());
-    if (!dest.IsValid())
-        {
+    if (!dest.IsValid()) {
         CodeSpecPtr destCodeSpec = CodeSpec::Import(nullptr, *sourceCodeSpec, *this);
-        if (destCodeSpec.IsNull())
-            {
+        if (destCodeSpec.IsNull()) {
             BeDataAssert(false && "Invalid source CodeSpec");
             return source;
-            }
+        }
 
         dest = destCodeSpec->GetCodeSpecId();
-        }
+    }
 
     return m_remap.Add(source, dest);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CodeSpec::Insert()
-    {
+DgnDbStatus CodeSpec::Insert() {
     return GetDgnDb().CodeSpecs().Insert(*this);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CodeSpec::CloneCodeForImport(DgnCodeR code, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
-    {
+DgnDbStatus CodeSpec::CloneCodeForImport(DgnCodeR code, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const {
     code = importer.IsBetweenDbs() ? srcElem.GetCode() : DgnCode();
     return DgnDbStatus::Success;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecPtr CodeSpec::Import(DgnDbStatus* outResult, CodeSpecCR src, DgnImportContext& importer)
-    {
-    DgnDbStatus ALLOW_NULL_OUTPUT (status, outResult);
+CodeSpecPtr CodeSpec::Import(DgnDbStatus* outResult, CodeSpecCR src, DgnImportContext& importer) {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, outResult);
 
     BeAssert(&src.GetDgnDb() == &importer.GetSourceDb());
-    if (!importer.IsBetweenDbs())
-        {
+    if (!importer.IsBetweenDbs()) {
         status = DgnDbStatus::DuplicateName;
         return nullptr;
-        }
+    }
 
     CodeSpecPtr dest = src.CloneForImport(&status, importer);
     if (dest.IsNull() || DgnDbStatus::Success != (status = dest->Insert()))
@@ -88,28 +79,25 @@ CodeSpecPtr CodeSpec::Import(DgnDbStatus* outResult, CodeSpecCR src, DgnImportCo
 
     status = DgnDbStatus::Success;
     return dest;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecPtr CodeSpec::CloneForImport(DgnDbStatus* outResult, DgnImportContext& importer) const
-    {
-    DgnDbStatus ALLOW_NULL_OUTPUT (status, outResult);
+CodeSpecPtr CodeSpec::CloneForImport(DgnDbStatus* outResult, DgnImportContext& importer) const {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, outResult);
 
-    if (importer.GetDestinationDb().CodeSpecs().QueryCodeSpecId(GetName().c_str()).IsValid())
-        {
+    if (importer.GetDestinationDb().CodeSpecs().QueryCodeSpecId(GetName().c_str()).IsValid()) {
         status = DgnDbStatus::DuplicateName;
         return nullptr;
-        }
+    }
 
     CreateParams params(importer.GetDestinationDb(), GetName().c_str());
     CodeSpecPtr clone = dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params);
-    if (!clone.IsValid())
-        {
-        status = DgnDbStatus::NotFound; // better error code...?
+    if (!clone.IsValid()) {
+        status = DgnDbStatus::NotFound;
         return nullptr;
-        }
+    }
 
     BeJsDocument props;
     ToPropertiesJson(props);
@@ -117,13 +105,12 @@ CodeSpecPtr CodeSpec::CloneForImport(DgnDbStatus* outResult, DgnImportContext& i
 
     status = DgnDbStatus::Success;
     return clone;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
-    {
+DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec) {
     if (codeSpec.GetCodeSpecId().IsValid())
         return DgnDbStatus::IdExists;
 
@@ -134,7 +121,7 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
     CodeSpecId newId;
     auto status = m_dgndb.GetServerIssuedId(newId, BIS_TABLE(BIS_CLASS_CodeSpec), "Id");
     if (BE_SQLITE_OK != status)
-        return DgnDbStatus::WriteError; // NEEDSWORK...can we communicate this more meaningfully?
+        return DgnDbStatus::WriteError;
 
     Utf8String propsStr = codeSpec.SerializeProperties();
 
@@ -152,52 +139,47 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
     m_loadedCodeSpecs.push_back(CodeSpecPtr(&codeSpec));
 
     return DgnDbStatus::Success;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult)
-    {
+CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult) {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, outResult);
 
-    if (!id.IsValid())
-        {
+    if (!id.IsValid()) {
         status = DgnDbStatus::InvalidId;
         return nullptr;
-        }
+    }
 
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement(stmt, "SELECT Name,JsonProperties FROM " BIS_TABLE(BIS_CLASS_CodeSpec) " WHERE Id=?");
     stmt->BindId(1, id);
 
-    if (BE_SQLITE_ROW != stmt->Step())
-        {
+    if (BE_SQLITE_ROW != stmt->Step()) {
         status = DgnDbStatus::InvalidId;
         return nullptr;
-        }
+    }
 
     Utf8String name = stmt->GetValueText(0);
     Utf8String props = stmt->GetValueText(1);
 
     CodeSpec::CreateParams params(m_dgndb, name.c_str(), id);
     CodeSpecPtr codeSpec = dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params);
-    if (codeSpec.IsNull())
-        {
+    if (codeSpec.IsNull()) {
         status = DgnDbStatus::NotFound;
         return nullptr;
-        }
+    }
 
     codeSpec->ReadProperties(props);
     status = DgnDbStatus::Success;
     return codeSpec;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(CodeSpecId id)
-    {
+CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(CodeSpecId id) {
     if (!id.IsValid())
         return nullptr;
 
@@ -205,35 +187,25 @@ CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(CodeSpecId id)
 
     BeDbMutexHolder _v(m_mutex);
     auto found = std::find_if(m_loadedCodeSpecs.begin(), m_loadedCodeSpecs.end(), [&id](CodeSpecPtr const& arg) { return arg->GetCodeSpecId() == id; });
-    if (m_loadedCodeSpecs.end() != found)
-        {
+    if (m_loadedCodeSpecs.end() != found) {
         codeSpec = *found;
-        }
-    else
-        {
+    } else {
         codeSpec = LoadCodeSpec(id, nullptr);
         BeDataAssert(codeSpec.IsValid());
         if (codeSpec.IsValid())
             m_loadedCodeSpecs.push_back(codeSpec);
-        }
+    }
 
     return codeSpec.get();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(Utf8CP name)
-    {
+CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(Utf8CP name) {
     // good chance it's already loaded - check there before running a query
     auto found = std::find_if(m_loadedCodeSpecs.begin(), m_loadedCodeSpecs.end(), [&name](CodeSpecPtr const& arg) { return arg->GetName().Equals(name); });
     return m_loadedCodeSpecs.end() != found ? (*found).get() : GetCodeSpec(QueryCodeSpecId(name));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpec::CodeSpec(CreateParams const& params) : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec) {
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,17 +219,17 @@ void CodeSpec::ToPropertiesJson(BeJsValue json) const {
     m_scopeSpec.ToJSON(json[json_scopeSpec()]);
 }
 
-/*---------------------------------------------------------------------------------**/ /**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::FromPropertiesJson(BeJsConst json) {
     m_specProperties.From(json[json_spec()]);
     m_scopeSpec.FromJSON(json[json_scopeSpec()]);
 }
 
-/*---------------------------------------------------------------------------------**/ /**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::ReadProperties(Utf8StringCR jsonStr) {
     FromPropertiesJson(BeJsDocument(jsonStr));
 }
@@ -265,27 +237,24 @@ void CodeSpec::ReadProperties(Utf8StringCR jsonStr) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CodeSpec::SerializeProperties() const
-    {
+Utf8String CodeSpec::SerializeProperties() const {
     BeJsDocument props;
     ToPropertiesJson(props);
     return props.Stringify();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR scopeSpec)
-    {
+CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR scopeSpec) {
     CreateParams params(db, codeSpecName, CodeSpecId(), scopeSpec);
     return dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params).get();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, BeJsConst jsonProperties)
-    {
+CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, BeJsConst jsonProperties) {
     if (!jsonProperties.isMember(CodeSpec::json_spec()) && !jsonProperties.isMember(CodeSpec::json_scopeSpec())) // quick sanity check of incoming JSON
         return nullptr;
 
@@ -295,13 +264,12 @@ CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, BeJsConst jsonPrope
         codeSpec->FromPropertiesJson(jsonProperties);
 
     return codeSpec;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus insertCodeSpec(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope, CodeSpecId expectedId=CodeSpecId())
-    {
+static DgnDbStatus insertCodeSpec(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope, CodeSpecId expectedId = CodeSpecId()) {
     CodeSpecPtr codeSpec = CodeSpec::Create(db, name, scope);
     if (!codeSpec.IsValid())
         return DgnDbStatus::InvalidCodeSpec;
@@ -311,37 +279,13 @@ static DgnDbStatus insertCodeSpec(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope,
         return DgnDbStatus::InvalidId;
 
     return insertStatus;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId CodeSpec::GetScopeElementId(DgnElementCR element) const
-    {
-    switch (GetScope().GetType())
-        {
-        case CodeScopeSpec::Type::Repository:
-            return element.GetDgnDb().Elements().GetRootSubjectId();
-
-        case CodeScopeSpec::Type::Model:
-            return element.GetModel()->GetModeledElementId();
-
-        case CodeScopeSpec::Type::ParentElement:
-            return element.GetParentId();
-
-        case CodeScopeSpec::Type::RelatedElement: // WIP: evaulate relationship
-        default:
-            BeAssert(false);
-            return DgnElementId();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateCodeSpecs()
-    {
-    if (// CodeSpecs with Repository scope
+DbResult DgnDb::CreateCodeSpecs() {
+    if ( // CodeSpecs with Repository scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_NullCodeSpec, CodeScopeSpec::CreateRepositoryScope(), CodeSpec::GetNullCodeSpecId())) ||
         // CodeSpecs with Model scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationFrameStyle, CodeScopeSpec::CreateModelScope())) ||
@@ -374,72 +318,66 @@ DbResult DgnDb::CreateCodeSpecs()
         // CodeSpecs with ParentElement scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_InformationPartitionElement, CodeScopeSpec::CreateParentElementScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SubCategory, CodeScopeSpec::CreateParentElementScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Subject, CodeScopeSpec::CreateParentElementScope())))
-        {
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Subject, CodeScopeSpec::CreateParentElementScope()))) {
         BeAssert(false);
         return BE_SQLITE_ERROR;
-        }
+    }
 
     return BE_SQLITE_OK;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value)
-    {
+DgnCode CodeSpec::CreateRepositoryScopedCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value) {
     CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecName);
     BeAssert(codeSpec.IsValid());
-    return codeSpec.IsValid() ? codeSpec->CreateCode(value) : DgnCode();
-    }
+    return codeSpec.IsValid() ? codeSpec->CreateRepositoryScopedCode(value) : DgnCode();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CodeSpec::CreateCode(Utf8StringCR value) const
-    {
+DgnCode CodeSpec::CreateRepositoryScopedCode(Utf8StringCR value) const {
     BeAssert(IsRepositoryScope());
-    return IsRepositoryScope() ? DgnCode(GetCodeSpecId(), GetDgnDb().Elements().GetRootSubjectId(), value) : DgnCode();
-    }
+    return IsRepositoryScope() ? DgnCode(GetCodeSpecId(), DgnElements::GetRootSubjectId(), value) : DgnCode();
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value)
-    {
+DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value) {
     CodeSpecCPtr codeSpec = scopeModel.GetDgnDb().CodeSpecs().GetCodeSpec(codeSpecName);
     BeAssert(codeSpec.IsValid() && codeSpec->IsModelScope());
     return codeSpec.IsValid() ? codeSpec->CreateCode(scopeModel, value) : DgnCode();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value)
-    {
+DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value) {
     CodeSpecCPtr codeSpec = scopeElement.GetDgnDb().CodeSpecs().GetCodeSpec(codeSpecName);
     BeAssert(codeSpec.IsValid());
     return codeSpec.IsValid() ? codeSpec->CreateCode(scopeElement, value) : DgnCode();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
-    {
+DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const {
     DgnElementCPtr scopeElement = scopeModel.GetModeledElement();
     BeAssert(scopeElement.IsValid() && IsModelScope());
-    return scopeElement.IsValid() && !value.empty() ? CreateCode(*scopeElement, value) : DgnCode();
-    }
+    return IsModelScope() ? CreateCode(*scopeElement, value) : DgnCode();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const {
-    if (value.empty())
+    if (value.empty() || !scopeElement.GetElementId().IsValid())
         return DgnCode();
 
-    return scopeElement.GetElementId().IsValid() ? DgnCode(GetCodeSpecId(), scopeElement.GetElementId(), value) : DgnCode();
+    return DgnCode(GetCodeSpecId(), scopeElement.GetElementId(), value);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -465,67 +403,60 @@ DgnCodeValue::CompareResult DgnCodeValue::Compare(Utf8Char lhs, Utf8Char rhs) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCodeValue::CompareResult DgnCodeValue::Compare(Utf8StringCR lhs, Utf8StringCR rhs)
-    {
+DgnCodeValue::CompareResult DgnCodeValue::Compare(Utf8StringCR lhs, Utf8StringCR rhs) {
     size_t lhsSize = lhs.size(),
            rhsSize = rhs.size(),
            minSize = std::min(lhsSize, rhsSize);
 
-    for (size_t i = 0; i < minSize; i++)
-        {
+    for (size_t i = 0; i < minSize; i++) {
         CompareResult cmp = Compare(lhs[i], rhs[i]);
         if (CompareResult::Equal != cmp)
             return cmp;
-        }
+    }
 
     return lhsSize == rhsSize ? CompareResult::Equal : (lhsSize < rhsSize ? CompareResult::Less : CompareResult::Greater);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnCodeValue::Equals(Utf8CP str) const
-    {
-    for (size_t i = 0; i < size(); i++)
-        {
+bool DgnCodeValue::Equals(Utf8CP str) const {
+    for (size_t i = 0; i < size(); i++) {
         if (0 == str[i] || CompareResult::Equal != Compare(m_value[i], str[i]))
             return false;
-        }
+    }
 
     return 0 == str[size()];
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnCode::CreateEmpty()
-    {
+DgnCode DgnCode::CreateEmpty() {
     return DgnCode(CodeSpec::GetNullCodeSpecId(), DgnElementId((uint64_t)1LL), ""); // codeScope=RootSubject, codeValue=null
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnCode::GetScopeElementId(DgnDbR db) const
-    {
+DgnElementId DgnCode::GetScopeElementId(DgnDbR db) const {
     uint64_t scopeElementId;
     if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, m_scope.c_str()))
         return DgnElementId(scopeElementId);
 
     return DgnElementId((uint64_t)1LL);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
-    {
+void DgnCode::RelocateToDestinationDb(DgnImportContext& importer) {
     m_specId = importer.RemapCodeSpecId(m_specId);
 
     uint64_t scopeElementId;
     if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, m_scope.c_str()))
         m_scope = importer.FindElementId(DgnElementId(scopeElementId)).ToHexStr();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
