@@ -258,7 +258,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         }
 
         auto schemaImportOptions = SchemaManager::SchemaImportOptions::None;
-        if (inParams.GetAllowDataTransformDuringSchemaUpdate())
+        if (inParams.m_allowDataTransformDuringSchemaUpdate)
             {
             schemaImportOptions = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
             }

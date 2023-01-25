@@ -85,7 +85,7 @@ describe("basic tests", () => {
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
-    const result = db.importSchemas([schemaPath] , /* allowDataTransformDuringSchemaUpdate = */false );
+    const result = db.importSchemas([schemaPath] , {schemaLockHeld: false} );
     assert.isTrue(result === DbResult.BE_SQLITE_OK);
 
     const prProps = db.getSchemaProps("PresentationRules");
@@ -102,7 +102,7 @@ describe("basic tests", () => {
     // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
     let bisProps = db.getSchemaProps("BisCore");
-    let result = db.importSchemas([test100Path], /* allowDataTransformDuringSchemaUpdate = */false );
+    let result = db.importSchemas([test100Path], {schemaLockHeld: false});
     assert.equal(result, DbResult.BE_SQLITE_OK);
     assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
 
@@ -113,7 +113,7 @@ describe("basic tests", () => {
     // local directory has higher precedence than the db
     const subAssetsDir = path.join(assetsDir, "LocalReferences");
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
-    result = db.importSchemas([test101Path], /* allowDataTransformDuringSchemaUpdate = */false );
+    result = db.importSchemas([test101Path], {schemaLockHeld: false} );
     assert.equal(result, DbResult.BE_SQLITE_OK);
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
   })
@@ -359,18 +359,18 @@ describe("basic tests", () => {
     db.saveChanges();
 
     // import a schema with changes that only required SchemaLock
-    let rc = await db.importXmlSchemas([generateSchema(20,1)], /* allowDataTransformDuringSchemaUpdate = */ false);
+    let rc = await db.importXmlSchemas([generateSchema(20, 1)], { schemaLockHeld: false });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     db.saveChanges();
 
     const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 23 << 24);
 
     // import should fail when allowDataTransformDuringSchemaUpdate flag is set to false which will fail the operation if data transform is required.
-    rc = await db.importXmlSchemas([generateSchema(20,20)], /* allowDataTransformDuringSchemaUpdate = */ false);
+    rc = await db.importXmlSchemas([generateSchema(20,20)], { schemaLockHeld: false });
     assert.equal(rc, BE_SQLITE_ERROR_DataTransformRequired);
 
     // import should be successful when allowDataTransformDuringSchemaUpdate flag is set to true so it can transform data if required.
-    rc = await db.importXmlSchemas([generateSchema(20,20)], /* allowDataTransformDuringSchemaUpdate = */ true);
+    rc = await db.importXmlSchemas([generateSchema(20,20)], { schemaLockHeld: true });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     db.saveChanges();
 

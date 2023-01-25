@@ -572,7 +572,7 @@ enum DbResult
     BE_SQLITE_ERROR_SchemaImportFailed          = (BE_SQLITE_IOERR | (20<<24)), //!< Error importing the schemas into the database.
     BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
     BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
-    BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)),  //!< Schema update need to update data.
+    BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
 };
@@ -2499,6 +2499,7 @@ public:
         ProfileUpgradeOptions m_profileUpgradeOptions = ProfileUpgradeOptions::None;
         bool m_rawSQLite = false;
         bool m_fromContainer = false;
+        bool m_allowDataTransformDuringSchemaUpdate = false;
 
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.
         bool m_skipFileCheck = false;
@@ -2731,7 +2732,7 @@ protected:
     BE_SQLITE_EXPORT virtual ProfileState _CheckProfileVersion() const;
     virtual DbResult _OnBeforeProfileUpgrade(OpenParams const& params) { return BE_SQLITE_OK; }
     BE_SQLITE_EXPORT virtual DbResult _UpgradeProfile(OpenParams const& params);
-    virtual DbResult _OnAfterProfileUpgrade(OpenParams const& params) { return BE_SQLITE_OK; }
+    virtual DbResult _OnAfterProfileUpgrade() { return BE_SQLITE_OK; }
     virtual DbResult _OnDbAttached(Utf8CP filename, Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual DbResult _OnDbDetached(Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual int _OnAddFunction(DbFunction& func) const {return 0;}

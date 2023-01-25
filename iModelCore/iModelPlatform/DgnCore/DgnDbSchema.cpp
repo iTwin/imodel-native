@@ -548,9 +548,9 @@ ProfileState DgnDb::_CheckProfileVersion() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
     {
-    if (GetBriefcaseId().IsBriefcase())
+    if (QueryProjectGuid().IsValid())
         {
-        if (!((const DgnDb::OpenParams&)params).GetAllowDataTransformDuringSchemaUpdate())
+        if (!params.m_allowDataTransformDuringSchemaUpdate)
             {
             LOG.error("Upgrading profile requires schema lock that is not held.");
             return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
@@ -566,7 +566,7 @@ BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade(Db::OpenParams const& params)
+BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
     {
     if (!AreTxnsEnabled())
         return BE_SQLITE_OK;

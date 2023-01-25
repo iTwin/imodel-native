@@ -1000,7 +1000,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         SchemaUpgradeOptions schemaUpgradeOptions(domainOptions);
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
         openParams.SetProfileUpgradeOptions(profileOptions);
-        openParams.SetAllowDataTransformDuringSchemaUpdate(allowDataTransformDuringSchemaUpdate);
+        openParams.m_allowDataTransformDuringSchemaUpdate = allowDataTransformDuringSchemaUpdate;
 
         if (info[3].IsObject()) {
             auto props = BeJsConst(info[3].As<Napi::Object>());
@@ -1784,17 +1784,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_BOOL(1, allowDataTransformDuringSchemaUpdate);
-        DbResult result = JsInterop::ImportSchemasDgnDb(GetDgnDb(), schemaFileNames, allowDataTransformDuringSchemaUpdate);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, opts);
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::File, BeJsConst(opts));
         return Napi::Number::New(Env(), (int)result);
         }
 
     Napi::Value ImportXmlSchemas(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, serializedXmlSchemas);
-        REQUIRE_ARGUMENT_BOOL(1, allowDataTransformDuringSchemaUpdate);
-        DbResult result = JsInterop::ImportXmlSchemas(GetDgnDb(), serializedXmlSchemas, allowDataTransformDuringSchemaUpdate);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, opts);
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, BeJsConst(opts));
         return Napi::Number::New(Env(), (int)result);
         }
 

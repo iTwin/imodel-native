@@ -240,7 +240,7 @@ protected:
     DGNPLATFORM_EXPORT BeSQLite::ProfileState _CheckProfileVersion() const override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _UpgradeProfile(BeSQLite::Db::OpenParams const&) override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeProfileUpgrade(BeSQLite::Db::OpenParams const&) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterProfileUpgrade(BeSQLite::Db::OpenParams const&) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterProfileUpgrade() override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;

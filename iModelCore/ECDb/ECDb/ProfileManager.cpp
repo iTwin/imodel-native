@@ -106,7 +106,7 @@ DbResult ProfileManager::UpgradeProfile(Db::OpenParams const& params) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    const auto importOpts =  static_cast<ECDb::OpenParams const&>(params).GetAllowDataTransformDuringSchemaUpdate() ?
+    const auto importOpts = params.m_allowDataTransformDuringSchemaUpdate ?
         SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade : SchemaManager::SchemaImportOptions::None;
 
     if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(m_ecdb, importOpts))

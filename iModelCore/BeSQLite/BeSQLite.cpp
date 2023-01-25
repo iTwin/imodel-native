@@ -2891,7 +2891,7 @@ DbResult Db::DoProfileUpgrade(OpenParams const& params) {
         return rc;
     }
 
-    rc = _OnAfterProfileUpgrade(params);
+    rc = _OnAfterProfileUpgrade();
     if (BE_SQLITE_OK != rc) {
         AbandonChanges();
         CloseDb();

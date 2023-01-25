@@ -428,6 +428,10 @@ export declare namespace IModelJsNative {
     readonly customAttributes?: Array<{ [value: string]: any }>;
   }
 
+  interface SchemaImportOptions {
+    readonly schemaLockHeld: boolean;
+  }
+
   // ###TODO import from core-common
   interface ModelExtentsResponseProps {
     id: Id64String;
@@ -521,8 +525,8 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
-    public importSchemas(schemaFileNames: string[], allowDataTransformDuringSchemaUpdate: boolean): DbResult;
-    public importXmlSchemas(serializedXmlSchemas: string[], allowDataTransformDuringSchemaUpdate: boolean): DbResult;
+    public importSchemas(schemaFileNames: string[], options: SchemaImportOptions): DbResult;
+    public importXmlSchemas(serializedXmlSchemas: string[], options: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties:{spec: any, scopeSpec: any}): Id64String;
