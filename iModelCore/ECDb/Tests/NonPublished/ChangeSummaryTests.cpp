@@ -20,7 +20,7 @@ struct TestChangeSet : BeSQLite::ChangeSet
 
     JsonValue ToJson(Db const& db) const
         {
-        JsonValue json;
+        JsonValue json(Json::ValueType::arrayValue);
 
         bmap<Utf8String, Json::Value> changedValuesPerTableMap;
         std::vector<Utf8String> tablesAsOrderedInChangeset;
@@ -111,8 +111,7 @@ struct TestChangeSet : BeSQLite::ChangeSet
             if (it == changedValuesPerTableMap.end())
                 return JsonValue();
 
-            json.m_value.appendValue();
-            json.m_value[json.m_value.size() - 1].From(it->second);
+            json.m_value.append(it->second);
             }
 
         return json;
@@ -3793,7 +3792,7 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
 
     //Verify
     //----------------------------------------------------------------------------------
-    BeJsDocument expectedChangeset0Json, expectedChangeset1Json;
+    Json::Value expectedChangeset0Json, expectedChangeset1Json;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedChangeset0Json, R"json(
         [{"pk":["id"],"rows":
             [{"indirect":false,"op":"insert",
