@@ -7,9 +7,8 @@
 
 #include <Bentley/Bentley.h>
 #include <stdlib.h>
-#include "TextEncoding.h"
 
-#define OOO_DLLPUBLIC_DBTOOLS 
+#define OOO_DLLPUBLIC_DBTOOLS
 
 #define OSL_DEBUG_LEVEL 3
 #define OSL_ASSERT(X) BeAssert( X)
@@ -27,8 +26,8 @@
 #define RTL_LOGFILE_CONTEXT_TRACE1( instance, frmt, arg1 ) ((void)0)
 #define RTL_LOGFILE_CONTEXT_TRACE2( instance, frmt, arg1, arg2 ) ((void)0)
 #define RTL_LOGFILE_CONTEXT_TRACE3( instance, frmt, arg1, arg2 , arg3 ) ((void)0)
-#define OSL_TRACE(X, Y) 
-#define TODO_ConvertCode() BeAssert(false && "Todo"); 
+#define OSL_TRACE(X, Y)
+#define TODO_ConvertCode() BeAssert(false && "Todo");
 #define DBG_UNHANDLED_EXCEPTION()
 //#define RTL_CONSTASCII_USTRINGPARAM( constAsciiStr ) constAsciiStr, ((sal_Int32)(sizeof(constAsciiStr)-1)), RTL_TEXTENCODING_ASCII_US
 #define RTL_CONSTASCII_USTRINGPARAM( constAsciiStr ) constAsciiStr, BentleyCharEncoding::Utf8
@@ -67,7 +66,7 @@ enum UnoReference_SetThrow
     };
 /////////////////////////SAL////////////////////////////////////////////////
 #define SAL_CALL
-#define SAL_THROW(X) 
+#define SAL_THROW(X)
 typedef  int sal_Int32;
 typedef  bool sal_Bool;
 typedef  Utf8Char sal_Char;
@@ -192,7 +191,7 @@ namespace com
             }
         }
     }
-//namespace osl 
+//namespace osl
 //    {
 //    struct Mutex
 //        {
