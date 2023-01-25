@@ -53,16 +53,17 @@ struct CodeScopeSpec {
     friend struct CodeSpec;
 
 public:
+    // declares the scope of uniqueness for codes that use this spec.
     enum class Type {
-        Repository = 1,     //!< The Code value must be unique within (at least) the DgnDb repository
-        Model = 2,          //!< The Code value must be unique within the scope of the DgnModel
-        ParentElement = 3,  //!< The Code value must be unique among other children of the same parent element
-        RelatedElement = 4, //!< The Code value must be unique among other elements also scoped by the same element
+        Repository = 1,     // an iModel
+        Model = 2,          // a single Model
+        ParentElement = 3,  // a parent element
+        RelatedElement = 4, // another (related) element
     };
 
 private:
     BE_JSON_NAME(type);
-    BE_JSON_NAME(relationship); // only valid for Type::RelatedElement
+    BE_JSON_NAME(relationship); // the full classname of the relationship for Type::RelatedElement.
     BE_JSON_NAME(fGuidRequired);
 
     Type m_type;
@@ -95,24 +96,13 @@ public:
     static CodeScopeSpec CreateRepositoryScope(bool fedGuid = false) { return CodeScopeSpec(Type::Repository, fedGuid); }
     static CodeScopeSpec CreateModelScope(bool fedGuid = false) { return CodeScopeSpec(Type::Model, fedGuid); }
     static CodeScopeSpec CreateParentElementScope(bool fedGuid = false) { return CodeScopeSpec(Type::ParentElement, fedGuid); }
-    static CodeScopeSpec CreateRelatedElementScope(Utf8CP relationship = nullptr, bool fedGuid = false) {
-        CodeScopeSpec scopeSpec(Type::RelatedElement, fedGuid);
-        scopeSpec.SetRelationship(relationship);
-        return scopeSpec;
-    }
 };
 
 //=======================================================================================
-//! A CodeSpec captures the rules for encoding and decoding significant business information into and from a Code (string).
-//! A CodeSpec determines how DgnCodes for elements are generated and validated.
-//! There are 2 general types of codes:
-//!   - User/Application-supplied: The user/application supplies a DgnCode and the CodeSpec
-//!     simply enforces any constraints on e.g. allowable characters
-//!   - Generated: The CodeSpec defines a CodeFragmentSpec array to indicate how to build up the overall CodeValue.
-//! @note A CodeSpec is DgnDb-specific. That is, CodeSpec names are constant, but their CodeSpecIds may vary per DgnDb.
+//! A CodeSpec captures the rules for encoding significant business information into a Code (string).
 // @bsistruct
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CodeSpec : RefCountedBase, NonCopyableClass {
+struct CodeSpec : RefCountedBase, NonCopyableClass {
     friend struct DgnCodeSpecs;
     friend struct dgn_CodeSpecHandler::CodeSpec;
 
@@ -126,8 +116,6 @@ public:
     };
 
     BE_PROP_NAME(JsonProperties);
-    BE_JSON_NAME(fragmentSpecs);
-    BE_JSON_NAME(registrySuffix);
     BE_JSON_NAME(scopeSpec);
     BE_JSON_NAME(spec);
     BE_JSON_NAME(version);
@@ -140,8 +128,7 @@ private:
     BeJsDocument m_specProperties;
     CodeScopeSpec m_scopeSpec;
 
-    DGNPLATFORM_EXPORT explicit CodeSpec(CreateParams const&);
-
+    explicit CodeSpec(CreateParams const& params) : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec) {}
     void ReadProperties(Utf8StringCR jsonStr);
     Utf8String SerializeProperties() const;
 
@@ -149,40 +136,27 @@ private:
     void FromPropertiesJson(BeJsConst);
     CodeSpecPtr CloneForImport(DgnDbStatus* status, DgnImportContext& importer) const;
 
-    static DgnDbStatus Insert(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope, CodeSpecId codeSpecId = CodeSpecId());
-
 public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     CodeSpecId GetCodeSpecId() const { return m_codeSpecId; }
     Utf8StringCR GetName() const { return m_name; }
 
-    Utf8String GetRegistrySuffix() const {return m_specProperties[json_registrySuffix()].asString();}
-    void SetRegistrySuffix(Utf8CP registrySuffix) {if (registrySuffix && *registrySuffix) m_specProperties[json_registrySuffix()] = registrySuffix;}
-
-    //! Return true if the codes associated with this CodeSpec are managed along with the DgnDb. Return false if the codes associated with this CodeSpec are managed by an external service.
-    bool IsManagedWithDgnDb() const { return m_specProperties[json_isManagedWithDgnDb()].asBool(true); }
-    //! Set whether the codes associated with this CodeSpec are managed along with the DgnDb or by an external service.
-    void SetIsManagedWithDgnDb(bool isManagedWithDgnDb) { m_specProperties[json_isManagedWithDgnDb()] = isManagedWithDgnDb; }
-
-    //! Return the CodeSpecId of the NullCodeSpec
+    // the CodeSpecId of the NullCodeSpec
     static CodeSpecId GetNullCodeSpecId() { return CodeSpecId((uint64_t)1LL); }
 
-    //! Return true if the specified CodeSpec is the NullCodeSpec
+    // true if the specified CodeSpec is the NullCodeSpec
     bool IsNullCodeSpec() const { return GetCodeSpecId() == GetNullCodeSpecId(); }
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec = CodeScopeSpec::CreateRepositoryScope());
+    DGNPLATFORM_EXPORT static CodeSpecPtr CreateRepositorySpec(DgnDbR db, Utf8CP name) { return Create(db, name, CodeScopeSpec::CreateRepositoryScope()); }
+    DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec);
     DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, BeJsConst jsonProperties);
 
     CodeScopeSpecCR GetScope() const { return m_scopeSpec; }
     bool IsRepositoryScope() const { return CodeScopeSpec::Type::Repository == GetScope().GetType(); }
     bool IsModelScope() const { return CodeScopeSpec::Type::Model == GetScope().GetType(); }
     bool IsParentElementScope() const { return CodeScopeSpec::Type::ParentElement == GetScope().GetType(); }
-    bool IsRelatedElementScope() const { return CodeScopeSpec::Type::RelatedElement == GetScope().GetType(); }
-
-    //! Return the DgnElementId of the scope element for the specified element.
-    DGNPLATFORM_EXPORT DgnElementId GetScopeElementId(DgnElementCR element) const;
 
     DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const;
@@ -190,10 +164,10 @@ public:
     DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const;
 
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
-    DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value) const;
+    DGNPLATFORM_EXPORT static DgnCode CreateRepositoryScopedCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
+    DGNPLATFORM_EXPORT DgnCode CreateRepositoryScopedCode(Utf8StringCR value) const;
 
-    DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
+    DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
     DGNPLATFORM_EXPORT static CodeSpecPtr Import(DgnDbStatus* status, CodeSpecCR sourceCodeSpec, DgnImportContext& importer);
 };
 

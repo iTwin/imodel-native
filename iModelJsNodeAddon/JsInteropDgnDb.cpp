@@ -362,16 +362,12 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             throwWrongClass();
 
         ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(dgndb, params.m_classId);
-        if (nullptr == elHandler) {
-            BeAssert(false);
+        if (nullptr == elHandler)
             throwWrongClass();
-        }
 
         DgnElementPtr el = elHandler->Create(params);
-        if (!el.IsValid()) {
-            BeAssert(false);
+        if (!el.IsValid())
             throwBadArg();
-        }
 
         el->FromJson(inJson);
 
