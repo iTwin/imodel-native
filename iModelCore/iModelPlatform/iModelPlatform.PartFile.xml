@@ -145,8 +145,8 @@
     <!-- Entry point part -->
     <Part Name="RunIModelEvolutionTests" PrgOutputDir="IModelEvolutionTests">
         <SubPart PartName="IModelEvolutionRunAllTestRunners"/>
-        <SubNuGetProduct NuGetProductName="IModelEvolutionTestRunnerNuget_iModelNative"/>
-        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget_iModelNative"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestRunnerNuget_test"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget_test"/>
     </Part>
 
     <!-- Runs all compatibility tests:
@@ -239,12 +239,12 @@
         </Bindings>
     </Part>
 
-    <NuGetProduct Name="IModelEvolutionTestRunnerNuget_iModelNative" Description="Create nuget that contains the current test runner">
+    <NuGetProduct Name="IModelEvolutionTestRunnerNuget_test" Description="Create nuget that contains the current test runner">
         <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BuildIModelEvolutionGTest"/>
     </NuGetProduct>
 
-    <NuGetProduct Name="IModelEvolutionTestFilesNuget_iModelNative" Description="Create the test files nuget">
+    <NuGetProduct Name="IModelEvolutionTestFilesNuget_test" Description="Create the test files nuget">
         <Directories DirectoryListName="IModelEvolutionTestFilesForNugetPackage"/>
         <SubPart PartName="PrepareIModelEvolutionTestFilesNugetPackaging"/>
     </NuGetProduct>
