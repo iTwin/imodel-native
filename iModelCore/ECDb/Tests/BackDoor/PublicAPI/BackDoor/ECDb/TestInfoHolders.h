@@ -15,19 +15,18 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct JsonValue final
     {
     public:
-        BeJsDocument m_value;
+        Json::Value m_value = Json::Value(Json::nullValue);
 
-        JsonValue() { m_value.SetNull(); }
-        JsonValue(const JsonValue& source) { m_value.From(source.m_value); }
-        explicit JsonValue(const BeJsDocument& json) { m_value.From(json); }
+        JsonValue() {}
+        explicit JsonValue(Json::ValueType type) : m_value(type) {}
+        explicit JsonValue(JsonValueCR json) : m_value(json) {}
         explicit JsonValue(Utf8CP json);
         explicit JsonValue(Utf8StringCR json) : JsonValue(json.c_str()) {}
 
-        void operator=(JsonValue const& rhs) { m_value.From(rhs.m_value); }
         bool operator==(JsonValue const& rhs) const;
         bool operator!=(JsonValue const& rhs) const { return !(*this == rhs); }
 
-        Utf8String ToString() const { return m_value.Stringify(); }
+        Utf8String ToString() const { return m_value.ToString(); }
     };
 
 void PrintTo(JsonValue const&, std::ostream*);
