@@ -1432,7 +1432,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
 
         const bool isECDbEnum = ecdbEnumSchemas.find(schemaId) != ecdbEnumSchemas.end();
 
-        BeJsDocument benchmarkEnumValuesJson, upgradedEnumValuesJson;
+        Json::Value benchmarkEnumValuesJson, upgradedEnumValuesJson;
         ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(benchmarkEnumValuesJson, benchmarkEnumsStmt.GetValueText(0)));
         ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(upgradedEnumValuesJson, upgradedEnumsStmt.GetValueText(0)));
         if (BeStringUtilities::StricmpAscii(enumName,"DateTimeComponent") == 0)
@@ -1442,8 +1442,8 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
 
         for (Json::ArrayIndex i = 0; i < benchmarkEnumValuesJson.size(); i++)
             {
-            BeJsConst const& benchmarkEnumValueJson = benchmarkEnumValuesJson[i];
-            BeJsConst const& upgradedEnumValueJson = upgradedEnumValuesJson[i];
+            Json::Value const& benchmarkEnumValueJson = benchmarkEnumValuesJson[i];
+            Json::Value const& upgradedEnumValueJson = upgradedEnumValuesJson[i];
             ASSERT_TRUE(upgradedEnumValueJson.isMember("Name"));
             Utf8CP actualName = upgradedEnumValueJson["Name"].asCString();
 
@@ -1474,8 +1474,8 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
                 else
                     FAIL();
 
-                EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel")) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.Stringify() << " Upgraded: " << upgradedEnumValueJson.Stringify();
-                EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.Stringify() << " Upgraded: " << upgradedEnumValueJson.Stringify();
+                EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel")) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
+                EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
                 }
             }
         }
