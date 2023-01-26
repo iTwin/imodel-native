@@ -4191,7 +4191,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_UsesRelatedInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression, R"*(
     <ECEntityClass typeName="Model">
         <ECProperty propertyName="ModelName" typeName="string" />
     </ECEntityClass>
@@ -4205,7 +4205,7 @@ DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilterExpression)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression)
     {
     ECClassCP modelClass = GetClass("Model");
     ECClassCP elementClass = GetClass("Element");
@@ -4226,7 +4226,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilter
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), false, false);
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), true, true);
     spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Backward, modelClass->GetFullName())), "model"));
     rule->AddSpecification(*spec);
 
@@ -5670,9 +5670,11 @@ DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAp
     </ECEntityClass>
     <ECEntityClass typeName="Derived1">
         <BaseClass>Base</BaseClass>
+        <ECProperty propertyName="Property1" typeName="string" />
     </ECEntityClass>
     <ECEntityClass typeName="Derived2">
         <BaseClass>Base</BaseClass>
+        <ECProperty propertyName="Property2" typeName="string" />
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAppliedToOnlyOneChildClassPolymorphically)
@@ -5681,28 +5683,34 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     ECClassCP baseClass = GetClass("Base");
     ECClassCP derived1Class = GetClass("Derived1")->GetEntityClassCP();
     ECClassCP derived2Class = GetClass("Derived2")->GetEntityClassCP();
-    IECInstancePtr derived1Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived1Class,
-        [](IECInstanceR instance) { instance.SetValue("Property", ECValue("Derived1")); });
-    IECInstancePtr derived2Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived2Class,
-        [](IECInstanceR instance) { instance.SetValue("Property", ECValue("Derived2")); });
+    IECInstancePtr derived1Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived1Class, [](IECInstanceR instance)
+        {
+        instance.SetValue("Property", ECValue("Derived1"));
+        instance.SetValue("Property1", ECValue("-111"));
+        });
+    IECInstancePtr derived2Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived2Class, [](IECInstanceR instance)
+        {
+        instance.SetValue("Property", ECValue("Derived2"));
+        instance.SetValue("Property2", ECValue("-222"));
+        });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true, true);
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "Derived2");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property & this.Property2"));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(4, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -5715,12 +5723,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("Derived1", jsonValues[FIELD_NAME(baseClass, "Property")].GetString());
+    EXPECT_STREQ("-111", jsonValues[FIELD_NAME(derived1Class, "Property1")].GetString());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(derived2Class, "Property2")].IsNull());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_STREQ("Derived2", jsonValues2[FIELD_NAME(baseClass, "Property")].GetString());
-    EXPECT_STREQ("Derived2", jsonValues2["CalculatedProperty_0"].GetString());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(derived1Class, "Property1")].IsNull());
+    EXPECT_STREQ("-222", jsonValues2[FIELD_NAME(derived2Class, "Property2")].GetString());
+    EXPECT_STREQ("Derived2-222", jsonValues2["CalculatedProperty_0"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -15637,6 +15649,108 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
     ASSERT_EQ(1, content->GetContentSet().GetSize());
 
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ a.get() }, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRuleset, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRuleset)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    // set up ruleset for hierarchy
+    PresentationRuleSetPtr nodeRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*nodeRules);
+
+    RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
+    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "", classA->GetFullName(), false));
+
+    nodeRules->AddPresentationRule(*nodeRule);
+
+    // set up ruleset for content
+    PresentationRuleSetPtr contentRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest() + Utf8String("contentRuleset"));
+    m_locater->AddRuleSet(*contentRules);
+
+    ContentRule* contentRule = new ContentRule("", 1000, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+
+    contentRules->AddPresentationRule(*contentRule);
+
+    // request nodes
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), RulesetVariables()))); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
+
+    // request
+    KeySetPtr input = KeySet::Create(bvector<NavNodeKeyCPtr>{rootNodes[0]->GetKey()});
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::KeysOnly, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ a.get() }, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRuleset, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRuleset)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Property", ECValue(5));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Property", ECValue(5)); });
+
+    // set up ruleset for hierarchy
+    PresentationRuleSetPtr nodeRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*nodeRules);
+
+    RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
+    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), false));
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classA->GetName(), "", "", "");;
+    nodeRules->AddPresentationRule(*groupingRule);
+    groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
+
+    nodeRules->AddPresentationRule(*nodeRule);
+
+    // set up ruleset for content
+    PresentationRuleSetPtr contentRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest() + Utf8String("contentRuleset"));
+    m_locater->AddRuleSet(*contentRules);
+
+    ContentRule* contentRule = new ContentRule("", 1000, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+
+    contentRules->AddPresentationRule(*contentRule);
+
+    // request nodes
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), RulesetVariables()))); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
+
+    // request
+    KeySetPtr input = KeySet::Create(bvector<NavNodeKeyCPtr>{rootNodes[0]->GetKey()});
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::KeysOnly, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ instance1.get(), instance2.get() }, * content);
     }
 
 /*---------------------------------------------------------------------------------**//**

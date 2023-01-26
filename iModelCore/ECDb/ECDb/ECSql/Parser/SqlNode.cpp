@@ -284,7 +284,7 @@ namespace connectivity
 
                 m_aChildren[0]->impl_parseNodeToString_throw(rString, aNewParam);
                 aNewParam.bQuote = rParam.bQuote;
-                //aNewParam.bPredicate = sal_False; // disable [ ] around names // look at i73215 
+                //aNewParam.bPredicate = sal_False; // disable [ ] around names // look at i73215
                 Utf8String aStringPara;
                 for (sal_uInt32 i = 1; i < nCount; i++)
                     {
@@ -478,7 +478,6 @@ namespace connectivity
         , m_aNodeValue(pNewValue)
         , m_eNodeType(eNewNodeType)
         , m_nNodeID(nNewNodeID)
-        , m_container(nullptr)
         {
         RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::OSQLParseNode");
 #if !NDEBUG
@@ -494,7 +493,6 @@ namespace connectivity
         , m_aNodeValue(_rNewValue)
         , m_eNodeType(eNewNodeType)
         , m_nNodeID(nNewNodeID)
-        , m_container(nullptr)
         {
         RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::OSQLParseNode");
 #if !NDEBUG
@@ -503,16 +501,7 @@ namespace connectivity
         OSL_ENSURE(m_eNodeType >= SQL_NODE_RULE && m_eNodeType <= SQL_NODE_CONCAT, "OSQLParseNode: mit unzulaessigem NodeType konstruiert");
         }
     //-----------------------------------------------------------------------------
-    OSQLParseNode::~OSQLParseNode()
-        {
-        for (OSQLParseNodes::const_iterator i = m_aChildren.begin();
-             i != m_aChildren.end(); i++)
-            delete *i;
-        m_aChildren.clear();
-
-        if (m_container)
-            m_container->erase(this);
-        }
+    OSQLParseNode::~OSQLParseNode(){}
     //-----------------------------------------------------------------------------
     OSQLParseNode* OSQLParseNode::detach()
         {
@@ -523,13 +512,6 @@ namespace connectivity
             m_pParent->m_aChildren.erase(itor);
             m_pParent = nullptr;
             }
-
-        if (m_container != nullptr)
-            {
-            m_container->erase(this);
-            m_container = nullptr;
-            }
-
         return this;
         }
 
@@ -844,52 +826,26 @@ namespace connectivity
                     rString.append(m_aNodeValue);
             }
         }
-    // -----------------------------------------------------------------------------
-    OSQLParseNode::Rule OSQLParseNode::getKnownRuleID() const
-        {
-        if (!isRule())
-            return UNKNOWN_RULE;
-        return OSQLParser::RuleIDToRule(getRuleID());
-        }
-    // -----------------------------------------------------------------------------
-    OSQLParseNodesContainer::OSQLParseNodesContainer()
-        {}
-    // -----------------------------------------------------------------------------
-    OSQLParseNodesContainer::~OSQLParseNodesContainer()
-        {}
-    // -----------------------------------------------------------------------------
-    void OSQLParseNodesContainer::push_back(OSQLParseNode* _pNode)
-        {
-        m_aNodes.push_back(_pNode);
+        // -----------------------------------------------------------------------------
+        OSQLParseNode::Rule OSQLParseNode::getKnownRuleID() const
+            {
+            if (!isRule())
+                return UNKNOWN_RULE;
+            return OSQLParser::RuleIDToRule(getRuleID());
+            }
 
+        OSQLParseNodesContainer::~OSQLParseNodesContainer() {
+            clearAndDelete();
         }
-    // -----------------------------------------------------------------------------
-    void OSQLParseNodesContainer::erase(OSQLParseNode* _pNode)
-        {
-        if (!m_aNodes.empty())
-            {
-            ::std::vector< OSQLParseNode* >::iterator aFind = ::std::find(m_aNodes.begin(), m_aNodes.end(), _pNode);
-            if (aFind != m_aNodes.end())
-                m_aNodes.erase(aFind);
+        void OSQLParseNodesContainer::clearAndDelete() {
+            for(auto& node: m_aNodes) {
+                delete node;
             }
+            m_aNodes.clear();
         }
-    // -----------------------------------------------------------------------------
-    void OSQLParseNodesContainer::clear()
-        {
-        m_aNodes.clear();
-        }
-    // -----------------------------------------------------------------------------
-    void OSQLParseNodesContainer::clearAndDelete()
-        {
-        // clear the garbage collector
-        while (!m_aNodes.empty())
-            {
-            OSQLParseNode* pNode = m_aNodes[0];
-            while (pNode->getParent())
-                {
-                pNode = pNode->getParent();
-                }
-            delete pNode;
-            }
+        OSQLParseNode* OSQLParseNodesContainer::NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID) {
+            auto newNode = new OSQLParseNode(pNewValue, eNodeType, nNodeID);
+            m_aNodes.push_back(newNode);
+            return newNode;
         }
     }  // namespace connectivity
