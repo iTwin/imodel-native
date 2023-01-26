@@ -411,9 +411,9 @@ private:
 
     UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
     UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
-    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
 public:
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     UNITS_EXPORT CompositeValueSpec();
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit);

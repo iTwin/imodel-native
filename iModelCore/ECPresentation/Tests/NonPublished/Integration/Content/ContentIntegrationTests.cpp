@@ -4191,7 +4191,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_UsesRelatedInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression, R"*(
     <ECEntityClass typeName="Model">
         <ECProperty propertyName="ModelName" typeName="string" />
     </ECEntityClass>
@@ -4205,7 +4205,7 @@ DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilterExpression)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression)
     {
     ECClassCP modelClass = GetClass("Model");
     ECClassCP elementClass = GetClass("Element");
@@ -4226,7 +4226,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilter
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), false, false);
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), true, true);
     spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Backward, modelClass->GetFullName())), "model"));
     rule->AddSpecification(*spec);
 
@@ -5670,9 +5670,11 @@ DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAp
     </ECEntityClass>
     <ECEntityClass typeName="Derived1">
         <BaseClass>Base</BaseClass>
+        <ECProperty propertyName="Property1" typeName="string" />
     </ECEntityClass>
     <ECEntityClass typeName="Derived2">
         <BaseClass>Base</BaseClass>
+        <ECProperty propertyName="Property2" typeName="string" />
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAppliedToOnlyOneChildClassPolymorphically)
@@ -5681,28 +5683,34 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     ECClassCP baseClass = GetClass("Base");
     ECClassCP derived1Class = GetClass("Derived1")->GetEntityClassCP();
     ECClassCP derived2Class = GetClass("Derived2")->GetEntityClassCP();
-    IECInstancePtr derived1Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived1Class,
-        [](IECInstanceR instance) { instance.SetValue("Property", ECValue("Derived1")); });
-    IECInstancePtr derived2Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived2Class,
-        [](IECInstanceR instance) { instance.SetValue("Property", ECValue("Derived2")); });
+    IECInstancePtr derived1Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived1Class, [](IECInstanceR instance)
+        {
+        instance.SetValue("Property", ECValue("Derived1"));
+        instance.SetValue("Property1", ECValue("-111"));
+        });
+    IECInstancePtr derived2Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived2Class, [](IECInstanceR instance)
+        {
+        instance.SetValue("Property", ECValue("Derived2"));
+        instance.SetValue("Property2", ECValue("-222"));
+        });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true, true);
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "Derived2");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property & this.Property2"));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(4, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -5715,12 +5723,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("Derived1", jsonValues[FIELD_NAME(baseClass, "Property")].GetString());
+    EXPECT_STREQ("-111", jsonValues[FIELD_NAME(derived1Class, "Property1")].GetString());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(derived2Class, "Property2")].IsNull());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_STREQ("Derived2", jsonValues2[FIELD_NAME(baseClass, "Property")].GetString());
-    EXPECT_STREQ("Derived2", jsonValues2["CalculatedProperty_0"].GetString());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(derived1Class, "Property1")].IsNull());
+    EXPECT_STREQ("-222", jsonValues2[FIELD_NAME(derived2Class, "Property2")].GetString());
+    EXPECT_STREQ("Derived2-222", jsonValues2["CalculatedProperty_0"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**

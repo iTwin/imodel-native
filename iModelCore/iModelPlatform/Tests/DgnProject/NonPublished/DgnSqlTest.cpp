@@ -28,9 +28,9 @@ struct SqlFunctionsTest : public ::testing::Test
 
     void SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode);
     void InsertElement(PhysicalElementR pelem);
-    DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
-    DgnCode CreateCode(Utf8StringCR value) const { return CodeSpec::CreateCode(*m_db, "SqlFunctionsTest", value); }
+    DgnModelR GetDefaultModel() const {return *m_db->Models().GetModel(m_defaultModelId);}
+    SpatialModelP GetDefaultSpatialModel() const {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
+    DgnCode CreateCode(Utf8StringCR value) const { return CodeSpec::CreateCode( "SqlFunctionsTest", *GetDefaultSpatialModel(), value); }
     };
 
 
@@ -69,7 +69,7 @@ void SqlFunctionsTest::SetUpTestCase()
 
     DgnSqlTestDomain::GetDomain().ImportSchema(*db);
 
-    CodeSpecPtr codeSpec = CodeSpec::Create(*db, "SqlFunctionsTest");
+    CodeSpecPtr codeSpec = CodeSpec::Create(*db, "SqlFunctionsTest", CodeScopeSpec::CreateModelScope());
     if (codeSpec.IsValid())
         codeSpec->Insert();
 
