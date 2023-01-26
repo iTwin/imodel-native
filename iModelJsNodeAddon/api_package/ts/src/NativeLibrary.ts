@@ -429,7 +429,7 @@ export declare namespace IModelJsNative {
   }
 
   interface SchemaImportOptions {
-    readonly schemaLockHeld: boolean;
+    readonly schemaLockHeld?: boolean;
   }
 
   // ###TODO import from core-common
