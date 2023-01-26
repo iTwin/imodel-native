@@ -3,15 +3,15 @@
 name: imodel-native-internal-$(Date:yyyy.MM.dd)$(Rev:.r)
 trigger: none
 
-pr:
-  autoCancel: true
-  drafts: false
-  branches:
-    include:
-      - main
-  paths:
-    exclude:
-      - build/NodeAddon_release.yml
+# pr:
+#   autoCancel: true
+#   drafts: false
+#   branches:
+#     include:
+#       - main
+#   paths:
+#     exclude:
+#       - build/NodeAddon_release.yml
 
 resources:
   repositories:
