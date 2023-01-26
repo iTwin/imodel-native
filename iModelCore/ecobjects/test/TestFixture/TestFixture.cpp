@@ -272,7 +272,7 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(BeJsDocument& jsonInput, BeFi
     }
 
 //---------------------------------------------------------------------------------------
-// @DMR Temp overloaded func
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
     {
@@ -319,14 +319,11 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFil
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECTestUtility::JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b)
     {
-    // auto astr = a.Stringify();
-    // auto bstr = b.Stringify();
-    // return astr == bstr;
     return a.isExactEqual(b);
     }
 
 //---------------------------------------------------------------------------------------
-// @DMR Temp overloaded func
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECTestUtility::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
     {
@@ -347,7 +344,7 @@ Utf8String ECTestUtility::JsonSchemasComparisonString(BeJsDocument const& create
     }
     
 //---------------------------------------------------------------------------------------
-// @DMR Temp overloaded func
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String ECTestUtility::JsonSchemasComparisonString(Json::Value const& createdSchema, Json::Value const& testDataSchema)
     {

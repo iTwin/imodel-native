@@ -583,7 +583,6 @@ int TestHelper::GetFrequencyCount(Utf8StringCR source, Utf8StringCR target) cons
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// @DMR Temp overloaded func
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 BentleyStatus TestUtilities::ReadFile(Json::Value& json, BeFileNameCR jsonFilePath)
