@@ -1,25 +1,22 @@
-import { expect } from 'chai';
-import * as os from 'os';
+import { expect } from "chai";
+import * as os from "os";
 
 import {
-    DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
-    DbResult, ECSqlReader, IModelError, QueryBinder, QueryLimit, QueryOptions, QueryOptionsBuilder,
-    QueryQuota, QueryRowFormat
-} from '@itwin/core-common';
+  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
+  DbResult, ECSqlReader, IModelError, QueryBinder, QueryOptions,
+} from "@itwin/core-common";
 
-import { IModelJsNative } from '../NativeLibrary';
-import { openDgnDb } from './';
+import { IModelJsNative } from "../NativeLibrary";
+import { openDgnDb } from "./";
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { dbFileName } from './utils';
+import { dbFileName } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
   process.env.LINUX_MINIDUMP_ENABLED = "yes";
-
-
 
 class ConcurrentQueryHelper {
   public static async executeQueryRequest(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, request: DbQueryRequest): Promise<DbQueryResponse> {
@@ -55,10 +52,9 @@ class ConcurrentQueryHelper {
       yield reader.formatCurrentRow();
     }
   }
-  public static resetConfig(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, config?: IModelJsNative.QueryConfig) : IModelJsNative.QueryConfig {
+  public static resetConfig(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, config?: IModelJsNative.QueryConfig): IModelJsNative.QueryConfig {
     return conn.concurrentQueryResetConfig(config);
   }
-
 }
 
 describe("concurrent query tests", () => {
@@ -66,12 +62,12 @@ describe("concurrent query tests", () => {
   beforeEach((done) => {
     conn = openDgnDb(dbFileName);
     done();
-  })
+  });
 
   afterEach((done) => {
     conn.closeIModel();
     done();
-  })
+  });
   it("reset config", async () => {
     const defaultConf = ConcurrentQueryHelper.resetConfig(conn);
     expect(defaultConf.ignorePriority).eq(false);
@@ -83,12 +79,12 @@ describe("concurrent query tests", () => {
     const modifiedConf = ConcurrentQueryHelper.resetConfig(conn, {
       globalQuota: {
         time: 1,
-        memory: 10000
+        memory: 10000,
       },
       ignorePriority: true,
       ignoreDelay: false,
       requestQueueSize: 1000,
-      workerThreads: 6
+      workerThreads: 6,
     });
     expect(modifiedConf.ignorePriority).eq(true);
     expect(modifiedConf.ignoreDelay).eq(false);
@@ -99,7 +95,7 @@ describe("concurrent query tests", () => {
 
     const resetConf = ConcurrentQueryHelper.resetConfig(conn);
     expect(resetConf.ignorePriority).eq(false);
-    expect(resetConf.ignoreDelay).eq(true);    
+    expect(resetConf.ignoreDelay).eq(true);
     expect(resetConf.requestQueueSize).eq(2000);
     expect(resetConf.workerThreads).not.eq(0);
     expect(resetConf.globalQuota?.memory).eq(0x800000);
@@ -112,7 +108,7 @@ describe("concurrent query tests", () => {
 
     // run a query with delay of 5 sec.
     const rc = await ConcurrentQueryHelper.executeQueryRequest(conn, {
-      kind :DbRequestKind.ECSql,
+      kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 5000,
     } as DbQueryRequest);
@@ -125,7 +121,7 @@ describe("concurrent query tests", () => {
 
     // run a query with delay of 5 sec.
     const rc = await ConcurrentQueryHelper.executeQueryRequest(conn, {
-      kind :DbRequestKind.ECSql,
+      kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
     } as DbQueryRequest);
 
@@ -137,17 +133,17 @@ describe("concurrent query tests", () => {
     ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { time: 20 }, ignoreDelay: false });
 
     const q0 = ConcurrentQueryHelper.executeQueryRequest(conn, {
-      kind :DbRequestKind.ECSql,
+      kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 5000,
-      restartToken:"token1"
+      restartToken: "token1",
     } as DbQueryRequest);
 
     const q1 = ConcurrentQueryHelper.executeQueryRequest(conn, {
-      kind :DbRequestKind.ECSql,
+      kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 0,
-      restartToken:"token1"
+      restartToken: "token1",
     } as DbQueryRequest);
 
     const r0 = await q0;

@@ -31,7 +31,6 @@ namespace Render = Dgn::Render;
 
 namespace IModelJsNative {
 
-
 /*=================================================================================**//**
 * An implementation of IKnownLocationsAdmin that is useful for desktop applications.
 * This implementation works for Windows, Linux, and MacOS.
@@ -883,14 +882,6 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemaSources.size())
         return BE_SQLITE_ERROR;
 
-    const auto kSchemaLockHeld = "schemaLockHeld";
-    auto allowDataTransformDuringSchemaUpdate = false;
-    if (opts.isObject()) {
-        if (opts.isBoolMember(kSchemaLockHeld)) {
-          allowDataTransformDuringSchemaUpdate = opts[kSchemaLockHeld].asBool();
-        }
-    }
-
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(
         false /*=acceptLegacyImperfectLatestCompatibleMatch*/,
         true /*=includeFilesWithNoVerExt*/);
@@ -925,7 +916,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemas.size())
         return BE_SQLITE_ERROR;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas, allowDataTransformDuringSchemaUpdate); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status = dgndb.ImportSchemas(schemas, opts[json_schemaLockHeld()].asBool(false)); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 

@@ -9,6 +9,7 @@ import * as path from "path";
 import { Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
 import { iModelJsNative } from "./utils";
 import { UpgradeOptions } from "@itwin/core-common";
+import { IModelJsNative } from "../NativeLibrary";
 
 // Run mocha tests on all *.test.ts files
 function runMochaTests() {
@@ -33,7 +34,7 @@ Logger.initializeToConsole();
 Logger.setLevelDefault(LogLevel.Error);
 iModelJsNative.logger = Logger;
 
-export function openDgnDb(filename: string, upgradeOptions?: UpgradeOptions) {
+export function openDgnDb(filename: string, upgradeOptions?: UpgradeOptions & IModelJsNative.SchemaImportOptions) {
   const db = new iModelJsNative.DgnDb();
   db.openIModel(filename, OpenMode.ReadWrite, upgradeOptions);
   return db;

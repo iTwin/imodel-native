@@ -425,6 +425,7 @@ struct JsInterop {
     BE_JSON_NAME(rootSubject)
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
+    BE_JSON_NAME(schemaLockHeld)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
     BE_JSON_NAME(state)

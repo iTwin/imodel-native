@@ -31,7 +31,7 @@ describe("embedded files", () => {
     const f2 = fs.readFileSync(originalFile);
     expect(f1).to.deep.equal(f2);
     fs.removeSync(localFileName);
-  }
+  };
 
   const testEmbed = (db: IModelJsNative.DgnDb | IModelJsNative.SQLiteDb) => {
     let stat = fs.statSync(dbFileName);
@@ -51,7 +51,7 @@ describe("embedded files", () => {
     stat = fs.statSync(dbFileName);
     db.embedFile({ name: embeddedName, localFileName: dbFileName, date: stat.mtimeMs, fileExt: embeddedExt, compress: false });
     validateEmbedding(db, dbFileName);
-  }
+  };
 
   it("embed files in SQLiteDb", () => {
     const tempSQLiteDbName = path.join(getOutputDir(), "testEmbed.db");
@@ -110,7 +110,7 @@ describe("embedded files", () => {
     expect(floats[2]).eq(3.4);
     const val2 = blobIo.read({numBytes: 8*3, offset: 8*3, blob: val});
     floats = new Float64Array(val.buffer);
-    expect(val2).eq(val)
+    expect(val2).eq(val);
     expect(floats[0]).eq(4.5);
     expect(floats[1]).eq(5.6);
     expect(floats[2]).eq(6.7);

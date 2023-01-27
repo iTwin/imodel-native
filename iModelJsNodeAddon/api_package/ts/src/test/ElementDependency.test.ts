@@ -10,6 +10,9 @@ import { IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName } from "./utils";
 import { openDgnDb } from "./index";
 
+/* eslint-disable @typescript-eslint/explicit-member-accessibility */
+/* eslint-disable @typescript-eslint/naming-convention */
+
 export interface ModelIdAndGeometryGuid {
   /** The model's Id. */
   id: Id64String;
@@ -28,13 +31,13 @@ class DependencyCallbackResults {
   public deletedDependency: RelationshipProps[] = [];
   // public directChange: Id64Array = [];
   // public validateOutput: RelationshipProps[] = [];
-};
+}
 
 class MockTxn {
   public dres = new DependencyCallbackResults();
 
-  public fmtElem = (elClassName: string, elId: Id64String) => { return elClassName + "." + elId; };
-  public fmtRel = (props: RelationshipProps) => { return this.fmtElem("", props.sourceId) + "->" + this.fmtElem("", props.targetId); }
+  public fmtElem = (elClassName: string, elId: Id64String) => { return `${elClassName  }.${  elId}`; };
+  public fmtRel = (props: RelationshipProps) => { return `${this.fmtElem("", props.sourceId)  }->${  this.fmtElem("", props.targetId)}`; };
 
   public resetDependencyResults() { this.dres = new DependencyCallbackResults(); }
 
@@ -101,10 +104,10 @@ class MockTxn {
 
 function makeSubject(codeValue: string, parent?: RelatedElementProps): SubjectProps {
   return {
-    classFullName: 'BisCore:Subject',
-    code: { spec: '0x1f', scope: '0x1', value: codeValue },
-    model: '0x1',
-    parent: parent || { id: '0x1', relClassName: 'BisCore:ElementOwnsChildElements' },
+    classFullName: "BisCore:Subject",
+    code: { spec: "0x1f", scope: "0x1", value: codeValue },
+    model: "0x1",
+    parent: parent || { id: "0x1", relClassName: "BisCore:ElementOwnsChildElements" },
   };
 }
 
@@ -115,7 +118,7 @@ export interface ElementDrivesElementProps extends RelationshipProps {
 
 function makeEDE(sourceId: Id64String, targetId: Id64String): ElementDrivesElementProps {
   return {
-    classFullName: 'BisCore:ElementDrivesElement',
+    classFullName: "BisCore:ElementDrivesElement",
     priority: 0,
     status: 0,
     sourceId,
@@ -123,10 +126,10 @@ function makeEDE(sourceId: Id64String, targetId: Id64String): ElementDrivesEleme
   };
 }
 
-function updateElement(db: IModelJsNative.DgnDb, elid: Id64String, newLabel: string) {
-  const ed2 = db.getElement({ id: elid });
+function updateElement(db1: IModelJsNative.DgnDb, elid: Id64String, newLabel: string) {
+  const ed2 = db1.getElement({ id: elid });
   ed2.userLabel = newLabel;
-  db.updateElement(ed2);
+  db1.updateElement(ed2);
 }
 
 function assertRels(list: RelationshipProps[], rels: ElementDrivesElementProps[]) {
@@ -152,7 +155,9 @@ describe("elementDependency", () => {
 
     db.enableTxnTesting();
 
-    mockTxn.fmtElem = (_cn: string, id: Id64String) => { return db.getElement({ id }).code.value!; };
+    mockTxn.fmtElem = (_cn: string, id: Id64String) => {
+      return db.getElement({ id }).code.value!;
+    };
 
     const p2id = db.insertElement(makeSubject("p2"));
     const p3id = db.insertElement(makeSubject("p3"));
@@ -173,7 +178,7 @@ describe("elementDependency", () => {
 
     // The full graph:
     //     .-parent-> p2 -EDE-> p3
-    /     /
+    /     /;
     //  e1 -EDE-> e2 -EDE-> e3
     //
     mockTxn.resetDependencyResults();
@@ -209,7 +214,9 @@ describe("elementDependency", () => {
 
     db.enableTxnTesting();
 
-    mockTxn.fmtElem = (_cn: string, id: Id64String) => { return db.getElement({ id }).code.value!; };
+    mockTxn.fmtElem = (_cn: string, id: Id64String) => {
+      return db.getElement({ id }).code.value!;
+    };
 
     // The full graph:
     //                                        BoreholeSource -EDE-> GroundGeneration
@@ -263,7 +270,9 @@ describe("elementDependency", () => {
 
     db.enableTxnTesting();
 
-    mockTxn.fmtElem = (_cn: string, id: Id64String) => { return db.getElement({ id }).code.value!; };
+    mockTxn.fmtElem = (_cn: string, id: Id64String) => {
+      return db.getElement({ id }).code.value!;
+    };
 
     const e1id = db.insertElement(makeSubject("e1"));
     const e2id = db.insertElement(makeSubject("e2"));
@@ -309,7 +318,9 @@ describe("elementDependency", () => {
 
     db.enableTxnTesting();
 
-    mockTxn.fmtElem = (_cn: string, id: Id64String) => { return db.getElement({ id }).code.value!; };
+    mockTxn.fmtElem = (_cn: string, id: Id64String) => {
+      return db.getElement({ id }).code.value!;
+    };
 
     const e1id = db.insertElement(makeSubject("e1"));
     const e1 = db.getElement({ id: e1id });

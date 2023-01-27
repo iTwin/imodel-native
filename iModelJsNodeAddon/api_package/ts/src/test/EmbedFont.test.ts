@@ -23,10 +23,10 @@ describe("embed fonts", () => {
         codePage: 100,
         degree: 21,
         diameter: 22,
-        plusMinus: 23
-      }
+        plusMinus: 23,
+      },
     },
-    data: new Uint8Array([100, 2, 233, 200])
+    data: new Uint8Array([100, 2, 233, 200]),
   };
 
   it("embed fonts in SQLiteDb", () => {
@@ -56,7 +56,7 @@ describe("embed fonts", () => {
     tempDgnDb.embedFont({fileName: ttfFileName, compress: true});
     if (os.platform() === "win32") // Embedding system fonts is only supported on windows.
       tempDgnDb.embedFont({systemFont: "times new roman", compress: true});
-    
-      tempDgnDb.closeIModel();
+
+    tempDgnDb.closeIModel();
   });
 });

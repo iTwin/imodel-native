@@ -983,7 +983,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             if (opts.isNumericMember("profile"))
                 profileOptions = (BeSQLite::Db::ProfileUpgradeOptions) opts["profile"].asUInt();
 
-            schemaLockHeld = opts["schemaLockHeld"].asBool(false);
+            schemaLockHeld = opts[JSON_NAME(schemaLockHeld)].asBool(false);
         }
 
         SchemaUpgradeOptions schemaUpgradeOptions(domainOptions);
