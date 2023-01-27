@@ -17,7 +17,7 @@ import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger, OpenMode,
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
-import type  {
+import type {
   ChangesetIndexAndId, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
   FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
@@ -38,7 +38,6 @@ export type ElementMeshRequestProps = any;
 /** Logger categories used by the native addon
  * @internal
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const NativeLoggerCategory = {
   BeSQLite: "BeSQLite",
   BRepCore: "BRepCore",
@@ -105,10 +104,10 @@ export class NativeLibrary {
  * @internal
  */
 export const enum WalCheckpointMode {
-  Passive=0,  /* Do as much as possible w/o blocking */
-  Full=1,     /* Wait for writers, then checkpoint */
-  Restart=2,  /* Like FULL but wait for for readers */
-  Truncate=3,  /* Like RESTART but also truncate WAL */
+  Passive = 0,  /* Do as much as possible w/o blocking */
+  Full = 1,     /* Wait for writers, then checkpoint */
+  Restart = 2,  /* Like FULL but wait for for readers */
+  Truncate = 3,  /* Like RESTART but also truncate WAL */
 }
 
 /** Possible outcomes of generateElementGraphics.
@@ -534,7 +533,7 @@ export declare namespace IModelJsNative {
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
-    public insertCodeSpec(name: string, jsonProperties: {spec: any, scopeSpec: any}): Id64String;
+    public insertCodeSpec(name: string, jsonProperties: { spec: any, scopeSpec: any }): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
@@ -562,7 +561,7 @@ export declare namespace IModelJsNative {
     public queryFirstTxnId(): TxnIdString;
     public queryLocalValue(name: string): string | undefined;
     // ###TODO mark deprecated use queryModelExtentsAsync
-    public queryModelExtents(options: {id: Id64String}):  { modelExtents: Range3dProps };
+    public queryModelExtents(options: { id: Id64String }): { modelExtents: Range3dProps };
     public queryModelExtentsAsync(modelIds: Id64String[]): Promise<ModelExtentsResponseProps[]>;
     public queryNextAvailableFileProperty(props: FilePropertyProps): number;
     public queryNextTxnId(txnId: TxnIdString): TxnIdString;
@@ -570,7 +569,7 @@ export declare namespace IModelJsNative {
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
     public readFontMap(): FontMapProps;
     public reinstateTxn(): IModelStatus;
-    public removeEmbeddedFile( name: string): void;
+    public removeEmbeddedFile(name: string): void;
     public replaceEmbeddedFile(arg: EmbedFileArg): void;
     public resetBriefcaseId(idValue: number): void;
     public restartDefaultTxn(): void;
@@ -882,7 +881,8 @@ export declare namespace IModelJsNative {
       /** starting offset within the blob to read */
       offset: number;
       /** If present and of sufficient size, use this ArrayBuffer for the value. */
-      blob?: ArrayBuffer; }): Uint8Array;
+      blob?: ArrayBuffer;
+    }): Uint8Array;
     /** Reposition this BlobIO to a new rowId
      * @note this BlobIO must be valid when this methods is called.
      */
@@ -894,7 +894,8 @@ export declare namespace IModelJsNative {
       /** starting offset within the blob to write */
       offset: number;
       /** the value to write */
-      blob: ArrayBuffer; }): void;
+      blob: ArrayBuffer;
+    }): void;
   }
 
   /**
@@ -1101,7 +1102,7 @@ export declare namespace IModelJsNative {
      * @param container the container holding the database.
      * @param dbName the name of the database to prefetch
      */
-    constructor(container: CloudContainer, dbName: string, args?: NativeCloudSqlite.PrefetchProps );
+    constructor(container: CloudContainer, dbName: string, args?: NativeCloudSqlite.PrefetchProps);
 
     /** Cancel a currently pending prefetch. The promise will be resolved immediately after this call. */
     public cancel(): void;
@@ -1232,14 +1233,14 @@ export declare namespace IModelJsNative {
   }
 
   const enum DbValueType {
-    IntegerVal  = 1,
-    FloatVal    = 2,
-    TextVal     = 3,
-    BlobVal     = 4,
-    NullVal     = 5,
+    IntegerVal = 1,
+    FloatVal = 2,
+    TextVal = 3,
+    BlobVal = 4,
+    NullVal = 5,
   }
 
-  type ChangeValueType = Uint8Array | number| string | null | undefined;
+  type ChangeValueType = Uint8Array | number | string | null | undefined;
 
   interface ChangedValue {
     new?: ChangeValueType;
@@ -1248,7 +1249,7 @@ export declare namespace IModelJsNative {
 
   class ChangesetReader {
     public close(): DbResult;
-    public getColumnCount(): number| undefined;
+    public getColumnCount(): number | undefined;
     public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
     public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
     public getFileName(): string | undefined;
