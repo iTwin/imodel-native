@@ -5,7 +5,7 @@
 
 import { expect } from "chai";
 import { dbFileName, iModelJsNative } from "./utils";
-import { DbResult, Logger, LogLevel } from "@itwin/core-bentley";
+import type { DbResult, Logger, LogLevel } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { openDgnDb } from ".";
 import * as sinon from "sinon";

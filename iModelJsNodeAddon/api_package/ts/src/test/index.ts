@@ -6,9 +6,9 @@
 import * as fs from "fs";
 import * as Mocha from "mocha";
 import * as path from "path";
-import { Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
+import type { Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
 import { iModelJsNative } from "./utils";
-import { UpgradeOptions } from "@itwin/core-common";
+import type { UpgradeOptions } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 
 // Run mocha tests on all *.test.ts files

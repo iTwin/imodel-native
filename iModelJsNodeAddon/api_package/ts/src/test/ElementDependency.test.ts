@@ -4,8 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { assert } from "chai";
-import { Guid, GuidString, Id64Array, Id64String } from "@itwin/core-bentley";
-import { ModelGeometryChangesProps, RelatedElementProps, RelationshipProps, SubjectProps } from "@itwin/core-common";
+import type { Guid, GuidString, Id64Array, Id64String } from "@itwin/core-bentley";
+import type { ModelGeometryChangesProps, RelatedElementProps, RelationshipProps, SubjectProps } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName } from "./utils";
 import { openDgnDb } from "./index";
@@ -36,8 +36,8 @@ class DependencyCallbackResults {
 class MockTxn {
   public dres = new DependencyCallbackResults();
 
-  public fmtElem = (elClassName: string, elId: Id64String) => { return `${elClassName  }.${  elId}`; };
-  public fmtRel = (props: RelationshipProps) => { return `${this.fmtElem("", props.sourceId)  }->${  this.fmtElem("", props.targetId)}`; };
+  public fmtElem = (elClassName: string, elId: Id64String) => { return `${elClassName}.${elId}`; };
+  public fmtRel = (props: RelationshipProps) => { return `${this.fmtElem("", props.sourceId)}->${this.fmtElem("", props.targetId)}`; };
 
   public resetDependencyResults() { this.dres = new DependencyCallbackResults(); }
 

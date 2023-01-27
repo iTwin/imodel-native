@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import * as os from "os";
 
-import {
+import type {
   DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
   DbResult, ECSqlReader, IModelError, QueryBinder, QueryOptions,
 } from "@itwin/core-common";
