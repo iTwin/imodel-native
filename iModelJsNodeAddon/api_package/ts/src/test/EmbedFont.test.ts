@@ -7,8 +7,8 @@ import * as path from "path";
 import * as fs from "fs-extra";
 import * as os from "os";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
-import { OpenMode } from "@itwin/core-bentley";
-import { FontType } from "@itwin/core-common";
+import type { OpenMode } from "@itwin/core-bentley";
+import type { FontType } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 
 describe("embed fonts", () => {
@@ -38,10 +38,10 @@ describe("embed fonts", () => {
     tempSQLiteDb.createDb(tempSQLiteDbName);
 
     tempSQLiteDb.embedFont(dummyRsc);
-    tempSQLiteDb.embedFont({fileName: shxFileName});
-    tempSQLiteDb.embedFont({fileName: ttfFileName});
+    tempSQLiteDb.embedFont({ fileName: shxFileName });
+    tempSQLiteDb.embedFont({ fileName: ttfFileName });
     if (os.platform() === "win32") // Embedding system fonts is only supported on windows.
-      tempSQLiteDb.embedFont({systemFont: "Times New Roman"});
+      tempSQLiteDb.embedFont({ systemFont: "Times New Roman" });
 
     tempSQLiteDb.closeDb();
   });
@@ -51,11 +51,11 @@ describe("embed fonts", () => {
     const tempDgnDbName = copyFile("testEmbedFont.bim", dbFileName);
     tempDgnDb.openIModel(tempDgnDbName, OpenMode.ReadWrite);
 
-    tempDgnDb.embedFont({...dummyRsc, compress:true});
-    tempDgnDb.embedFont({fileName: shxFileName, compress: true});
-    tempDgnDb.embedFont({fileName: ttfFileName, compress: true});
+    tempDgnDb.embedFont({ ...dummyRsc, compress: true });
+    tempDgnDb.embedFont({ fileName: shxFileName, compress: true });
+    tempDgnDb.embedFont({ fileName: ttfFileName, compress: true });
     if (os.platform() === "win32") // Embedding system fonts is only supported on windows.
-      tempDgnDb.embedFont({systemFont: "times new roman", compress: true});
+      tempDgnDb.embedFont({ systemFont: "times new roman", compress: true });
 
     tempDgnDb.closeIModel();
   });
