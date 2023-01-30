@@ -27,7 +27,7 @@ struct DgnCodeSpecsTest : public DgnDbTestFixture
 
     CodeSpecPtr Create(Utf8CP name, bool insert = true)
         {
-        auto codeSpec = CodeSpec::Create(GetDgnDb(), name);
+        auto codeSpec = CodeSpec::CreateRepositorySpec(GetDgnDb(), name);
         if (insert)
             {
             EXPECT_EQ(DgnDbStatus::Success, codeSpec->Insert());
@@ -156,23 +156,17 @@ TEST_F(CodeSpecTests, CRUD)
         CodeScopeSpec repositoryScope = CodeScopeSpec::CreateRepositoryScope();
         CodeScopeSpec modelScope = CodeScopeSpec::CreateModelScope();
         CodeScopeSpec parentElementScope = CodeScopeSpec::CreateParentElementScope();
-        Utf8CP relationship = BIS_SCHEMA("ShouldBeRelationshipName"); // in production this would be a valid ECRelationshipClass name
-        CodeScopeSpec relatedElementScope = CodeScopeSpec::CreateRelatedElementScope(relationship);
         ASSERT_EQ(CodeScopeSpec::Type::Repository, repositoryScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::Model, modelScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::ParentElement, parentElementScope.GetType());
-        ASSERT_EQ(CodeScopeSpec::Type::RelatedElement, relatedElementScope.GetType());
-        ASSERT_STREQ(relationship, relatedElementScope.GetRelationship().c_str());
         }
 
     // CodeSpec for TestSpatialLocation elements
         {
-        CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_CLASS_TestSpatialLocation));
+        CodeSpecPtr codeSpec = CodeSpec::CreateRepositorySpec(*m_db, DPTEST_SCHEMA(DPTEST_CLASS_TestSpatialLocation));
         ASSERT_TRUE(codeSpec.IsValid());
         ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Repository);
         ASSERT_TRUE(codeSpec->IsRepositoryScope());
-        ASSERT_TRUE(codeSpec->GetRegistrySuffix().empty());
-        ASSERT_TRUE(codeSpec->IsManagedWithDgnDb());
         ASSERT_EQ(DgnDbStatus::Success, codeSpec->Insert());
         }
 
@@ -180,12 +174,8 @@ TEST_F(CodeSpecTests, CRUD)
         {
         CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_TEST_ELEMENT_CLASS_NAME), CodeScopeSpec::CreateModelScope());
         ASSERT_TRUE(codeSpec.IsValid());
-        codeSpec->SetRegistrySuffix("RegistrySuffix");
-        codeSpec->SetIsManagedWithDgnDb(false);
         ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Model);
         ASSERT_TRUE(codeSpec->IsModelScope());
-        ASSERT_STREQ(codeSpec->GetRegistrySuffix().c_str(), "RegistrySuffix");
-        ASSERT_FALSE(codeSpec->IsManagedWithDgnDb());
         ASSERT_EQ(DgnDbStatus::Success, codeSpec->Insert());
         }
     }

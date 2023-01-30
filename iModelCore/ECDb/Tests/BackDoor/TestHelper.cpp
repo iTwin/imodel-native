@@ -598,6 +598,19 @@ BentleyStatus TestUtilities::ReadFile(Json::Value& json, BeFileNameCR jsonFilePa
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+BentleyStatus TestUtilities::ReadFile(BeJsDocument& json, BeFileNameCR jsonFilePath)
+    {
+    Utf8String jsonFileContent;
+    if (SUCCESS != ReadFile(jsonFileContent, jsonFilePath))
+        return ERROR;
+
+    return ParseJson(json, jsonFileContent);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 BentleyStatus TestUtilities::ReadFile(rapidjson::Document& json, BeFileNameCR jsonFilePath)
     {
     Utf8String jsonFileContent;

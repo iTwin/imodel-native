@@ -359,8 +359,8 @@ DgnElementPtr   VersionCompareTestFixture::InsertPhysicalElement(Utf8String code
     {
     PhysicalModelR model = *m_defaultModel->ToPhysicalModelP();
     GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(model, m_defaultCategoryId);
-    auto codeSpec = CodeSpec::Create(*m_db, "MyCodeSpec");
-    physicalElementPtr->SetCode(codeSpec->CreateCode(codeName));
+    auto codeSpec = CodeSpec::Create(*m_db, "MyCodeSpec", CodeScopeSpec::CreateModelScope());
+    physicalElementPtr->SetCode(codeSpec->CreateCode(model, codeName));
 
     // Set physical type if provided
     if (type != nullptr)

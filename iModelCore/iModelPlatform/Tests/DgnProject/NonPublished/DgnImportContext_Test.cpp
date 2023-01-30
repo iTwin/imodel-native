@@ -483,9 +483,9 @@ TEST_F(ImportTest, ImportElementsWithCodeSpecs)
     CodeSpecId sourceCodeSpecId;
     RefCountedPtr<CodeSpec> codeSpec1;
     {
-        auto codeSpec0 = CodeSpec::Create(*m_db, "TestCodeSpec_NotUsed");
-        codeSpec1 = CodeSpec::Create(*m_db, "TestCodeSpec");
-        auto codeSpec2 = CodeSpec::Create(*m_db, "TestCodeSpec_AlsoNotUsed");
+        auto codeSpec0 = CodeSpec::CreateRepositorySpec(*m_db, "TestCodeSpec_NotUsed");
+        codeSpec1 = CodeSpec::CreateRepositorySpec(*m_db, "TestCodeSpec");
+        auto codeSpec2 = CodeSpec::CreateRepositorySpec(*m_db, "TestCodeSpec_AlsoNotUsed");
         ASSERT_EQ(DgnDbStatus::Success, codeSpec0->Insert());
         ASSERT_EQ(DgnDbStatus::Success, codeSpec1->Insert());
         ASSERT_EQ(DgnDbStatus::Success, codeSpec2->Insert());
@@ -501,7 +501,7 @@ TEST_F(ImportTest, ImportElementsWithCodeSpecs)
 
     // Put an element with an Item into moddel1
     {
-        DgnCode code = codeSpec1->CreateCode("TestElement");
+        DgnCode code = codeSpec1->CreateRepositoryScopedCode("TestElement");
         DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
         TestElementPtr tempEl = TestElement::Create(*m_db, model1->GetModelId(), gcatid, code);
         ASSERT_TRUE(m_db->Elements().Insert(*tempEl).IsValid());

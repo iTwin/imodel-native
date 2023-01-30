@@ -195,6 +195,14 @@ void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+Utf8String FormattingTestUtils::JsonComparisonString(BeJsDocument const& created, BeJsDocument const& test)
+    {
+    return "Created   (minified): " + created.Stringify() + '\n' +
+           "Test Data (minified): " + test.Stringify() + '\n' +
+           "Created   (pretty):\n"  + created.Stringify(Indented) + '\n' +
+           "Test Data (pretty):\n"  + test.Stringify(Indented);
+    }
+// DMR - overloaded func
 Utf8String FormattingTestUtils::JsonComparisonString(Json::Value const& created, Json::Value const& test)
     {
     return "Created   (minified): " + created.ToString() + '\n' +

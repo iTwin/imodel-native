@@ -125,7 +125,7 @@ public:
 
     static DgnCode CreateCode(DgnDbR dgndb, Utf8StringCR value)
         {
-        return CodeSpec::CreateCode(dgndb, "SchemaVersionTest", value);
+        return CodeSpec::CreateRepositoryScopedCode(dgndb, "SchemaVersionTest", value);
         }
 };
 
@@ -156,7 +156,7 @@ struct SchemaVersionTestFixture : public DgnDbTestFixture
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, SchemaVersionTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
         ASSERT_TRUE(db.IsValid());
 
-        CodeSpecPtr codeSpec = CodeSpec::Create(*db, "SchemaVersionTest");
+        CodeSpecPtr codeSpec = CodeSpec::CreateRepositorySpec(*db, "SchemaVersionTest");
         if (codeSpec.IsValid())
             codeSpec->Insert();
 
@@ -653,7 +653,7 @@ TEST_F(SchemaVersionTestFixture, DomainUpgradeAutoUpgradesProfileVersion)
     ASSERT_EQ(BE_SQLITE_OK, result) << "Failed to open file " << destFileName;
     ASSERT_TRUE(m_db.IsValid());
 
-    CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, "SchemaVersionTest");
+    CodeSpecPtr codeSpec = CodeSpec::CreateRepositorySpec(*m_db, "SchemaVersionTest");
     if (codeSpec.IsValid())
         codeSpec->Insert();
 
