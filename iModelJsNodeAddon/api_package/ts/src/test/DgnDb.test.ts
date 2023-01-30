@@ -2,15 +2,15 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
-import type { DbResult, Id64Array, Id64String, IModelStatus } from "@itwin/core-bentley";
-import { IModelJsNative } from "../NativeLibrary";
+import { DbResult, Id64Array, Id64String, IModelStatus } from "@itwin/core-bentley";
+import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
 import { assert, expect } from "chai";
-import { openDgnDb } from ".";
-import * as path from "path";
-import * as os from "os";
 import * as fs from "fs-extra";
-import type { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
+import * as os from "os";
+import * as path from "path";
+import { openDgnDb } from ".";
+import { IModelJsNative } from "../NativeLibrary";
+import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")

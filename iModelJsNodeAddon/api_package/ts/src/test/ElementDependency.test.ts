@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { assert } from "chai";
-import type { Guid, GuidString, Id64Array, Id64String } from "@itwin/core-bentley";
+import { Guid, GuidString, Id64Array, Id64String } from "@itwin/core-bentley";
 import type { ModelGeometryChangesProps, RelatedElementProps, RelationshipProps, SubjectProps } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName } from "./utils";

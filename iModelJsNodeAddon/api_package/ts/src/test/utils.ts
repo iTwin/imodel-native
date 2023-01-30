@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import { IModelJsNative, NativeLibrary } from "../NativeLibrary";
-import type { assert } from "@itwin/core-bentley";
+import { assert } from "@itwin/core-bentley";
 
 /** The directory where test assets are stored. Keep in mind that the test is playing the role of the app. */
 export function getAssetsDir(): string {

@@ -7,8 +7,8 @@ import * as path from "path";
 import * as fs from "fs-extra";
 import * as os from "os";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
-import type { OpenMode } from "@itwin/core-bentley";
-import type { FontType } from "@itwin/core-common";
+import { OpenMode } from "@itwin/core-bentley";
+import { FontType } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 
 describe("embed fonts", () => {

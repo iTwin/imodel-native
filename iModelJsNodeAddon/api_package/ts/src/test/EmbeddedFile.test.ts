@@ -7,9 +7,9 @@ import * as path from "path";
 import * as fs from "fs-extra";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 import { expect } from "chai";
-import type { OpenMode } from "@itwin/core-bentley";
+import { OpenMode } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
-import type { Range3d } from "@itwin/core-geometry";
+import { Range3d } from "@itwin/core-geometry";
 
 describe("embedded files", () => {
   const embeddedName = "embedded file 1";
