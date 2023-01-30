@@ -363,7 +363,7 @@ public:
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported.
-    //! @param[in] allowDataTransformDuringSchemaUpdate Allow schema import to upgrade instances which is disallowed by default.
+    //! @param[in] schemaLockHeld Allow schema import to upgrade instances which is disallowed by default.
     //! @remarks
     //! <ul>
     //! <li> ONLY to be used for cases where the schemas are NOT paired with a domain.
@@ -374,7 +374,7 @@ public:
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool allowDataTransformDuringSchemaUpdate = false);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false);
 
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.

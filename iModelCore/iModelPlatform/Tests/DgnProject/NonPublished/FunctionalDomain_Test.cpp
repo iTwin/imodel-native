@@ -182,10 +182,10 @@ void FunctionalDomainTests::SetupFunctionalTestDomain()
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No, &schemaRootDir);
     DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No, &schemaRootDir);
 
-    SchemaStatus status = FunctionalDomain::GetDomain().ImportSchema(*m_db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+    SchemaStatus status = FunctionalDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_EQ(SchemaStatus::Success, status);
 
-    status = FunctionalTestDomain::GetDomain().ImportSchema(*m_db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+    status = FunctionalTestDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_EQ(SchemaStatus::Success, status);
     }
 

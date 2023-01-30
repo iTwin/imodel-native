@@ -367,11 +367,11 @@ describe("basic tests", () => {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 23 << 24);
 
-    // import should fail when allowDataTransformDuringSchemaUpdate flag is set to false which will fail the operation if data transform is required.
+    // import should fail when schemaLockHeld flag is set to false which will fail the operation if data transform is required.
     rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false });
     assert.equal(rc, BE_SQLITE_ERROR_DataTransformRequired);
 
-    // import should be successful when allowDataTransformDuringSchemaUpdate flag is set to true so it can transform data if required.
+    // import should be successful when schemaLockHeld flag is set to true so it can transform data if required.
     rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     db.saveChanges();

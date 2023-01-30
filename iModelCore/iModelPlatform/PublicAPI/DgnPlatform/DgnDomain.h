@@ -410,7 +410,7 @@ public:
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb, BeSQLite::EC::SchemaManager::SchemaImportOptions options);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb, BeSQLite::EC::SchemaManager::SchemaImportOptions options = BeSQLite::EC::SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
 
     //! Returns true of the schema for this domain has been imported into the supplied DgnDb.
     //! @remarks Only checks if the schema has been imported, and does not do any validation of

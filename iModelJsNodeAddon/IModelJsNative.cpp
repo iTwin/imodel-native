@@ -989,7 +989,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         SchemaUpgradeOptions schemaUpgradeOptions(domainOptions);
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
         openParams.SetProfileUpgradeOptions(profileOptions);
-        openParams.m_allowDataTransformDuringSchemaUpdate = schemaLockHeld;
+        openParams.m_schemaLockHeld = schemaLockHeld;
 
         BeJsConst props(info[3]);
         if (props.isObject()) {

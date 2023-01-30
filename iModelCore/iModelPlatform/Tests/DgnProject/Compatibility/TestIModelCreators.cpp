@@ -298,7 +298,7 @@ BentleyStatus TestDomainTestIModelCreator::_Create()
     if (bim == nullptr)
         return ERROR;
 
-    if (SchemaStatus::Success != IModelEvolutionTestsDomain::GetDomain().ImportSchema(*bim, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade))
+    if (SchemaStatus::Success != IModelEvolutionTestsDomain::GetDomain().ImportSchema(*bim))
         return ERROR;
 
     bim->SaveChanges();

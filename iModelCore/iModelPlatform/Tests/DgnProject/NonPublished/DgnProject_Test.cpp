@@ -263,7 +263,7 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
     dgndb->SaveChanges();
 
     BeTest::SetFailOnAssert(false);
-    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
     BeTest::SetFailOnAssert(true);
 
     ASSERT_TRUE(schemaStatus != SchemaStatus::Success);

@@ -928,7 +928,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
     {
-    return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //---------------------------------------------------------------------------------------

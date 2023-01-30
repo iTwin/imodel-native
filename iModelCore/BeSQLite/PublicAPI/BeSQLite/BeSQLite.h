@@ -2499,7 +2499,7 @@ public:
         ProfileUpgradeOptions m_profileUpgradeOptions = ProfileUpgradeOptions::None;
         bool m_rawSQLite = false;
         bool m_fromContainer = false;
-        bool m_allowDataTransformDuringSchemaUpdate = false;
+        bool m_schemaLockHeld = false;
 
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.
         bool m_skipFileCheck = false;
