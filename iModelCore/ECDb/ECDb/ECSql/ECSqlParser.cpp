@@ -24,21 +24,16 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
     if (parseTree == nullptr || !error.empty()) {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
 
-        // Check is Min/Max function with multiple args was called. 
-        std::cmatch regexMatches;
-        std::regex_search(ecsql, regexMatches, std::regex(R"rx([(=,\s]MAX\(\d+,.*\))rx", std::regex_constants::icase));
-        if (!regexMatches.empty())
-            {
+        // Check if Min/Max function with multiple args was called. 
+        std::cmatch maxRegexMatches;
+        std::regex_search(ecsql, maxRegexMatches, std::regex(R"rx([(=,\s]MAX\(\d+,.*\))rx", std::regex_constants::icase));
+        if (!maxRegexMatches.empty())
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "MAX function with multiple arguments isn't supported. Please use GREATEST instead.");
-            return nullptr;
-            }
 
-        std::regex_search(ecsql, regexMatches, std::regex(R"rx([(=,\s]MIN\(\d+,.*\))rx", std::regex_constants::icase));
-        if (!regexMatches.empty())
-            {
+        std::cmatch minRegexMatches;
+        std::regex_search(ecsql, minRegexMatches, std::regex(R"rx([(=,\s]MIN\(\d+,.*\))rx", std::regex_constants::icase));
+        if (!minRegexMatches.empty())
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "MIN function with multiple arguments isn't supported. Please use LEAST instead.");
-            return nullptr;
-            }
 
         return nullptr;
     }

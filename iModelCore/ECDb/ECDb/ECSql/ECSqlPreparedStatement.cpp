@@ -576,24 +576,17 @@ namespace
     {
     void ResetMaxOrMinFunctionInSql(Utf8StringR ecsql)
         {
-        // Check if Max/Min function with multiple args is being called
+        // Check if Max/Min function with multiple args was called
         // If so, replace Max with Greatest and Min with Least
-        std::cmatch regexMatches;
-        std::regex_search(ecsql.c_str(), regexMatches, std::regex(R"rx([(=,\s]MAX\(\d+,.*\))rx", std::regex_constants::icase));
-        if (!regexMatches.empty())
-            {
-            if (auto index = ecsql.find("MAX("); index != std::string::npos)
-                ecsql = ecsql.substr(0U, index).append("GREATEST").append(ecsql.substr(index + 3U, ecsql.length()));
-            }
-        else
-            {
-            std::regex_search(ecsql.c_str(), regexMatches, std::regex(R"rx([(=,\s]MIN\(\d+,.*\))rx", std::regex_constants::icase));
-            if (!regexMatches.empty())
-                {
-                if (auto index = ecsql.find("MIN("); index != std::string::npos)
-                    ecsql = ecsql.substr(0U, index).append("LEAST").append(ecsql.substr(index + 3U, ecsql.length()));
-                }
-            }
+        std::cmatch maxRegexMatches;
+        std::regex_search(ecsql.c_str(), maxRegexMatches, std::regex(R"rx([(=,\s]MAX[\s]*\(\d+,.*\))rx", std::regex_constants::icase));
+        if (!maxRegexMatches.empty())
+            ecsql = std::regex_replace(ecsql, std::regex(R"rx(MAX[\s]*\()rx"), "GREATEST(");
+
+        std::cmatch minRegexMatches;
+        std::regex_search(ecsql.c_str(), minRegexMatches, std::regex(R"rx([(=,\s]MIN[\s]*\(\d+,.*\))rx", std::regex_constants::icase));
+        if (!minRegexMatches.empty())
+            ecsql = std::regex_replace(ecsql, std::regex(R"rx(MIN[\s]*\()rx"), "LEAST(");
         }
     }
 

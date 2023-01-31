@@ -580,26 +580,33 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
     m_ecdb.AddIssueListener(listener);
 
     // Test DQL statements
-    for (const auto& [lineNumber, sqlStatement, expectedStatus, expectedResult, errorMsg] : bvector<std::tuple<const int, const Utf8String, const ECSqlStatus, const int, const Utf8String>>
+    for (const auto& [lineNumber, sqlStatement, expectedStatus, expectedResult, errorMsg] : bvector<std::tuple<const int, const Utf8String, const ECSqlStatus, const std::vector<int>, const Utf8String>>
         {
-        { __LINE__, "SELECT GREATEST()", ECSqlStatus::InvalidECSql, 0, "Preparing the ECSQL 'SELECT GREATEST()' failed. Underlying SQLite statement failed to prepare: BE_SQLITE_ERROR wrong number of arguments to function MAX() (BE_SQLITE_ERROR) [SQL: SELECT MAX()]" },
-        { __LINE__, "SELECT GREATEST(4)", ECSqlStatus::Success, 4, "" },
-        { __LINE__, "SELECT GREATEST(4, 2, 1, 5, 3)", ECSqlStatus::Success, 5, "" },
+        { __LINE__, "SELECT GREATEST()", ECSqlStatus::InvalidECSql, { 0 }, "Preparing the ECSQL 'SELECT GREATEST()' failed. Underlying SQLite statement failed to prepare: BE_SQLITE_ERROR wrong number of arguments to function MAX() (BE_SQLITE_ERROR) [SQL: SELECT MAX()]" },
+        { __LINE__, "SELECT GREATEST(4)", ECSqlStatus::Success, { 4 }, "" },
+        { __LINE__, "SELECT GREATEST(4, 2, 1, 5, 3)", ECSqlStatus::Success, { 5 }, "" },
 
-        { __LINE__, "SELECT LEAST()", ECSqlStatus::InvalidECSql, 0, "Preparing the ECSQL 'SELECT LEAST()' failed. Underlying SQLite statement failed to prepare: BE_SQLITE_ERROR wrong number of arguments to function MIN() (BE_SQLITE_ERROR) [SQL: SELECT MIN()]" },
-        { __LINE__, "SELECT LEAST(4)", ECSqlStatus::Success, 4, "" },
-        { __LINE__, "SELECT LEAST(4, 2, 1, 5, 3)", ECSqlStatus::Success, 1, "" },
-        { __LINE__, "SELECT LEAST(4, 2, 1, 5, 3)", ECSqlStatus::Success, 1, "" },
+        { __LINE__, "SELECT LEAST()", ECSqlStatus::InvalidECSql, { 0 }, "Preparing the ECSQL 'SELECT LEAST()' failed. Underlying SQLite statement failed to prepare: BE_SQLITE_ERROR wrong number of arguments to function MIN() (BE_SQLITE_ERROR) [SQL: SELECT MIN()]" },
+        { __LINE__, "SELECT LEAST(4)", ECSqlStatus::Success, { 4 }, "" },
+        { __LINE__, "SELECT LEAST(4, 2, 1, 5, 3)", ECSqlStatus::Success, { 1 }, "" },
+        { __LINE__, "SELECT LEAST(4, 2, 1, 5, 3)", ECSqlStatus::Success, { 1 }, "" },
 
-        { __LINE__, "SELECT MAX()", ECSqlStatus::InvalidECSql, 0, "Failed to parse ECSQL 'SELECT MAX()': syntax error" },
-        { __LINE__, "SELECT MAX(4)", ECSqlStatus::Success, 4, "" },
-        { __LINE__, "SELECT MAX(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, 0, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
-        { __LINE__, "SELECT MAX(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, 0, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
+        { __LINE__, "SELECT MAX()", ECSqlStatus::InvalidECSql, { 0 }, "Failed to parse ECSQL 'SELECT MAX()': syntax error" },
+        { __LINE__, "SELECT MAX(4)", ECSqlStatus::Success, { 4 }, "" },
+        { __LINE__, "SELECT MAX(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { 0 }, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
+        { __LINE__, "SELECT MAX(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { 0 }, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
 
-        { __LINE__, "SELECT MIN()", ECSqlStatus::InvalidECSql, 0, "Failed to parse ECSQL 'SELECT MIN()': syntax error" },
-        { __LINE__, "SELECT MIN(4)", ECSqlStatus::Success, 4, "" },
-        { __LINE__, "SELECT MIN(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, 0, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
-        { __LINE__, "SELECT MIN(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, 0, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+        { __LINE__, "SELECT MIN()", ECSqlStatus::InvalidECSql, { 0 }, "Failed to parse ECSQL 'SELECT MIN()': syntax error" },
+        { __LINE__, "SELECT MIN(4)", ECSqlStatus::Success, { 4 }, "" },
+        { __LINE__, "SELECT MIN(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { 0 }, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+        { __LINE__, "SELECT MIN(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { 0 }, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+
+        { __LINE__, "SELECT GREATEST(4, 5, 1), GREATEST(6, 7, 9)", ECSqlStatus::Success, { 5, 9 }, "" },
+        { __LINE__, "SELECT GREATEST(4, 5, 1), LEAST(4, 5, 1)", ECSqlStatus::Success, { 5, 1 }, "" },
+        { __LINE__, "SELECT LEAST(4, 5, 1), GREATEST(4, 5, 1)", ECSqlStatus::Success, { 1, 5 }, "" },
+        { __LINE__, "SELECT LEAST(4, 5, 1), LEAST(6, 7, 9)", ECSqlStatus::Success, { 1, 6 }, "" },
+        { __LINE__, "SELECT MAX(4, 5, 1), MIN(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+        { __LINE__, "SELECT MIN(4, 5, 1), MAX(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
         })
         {
         listener.clearMessages();
@@ -608,7 +615,8 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
         if (expectedStatus == ECSqlStatus::Success)
             {
             EXPECT_EQ(BE_SQLITE_ROW, statement.Step()) << "Test case at line " << lineNumber << " failed.\n";
-            EXPECT_EQ(expectedResult, statement.GetValueInt(0)) << "Test case at line " << lineNumber << " failed.\n";
+            for (auto i = 0; i < expectedResult.size(); ++i)
+                EXPECT_EQ(expectedResult[i], statement.GetValueInt(i)) << "Test case at line " << lineNumber << " failed.\n";
             }
         else
             {
@@ -625,7 +633,8 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='TestClass' modifier='None'>"
-        "        <ECProperty propertyName='TestCol' typeName='int' />"      //Code  
+        "        <ECProperty propertyName='TestCol1' typeName='int' />"
+        "        <ECProperty propertyName='TestCol2' typeName='int' />"
         "    </ECEntityClass>"
         "</ECSchema>")));
 
@@ -633,27 +642,33 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
     m_ecdb.AddIssueListener(listener);
 
     for (const auto& [lineNumber, isSelect, sqlStatement, expectedStatus, expectedResult, errorMsg] 
-    : bvector<std::tuple<const int, const bool, const Utf8String, const ECSqlStatus, const std::vector<int>, const Utf8String>>
+    : bvector<std::tuple<const int, const bool, const Utf8String, const ECSqlStatus, const std::vector<std::pair<int, int>>, const Utf8String>>
         {
-        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol) VALUES(GREATEST(5, 2, 1, 4))", ECSqlStatus::Success, { 5 }, "" },
-        { __LINE__, false, "UPDATE ts.TestClass SET TestCol=greatest(3, 1, 2)", ECSqlStatus::Success, { 3 }, "" },
-        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol=GREATEST(0, 1, 3)", ECSqlStatus::Success, { 1 }, "" },
-        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol = greatest(3, 2, 1)", ECSqlStatus::Success, {}, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(GREATEST(5, 2, 1, 4), 0)", ECSqlStatus::Success, { {5, 0} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(LEAST(5, 2, 1, 4), 0)", ECSqlStatus::Success, { {5, 0}, {1, 0} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(GREATEST(5, 2, 1, 4), GREATEST(6, 9, 4))", ECSqlStatus::Success, { {5, 0}, {1, 0}, {5, 9} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(GREATEST(2, 1, 4), LEAST(6, 1, 4))", ECSqlStatus::Success, { {5, 0}, {1, 0}, {5, 9}, {4, 1} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(LEAST(2, 1, 4), GREATEST(6, 1, 4))", ECSqlStatus::Success, { {5, 0}, {1, 0}, {5, 9}, {4, 1}, {1, 6} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(LEAST(8, 7, 9), LEAST(6, 1, 4))", ECSqlStatus::Success, { {5, 0}, {1, 0}, {5, 9}, {4, 1}, {1, 6}, {7, 1} }, "" },
 
-        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol) VALUES(LEAST(9, 10, 6))", ECSqlStatus::Success, { 6 }, "" },
-        { __LINE__, false, "UPDATE ts.TestClass SET TestCol = LEAST(12, 45, 20, 15)", ECSqlStatus::Success, { 12 }, "" },
-        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol=least(30, 12, 56)", ECSqlStatus::Success, { 1 }, "" },
-        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol = least(30, 12, 56)", ECSqlStatus::Success, { }, "" },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=greatest(3, 1, 2)", ECSqlStatus::Success, { {3, 0}, {3, 0}, {3, 9}, {3, 1}, {3, 6}, {3, 1} }, "" },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1=GREATEST(0, 1, 3)", ECSqlStatus::Success, { {3, 0}, {3, 0}, {3, 9}, {3, 1}, {3, 6}, {3, 1} }, "" },
 
-        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol) VALUES(MAX(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
-        { __LINE__, false, "UPDATE ts.TestClass SET TestCol=max(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
-        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol = MAX(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
-        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol = max(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol2 = LEAST(12, 45, 20, 15) WHERE TestCol2=0", ECSqlStatus::Success, { {3, 12}, {3, 12}, {3, 9}, {3, 1}, {3, 6}, {3, 1} }, "" },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1=least(3, 7, 5)", ECSqlStatus::Success, { {3, 12}, {3, 12}, {3, 9}, {3, 1}, {3, 6}, {3, 1} }, "" },
 
-        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol) VALUES(MIN(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
-        { __LINE__, false, "UPDATE ts.TestClass SET TestCol=MIN(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
-        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
-        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol2 = least(3, 2, 1)", ECSqlStatus::Success, { {3, 12}, {3, 12}, {3, 9}, {3, 6} }, "" },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = greatest(3, 2, 1)", ECSqlStatus::Success, { }, "" },
+
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MAX(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=max(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = MAX(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = max(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX function with multiple arguments isn't supported. Please use GREATEST instead." },
+
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MIN(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=MIN(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MIN function with multiple arguments isn't supported. Please use LEAST instead." },
         })
         {
         // Reset listener queue for current test case
@@ -669,24 +684,24 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
                 {
                 // Test the select statement test case results
                 EXPECT_EQ(BE_SQLITE_ROW, testCaseSQL.Step()) << "Test case at line " << lineNumber << " failed.\n";
-                EXPECT_EQ(expectedResult[0], testCaseSQL.GetValueInt(0)) << "Test case at line " << lineNumber << " failed.\n";
+                EXPECT_EQ(expectedResult.size(), testCaseSQL.GetValueInt(0)) << "Test case at line " << lineNumber << " failed.\n";
                 testCaseSQL.Finalize();
                 }
             else
                 {
                 // Test the insert, update and delete test case results
                 EXPECT_EQ(BE_SQLITE_DONE, testCaseSQL.Step()) << "Test case at line " << lineNumber << " failed.\n";
-                EXPECT_EQ(m_ecdb.GetModifiedRowCount(), 1) << "Test case at line " << lineNumber << " failed.\n";
                 testCaseSQL.Finalize();
 
                 // Query the table to test whether insert/update/delete has been done
                 ECSqlStatement selectStatement;
-                if (selectStatement.Prepare(m_ecdb, "SELECT TestCol FROM ts.TestClass") == ECSqlStatus::Success)
+                if (selectStatement.Prepare(m_ecdb, "SELECT TestCol1, TestCol2 FROM ts.TestClass") == ECSqlStatus::Success)
                     {
                     auto i = 0U;
                     while (BE_SQLITE_ROW == selectStatement.Step())
                         {
-                        EXPECT_EQ(expectedResult[i], selectStatement.GetValueInt(0)) << "Test case at line " << lineNumber << " failed.\n";
+                        EXPECT_EQ(expectedResult[i].first, selectStatement.GetValueInt(0)) << "Test case at line " << lineNumber << " failed.\n";
+                        EXPECT_EQ(expectedResult[i].second, selectStatement.GetValueInt(1)) << "Test case at line " << lineNumber << " failed.\n";
                         ++i;
                         }
                     }
