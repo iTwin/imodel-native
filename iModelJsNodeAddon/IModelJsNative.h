@@ -385,6 +385,7 @@ struct JsInterop {
     BE_JSON_NAME(description)
     BE_JSON_NAME(durationSeconds)
     BE_JSON_NAME(ecefLocation)
+    BE_JSON_NAME(ecSchemaXmlContext)
     BE_JSON_NAME(element)
     BE_JSON_NAME(errorNumber)
     BE_JSON_NAME(expires)
@@ -492,7 +493,7 @@ public:
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
-    static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames);
+    static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames, ECSchemaReadContextPtr customSchemaContext = nullptr);
     static DbResult ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const &serializedXmlSchemas);
     static DbResult ImportFunctionalSchema(DgnDbR);
     static DgnRevisionPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);

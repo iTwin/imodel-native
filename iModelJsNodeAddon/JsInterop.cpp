@@ -879,12 +879,15 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames)
+DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames, ECSchemaReadContextPtr customSchemaContext)
     {
     if (0 == schemaFileNames.size())
         return BE_SQLITE_NOTFOUND;
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    ECSchemaReadContextPtr schemaContext = customSchemaContext;
+    if (schemaContext.IsNull())
+        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
     JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
 
     bvector<ECSchemaCP> schemas;

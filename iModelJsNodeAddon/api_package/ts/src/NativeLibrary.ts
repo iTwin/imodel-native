@@ -435,7 +435,7 @@ export declare namespace IModelJsNative {
     status: IModelStatus;
   }
 
-  interface ImportSchemasOptions {
+  export interface ImportSchemasOptions {
     ecSchemaXmlContext?: ECSchemaXmlContext;
   }
 

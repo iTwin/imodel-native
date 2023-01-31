@@ -684,6 +684,8 @@ struct NativeECSchemaXmlContext : BeObjectWrap<NativeECSchemaXmlContext>
             return obj.InstanceOf(Constructor().Value());
             }
 
+        ECN::ECSchemaReadContextPtr GetContext() { return m_context; }
+
         void SetSchemaLocater(NapiInfoCR info)
             {
             REQUIRE_ARGUMENT_FUNCTION(0, locaterCallback);
@@ -1774,7 +1776,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        DbResult result = JsInterop::ImportSchemasDgnDb(GetDgnDb(), schemaFileNames);
+        ECSchemaReadContextPtr customContext = nullptr;
+
+        if (ARGUMENT_IS_PRESENT(1))
+            {
+            const auto& options = info[1].As<Napi::Object>();
+            const auto& maybeEcSchemaContextVal = options[JsInterop::json_ecSchemaXmlContext()];
+            if (!maybeEcSchemaContextVal.IsUndefined())
+                {
+                if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                    THROW_JS_TYPE_EXCEPTION("if ImportSchemaOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+                customContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+                }
+            }
+
+        DbResult result = JsInterop::ImportSchemasDgnDb(GetDgnDb(), schemaFileNames, customContext);
         return Napi::Number::New(Env(), (int)result);
         }
 
