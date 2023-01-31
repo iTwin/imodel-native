@@ -2497,8 +2497,15 @@ public:
         mutable OpenMode m_openMode;
         DefaultTxn m_startDefaultTxn = DefaultTxn::Yes;
         ProfileUpgradeOptions m_profileUpgradeOptions = ProfileUpgradeOptions::None;
+
+        // if true the database should be opened without checking for the BeSQLite properties table.
         bool m_rawSQLite = false;
+
+        // if true, the database to be opened is from a CloudSqlite container.
         bool m_fromContainer = false;
+
+        // if true, the schema lock for this Db is held by the application, so operations
+        // that require there be "no other writers on any computer anywhere" are allowed.
         bool m_schemaLockHeld = false;
 
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.

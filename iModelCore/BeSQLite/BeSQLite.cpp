@@ -2947,7 +2947,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params) {
 
     rc = _OnDbOpened(params);
     if (BE_SQLITE_OK != rc) {
-        // only call AbandonChanges() only if connection is still open. Otherwise it causes crash.
+        // only call AbandonChanges() if connection is still open. Otherwise it may crash.
         if (IsDbOpen()) {
             AbandonChanges();
             CloseDb();
