@@ -1778,7 +1778,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         ECSchemaReadContextPtr customContext = nullptr;
 
-        if (ARGUMENT_IS_PRESENT(1))
+        if (!ARGUMENT_IS_EMPTY(1))
             {
             const auto& options = info[1].As<Napi::Object>();
             const auto& maybeEcSchemaContextVal = options[JsInterop::json_ecSchemaXmlContext()];
