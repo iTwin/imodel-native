@@ -659,25 +659,25 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         // Reset listener queue for current test case
         listener.clearMessages();
         
-        ECSqlStatement testCaseSQLStatement;
+        ECSqlStatement testCaseSQL;
         // Prepare the SQL statement
-        EXPECT_EQ(expectedStatus, testCaseSQLStatement.Prepare(m_ecdb, sqlStatement.c_str(), true)) << "Test case at line " << lineNumber << " failed.\n";
+        EXPECT_EQ(expectedStatus, testCaseSQL.Prepare(m_ecdb, sqlStatement.c_str(), true)) << "Test case at line " << lineNumber << " failed.\n";
 
         if (expectedStatus == ECSqlStatus::Success)
             {
             if (isSelect)
                 {
                 // Test the select statement test case results
-                EXPECT_EQ(BE_SQLITE_ROW, testCaseSQLStatement.Step()) << "Test case at line " << lineNumber << " failed.\n";
-                EXPECT_EQ(expectedResult[0], testCaseSQLStatement.GetValueInt(0)) << "Test case at line " << lineNumber << " failed.\n";
-                testCaseSQLStatement.Finalize();
+                EXPECT_EQ(BE_SQLITE_ROW, testCaseSQL.Step()) << "Test case at line " << lineNumber << " failed.\n";
+                EXPECT_EQ(expectedResult[0], testCaseSQL.GetValueInt(0)) << "Test case at line " << lineNumber << " failed.\n";
+                testCaseSQL.Finalize();
                 }
             else
                 {
                 // Test the insert, update and delete test case results
-                EXPECT_EQ(BE_SQLITE_DONE, testCaseSQLStatement.Step()) << "Test case at line " << lineNumber << " failed.\n";
+                EXPECT_EQ(BE_SQLITE_DONE, testCaseSQL.Step()) << "Test case at line " << lineNumber << " failed.\n";
                 EXPECT_EQ(m_ecdb.GetModifiedRowCount(), 1) << "Test case at line " << lineNumber << " failed.\n";
-                testCaseSQLStatement.Finalize();
+                testCaseSQL.Finalize();
 
                 // Query the table to test whether insert/update/delete has been done
                 ECSqlStatement selectStatement;
