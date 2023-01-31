@@ -326,13 +326,12 @@ describe("basic tests", () => {
     });
   });
 
-  it("import schema", async () => {
+  it("schemaLockHeld flag", async () => {
     let t = 0;
     const generateIntProp = (propCount: number, prefix: string = "P") => {
       let xml = "";
       for (let i = 0; i < Math.max(propCount, 1); ++i) {
         xml += `<ECProperty propertyName="${prefix}${i}" typeName="int"/>\n`;
-
       }
       return xml;
     };
@@ -375,7 +374,6 @@ describe("basic tests", () => {
     rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     db.saveChanges();
-
     db.closeIModel();
   });
 
