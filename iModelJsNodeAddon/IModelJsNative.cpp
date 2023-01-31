@@ -1830,10 +1830,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         BeFileName schemaFileName(exportDirectory);
         schemaFileName.AppendSeparator();
         if (maybeOutFileName == "")
+            {
             schemaFileName.AppendUtf8(schema->GetFullSchemaName().c_str());
+            schemaFileName.AppendExtension(L"ecschema.xml");
+            }
         else
             schemaFileName.AppendUtf8(maybeOutFileName.c_str());
-        schemaFileName.AppendExtension(L"ecschema.xml");
         ECVersion xmlVersion = ECSchema::ECVersionToWrite(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
 
         SchemaWriteStatus status = schema->WriteToXmlFile(schemaFileName.GetName(), xmlVersion);
