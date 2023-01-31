@@ -973,27 +973,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         SchemaUpgradeOptions::DomainUpgradeOptions domainOptions = SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades;
         BeSQLite::Db::ProfileUpgradeOptions profileOptions = BeSQLite::Db::ProfileUpgradeOptions::None;
-        if (!ARGUMENT_IS_EMPTY(2)) {
-            Napi::Object upgradeOptions = info[2].As<Napi::Object>();
+        bool schemaLockHeld = false;
 
-            Napi::Number valDomain;
-            valDomain = upgradeOptions.Get("domain").ToNumber();
-            if (!valDomain.IsUndefined() && !valDomain.IsNull()) {
-                domainOptions = (SchemaUpgradeOptions::DomainUpgradeOptions) valDomain.Uint32Value();
-            }
+        BeJsConst opts(info[2]);
+        if (opts.isObject()) {
+            if (opts.isNumericMember("domain"))
+                domainOptions = (SchemaUpgradeOptions::DomainUpgradeOptions) opts["domain"].asUInt();
 
-            Napi::Number valProfile;
-            valProfile = upgradeOptions.Get("profile").ToNumber();
-            if (!valProfile.IsUndefined() && !valProfile.IsNull()) {
-                profileOptions = (BeSQLite::Db::ProfileUpgradeOptions) valProfile.Uint32Value();
-            }
+            if (opts.isNumericMember("profile"))
+                profileOptions = (BeSQLite::Db::ProfileUpgradeOptions) opts["profile"].asUInt();
+
+            schemaLockHeld = opts[JSON_NAME(schemaLockHeld)].asBool(false);
         }
+
         SchemaUpgradeOptions schemaUpgradeOptions(domainOptions);
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
         openParams.SetProfileUpgradeOptions(profileOptions);
+        openParams.m_schemaLockHeld = schemaLockHeld;
 
-        if (info[3].IsObject()) {
-            auto props = BeJsConst(info[3].As<Napi::Object>());
+        BeJsConst props(info[3]);
+        if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
             if (tempFileBase.isString())
                 openParams.m_tempfileBase = tempFileBase.asString();
@@ -1774,15 +1773,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        DbResult result = JsInterop::ImportSchemasDgnDb(GetDgnDb(), schemaFileNames);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, opts);
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::File, BeJsConst(opts));
         return Napi::Number::New(Env(), (int)result);
         }
 
     Napi::Value ImportXmlSchemas(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, serializedXmlSchemas);
-        DbResult result = JsInterop::ImportXmlSchemas(GetDgnDb(), serializedXmlSchemas);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, opts);
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, BeJsConst(opts));
         return Napi::Number::New(Env(), (int)result);
         }
 

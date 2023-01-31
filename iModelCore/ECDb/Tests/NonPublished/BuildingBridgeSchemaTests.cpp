@@ -971,7 +971,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
     </ECEntityClass>
 </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

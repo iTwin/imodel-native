@@ -333,6 +333,11 @@ enum class ProcessPolyfaceResult {
   Ok, // polyface was processed
 };
 
+enum class SchemaSourceType {
+    File,
+    XmlString
+};
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -421,6 +426,7 @@ struct JsInterop {
     BE_JSON_NAME(rootSubject)
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
+    BE_JSON_NAME(schemaLockHeld)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
     BE_JSON_NAME(state)
@@ -492,8 +498,7 @@ public:
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
-    static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames);
-    static DbResult ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const &serializedXmlSchemas);
+    static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, BeJsConst);
     static DbResult ImportFunctionalSchema(DgnDbR);
     static DgnRevisionPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);
     static bvector<DgnRevisionPtr> GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);

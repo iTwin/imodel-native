@@ -36,7 +36,7 @@ BeFileName DynamicSchemaTest::ImportSchema(Utf8CP schemaName, Utf8CP schemaXml)
     EXPECT_EQ(SchemaReadStatus::Success, schemaStatus);
     EXPECT_EQ(true, schema->IsDynamicSchema());
 
-    SchemaStatus schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas());
+    SchemaStatus schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas(), true);
     EXPECT_EQ(SchemaStatus::Success, schemaImportStat);
     m_db->SaveChanges("Imported Test schema");
     CloseDb();
@@ -66,7 +66,7 @@ void DynamicSchemaTest::TestSchemaUpgrade(Utf8CP schemaName, BeFileNameCR fileNa
     SchemaStatus schemaImportStat = SchemaStatus::Success;
     {
     DISABLE_ASSERTS
-    schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas());
+    schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas(), true);
     }
     ASSERT_EQ(expectedImportStatus, schemaImportStat);
     m_db->SaveChanges("Imported updated Test schema");
