@@ -2077,4 +2077,42 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
     }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyCustomAttributes) {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    ASSERT_EQ(SUCCESS, SetupECDb("metaschema_propertycustomattributes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="CAClass" modifier="Sealed" appliesTo="PrimitiveProperty">
+            <ECProperty propertyName="CAProp" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECProperty propertyName="Bar" typeName="string">
+                <ECCustomAttributes>
+                    <CAClass>
+                        <CAProp>Test</CAProp>
+                    </CAClass>
+            </ECCustomAttributes>
+          </ECProperty>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.Instance, prop.Name
+             FROM meta.PropertyCustomAttribute ca 
+             JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
+             JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        printf("ca: %s\n", stmt.GetValueText(0));
+        printf("prop: %s\n", stmt.GetValueText(1));
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

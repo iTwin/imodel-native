@@ -42,7 +42,7 @@ This can be applied to any `ECEntityClass` or `ECRelationshipClass` that follow 
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>SELECT cd.ECInstanceId,  sc.Name SchemaName, cd.Name ClassName FROM meta.ECSchemaDef sc JOIN meta.ECClassDef cd ON cd.Schema.Id=sc.ECInstanceId</Query>
                 </TransientView>
            </ECCustomAttributes>
@@ -105,7 +105,7 @@ Following is a example of `PersistedView` definition which also define a index o
     <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
     <ECEntityClass typeName="ModelCategories3d" description="" displayLabel="" modifier="Sealed">
         <ECCustomAttributes>
-            <PersistedView xmlns="ClassView.01.00.00">
+            <PersistedView xmlns="ECDbView.01.00.00">
                 <PersistenceMethod>Permanent</PersistenceMethod>
                 <RefreshMethod>Recompute</RefreshMethod>
                 <Query>

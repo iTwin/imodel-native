@@ -25,4 +25,7 @@ $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.00.ecschema.xml : $(_Make
 $(BuildContext)ECSchemas/ECDb/ECDbChange.01.00.01.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbChange.01.00.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)ECSchemas/ECDb/ECDbView.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbView.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
     

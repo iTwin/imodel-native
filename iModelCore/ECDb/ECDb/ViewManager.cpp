@@ -7,7 +7,7 @@
 #include <functional>
 #include <re2/re2.h>
 
-#define VIEW_SCHEMA_Name "ClassView"
+#define VIEW_SCHEMA_Name "ECDbView"
 #define VIEW_CLASS_PersistedView "PersistedView"
 #define VIEW_CLASS_TransientView "TransientView"
 #define VIEW_PROP_Namespace "ecViews"
@@ -637,21 +637,32 @@ ViewDef::ValidationResult ViewDef::ValidateFull(
 
             const auto& queryDataType = queryColumnInfo.GetDataType();
             if (queryDataType.IsPrimitive() ) {
-                if (!classProp.GetIsPrimitive()) {
+                if (classProp.GetIsPrimitive()) {
+                    const auto primitiveType = classProp.GetAsPrimitiveProperty()->GetType();
+                    if (queryDataType.GetPrimitiveType() != primitiveType) {
+                        issues.Error(
+                            "Invalid view class '%s'. Query property '%s' has type '%s' which is not same as '%s' type of class property with same name.",
+                            classDef.GetECSqlName().c_str(),
+                            queryColumnInfo.GetProperty()->GetName().c_str(),
+                            typeToString(queryDataType.GetPrimitiveType()),
+                            typeToString(primitiveType));
+                        return ValidationResult::Error;
+                    }
+                } else if (classProp.GetIsNavigation()) {
+                    if (queryDataType.GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Long &&
+                        queryDataType.GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Integer) {
+                        issues.Error(
+                            "Invalid view class '%s'. Query property '%s' has type '%s', but since it maps to a navigation property, it needs to be integer or long.",
+                            classDef.GetECSqlName().c_str(),
+                            queryColumnInfo.GetProperty()->GetName().c_str(),
+                            typeToString(queryDataType.GetPrimitiveType()));
+                        return ValidationResult::Error;
+                    }
+                } else {
                     issues.Error(
                         "Invalid view class '%s'. Query property '%s' is of primitive type but class property with same name is not primitive.",
                         classDef.GetECSqlName().c_str(),
                         queryColumnInfo.GetProperty()->GetName().c_str());
-                    return ValidationResult::Error;
-                }
-                const auto primitiveType = classProp.GetAsPrimitiveProperty()->GetType();
-                if (queryDataType.GetPrimitiveType() != primitiveType) {
-                    issues.Error(
-                        "Invalid view class '%s'. Query property '%s' has type '%s' which is not same as '%s' type of class property with same name.",
-                        classDef.GetECSqlName().c_str(),
-                        queryColumnInfo.GetProperty()->GetName().c_str(),
-                        typeToString(queryDataType.GetPrimitiveType()),
-                        typeToString(primitiveType));
                     return ValidationResult::Error;
                 }
             } else if (queryDataType.IsStruct()) {
@@ -711,6 +722,8 @@ ViewDef::ValidationResult ViewDef::ValidateFull(
                         classStructArrayTypeName.c_str());
                     return ValidationResult::Error;
                 }
+            } else if (queryDataType.IsNavigation()) {
+
             } else {
                 BeAssert("unsupported type");
                 return ValidationResult::Error;

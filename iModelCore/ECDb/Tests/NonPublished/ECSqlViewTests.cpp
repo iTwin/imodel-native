@@ -12,7 +12,7 @@ struct ECSqlView : public ECDbTestFixture {
 };
 auto ClassViewSchema_1_0 = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema
-            schemaName="ClassView"
+            schemaName="ECDbView"
             alias="ecdbview"
             version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -58,7 +58,7 @@ TEST_F(ECSqlView, TransientView_Simple) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>SELECT cd.ECInstanceId,  sc.Name SchemaName, cd.Name ClassName FROM meta.ECSchemaDef sc JOIN meta.ECClassDef cd ON cd.Schema.Id=sc.ECInstanceId GROUP BY sc.Name, cd.Name LIMIT 10</Query>
                 </TransientView>
            </ECCustomAttributes>
@@ -78,7 +78,7 @@ TEST_F(ECSqlView, TransientView_Simple) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(73ull));
         ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(75ull));
-        ASSERT_STREQ(stmt.GetValueText(2), "ClassView");
+        ASSERT_STREQ(stmt.GetValueText(2), "ECDbView");
         ASSERT_STREQ(stmt.GetValueText(3), "PersistedView");
     }
     if (true){
@@ -120,7 +120,7 @@ TEST_F(ECSqlView, PersistedView_Simple) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -198,7 +198,7 @@ TEST_F(ECSqlView, PersistedView_DataVersion) {
         </ECEntityClass>
         <ECEntityClass typeName="PersonView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT FirstName || ' ' || LastName, Age FROM ts.Person ORDER BY LastName, FirstName
                     </Query>
@@ -305,7 +305,7 @@ TEST_F(ECSqlView, TransientView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView1" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM ts.SchemaClassesView2
@@ -317,7 +317,7 @@ TEST_F(ECSqlView, TransientView_Validation_Checks) {
         </ECEntityClass>
         <ECEntityClass typeName="SchemaClassesView2" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM ts.SchemaClassesView1
@@ -343,7 +343,7 @@ TEST_F(ECSqlView, TransientView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM ts.SchemaClassesView
@@ -368,7 +368,7 @@ TEST_F(ECSqlView, TransientView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -395,7 +395,7 @@ TEST_F(ECSqlView, TransientView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query></Query>
                 </TransientView>
             </ECCustomAttributes>
@@ -418,7 +418,7 @@ TEST_F(ECSqlView, TransientView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>Update table</Query>
                 </TransientView>
             </ECCustomAttributes>
@@ -440,7 +440,7 @@ TEST_F(ECSqlView, TransientView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <TransientView xmlns="ClassView.01.00.00">
+                <TransientView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -477,7 +477,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView1" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.name, cd.Name 
                         FROM ts.SchemaClassesView2
@@ -496,7 +496,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         </ECEntityClass>
         <ECEntityClass typeName="SchemaClassesView2" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.name, cd.Name 
                         FROM ts.SchemaClassesView1
@@ -529,7 +529,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.name, cd.Name 
                         FROM ts.SchemaClassesView
@@ -561,7 +561,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>wrong query</Query>
                     <PersistenceMethod>Permanent</PersistenceMethod>
                     <RefreshMethod>Recompute</RefreshMethod>
@@ -589,7 +589,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query></Query>
                     <PersistenceMethod>Permanent</PersistenceMethod>
                     <RefreshMethod>Recompute</RefreshMethod>
@@ -618,7 +618,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -651,7 +651,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -684,7 +684,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -718,7 +718,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -751,7 +751,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
@@ -782,7 +782,7 @@ TEST_F(ECSqlView, PersistedView_Validation_Checks) {
         <ECSchemaReference name='ClassView' version='01.00.00' alias='classView' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
-                <PersistedView xmlns="ClassView.01.00.00">
+                <PersistedView xmlns="ECDbView.01.00.00">
                     <Query>
                         SELECT cd.ECInstanceId, sc.Name, cd.Name
                         FROM meta.ECSchemaDef sc
