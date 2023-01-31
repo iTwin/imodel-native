@@ -5,6 +5,7 @@
 #include "ECDbPch.h"
 #include "Parser/SqlNode.h"
 #include "Parser/SqlParse.h"
+#include "regex"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -22,6 +23,23 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
 
     if (parseTree == nullptr || !error.empty()) {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
+
+        // Check is Min/Max function with multiple args was called. 
+        std::cmatch regexMatches;
+        std::regex_search(ecsql, regexMatches, std::regex(R"rx([(=,\s]MAX\(\d+,.*\))rx", std::regex_constants::icase));
+        if (!regexMatches.empty())
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "MAX function with multiple arguments isn't supported. Please use GREATEST instead.");
+            return nullptr;
+            }
+
+        std::regex_search(ecsql, regexMatches, std::regex(R"rx([(=,\s]MIN\(\d+,.*\))rx", std::regex_constants::icase));
+        if (!regexMatches.empty())
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "MIN function with multiple arguments isn't supported. Please use LEAST instead.");
+            return nullptr;
+            }
+
         return nullptr;
     }
 
@@ -921,12 +939,19 @@ BentleyStatus ECSqlParser::ParseFctSpec(std::unique_ptr<ValueExp>& exp, OSQLPars
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function with token ID %" PRIu32 " not yet supported.", tokenId);
         return ERROR;
         }
+    
+    // Replace Greatest with Sqlite's Max function and Least with Sqlite's Min function
+    auto finalFunctionName = Utf8String(functionName.c_str());
+    if (functionName.EqualsI("GREATEST"))
+        finalFunctionName = "MAX";
+    else if (functionName.EqualsI("LEAST"))
+        finalFunctionName = "MIN";
 
     const size_t childCount = parseNode->count();
     if (childCount == 5)
-        return ParseSetFct(exp, *parseNode, functionName, false);
+        return ParseSetFct(exp, *parseNode, finalFunctionName, false);
 
-    std::unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>(functionName);
+    std::unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>(finalFunctionName);
     //parse function args. (if child parse node count is < 4, function doesn't have args)
     if (childCount == 4)
         {
