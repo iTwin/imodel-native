@@ -14,15 +14,30 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& e)
+ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& ew)
     {
-    if (e.is_compatible_with<CancellationException>())
+    if (!ew)
+        return ECPresentationResult(ECPresentationStatus::Error, "Invalid exception");
+    try
+        {
+        ew.throwException();
+        }
+    catch (CancellationException const&)
+        {
         return ECPresentationResult(ECPresentationStatus::Canceled, "");
-
-    if (e.is_compatible_with<InvalidArgumentException>())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what().c_str()));
-
-    return ECPresentationResult(ECPresentationStatus::Error, Utf8String(e.what().c_str()));
+        }
+    catch (InvalidArgumentException const& e)
+        {
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what()));
+        }
+    catch (std::runtime_error const& e)
+        {
+        return ECPresentationResult(ECPresentationStatus::Error, Utf8String(e.what()));
+        }
+    catch (...)
+        {
+        return ECPresentationResult(ECPresentationStatus::Error, "Unknown exception");
+        }
     }
 
 /*=================================================================================**//**
@@ -769,14 +784,11 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
 
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
-        .then([](NodesResponse response)
+        .then([](NodesResponse nodesResponse)
             {
-            rapidjson::Document json;
-            json.SetArray();
-            for (NavNodeCPtr const& node : *response)
-                PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
-            return ECPresentationResult(std::move(json), true);
-        });
+            ECPresentationSerializerContext ctx;
+            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse), true);
+            });
     }
 
 #define PRESENTATION_JSON_ATTRIBUTE_GetNode_NodeKey "nodeKey"
@@ -864,11 +876,8 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse nodesResponse)
             {
-            rapidjson::Document json;
-            json.SetArray();
-            for (NavNodeCPtr const& node : *nodesResponse)
-                PUSH_JSON_IF_VALID(json, json.GetAllocator(), node);
-            return ECPresentationResult(std::move(json), true);
+            ECPresentationSerializerContext ctx;
+            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse), true);
             });
     }
 

@@ -13278,32 +13278,69 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SuppressesInfiniteHierar
         });
     childRule->AddSpecification(*childSpecification);
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
-    );
-    ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *a);
-    EXPECT_TRUE(rootNodes[0]->HasChildren());
+    // validate the hierarchy
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()),
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            // should get A child node, because it's built using another spec
+            ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+                {
+                // should get yet another A node, but without children this time - it has a similar ancestor built from the same spec
+                ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+                    {
+                    }),
+                }),
+            }),
+        });
+    }
 
-    // should get A child node, because it's built using another spec
-    auto childNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); }
-    );
-    ASSERT_EQ(1, childNodes.GetSize());
-    VerifyNodeInstance(*childNodes[0], *a);
-    EXPECT_TRUE(childNodes[0]->HasChildren());
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SuppressesInfiniteVirtualHierarchyWhenItIsHiddenWithHideIfNoChildrenFlag, R"*(
+    <ECEntityClass typeName="A" />
+    <ECRelationshipClass typeName="A_A" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="aa" polymorphic="false">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="aa" polymorphic="false">
+            <Class class="A"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, SuppressesInfiniteVirtualHierarchyWhenItIsHiddenWithHideIfNoChildrenFlag)
+    {
+    ECClassCP classA = GetClass("A");
+    ECRelationshipClassCP relAA = GetClass("A_A")->GetRelationshipClassCP();
 
-    // should get yet another A node, but without children this time - it has a similar ancestor built from the same spec
-    auto finalChildNodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), childNodes[0].get()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), childNodes[0].get())).get(); }
-    );
-    ASSERT_EQ(1, finalChildNodes.GetSize());
-    VerifyNodeInstance(*finalChildNodes[0], *a);
-    EXPECT_FALSE(finalChildNodes[0]->HasChildren());
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAA, *a, *a);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", classA->GetFullName(), false));
+
+    ChildNodeRule* childRule = new ChildNodeRule();
+    rules->AddPresentationRule(*childRule);
+    auto childSpecification = new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, true, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(relAA->GetFullName(), RequiredRelationDirection_Forward)),
+        });
+    childRule->AddSpecification(*childSpecification);
+
+    // validate the hierarchy
+    ValidateHierarchy(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()),
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a }),
+            {
+            }),
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**

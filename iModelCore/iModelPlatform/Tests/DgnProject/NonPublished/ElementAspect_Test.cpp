@@ -18,7 +18,7 @@ struct ElementAspectTests : public DgnDbTestFixture
 {
     CodeSpecPtr Create(Utf8CP name, bool insert = true)
     {
-        CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, name);
+        CodeSpecPtr codeSpec = CodeSpec::CreateRepositorySpec(*m_db, name);
         if (insert)
         {
             EXPECT_EQ(DgnDbStatus::Success, codeSpec->Insert());

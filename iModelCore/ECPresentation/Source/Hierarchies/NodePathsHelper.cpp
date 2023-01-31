@@ -244,7 +244,7 @@ static NodesPathElement FindNode(ECPresentationManager::Impl& manager, NodeByIns
     {
     auto diagnostics = Diagnostics::Scope::Create("Find node");
 
-    INavNodesDataSourcePtr nodes = manager.GetNodes(HierarchyRequestImplParams::Create(params));
+    auto nodes = manager.GetNodes(HierarchyRequestImplParams::Create(params));
     if (!nodes.IsValid())
         return NodesPathElement();
 

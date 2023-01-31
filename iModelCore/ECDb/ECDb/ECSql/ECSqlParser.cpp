@@ -19,7 +19,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
     //Parse statement
     Utf8String error;
     OSQLParser parser;
-    std::unique_ptr<OSQLParseNode> parseTree(parser.parseTree(error, ecsql));
+    auto parseTree = parser.parseTree(error, ecsql);
 
     if (parseTree == nullptr || !error.empty()) {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
@@ -93,7 +93,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
         }
         case OSQLParseNode::cte: {
             std::unique_ptr<CommonTableExp> cteExp;
-            if (SUCCESS != ParseCTE(cteExp, parseTree.get()))
+            if (SUCCESS != ParseCTE(cteExp, parseTree))
                 return nullptr;
 
             exp = std::move(cteExp);
