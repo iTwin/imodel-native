@@ -192,7 +192,7 @@ JsonValue TestHelper::ExecuteSelectECSql(Utf8CP ecsql) const
     {
     ECSqlStatement stmt;
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
-        return JsonValue(Json::nullValue);
+        return JsonValue();
     
     return ExecutePreparedECSql(stmt);
     }
@@ -586,6 +586,19 @@ int TestHelper::GetFrequencyCount(Utf8StringCR source, Utf8StringCR target) cons
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 BentleyStatus TestUtilities::ReadFile(Json::Value& json, BeFileNameCR jsonFilePath)
+    {
+    Utf8String jsonFileContent;
+    if (SUCCESS != ReadFile(jsonFileContent, jsonFilePath))
+        return ERROR;
+
+    return ParseJson(json, jsonFileContent);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus TestUtilities::ReadFile(BeJsDocument& json, BeFileNameCR jsonFilePath)
     {
     Utf8String jsonFileContent;
     if (SUCCESS != ReadFile(jsonFileContent, jsonFilePath))

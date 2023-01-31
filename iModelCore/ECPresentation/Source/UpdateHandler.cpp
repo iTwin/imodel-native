@@ -13,6 +13,7 @@ bool AffectedHierarchyLevelIdentifier::operator<(AffectedHierarchyLevelIdentifie
     STR_LESS_COMPARE(m_hierarchyLevelIdentifier.GetConnectionId().c_str(), other.m_hierarchyLevelIdentifier.GetConnectionId().c_str());
     STR_LESS_COMPARE(m_hierarchyLevelIdentifier.GetRulesetId().c_str(), other.m_hierarchyLevelIdentifier.GetRulesetId().c_str());
     PTR_VALUE_LESS_COMPARE(m_parentNodeKey.get(), other.m_parentNodeKey.get());
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

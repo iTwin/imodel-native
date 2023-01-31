@@ -265,6 +265,18 @@ bvector<Utf8String> LabelGroupingNodeKey::CreateHashPath(Utf8StringCR connection
     return CombineHashes(parentKey ? parentKey->GetHashPath() : bvector<Utf8String>(), h.GetHashString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKey::NavNodeKey(NavNodeKey const& other)
+    {
+    m_type = other.m_type;
+    m_specificationIdentifier = other.m_specificationIdentifier;
+    m_hashPath = other.m_hashPath; 
+    if (other.m_instanceKeysSelectQuery)
+        m_instanceKeysSelectQuery = other.m_instanceKeysSelectQuery->Clone();
+    }
+
 #define NAVNODE_JSON_CHUNK_SIZE 256
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -274,8 +286,6 @@ NavNode::NavNode()
     {
     m_internalExtendedData.SetObject();
     m_nodeId.Invalidate();
-    m_determinedChildren = false;
-    m_hasChildren = false;
     m_isChecked = false;
     m_isCheckboxVisible = false;
     m_isCheckboxEnabled = false;
@@ -300,14 +310,12 @@ NavNode::NavNode(NavNodeCR other)
     m_backColor = other.m_backColor;
     m_fontStyle = other.m_fontStyle;
     m_type = other.m_type;
-    m_determinedChildren = other.m_determinedChildren;
     m_hasChildren = other.m_hasChildren;
     m_isChecked = other.m_isChecked;
     m_isCheckboxVisible = other.m_isCheckboxVisible;
     m_isCheckboxEnabled = other.m_isCheckboxEnabled;
     m_shouldAutoExpand = other.m_shouldAutoExpand;
-    if (other.m_instanceKeysSelectQuery)
-        m_instanceKeysSelectQuery = other.m_instanceKeysSelectQuery->Clone();
+    m_supportsFiltering = other.m_supportsFiltering;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,8 +345,17 @@ void NavNode::AddUsersExtendedData(Utf8CP key, ECValueCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNode::HasChildren() const
     {
-    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, m_determinedChildren, "Returning 'has children' flag without having it determined");
-    return m_hasChildren;
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, m_hasChildren.IsValid(), "Returning 'has children' flag without having it determined");
+    return *m_hasChildren;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NavNode::SupportsFiltering() const
+    {
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, m_supportsFiltering.IsValid(), "Returning 'supports filtering' flag without having it determined");
+    return *m_supportsFiltering;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -367,16 +384,6 @@ RapidJsonAccessor NavNode::GetUsersExtendedData() const
         return RapidJsonAccessor();
     return RapidJsonAccessor(*m_usersExtendedData);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQuery const* NavNode::GetInstanceKeysSelectQuery() const {return m_instanceKeysSelectQuery.get();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void NavNode::SetInstanceKeysSelectQuery(std::unique_ptr<PresentationQuery const> query) {m_instanceKeysSelectQuery = std::move(query);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

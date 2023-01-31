@@ -918,6 +918,8 @@ public:
     // replace the content of this document with the parsed value of stringified JSON
     void Parse(std::string const& jsonString) { Parse(jsonString.c_str()); }
 
+    bool hasParseError() { return m_doc.HasParseError(); }
+
     // Obtain a global immutable null document.
     static BeJsConst Null()
         {

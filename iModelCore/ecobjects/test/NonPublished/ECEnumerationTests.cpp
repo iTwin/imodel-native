@@ -466,10 +466,10 @@ TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
     ECEnumeratorP enumeratorC;
     EC_ASSERT_SUCCESS(enumeration->CreateEnumerator(enumeratorC, "EnumeratorC", 3));
     enumeratorC->SetDisplayLabel("AnotherVal");
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(enumeration->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECEnumeration.ecschema.json"));
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile));
 

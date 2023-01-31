@@ -21,6 +21,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
             <ECProperty propertyName="Prop6" typeName="point2d" />
             <ECProperty propertyName="Prop7" typeName="point3d" />
             <ECProperty propertyName="Prop7" typeName="DateTime" />
+            <ECProperty propertyName="SmallLengthProp" typeName="double" kindOfQuantity="SmallLength" />
         </ECClass>
         <ECEnumeration typeName="TestIntEnum" backingTypeName="int" isStrict="true">
             <ECEnumerator value="0" displayLabel="Zero"/>
@@ -34,6 +35,8 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
         </ECEnumeration>
         <KindOfQuantity typeName="Length" displayLabel="Length" persistenceUnit="M" relativeError="1e-6"
             presentationUnits="FT(real4u);M(real4u);FT(fi8);IN(real)" />
+        <KindOfQuantity typeName="SmallLength" displayLabel="Small Length" persistenceUnit="M" relativeError="0"
+            presentationUnits="FT(real4u);IN(real)" />
     </ECSchema>
 )xml"
 
@@ -206,4 +209,17 @@ TEST_F(DefaultPropertyFormatterTests, DefaultPropertyFormatterHandlesDefaultMap)
 
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ(Utf8PrintfString("123%c0 m", decimalSeparator).c_str(), formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, UsesPersistenceUnitFormatInsteadOfDefaultFormatIfItMatchesUnitSystem)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("SmallLengthProp");
+    ECValue value(123.0);
+
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Metric));
+    EXPECT_STREQ("123.0 m", formattedValue.c_str());
     }

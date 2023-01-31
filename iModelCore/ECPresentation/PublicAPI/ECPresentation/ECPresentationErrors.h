@@ -56,7 +56,7 @@ struct CancellationException : ECPresentationException<std::exception>
 +===============+===============+===============+===============+===============+======*/
 struct DbConnectionBusyException : ECPresentationException<std::runtime_error>
     {
-    DbConnectionBusyException() 
+    DbConnectionBusyException()
         : ECPresentationException<std::runtime_error>("IModel is locked and can not be read")
         {}
     };
@@ -93,6 +93,23 @@ struct InvalidArgumentException : ECPresentationException<std::invalid_argument>
     InvalidArgumentException(Utf8CP message = "") : T_Super(message) {}
     InvalidArgumentException(Utf8String message) : T_Super(message) {}
     };
+
+/*=================================================================================**//**
+* This is thrown when filtering is requested for a hierarchy level that doesn't support
+* filtering. Requestor should check the `NavNode::SupportsFiltering()` flag on the parent
+* node before requesting its hierarchy level to be filtered.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct FilteringNotSupportedException : InvalidArgumentException
+{
+    DEFINE_T_SUPER(InvalidArgumentException)
+private:
+    bvector<Utf8String> m_reasons;
+public:
+    FilteringNotSupportedException(bvector<Utf8String> reasons)
+        : T_Super("Filtering not supported"), m_reasons(reasons)
+        {}
+};
 
 #ifdef WIP_LIMITING_RESULT_SETS_SIZE
 /*=================================================================================**//**

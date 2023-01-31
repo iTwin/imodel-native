@@ -3962,7 +3962,8 @@ public:
     DGNPLATFORM_EXPORT ElementAspectIterator MakeAspectIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
     //! Return the DgnElementId for the root Subject
-    DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
+    static DgnElementId GetRootSubjectId() { return DgnElementId((uint64_t)1LL);}
+
     //! Return the root Subject
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 
