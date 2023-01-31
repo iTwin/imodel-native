@@ -265,7 +265,7 @@ void PresentationManagerIntegrationTests::VerifyCustomNode(NavNodeCR node, Utf8S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(AsyncHierarchyRequestParams params, std::function<void(AsyncHierarchyRequestParams&)> const& configureParams, bvector<ExpectedHierarchyDef> const& expectedHierarchy)
+HierarchyListDef<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(AsyncHierarchyRequestParams params, std::function<void(AsyncHierarchyRequestParams&)> const& configureParams, HierarchyListDef<ExpectedHierarchyDef> const& expectedHierarchy)
     {
     if (configureParams)
         configureParams(params);
@@ -275,8 +275,12 @@ bvector<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(A
         [&]() { return m_manager->GetNodesCount(params).get(); }
     );
     EXPECT_EQ(expectedHierarchy.size(), nodes.GetSize());
+    if (!expectedHierarchy.SupportsFiltering().IsNull())
+        EXPECT_EQ(*expectedHierarchy.SupportsFiltering(), nodes.SupportsFiltering());
 
-    bvector<HierarchyDef<>> h;
+    HierarchyListDef<HierarchyDef<>> h;
+    h.SetSupportsFiltering(nodes.SupportsFiltering());
+
     for (size_t i = 0; i < expectedHierarchy.size() && i < nodes.GetSize(); ++i)
         {
         NavNodeCPtr actualNode = nodes[i];
@@ -287,6 +291,9 @@ bvector<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(A
             expectation.node(*actualNode, params);
 
         EXPECT_EQ(expectation.nodeHasChildren, actualNode->HasChildren());
+
+        if (!expectation.children.SupportsFiltering().IsNull())
+            EXPECT_EQ(*expectation.children.SupportsFiltering(), actualNode->SupportsFiltering());
 
         AsyncHierarchyRequestParams childParams(params);
         // intentionally set parent as a node key rather than the node itself to replicate
@@ -306,7 +313,7 @@ bvector<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(A
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(AsyncHierarchyRequestParams const& params, bvector<ExpectedHierarchyDef> const& expectedHierarchy)
+HierarchyListDef<HierarchyDef<>> PresentationManagerIntegrationTests::ValidateHierarchy(AsyncHierarchyRequestParams const& params, HierarchyListDef<ExpectedHierarchyDef> const& expectedHierarchy)
     {
     return ValidateHierarchy(params, nullptr, expectedHierarchy);
     }

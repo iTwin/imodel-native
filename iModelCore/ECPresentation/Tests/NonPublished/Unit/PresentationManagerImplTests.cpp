@@ -112,12 +112,12 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, GetsChildrenForNodeWhoseGrandP
     m_locater->AddRuleSet(*ruleset);
 
     // request and verify
-    INavNodesDataSourcePtr rootNodes = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, nullptr,
+    NavNodesDataSourcePtr rootNodes = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, nullptr,
         ruleset->GetRuleSetId(), RulesetVariables()));
     ASSERT_EQ(2, rootNodes->GetSize());
     EXPECT_STREQ("child1", rootNodes->Get(0)->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("child2", rootNodes->Get(1)->GetLabelDefinition().GetDisplayValue().c_str());
-    INavNodesDataSourcePtr childNodes = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, nullptr,
+    NavNodesDataSourcePtr childNodes = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, nullptr,
         ruleset->GetRuleSetId(), RulesetVariables(), rootNodes->Get(1).get()));
     ASSERT_EQ(1, childNodes->GetSize());
     EXPECT_STREQ("child2.1", childNodes->Get(0)->GetLabelDefinition().GetDisplayValue().c_str());
@@ -411,8 +411,8 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsNodesR
         });
 
     // request and verify
-    INavNodesDataSourceCPtr nodes = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, token.get(), m_ruleset->GetRuleSetId(), RulesetVariables()));
-    EXPECT_EQ(0, nodes->GetSize());
+    NavNodesDataSourceCPtr nodes = m_impl->GetNodes(HierarchyRequestImplParams::Create(*m_connection, token.get(), m_ruleset->GetRuleSetId(), RulesetVariables()));
+    EXPECT_TRUE(nodes.IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -448,7 +448,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodes
     {
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetNodesHandler([&](auto const& params) -> INavNodesDataSourcePtr
+    m_impl->SetNodesHandler([&](auto const& params) -> NavNodesDataSourcePtr
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -783,7 +783,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesRequ
     RunTestWithParams([this](bool started)
         {
         // set the request handler
-        m_impl->SetNodesHandler([&](auto const& params) -> INavNodesDataSourcePtr
+        m_impl->SetNodesHandler([&](auto const& params) -> NavNodesDataSourcePtr
             {
             if (started)
                 {
@@ -812,7 +812,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesRequ
     RunTestWithParams([this](bool started)
         {
         // set the request handler
-        m_impl->SetNodesHandler([&](auto const& params) -> INavNodesDataSourcePtr
+        m_impl->SetNodesHandler([&](auto const& params) -> NavNodesDataSourcePtr
             {
             if (started)
                 {
@@ -841,7 +841,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodesRequ
     RunTestWithParams([this](bool started)
         {
         // set the request handler
-        m_impl->SetNodesHandler([&](auto const& params) -> INavNodesDataSourcePtr
+        m_impl->SetNodesHandler([&](auto const& params) -> NavNodesDataSourcePtr
             {
             if (started)
                 {

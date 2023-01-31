@@ -24,7 +24,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(expectedJson, jsonInputFile));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
@@ -50,13 +50,13 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ONLY jt.Document"));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     JsonECSqlSelectAdapter jsonAdapter(statement);
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson));
     statement.Finalize();
     /* Validate */
     actualJson.removeMember(ECJsonUtilities::json_id());
-    ASSERT_EQ(0, expectedJson.compare(actualJson)) << actualJson.ToString().c_str();
+    ASSERT_TRUE(expectedJson.isExactEqual(actualJson)) << actualJson.Stringify().c_str();
 
     //verify Json Insertion using the other Overload
     actualJson.removeMember(ECJsonUtilities::json_id()); //remove id member as it would insert the new row with the existing id
@@ -143,14 +143,15 @@ TEST_F(JsonInserterTests, InsertNavProps)
 
     ECInstanceKey childKey;
     Utf8String expectedJsonStr;
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     rapidjson::Document expectedRapidJson;
 
     {
     expectedJsonStr.Sprintf(R"json({ "name" : "Child 1",
                                     "parent" : { "id" : "%s", "relClassName" : "TestSchema.FkRel" } })json", parentKey.GetInstanceId().ToHexStr().c_str());
 
-    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedJson.Parse(expectedJsonStr);
+    ASSERT_FALSE(expectedJson.hasParseError()) << expectedJsonStr;
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
@@ -162,8 +163,9 @@ TEST_F(JsonInserterTests, InsertNavProps)
 
     {
     expectedJsonStr.Sprintf(R"json({ "name" : "Child 2", "parent" : { "id" : "%s", "relClassName" : null }})json", parentKey.GetInstanceId().ToHexStr().c_str());
-    expectedJson = Json::nullValue;
-    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedJson.Null();
+    expectedJson.Parse(expectedJsonStr);
+    ASSERT_FALSE(expectedJson.hasParseError()) << expectedJsonStr;
     expectedRapidJson.SetNull();
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
@@ -176,8 +178,9 @@ TEST_F(JsonInserterTests, InsertNavProps)
 
     {
     expectedJsonStr.assign(R"json({ "name" : "Child 3", "parent" : null })json");
-    expectedJson = Json::nullValue;
-    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedJson.Null();
+    expectedJson.Parse(expectedJsonStr);
+    ASSERT_FALSE(expectedJson.hasParseError()) << expectedJsonStr;
     expectedRapidJson.SetNull();
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
@@ -190,8 +193,9 @@ TEST_F(JsonInserterTests, InsertNavProps)
 
     {
     expectedJsonStr.assign(R"json({ "name" : "Child 4", "parent" : {"id" : null }})json");
-    expectedJson = Json::nullValue;
-    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedJson.Null();
+    expectedJson.Parse(expectedJsonStr);
+    ASSERT_FALSE(expectedJson.hasParseError()) << expectedJsonStr;
     expectedRapidJson.SetNull();
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
@@ -246,7 +250,7 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
     ASSERT_TRUE(relInserter.IsValid()) << linkTableRelClass->GetFullName();
 
     Utf8String expectedJsonStr;
-    Json::Value expectedJson;
+    BeJsDocument expectedJson;
     rapidjson::Document expectedRapidJson;
     ECInstanceKey linkTableRelKey;
 
@@ -254,7 +258,8 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
 
     {
     expectedJsonStr.Sprintf(R"json({ "sourceId" : "%s", "targetId" : "%s"})json", parentKey.GetInstanceId().ToHexStr().c_str(), childKey.GetInstanceId().ToHexStr().c_str());
-    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedJson.Parse(expectedJsonStr);
+    ASSERT_FALSE(expectedJson.hasParseError()) << expectedJsonStr;
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
     ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedJson)) << expectedJsonStr.c_str();
@@ -269,8 +274,9 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
 
     {
     expectedJsonStr.Sprintf(R"json({ "sourceId" : "%s", "sourceClassName" : "TestSchema.Child", "targetId" : "%s", "targetClassName" : "TestSchema.Child"})json", parentKey.GetInstanceId().ToHexStr().c_str(), childKey.GetInstanceId().ToHexStr().c_str());
-    expectedJson = Json::nullValue;
-    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedJson.Null();
+    expectedJson.Parse(expectedJsonStr);
+    ASSERT_FALSE(expectedJson.hasParseError()) << expectedJsonStr;
     expectedRapidJson.SetNull();
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
@@ -299,10 +305,10 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    Json::Value expectedJsonCpp;
+    BeJsDocument expectedJsonCpp;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(expectedJsonCpp, jsonInputFile));
     rapidjson::Document expectedJson;
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, Json::FastWriter().write(expectedJsonCpp)));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, expectedJsonCpp.Stringify()));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
@@ -328,14 +334,14 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     DbResult stepStatus = statement.Step();
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
 
-    Json::Value actualJson;
+    BeJsDocument actualJson;
     JsonECSqlSelectAdapter jsonAdapter(statement);
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson));
     statement.Finalize();
 
     /* Validate */
     actualJson.removeMember(ECJsonUtilities::json_id());
-    ASSERT_EQ(0, expectedJsonCpp.compare(actualJson)) << actualJson.ToString().c_str();
+    ASSERT_TRUE(expectedJsonCpp.isExactEqual(actualJson)) << actualJson.Stringify().c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -418,9 +424,9 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
 
     for (std::pair<Utf8CP, bool> const& testItem : testDataset)
         {
-        Json::Value json;
-        Json::Reader reader;
-        ASSERT_TRUE(reader.Parse(testItem.first, json, false));
+        BeJsDocument json;
+        json.Parse(testItem.first);
+        ASSERT_FALSE(json.hasParseError());
 
         ECInstanceKey newKey;
         if (testItem.second)
@@ -551,7 +557,7 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
 
     // Insert one instnace
-    Json::Value rootInstance;
+    BeJsDocument rootInstance;
     rootInstance["name"] = rootName;
     rootInstance["persistance"] = 0;
 

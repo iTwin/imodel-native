@@ -252,7 +252,13 @@ bool DgnDbTestFixture::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
     return astr == bstr;
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DgnDbTestFixture::JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b) const
+    {
+    return a.isExactEqual(b);
+    }
 //////////////////////////////////////////////////////////////////////////
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

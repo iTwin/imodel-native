@@ -525,7 +525,7 @@ export declare namespace IModelJsNative {
     public importXmlSchemas(serializedXmlSchemas: string[]): DbResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
-    public insertCodeSpec(name: string, jsonProperties:{spec: any, scopeSpec: any}): Id64String;
+    public insertCodeSpec(name: string, jsonProperties:{spec?: any, scopeSpec: any}): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
