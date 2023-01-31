@@ -2501,7 +2501,7 @@ OParseContext            OSQLParser::s_aDefaultContext;
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     {
-    m_pParseTree =std::unique_ptr<OSQLParseNode>(pNewParseTree->detach());
+    m_pParseTree = pNewParseTree->detach();
     }
 //-----------------------------------------------------------------------------
 
@@ -2566,7 +2566,7 @@ static Utf8String delComment(Utf8String const& rQuery)
     return aBuf;
 }
 //-----------------------------------------------------------------------------
-std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,Utf8String const& rStatement, sal_Bool bInternational) {
+OSQLParseNode* OSQLParser::parseTree (Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational) {
     Utf8String sTemp = delComment(rStatement);
     m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
     m_pParseTree = nullptr;
@@ -2581,7 +2581,7 @@ std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,
         return nullptr;
         }
 
-    return std::move(m_pParseTree);
+    return m_pParseTree;
     }
 //-----------------------------------------------------------------------------
 Utf8String OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext)

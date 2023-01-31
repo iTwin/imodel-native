@@ -1,4 +1,6 @@
-#line 2 "D:\\bsw\\git-native-master\\src\\imodel-native\\iModelCore\\ECDb\\Scripts\\\\..\\ECDb\\ECSql\\parser\\SQLflex.l"
+
+#line 2 "D:\\bsw\\git-native-schema-lock\\src\\imodel-native\\iModelCore\\ECDb\\Scripts\\\\..\\ECDb\\ECSql\\parser\\SQLflex.l"
+
 //------------------------------------------------------------
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -4955,19 +4957,13 @@ sal_Int32 OSQLScanner::SQLlex(YYSTYPE* val)
 // -------------------------------------------------------------------------
 OSQLParseNode* OSQLScanner::NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
     {
-    auto newNode = new OSQLParseNode(pNewValue, eNodeType, nNodeID);
-    m_pGarbageCollector.push_back(newNode);
-    newNode->m_container = &m_pGarbageCollector;
-    return newNode;
+    return m_pGarbageCollector.NewNode(pNewValue, eNodeType, nNodeID);
     }
 
 // -------------------------------------------------------------------------
 OSQLParseNode* OSQLScanner::NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
     {
-    auto newNode = new OSQLParseNode(_rNewValue, eNodeType, nNodeID);
-    m_pGarbageCollector.push_back(newNode);
-    newNode->m_container = &m_pGarbageCollector;
-    return newNode;
+    return m_pGarbageCollector.NewNode(_rNewValue.c_str(), eNodeType, nNodeID);
     }
 
 // -------------------------------------------------------------------------

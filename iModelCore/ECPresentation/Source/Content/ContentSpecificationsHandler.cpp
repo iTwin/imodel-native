@@ -1034,42 +1034,47 @@ void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInstances(bvector<SelectClassWithExcludes<ECClass>> const& inputSelectClasses,
+static bvector<ContentSource> FindContentSourcesWithInstances(bvector<ContentSource> const& inputContentSources,
     Utf8StringCR instanceFilter, ContentSpecificationsHandler::Context const& context)
     {
-    bvector<SelectClassWithExcludes<ECClass>> result;
+    bvector<ContentSource> result;
 
     // sqlite has a limit of 500 statements in a union - need to split the query
-    size_t iterationsCount = inputSelectClasses.size() / MAX_COMPOUND_STATEMENTS_COUNT + 1;
+    size_t iterationsCount = inputContentSources.size() / MAX_COMPOUND_STATEMENTS_COUNT + 1;
     for (size_t iteration = 0; iteration < iterationsCount; ++iteration)
         {
         auto unionQuery = UnionQueryBuilder::Create({});
         size_t offset = iteration * MAX_COMPOUND_STATEMENTS_COUNT;
         size_t end = offset + MAX_COMPOUND_STATEMENTS_COUNT;
-        if (end > inputSelectClasses.size())
-            end = inputSelectClasses.size();
+        if (end > inputContentSources.size())
+            end = inputContentSources.size();
         for (size_t i = offset; i < end; ++i)
             {
-            SelectClassWithExcludes<ECClass> const& selectClass = inputSelectClasses[i];
+            auto const& contentSource = inputContentSources[i];
 
             auto query = ComplexQueryBuilder::Create();
-            auto contract = SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId"));
+            auto contract = SimpleQueryContract::Create(
+                {
+                PresentationQueryContractSimpleField::Create("ECClassId", Utf8PrintfString("[%s].[ECClassId]", contentSource.GetSelectClass().GetAlias().c_str())),
+                PresentationQueryContractSimpleField::Create("ContentSourceIndex", Utf8PrintfString("%" PRIu64, i), false),
+                });
             query->SelectContract(*contract);
-            query->From(selectClass);
-            query->GroupByContract(*contract);
-
+            query->From(contentSource.GetSelectClass());
+            for (auto const& relatedInstancePath : contentSource.GetPathsFromSelectToRelatedInstanceClasses())
+                query->Join(relatedInstancePath);
+            
             auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(context);
             InstanceFilteringParams params(context.GetSchemaHelper().GetECExpressionsCache(), filteringExpressionContext.get(),
                 instanceFilter.c_str(), nullptr);
             QueryBuilderHelpers::ApplyInstanceFilter(*query, params);
 
-            unionQuery->AddQuery(*query);
+            unionQuery->AddQuery(ComplexQueryBuilder::Create()->SelectAll().From(*query).GroupByContract(*contract));
             }
 
         CachedECSqlStatementPtr statement = context.GetConnection().GetStatementCache().GetPreparedStatement(
             context.GetConnection().GetECDb().Schemas(), context.GetConnection().GetDb(), unionQuery->GetQuery()->GetQueryString().c_str());
         if (statement.IsNull())
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare actual classes with instances query");
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to prepare content sources with instances query");
 
         unionQuery->GetQuery()->BindValues(*statement);
 
@@ -1080,9 +1085,12 @@ static bvector<SelectClassWithExcludes<ECClass>> FindActualSelectClassesWithInst
             if (nullptr == ecclass)
                 {
                 DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default,
-                    Utf8PrintfString("Failed to load ECClass with id - %s while getting actual classes with instances.", classId.ToString().c_str()));
+                    Utf8PrintfString("Failed to load ECClass with id - %s while getting content sources with instances.", classId.ToString().c_str()));
                 }
-            result.push_back(SelectClass<ECClass>(*ecclass, "this", false));
+            ContentSource contentSourceCopy = inputContentSources[statement->GetValueUInt64(1)];
+            contentSourceCopy.SetPropertiesSourceOverride(nullptr);
+            contentSourceCopy.GetSelectClass() = SelectClass<ECClass>(*ecclass, "this", false);
+            result.push_back(contentSourceCopy);
             }
         }
 
@@ -1110,14 +1118,14 @@ void ContentSpecificationsHandler::HandleSpecification(ContentInstancesOfSpecifi
         });
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " select classes.", (uint64_t)selectClasses.size()));
 
-    if (specification.ShouldHandlePropertiesPolymorphically())
-        {
-        selectClasses = FindActualSelectClassesWithInstances(selectClasses, specification.GetInstanceFilter(), GetContext());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " select classes after filtering-out classes without instances.", (uint64_t)selectClasses.size()));
-        }
-
     bvector<ContentSource> contentSources = _BuildContentSource(selectClasses, specification);
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " content sources.", (uint64_t)contentSources.size()));
+
+    if (specification.ShouldHandlePropertiesPolymorphically())
+        {
+        contentSources = FindContentSourcesWithInstances(contentSources, specification.GetInstanceFilter(), GetContext());
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " content sources after filtering-out ones without instances.", (uint64_t)contentSources.size()));
+        }
 
     for (ContentSource const& src : contentSources)
         {

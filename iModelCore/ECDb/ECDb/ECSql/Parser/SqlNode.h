@@ -119,8 +119,8 @@ namespace connectivity
         Utf8String m_aNodeValue;    // Token-Name oder leer bei Regeln oder Utf8String bei
         SQLNodeType m_eNodeType;    // s. o.
         sal_uInt32 m_nNodeID;         // ::com::sun::star::chaos::Rule ID (bei IsRule()) oder Token ID (bei !IsRule())
-        OSQLParseNodesContainer* m_container;
-        public:
+
+       public:
             enum Rule
                 {
                 all_or_any_predicate = 0,
