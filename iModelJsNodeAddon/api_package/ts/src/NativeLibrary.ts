@@ -435,6 +435,10 @@ export declare namespace IModelJsNative {
     status: IModelStatus;
   }
 
+  interface ImportSchemasOptions {
+    ecSchemaXmlContext?: ECSchemaXmlContext;
+  }
+
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
@@ -521,7 +525,7 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
-    public importSchemas(schemaFileNames: string[]): DbResult;
+    public importSchemas(schemaFileNames: string[], options?: ImportSchemasOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[]): DbResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;

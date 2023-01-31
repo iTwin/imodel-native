@@ -1820,7 +1820,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         schemaFileName.AppendExtension(L"ecschema.xml");
         ECVersion xmlVersion = ECSchema::ECVersionToWrite(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
 
-        
         SchemaWriteStatus status = schema->WriteToXmlFile(schemaFileName.GetName(), xmlVersion);
         if (SchemaWriteStatus::Success != status)
             return Napi::Number::New(Env(), (int) status);
