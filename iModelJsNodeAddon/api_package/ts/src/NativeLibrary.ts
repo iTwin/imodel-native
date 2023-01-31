@@ -481,7 +481,7 @@ export declare namespace IModelJsNative {
     public executeTest(testName: string, params: string): string;
     public exportGraphics(exportProps: any/* ExportGraphicsProps */): DbResult;
     public exportPartGraphics(exportProps: any/* ExportPartGraphicsProps */): DbResult;
-    public exportSchema(schemaName: string, exportDirectory: string): SchemaWriteStatus;
+    public exportSchema(schemaName: string, exportDirectory: string, outFileName?: string): SchemaWriteStatus;
     public exportSchemas(exportDirectory: string): SchemaWriteStatus;
     public extractChangedInstanceIdsFromChangeSets(changeSetFileNames: string[]): ErrorStatusOrResult<IModelStatus, ChangedInstanceIdsProps>;
     public extractChangeSummary(changeCacheFile: ECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;

@@ -1805,6 +1805,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         REQUIRE_ARGUMENT_STRING(1, exportDirectory);
+        OPTIONAL_ARGUMENT_STRING(2, maybeOutFileName);
 
         ECSchemaCP schema = GetDgnDb().Schemas().GetSchema(schemaName);
         if (nullptr == schema)
@@ -1812,10 +1813,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         BeFileName schemaFileName(exportDirectory);
         schemaFileName.AppendSeparator();
-        schemaFileName.AppendUtf8(schema->GetFullSchemaName().c_str());
+        if (maybeOutFileName == "")
+            schemaFileName.AppendUtf8(schema->GetFullSchemaName().c_str());
+        else
+            schemaFileName.AppendUtf8(maybeOutFileName.c_str());
         schemaFileName.AppendExtension(L"ecschema.xml");
         ECVersion xmlVersion = ECSchema::ECVersionToWrite(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
 
+        
         SchemaWriteStatus status = schema->WriteToXmlFile(schemaFileName.GetName(), xmlVersion);
         if (SchemaWriteStatus::Success != status)
             return Napi::Number::New(Env(), (int) status);
