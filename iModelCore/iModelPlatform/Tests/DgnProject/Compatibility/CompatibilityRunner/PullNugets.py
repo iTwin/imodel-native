@@ -142,6 +142,10 @@ def main():
     imodel02MinimumNugetVersion = "2019.2.2.1"
     imodel02IgnoreNugetVersions = {"2019.4.20.1"}
 
+    # Profile version upgrade 2.0.0.5_4.0.0.3_3.1.0.2
+    imodelNativeMinimumNugetVersion = "2023.2.1.2"
+    imodelNativeIgnoreNugetVersions = {"2023.1.23.4"}
+
     # The current EC3.3 tests won't work because they need to have the latest version of the CoreCA schema.
     # ec33MinimumNugetVersion = "2019.4.1.1"
     # ec33IgnoreNugetVersions = {}
@@ -151,6 +155,7 @@ def main():
     pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
     pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200_x64", bim02MinimumNugetVersion, bim02IgnoreNugetVersions)
     pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_imodel02_x64", imodel02MinimumNugetVersion, imodel02IgnoreNugetVersions)
+    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_imodelNative_x64", imodelNativeMinimumNugetVersion, imodelNativeIgnoreNugetVersions)
     # pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_ec33_x64", ec33MinimumNugetVersion, ec33IgnoreNugetVersions)
     unzipNugets(nugetPathInSrc)
     # Test files can be downloaded in out folder directly
@@ -158,6 +163,7 @@ def main():
     pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
     pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200_x64", bim02MinimumNugetVersion, bim02IgnoreNugetVersions)
     pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_imodel02_x64", imodel02MinimumNugetVersion, imodel02IgnoreNugetVersions)
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_imodelNative_x64", imodelNativeMinimumNugetVersion, imodelNativeIgnoreNugetVersions)
     # pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_ec33_x64", ec33MinimumNugetVersion, ec33IgnoreNugetVersions)
     unzipNugets(testFileNugetPath)
     # Copy test files from all nugets into a single central folder
