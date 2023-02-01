@@ -506,7 +506,6 @@ public:
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
     static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
-
     static DbResult ImportFunctionalSchema(DgnDbR);
     static DgnRevisionPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);
     static bvector<DgnRevisionPtr> GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);
