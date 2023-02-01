@@ -542,7 +542,7 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas(), true));
     ASSERT_TRUE(m_db->IsDbOpen());
 }
 

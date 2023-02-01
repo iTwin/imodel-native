@@ -734,10 +734,10 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
     {
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithNoItems.ecschema.json").c_str());
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -865,10 +865,10 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     prop->SetPriority(5);
 
     // Test the schema
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithItems.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1037,7 +1037,7 @@ TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization)
     ASSERT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveProperty(namedReferencingProp, "NamedReffingProp", PrimitiveType::PRIMITIVETYPE_Integer));
     namedReferencingProp->SetCategory(namedCategory);
 
-    Json::Value actualSchemaJson;
+    BeJsDocument actualSchemaJson;
     EXPECT_TRUE(initialSchema->WriteToJsonValue(actualSchemaJson));
     ECSchemaPtr actualSchema;
 
@@ -1075,8 +1075,9 @@ TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization)
         "version":"01.00.00"
     })json";
 
-    Json::Value expectedSchemaJson;
-    ASSERT_TRUE(Json::Reader::Parse(expectedSchemaJsonSrc, expectedSchemaJson));
+    BeJsDocument expectedSchemaJson;
+    expectedSchemaJson.Parse(expectedSchemaJsonSrc);
+    ASSERT_FALSE(expectedSchemaJson.hasParseError());
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(expectedSchemaJson, actualSchemaJson))
         << ECTestUtility::JsonSchemasComparisonString(expectedSchemaJson, actualSchemaJson);

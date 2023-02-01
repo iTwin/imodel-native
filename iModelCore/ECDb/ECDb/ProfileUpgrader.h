@@ -152,7 +152,7 @@ private:
     static BentleyStatus ReadSchemaFromDisk(ECN::ECSchemaReadContextR readContext, ECN::SchemaKey&, Utf8CP ecdbFileName);
 
 public:
-    static DbResult ImportProfileSchemas(ECDbCR);
+    static DbResult ImportProfileSchemas(ECDbCR, SchemaManager::SchemaImportOptions);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

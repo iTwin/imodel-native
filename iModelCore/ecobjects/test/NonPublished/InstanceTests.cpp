@@ -1295,7 +1295,7 @@ TEST_F(InstanceTests, TestJsonAndXmlInstanceCompatibility)
     EXPECT_EQ(InstanceReadStatus::Success, instanceStatus);
 
     IECInstancePtr testInstanceJson = enabler->CreateInstance();
-    Json::Value instance;
+    BeJsDocument instance;
     BeFileName instanceJson(GetTestDataPath(L"BasicTest_Instance1.json").c_str());
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(instance, instanceJson));
 

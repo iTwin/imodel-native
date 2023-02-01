@@ -26,7 +26,7 @@
 
 #define BEGIN_ECDBUNITTESTS_NAMESPACE BEGIN_BENTLEY_SQLITE_EC_NAMESPACE namespace Tests {
 #define END_ECDBUNITTESTS_NAMESPACE } END_BENTLEY_SQLITE_EC_NAMESPACE
-
+#define USING_ECDBUNITTESTS_NAMESPACE using namespace BentleyApi::BeSQLite::EC::Tests;
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================

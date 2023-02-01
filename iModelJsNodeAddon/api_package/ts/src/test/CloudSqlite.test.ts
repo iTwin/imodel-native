@@ -3,7 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import { expect, use as chaiuse } from "chai";
+import { use as chaiuse, expect } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs";
 import { join } from "path";
@@ -17,7 +17,7 @@ describe("cloud sqlite", () => {
   let cache: IModelJsNative.CloudCache;
 
   before(() => {
-    const rootDir =  join(getOutputDir(), "cloud");
+    const rootDir = join(getOutputDir(), "cloud");
     if (!fs.existsSync(rootDir))
       fs.mkdirSync(rootDir);
 
@@ -25,7 +25,7 @@ describe("cloud sqlite", () => {
       rootDir,
       name: "testVFS",
       cacheSize: "10G",
-    }
+    };
     cache = new iModelJsNative.CloudCache(cloudProps);
     expect(cache.name).equal(cloudProps.name);
     expect(cache.rootDir).equal(cloudProps.rootDir);
@@ -52,9 +52,11 @@ describe("cloud sqlite", () => {
     expect(() => container.connect(cache)).to.throw("attach error").property("errorNumber").equal(403);
 
     const notAttached = "container not connected to cache";
+    // eslint-disable-next-line @typescript-eslint/promise-function-async
     expect(() => container.cleanDeletedBlocks()).to.throw(notAttached);
     expect(() => container.acquireWriteLock("test 1")).to.throw(notAttached);
     expect(() => container.releaseWriteLock()).to.throw(notAttached);
+    // eslint-disable-next-line @typescript-eslint/promise-function-async
     expect(() => container.uploadChanges()).to.throw(notAttached);
     expect(() => container.checkForChanges()).to.throw(notAttached);
   });
