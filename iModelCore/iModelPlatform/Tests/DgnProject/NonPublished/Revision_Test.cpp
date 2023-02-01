@@ -927,7 +927,7 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
     // Import schema with table/column additions, and create a revision with it
     bvector<ECSchemaCP> schemas;
     schemas.push_back(testSchema.get());
-    SchemaStatus schemaStatus = m_db->ImportSchemas(schemas);
+    SchemaStatus schemaStatus = m_db->ImportSchemas(schemas, true);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
     m_db->SaveChanges("Imported Test schema");
 
@@ -1508,7 +1508,7 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
     int beforeCount = GetColumnCount(*m_db, "bis_DefinitionElement");
     ASSERT_FALSE(m_db->TableExists("bis_DefinitionElement_Overflow"));
 
-    SchemaStatus schemaStatus = m_db->ImportSchemas(bvector<ECSchemaCP>{testSchema.get()});
+    SchemaStatus schemaStatus = m_db->ImportSchemas(bvector<ECSchemaCP>{testSchema.get()}, true);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 1: Imported Test schema"));
 

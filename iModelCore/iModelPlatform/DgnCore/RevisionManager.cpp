@@ -263,7 +263,7 @@ public:
         if (BE_SQLITE_OK != result)
             {
             BeAssert(false);
-            return (result == BE_SQLITE_ERROR_InvalidRevisionVersion) ? RevisionStatus::InvalidVersion : RevisionStatus::CorruptedChangeStream;
+            return (result == BE_SQLITE_ERROR_InvalidChangeSetVersion) ? RevisionStatus::InvalidVersion : RevisionStatus::CorruptedChangeStream;
             }
 
         if (!prefix.empty())

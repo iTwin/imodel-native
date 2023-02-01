@@ -16,6 +16,23 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+SchemaItem operator"" _schema(const char* s, size_t n) {
+    return SchemaItem(s);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Json::Value operator"" _json(const char* s, size_t n) {
+    Json::Value json;
+    Json::Reader reader;
+    EXPECT_TRUE(reader.Parse(s, json, false));
+    return json;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 // static
 bool ECDbTestFixture::s_isInitialized = false;
 ECDbTestFixture::SeedECDbManager* ECDbTestFixture::s_seedECDbManager = nullptr;
@@ -50,6 +67,7 @@ DbResult ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
 BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams const& openParams)
     {
     CloseECDb();
+    auto ecdbParam = openParams;
     if (schema.GetType() == SchemaItem::Type::File)
         {
         BeFileName schemaFileName = schema.GetFileName();
@@ -76,7 +94,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
             seedECDb.SaveChanges();
             }
 
-        return CloneECDb(ecdbFileName, seedFilePath, openParams) == BE_SQLITE_OK ? SUCCESS : ERROR;
+        return CloneECDb(ecdbFileName, seedFilePath, ecdbParam) == BE_SQLITE_OK ? SUCCESS : ERROR;
         }
 
     BeAssert(schema.GetType() == SchemaItem::Type::String);
@@ -89,7 +107,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
         return ERROR;
         }
 
-    if (SUCCESS != TestHelper(ecdb).ImportSchema(schema))
+    if (SUCCESS != TestHelper(ecdb).ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade))
         {
         //EXPECT_TRUE(false) << "Importing schema failed.";
         ecdb.AbandonChanges();
@@ -99,9 +117,9 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
     ecdbPath.AssignUtf8(ecdb.GetDbFileName());
     ecdb.SaveChanges();
     }
-    
+
     //reopen the file after creating and importing the schema
-    return BE_SQLITE_OK == m_ecdb.OpenBeSQLiteDb(ecdbPath, openParams) ? SUCCESS : ERROR;
+    return BE_SQLITE_OK == m_ecdb.OpenBeSQLiteDb(ecdbPath, ecdbParam) ? SUCCESS : ERROR;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -131,7 +149,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, void* fileData, ui
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbTestFixture::CloseECDb()
     {
-    if (m_ecdb.IsDbOpen()) 
+    if (m_ecdb.IsDbOpen())
         m_ecdb.SaveChanges();
         m_ecdb.CloseDb();
     }
@@ -277,7 +295,7 @@ BentleyStatus ECDbTestFixture::PopulateECDb(int instanceCountPerClass)
         bvector<ECN::ECSchemaCP> schemas = m_ecdb.Schemas().GetSchemas();
         for (ECSchemaCP schema : schemas)
             {
-            if (schema->IsStandardSchema() || schema->IsSystemSchema() || 
+            if (schema->IsStandardSchema() || schema->IsSystemSchema() ||
                 schema->GetName().EqualsIAscii("ECDbChange") || schema->GetName().EqualsIAscii("ECDbFileInfo") || schema->GetName().EqualsIAscii("ECDbSystem"))
                 continue;
 
@@ -491,4 +509,84 @@ ECN::ECSchemaPtr ECDbTestFixture::GetFormatsSchema(bool recreate)
     return s_formatsSchema;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className) {
+    Utf8CP sql = R"(
+        SELECT json_group_array(schemaName||':' || className|| ':' || accessString || ':' || tableName || ':' || columnName)
+            FROM (
+                SELECT s.Name schemaName, cl.Name className, p.AccessString accessString, t.Name tableName, c.Name columnName
+                    FROM   [ec_PropertyMap] [pp]
+                            JOIN [ec_Column] [c] ON [c].[Id] = [pp].[ColumnId]
+                            JOIN [ec_Table] [t] ON [t].[Id] = [c].[TableId]
+                            JOIN [ec_Class] [cl] ON [cl].[Id] = [pp].[ClassId]
+                            JOIN [ec_PropertyPath] [p] ON [p].[Id] = [pp].[PropertyPathId]
+                            JOIN [ec_Schema] [s] ON [cl].[SchemaId] = [s].[Id]
+                    WHERE  [s].[Name] ||'.' || [cl].[Name]  = ?1 OR [s].[Alias]||'.' || [cl].[Name]= ?1
+                    ORDER BY s.Name, cl.Name, p.AccessString, t.Name, c.Name
+            )
+    )";
+
+    auto stmt = ecdb.GetCachedStatement(sql);
+    stmt->BindText(1, className, Statement::MakeCopy::No);
+    EXPECT_EQ(BE_SQLITE_ROW, stmt->Step());
+    Json::Value json;
+    Json::Reader reader;
+    EXPECT_TRUE(reader.Parse(stmt->GetValueText(0), json, false));
+    return json;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceKey InsertInstance(ECDbCR ecdb, Json::Value const& v) {
+    auto className = v["className"].asString();
+    auto data = v["data"];
+    bvector<Utf8String> parts;
+    BeStringUtilities::Split(className.c_str(), ".", parts);
+    auto ecClass = ecdb.Schemas().GetClass(parts[0], parts[1], SchemaLookupMode::AutoDetect);
+    EXPECT_TRUE(ecClass != nullptr);
+    JsonInserter inserter(ecdb, *ecClass, nullptr);
+    ECInstanceKey key;
+    EXPECT_EQ(SUCCESS, inserter.Insert(key, data));
+    return key;
+};
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, Json::Value const& v) {
+    auto className = v["className"].asString();
+    auto data = v["data"];
+    bvector<Utf8String> parts;
+    BeStringUtilities::Split(className.c_str(), ".", parts);
+    auto ecClass = ecdb.Schemas().GetClass(parts[0], parts[1], SchemaLookupMode::AutoDetect);
+    EXPECT_TRUE(ecClass != nullptr);
+    JsonUpdater updater(ecdb, *ecClass, nullptr);
+    EXPECT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), data));
+};
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Json::Value ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop) {
+    auto ecClass = ecdb.Schemas().GetClass(ik.GetClassId());
+    ECSqlStatement stmt;
+    Utf8String sql = SqlPrintfString("SELECT %s FROM %s WHERE ECInstanceId=%s", prop, ecClass->GetFullName(), ik.GetInstanceId().ToString().c_str()).GetUtf8CP();
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql.c_str())) << "ECSQL:" << sql.c_str();
+    EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW) << "ECSQL:" << sql.c_str();
+    JsonECSqlSelectAdapter sl(stmt);
+    Json::Value v;
+    EXPECT_EQ(SUCCESS, sl.GetRowInstance(v, ecClass->GetId()));
+    return v;
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void DeleteInstance(ECDbCR ecdb, ECInstanceKey ik) {
+    auto ecClass = ecdb.Schemas().GetClass(ik.GetClassId());
+    ECSqlStatement stmt;
+    Utf8String sql = SqlPrintfString("DELETE FROM %s WHERE ECInstanceId=%s", ecClass->GetFullName(), ik.GetInstanceId().ToString().c_str()).GetUtf8CP();
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql.c_str())) << "ECSQL:" << sql.c_str();
+    EXPECT_EQ(stmt.Step(), BE_SQLITE_DONE) << "ECSQL:" << sql.c_str();
+};
 END_ECDBUNITTESTS_NAMESPACE

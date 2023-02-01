@@ -1032,7 +1032,7 @@ void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> co
         if (options == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
             schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportV8LegacySchemas(context->GetCache().GetSchemas());
         else
-            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas());
+            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas(), true);
         }
     else
         schemaImportSuccessful = SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas(), options);
