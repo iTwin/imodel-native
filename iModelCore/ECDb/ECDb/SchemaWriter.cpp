@@ -136,7 +136,7 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext& schemaImportCtx, bvector<ECSchemaCP> const& schemasRaw)
+SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext& schemaImportCtx, bvector<ECSchemaCP> const& schemasRaw)
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Persist schemas");
     Context ctx(schemaImportCtx);
@@ -144,17 +144,17 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
     if (SUCCESS != ctx.PreprocessSchemas(schemas, schemasRaw))
         {
         LOG.debug("SchemaWriter::ImportSchemas - failed to PreprocessSchemas");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     if (SUCCESS != CompareSchemas(ctx, schemas))
         {
         LOG.debug("SchemaWriter::ImportSchemas - failed to CompareSchemas");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     if (ctx.GetSchemasToImport().empty())
-        return SUCCESS;
+        return SchemaImportResult::OK;
 
     for (ECSchemaCP schema : ctx.GetSchemasToImport())
         {
@@ -162,36 +162,36 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schema '%s'. Current ECDb profile version (%s) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.",
                                     schema->GetFullSchemaName().c_str(), ctx.GetECDb().GetECDbProfileVersion().ToString().c_str());
-            return ERROR;
+            return SchemaImportResult::ERROR;
             }
 
         if (SUCCESS != ImportSchema(ctx, *schema))
             {
             LOG.debugv("SchemaWriter::ImportSchemas - failed to Import Schema %s", schema->GetFullSchemaName().c_str());
-            return ERROR;
+            return SchemaImportResult::ERROR;
             }
         }
 
     if (SUCCESS != ctx.PostprocessSchemas(schemas, schemasRaw))
         {
         LOG.debug("SchemaWriter::ImportSchemas - failed to PostprocessSchemas");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ctx.GetECDb()))
         {
         LOG.debug("SchemaWriter::ImportSchemas - Failed to RepopulateClassHierarchyCacheTable");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     if (SUCCESS != ReloadSchemas(ctx))
         {
         LOG.debug("SchemaWriter::ImportSchemas - Failed to ReloadSchemas");
-        return ERROR;
+        return SchemaImportResult::ERROR;
         }
 
     schemasToMap.insert(schemasToMap.begin(), ctx.GetSchemasToImport().begin(), ctx.GetSchemasToImport().end());
-    return SUCCESS;
+    return SchemaImportResult::OK;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -3698,7 +3698,7 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
             if (SUCCESS != UpdateKindOfQuantity(ctx, change, oldSchema, *oldKoq, *newKoq))
             {
-                if (ctx.IgnoreIllegalDeletionsAndModifications())   
+                if (ctx.IgnoreIllegalDeletionsAndModifications())
                     continue;
                 return ERROR;
             }
@@ -3809,7 +3809,7 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
     BeAssert(toDeleteCategoryName.IsValid());
     if (!toDeleteCategoryName.IsValid())
         {
-        ctx.IgnoreIllegalDeletionsAndModifications() ? 
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
             LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist",
                                 oldSchema.GetFullSchemaName().c_str(), toDeleteCategoryName.Value().c_str()) :
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist",
@@ -3825,12 +3825,12 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
                 if (property->GetCategory() != nullptr &&
                     property->GetCategory()->GetName() == toDeleteCategoryName.Value())
                     {
-                    ctx.IgnoreIllegalDeletionsAndModifications() ? 
+                    ctx.IgnoreIllegalDeletionsAndModifications() ?
                         LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Cannot delete PropertyCategory which is still referenced by a property, %s.%s.",
                             oldSchema.GetFullSchemaName().c_str(),
                             toDeleteCategoryName.Value().c_str(),
                             property->GetClass().GetFullName(), property->GetName().c_str()) :
-                        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
+                        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
                         "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Cannot delete PropertyCategory which is still referenced by a property, %s.%s.",
                             oldSchema.GetFullSchemaName().c_str(),
                             toDeleteCategoryName.Value().c_str(),
@@ -3884,7 +3884,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
                 {
                 if(ctx.IgnoreIllegalDeletionsAndModifications())
                     continue;
-                    
+
                 return ERROR;
                 }
 
@@ -3952,7 +3952,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
 
     if (change.Name().IsChanged())
         {
-        ctx.IgnoreIllegalDeletionsAndModifications() ? 
+        ctx.IgnoreIllegalDeletionsAndModifications() ?
             LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s:  Changing the name of a PropertyCategory is not supported. Modified '%s' to '%s'",
                                 oldSchema.GetFullSchemaName().c_str(),
                                 oldCat.GetFullName().c_str(),

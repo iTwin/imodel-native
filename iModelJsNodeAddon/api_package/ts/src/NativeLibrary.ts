@@ -14,10 +14,10 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger, OpenMode, RepositoryStatus,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger, OpenMode,
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
-import type  {
+import type {
   ChangesetIndexAndId, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
   FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
@@ -26,11 +26,14 @@ import type  {
 } from "@itwin/core-common";
 import type { Range3dProps } from "@itwin/core-geometry";
 
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable @itwin/prefer-get */
+
 // ###TODO import from core-common after merge with master
 export type ElementMeshRequestProps = any;
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
-/* eslint-disable @bentley/prefer-get, no-restricted-syntax */
 
 /** Logger categories used by the native addon
  * @internal
@@ -79,8 +82,8 @@ export class NativeLibrary {
       require("./devbuild.json");
       return true;
     } catch (_e) {
-      return false
-    };
+      return false;
+    }
   }
 
   public static get defaultCacheDir(): string { return path.join(this.defaultLocalDir, "iModelJs"); }
@@ -90,6 +93,7 @@ export class NativeLibrary {
     if (!this._nativeLib) {
       this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
       if (this.isDevBuild)
+        // eslint-disable-next-line no-console
         console.log("\x1b[36m", `using dev build from ${__dirname}\n`, "\x1b[0m");
     }
     return this._nativeLib;
@@ -100,10 +104,10 @@ export class NativeLibrary {
  * @internal
  */
 export const enum WalCheckpointMode {
-  Passive=0,  /* Do as much as possible w/o blocking */
-  Full=1,     /* Wait for writers, then checkpoint */
-  Restart=2,  /* Like FULL but wait for for readers */
-  Truncate=3,  /* Like RESTART but also truncate WAL */
+  Passive = 0,  /* Do as much as possible w/o blocking */
+  Full = 1,     /* Wait for writers, then checkpoint */
+  Restart = 2,  /* Like FULL but wait for for readers */
+  Truncate = 3,  /* Like RESTART but also truncate WAL */
 }
 
 /** Possible outcomes of generateElementGraphics.
@@ -165,7 +169,7 @@ export declare namespace IModelJsNative {
   const version: string;
   let logger: Logger;
   function setMaxTileCacheSize(maxBytes: number): void;
-  function flushLog():void;
+  function flushLog(): void;
   function getTileVersionInfo(): TileVersionInfo;
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
   function setCrashReportProperty(name: string, value: string | undefined): void;
@@ -179,11 +183,11 @@ export declare namespace IModelJsNative {
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */
-    schemaXmlPath: string,
+    schemaXmlPath: string;
     /** A list of directories to find referenced schemas */
-    referencePaths: string[],
+    referencePaths: string[];
     /** If true, the returned SHA1 includes the hash of all referenced schemas */
-    exactMatch?: boolean
+    exactMatch?: boolean;
   }): string;
 
   /** The return type of synchronous functions that may return an error or a successful result. */
@@ -191,17 +195,17 @@ export declare namespace IModelJsNative {
     /** Error from the operation. This property is defined if and only if the operation failed. */
     error: StatusCodeWithMessage<ErrorCodeType>;
     result?: never;
-    } | {
-    error?:never
+  } | {
+    error?: never;
     /** Result of the operation. This property is defined if the operation completed successfully */
     result: ResultType;
-    }
+  };
 
   namespace ConcurrentQuery {
     /**
      * @internal
      */
-    type OnResponse = (response: DbResponse)=>void;
+    type OnResponse = (response: DbResponse) => void;
     /** Configuration for concurrent query manager
      * @internal
      */
@@ -212,15 +216,15 @@ export declare namespace IModelJsNative {
     concurrentQueryShutdown(): void;
   }
 
-/** Concurrent query config which should be set before making first call to concurrent query manager.
+  /** Concurrent query config which should be set before making first call to concurrent query manager.
  * @internal
  */
   export interface QueryConfig {
-    globalQuota?: QueryQuota,
-    ignoreDelay?: boolean
-    ignorePriority?: boolean,
-    requestQueueSize?: number,
-    workerThreads?: number,
+    globalQuota?: QueryQuota;
+    ignoreDelay?: boolean;
+    ignorePriority?: boolean;
+    requestQueueSize?: number;
+    workerThreads?: number;
   }
 
   interface TileContent {
@@ -312,20 +316,20 @@ export declare namespace IModelJsNative {
   }
 
   interface EmbeddedFileProps {
-    name: string,
-    localFileName: string,
+    name: string;
+    localFileName: string;
   }
 
   interface EmbedFileArg extends EmbeddedFileProps {
-    date: number,
-    fileExt?: string,
+    date: number;
+    fileExt?: string;
     compress?: boolean;
   }
 
   interface EmbedFileQuery {
-    size: number,
-    date: number,
-    fileExt: string
+    size: number;
+    date: number;
+    fileExt: string;
   }
 
   interface FontEncodingProps {
@@ -401,8 +405,8 @@ export declare namespace IModelJsNative {
   }
 
   interface SchemaReferenceProps {
-      readonly name: string;
-      readonly version: string;
+    readonly name: string;
+    readonly version: string;
   }
 
   interface SchemaItemProps {
@@ -428,15 +432,16 @@ export declare namespace IModelJsNative {
     readonly customAttributes?: Array<{ [value: string]: any }>;
   }
 
+  interface SchemaImportOptions {
+    readonly schemaLockHeld?: boolean;
+    readonly ecSchemaXmlContext?: ECSchemaXmlContext;
+  }
+
   // ###TODO import from core-common
   interface ModelExtentsResponseProps {
     id: Id64String;
     extents: Range3dProps;
     status: IModelStatus;
-  }
-
-  export interface ImportSchemasOptions {
-    ecSchemaXmlContext?: ECSchemaXmlContext;
   }
 
   /** The native object for a Briefcase. */
@@ -525,11 +530,11 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
-    public importSchemas(schemaFileNames: string[], options?: ImportSchemasOptions): DbResult;
-    public importXmlSchemas(serializedXmlSchemas: string[]): DbResult;
+    public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
+    public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
-    public insertCodeSpec(name: string, jsonProperties:{spec?: any, scopeSpec: any}): Id64String;
+    public insertCodeSpec(name: string, jsonProperties: { spec: any, scopeSpec: any }): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
@@ -546,7 +551,7 @@ export declare namespace IModelJsNative {
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
-    public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions, props?: SnapshotOpenOptions, container?: CloudContainer): void;
+    public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer): void;
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public processGeometryStream(requestProps: any/* ElementGeometryOptions */): IModelStatus;
@@ -557,7 +562,7 @@ export declare namespace IModelJsNative {
     public queryFirstTxnId(): TxnIdString;
     public queryLocalValue(name: string): string | undefined;
     // ###TODO mark deprecated use queryModelExtentsAsync
-    public queryModelExtents(options: {id: Id64String}):  { modelExtents: Range3dProps };
+    public queryModelExtents(options: { id: Id64String }): { modelExtents: Range3dProps };
     public queryModelExtentsAsync(modelIds: Id64String[]): Promise<ModelExtentsResponseProps[]>;
     public queryNextAvailableFileProperty(props: FilePropertyProps): number;
     public queryNextTxnId(txnId: TxnIdString): TxnIdString;
@@ -565,7 +570,7 @@ export declare namespace IModelJsNative {
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
     public readFontMap(): FontMapProps;
     public reinstateTxn(): IModelStatus;
-    public removeEmbeddedFile( name: string): void;
+    public removeEmbeddedFile(name: string): void;
     public replaceEmbeddedFile(arg: EmbedFileArg): void;
     public resetBriefcaseId(idValue: number): void;
     public restartDefaultTxn(): void;
@@ -594,7 +599,7 @@ export declare namespace IModelJsNative {
     public updateModel(modelProps: ModelProps): void;
     public updateModelGeometryGuid(modelId: Id64String): IModelStatus;
     public updateProjectExtents(newExtentsJson: string): void;
-    public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems:Id64Array): BentleyStatus;
+    public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems: Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public enableWalMode(yesNo?: boolean): void;
@@ -607,8 +612,8 @@ export declare namespace IModelJsNative {
 
   /** The native object for GeoServices. */
   class GeoServices {
-      constructor();
-      public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
+    constructor();
+    public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
 
   }
 
@@ -860,13 +865,13 @@ export declare namespace IModelJsNative {
       db: AnyDb,
       args: {
         /** the name of the table for the blob*/
-        tableName: string,
+        tableName: string;
         /** the name of the column for the blob */
-        columnName: string,
+        columnName: string;
         /** The rowId of the blob */
-        row: number,
+        row: number;
         /** If true, open this BlobIO for write access */
-        writeable?: boolean
+        writeable?: boolean;
       }): void;
     /** Read from a blob
      * @returns the contents of the requested byte range
@@ -877,7 +882,8 @@ export declare namespace IModelJsNative {
       /** starting offset within the blob to read */
       offset: number;
       /** If present and of sufficient size, use this ArrayBuffer for the value. */
-      blob?: ArrayBuffer; }): Uint8Array;
+      blob?: ArrayBuffer;
+    }): Uint8Array;
     /** Reposition this BlobIO to a new rowId
      * @note this BlobIO must be valid when this methods is called.
      */
@@ -889,7 +895,8 @@ export declare namespace IModelJsNative {
       /** starting offset within the blob to write */
       offset: number;
       /** the value to write */
-      blob: ArrayBuffer; }): void;
+      blob: ArrayBuffer;
+    }): void;
   }
 
   /**
@@ -981,9 +988,9 @@ export declare namespace IModelJsNative {
      * This function fails with BE_SQLITE_BUSY if one or more clients have open read or write transactions
      * on any database in the container.
      */
-     public abandonChanges(): void;
+    public abandonChanges(): void;
 
-     /**
+    /**
      * Connect this CloudContainer to a CloudCache for reading or writing its manifest, write lock, and databases.
      * @note A CloudCache is a local directory holding copies of information from the cloud. Its content is persistent across sessions,
      * but this method must be called each session to (re)establish the connection to the cache. If the CloudCache was previously populated,
@@ -1001,9 +1008,9 @@ export declare namespace IModelJsNative {
     /**
      * Permanently Detach and Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container.
      */
-     public detach(): void;
+    public detach(): void;
 
-     /**
+    /**
      * Poll cloud storage for changes from other processes. *No changes* made by other processes are visible to
      * this CloudContainer unless/until this method is called.
      * @note this is automatically called whenever the write lock is obtained to ensure all changes are against the latest version.
@@ -1096,7 +1103,7 @@ export declare namespace IModelJsNative {
      * @param container the container holding the database.
      * @param dbName the name of the database to prefetch
      */
-    constructor(container: CloudContainer, dbName: string, args?: NativeCloudSqlite.PrefetchProps );
+    constructor(container: CloudContainer, dbName: string, args?: NativeCloudSqlite.PrefetchProps);
 
     /** Cancel a currently pending prefetch. The promise will be resolved immediately after this call. */
     public cancel(): void;
@@ -1138,7 +1145,7 @@ export declare namespace IModelJsNative {
 
   type ECPresentationManagerResponse<TResult> = ErrorStatusOrResult<ECPresentationStatus, TResult> & {
     diagnostics?: any;
-  }
+  };
 
   interface ECPresentationManagerProps {
     id: string;
@@ -1207,7 +1214,6 @@ export declare namespace IModelJsNative {
     public cancelSnap(): void;
   }
 
-
   interface FeatureUserDataKeyValuePair {
     key: string;
     value: string;
@@ -1228,14 +1234,14 @@ export declare namespace IModelJsNative {
   }
 
   const enum DbValueType {
-    IntegerVal  = 1,
-    FloatVal    = 2,
-    TextVal     = 3,
-    BlobVal     = 4,
-    NullVal     = 5,
+    IntegerVal = 1,
+    FloatVal = 2,
+    TextVal = 3,
+    BlobVal = 4,
+    NullVal = 5,
   }
 
-  type ChangeValueType = Uint8Array | number| string | null | undefined;
+  type ChangeValueType = Uint8Array | number | string | null | undefined;
 
   interface ChangedValue {
     new?: ChangeValueType;
@@ -1243,20 +1249,20 @@ export declare namespace IModelJsNative {
   }
 
   class ChangesetReader {
-    close(): DbResult;
-    getColumnCount(): number| undefined;
-    getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
-    getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
-    getFileName(): string | undefined;
-    getOpCode(): DbOpcode | undefined;
-    getRow(): ChangedValue[] | undefined;
-    getDdlChanges(): string | undefined;
-    getTableName(): string | undefined;
-    isIndirectChange(): boolean | undefined;
-    isPrimaryKeyColumn(col: number): boolean | undefined;
-    open(fileName: string, invert: boolean): DbResult;
-    reset(): DbResult;
-    step(): DbResult;
+    public close(): DbResult;
+    public getColumnCount(): number | undefined;
+    public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
+    public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
+    public getFileName(): string | undefined;
+    public getOpCode(): DbOpcode | undefined;
+    public getRow(): ChangedValue[] | undefined;
+    public getDdlChanges(): string | undefined;
+    public getTableName(): string | undefined;
+    public isIndirectChange(): boolean | undefined;
+    public isPrimaryKeyColumn(col: number): boolean | undefined;
+    public open(fileName: string, invert: boolean): DbResult;
+    public reset(): DbResult;
+    public step(): DbResult;
   }
 
   class DisableNativeAssertions implements IDisposable {
