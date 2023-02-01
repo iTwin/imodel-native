@@ -108,7 +108,7 @@ void MergeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         if (options == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
             schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportV8LegacySchemas(result.GetResults());
         else
-            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(result.GetResults());
+            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(result.GetResults(), true);
         }
     else
         schemaImportSuccessful = SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(result.GetResults(), options);

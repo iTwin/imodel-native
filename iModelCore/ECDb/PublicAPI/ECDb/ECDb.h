@@ -237,7 +237,7 @@ protected:
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT ProfileState _CheckProfileVersion() const override;
-    ECDB_EXPORT DbResult _UpgradeProfile() override;
+    ECDB_EXPORT DbResult _UpgradeProfile(Db::OpenParams const& params) override;
     ECDB_EXPORT DbResult _OnDbAttached(Utf8CP fileName, Utf8CP dbAlias) const override;
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
