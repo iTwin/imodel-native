@@ -17,13 +17,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
+
+#define SQLFUNC_ExtractInst "extract_inst"
+#define SQLFUNC_ExtractProp "extract_prop"
+#define SQLFUNC_PropExists "prop_exists"
+
 //=======================================================================================
 //! S ClassName(I)
 // @bsiclass
 //=======================================================================================
 struct ClassNameFunc final : ScalarFunction
     {
-    enum class FormatOptions 
+    enum class FormatOptions
         {
         s_semicolon_c = 0,    // SchemaName:ClassName
         a_semicolon_c = 1,    // SchemaAlias:ClassName
@@ -174,5 +179,50 @@ struct ChangedValueSqlFunction final : ScalarFunction
 
         void ClearCache() { m_statementCache.Empty(); }
     };
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ExtractInstFunc final : ScalarFunction {
+    private:
+        ECDbCR m_ecdb;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        explicit ExtractInstFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractInst, 2, DbValueType::TextVal), m_ecdb(ecdb) {}
+        ~ExtractInstFunc() {}
+        static std::unique_ptr<ExtractInstFunc> Create(ECDbCR);
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ExtractPropFunc final : ScalarFunction {
+    private:
+        ECDbCR m_ecdb;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        explicit ExtractPropFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractProp, 3, DbValueType::TextVal), m_ecdb(ecdb) {}
+        ~ExtractPropFunc() {}
+         static std::unique_ptr<ExtractPropFunc> Create(ECDbCR);
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct PropExistsFunc final : ScalarFunction , ECDb::IECDbCacheClearListener {
+    private:
+        ECDbCR m_ecdb;
+        InMemoryPropertyExistMap m_propMap;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+        void _OnBeforeClearECDbCache() override {}
+        void _OnAfterClearECDbCache() override { m_propMap.Build(m_ecdb, true); }
+    public:
+        explicit PropExistsFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_PropExists, 2, DbValueType::IntegerVal), m_ecdb(ecdb) {
+            const_cast<ECDbR>(m_ecdb).AddECDbCacheClearListener(*this);
+            m_propMap.Build(m_ecdb, true);
+        }
+        ~PropExistsFunc() { const_cast<ECDbR>(m_ecdb).RemoveECDbCacheClearListener(*this); }
+        static std::unique_ptr<PropExistsFunc> Create(ECDbCR);
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
