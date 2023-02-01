@@ -118,7 +118,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //!
         //! @see @ref ECDbCodeSampleExecuteECSqlSelectMultiThreaded for a code example
         //! @param[in] schemaManager SchemaManager that is to be used to parse the ECSQL. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
-        //! @param[in] dataSourceECDb Connection to the same %ECDb file which is to be used to execute ECSqlStatment. Must be read-only, but can be in a
+        //! @param[in] dataSourceECDb Connection to the same %ECDb file which is to be used to execute ECSqlStatement. Must be read-only, but can be in a
         //! another thread than @p schemaManager
         //! @param[in] selectECSql SELECT ECSQL
         //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
@@ -643,7 +643,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
         //! @see BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP)
         //! @param[in] schemaManager SchemaManager that is to be used to parse the ECSQL. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
-        //! @param[in] dataSourceECDb Connection to the same ECDb file which is to be used to execute ECSqlStatment. Must be read-only, but can be in a
+        //! @param[in] dataSourceECDb Connection to the same ECDb file which is to be used to execute ECSqlStatement. Must be read-only, but can be in a
         //! another thread than @p schemaManager
         //! @param[in] selectECSql SELECT ECSQL
         //! @param[in] logPrepareErrors It determines when attempt to prepare statement, if to log errors or not

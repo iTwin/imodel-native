@@ -374,6 +374,9 @@ bool Class::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
     if(m_tables.empty()) {
         return false;
     }
+    for (auto& prop: m_properties) {
+        prop->OnAfterReset();
+    }
     auto it = m_tables.begin();
     if (!(*it)->Seek(rowId, &rowClassId)) {
         return false;
@@ -382,6 +385,9 @@ bool Class::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
         if (!(*it)->Seek(rowId)) {
             return false;
         }
+    }
+    for (auto& prop: m_properties) {
+        prop->OnAfterStep();
     }
     return true;
 }

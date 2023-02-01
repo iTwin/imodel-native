@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct InstanceReader::Impl final {
     //=======================================================================================
     //! @bsiclass
-    //+===============+===============+===============+===============+===============+======    
+    //+===============+===============+===============+===============+===============+======
     struct PropertyExists final {
         private:
             struct NoCaseAsciiStrHash final {
@@ -103,6 +103,8 @@ struct InstanceReader::Impl final {
             const Table& GetTable() const {return *m_table; }
             bool Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const;
             static Ptr Create(Table const&, std::unique_ptr<ECSqlField>);
+            ECSqlStatus OnAfterStep() const { return m_field->OnAfterStep(); }
+            ECSqlStatus OnAfterReset() const { return m_field->OnAfterReset(); }
     };
 
     //=======================================================================================
