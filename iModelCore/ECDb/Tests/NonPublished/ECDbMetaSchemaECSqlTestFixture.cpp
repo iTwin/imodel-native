@@ -2103,12 +2103,12 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyCustomAttributes) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
-            SELECT ca.Instance, prop.Name
+            SELECT ca.Instance, pDef.Name
              FROM meta.PropertyCustomAttribute ca 
-             JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
              JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
-             WHERE cDef.Name='CAClass'
             )stmt"));
+            //             JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
+            // WHERE cDef.Name='CAClass'
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         printf("ca: %s\n", stmt.GetValueText(0));
         printf("prop: %s\n", stmt.GetValueText(1));

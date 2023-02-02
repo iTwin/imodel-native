@@ -548,7 +548,7 @@
         <ECProperty propertyName="Instance"  typeName="string"/>
         <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstance" direction="backward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="CustomAttributeClassHasInstance" modifier="Sealed" strength="embedding">
+    <ECRelationshipClass typeName="CustomAttributeClassHasInstance" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
             <Class class="ECClassDef"/>
         </Source>
@@ -576,7 +576,7 @@
             <Class class="PropertyCustomAttribute"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Sealed" strength="embedding">
+    <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
             <Class class="ECClassDef"/>
         </Source>

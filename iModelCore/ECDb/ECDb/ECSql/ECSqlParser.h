@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECSqlParseContext final
     {
 public:
-    typedef bmap<ECN::ECClassId, ECN::ECClassCP> ClassListById;
+    typedef std::map<ECN::ECClassId, ECN::ECClassCP> ClassListById;
     struct ParseArg
         {
         enum class Type

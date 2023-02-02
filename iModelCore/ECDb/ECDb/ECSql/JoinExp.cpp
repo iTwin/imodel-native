@@ -154,7 +154,8 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     for (RangeClassInfo const& classRef : fromClassRefs)
         {
-        if (classRef.GetExp().GetType() != Exp::Type::ClassName)
+        auto expType = classRef.GetExp().GetType();
+        if (expType != Exp::Type::ClassName && expType != Exp::Type::SubqueryRef)
             continue;
 
         if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClassNameExp())
@@ -162,7 +163,8 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
         ClassNameExp const& fromClassNameExpression = classRef.GetExp().GetAs<ClassNameExp>();
         ECClassId fromClassId = fromClassNameExpression.GetInfo().GetMap().GetClass().GetId();
-
+ECClassP c;
+c->Enti
         //Same ClassNameExp/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these classes
         if (fromClassExistsInSourceList.find(fromClassId) == fromClassExistsInSourceList.end())
             {
