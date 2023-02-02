@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <regex>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -572,24 +571,6 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     return PopulateProxyBinders(prepareInfo);
     }
 
-namespace
-    {
-    void ResetMaxOrMinFunctionInSql(Utf8StringR ecsql)
-        {
-        // Check if Max/Min function with multiple args was called
-        // If so, replace Max with Greatest and Min with Least
-        std::cmatch maxRegexMatches;
-        std::regex_search(ecsql.c_str(), maxRegexMatches, std::regex(R"rx([(=,\s]MAX[\s]*\(\d+,.*\))rx", std::regex_constants::icase));
-        if (!maxRegexMatches.empty())
-            ecsql = std::regex_replace(ecsql, std::regex(R"rx(MAX[\s]*\()rx"), "GREATEST(");
-
-        std::cmatch minRegexMatches;
-        std::regex_search(ecsql.c_str(), minRegexMatches, std::regex(R"rx([(=,\s]MIN[\s]*\(\d+,.*\))rx", std::regex_constants::icase));
-        if (!minRegexMatches.empty())
-            ecsql = std::regex_replace(ecsql, std::regex(R"rx(MIN[\s]*\()rx"), "LEAST(");
-        }
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -658,10 +639,6 @@ ECSqlStatus ECSqlInsertPreparedStatement::PrepareLeafStatements(PrepareInfo& pre
                       valuesECSqlClause.c_str());
 
         ECSqlParser parser;
-        // Check if Greatest/Least was changed to Max/Min in the un-prepared statement
-        // If so, it needs to be reset to Greatest/Least in the prepared statement to succeed parsing
-        ResetMaxOrMinFunctionInSql(ecsql);
-
         std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str(), prepareInfo.GetContext().Issues());
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;
@@ -1171,10 +1148,6 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PrepareLeafStatements(PrepareInfo& pre
             }
 
         ECSqlParser parser;
-        // Check if Greatest/Least was changed to Max/Min in the un-prepared statement
-        // If so, it needs to be reset to Greatest/Least in the prepared statement in order to succeed in parsing
-        ResetMaxOrMinFunctionInSql(ecsql);
-
         std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str(), prepareInfo.GetContext().Issues());
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;

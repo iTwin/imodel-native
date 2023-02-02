@@ -945,27 +945,46 @@ void FunctionCallExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    ctx.AppendToECSql(m_functionName);
-
+    auto functionNameAppended = false;
     if (!m_isGetter)
         {
-        ctx.AppendToECSql("(");
-
-        if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
-            ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
-
-        bool isFirstItem = true;
+        auto hasSingleOrNoArgs = true;
         for (Exp const* argExp : GetChildren())
             {
-            if (!isFirstItem)
+            if (!hasSingleOrNoArgs)
                 ctx.AppendToECSql(",");
 
+            hasSingleOrNoArgs = false;
+            if (!functionNameAppended)
+                {
+                // If function called is Max/Min with multiple args, change it to Greatest/Least
+                if (!hasSingleOrNoArgs && m_functionName.EqualsI("MAX"))
+                    ctx.AppendToECSql("GREATEST(");
+                else if (!hasSingleOrNoArgs && m_functionName.EqualsI("MIN"))
+                    ctx.AppendToECSql("LEAST(");
+                else
+                    ctx.AppendToECSql(m_functionName + "(");
+                functionNameAppended = true;
+
+                if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+                    ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
+                }
+                
             ctx.AppendToECSql(*argExp);
-            isFirstItem = false;
+            }
+        if (hasSingleOrNoArgs)
+            {
+            ctx.AppendToECSql(m_functionName + "(");
+            functionNameAppended = true;
+            if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+                ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
             }
 
         ctx.AppendToECSql(")");
         }
+
+    if (!functionNameAppended)
+        ctx.AppendToECSql(m_functionName);
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
