@@ -7,7 +7,7 @@
 # Set up all the standard stuff.
 #----------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)imodel02/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+%include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 always:
-    python $(SrcRoot)/imodel02/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $(TESTRUNNERS_SANDBOXDIR)
+    python $(SrcRoot)/imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $(TESTRUNNERS_SANDBOXDIR)

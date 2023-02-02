@@ -217,12 +217,11 @@ double              tol   // Tolerance to check removability
     {
     const double WMIN = 1e-5;
     const double WMAX = 200.0;
-    int i, j, k, ii, jj, first, last, off, n, m, r, s, fout, l, ns, lp, rp, lt, rt, left = 0, right = 0, p, nu, norem = 0;
+    int i, j, k, ii, jj, first, last, off, n, m, r, s, fout, l, lp, rp, lt, rt, left = 0, right = 0, p, nu, norem = 0;
     bool rmf, rem, rat = false;
     p = pCurve->params.order - 1;
     n = pCurve->params.numPoles - 1;
     m = n + p +1;
-    ns = n;
     nu = num - 1;
     
     bvector<DPoint4d> tmpPoles (2*p+1);
@@ -488,12 +487,11 @@ double              tol
     {
     const double WMIN = 1e-5;
     const double WMAX = 200.0;
-    int i, j, k, ii, jj, first, last, off, n, m, r, s, fout, l, ns, p, norem = 0;
+    int i, j, k, ii, jj, first, last, off, n, m, r, s, fout, l, p, norem = 0;
     bool rmf, rat = false;
     p = pCurve->params.order - 1;
     n = pCurve->params.numPoles - 1;
     m = n + p +1;
-    ns = n;
     
     bvector<DPoint4d> tmpPoles (2*p+1);
     bvector<DPoint4d> polesWeighted (n+1);
@@ -726,7 +724,6 @@ MSBsplineStatus MSBsplineCurve::RemoveKnotsBounded (double tol, int startPreserv
     double param[2], knot;
     int numParam = 0, status, paramType[2], iKnot, iMult, mult; 
     int degree = params.order - 1, m = params.numPoles + params.order - 1;
-    bool    bOverSaturatedKnot = false;
     
     if (startPreservation)
         {
@@ -739,10 +736,9 @@ MSBsplineStatus MSBsplineCurve::RemoveKnotsBounded (double tol, int startPreserv
         paramType[numParam++] = endPreservation;
         }
     
-        // flatten first knot if oversaturated
+    // flatten first knot if oversaturated
     if (knots[degree + 1] - knots[degree] < RELATIVE_BSPLINE_KNOT_TOLERANCE)
         {
-        bOverSaturatedKnot = true;
         knot = knots[0];
         for (iKnot = 1; iKnot <= m && knots[iKnot] - knot < RELATIVE_BSPLINE_KNOT_TOLERANCE; iKnot++)
             knots[iKnot] = knot;
@@ -751,7 +747,6 @@ MSBsplineStatus MSBsplineCurve::RemoveKnotsBounded (double tol, int startPreserv
     // flatten last knot if oversaturated
     if (knots[m - degree] - knots[m - degree - 1] < RELATIVE_BSPLINE_KNOT_TOLERANCE)
         {
-        bOverSaturatedKnot = true;
         knot = knots[m];
         for (iKnot = m - 1; iKnot >= 0 && knot - knots[iKnot] < RELATIVE_BSPLINE_KNOT_TOLERANCE; iKnot--)
             knots[iKnot] = knot;
@@ -766,7 +761,6 @@ MSBsplineStatus MSBsplineCurve::RemoveKnotsBounded (double tol, int startPreserv
             {
             for (iMult = 1; iMult < mult; iMult++)
                 knots[iKnot + iMult] = knot;
-            bOverSaturatedKnot = true;
             }
         }
 

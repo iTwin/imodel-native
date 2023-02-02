@@ -195,7 +195,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         DbResult stat;
         Dgn::DgnDb::OpenParams params(openMode);
         params.SetProfileUpgradeOptions(profileUpgradeOptions);
-        Dgn::DgnDbPtr iModel = Dgn::DgnDb::OpenDgnDb(&stat, filePath, params);
+        Dgn::DgnDbPtr iModel = Dgn::DgnDb::OpenIModelDb(&stat, filePath, params);
         if (BE_SQLITE_OK != stat)
             {
             IModelConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
@@ -366,7 +366,7 @@ void CreateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             createParams.SetOverwriteExisting(true);
 
             DbResult fileStatus;
-            Dgn::DgnDbPtr iModel = Dgn::DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
+            Dgn::DgnDbPtr iModel = Dgn::DgnDb::CreateIModel(&fileStatus, filePath, createParams);
             if (BE_SQLITE_OK != fileStatus)
                 {
                 IModelConsole::WriteErrorLine("Failed to create iModel file '%s'.", filePath.GetNameUtf8().c_str());
@@ -1032,7 +1032,7 @@ void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> co
         if (options == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
             schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportV8LegacySchemas(context->GetCache().GetSchemas());
         else
-            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas());
+            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas(), true);
         }
     else
         schemaImportSuccessful = SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas(), options);

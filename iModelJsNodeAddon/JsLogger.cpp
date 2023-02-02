@@ -77,11 +77,18 @@ bool JsLogger::canUseJavaScript() {
 /** Given a category and severity level, return true if it should be logged.
  * @note Must be called with deferredMutex held
  */
-bool JsLogger::isEnabled(Utf8CP category, SEVERITY sev) {
+bool JsLogger::isEnabled(Utf8CP catIn, SEVERITY sev) {
     SEVERITY severity = m_defaultSeverity;
+    Utf8String category(catIn);
     auto it = m_categoryFilter.find(category);
-    if (it != m_categoryFilter.end())
+    if (it != m_categoryFilter.end()) {
         severity = it->second;
+    } else {
+        // check for a namespace (delimited by ".") within the category.
+        auto dot = category.find_last_of('.');
+        if (std::string::npos != dot)
+            return isEnabled(category.substr(0, dot).c_str(), sev);
+    }
     return (sev >= severity);
 }
 

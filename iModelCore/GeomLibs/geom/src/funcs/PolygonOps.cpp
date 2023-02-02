@@ -355,7 +355,7 @@ bool             addVerticesAtCrossings
     VuMask      numberedNodeMask = vu_grabMask (graphP);
     VuP         faceP, originalNodeP;
     bool status = false;
-    int       i, numError;
+    int       i;
     int       originalIndex;
     int       outputIndex;
     int     separator = signedOneBasedIndices ? 0 : -1;
@@ -382,7 +382,6 @@ bool             addVerticesAtCrossings
         vu_flipTrianglesToImproveQuadraticAspectRatio (graphP);
 
     vu_collectInteriorFaceLoops (faceArrayP, graphP);
-    numError = 0;
 
     vu_arrayOpen (faceArrayP);
     status = true;
@@ -506,7 +505,6 @@ int PolygonOps::CoordinateFrameAndRank
     size_t numBeforeDisconnect = 0;
     //bool bDone = false;
     static double sFirstEdgeFactor = 0.001;
-    bool degenerateNormal = false;
     bool bOK = false;
     localToWorld.InitIdentity ();
     worldToLocal.InitIdentity ();
@@ -544,7 +542,6 @@ int PolygonOps::CoordinateFrameAndRank
         DVec3d vectorX, vectorY, vectorZ;
         vector.GetNormalizedTriad (vectorX, vectorY, vectorZ);
         normal = vectorY;
-        degenerateNormal = true;
         }
     // Capture x direction along first ong edge, and upwards orientation by first polygon area vectors ..
     bOK = false;

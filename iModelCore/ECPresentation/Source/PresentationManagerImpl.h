@@ -62,10 +62,32 @@ public:
     ICancelationTokenCP GetCancellationToken() const {return m_cancellationToken.get();}
 };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct NodeInstanceKeysRequestParams : RequestWithRulesetParams
+{
+private:
+    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
+public:
+    NodeInstanceKeysRequestParams(RequestWithRulesetParams const& rulesetParams, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
+        : RequestWithRulesetParams(rulesetParams), m_instanceFilter(instanceFilter)
+        {}
+    NodeInstanceKeysRequestParams(RequestWithRulesetParams&& rulesetParams, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
+        : RequestWithRulesetParams(std::move(rulesetParams)), m_instanceFilter(instanceFilter)
+        {}
+    NodeInstanceKeysRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
+        : RequestWithRulesetParams(rulesetId, rulesetVariables), m_instanceFilter(instanceFilter)
+        {}
+    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
+    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
+};
+typedef ImplTaskParams<NodeInstanceKeysRequestParams> NodeInstanceKeysRequestImplParams;
+
 typedef ImplTaskParams<RequestWithRulesetParams> RequestWithRulesetImplParams;
 
 typedef ImplTaskParams<HierarchyRequestParams> HierarchyRequestImplParams;
-typedef ImplTaskParams<NodeByKeyRequestParams> NodeByKeyRequestImplParams;
+typedef ImplTaskParams<HierarchyLevelDescriptorRequestParams> HierarchyLevelDescriptorRequestImplParams;
 typedef ImplTaskParams<NodeByInstanceKeyRequestParams> NodeByInstanceKeyRequestImplParams;
 typedef ImplTaskParams<NodeParentRequestParams> NodeParentRequestImplParams;
 typedef ImplTaskParams<NodePathFromInstanceKeyPathRequestParams> NodePathFromInstanceKeyPathRequestImplParams;
@@ -117,11 +139,11 @@ protected:
 /** @} */
 
 /** @name Navigation */
-    virtual std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams const&) const = 0;
-    virtual INavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) = 0;
+    virtual std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const&) const = 0;
+    virtual NavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) = 0;
     virtual size_t _GetNodesCount(HierarchyRequestImplParams const&) = 0;
+    virtual ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) = 0;
     virtual NavNodeCPtr _GetParent(NodeParentRequestImplParams const&) = 0;
-    virtual NavNodeCPtr _GetNode(NodeByKeyRequestImplParams const&) = 0;
     virtual bvector<NavNodeCPtr> _GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const&) = 0;
     virtual HierarchyComparePositionPtr _CompareHierarchies(HierarchyCompareRequestImplParams const&) = 0;
 /** @} */
@@ -151,11 +173,11 @@ public:
 /** @} */
 
 /** @name Navigation */
-    std::unique_ptr<INodeInstanceKeysProvider> CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams const& params) const {return _CreateNodeInstanceKeysProvider(params);}
-    INavNodesDataSourcePtr GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) {return _GetNodes(params);}
+    std::unique_ptr<INodeInstanceKeysProvider> CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const& params) const {return _CreateNodeInstanceKeysProvider(params);}
+    NavNodesDataSourcePtr GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params) {return _GetNodes(params);}
     size_t GetNodesCount(HierarchyRequestImplParams const& params) {return _GetNodesCount(params);}
+    ContentDescriptorCPtr GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const& params) {return _GetNodesDescriptor(params);}
     NavNodeCPtr GetParent(NodeParentRequestImplParams const& params) {return _GetParent(params);}
-    NavNodeCPtr GetNode(NodeByKeyRequestImplParams const& params) {return _GetNode(params);}
     bvector<NavNodeCPtr> GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const& params) {return _GetFilteredNodes(params);}
     HierarchyComparePositionPtr CompareHierarchies(HierarchyCompareRequestImplParams const& params) {return _CompareHierarchies(params);}
 /** @} */
@@ -206,12 +228,12 @@ private:
 
 private:
     NavNodesProviderContextPtr CreateNodesProviderContext(HierarchyRequestImplParams const&, std::shared_ptr<INavNodesCache> = nullptr) const;
-    NavNodesDataSourcePtr GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const&);
-    NavNodesDataSourcePtr GetCachedDataSource(NavNodesProviderContextR, PageOptionsCP);
-    void TraverseHierarchy(HierarchyRequestImplParams const&, std::shared_ptr<INavNodesCache>);
+    RefCountedPtr<ProviderBasedNodesDataSource> GetCachedDataSource(WithPageOptions<HierarchyRequestImplParams> const&) const;
+    RefCountedPtr<ProviderBasedNodesDataSource> GetCachedDataSource(NavNodesProviderContextR, PageOptionsCP) const;
+    void TraverseHierarchy(HierarchyRequestImplParams const&, std::shared_ptr<INavNodesCache>) const;
     ContentProviderContextPtr CreateContentProviderContext(IConnectionCR, ContentProviderKey const&, std::unique_ptr<RulesetVariables>, ICancelationTokenCP) const;
-    SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCP, ContentProviderKey const&, RulesetVariables const& variables);
-    SpecificationContentProviderPtr GetContentProvider(ContentRequestImplParams const&);
+    SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCP, ContentProviderKey const&, RulesetVariables const& variables) const;
+    SpecificationContentProviderPtr GetContentProvider(ContentRequestImplParams const&) const;
     void FinalizeNode(RequestWithRulesetImplParams const&, NavNodeR) const;
     NavNodePtr FinalizeNode(RequestWithRulesetImplParams const&, NavNodeCR) const;
 
@@ -241,11 +263,11 @@ protected:
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
 
     // ECPresentationManager::Impl: Navigation
-    ECPRESENTATION_EXPORT std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(RequestWithRulesetImplParams const&) const override;
-    ECPRESENTATION_EXPORT INavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) override;
+    ECPRESENTATION_EXPORT std::unique_ptr<INodeInstanceKeysProvider> _CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const&) const override;
+    ECPRESENTATION_EXPORT NavNodesDataSourcePtr _GetNodes(WithPageOptions<HierarchyRequestImplParams> const&) override;
     ECPRESENTATION_EXPORT size_t _GetNodesCount(HierarchyRequestImplParams const&) override;
+    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetNodesDescriptor(HierarchyLevelDescriptorRequestImplParams const&) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(NodeParentRequestImplParams const&) override;
-    ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(NodeByKeyRequestImplParams const&) override;
     ECPRESENTATION_EXPORT bvector<NavNodeCPtr> _GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const&) override;
     ECPRESENTATION_EXPORT HierarchyComparePositionPtr _CompareHierarchies(HierarchyCompareRequestImplParams const&) override;
 

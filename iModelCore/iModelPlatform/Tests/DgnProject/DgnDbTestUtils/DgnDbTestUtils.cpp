@@ -275,7 +275,7 @@ DgnSubCategoryId DgnDbTestUtils::InsertSubCategory(DgnDbR db, DgnCategoryId cate
 CodeSpecId DgnDbTestUtils::InsertCodeSpec(DgnDbR db, Utf8CP codeSpecName)
     {
     MUST_HAVE_HOST(CodeSpecId());
-    CodeSpecPtr codeSpec = CodeSpec::Create(db, codeSpecName);
+    CodeSpecPtr codeSpec = CodeSpec::CreateRepositorySpec(db, codeSpecName);
     EXPECT_TRUE(codeSpec.IsValid());
     DgnDbStatus status = codeSpec->Insert();
     EXPECT_TRUE(DgnDbStatus::Success == status) << WPrintfString(L"%ls - CodeSpec insert into %ls failed with %x", WString(codeSpecName,BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str(), (int)status).c_str();

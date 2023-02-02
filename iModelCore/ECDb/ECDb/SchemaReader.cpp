@@ -2182,7 +2182,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
     for (PropReaderHelper::RowInfo const& rowInfo : rowInfos)
         {
         ECPropertyP prop = nullptr;
-        if (isSystemSchema) {
+        if (isSystemSchema && (GetECDb().GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 3))) {
             patchExtendedTypeForClassIdSystemProperty(const_cast<PropReaderHelper::RowInfo&>(rowInfo));
         }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- =====================================================================================
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 ========================================================================================== -->
 <ECSchema schemaName="SchemaVersionTest" alias="vertest" version="02.02.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" description="This is a test schema.">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>

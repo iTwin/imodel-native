@@ -535,7 +535,7 @@ TEST_F(ConcurrentQueryFixture, RestartToken) {
     ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
-        
+
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
     auto req0 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));
@@ -709,6 +709,30 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
 
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(ConcurrentQueryFixture, pragma_file_info) {
+//     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_test.ecdb"));
+//     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+//     ECSqlReader reader(mgr, "PRAGMA file_info");
+//     int i = 0;
+//     while(reader.Next()) {
+//         if (BeStringUtilities::StricmpAscii("ecsql_ver", reader.GetRow()["key"].asCString()) == 0) {
+//             ASSERT_STREQ(reader.GetRow()["value"].asCString(), "1.0.0.0");
+//             ++i;
+//         }
+//         if (BeStringUtilities::StricmpAscii("ecdb_profile_ver", reader.GetRow()["key"].asCString()) == 0) {
+//             ASSERT_STREQ(reader.GetRow()["value"].asCString(), "4.0.0.2");
+//             ++i;
+//         }
+//         if (BeStringUtilities::StricmpAscii("journal_mode", reader.GetRow()["key"].asCString()) == 0) {
+//             ASSERT_STREQ(reader.GetRow()["value"].asCString(), "delete");
+//             ++i;
+//         }
+//     }
+//     ASSERT_EQ(i, 3);
+// }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

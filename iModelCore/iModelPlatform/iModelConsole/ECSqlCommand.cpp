@@ -43,7 +43,7 @@ void ECSqlCommand::_Run(Session& session, Utf8StringCR args) const
 
     IModelConsole::WriteLine();
 
-    if (ecsql.StartsWithIAscii("select") || ecsql.StartsWithIAscii("values") || ecsql.StartsWithIAscii("with"))
+    if (ecsql.StartsWithIAscii("select") || ecsql.StartsWithIAscii("values") || ecsql.StartsWithIAscii("with") || ecsql.StartsWithIAscii("pragma"))
         ExecuteSelect(session, stmt);
     else if (ecsql.StartsWithIAscii("insert into"))
         ExecuteInsert(session, stmt);
@@ -64,7 +64,7 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
         ECSqlColumnInfo const& columnInfo = statement.GetColumnInfo(i);
         const int columnSize = ComputeColumnSize(columnInfo);
         columnSizes.push_back(columnSize);
-        
+
         Utf8String formatString;
         formatString.Sprintf("%%-%ds", columnSize);
         Utf8String columnHeader;

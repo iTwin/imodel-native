@@ -243,7 +243,9 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     {
     NavNodePtr parentNode = CreateNode("Parent", "description", "imageId", "ParentType");
     RulesEngineTestHelpers::CacheNode(*m_nodesCache, *parentNode);
-    BeGuid parentNodeId = parentNode->GetNodeId();
+
+    NavNodePtr thisNode = CreateNode("This", "description", "imageId", "ThisType");
+    RulesEngineTestHelpers::CacheNode(*m_nodesCache, *thisNode, parentNode->GetNodeId());
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
     NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, parentNode.get(),
@@ -251,9 +253,6 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
         *m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);
     childContext->SetChildNodeContext(&rule, *parentNode);
-
-    NavNodePtr thisNode = CreateNode("This", "description", "imageId", "ThisType");
-    NavNodeExtendedData(*thisNode).SetVirtualParentIds({parentNodeId});
 
     StyleOverrideP styleOverride = new StyleOverride("ParentNode.Type=\"ParentType\"", 1, "\"overridenForeColor\"", "\"overridenBackColor\"", "\"overridenFontStyle\"");
     m_ruleset->AddPresentationRule(*styleOverride);

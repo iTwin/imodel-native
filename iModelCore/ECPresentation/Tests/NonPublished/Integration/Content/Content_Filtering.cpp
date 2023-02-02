@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ContentIntegrationTests.h"
 
@@ -38,7 +38,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropA = 2", classA, bvector<RelatedClassPath>()));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropA = 2", *classA, bvector<RelatedClassPath>()));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a2.get(), b2.get()}, *content, true);
@@ -78,7 +78,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", classB, bvector<RelatedClassPath>()));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", *classB, bvector<RelatedClassPath>()));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b2.get()}, *content, true);
@@ -121,7 +121,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstancesSpecif
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropA = 2", classA, bvector<RelatedClassPath>()));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropA = 2", *classA, bvector<RelatedClassPath>()));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a2.get(), b2.get()}, *content, true);
@@ -164,7 +164,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstancesSpecif
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", classB, bvector<RelatedClassPath>()));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", *classB, bvector<RelatedClassPath>()));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b2.get()}, *content, true);
@@ -230,7 +230,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropA = 2", classA, bvector<RelatedClassPath>()));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropA = 2", *classA, bvector<RelatedClassPath>()));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a2.get(), b2.get()}, *content, true);
@@ -295,7 +295,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", classB, bvector<RelatedClassPath>()));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", *classB, bvector<RelatedClassPath>()));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b2.get()}, *content, true);
@@ -335,7 +335,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorInstanceFilter_Us
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", classB, bvector<RelatedClassPath>()));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.IntPropB = 22", *classB, bvector<RelatedClassPath>()));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b2.get()}, *content, true);
@@ -389,7 +389,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorInstanceFilter_Us
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
     RelatedClassPath relatedInstance = { RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "rel_alias_test"), true, SelectClass<ECClass>(*classB, "rel_class_B")) };
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("rel_class_B.IntPropB = 22", classA, bvector<RelatedClassPath>({ relatedInstance })));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("rel_class_B.IntPropB = 22", *classA, bvector<RelatedClassPath>({ relatedInstance })));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a2.get()}, *content, true);
@@ -452,7 +452,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorInstanceFilter_Us
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
     RelatedClassPath relatedInstance = { RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, "rel_BC"), true, SelectClass<ECClass>(*classC, "rel_class_C")) };
-    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("rel_class_C.IntPropC = 111", classB, bvector<RelatedClassPath>({ relatedInstance })));
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("rel_class_C.IntPropC = 111", *classB, bvector<RelatedClassPath>({ relatedInstance })));
 
     ContentCPtr content = GetVerifiedContent(*ovr);
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{b1.get()}, *content, true);

@@ -16,9 +16,8 @@ struct NodePathsHelper
 private:
     NodePathsHelper() {}
 public:
-    static bvector<NodesPathElement> CreateHierarchy(ECPresentationManager::Impl&, NodePathsFromFilterTextRequestImplParams const&, bvector<NavNodeCPtr> const& nodes);
+    static bvector<NodesPathElement> CreateHierarchy(bvector<NavNodeCPtr> const& nodes, std::function<NavNodeCPtr(NavNodeCR)> const& parentGetter, Utf8StringCR matchText);
     static bvector<NodesPathElement> MergePaths(std::vector<NodesPathElement>& paths, Nullable<size_t> const& markedIndex);
-    static NodesPathElement FindNode(ECPresentationManager::Impl&, NodeByInstanceKeyRequestImplParams const&);
     static NodesPathElement CreateNodePath(ECPresentationManager::Impl&, NodePathFromInstanceKeyPathRequestImplParams const&);
 };
 

@@ -9,6 +9,7 @@
 #include <ECPresentation/LabelDefinition.h>
 #include <ECPresentation/Connection.h>
 #include <ECPresentation/NavNodeKey.h>
+#include <ECPresentation/DataSource.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -36,7 +37,6 @@ private:
     std::unique_ptr<rapidjson::Document> m_usersExtendedData;
     LabelDefinitionCPtr m_labelDefinition;
     BeGuid m_nodeId;
-    BeGuid m_parentNodeId;
     NavNodeKeyPtr m_nodeKey;
     Utf8String m_description;
     Utf8String m_imageId;
@@ -44,13 +44,12 @@ private:
     Utf8String m_backColor;
     Utf8String m_fontStyle;
     Utf8String m_type;
-    bool m_determinedChildren;
-    bool m_hasChildren;
+    Nullable<bool> m_hasChildren;
     bool m_isChecked;
     bool m_isCheckboxVisible;
     bool m_isCheckboxEnabled;
     bool m_shouldAutoExpand;
-    PresentationQueryBasePtr m_instanceKeysSelectQuery;
+    Nullable<bool> m_supportsFiltering;
 
 private:
     void InitUsersExtendedData(rapidjson::Value const* source = nullptr);
@@ -79,37 +78,31 @@ public:
     //! Get guid of this node.
     BeGuidCR GetNodeId() const {return m_nodeId;}
 
-    //! Get guid of the parent node. Invalid guid is returned if this is a root node.
-    BeGuidCR GetParentNodeId() const {return m_parentNodeId;}
-    //! Set parent node guid.
-    ECPRESENTATION_EXPORT void SetParentNodeId(BeGuid id);
-    void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
-
     //! Set description.
-    void SetDescription(Utf8CP description) {m_description = description;}
+    void SetDescription(Utf8String description) {m_description = description;}
     //! Get the description.
     Utf8StringCR GetDescription() const {return m_description;}
 
     //! Set image ID for this node.
-    void SetImageId(Utf8CP imageId) {m_imageId = imageId;}
+    void SetImageId(Utf8String imageId) {m_imageId = imageId;}
     //! Get image ID for when this node.
     Utf8StringCR GetImageId() const {return m_imageId;}
 
     //! Set the color of this node's text.
-    void SetForeColor(Utf8CP color) {m_foreColor = color;}
+    void SetForeColor(Utf8String color) {m_foreColor = color;}
     //! Get the color of this node's text.
     Utf8StringCR GetForeColor() const {return m_foreColor;}
     //! Set the background color of this node.
-    void SetBackColor(Utf8CP color) {m_backColor = color;}
+    void SetBackColor(Utf8String color) {m_backColor = color;}
     //! Get the background color of this node.
     Utf8StringCR GetBackColor() const {return m_backColor;}
     //! Set the font style of this node's text.
-    void SetFontStyle(Utf8CP style) {m_fontStyle = style;}
+    void SetFontStyle(Utf8String style) {m_fontStyle = style;}
     //! Get the font style of this node's text.
     Utf8StringCR GetFontStyle() const {return m_fontStyle;}
 
     //! Set the type of this node.
-    void SetType(Utf8CP type) {m_type = type;}
+    void SetType(Utf8String type) {m_type = type;}
     //! Get the type of this node.
     Utf8StringCR GetType() const {return m_type;}
 
@@ -119,12 +112,12 @@ public:
     void SetLabelDefinition(LabelDefinitionCR value) {m_labelDefinition = &value;}
 
     //! Set if this node has a children.
-    void SetHasChildren(bool value) {m_hasChildren = value; m_determinedChildren = true;}
+    void SetHasChildren(bool value) {m_hasChildren = value;}
     //! Does this node have children.
     ECPRESENTATION_EXPORT bool HasChildren() const;
     //! Does this node have determined whether it has children or not.
-    bool DeterminedChildren() const {return m_determinedChildren;}
-    void ResetHasChildren() {m_determinedChildren = false;}
+    bool DeterminedChildren() const {return m_hasChildren.IsValid();}
+    void ResetHasChildren() {m_hasChildren = nullptr;}
 
     //! Set if this node is checked.
     void SetIsChecked(bool value) {m_isChecked = value;}
@@ -142,9 +135,9 @@ public:
     void SetShouldAutoExpand(bool value) {m_shouldAutoExpand = value;}
     //! Should this node be auto-expanded.
     bool ShouldAutoExpand() const {return m_shouldAutoExpand;}
-
-    ECPRESENTATION_EXPORT PresentationQueryBasePtr GetInstanceKeysSelectQuery() const;
-    ECPRESENTATION_EXPORT void SetInstanceKeysSelectQuery(PresentationQueryBasePtr);
+    //! Does the node support hierarchy level filtering.
+    ECPRESENTATION_EXPORT bool SupportsFiltering() const;
+    void SetSupportsFiltering(bool value) {m_supportsFiltering = value;}
 
     //! Get extended data injected into this node by API user
     ECPRESENTATION_EXPORT RapidJsonAccessor GetUsersExtendedData() const;
@@ -153,6 +146,29 @@ public:
     //! Serialize the node to JSON
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
+};
+
+/*=================================================================================**//**
+* A container of refcounted NavNode objects.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct NavNodesContainer : DataContainer<NavNodeCPtr>
+{
+    DEFINE_T_SUPER(DataContainer<NavNodeCPtr>)
+
+private:
+    bool m_supportsFiltering;
+
+public:
+    //! Constructor. Creates an empty container.
+    NavNodesContainer() : T_Super(), m_supportsFiltering(false) {}
+
+    //! Constructor. Creates a container using the supplied data source.
+    NavNodesContainer(IDataSource<NavNodeCPtr> const& source) : T_Super(source), m_supportsFiltering(false) {}
+
+    //! Does the returned hierarchy level support filtering.
+    bool SupportsFiltering() const {return m_supportsFiltering;}
+    void SetSupportsFiltering(bool value) {m_supportsFiltering = value;}
 };
 
 //=======================================================================================

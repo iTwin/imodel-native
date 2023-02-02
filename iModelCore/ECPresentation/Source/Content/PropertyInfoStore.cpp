@@ -201,7 +201,7 @@ static BentleyStatus CreatePropertyCategoryFromSpec(bvector<std::shared_ptr<Prop
     auto iter = std::find_if(specs.begin(), specs.end(), [&identifier](PropertyCategorySpecificationCP spec) {return spec->GetId().Equals(identifier.AsIdIdentifier()->GetCategoryId());});
     if (iter == specs.end())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to find category '%s' in current scope. Available categories: [%s]",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to find category '%s' in current scope. Available categories: [%s]",
             identifier.AsIdIdentifier()->GetCategoryId().c_str(),
             BeStringUtilities::Join(ContainerHelpers::TransformContainer<T_Utf8StringVector>(specs, [](auto const& spec) {return Utf8String("'").append(spec->GetId()).append("'"); })).c_str()));
         return ERROR;
@@ -401,9 +401,9 @@ static Nullable<bool> EvaluateDisplayOverride(BoolOrString const& displayOverrid
 +---------------+---------------+---------------+---------------+-----------+------*/
 bool PropertyInfoStore::ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass, std::function<ExpressionContextPtr()> const& expressionContextFactory, PropertySpecificationsList const& customOverrides) const
     {
-    auto const displayOverride = ContainerHelpers::FindFirst<PropertySpecificationP>(customOverrides, [&](auto const& spec) 
+    auto const displayOverride = ContainerHelpers::FindFirst<PropertySpecificationP>(customOverrides, [&](auto const& spec)
         {
-        return spec->IsDisplayed().IsValid(); 
+        return spec->IsDisplayed().IsValid();
         }, nullptr);
     Nullable<bool> displayOverrideValue = nullptr;
     if (displayOverride && displayOverride->IsDisplayed().IsValid())

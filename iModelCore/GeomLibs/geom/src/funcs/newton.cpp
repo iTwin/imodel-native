@@ -316,8 +316,6 @@ FunctionRRToRRD &evaluator
     double u = uu;
     double v = vv;
     double f=0.0, g=0.0, dfdu, dfdv, dgdu, dgdv, du, dv;
-    double du0 = DBL_MAX;
-    double dv0 = DBL_MAX;
     double f0=0.0, g0=0.0;
     static double s_smallDeltaForFunctionValueTest = 1.0e-14;
     for (int numIterations = 0; CheckIterationStart (u, v, numIterations); numIterations++)
@@ -335,8 +333,6 @@ FunctionRRToRRD &evaluator
             }
         u -= du;
         v -= dv;
-        du0 = du;
-        dv0 = dv;
         if (CheckConvergence (u, v, f, g, du, dv, numConverged))
             {
             return SetReturnValues (uu, vv, u, v,
@@ -363,7 +359,6 @@ FunctionRToRD &evaluator
     int numConverged = 0;
     double u = uu;
     double f=0.0, dfdu;
-    double du0 = DBL_MAX;
     double f0=0.0;
     static double s_smallDeltaForFunctionValueTest = 1.0e-14;
     for (int numIterations = 0; CheckIterationStart (u, u, numIterations); numIterations++)
@@ -378,7 +373,6 @@ FunctionRToRD &evaluator
         if (!du.IsValid ())
             return false;
         u -= du;
-        du0 = du;
         if (CheckConvergence (u, u, f, f, du.Value (), du.Value (), numConverged))
             {
             return SetReturnValues (uu, u,

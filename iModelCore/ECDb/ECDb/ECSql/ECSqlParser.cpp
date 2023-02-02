@@ -18,7 +18,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
     //Parse statement
     Utf8String error;
     OSQLParser parser;
-    std::unique_ptr<OSQLParseNode> parseTree(parser.parseTree(error, ecsql));
+    auto parseTree = parser.parseTree(error, ecsql);
 
     if (parseTree == nullptr || !error.empty()) {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
@@ -33,6 +33,14 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
 
     std::unique_ptr<Exp> exp = nullptr;
     switch (parseTree->getKnownRuleID()) {
+        case OSQLParseNode::pragma: {
+            std::unique_ptr<PragmaStatementExp> pragmaExp = nullptr;
+            if (SUCCESS != ParsePragmaStatement(pragmaExp, *parseTree))
+                return nullptr;
+
+            exp = std::move(pragmaExp);
+            break;
+        }
         case OSQLParseNode::insert_statement: {
             std::unique_ptr<InsertStatementExp> insertExp = nullptr;
             if (SUCCESS != ParseInsertStatement(insertExp, *parseTree))
@@ -60,14 +68,14 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
         case OSQLParseNode::select_statement: {
             std::unique_ptr<SelectStatementExp> selectExp = nullptr;
             if (SUCCESS != ParseSelectStatement(selectExp, *parseTree))
-                return nullptr; 
+                return nullptr;
 
             exp = std::move(selectExp);
             break;
         }
         case OSQLParseNode::cte: {
             std::unique_ptr<CommonTableExp> cteExp;
-            if (SUCCESS != ParseCTE(cteExp, parseTree.get()))
+            if (SUCCESS != ParseCTE(cteExp, parseTree))
                 return nullptr;
 
             exp = std::move(cteExp);
@@ -117,7 +125,7 @@ BentleyStatus ECSqlParser::ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>& e
     std::unique_ptr<SelectStatementExp> selectStmt;
     if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
         return ERROR;
-    
+
     /* Defered test
     if (selectStmt->GetSelection()->GetChildrenCount() != columns.size()) {
         error
@@ -193,7 +201,7 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSele
         BeAssert(false);
         return ERROR;
         }
-    
+
     if (tableExpNode->count() == 0) {
         exp = std::make_unique<SingleSelectStatementExp>(opt_all_distinct,std::move(selectClauseExp), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         return SUCCESS;
@@ -314,6 +322,111 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
         columnAlias = opt_as_clause->getTokenValue();
 
     exp = std::make_unique<DerivedPropertyExp>(std::move(valExp), columnAlias.c_str());
+    return SUCCESS;
+    }
+//****************** Parsing PRAGMA statement ***********************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParsePragmaStatement(std::unique_ptr<PragmaStatementExp>& pragmaExp, OSQLParseNode const& parseNode) const {
+    using ParseNode = OSQLParseNode;
+    using ParseFunc = std::function<BentleyStatus(ParseNode const*)>;
+    pragmaExp = nullptr;
+
+    if (false == SQL_ISRULE(&parseNode, pragma)) {
+        return ERROR;
+    }
+
+    Utf8String outPragmaName;
+    std::vector<Utf8String> outPathTokens;
+    PragmaVal outPragmaVal;
+    bool outReadValue = true;
+    ParseFunc parse_pragma_path = [&](ParseNode const* parseNode) {
+        if (!SQL_ISRULE(parseNode, pragma_path)) {
+            return ERROR;
+        }
+        if (parseNode->count() == 0) {
+            return ERROR;
+        }
+        for(int i=0; i< parseNode->count(); ++i) {
+            outPathTokens.push_back(parseNode->getChild(i)->getTokenValue());
+        }
+        return SUCCESS;
+    };
+    ParseFunc parse_opt_pragma_value = [&](ParseNode const* parseNode) {
+        if (parseNode->getNodeType() == SQL_NODE_INTNUM) {
+            outPragmaVal = PragmaVal((int64_t)std::stoll(parseNode->getTokenValue()));
+        } else if (parseNode->getNodeType() == SQL_NODE_APPROXNUM) {
+            outPragmaVal = PragmaVal(std::stod(parseNode->getTokenValue()));
+        } else if (parseNode->getNodeType() == SQL_NODE_STRING) {
+            outPragmaVal = PragmaVal(parseNode->getTokenValue(), false);
+        } else if (parseNode->getNodeType() == SQL_NODE_NAME) {
+            outPragmaVal = PragmaVal(parseNode->getTokenValue(), true);
+        } else if (parseNode->getNodeType() == SQL_NODE_KEYWORD && parseNode->getTokenID() == SQL_TOKEN_TRUE) {
+            outPragmaVal = PragmaVal(true);
+        } else if (parseNode->getNodeType() == SQL_NODE_KEYWORD && parseNode->getTokenID()== SQL_TOKEN_FALSE) {
+            outPragmaVal = PragmaVal(false);
+        } else if (parseNode->getNodeType() == SQL_NODE_KEYWORD && parseNode->getTokenID()== SQL_TOKEN_NULL) {
+            outPragmaVal = PragmaVal::Null();
+        } else {
+            BeAssert(false && "unhandled token id");
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL, "Unsupported PRAGMA value Token Id %" PRIu32 ".", parseNode->getTokenID());
+            return ERROR;
+        }
+        return SUCCESS;
+    };
+    ParseFunc parse_opt_pragma_func = [&](ParseNode const* parseNode) {
+       if (!SQL_ISRULE(parseNode, opt_pragma_func)) {
+            return SUCCESS;
+        }
+        return parse_opt_pragma_value(parseNode->getChild(0));
+    };
+    ParseFunc parse_opt_pragma_set_val = [&](ParseNode const* parseNode) {
+        if (!SQL_ISRULE(parseNode, opt_pragma_set_val)) {
+            return SUCCESS;
+        }
+        outReadValue = false;
+        return parse_opt_pragma_value(parseNode->getChild(0));
+    };
+    ParseFunc parse_opt_pragma_set = [&](ParseNode const* parseNode) {
+        if (SQL_ISRULE(parseNode, opt_pragma_set)) {
+            return SUCCESS;
+        }
+        if (SQL_ISRULE(parseNode, opt_pragma_set_val)) {
+            return parse_opt_pragma_set_val(parseNode);
+        }
+        if (SQL_ISRULE(parseNode, opt_pragma_func)) {
+            return parse_opt_pragma_func(parseNode);
+        }
+        BeAssert(false && "Unhandled case");
+        return ERROR;
+    };
+    ParseFunc parse_opt_pragma_for = [&](ParseNode const* parseNode) {
+        if (!SQL_ISRULE(parseNode, opt_pragma_for)) {
+            return ERROR;
+        }
+        if (parseNode->count() == 0) {
+            return SUCCESS;
+        }
+        return parse_pragma_path(parseNode->getChild(0 /* pragma_path */));
+    };
+    auto parse_pragma = [&](ParseNode const* parseNode) {
+        outPragmaName = parseNode->getChild(1 /* SQL_TOKEN_NAME */)->getTokenValue();
+        if (SUCCESS != parse_opt_pragma_set(parseNode->getChild(2 /* opt_pragma_set */))) {
+            return ERROR;
+        }
+        if (SUCCESS != parse_opt_pragma_for(parseNode->getChild(3 /* opt_pragma_for */))) {
+            return ERROR;
+        }
+        return SUCCESS;
+    };
+    if (SUCCESS != parse_pragma(&parseNode)) {
+        return ERROR;
+    }
+    pragmaExp = std::make_unique<PragmaStatementExp>(outPragmaName, outPragmaVal, outReadValue, outPathTokens);
     return SUCCESS;
     }
 
@@ -637,16 +750,73 @@ BentleyStatus ECSqlParser::ParseColumnRefAsPropertyNameExp(std::unique_ptr<Prope
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode, bool forceIntoPropertyNameExp) const
-    {
-    if (!SQL_ISRULE(parseNode, column_ref))
-        {
+BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode, bool forceIntoPropertyNameExp) const {
+    if (!SQL_ISRULE(parseNode, column_ref)) {
         BeAssert(false && "Wrong grammar");
         return ERROR;
-        }
-
-    return ParseExpressionPath(exp, parseNode->getFirst(), forceIntoPropertyNameExp);
     }
+
+    std::unique_ptr<ValueExp> lhsExp;
+    const auto rc =  ParseExpressionPath(lhsExp, parseNode->getFirst(), forceIntoPropertyNameExp);
+    if (rc != SUCCESS) {
+        return rc;
+    }
+
+    const auto opt_extract_value = parseNode->getLast();
+    if (!SQL_ISRULE(opt_extract_value, opt_extract_value)) {
+        BeAssert(false && "Wrong grammar");
+        return ERROR;
+    }
+
+    const auto isExtractProp  = (opt_extract_value->count() != 0);
+    if (isExtractProp) {
+        if (lhsExp->GetType() != Exp::Type::PropertyName) {
+            Issues().Report(
+                IssueSeverity::Error, 
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL, 
+                "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
+            return ERROR;
+        }
+    }
+
+    if (lhsExp->GetType() == Exp::Type::PropertyName) {
+        auto lhsPropExp = lhsExp->GetAsCP<PropertyNameExp>();
+        if (InstanceValueExp::IsInstancePath(lhsPropExp->GetPropertyPath())) {
+            if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetPropertyPath())) {
+                Issues().Report(
+                    IssueSeverity::Error, 
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL, 
+                    "Invalid grammar. Instance exp must be follow syntax '[<alias>.]$'");
+                return ERROR;
+            }
+            if (!isExtractProp) {
+                exp = std::make_unique<ExtractInstanceValueExp>(lhsPropExp->GetPropertyPath());
+                return SUCCESS;
+            } else {
+                std::unique_ptr<ValueExp> rhsExp;
+                const auto rc =  ParseExpressionPath(rhsExp, opt_extract_value->getFirst(), false);
+                if (rc != SUCCESS) {
+                    return rc;
+                }
+                if (rhsExp->GetType() != Exp::Type::PropertyName) {
+                    Issues().Report(
+                        IssueSeverity::Error, 
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL, 
+                        "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
+                    return ERROR;
+                }
+                auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
+                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath());
+                return SUCCESS;
+            }
+        }
+    }
+    exp = std::move(lhsExp);
+    return SUCCESS;
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -742,7 +912,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
 
     const bool isArrayTargetType = SQL_ISRULE(castTargetNode, cast_target_array);
     OSQLParseNode const* scalarTargetNode = nullptr;
-    
+
     if (isArrayTargetType)
         {
         scalarTargetNode = castTargetNode->getChild(0);
@@ -753,7 +923,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
             return ERROR;
             }
         }
-    else 
+    else
         scalarTargetNode = castTargetNode;
 
     BeAssert(SQL_ISRULE(scalarTargetNode, cast_target_scalar));
@@ -1222,12 +1392,12 @@ BentleyStatus ECSqlParser::ParseFromClause(std::unique_ptr<FromExp>& exp, OSQLPa
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constraint, OSQLParseNode const* parseNode) 
+BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constraint, OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, OSQLParseNode::Rule::opt_only))
         return ERROR;
 
-    if (parseNode->count() == 0) 
+    if (parseNode->count() == 0)
         {
         constraint = PolymorphicInfo::All();
         return SUCCESS;
@@ -1241,7 +1411,7 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
     bool disqualify = false;
     if (disqualifyNode->count() == 1)
         disqualify = true;
-    
+
     auto type = PolymorphicInfo::Type::Default;
     if (!PolymorphicInfo::TryParseToken(type, constraintNode->getTokenValue()))
         return ERROR;
@@ -1302,10 +1472,10 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                 std::unique_ptr<TableValuedFunctionExp> tableValueFunc;
                 if (SUCCESS == ParseCommonTableBlockName(cteBlockNameExp, *thirdNode)) {
                     rangeClassRef = std::move(cteBlockNameExp);
-                } 
+                }
                 if (SUCCESS == ParseTableValuedFunction(tableValueFunc, *thirdNode)) {
                     rangeClassRef = std::move(tableValueFunc);
-                } 
+                }
             }
             if ( rangeClassRef == nullptr) {
                 std::unique_ptr<ClassNameExp> classNameExp = nullptr;
@@ -1352,7 +1522,7 @@ BentleyStatus ECSqlParser::ParseJoinedTable(std::unique_ptr<JoinExp>& exp, OSQLP
             std::unique_ptr<CrossJoinExp> joinExp = nullptr;
             if (SUCCESS != ParseCrossUnion(joinExp, parseNode))
                 return ERROR;
-            
+
             exp = std::move(joinExp);
             return SUCCESS;
             }
@@ -1565,7 +1735,7 @@ BentleyStatus ECSqlParser::ParseJoinSpec(std::unique_ptr<JoinSpecExp>& exp, OSQL
             std::unique_ptr<NamedPropertiesJoinExp> namedPropJoinExp = nullptr;
             if (SUCCESS != ParseNamedColumnsJoin(namedPropJoinExp, parseNode))
                 return ERROR;
-            
+
             exp = std::move(namedPropJoinExp);
             return SUCCESS;
             }
@@ -1718,7 +1888,7 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
     if (functionNode->getChild(1)->isLeaf()) {
         return ERROR;
     }
-  
+
     std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
     if (functionNode != nullptr)
         {
@@ -2465,7 +2635,7 @@ BentleyStatus ECSqlParser::ParseGroupByClause(std::unique_ptr<GroupByExp>& exp, 
         }
 
     if (parseNode->count() == 0)
-        return SUCCESS; //User never provided a GROUP BY clause 
+        return SUCCESS; //User never provided a GROUP BY clause
 
     std::unique_ptr<ValueExpListExp> listExp = nullptr;
     if (SUCCESS != ParseValueExpCommalist(listExp, parseNode->getChild(2)))
@@ -2489,7 +2659,7 @@ BentleyStatus ECSqlParser::ParseHavingClause(std::unique_ptr<HavingExp>& exp, OS
         }
 
     if (parseNode->count() == 0)
-        return SUCCESS; //User never provided a HAVING clause 
+        return SUCCESS; //User never provided a HAVING clause
 
     std::unique_ptr<BooleanExp> searchConditionExp = nullptr;
     BentleyStatus stat = ParseSearchCondition(searchConditionExp, parseNode->getChild(1));
@@ -2538,7 +2708,7 @@ BentleyStatus ECSqlParser::ParseOrderByClause(std::unique_ptr<OrderByExp>& exp, 
         }
 
     if (parseNode->count() == 0)
-        return SUCCESS; //User never provided a ORDER BY clause 
+        return SUCCESS; //User never provided a ORDER BY clause
 
     std::vector<std::unique_ptr<OrderBySpecExp>> orderBySpecs;
     OSQLParseNode const* ordering_spec_commalist = parseNode->getChild(2 /*ordering_spec_commalist*/);
@@ -2780,7 +2950,7 @@ BentleyStatus ECSqlParser::ParseCaseExp(std::unique_ptr<ValueExp>& valueExp, OSQ
         BeAssert(false && "Invalid grammar. Expecting searched_case");
         return ERROR;
         }
-    
+
     const auto searched_when_clause_list = parseNode->getChild(1);
     const auto else_clause = parseNode->getChild(2);
     const size_t childCount = searched_when_clause_list->count();
@@ -2800,7 +2970,7 @@ BentleyStatus ECSqlParser::ParseCaseExp(std::unique_ptr<ValueExp>& valueExp, OSQ
 
         whenList.push_back(std::make_unique<SearchedWhenClauseExp>(whenExp, thenExp));
         }
-    
+
     std::unique_ptr<ValueExp> elseExp = nullptr;
     if (else_clause->count() > 0)
         {
@@ -2822,8 +2992,8 @@ BentleyStatus ECSqlParser::ParseIIFExp(std::unique_ptr<ValueExp>& valueExp, OSQL
         BeAssert(false && "Invalid grammar. Expecting iif_spec");
         return ERROR;
         }
-    
-    const auto cond = parseNode->getChild(1); 
+
+    const auto cond = parseNode->getChild(1);
     const auto trueVal = parseNode->getChild(2);
     const auto falseVal = parseNode->getChild(3);
 
@@ -2852,7 +3022,7 @@ BentleyStatus ECSqlParser::ParseTypePredicate(std::unique_ptr<ValueExp>& valueEx
         BeAssert(false && "Invalid grammar. Expecting type_predicate");
         return ERROR;
         }
-    
+
     const auto type_list = parseNode->getChild(1);
     const auto count = type_list->count();
     std::vector<std::unique_ptr<ClassNameExp>> typeList;
@@ -3052,13 +3222,13 @@ BentleyStatus ECSqlParseContext::FinalizeParsing(Exp& rootExp)
     {
     if (SUCCESS != rootExp.FinalizeParsing(*this))
         return ERROR;
-    
+
     if (GetDeferFinalize()) {
         SetDeferFinalize(false);
         if (SUCCESS != rootExp.FinalizeParsing(*this))
             return ERROR;
     }
-    
+
     for (ParameterExp* parameterExp : m_parameterExpList)
         {
         if (!parameterExp->TryDetermineParameterExpType(*this, *parameterExp))

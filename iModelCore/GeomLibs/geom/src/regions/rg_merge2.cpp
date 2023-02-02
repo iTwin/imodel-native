@@ -116,15 +116,11 @@ int             noisy
 )
     {
     DPoint3d xyNodeId;
-    int numThisCluster, clusterIndex, blockIndex, numCluster, numBlockedIndex;
-    int *pBlockedIndexBuffer;
+    int numThisCluster, clusterIndex, blockIndex;
     int xyNodeIdIndex;
 
-    numCluster = jmdlVArrayDPoint3d_identifyMatchedVerticesXY
+    jmdlVArrayDPoint3d_identifyMatchedVerticesXY
                             (pXYNodeIdArray, NULL, pBlockedIndexArray, tolerance, 0.0);
-    pBlockedIndexBuffer = jmdlEmbeddedIntArray_getPtr (pBlockedIndexArray, 0);
-    numBlockedIndex = jmdlEmbeddedIntArray_getCount (pBlockedIndexArray);
-
 
     jmdlEmbeddedIntArray_empty (pNodeIdToVertexIndexArray);
     jmdlEmbeddedIntArray_setConstant (pNodeIdToVertexIndexArray, -1, maxNodeId);
@@ -190,7 +186,6 @@ int             noisy
     static double s_tolFactor = 4.0;
     static int s_numChords = 8;
     double lengthTol = s_tolFactor * clusterSize;
-    bool    loopEdge;
     pVVNArrayHeader->clear ();
 
     for (nodeId0 = 0; nodeId0 <= maxNodeId; nodeId0++)
@@ -201,8 +196,7 @@ int             noisy
             {
             nodeId1 = jmdlMTGGraph_getEdgeMate (pGraph, nodeId0);
             jmdlEmbeddedIntArray_getInt (pNodeIdToVertexIndexArray, &vvn.cluster1, nodeId1);
-            loopEdge = false;
-
+    
             if (noisy > 4)
                 {
                 if (vvn.cluster0 == vvn.cluster1)
@@ -215,7 +209,7 @@ int             noisy
                 quickLength = jmdlRG_quickChordLength (pRG, nodeId0, s_numChords);
                 if (quickLength > lengthTol)
                     {
-                    loopEdge = true;
+                    // this is a loop edge
                     }
                 else
                     {

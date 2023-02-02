@@ -47,12 +47,14 @@ static Utf8CP GetDiagnosticsCategoryName(DiagnosticsCategory category)
         case DiagnosticsCategory::RulesetVariables: return LOGGER_NAMESPACE_ECPRESENTATION_RULESET_VARIABLES;
         case DiagnosticsCategory::ECExpressions: return LOGGER_NAMESPACE_ECPRESENTATION_ECEXPRESSIONS;
 
-        case DiagnosticsCategory::Hierarchies: return LOGGER_NAMESPACE_ECPRESENTATION_HIEARCHIES;
-        case DiagnosticsCategory::HierarchiesCache: return LOGGER_NAMESPACE_ECPRESENTATION_HIEARCHIES_CACHE;
-        case DiagnosticsCategory::HierarchiesUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_HIEARCHIES_UPDATE;
+        case DiagnosticsCategory::Hierarchies: return LOGGER_NAMESPACE_ECPRESENTATION_HIERARCHIES;
+        case DiagnosticsCategory::HierarchiesCache: return LOGGER_NAMESPACE_ECPRESENTATION_HIERARCHIES_CACHE;
 
         case DiagnosticsCategory::Content: return LOGGER_NAMESPACE_ECPRESENTATION_CONTENT;
-        case DiagnosticsCategory::ContentUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_CONTENT_UPDATE;
+
+        case DiagnosticsCategory::Update: return LOGGER_NAMESPACE_ECPRESENTATION_UPDATE;
+        case DiagnosticsCategory::HierarchiesUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_UPDATE_HIERARCHIES;
+        case DiagnosticsCategory::ContentUpdate: return LOGGER_NAMESPACE_ECPRESENTATION_UPDATE_CONTENT;
         }
     BeAssert(false);
     return LOGGER_NAMESPACE_ECPRESENTATION;
@@ -88,7 +90,7 @@ Diagnostics::Message::Message(DiagnosticsCategory category, NativeLogging::SEVER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document Diagnostics::Message::_BuildJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document Diagnostics::Message::_BuildJson(rapidjson::Document::AllocatorType* allocator)
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -150,6 +152,7 @@ Diagnostics::Scope::Scope(std::shared_ptr<Scope> parentScope, Utf8String name, s
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Scope::Attach()
     {
+    BeMutexHolder lock(m_mutex);
     Diagnostics::SetCurrentScope(shared_from_this());
     m_end = 0;
     }
@@ -159,7 +162,9 @@ void Diagnostics::Scope::Attach()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Scope::Detach()
     {
-    m_end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    BeMutexHolder lock(m_mutex);
+    if (!m_isFinalized)
+        m_end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     Diagnostics::SetCurrentScope(m_parentScope.lock());
     }
 
@@ -178,11 +183,14 @@ Diagnostics::Options const& Diagnostics::Scope::GetOptions() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::AllocatorType* allocator)
     {
     BeMutexHolder lock(m_mutex);
 
-    uint64_t duration = GetElapsedTime();
+    m_isFinalized = true;
+    if (!m_end)
+        m_end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    uint64_t duration = m_end - m_start;
 
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -224,8 +232,6 @@ rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::Allocato
 
     json.AddMember("scope", rapidjson::Value(m_name.c_str(), json.GetAllocator()), json.GetAllocator());
 
-    m_isFinalized = true;
-
     return json;
     }
 
@@ -234,10 +240,6 @@ rapidjson::Document Diagnostics::Scope::_BuildJson(rapidjson::Document::Allocato
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Scope::AddMessage(DiagnosticsCategory category, NativeLogging::SEVERITY const* devSeverity, NativeLogging::SEVERITY const* editorSeverity, Utf8String msg)
     {
-    // pass dev logs to native logger (messages of severity lower than configured will be dropped)
-    if (devSeverity)
-        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).message(*devSeverity, msg.c_str());
-
     if (devSeverity && *devSeverity < GetOptions().GetDevSeverity())
         devSeverity = nullptr;
 
@@ -287,17 +289,6 @@ void Diagnostics::Scope::DevLog(DiagnosticsCategory category, NativeLogging::SEV
 void Diagnostics::Scope::EditorLog(DiagnosticsCategory category, NativeLogging::SEVERITY severity, Utf8String msg)
     {
     AddMessage(category, nullptr, &severity, msg);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Diagnostics::Scope::IsEnabled(DiagnosticsCategory category, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity) const
-    {
-    return devSeverity >= GetOptions().GetDevSeverity()
-        || editorSeverity >= GetOptions().GetEditorSeverity()
-        // note: we get A LOT of trace messages - don't want to emit those to native logger (even the check if they're enabled is expensive)
-        || devSeverity >= NativeLogging::LOG_DEBUG && NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).isSeverityEnabled(devSeverity);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,15 +354,21 @@ Diagnostics::Scope* Diagnostics::GetCurrentScopeRaw()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsDiagnosticsCategoryEnabledForNativeLogger(DiagnosticsCategory category, NativeLogging::SEVERITY severity)
+    {
+    // note: we get A LOT of trace messages - don't want to emit those to native logger (even the check if they're enabled gets expensive)
+    return severity > NativeLogging::LOG_TRACE
+        && NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).isSeverityEnabled(severity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TCallable> static void WithDiagnosticsScope(TCallable cb)
     {
     auto scope = Diagnostics::GetCurrentScope().lock();
-    if (!scope)
-        {
-        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(DiagnosticsCategory::Default)).error("Attempted to log a diagnostics message outside of Diagnostics::Scope");
-        return;
-        }
-    cb(*scope);
+    if (scope)
+        cb(*scope);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -379,6 +376,10 @@ template<typename TCallable> static void WithDiagnosticsScope(TCallable cb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::Log(DiagnosticsCategory category, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg)
     {
+    // pass dev logs to native logger (messages of severity lower than configured will be dropped)
+    if (IsDiagnosticsCategoryEnabledForNativeLogger(category, devSeverity))
+        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).message(devSeverity, msg.c_str());
+
     WithDiagnosticsScope([&](auto& scope)
         {
         scope.Log(category, devSeverity, editorSeverity, std::move(msg));
@@ -390,6 +391,10 @@ void Diagnostics::Log(DiagnosticsCategory category, NativeLogging::SEVERITY devS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Diagnostics::DevLog(DiagnosticsCategory category, NativeLogging::SEVERITY severity, Utf8String msg)
     {
+    // pass dev logs to native logger (messages of severity lower than configured will be dropped)
+    if (IsDiagnosticsCategoryEnabledForNativeLogger(category, severity))
+        NativeLogging::CategoryLogger(GetDiagnosticsCategoryName(category)).message(severity, msg.c_str());
+
     WithDiagnosticsScope([&](auto& scope)
         {
         scope.DevLog(category, severity, std::move(msg));

@@ -443,7 +443,7 @@ folly::Future<folly::Unit> PresentationManagerTestsHelper::GetNodesCount(ECPrese
     bvector<NavNodeCPtr> const& nodesPath, Utf8CP rulesetId, int expectedNodesCount)
     {
     std::vector<folly::Future<NodesCountResponse>> futures;
-    futures.push_back(manager.GetNodesCount(AsyncHierarchyRequestParams::Create(project, rulesetId, RulesetVariables(), nullptr)));
+    futures.push_back(manager.GetNodesCount(AsyncHierarchyRequestParams::Create(project, rulesetId, RulesetVariables())));
     for (NavNodeCPtr node : nodesPath)
         futures.push_back(manager.GetNodesCount(AsyncHierarchyRequestParams::Create(project, rulesetId, RulesetVariables(), node.get())));
 

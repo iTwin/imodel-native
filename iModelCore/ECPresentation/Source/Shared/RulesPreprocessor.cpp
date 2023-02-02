@@ -166,7 +166,7 @@ static bool MeetsSchemaRequirements(ECDbCR ecdb, RequiredSchemaSpecificationsLis
         auto schema = ecdb.Schemas().GetSchema(schemaRequirement->GetName(), false);
         if (!schema)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Omitting %s - schema requirement is not met. "
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Omitting %s - schema requirement is not met. "
                 "Rule requires `%s` schema which is not present in the dataset.", containerIdentifier.c_str(),
                 schemaRequirement->GetName().c_str()));
             meetsRequirements = false;
@@ -177,7 +177,7 @@ static bool MeetsSchemaRequirements(ECDbCR ecdb, RequiredSchemaSpecificationsLis
             SchemaKey minKey(schema->GetName().c_str(), schemaRequirement->GetMinVersion().Value().GetMajor(), schemaRequirement->GetMinVersion().Value().GetMinor(), schemaRequirement->GetMinVersion().Value().GetPatch());
             if (schema->GetSchemaKey().CompareByVersion(minKey) < 0)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Omitting %s - schema requirement is not met. "
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Omitting %s - schema requirement is not met. "
                     "Rule requires `%s` schema version to be at least %s. Actual schema version is %s.", containerIdentifier.c_str(),
                     schema->GetName().c_str(), minKey.GetVersionString().c_str(), schema->GetSchemaKey().GetVersionString().c_str()));
                 meetsRequirements = false;
@@ -189,7 +189,7 @@ static bool MeetsSchemaRequirements(ECDbCR ecdb, RequiredSchemaSpecificationsLis
             SchemaKey maxKey(schema->GetName().c_str(), schemaRequirement->GetMaxVersion().Value().GetMajor(), schemaRequirement->GetMaxVersion().Value().GetMinor(), schemaRequirement->GetMaxVersion().Value().GetPatch());
             if (schema->GetSchemaKey().CompareByVersion(maxKey) >= 0)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Omitting %s - schema requirement is not met. "
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Omitting %s - schema requirement is not met. "
                     "Rule requires `%s` schema version to be less than %s. Actual schema version is %s.", containerIdentifier.c_str(),
                     schema->GetName().c_str(), maxKey.GetVersionString().c_str(), schema->GetSchemaKey().GetVersionString().c_str()));
                 meetsRequirements = false;
@@ -232,7 +232,7 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(IRulesetLocater
     {
     ECSchemaHelper schemaHelper(connection, nullptr, nullptr);
     bvector<PresentationRuleSetPtr> rulesets = locaters.LocateRuleSets(connection, rulesetId);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, Utf8PrintfString("Located %" PRIu64 " rulesets with id '%s'", (uint64_t)rulesets.size(), rulesetId));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_INFO, Utf8PrintfString("Located %" PRIu64 " rulesets with id '%s'", (uint64_t)rulesets.size(), rulesetId));
 
     // find the primary ruleset
     PresentationRuleSetPtr primary;
@@ -243,7 +243,7 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(IRulesetLocater
 
         if (ruleset->GetRulesetSchemaVersion().GetMajor() > PresentationRuleSet::GetCurrentRulesetSchemaVersion().GetMajor())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Skipping %s - ruleset schema major version (%s) "
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Skipping %s - ruleset schema major version (%s) "
                 "is higher than latest supported major version of the library (%s).", ruleset->GetFullRuleSetId().c_str(),
                 ruleset->GetRulesetSchemaVersion().ToString().c_str(), PresentationRuleSet::GetCurrentRulesetSchemaVersion().ToString().c_str()));
             continue;
@@ -276,7 +276,7 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(IRulesetLocater
 
         if (ruleset->GetRulesetSchemaVersion().GetMajor() > PresentationRuleSet::GetCurrentRulesetSchemaVersion().GetMajor())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Skipping %s - ruleset schema major version (%s) "
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Skipping %s - ruleset schema major version (%s) "
                 "is higher than latest supported major version of the library (%s).", ruleset->GetFullRuleSetId().c_str(),
                 ruleset->GetRulesetSchemaVersion().ToString().c_str(), PresentationRuleSet::GetCurrentRulesetSchemaVersion().ToString().c_str()));
             continue;
@@ -295,7 +295,7 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(IRulesetLocater
         supplementalRuleSets[ruleset->GetSupplementationPurpose()] = ruleset;
         }
     auto supplementalRuleSetsList = ContainerHelpers::TransformContainer<bvector<PresentationRuleSetPtr>>(supplementalRuleSets, [](auto const& entry){return entry.second;});
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, Utf8PrintfString("Identified %" PRIu64 " supplemental rulesets.", (uint64_t)supplementalRuleSetsList.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_INFO, Utf8PrintfString("Identified %" PRIu64 " supplemental rulesets.", (uint64_t)supplementalRuleSetsList.size()));
 
     PresentationRuleSetPtr supplementedRuleSet = supplementalRuleSets.empty() ? primary : CreateSupplementedRuleSet(*primary, supplementalRuleSetsList);
     MergeDuplicateNodeRules(*supplementedRuleSet);
@@ -323,7 +323,7 @@ bool RulesPreprocessor::VerifyCondition(Utf8CP condition, ECExpressionsCache& ex
     ExpressionContextPtr context = contextPreparer();
     if (ExpressionStatus::Success != node->GetValue(valueResult, *context))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to evaluate ECExpression: %s", condition));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to evaluate ECExpression: %s", condition));
         return false;
         }
 

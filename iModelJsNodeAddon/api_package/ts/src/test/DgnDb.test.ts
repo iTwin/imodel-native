@@ -2,14 +2,15 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { copyFile, dbFileName, getAssetsDir, iModelJsNative } from "./utils";
-import { DbResult, Id64Array, IModelStatus } from "@itwin/core-bentley";
-import { IModelJsNative } from "../NativeLibrary";
+import { DbResult, Id64Array, Id64String, IModelStatus } from "@itwin/core-bentley";
+import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
 import { assert, expect } from "chai";
-import { openDgnDb } from ".";
-import * as path from "path";
+import * as fs from "fs-extra";
 import * as os from "os";
-import { ProfileOptions } from "@itwin/core-common";
+import * as path from "path";
+import { openDgnDb } from ".";
+import { IModelJsNative } from "../NativeLibrary";
+import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
@@ -20,19 +21,19 @@ describe("basic tests", () => {
   let dgndb: IModelJsNative.DgnDb;
 
   before((done) => {
-    dgndb = openDgnDb(dbFileName);
+    dgndb = openDgnDb(dbFileName, { schemaLockHeld: true });
     done();
-  })
+  });
 
   after((done) => {
     dgndb.closeIModel();
     done();
-  })
+  });
 
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function
-    expect(() => (iModelJsNative as any).storeObjectInVault()).to.throw("Argument 0");
+    expect(() => (iModelJsNative as any).addFontWorkspace()).to.throw("Argument 0");
 
     // now try methods
     const db = new iModelJsNative.DgnDb() as any;
@@ -42,10 +43,6 @@ describe("basic tests", () => {
     // from Node
     expect(() => db.nonsense()).to.throw("not a function");
   });
-
-  it("testImportSchemas", () => {
-
-  })
 
   it("testTileVersionInfo", () => {
     const ver = iModelJsNative.getTileVersionInfo();
@@ -71,7 +68,9 @@ describe("basic tests", () => {
     assert(elementIdArray.length > 0, "No 3D elements in test file");
     // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
     const elementsWithGraphics: any = {};
-    const onGraphics = (info: any) => { elementsWithGraphics[info.elementId] = true; };
+    const onGraphics = (info: any) => {
+      elementsWithGraphics[info.elementId] = true;
+    };
     const res = dgndb.exportGraphics({ elementIdArray, onGraphics });
 
     assert.equal(res, 0, `IModelDb.exportGraphics returned ${res}`);
@@ -82,44 +81,44 @@ describe("basic tests", () => {
   it("testSchemaImport", () => {
     const writeDbFileName = copyFile("testSchemaImport.bim", dbFileName);
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
-    const db = openDgnDb(writeDbFileName, {profile: ProfileOptions.Upgrade});
+    const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
     assert.isTrue(db !== undefined);
     expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found"); // presentationrules alias is 'pr'.
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
-    const result = db.importSchemas([schemaPath]);
+    const result = db.importSchemas([schemaPath], { schemaLockHeld: false });
     assert.isTrue(result === DbResult.BE_SQLITE_OK);
 
-    const prProps = db.getSchemaProps("PresentationRules");
+    db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.15"); // PR references 01.00.15, so importing PR will cause it to upgrade.
-  })
+  });
 
   it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
     const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
     const db = openDgnDb(testFileName);
-    const assetsDir = path.join(getAssetsDir(), 'ImportSchemaTests');
+    const assetsDir = path.join(getAssetsDir(), "ImportSchemaTests");
     const test100Path = path.join(assetsDir, "Test.01.00.00.ecschema.xml");
-    
+
     // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
-    let bisProps = db.getSchemaProps("BisCore");
-    let result = db.importSchemas([test100Path]);
+    const bisProps = db.getSchemaProps("BisCore");
+    let result = db.importSchemas([test100Path], { schemaLockHeld: false });
     assert.equal(result, DbResult.BE_SQLITE_OK);
     assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
 
-    let testRefProps = db.getSchemaProps("TestRef");
+    const testRefProps = db.getSchemaProps("TestRef");
     assert.equal(testRefProps.version, "01.00.00", "TestRef after Test 1.0.0 import");
 
     // TestRef is updated to version 1.0.1 even though Test only references 1.0.0
     // local directory has higher precedence than the db
     const subAssetsDir = path.join(assetsDir, "LocalReferences");
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
-    result = db.importSchemas([test101Path]);
+    result = db.importSchemas([test101Path], { schemaLockHeld: false });
     assert.equal(result, DbResult.BE_SQLITE_OK);
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
-  })
+  });
 
   it("testSchemaExport", () => {
     const xml = dgndb.schemaToXmlString("BisCore", IModelJsNative.ECVersion.V2_0);
@@ -169,6 +168,19 @@ describe("basic tests", () => {
     // iModelJsNative.NativeDevTools.signal(3);
   });
 
+  it("WAL mode", () => {
+    const withWal = new iModelJsNative.DgnDb();
+    const tempDbName = path.join(getOutputDir(), "testWal.bim");
+    if (fs.existsSync(tempDbName))
+      fs.removeSync(tempDbName);
+
+    withWal.createIModel(tempDbName, { rootSubject: { name: "wal" } });
+    withWal.enableWalMode();
+    withWal.performCheckpoint();
+    withWal.setAutoCheckpointThreshold(2000);
+    withWal.closeIModel();
+  });
+
   it("testGetSchemaProps", async () => {
     assert.isTrue(dgndb.isOpen());
     expect(() => dgndb.getSchemaProps("DoesNotExist")).to.throw("schema not found");
@@ -207,12 +219,12 @@ describe("basic tests", () => {
   }
 
   it("queryModelExtents", () => {
-    expect(() => dgndb.queryModelExtents({id: "NotAnId"})).to.throw("Invalid id").property("errorNumber").equal(IModelStatus.InvalidId);
-    expect(() => dgndb.queryModelExtents({id: "0xabcdef"})).to.throw("not found").property("errorNumber").equal(IModelStatus.NotFound);
-    expect(() => dgndb.queryModelExtents({id: "0x1"})).to.throw("error=10040").property("errorNumber").equal(IModelStatus.WrongModel);
-    expect(() => dgndb.queryModelExtents({id: "0x1c"})).to.throw("error=10022").property("errorNumber").equal(IModelStatus.NoGeometry);
+    expect(() => dgndb.queryModelExtents({ id: "NotAnId" })).to.throw("Invalid id").property("errorNumber").equal(IModelStatus.InvalidId);
+    expect(() => dgndb.queryModelExtents({ id: "0xabcdef" })).to.throw("not found").property("errorNumber").equal(IModelStatus.NotFound);
+    expect(() => dgndb.queryModelExtents({ id: "0x1" })).to.throw("error=10040").property("errorNumber").equal(IModelStatus.WrongModel);
+    expect(() => dgndb.queryModelExtents({ id: "0x1c" })).to.throw("error=10022").property("errorNumber").equal(IModelStatus.NoGeometry);
 
-    expectExtents(dgndb.queryModelExtents({id: "0x23"}).modelExtents, { low: [-10, -16, -10], high: [14, 6, 10] });
+    expectExtents(dgndb.queryModelExtents({ id: "0x23" }).modelExtents, { low: [-10, -16, -10], high: [14, 6, 10] });
   });
 
   it("queryModelExtentsAsync", async () => {
@@ -270,17 +282,17 @@ describe("basic tests", () => {
   describe("generateElementMeshes", () => {
     it("throws if source is not a geometric element", async () => {
       const msg = "Geometric element required";
-      await expect(dgndb.generateElementMeshes({source: "NotAnId"})).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({ })).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({source: "0"})).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({source: "0x1"})).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({source: "0x123456789"})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "NotAnId" })).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "0" })).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "0x1" })).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "0x123456789" })).rejectedWith(msg);
     });
 
     it("produces meshes", async () => {
       const elemIds = ["0x38", "0x3a", "0x3b", "0x39"];
       for (const source of elemIds) {
-        let bytes = await dgndb.generateElementMeshes({
+        const bytes = await dgndb.generateElementMeshes({
           source,
           chordTolerance: 0.001,
         });
@@ -311,6 +323,156 @@ describe("basic tests", () => {
         u32 = new Uint32Array(fewerBytes.buffer);
         expect(u32[3] < numPolyfaceBytes).to.be.true;
       }
+    });
+  });
+
+  it("schemaLockHeld flag", async () => {
+    let t = 0;
+    const generateIntProp = (propCount: number, prefix: string = "P") => {
+      let xml = "";
+      for (let i = 0; i < Math.max(propCount, 1); ++i) {
+        xml += `<ECProperty propertyName="${prefix}${i}" typeName="int"/>\n`;
+      }
+      return xml;
+    };
+    const generateSchema = (classPropCount: number, structPropCount: number) => {
+      const schemaXml = `<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="SchemaVersionTest" alias="vt" version="01.00.0${t++}" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+          <ECStructClass typeName="ChangeInfoStruct" modifier="None">
+            ${generateIntProp(structPropCount)}
+          </ECStructClass>
+          <ECEntityClass typeName="TestElement">
+            <BaseClass>bis:GeometricElement2d</BaseClass>
+            <ECStructProperty propertyName="structProp" typeName="ChangeInfoStruct" />
+            ${generateIntProp(classPropCount)}
+          </ECEntityClass>
+      </ECSchema>`;
+      return schemaXml;
+    };
+    const testFile = dbFileName.replace("test.bim", "test-schema-import.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+    fs.copyFileSync(dbFileName, testFile);
+    const db = openDgnDb(testFile);
+    db.saveChanges();
+
+    // import a schema with changes that only required SchemaLock
+    let rc = db.importXmlSchemas([generateSchema(20, 1)], { schemaLockHeld: false });
+    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.saveChanges();
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 23 << 24);
+
+    // import should fail when schemaLockHeld flag is set to false which will fail the operation if data transform is required.
+    rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false });
+    assert.equal(rc, BE_SQLITE_ERROR_DataTransformRequired);
+
+    // import should be successful when schemaLockHeld flag is set to true so it can transform data if required.
+    rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
+    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.saveChanges();
+    db.closeIModel();
+  });
+
+  it("ecsql query", async () => {
+    const query = async (ecsql: string) => {
+      const request: DbQueryRequest = {
+        kind: DbRequestKind.ECSql,
+        query: ecsql,
+      };
+      return new Promise<DbQueryResponse>((resolve) => {
+        dgndb.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbQueryResponse);
+        });
+      });
+    };
+    const resp = await query("SELECT ECInstanceId FROM Bis.Element LIMIT 5");
+    assert(resp.status === DbResponseStatus.Done);
+    assert(resp.rowCount === 5);
+    assert(resp.error === "");
+    assert(resp.data[0], "0x1");
+    assert(resp.data[1], "0xe");
+    assert(resp.data[2], "0x10");
+    assert(resp.data[3], "0x11");
+    assert(resp.data[4], "0x13");
+  });
+
+  it("blob query", async () => {
+    const query = async (className: string, accessString: string, instanceId: Id64String, range?: BlobRange) => {
+      const request: DbBlobRequest = {
+        kind: DbRequestKind.BlobIO,
+        className,
+        accessString,
+        instanceId,
+        range,
+      };
+      return new Promise<DbBlobResponse>((resolve) => {
+        dgndb.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbBlobResponse);
+        });
+      });
+    };
+    const resp = await query("Bis.GeometricElement3d", "GeometryStream", "0x39");
+    assert(resp.status === DbResponseStatus.Done);
+    assert(resp.rawBlobSize === 201);
+    assert(resp.data instanceof Uint8Array);
+    assert(resp.data?.length === 201);
+    assert(Buffer.from(resp.data).toString("base64") === "yQCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQgBAf8VDEgAAAsAAACoAAAAYmcwMDAxZmIQASMUAAoADgAHBUIACgUQCAAHDAUIiAYAfAAEAAYAAAC2dX71ziceQHxSG5uae5m8PEMbZw/wtDwABSgoAAC8DXhGH+CTPLgNKAkXBNC8CQggAAC2vz2w0buqDRAIwDy3MigAJAAAGC1EVPsh+b8JCCQJQAEAAAAAAAAA");
+  });
+
+  it("blob query with range", async () => {
+    const query = async (className: string, accessString: string, instanceId: Id64String, range?: BlobRange) => {
+      const request: DbBlobRequest = {
+        kind: DbRequestKind.BlobIO,
+        className,
+        accessString,
+        instanceId,
+        range,
+      };
+      return new Promise<DbBlobResponse>((resolve) => {
+        dgndb.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbBlobResponse);
+        });
+      });
+    };
+    const resp = await query("Bis.GeometricElement3d", "GeometryStream", "0x39", { offset: 5, count: 10 });
+    assert(resp.status === DbResponseStatus.Done);
+    assert(resp.rawBlobSize === 201);
+    assert(resp.data instanceof Uint8Array);
+    assert(resp.data?.length === 10);
+    assert(Buffer.from(resp.data).toString("base64") === "AAYAAPgAAAABAA==");
+  });
+
+  it("testSimpleDbQueries", () => {
+    assert.isTrue(dgndb.isOpen());
+    assert.isFalse(dgndb.isReadonly());
+    assert.isFalse(dgndb.isRedoPossible());
+    expect(() => dgndb.deleteElement("0x33333")).to.throw("missing id");
+  });
+
+  it("testGetECClassMetaData custom attributes", async () => {
+    assert.isTrue(dgndb.isOpen());
+    const result = dgndb.getECClassMetaData("BisCore", "ISubModeledElement");
+    assert(result.result);
+    const classMetaData = JSON.parse(result.result);
+    expect(classMetaData).to.deep.equal({
+      ecclass: "BisCore:ISubModeledElement",
+      description:
+        "An interface which indicates that an Element can be broken down or described by a (sub) Model.  " +
+        "This interface is mutually exclusive with IParentElement.",
+      modifier: "Abstract",
+      displayLabel: "Modellable Element",
+      baseClasses: [],
+      customAttributes: [{
+        ecclass: "CoreCustomAttributes:IsMixin",
+        properties: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          AppliesToEntityClass: "Element",
+        },
+      }],
     });
   });
 });

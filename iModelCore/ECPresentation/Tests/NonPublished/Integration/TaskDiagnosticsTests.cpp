@@ -154,6 +154,7 @@ TEST_F(TaskDiagnosticTests, BuildsCorrectTaskDiagnosticsWithMultipleChainedTasks
             {
             ExpectedScopesDef("Get content descriptor", 
                 {
+                ExpectedScopesDef("Get task connection"),
                 ExpectedScopesDef("Tasks scheduler: schedule task *"),
                 ExpectedScopesDef("Task * executing"),
                 ExpectedScopesDef("Task * completing"),
@@ -171,6 +172,7 @@ TEST_F(TaskDiagnosticTests, BuildsCorrectTaskDiagnosticsWithMultipleChainedTasks
             {
             ExpectedScopesDef("Get content descriptor", 
                 {
+                ExpectedScopesDef("Get task connection"),
                 ExpectedScopesDef("Tasks scheduler: schedule task *"),
                 ExpectedScopesDef("Task * executing"),
                 ExpectedScopesDef("Task * completing"),

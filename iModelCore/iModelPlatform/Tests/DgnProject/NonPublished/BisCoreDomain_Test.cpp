@@ -24,7 +24,55 @@ Utf8String BisCoreDomainTests::GetDDL(Utf8CP tableName)
     BeAssert(BE_SQLITE_ROW == stepStatus);
     return statement->GetValueText(0);
     }
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(BisCoreDomainTests, DisqualifyTypeFilterForExternalSourceAspect)
+    {
+    SetupSeedProject();
 
+    Utf8String externalSourceAspectClassId = GetDgnDb().Schemas().FindClass("BisCore.ExternalSourceAspect")->GetId().ToString();
+    Utf8String externalSourceAspectTypeFilter = SqlPrintfString("[bis_ElementMultiAspect].ECClassId=%s", externalSourceAspectClassId.c_str()).GetUtf8CP();
+    auto externalSourceAspectQuery = R"sql(
+        SELECT
+            [esa].[ECClassId],
+            group_concat(DISTINCT [ge].[ECClassId])
+        FROM [bis].[GeometricElement] [ge]
+        INNER JOIN [bis].[ExternalSourceAspect] [esa]
+            ON [esa].[Element].[Id] = [ge].[ECInstanceId] AND [esa].[Kind] <> 'Relationship'
+        GROUP BY [esa].[ECClassId])sql";
+
+    if ("check default value for disqualify_type_index")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDgnDb(), "PRAGMA disqualify_type_index FOR BisCore.ExternalSourceAspect"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0)) << "This disqualify_type_index must be set to true by default for BisCore.ExternalSourceAspect";
+        }
+
+    if ("ensure generated sql disqualify type filter expression for BisCore.ExternalSourceAspect")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDgnDb(), externalSourceAspectQuery));
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains("+" + externalSourceAspectTypeFilter));
+        }
+
+    if ("disable disqualify_type_index")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDgnDb(), "PRAGMA disqualify_type_index=FALSE FOR BisCore.ExternalSourceAspect"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if ("ensure when disqualify_type_index is set to false the generated native sql does not include '+'")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDgnDb(), externalSourceAspectQuery));
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(externalSourceAspectTypeFilter));
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @betest
 //---------------------------------------------------------------------------------------
@@ -110,7 +158,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_GeometricElement3d));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])")); 
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
@@ -235,7 +283,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
 
     // ensure the the root Subject still exists
         {
-        m_db->Elements().ClearCache(); 
+        m_db->Elements().ClearCache();
         SubjectCPtr subject = m_db->Elements().GetRootSubject();
         ASSERT_TRUE(subject.IsValid());
         }

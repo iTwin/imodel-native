@@ -12,21 +12,26 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IModelJsECPresentationUiStateProvider : IUiStateProvider
+struct IModelJsECPresentationUiStateProvider : IUiStateProvider, IConnectionsListener
 {
 private:
-    bmap<Utf8String, NavNodeKeySet> m_expandedNodesPerHierarchy;
     mutable BeMutex m_mutex;
+    ECPresentationManager const* m_manager;
+    bmap<bpair<IConnectionCP, Utf8String>, std::unique_ptr<UiState>> m_uiState;
 
 private:
-    ECPresentationResult AddNodeKeys(Utf8StringCR rulesetId, NavNodeKeyListCR keys);
-    ECPresentationResult RemoveNodeKeys(Utf8StringCR rulesetId, NavNodeKeyListCR keys);
+    UiState& GetUiState(IConnectionCR, Utf8StringCR);
 
 protected:
-    INavNodeKeysContainerCPtr _GetExpandedNodes(Utf8StringCR rulesetId) const override;
+    void _OnConnectionEvent(ConnectionEvent const&) override;
+    std::shared_ptr<UiState> _GetUiState(IConnectionCR, Utf8StringCR) const override;
+    bvector<RulesetUiState> _GetUiState(IConnectionCR) const override;
+    bvector<ConnectionUiState> _GetUiState(Utf8StringCR) const override;
 
 public:
-    ECPresentationResult UpdateHierarchyState(ECPresentationManager& manager, ECDbCR, Utf8StringCR rulesetId, Utf8StringCR change, Utf8StringCR serializedKeys);
+    IModelJsECPresentationUiStateProvider() : m_manager(nullptr) {}
+    ~IModelJsECPresentationUiStateProvider();
+    ECPresentationResult UpdateHierarchyState(ECPresentationManager& manager, ECDbCR, Utf8StringCR rulesetId, BeJsConst stateChanges);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

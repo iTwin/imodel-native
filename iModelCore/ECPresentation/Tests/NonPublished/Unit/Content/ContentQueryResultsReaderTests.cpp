@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "../../../../Source/Content/ContentQuery.h"
+#include "../../../../Source/Content/ContentQueryContracts.h"
 #include "../../../../Source/Content/ContentQueryResultsReader.h"
 #include "../Queries/QueryExecutorTests.h"
 #include "../../Helpers/TestHelpers.h"
@@ -43,21 +43,22 @@ TEST_F(ContentQueryResultsReaderTests, HandlesUnionSelectionFromClassWithPointPr
     AddField(*descriptor, *classE, ContentDescriptor::Property("e", *classE, *classE->GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
 
     SelectClass<ECClass> selectClass1(*classH, "h", false);
-    ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
     q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, classH, *q1, nullptr, {}, false, false), "h");
     q1->From(selectClass1);
 
     SelectClass<ECClass> selectClass2(*classE, "e", false);
-    ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr q2 = ComplexQueryBuilder::Create();
     q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, classE, *q2, nullptr, {}, false, false), "e");
     q2->From(selectClass2);
 
-    UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
+    UnionQueryBuilderPtr query = UnionQueryBuilder::Create({q1, q2});
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr item;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(item, reader));
@@ -85,7 +86,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromOneClass)
         instance.SetValue("MyID", ECValue("GadgetId"));
         instance.SetValue("Description", ECValue("Gadget 2"));
         });
-    
+
     Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
 
     ContentDescriptorPtr descriptor = CreateContentDescriptor();
@@ -93,14 +94,15 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromOneClass)
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
     descriptor->AddContentFlag(ContentFlags::MergeResults);
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "gadget");
     query->From(*m_gadgetClass, false, "gadget");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -160,11 +162,11 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromMultipleClasses)
     f2->AsPropertiesField()->AddProperty(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
     innerDescriptor->AddRootField(*f2);
 
-    ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
     q1->SelectContract(*ContentQueryContract::Create(1, *innerDescriptor, m_gadgetClass, *q1, nullptr, {}, false, false), "gadget");
     q1->From(*m_gadgetClass, false, "gadget");
 
-    ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr q2 = ComplexQueryBuilder::Create();
     q2->SelectContract(*ContentQueryContract::Create(2, *innerDescriptor, m_widgetClass, *q2, nullptr, {}, false, false), "widget");
     q2->From(*m_widgetClass, false, "widget");
 
@@ -176,14 +178,15 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromMultipleClasses)
         }
     outerDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query, nullptr, {}, false, false));
-    query->From(*UnionContentQuery::Create({q1, q2}));
+    query->From(*UnionQueryBuilder::Create({q1, q2}));
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -231,14 +234,15 @@ TEST_F(ContentQueryResultsReaderTests, HandlesStructProperties)
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StringProperty")));
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StructProperty")));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query, nullptr, {}, false), "this");
     query->From(*classI, false, "this");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -298,14 +302,15 @@ TEST_F(ContentQueryResultsReaderTests, HandlesArrayProperties)
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("IntsArray")));
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("StructsArray")));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query, nullptr, {}, false), "this");
     query->From(*classR, false, "this");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -354,15 +359,16 @@ TEST_F(ContentQueryResultsReaderTests, SelectsRelatedProperties)
             ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_gadgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -420,15 +426,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedProperties)
             ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_gadgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -487,15 +494,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedPropertiesO
         ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_gadgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -549,15 +557,16 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties)
             ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -623,15 +632,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
             ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -690,15 +700,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -762,15 +773,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -831,15 +843,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
             ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -900,15 +913,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
             ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -980,15 +994,16 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_DeepTre
             })
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGS});
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -1127,15 +1142,16 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
             })
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGS});
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -1219,7 +1235,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_Diamond
             })
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGW});
@@ -1227,8 +1243,9 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_Diamond
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -1339,7 +1356,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
             })
         }));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGW});
@@ -1347,8 +1364,9 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -1448,21 +1466,22 @@ TEST_F(ContentQueryResultsReaderTests, SelectsRelatedPropertiesFromOnlySingleCla
             ContentDescriptor::Property(relatedPropertyPath.GetTargetClass().GetAlias(), classD, *classD.GetPropertyP("StringProperty")->GetAsPrimitiveProperty())),
         }));
 
-    ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query1 = ComplexQueryBuilder::Create();
     query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &classE, *query1, nullptr), "this");
     query1->From(classE, false, "this");
     query1->Join(relatedPropertyPath);
 
-    ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query2 = ComplexQueryBuilder::Create();
     query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &classF, *query2, nullptr), "this");
     query2->From(classF, false, "this");
 
-    UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
+    UnionQueryBuilderPtr query = UnionQueryBuilder::Create({query1, query2});
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));
@@ -1527,14 +1546,15 @@ TEST_F(ContentQueryResultsReaderTests, UsesSuppliedECPropertyFormatterToFormatPr
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("BoolProperty")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("DoubleProperty")->GetAsPrimitiveProperty()));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "widget");
     query->From(*m_widgetClass, false, "widget");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
     reader.SetPropertyFormatter(formatter);
 
     ContentSetItemPtr record;
@@ -1570,14 +1590,15 @@ TEST_F(ContentQueryResultsReaderTests, DoesntIncludeFieldPropertyValueInstanceKe
     descriptor->SetContentFlags(descriptor->GetContentFlags() | (int)ContentFlags::ExcludeEditingData);
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "widget");
     query->From(*m_widgetClass, false, "widget");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
-    QueryExecutor executor(*m_connection, *query);
-    ContentReader reader(s_project->GetECDb().Schemas(), *query);
+    ContentQueryContractsFilter contracts(*query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
+    ContentReader reader(s_project->GetECDb().Schemas(), contracts);
 
     ContentSetItemPtr record;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(record, reader));

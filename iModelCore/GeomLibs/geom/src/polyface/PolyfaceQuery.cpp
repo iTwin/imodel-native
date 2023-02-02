@@ -1075,8 +1075,8 @@ bool PolyfaceQuery::HasFacets () const
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceQuery::IsTriangulated () const
     {
-    size_t numFacet, maxPerFace;
-    numFacet = GetNumFacet (maxPerFace);
+    size_t maxPerFace;
+    GetNumFacet (maxPerFace);
     return maxPerFace == 3;
     }
 

@@ -360,7 +360,6 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithMaximalPlanarFacets (bool mergeCoplan
     int readIndexOffset;
     if (!mtgFacets->GetGraphP ()->TrySearchLabelTag (MTG_LABEL_TAG_POLYFACE_READINDEX, readIndexOffset))
         return newMesh;
-    size_t errors = 0;
     MTGMask planarBoundaryMask = MTG_PRIMARY_EDGE_MASK;
     if (mtgFacets->BuildFacePlaneNormals ())
         {
@@ -374,9 +373,9 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithMaximalPlanarFacets (bool mergeCoplan
             if (CountMaskParityErrorAroundVertexLoops (*mtgFacets->GetGraphP (), planarBoundaryMask) == 0)
                 {
                 bvector<bvector<MTGNodeId>> loopNodes;
-                errors += CollectExtendedFaceLoops (*mtgFacets->GetGraphP (), loopNodes, planarBoundaryMask, vertexInColinearEdgeMask);
+                CollectExtendedFaceLoops (*mtgFacets->GetGraphP (), loopNodes, planarBoundaryMask, vertexInColinearEdgeMask);
                 bvector<bvector<int>> readIndexLoops;
-                errors += CollectLabels (*mtgFacets->GetGraphP (), readIndexOffset, loopNodes, readIndexLoops);
+                CollectLabels (*mtgFacets->GetGraphP (), readIndexOffset, loopNodes, readIndexLoops);
 #ifdef PrintExtendedLoops
                 Check::PrintHeading ("ExtendedFaceLoops", "nodes");
                 for (auto &loop : loopNodes)

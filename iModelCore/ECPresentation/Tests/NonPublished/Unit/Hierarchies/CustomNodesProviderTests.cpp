@@ -109,7 +109,6 @@ TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     EXPECT_TRUE(iter != provider->end());
     EXPECT_EQ(1, provider->GetNodesCount());
     ASSERT_TRUE((*iter).IsValid());
-    EXPECT_EQ(BeGuid(), (*iter)->GetParentNodeId());
     }
 
 /*---------------------------------------------------------------------------------**//**

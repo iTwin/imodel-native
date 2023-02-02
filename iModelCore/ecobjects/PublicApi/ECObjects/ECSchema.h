@@ -1227,6 +1227,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
     ECOBJECTS_EXPORT ECObjectsStatus SetPersistenceUnit(ECUnitCR unit); //!< Sets the provided ECUnit as the persistence unit.
     ECUnitCP GetPersistenceUnit() const {return m_persistenceUnit;} //!< Gets the Unit of measurement used for persisting the information
+    NamedFormatCP GetPersistenceFormat() const {return GetCachedPersistenceFormat();} //!< Get default format based on persistence unit.
 
     //! Constructs a NamedFormat and sets it as the default (First in the presentation format list).
     ECObjectsStatus SetDefaultPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr)

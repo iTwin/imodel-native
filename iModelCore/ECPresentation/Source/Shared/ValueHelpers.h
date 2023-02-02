@@ -46,6 +46,7 @@ public:
     static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, BeSQLite::EC::IECSqlValue const&);
     static ECN::ECValue GetECValueFromString(ECN::PrimitiveType, Utf8StringCR);
     ECPRESENTATION_EXPORT static ECN::ECValue GetECValueFromJson(ECN::PrimitiveType, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static bvector<ECN::ECValue> GetECValueSetFromJson(ECN::PrimitiveType, RapidJsonValueCR);
 
     static rapidjson::Document GetECInstanceKeyAsJson(ECInstanceKeyCR, rapidjson::MemoryPoolAllocator<>* = nullptr);
     static Utf8String GetECInstanceKeyAsJsonString(ECInstanceKeyCR);
@@ -76,12 +77,14 @@ public:
 
     static ECClassInstanceKey GetECClassInstanceKey(BeSQLite::EC::SchemaManagerCR, ECInstanceKeyCR);
 
-    static Utf8String GetECValueTypeName(ECN::ECValueCR);
+    static Utf8CP PrimitiveTypeAsString(ECN::PrimitiveType);
 
     static Utf8String PadNumbersInString(Utf8StringCR str);
     static Utf8String GuidToString(BeGuidCR guid);
 
     static Formatting::Format const* GetPresentationFormat(KindOfQuantityCR koq, ECPresentation::UnitSystem unitSystemGroup, std::map<std::pair<Utf8String, UnitSystem>, std::shared_ptr<Formatting::Format>> const& defaultFormats);
+
+    static rapidjson::Document ToRapidJson(BeJsConst json);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

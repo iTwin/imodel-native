@@ -76,7 +76,7 @@ struct QueryExecutor : NonCopyableClass
 {
 private:
     IConnectionCR m_connection;
-    PresentationQueryBase const* m_query;
+    PresentationQuery const* m_query;
     CachedECSqlStatementPtr m_statement;
     bool m_step;
     bool m_readStarted;
@@ -91,9 +91,9 @@ protected:
 
 public:
     ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR);
-    ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, PresentationQueryBase const& query);
-    ECPRESENTATION_EXPORT void SetQuery(PresentationQueryBase const& query);
-    ECPRESENTATION_EXPORT PresentationQueryBase const* GetQuery() const;
+    ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, PresentationQuery const& query);
+    ECPRESENTATION_EXPORT void SetQuery(PresentationQuery const& query);
+    ECPRESENTATION_EXPORT PresentationQuery const* GetQuery() const;
     bool IsReadFinished() const { return m_readFinished; }
     bool IsReadStarted() const { return m_readStarted; }
     ECPRESENTATION_EXPORT void Reset();
@@ -167,14 +167,14 @@ struct QueryExecutorHelper
 private:
     QueryExecutorHelper() {}
 public:
-    ECPRESENTATION_EXPORT static uint64_t ReadUInt64(IConnectionCR, GenericQueryCR);
-    ECPRESENTATION_EXPORT static Utf8String ReadText(IConnectionCR, GenericQueryCR);
+    ECPRESENTATION_EXPORT static uint64_t ReadUInt64(IConnectionCR, PresentationQueryCR);
+    ECPRESENTATION_EXPORT static Utf8String ReadText(IConnectionCR, PresentationQueryCR);
 
     ECPRESENTATION_EXPORT static DbResult Step(ECSqlStatement&);
 
     //! Executes query and forwards each result row to accumulator.
     //! @returns QueryExecutorStatus::Done if operation is successful.
-    ECPRESENTATION_EXPORT static QueryExecutorStatus ExecuteQuery(IConnectionCR, PresentationQueryBase const&,
+    ECPRESENTATION_EXPORT static QueryExecutorStatus ExecuteQuery(IConnectionCR, PresentationQuery const&,
         IQueryResultAccumulator&, ICancelationTokenCR);
 };
 

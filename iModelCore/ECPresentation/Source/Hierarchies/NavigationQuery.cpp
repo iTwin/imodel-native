@@ -113,7 +113,7 @@ int NavigationQueryExtendedData::GetRangeIndex(DbValue const& dbValue) const
                     break;
                     }
                 default:
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled range value type: %d", (int)from.GetType()));
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled range value type: %d. Defaulting to 'other` range.", (int)from.GetType()));
                 }
             }
         }
@@ -146,11 +146,7 @@ static Utf8String GetJsonAsString(RapidJsonValueCR json)
                 return Utf8PrintfString("%.2f", json.GetDouble());
             }
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unexpected type of JSON: %d", (int)json.GetType()));
-    rapidjson::StringBuffer buf;
-    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
-    json.Accept(writer);
-    return buf.GetString();
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unexpected type of JSON for property value range: %d", (int)json.GetType()));
     }
 
 /*---------------------------------------------------------------------------------**//**

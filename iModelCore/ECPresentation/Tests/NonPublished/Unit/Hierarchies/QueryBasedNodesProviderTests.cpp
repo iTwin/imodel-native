@@ -55,7 +55,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
 
     ICancelationTokenPtr cancelationToken = new TestCancelationToken([&nodesCached]()
@@ -68,7 +68,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     // verify the data source is still invalid
     ASSERT_TRUE(cachedHierarchyLevel.IsValid());
     ASSERT_TRUE(cachedDataSource.IsValid());
-    EXPECT_FALSE(m_nodesCache->IsInitialized(cachedDataSource, RulesetVariables()));
+    EXPECT_FALSE(m_nodesCache->IsDataSourceInitialized(cachedDataSource.GetId()));
     EXPECT_EQ(2, provider->GetNodesCount());
 
     bool wasCancelled = false;
@@ -89,7 +89,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     // verify the nodes cache is empty
     NavNodesProviderContextPtr context = m_providerContextFactory.Create(*m_connection, cachedHierarchyLevel.GetRulesetId().c_str(),
         nullptr, m_nodesCache, nullptr, RulesetVariables());
-    EXPECT_TRUE(m_nodesCache->GetHierarchyLevel(*context, cachedHierarchyLevel).IsNull());
+    EXPECT_TRUE(m_nodesCache->GetHierarchyLevel(*context, cachedHierarchyLevel.GetId()).IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,8 +101,8 @@ TEST_F(QueryBasedNodesProviderTests, HasNodesDoesntQueryChildrenIfAlwaysReturnsC
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     EXPECT_TRUE(provider->HasNodes());
@@ -119,12 +119,12 @@ TEST_F(QueryBasedNodesProviderTests, DoesntFlagProviderAsInitializedInCacheIfPro
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     provider->SetPageOptions(std::make_shared<NavNodesProviderContext::PageOptions>(0, 1));
     NavNodeCPtr node = *provider->begin();
 
-    EXPECT_FALSE(m_nodesCache->IsInitialized(provider->GetIdentifier(), m_context->GetRulesetVariables()));
+    EXPECT_FALSE(m_nodesCache->IsDataSourceInitialized(provider->GetIdentifier().GetId()));
     }

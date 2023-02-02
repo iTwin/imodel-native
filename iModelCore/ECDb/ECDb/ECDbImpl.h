@@ -21,7 +21,7 @@ struct IdFactory final: NonCopyableClass {
         private:
             mutable std::atomic<uint64_t> m_id;
             bool m_isIntializedFromTable;
-        public:         
+        public:
             explicit IdSequence(uint64_t id, bool isIntializedFromTable) :m_id(id), m_isIntializedFromTable(isIntializedFromTable){}
             BeInt64Id NextId() const { BeAssert(m_isIntializedFromTable); return BeInt64Id(++m_id); }
             bool IsIntializedFromTable() const { return m_isIntializedFromTable; }
@@ -80,6 +80,8 @@ struct IdFactory final: NonCopyableClass {
         bool Reset() const;
         static std::unique_ptr<IdFactory> Create(ECDbCR ecdb);
 };
+
+struct PragmaManager;
 //=======================================================================================
 //! ECDb::Impl is the private implementation of ECDb hidden from the public headers
 //! (PIMPL idiom)
@@ -132,7 +134,7 @@ private:
             };
         };
 
-    
+
     static bool s_isInitialized;
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
@@ -142,6 +144,7 @@ private:
     ChangeManager m_changeManager;
     SettingsManager m_settingsManager;
     StatementCache m_sqliteStatementCache;
+    mutable std::unique_ptr<InstanceReader> m_instanceReader;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
@@ -153,14 +156,13 @@ private:
     mutable std::unique_ptr<ClassIdFunc> m_classIdFunc;
     mutable std::unique_ptr<InstanceOfFunc> m_instanceOfFunc;
     mutable std::unique_ptr<IdFactory> m_idFactory;
+    mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
+    mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
+    mutable std::unique_ptr<PropExistsFunc> m_propExistsFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
+    mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
-        {
-        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
-        // set default logger
-        IssueDataSource::AppendLogSink(m_issueReporter, "ECDb");
-        }
+    explicit Impl(ECDbR ecdb);
 
     //not copyable
     Impl(Impl const&) = delete;
@@ -218,12 +220,21 @@ public:
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
+    PragmaManager& GetPragmaManager() const;
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
     //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
     //! an error from any of its methods.
     ClearCacheCounter const& GetClearCacheCounter() const { return m_clearCacheCounter; }
-
+    InstanceReader& GetInstanceReader() const { 
+        if (m_instanceReader == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_instanceReader == nullptr) {
+                m_instanceReader = std::make_unique<InstanceReader>(m_ecdb);
+            }
+        }
+        return *m_instanceReader; 
+    }
     IssueDataSource const& Issues() const { return m_issueReporter; }
 
     BeMutex& GetMutex() const { return m_mutex; }
