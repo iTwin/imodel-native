@@ -874,17 +874,18 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
     searchPaths.push_back(ecdbPath);
     schemaContext->AddFinalSchemaPaths(searchPaths);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType, BeJsConst opts)
+DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType, const SchemaImportOptions& opts)
     {
     if (0 == schemaSources.size())
         return BE_SQLITE_ERROR;
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(
-        false /*=acceptLegacyImperfectLatestCompatibleMatch*/,
-        true /*=includeFilesWithNoVerExt*/);
+    ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
+    if (schemaContext.IsNull())
+        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
 
     JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
     bvector<ECSchemaCP> schemas;
@@ -916,7 +917,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemas.size())
         return BE_SQLITE_ERROR;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas, opts[json_schemaLockHeld()].asBool(false)); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 
