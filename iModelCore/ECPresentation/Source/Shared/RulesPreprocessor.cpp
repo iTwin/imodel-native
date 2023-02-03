@@ -888,95 +888,95 @@ DefaultPropertyCategoryOverrideCP RulesPreprocessor::_GetDefaultPropertyCategory
         if (MeetsSchemaRequirements(m_connection.GetECDb(), rule->GetRequiredSchemaSpecifications(), *rule))
             rules.insert(CustomizationRuleOrder<DefaultPropertyCategoryOverride>(rule, 0));
         }
-if (!rules.empty())
-return (*rules.begin()).GetRule();
-return nullptr;
+    if (!rules.empty())
+        return (*rules.begin()).GetRule();
+    return nullptr;
     }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules(CustomizationRuleByNodeParametersCR params)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules(CustomizationRuleByNodeParametersCR params)
+    {
+    std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        std::function<ExpressionContextPtr()> contextPreparer = [&]()
-            {
-            ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(static_cast<NavNodeCR>(params.GetNode()), static_cast<NavNodeCP>(params.GetParentNode()),
-                m_connection, m_rulesetVariables, m_usedVariablesListener);
-            return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
-            };
-        OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
-        bvector<ExtendedDataRuleCP> rules = GetCustomizationRules(m_connection.GetECDb(), params.GetNode(), m_ruleset, &PresentationRuleSet::GetExtendedDataRules);
-        bvector<ExtendedDataRuleCP> matchingRules;
-        for (ExtendedDataRuleCP rule : rules)
-            {
-            if (rule->GetOnlyIfNotHandled() && !matchingRules.empty())
-                continue;
-
-            if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
-                matchingRules.push_back(rule);
-            }
-        return matchingRules;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules()
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(static_cast<NavNodeCR>(params.GetNode()), static_cast<NavNodeCP>(params.GetParentNode()),
+            m_connection, m_rulesetVariables, m_usedVariablesListener);
+        return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
+        };
+    OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
+    bvector<ExtendedDataRuleCP> rules = GetCustomizationRules(m_connection.GetECDb(), params.GetNode(), m_ruleset, &PresentationRuleSet::GetExtendedDataRules);
+    bvector<ExtendedDataRuleCP> matchingRules;
+    for (ExtendedDataRuleCP rule : rules)
         {
-        return GetRootRules<ExtendedDataRule>(m_connection.GetECDb(), m_ruleset, &PresentationRuleSet::GetExtendedDataRules);
-        }
+        if (rule->GetOnlyIfNotHandled() && !matchingRules.empty())
+            continue;
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules(CustomizationRuleByNodeParametersCR params)
-        {
-        std::function<ExpressionContextPtr()> contextPreparer = [&]()
-            {
-            ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(static_cast<NavNodeCR>(params.GetNode()), static_cast<NavNodeCP>(params.GetParentNode()),
-                m_connection, m_rulesetVariables, m_usedVariablesListener);
-            return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
-            };
-        OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
-        bvector<NodeArtifactsRuleCP> rules = GetCustomizationRules(m_connection.GetECDb(), params.GetNode(), m_ruleset, &PresentationRuleSet::GetNodeArtifactRules);
-        bvector<NodeArtifactsRuleCP> matchingRules;
-        for (NodeArtifactsRuleCP rule : rules)
-            {
-            if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
-                matchingRules.push_back(rule);
-            }
-        return matchingRules;
+        if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
+            matchingRules.push_back(rule);
         }
+    return matchingRules;
+    }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules(CustomizationRuleBySpecParametersCR params)
-        {
-        return GetCustomizationRules(m_connection.GetECDb(), { params.GetSpecificationHash() }, m_ruleset, &PresentationRuleSet::GetNodeArtifactRules);
-        }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules()
+    {
+    return GetRootRules<ExtendedDataRule>(m_connection.GetECDb(), m_ruleset, &PresentationRuleSet::GetExtendedDataRules);
+    }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules(CustomizationRuleByNodeParametersCR params)
+    {
+    std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        return GetRootRules<NodeArtifactsRule>(m_connection.GetECDb(), m_ruleset, &PresentationRuleSet::GetNodeArtifactRules);
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(static_cast<NavNodeCR>(params.GetNode()), static_cast<NavNodeCP>(params.GetParentNode()),
+            m_connection, m_rulesetVariables, m_usedVariablesListener);
+        return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
+        };
+    OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
+    bvector<NodeArtifactsRuleCP> rules = GetCustomizationRules(m_connection.GetECDb(), params.GetNode(), m_ruleset, &PresentationRuleSet::GetNodeArtifactRules);
+    bvector<NodeArtifactsRuleCP> matchingRules;
+    for (NodeArtifactsRuleCP rule : rules)
+        {
+        if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
+            matchingRules.push_back(rule);
         }
+    return matchingRules;
+    }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ContentRuleCP> RulesPreprocessor::_GetContentRules()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules(CustomizationRuleBySpecParametersCR params)
+    {
+    return GetCustomizationRules(m_connection.GetECDb(), { params.GetSpecificationHash() }, m_ruleset, &PresentationRuleSet::GetNodeArtifactRules);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules()
+    {
+    return GetRootRules<NodeArtifactsRule>(m_connection.GetECDb(), m_ruleset, &PresentationRuleSet::GetNodeArtifactRules);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ContentRuleCP> RulesPreprocessor::_GetContentRules()
+    {
+    bvector<ContentRuleCP> result;
+    for (auto rule : m_ruleset.GetContentRules())
         {
-        bvector<ContentRuleCP> result;
-        for (auto rule : m_ruleset.GetContentRules())
-            {
-            if (MeetsSchemaRequirements(m_connection.GetECDb(), rule->GetRequiredSchemaSpecifications(), *rule))
-                result.push_back(rule);
-            }
-        return result;
+        if (MeetsSchemaRequirements(m_connection.GetECDb(), rule->GetRequiredSchemaSpecifications(), *rule))
+            result.push_back(rule);
         }
+    return result;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

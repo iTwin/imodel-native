@@ -521,5 +521,4 @@ struct INodeInstanceKeysProvider
         bool ContainsInstanceKey(NavNodeCR node, ECInstanceKeyCR instanceKey) const { return _ContainsInstanceKey(node, instanceKey); }
     };
 
-
 END_BENTLEY_ECPRESENTATION_NAMESPACE
