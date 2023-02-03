@@ -981,26 +981,47 @@ bvector<ContentRuleCP> RulesPreprocessor::_GetContentRules()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<NavNodeKeyCPtr> SplitLabelGroupedKeys(IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider, LabelGroupingNodeKey const* key)
+static bvector<NavNodeKeyCPtr> SplitLabelGroupedKeys(IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider, LabelGroupingNodeKey const& key)
     {
     bvector<NavNodeKeyCPtr> result;
     bmap<ECN::ECClassId, bvector<ECInstanceKey>> instanceKeyMap;
-    instanceKeyProvider->IterateInstanceKeys(*key,
+    instanceKeyProvider->IterateInstanceKeys(key,
         [&instanceKeyMap](ECInstanceKey instanceKey)
             {
-                if (instanceKeyMap[instanceKey.GetClassId()].empty())
-                    instanceKeyMap[instanceKey.GetClassId()] = { instanceKey };
-                else
-                    instanceKeyMap[instanceKey.GetClassId()].push_back(instanceKey);
-                return true;
+            if (instanceKeyMap.find(instanceKey.GetClassId()) == instanceKeyMap.end())
+                instanceKeyMap[instanceKey.GetClassId()] = { instanceKey };
+            else
+                instanceKeyMap[instanceKey.GetClassId()].push_back(instanceKey);
+            return true;
             });
     for (auto& instanceKeys : instanceKeyMap)
         {
         std::unique_ptr<bvector<ECInstanceKey>> keyList = std::make_unique<bvector<ECInstanceKey>>(instanceKeys.second);
-        result.push_back(LabelGroupingNodeKey::Create(connection, key->GetSpecificationIdentifier(),
-            nullptr, key->GetLabel(), instanceKeys.second.size(), nullptr, std::move(keyList)));
+        result.push_back(LabelGroupingNodeKey::Create(connection, key.GetSpecificationIdentifier(),
+            nullptr, key.GetLabel(), instanceKeys.second.size(), nullptr, std::move(keyList)));
         }
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<NavNodeKeyCPtr> GetSingleNodeKeys(INavNodeKeysContainerCR inputNodeKeys, IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider)
+    {
+    bvector<NavNodeKeyCPtr> singleNodeKeys;
+    for (NavNodeKeyCPtr const& inputNodeKey : inputNodeKeys)
+        {
+        if (inputNodeKey->AsLabelGroupingNodeKey())
+            {
+            bvector<NavNodeKeyCPtr> keys = SplitLabelGroupedKeys(connection, instanceKeyProvider, *inputNodeKey->AsLabelGroupingNodeKey());
+            singleNodeKeys.insert(singleNodeKeys.end(), keys.begin(), keys.end());
+            }
+        else
+            {
+            singleNodeKeys.push_back(inputNodeKey);
+            }
+        }
+    return singleNodeKeys;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1010,20 +1031,8 @@ ContentRuleInputKeysContainer RulesPreprocessor::_GetContentSpecifications(Conte
     {
     ContentRuleInputKeysContainer specs;
     bset<NavNodeKeyCP> handledNodes;
-    bvector<NavNodeKeyCPtr> singleNodeKeys;
-    for (NavNodeKeyCPtr const& inputNodeKey : params.GetInputNodeKeys())
-        {
-        if (inputNodeKey->GetType().Equals("DisplayLabelGroupingNode"))
-            {
-            bvector<NavNodeKeyCPtr> keys = SplitLabelGroupedKeys(m_connection, params.GetInstanceKeyProvider(), inputNodeKey->AsLabelGroupingNodeKey());
-            singleNodeKeys.insert(singleNodeKeys.end(), keys.begin(), keys.end());
-            }
-        else
-            {
-            singleNodeKeys.push_back(inputNodeKey);
-            }
-        }
-
+    bvector<NavNodeKeyCPtr> singleNodeKeys = GetSingleNodeKeys(params.GetInputNodeKeys(), m_connection, params.GetInstanceKeyProvider());
+   
     for (NavNodeKeyCPtr const& inputNodeKey : singleNodeKeys)
         {
         std::function<ExpressionContextPtr()> contextPreparer = [&]()
