@@ -321,10 +321,11 @@ private:
         if (extendedData.HasECClassId())
             classIds.insert(extendedData.GetECClassId());
         else if (ctx.m_node->GetKey()->AsECInstanceNodeKey())
-            {
             for (auto const& key : ctx.m_node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys())
                 classIds.insert(key.GetClass()->GetId());
-            }
+        else if (ctx.m_node->GetKey()->AsLabelGroupingNodeKey() && ctx.m_node->GetKey()->AsLabelGroupingNodeKey()->GetGroupedInstanceKeys() != nullptr)
+            for(auto const& key : *ctx.m_node->GetKey()->AsLabelGroupingNodeKey()->GetGroupedInstanceKeys())
+                classIds.insert(key.GetClassId());
 
         evalResult.InitECValue().SetBoolean(false);
         for (auto const& classId : classIds)

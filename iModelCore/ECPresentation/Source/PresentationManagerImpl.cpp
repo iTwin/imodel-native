@@ -1314,7 +1314,11 @@ private:
                     });
                 continue;
                 }
-
+            if (key->AsGroupingNodeKey() && key->AsGroupingNodeKey()->GetGroupedInstanceKeys() != nullptr)
+                {
+                instanceKeys.insert(instanceKeys.end(), key->AsGroupingNodeKey()->GetGroupedInstanceKeys()->begin(), 
+                    key->AsGroupingNodeKey()->GetGroupedInstanceKeys()->end());
+                }
 
             m_nodeInstanceKeysProvider->IterateInstanceKeys(*key, [&](ECInstanceKey k)
                 {
@@ -1425,7 +1429,8 @@ SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContent
 
     // get content specifications
     NodeLabelCalculator nodeLabelCalculator(context->GetSchemaHelper(), *m_connections, connection, key.GetRulesetId(), context->GetRulesPreprocessor(), variables, context->GetECExpressionsCache(), *m_nodesFactory);
-    IRulesPreprocessor::ContentRuleParameters params(key.GetInputNodeKeys(), key.GetPreferredDisplayType(), key.GetSelectionInfo(), nodeLabelCalculator, &context->GetNodesLocater());
+    std::unique_ptr<INodeInstanceKeysProvider> instanceKeysProvider = context->CreateNodeInstanceKeysProvider();
+    IRulesPreprocessor::ContentRuleParameters params(key.GetInputNodeKeys(), key.GetPreferredDisplayType(), key.GetSelectionInfo(), nodeLabelCalculator, &context->GetNodesLocater(), instanceKeysProvider.get());
     ContentRuleInputKeysContainer specs = context->GetRulesPreprocessor().GetContentSpecifications(params);
     DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Creating content provider using %" PRIu64 " specifications.", (uint64_t)specs.size()));
 

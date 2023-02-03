@@ -16253,3 +16253,116 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyOverrideRuleWithAst
     // validate content set
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a1.get()}, *content);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetContentForDisplayLabelGroupingNode, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropC" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGroupingNode)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("PropB", ECValue(3)); });
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("PropC", ECValue("string")); });
+    ECClassInstanceKey instanceBKey = RulesEngineTestHelpers::GetInstanceKey(*instanceB);
+    // setup ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
+        bvector<MultiSchemaClass*> { new MultiSchemaClass(BeTest::GetNameOfCurrentTest(), true, bvector<Utf8String> { "A" })}, bvector<MultiSchemaClass*>());
+    rootRule->AddSpecification(*spec);
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "type", "node", "", ""));
+    rules->AddPresentationRule(*rootRule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification("label") }));
+    ContentRuleP contentRule = new ContentRule(Utf8PrintfString("SelectedNode.IsOfClass(\"B\", \"%s\")", classB->GetSchema().GetName().c_str()), 1, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*contentRule);
+    m_locater->AddRuleSet(*rules);
+    // cache hierarchy
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
+    ASSERT_EQ(2, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str());
+    // validate content descriptor
+    NavNodeKeyCPtr selectedNode = rootNodes[0]->GetKey();
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*selectedNode))));
+    ASSERT_TRUE(descriptor.IsValid());
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    // validate content
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+    ASSERT_EQ(1, contentSet[0]->GetKeys().size());
+    EXPECT_EQ(contentSet[0]->GetKeys()[0], instanceBKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetContentForDisplayLabelGroupingNode_WithMultipleRulesets, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropC" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGroupingNode_WithMultipleRulesets)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("PropB", ECValue(3)); });
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("PropC", ECValue("string")); });
+    ECClassInstanceKey instanceBKey = RulesEngineTestHelpers::GetInstanceKey(*instanceB);
+    // setup ruleset
+    PresentationRuleSetPtr hierarchyRules = PresentationRuleSet::CreateInstance(Utf8PrintfString("%s_Nodes", BeTest::GetNameOfCurrentTest()));
+    PresentationRuleSetPtr contentRules = PresentationRuleSet::CreateInstance(Utf8PrintfString("%s_Content", BeTest::GetNameOfCurrentTest()));
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
+        bvector<MultiSchemaClass*> { new MultiSchemaClass(BeTest::GetNameOfCurrentTest(), true, bvector<Utf8String> { "A" })}, bvector<MultiSchemaClass*>());
+    rootRule->AddSpecification(*spec);
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "type", "node", "", ""));
+    hierarchyRules->AddPresentationRule(*rootRule);
+    hierarchyRules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification("label") }));
+    ContentRuleP contentRule = new ContentRule(Utf8PrintfString("SelectedNode.IsOfClass(\"B\", \"%s\")", classB->GetSchema().GetName().c_str()), 1, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    contentRules->AddPresentationRule(*contentRule);
+    m_locater->AddRuleSet(*hierarchyRules);
+    m_locater->AddRuleSet(*contentRules);
+    // cache hierarchy
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), hierarchyRules->GetRuleSetId(), RulesetVariables())));
+    ASSERT_EQ(2, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str());
+    // validate content descriptor
+    NavNodeKeyCPtr selectedNode = rootNodes[0]->GetKey();
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        contentRules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*selectedNode))));
+    ASSERT_TRUE(descriptor.IsValid());
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    // validate content
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+    ASSERT_EQ(1, contentSet[0]->GetKeys().size());
+    EXPECT_EQ(contentSet[0]->GetKeys()[0], instanceBKey);
+    }
+

@@ -67,6 +67,9 @@ static bset<ECClassId> GetClassIds(NavNodeKeyCR key)
         ids.insert(key.AsECClassGroupingNodeKey()->GetECClassId());
     else if (key.AsECPropertyGroupingNodeKey())
         ids.insert(key.AsECPropertyGroupingNodeKey()->GetECClassId());
+    else if (key.AsLabelGroupingNodeKey() && key.AsLabelGroupingNodeKey()->GetGroupedInstanceKeys() != nullptr)
+        for (auto const& instanceKey : *key.AsLabelGroupingNodeKey()->GetGroupedInstanceKeys())
+            ids.insert(instanceKey.GetClassId());
     return ids;
     }
 
