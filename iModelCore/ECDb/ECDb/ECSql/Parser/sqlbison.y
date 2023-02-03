@@ -117,8 +117,8 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_TRUE SQL_TOKEN_UNION
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_USING SQL_TOKEN_VALUE SQL_TOKEN_VALUES
-%token <pParseNode> SQL_TOKEN_WHERE
-
+%token <pParseNode> SQL_TOKEN_WHERE 
+%token <pParseNode> SQL_TOKEN_DOLLAR
 %token <pParseNode> SQL_BITWISE_NOT
 
 /* time and date functions */
@@ -148,6 +148,8 @@ using namespace connectivity;
 
 %left <pParseNode> SQL_TOKEN_OR
 %left <pParseNode> SQL_TOKEN_AND
+
+%left <pParseNode> SQL_ARROW
 
 %left <pParseNode> SQL_BITWISE_OR
 %left <pParseNode> SQL_BITWISE_AND
@@ -205,7 +207,7 @@ using namespace connectivity;
 %type <pParseNode> table_node tablespace_qualified_class_name qualified_class_name class_name table_primary_as_range_column opt_as
 %type <pParseNode> table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
-%type <pParseNode> when_operand_list when_operand case_operand
+%type <pParseNode> when_operand_list when_operand case_operand opt_extract_value
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_disqualify_primary_join opt_disqualify_polymorphic_constraint
 
 /* LIMIT and OFFSET */
@@ -1609,6 +1611,16 @@ cast_spec:
             $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
+
+opt_extract_value: 
+      { $$ = SQL_NEW_RULE; }
+    | SQL_ARROW  property_path 
+        {
+           $$ = SQL_NEW_RULE;
+           $$->append($2);
+    
+        }
+    ;
 value_exp_primary:
         unsigned_value_spec
       | fct_spec
@@ -2002,13 +2014,19 @@ property_path_entry:
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
         }
+	|   SQL_TOKEN_DOLLAR
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("$", SQL_NODE_PUNCTUATION));
+        }          
     ;
 
 column_ref:
-		property_path
+		property_path opt_extract_value
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
+            $$->append($2);
 		}
 
 
@@ -2483,7 +2501,7 @@ OParseContext            OSQLParser::s_aDefaultContext;
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     {
-    m_pParseTree =std::unique_ptr<OSQLParseNode>(pNewParseTree->detach());
+    m_pParseTree = pNewParseTree->detach();
     }
 //-----------------------------------------------------------------------------
 
@@ -2548,7 +2566,7 @@ static Utf8String delComment(Utf8String const& rQuery)
     return aBuf;
 }
 //-----------------------------------------------------------------------------
-std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,Utf8String const& rStatement, sal_Bool bInternational) {
+OSQLParseNode* OSQLParser::parseTree (Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational) {
     Utf8String sTemp = delComment(rStatement);
     m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
     m_pParseTree = nullptr;
@@ -2563,7 +2581,7 @@ std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,
         return nullptr;
         }
 
-    return std::move(m_pParseTree);
+    return m_pParseTree;
     }
 //-----------------------------------------------------------------------------
 Utf8String OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext)
