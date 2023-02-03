@@ -22,11 +22,11 @@ struct UsedRulesetVariablesListener;
 struct INodeInstanceKeysProvider
 {
 protected:
-    virtual void _IterateInstanceKeys(NavNodeCR, std::function<bool(ECInstanceKey)>) const = 0;
+    virtual void _IterateInstanceKeys(NavNodeKeyCR, std::function<bool(ECInstanceKey)>) const = 0;
     virtual bool _ContainsInstanceKey(NavNodeCR, ECInstanceKeyCR) const = 0;
 public:
     virtual ~INodeInstanceKeysProvider() {}
-    void IterateInstanceKeys(NavNodeCR node, std::function<bool(ECInstanceKey)> cb) const { _IterateInstanceKeys(node, cb); }
+    void IterateInstanceKeys(NavNodeKeyCR nodeKey, std::function<bool(ECInstanceKey)> cb) const { _IterateInstanceKeys(nodeKey, cb); }
     bool ContainsInstanceKey(NavNodeCR node, ECInstanceKeyCR instanceKey) const { return _ContainsInstanceKey(node, instanceKey); }
 };
 
@@ -78,8 +78,8 @@ public:
     NavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     RulesetVariables const& GetRulesetVariables() const {return *m_rulesetVariables;}
     ECPRESENTATION_EXPORT IUsedRulesetVariablesListener& GetUsedVariablesListener() const;
-    ECPRESENTATION_EXPORT void SetUsedVariablesListener(RulesDrivenProviderContextCR other, bool makeCopy);
-    bset<Utf8String> GetRelatedVariablesIds() const;
+    ECPRESENTATION_EXPORT void InitUsedVariablesListener(bset<Utf8String> const& parentVariables, IUsedRulesetVariablesListener* parentListener);
+    bset<Utf8String> const& GetRelatedVariablesIds() const;
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}
     ECPRESENTATION_EXPORT IRulesPreprocessorR GetRulesPreprocessor() const;

@@ -276,7 +276,6 @@ DEllipse3d          *pEllipse               /* => ellipse geometry from second c
     int         i;
     double      tol = jmdlRG_getTolerance (pRG);
     double      tol2 = tol * tol;
-    int         numClose;
 
     int lineNode, ellipseNode;
     int numIntersection;
@@ -288,7 +287,7 @@ DEllipse3d          *pEllipse               /* => ellipse geometry from second c
 
     pEllipse->EvaluateEndPoints (ellipsePoint[0], ellipsePoint[1]);
 
-    numClose = jmdlRIMSBS_computeSquaredXYDistancesExt (endDist2, isClose, linePoint, true, ellipsePoint, false, tol2);
+    jmdlRIMSBS_computeSquaredXYDistancesExt (endDist2, isClose, linePoint, true, ellipsePoint, false, tol2);
 
     jmdlRIMSBS_declareEndPointIntersections
                         (
@@ -360,7 +359,7 @@ DEllipse3d          *pEllipse1              /* => ellipse geometry from second c
     bool        isClose[2][2];
     double      endDist2[2][2];
 
-    int numIntersection, numClose;
+    int numIntersection;
     int i;
     double      tol = jmdlRG_getTolerance (pRG);
     double      tol2 = tol * tol;
@@ -375,7 +374,7 @@ DEllipse3d          *pEllipse1              /* => ellipse geometry from second c
     ellipse0NodeId = jmdlRGEdge_getNodeId (pEdgeData0, 0);
     ellipse1NodeId = jmdlRGEdge_getNodeId (pEdgeData1, 0);
 
-    numClose = jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, ellipse0End, ellipse1End, tol2);
+    jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, ellipse0End, ellipse1End, tol2);
 
     jmdlRIMSBS_declareEndPointIntersections
                         (
@@ -438,7 +437,6 @@ MSBsplineCurve      *pCurve                 /* => curve data from second edge */
     int             i;
     double          tol = jmdlRG_getTolerance (pRG);
     double          tol2 = tol * tol;
-    int             numClose;
 
     int             numIntersection;
     double          *pSegmentParam;
@@ -458,7 +456,7 @@ MSBsplineCurve      *pCurve                 /* => curve data from second edge */
     lineNodeId = jmdlRGEdge_getNodeId (pEdgeData0, 0);
     curveNodeId = jmdlRGEdge_getNodeId (pEdgeData1, 0);
 
-    numClose = jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, linePoint, curvePoint, tol2);
+    jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, linePoint, curvePoint, tol2);
 
     jmdlRIMSBS_declareEndPointIntersections
                         (
@@ -626,7 +624,7 @@ MSBsplineCurve      *pCurve1                /* => curve data from second edge */
     DPoint3d    *pIntersectionPoint;
     double      *pParam0, *pParam1;
 
-    int numIntersection, numClose;
+    int numIntersection;
     int i;
     double      tol = jmdlRG_getTolerance (pRG);
     double      intersectionTol = tol;
@@ -649,7 +647,7 @@ MSBsplineCurve      *pCurve1                /* => curve data from second edge */
     curve0NodeId = jmdlRGEdge_getNodeId (pEdgeData0, 0);
     curve1NodeId = jmdlRGEdge_getNodeId (pEdgeData1, 0);
 
-    numClose = jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, curve0End, curve1End, tol2);
+    jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, curve0End, curve1End, tol2);
 
     jmdlRIMSBS_declareEndPointIntersections
                         (
@@ -727,11 +725,11 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
     double      *pParam0, *pParam1, theta1;
     Transform ellipseFrame, inverseFrame;
 
-    int numIntersection, numClose;
+    int numIntersection;
     int i;
     double      tol = jmdlRG_getTolerance (pRG);
     double      tol2 = tol * tol;
-    double      f0, f1, s1;
+    double      f0, f1;
     MSBsplineCurve curve1;
     RotMatrix z0Matrix;
 
@@ -748,7 +746,7 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
     curve1NodeId = jmdlRGEdge_getNodeId (pEdgeData1, 0);
 
 
-    numClose = jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, curve0End, curve1End, tol2);
+    jmdlRIMSBS_computeSquaredXYDistances (endDist2, isClose, curve0End, curve1End, tol2);
 
     jmdlRIMSBS_declareEndPointIntersections
                         (
@@ -805,7 +803,6 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
         for (i = 0; i < numIntersection; i++)
             {
             f0 = pParam0[i];
-            s1 = pParam1[i];
 
             inverseFrame.Multiply (&ellipseCoffs, &pIntersectionPoint[i], 1);
             theta1 = Angle::Atan2 (ellipseCoffs.y, ellipseCoffs.x);

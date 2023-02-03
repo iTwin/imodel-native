@@ -31,7 +31,6 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
     m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys), m_contentFlags(other.m_contentFlags)
     {
     Init();
-    SetUsedVariablesListener(other, false);
 
     if (other.IsSelectionContext())
         SetSelectionInfo(other);
@@ -101,7 +100,7 @@ SpecificationContentProvider::SpecificationContentProvider(SpecificationContentP
     {
     m_descriptor = other.m_descriptor;
     if (other.m_queries)
-        m_queries = std::make_unique<ContentQuerySet>(*other.m_queries);
+        m_queries = std::make_unique<QuerySet>(*other.m_queries);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,7 +487,7 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
             (uint64_t)item.GetKeys().size(), item.GetClass()->GetFullName()));
 
         uint64_t contractId = ContentSetItemExtendedData(item).GetContractId();
-        ContentQueryContract const* contract = _GetContentQuerySet().GetContract(contractId);
+        ContentQueryContract const* contract = ContentQueryContractsFilter(_GetContentQuerySet()).GetContract(contractId);
         if (nullptr == contract)
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Contract is NULL");
 
@@ -629,7 +628,7 @@ protected:
             return true;
             }
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, "SelectedNodeInstances content specification did not result in any query");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, "SelectedNodeInstances content specification did not result in any query");
         return false;
         }
 
@@ -645,7 +644,7 @@ protected:
             return true;
             }
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, "ContentInstancesOfSpecificClasses content specification did not result in any query");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, "ContentInstancesOfSpecificClasses content specification did not result in any query");
         return false;
         }
 
@@ -664,7 +663,7 @@ protected:
             return true;
             }
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, "ContentRelatedInstances content specification did not result in any query");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, "ContentRelatedInstances content specification did not result in any query");
         return false;
         }
 
@@ -792,7 +791,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+--*/
-    ContentQuerySet const& GetQuerySet() {return m_queryBuilder->GetQuerySet();}
+    QuerySet const& GetQuerySet() {return m_queryBuilder->GetQuerySet();}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -908,24 +907,24 @@ ContentDescriptorCP SpecificationContentProvider::_GetContentDescriptor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQuerySet const& SpecificationContentProvider::_GetContentQuerySet() const
+QuerySet const& SpecificationContentProvider::_GetContentQuerySet() const
     {
     BeMutexHolder lock(GetMutex());
     if (m_queries == nullptr)
         {
         auto scope = Diagnostics::Scope::Create("Create content queries");
-        m_queries = std::make_unique<ContentQuerySet>();
+        m_queries = std::make_unique<QuerySet>();
         ContentDescriptorCP descriptor = GetContentDescriptor();
         if (nullptr == descriptor)
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Query set is empty due to NULL descriptor");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, "Query set is empty due to NULL descriptor");
             return *m_queries;
             }
 
         QueryBuilder builder(GetContext(), *descriptor);
         VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
         m_queries->GetQueries() = builder.GetQuerySet().GetQueries();
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)m_queries->GetQueries().size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)m_queries->GetQueries().size()));
         }
     return *m_queries;
     }
@@ -933,7 +932,7 @@ ContentQuerySet const& SpecificationContentProvider::_GetContentQuerySet() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericQuerySet SpecificationContentProvider::_GetCountQuerySet() const
+QuerySet SpecificationContentProvider::_GetCountQuerySet() const
     {
     auto scope = Diagnostics::Scope::Create("Create content set size queries");
 
@@ -949,7 +948,7 @@ GenericQuerySet SpecificationContentProvider::_GetCountQuerySet() const
 
     QueryBuilder builder(GetContext(), *countDescriptor, false, true);
     VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
-    GenericQuerySet querySet(ContainerHelpers::TransformContainer<bvector<GenericQueryPtr>>(builder.GetQuerySet().GetQueries(), [&](auto const& keysQuery)
+    QuerySet querySet(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(builder.GetQuerySet().GetQueries(), [&](auto const& keysQuery)
         {
         Utf8CP groupingFieldName = ContentQueryContract::ECInstanceKeysFieldName;
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
@@ -957,13 +956,13 @@ GenericQuerySet SpecificationContentProvider::_GetCountQuerySet() const
             groupingFieldName = countDescriptor->GetDistinctField()->GetUniqueName().c_str();
 #endif
         RefCountedPtr<CountQueryContract> contract = CountQueryContract::Create(groupingFieldName);
-        ComplexGenericQueryPtr countQuery = ComplexGenericQuery::Create();
+        auto countQuery = ComplexQueryBuilder::Create();
         countQuery->SelectContract(*contract);
         countQuery->GroupByContract(*contract);
-        countQuery->From(*StringGenericQuery::Create(keysQuery->ToString(), keysQuery->GetBoundValues()));
+        countQuery->From(*keysQuery->GetQuery());
         return countQuery;
         }));
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
     return querySet;
     }
 
@@ -990,20 +989,20 @@ bvector<DisplayValueGroupCPtr> SpecificationContentProvider::CreateDistinctValue
 
     if (!GetContext().IsQueryContext())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Not a query context - return empty result.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Not a query context - return empty result.");
         return bvector<DisplayValueGroupCPtr>();
         }
 
     if (!field.IsPropertiesField() && !field.IsDisplayLabelField() && !field.IsCalculatedPropertyField())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Not a properties, display label or calculated field - return empty result.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Not a properties, display label or calculated field - return empty result.");
         return bvector<DisplayValueGroupCPtr>();
         }
 
     ContentDescriptorCP contentDescriptor = GetContentDescriptor();
     if (!contentDescriptor)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "No content descriptor - return empty result.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "No content descriptor - return empty result.");
         return bvector<DisplayValueGroupCPtr>();
         }
 
@@ -1015,7 +1014,7 @@ bvector<DisplayValueGroupCPtr> SpecificationContentProvider::CreateDistinctValue
             field.AsNestedContentField()->AsRelatedContentField()->GetPathFromSelectToContentClass().SetTargetsCount(nullptr);
         return true;
         });
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Created a new descriptor with a single field.");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Created a new descriptor with a single field.");
 
     IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
     ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
@@ -1032,7 +1031,7 @@ bvector<DisplayValueGroupCPtr> SpecificationContentProvider::CreateDistinctValue
 
     QueryBuilder builder(GetContext(), *distinctValuesDescriptor, true);
     VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)builder.GetQuerySet().GetQueries().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)builder.GetQuerySet().GetQueries().size()));
     for (auto const& contentQuery : builder.GetQuerySet().GetQueries())
         {
         ThrowIfCancelled(GetContext().GetCancelationToken());
@@ -1044,19 +1043,19 @@ bvector<DisplayValueGroupCPtr> SpecificationContentProvider::CreateDistinctValue
             {
             PresentationQueryContractSimpleField::Create(field.GetUniqueName().c_str(), field.GetUniqueName().c_str())
             });
-        ComplexGenericQueryPtr distinctValuesQuery = ComplexGenericQuery::Create();
+        auto distinctValuesQuery = ComplexQueryBuilder::Create();
         distinctValuesQuery->SelectContract(*contract, "values");
-        distinctValuesQuery->From(*StringGenericQuery::Create(contentQuery->ToString(), contentQuery->GetBoundValues()), "values");
+        distinctValuesQuery->From(*contentQuery->GetQuery(), "values");
         distinctValuesQuery->GroupByContract(*contract);
 
         auto queryScope = Diagnostics::Scope::Create("Accumulate query results");
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", distinctValuesQuery->ToString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Query: `%s`", distinctValuesQuery->GetQuery()->GetQueryString().c_str()));
 
-        QueryExecutorHelper::ExecuteQuery(GetContext().GetConnection(), *distinctValuesQuery,
+        QueryExecutorHelper::ExecuteQuery(GetContext().GetConnection(), *distinctValuesQuery->GetQuery(),
             distinctValuesAccumulator, GetContext().GetCancelationToken());
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Total distinct values: %" PRIu64, (uint64_t)distinctValuesAccumulator.GetValues().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Total distinct values: %" PRIu64, (uint64_t)distinctValuesAccumulator.GetValues().size()));
 
     bvector<DisplayValueGroupCPtr> values;
     values.reserve(distinctValuesAccumulator.GetValues().size());
@@ -1072,13 +1071,13 @@ IDataSourceCPtr<DisplayValueGroupCPtr> SpecificationContentProvider::GetDistinct
     auto cacheIter = m_distinctValuesCache.find(field.GetUniqueName());
     if (m_distinctValuesCache.end() == cacheIter)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Distinct values not found in cache");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Distinct values not found in cache");
         bvector<DisplayValueGroupCPtr> values = CreateDistinctValues(field);
         cacheIter = m_distinctValuesCache.Insert(field.GetUniqueName(), values).first;
         }
     else
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Distinct values found in cache");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Distinct values found in cache");
         }
     return VectorDataSource<DisplayValueGroupCPtr>::Create(cacheIter->second);
     }
@@ -1129,7 +1128,7 @@ void ContentProvider::Initialize()
 
     if (!GetContext().IsQueryContext())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Not a query context - return.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Not a query context - return.");
         return;
         }
 
@@ -1142,13 +1141,14 @@ void ContentProvider::Initialize()
     auto const& querySet = _GetContentQuerySet();
     if (querySet.GetQueries().empty())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Empty query set - return.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Empty query set - return.");
         return;
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
 
-    ContentDescriptorCR descriptor = querySet.GetContract()->GetDescriptor();
-    ContentReader contentReader(GetContext().GetConnection().GetECDb().Schemas(), querySet);
+    ContentQueryContractsFilter contracts(querySet);
+    ContentDescriptorCR descriptor = contracts.GetContract()->GetDescriptor();
+    ContentReader contentReader(GetContext().GetConnection().GetECDb().Schemas(), contracts);
     if (GetContext().IsPropertyFormattingContext())
         {
         contentReader.SetPropertyFormatter(GetContext().GetECPropertyFormatter());
@@ -1161,7 +1161,7 @@ void ContentProvider::Initialize()
         // note: the reader lags returning the items by 1 record - need to start
         // reading 1 record before it reaches `skipRecords == 0`
         contentReader.SetMode(ContentReader::Mode::Skip);
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Starting content reader in `Skip` mode.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Starting content reader in `Skip` mode.");
         }
 
     bvector<ContentSetItemPtr> records;
@@ -1169,9 +1169,9 @@ void ContentProvider::Initialize()
     for (auto const& query : querySet.GetQueries())
         {
         auto queryScope = Diagnostics::Scope::Create("Execute query");
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", query->ToString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Query: `%s`", query->GetQuery()->GetQueryString().c_str()));
 
-        executor.SetQuery(*query);
+        executor.SetQuery(*query->GetQuery());
         ContentSetItemPtr item;
         while (QueryExecutorStatus::Row == executor.ReadNext(item, contentReader) && (GetPageOptions().GetPageSize() == 0 || records.size() < GetPageOptions().GetPageSize()))
             {
@@ -1183,7 +1183,7 @@ void ContentProvider::Initialize()
                 if (--skipRecords == 1)
                     {
                     contentReader.SetMode(ContentReader::Mode::Read);
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Set content reader mode to `Read`.");
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Set content reader mode to `Read`.");
                     }
                 continue;
                 }
@@ -1205,13 +1205,13 @@ void ContentProvider::Initialize()
                 }
 #endif
 
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Read content item: %s", DiagnosticsHelpers::CreateContentSetItemStr(*item).c_str()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Read content item: %s", DiagnosticsHelpers::CreateContentSetItemStr(*item).c_str()));
             LoadNestedContent(*item);
             records.push_back(item);
             }
         }
     m_records = std::make_unique<bvector<ContentSetItemPtr>>(std::move(records));
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Read content items: %" PRIu64, (uint64_t)m_records->size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Read content items: %" PRIu64, (uint64_t)m_records->size()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1226,7 +1226,7 @@ size_t ContentProvider::GetFullContentSetSize() const
         if (GetContentDescriptor() && GetContentDescriptor()->MergeResults())
             {
             m_fullContentSetSize = std::make_unique<size_t>(1);
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Descriptor is valid and requests merged rows. Set size to 1.");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, "Descriptor is valid and requests merged rows. Set size to 1.");
             }
         else if (GetContext().IsQueryContext())
             {
@@ -1237,7 +1237,7 @@ size_t ContentProvider::GetFullContentSetSize() const
                 GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
 
             auto countQuerySet = _GetCountQuerySet();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)countQuerySet.GetQueries().size()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)countQuerySet.GetQueries().size()));
             size_t fullSize = 0;
             for (auto const& query : countQuerySet.GetQueries())
                 {
@@ -1245,11 +1245,11 @@ size_t ContentProvider::GetFullContentSetSize() const
                     continue;
 
                 auto queryScope = Diagnostics::Scope::Create("Execute count query");
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Query: `%s`", query->ToString().c_str()));
-                fullSize += (size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *query);
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Query: `%s`", query->GetQuery()->GetQueryString().c_str()));
+                fullSize += (size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *query->GetQuery());
                 }
             m_fullContentSetSize = std::make_unique<size_t>(fullSize);
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Total content set size: %" PRIu64, (uint64_t)*m_fullContentSetSize));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Total content set size: %" PRIu64, (uint64_t)*m_fullContentSetSize));
             }
         }
     return m_fullContentSetSize ? *m_fullContentSetSize : 0;
@@ -1276,19 +1276,19 @@ bool ContentProvider::GetContentSetItem(ContentSetItemPtr& item, size_t index) c
 
     if (!GetContentDescriptor())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Descriptor is NULL. No item returned.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Descriptor is NULL. No item returned.");
         return false;
         }
 
     if (!m_records || index >= m_records->size())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, "Supplied index out of bounds. No item returned.");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Supplied index out of bounds. No item returned.");
         return false;
         }
 
     item = m_records->at(index);
     CustomizationHelper::Customize(GetContext(), *GetContentDescriptor(), *item);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Returning item: %s", DiagnosticsHelpers::CreateContentSetItemStr(*item).c_str()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Returning item: %s", DiagnosticsHelpers::CreateContentSetItemStr(*item).c_str()));
     return true;
     }
 
@@ -1323,14 +1323,14 @@ void NestedContentProvider::_OnDescriptorChanged()
 ContentDescriptorCP NestedContentProvider::_GetContentDescriptor() const
     {
     auto const& querySet = _GetContentQuerySet();
-    auto const& contract = querySet.GetContract();
+    auto const& contract = ContentQueryContractsFilter(querySet).GetContract();
     return contract ? &contract->GetDescriptor() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
+QuerySet const& NestedContentProvider::_GetContentQuerySet() const
     {
     BeMutexHolder lock(GetMutex());
     auto scope = Diagnostics::Scope::Create("Create content queries");
@@ -1341,8 +1341,8 @@ ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
             GetContext().GetRulesPreprocessor(), GetContext().GetRuleset(), GetContext().GetRulesetVariables(), GetContext().GetECExpressionsCache(), &GetContext().GetUsedVariablesListener(),
             GetContext().GetCategorySupplier(), false, false, formatter, GetContext().GetLocalState());
         ContentQueryBuilder queryBuilder(params);
-        m_unfilteredQueries = std::make_unique<ContentQuerySet>(queryBuilder.CreateQuerySet(m_field));
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " unfiltered queries", (uint64_t)m_unfilteredQueries->GetQueries().size()));
+        m_unfilteredQueries = std::make_unique<QuerySet>(queryBuilder.CreateQuerySet(m_field));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " unfiltered queries", (uint64_t)m_unfilteredQueries->GetQueries().size()));
         }
     if (m_queries == nullptr)
         {
@@ -1352,26 +1352,26 @@ ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
             Utf8String idSelector = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]");
             bvector<ECInstanceId> ids = ContainerHelpers::TransformContainer<bvector<ECInstanceId>>(m_primaryInstanceKeys, [](ECClassInstanceKeyCR key){return key.GetId();});
             ValuesFilteringHelper idsFilteringHelper(ids);
-            m_queries = std::make_unique<ContentQuerySet>(ContainerHelpers::TransformContainer<bvector<ContentQueryPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
+            m_queries = std::make_unique<QuerySet>(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
                 {
-                ContentQueryPtr query = unfilteredQuery->Clone();
+                auto query = unfilteredQuery->Clone();
                 QueryBuilderHelpers::Where(query, idsFilteringHelper.CreateWhereClause(idSelector.c_str()).c_str(), idsFilteringHelper.CreateBoundValues());
                 return query;
                 }));
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " id-filtered queries", (uint64_t)m_queries->GetQueries().size()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " id-filtered queries", (uint64_t)m_queries->GetQueries().size()));
             }
         else
             {
             BoundQueryValuesList bindings({ std::make_shared<BoundQueryId>(m_primaryInstanceKeys[0].GetId()) });
             Utf8CP idFieldAlias = (nullptr != m_field.AsRelatedContentField()) ? m_field.AsRelatedContentField()->GetSelectClassAlias() : m_field.GetContentClassAlias().c_str();
             Utf8String whereClause = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId] = ? ");
-            m_queries = std::make_unique<ContentQuerySet>(ContainerHelpers::TransformContainer<bvector<ContentQueryPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
+            m_queries = std::make_unique<QuerySet>(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(m_unfilteredQueries->GetQueries(), [&](auto const& unfilteredQuery)
                 {
-                ContentQueryPtr query = unfilteredQuery->Clone();
+                auto query = unfilteredQuery->Clone();
                 QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);
                 return query;
                 }));
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " id-filtered merging queries", (uint64_t)m_queries->GetQueries().size()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " id-filtered merging queries", (uint64_t)m_queries->GetQueries().size()));
             }
         }
     return *m_queries;
@@ -1380,20 +1380,20 @@ ContentQuerySet const& NestedContentProvider::_GetContentQuerySet() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericQuerySet NestedContentProvider::_GetCountQuerySet() const
+QuerySet NestedContentProvider::_GetCountQuerySet() const
     {
     auto scope = Diagnostics::Scope::Create("Create content set size queries");
     auto const& contentQueries = _GetContentQuerySet();
-    GenericQuerySet querySet(ContainerHelpers::TransformContainer<bvector<GenericQueryPtr>>(contentQueries.GetQueries(), [](auto const& contentQuery)
+    QuerySet querySet(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(contentQueries.GetQueries(), [](auto const& contentQuery)
         {
         RefCountedPtr<CountQueryContract> contract = CountQueryContract::Create();
-        ComplexGenericQueryPtr countQuery = ComplexGenericQuery::Create();
+        auto countQuery = ComplexQueryBuilder::Create();
         countQuery->SelectContract(*contract);
         countQuery->GroupByContract(*contract);
-        countQuery->From(*StringGenericQuery::Create(contentQuery->ToString(), contentQuery->GetBoundValues()));
+        countQuery->From(*contentQuery->GetQuery());
         return countQuery;
         }));
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " queries", (uint64_t)querySet.GetQueries().size()));
     return querySet;
     }
 

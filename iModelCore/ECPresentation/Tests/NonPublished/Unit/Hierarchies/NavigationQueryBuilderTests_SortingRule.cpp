@@ -25,32 +25,32 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortByRulesAndLabelAndNotSorted
     // note: "C" doesn't have a sorting rule and is going to be sorted by label
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
-        ComplexNavigationQueryPtr rulesSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+        ComplexQueryBuilderPtr rulesSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA)
             .OrderBy("[this].[PropA]"));
 
         SelectClass<ECClass> selectClassC(*classC, "this", true);
-        ComplexNavigationQueryPtr labelSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC)), "this")
+        ComplexQueryBuilderPtr labelSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC)), "this")
             .From(selectClassC));
         labelSortedQuery->OrderBy(GetECInstanceNodesOrderByClause().c_str());
 
-        ComplexNavigationQueryPtr labelSortedQueryWrapper = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr labelSortedQueryWrapper = ComplexQueryBuilder::Create();
         labelSortedQueryWrapper->SelectAll().From(*labelSortedQuery);
 
         SelectClass<ECClass> selectClassB(*classB, "this", true);
-        ComplexNavigationQueryPtr notSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+        ComplexQueryBuilderPtr notSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB));
 
-        return UnionNavigationQuery::Create({ rulesSortedQuery, labelSortedQueryWrapper, notSortedQuery });
+        return UnionQueryBuilder::Create({ rulesSortedQuery, labelSortedQueryWrapper, notSortedQuery });
         });
     }
 
@@ -69,14 +69,14 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortSingleECClassByRule)
     m_ruleset->AddPresentationRule(*new SortingRule("", 1, classA->GetSchema().GetName(), classA->GetName(), "PropA", true, false, false));
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr rulesSortedQuery = &ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
+        ComplexQueryBuilderPtr rulesSortedQuery = &ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "PropA").c_str());
         return RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *rulesSortedQuery);
@@ -96,14 +96,14 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortSingleECClassByDoNotSortRul
     m_ruleset->AddPresentationRule(*new SortingRule("", 1, classA->GetSchema().GetName(), classA->GetName(), "", true, true, false));
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr notSortedQuery = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr notSortedQuery = ComplexQueryBuilder::Create();
         notSortedQuery->SelectContract(*contract, "this");
         notSortedQuery->From(selectClass);
         return RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *notSortedQuery);
@@ -125,14 +125,14 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortDescending)
     m_ruleset->AddPresentationRule(*new SortingRule("", 1, classA->GetSchema().GetName(), classA->GetName(), "PropA", false, false, false));
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr rulesSortedQuery = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr rulesSortedQuery = ComplexQueryBuilder::Create();
         rulesSortedQuery->SelectContract(*contract, "this");
         rulesSortedQuery->From(selectClass);
         rulesSortedQuery->OrderBy(Utf8PrintfString("%s([this].[%s]) DESC", FUNCTION_NAME_GetSortingValue, "PropA").c_str());
@@ -159,24 +159,24 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_AppliedToAllSchemaClasses)
     m_ruleset->AddPresentationRule(*new SortingRule("", 1, GetECSchema()->GetName(), "", "Prop", true, false, false));
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
-        ComplexNavigationQueryPtr queryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+        ComplexQueryBuilderPtr queryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "Prop").c_str()));
 
         SelectClass<ECClass> selectClassB(*classB, "this", true);
-        ComplexNavigationQueryPtr queryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+        ComplexQueryBuilderPtr queryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "Prop").c_str()));
 
-        return UnionNavigationQuery::Create({ queryA, queryB });
+        return UnionQueryBuilder::Create({ queryA, queryB });
         });
     }
 
@@ -196,14 +196,14 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_AppliedToClassesOfAllSchemas)
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this")
+        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "Prop").c_str()));
         return query;
@@ -225,7 +225,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_IgnoresRulesWithInvalidProperty
     m_ruleset->AddPresentationRule(*new SortingRule("", 1, classA->GetSchema().GetName(), classA->GetName(), "InvalidProperty", true, false, false));
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -233,11 +233,11 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_IgnoresRulesWithInvalidProperty
         SelectClass<ECClass> selectClass(*classA, "this", true);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
 
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
         query->From(selectClass);
 
-        ComplexNavigationQueryPtr labelSorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *query);
+        ComplexQueryBuilderPtr labelSorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *query);
         labelSorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
 
         return labelSorted;
@@ -261,7 +261,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_OverridenBySpecificationsDoNotS
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
     spec.SetDoNotSort(true);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -269,7 +269,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_OverridenBySpecificationsDoNotS
         SelectClass<ECClass> selectClass(*classA, "this", true);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
 
-        ComplexNavigationQueryPtr notSortedQuery = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr notSortedQuery = ComplexQueryBuilder::Create();
         notSortedQuery->SelectContract(*contract, "this");
         notSortedQuery->From(selectClass);
 
@@ -293,23 +293,23 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_DoesntSortWhenGroupingByClass)
 
     AllInstanceNodesSpecification spec(1, false, false, false, true, false, GetECSchema()->GetName());
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr);
 
-        ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
-        grouped->From(ComplexNavigationQuery::Create()->SelectContract(*contract, "this").From(*classA, true, "this"));
+        grouped->From(ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(*classA, true, "this"));
         grouped->GroupByContract(*contract);
 
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectAll();
         query->From(*grouped);
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        query->GetResultParametersR().GetSelectInstanceClasses().clear();
+        query->GetNavigationResultParameters().GetSelectInstanceClasses().clear();
         return query;
         });
     }
@@ -333,14 +333,14 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsByProperty_WhenUsingParentI
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Prop = parent.Prop", classA->GetFullName(), false);
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    auto queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this")
             .From(selectClass)
             .From(*classA, false, "parent")
@@ -379,7 +379,7 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsUsingRelatedInstancePropert
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
     spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, relAB->GetFullName(), classB->GetFullName(), "b"));
 
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
     ValidateQuery(spec, queries[0], [&]()
@@ -387,12 +387,12 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsUsingRelatedInstancePropert
         SelectClass<ECClass> selectClass(*classA, "this", false);
         RelatedClass relatedInstanceClass(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, "b", true));
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
-        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this")
             .From(selectClass)
             .Join(relatedInstanceClass)
             .OrderBy("[b].[Prop]");
-        query->GetResultParametersR().GetUsedRelationshipClasses().insert(relAB);
+        query->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *query);
         });
     }

@@ -113,10 +113,10 @@ ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleS
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
-    : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_specificationClasses(other.m_specificationClasses), 
-    m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags), 
-    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys), 
-    m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem), 
+    : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_specificationClasses(other.m_specificationClasses),
+    m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags),
+    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
+    m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem),
     m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables)
     {
     for (Field const* field : other.m_fields)
@@ -856,7 +856,7 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
         {
         if (!ecProperty->GetIsStruct())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid property access token '%s' for property '%s.%s'",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid property access token '%s' for property '%s.%s'",
                 accessString.c_str(), structProperty.GetClass().GetFullName(), structProperty.GetName().c_str()));
             break;
             }
@@ -865,7 +865,7 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
         }
     if (nullptr == ecProperty || !ecProperty->GetIsPrimitive())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Access token '%s' for property '%s.%s' did not result in a valid primitive property",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Access token '%s' for property '%s.%s' did not result in a valid primitive property",
             accessString.c_str(), structProperty.GetClass().GetFullName(), structProperty.GetName().c_str()));
         return nullptr;
         }
@@ -1616,7 +1616,7 @@ BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formatte
     Formatting::Format const* format = GetActiveFormat(*koq, unitSystemGroup);
     if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value as active format does not have a composite major unit",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value as active format does not have a composite major unit",
             ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str()));
         return ERROR;
         }

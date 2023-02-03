@@ -34,7 +34,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_ReturnsValuesFromRea
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     GenericQueryResultReader<Utf8String> reader([](ECSqlStatementCR stmt)
@@ -43,7 +43,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_ReturnsValuesFromRea
         });
 
     // test
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 
@@ -69,7 +69,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_ReturnsValuesFromRea
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     int iteration = 0;
@@ -80,7 +80,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_ReturnsValuesFromRea
         });
 
     // test
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 
@@ -107,7 +107,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_SkipsValuesUponReade
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     int iteration = 0;
@@ -123,7 +123,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_SkipsValuesUponReade
         });
 
     // test
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 
@@ -146,7 +146,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_StopsExecutingUponRe
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     GenericQueryResultReader<Utf8String> reader([](Utf8StringR result, ECSqlStatementCR stmt)
@@ -156,7 +156,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithResultAsReturnValue_StopsExecutingUponRe
         });
 
     // test
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 
@@ -175,7 +175,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_ReturnsValuesFromRea
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     GenericQueryResultReader<Utf8String> reader([](ECSqlStatementCR stmt)
@@ -185,7 +185,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_ReturnsValuesFromRea
 
     // test
     Utf8String value;
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 
@@ -214,7 +214,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_ReturnsValuesFromRea
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     int iteration = 0;
@@ -226,7 +226,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_ReturnsValuesFromRea
 
     // test
     int value;
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 
@@ -256,7 +256,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_SkipsValuesUponReade
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     int iteration = 0;
@@ -273,7 +273,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_SkipsValuesUponReade
 
     // test
     Utf8String value;
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 
@@ -298,7 +298,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_StopsExecutingUponRe
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // create a query to select all widgets
-    GenericQueryPtr query = StringGenericQuery::Create("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
+    PresentationQuery query("SELECT ECInstanceId FROM [RET].[Widget]", BoundQueryValuesList());
 
     // set up query reader
     GenericQueryResultReader<Utf8String> reader([](Utf8StringR result, ECSqlStatementCR stmt)
@@ -309,7 +309,7 @@ TEST_F(QueryExecutorTests, ReadNext_WithStatusAsReturnValue_StopsExecutingUponRe
 
     // test
     Utf8String value;
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, query);
     EXPECT_FALSE(executor.IsReadStarted());
     EXPECT_FALSE(executor.IsReadFinished());
 

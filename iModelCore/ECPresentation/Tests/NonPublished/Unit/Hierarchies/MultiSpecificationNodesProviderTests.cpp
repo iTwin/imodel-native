@@ -161,3 +161,30 @@ TEST_F(MultiSpecificationNodesProviderTests, EvaluatesChildrenArtifactsWhenCheck
 
     EXPECT_EQ(1, captureArtifacts->GetArtifacts().size());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiSpecificationNodesProviderTests, AssociatesIndividualProvidersWithTheirRulesetVariables)
+    {
+    m_context->GetUsedVariablesListener().OnVariableUsed("x");
+
+    RootNodeRule rule;
+    InstanceNodesOfSpecificClassesSpecification spec1(1, ChildrenHint::Unknown, false, false, false, false, "HasVariable(\"a\")",
+        { new MultiSchemaClass("ECDbMeta", false, { "ECClassDef" }) }, {});
+    CustomNodeSpecification spec2(1, false, "type2", "label2", "", "imageId");
+    InstanceNodesOfSpecificClassesSpecification spec3(1, ChildrenHint::Unknown, false, false, false, false, "HasVariable(\"b\")",
+        { new MultiSchemaClass("ECDbMeta", false, { "ECSchemaDef" }) }, {});
+
+    RootNodeRuleSpecificationsList specs;
+    specs.push_back(RootNodeRuleSpecification(spec1, rule));
+    specs.push_back(RootNodeRuleSpecification(spec2, rule));
+    specs.push_back(RootNodeRuleSpecification(spec3, rule));
+
+    auto provider = MultiSpecificationNodesProvider::Create(*m_context, specs);
+
+    EXPECT_EQ((bvector<Utf8String>{"a", "b", "x"}), provider->GetRelatedRulesetVariables().GetVariableNames());
+    EXPECT_EQ((bvector<Utf8String>{"a", "x"}), provider->GetNodeProviders()[0]->GetRelatedRulesetVariables().GetVariableNames());
+    EXPECT_EQ((bvector<Utf8String>{"x"}), provider->GetNodeProviders()[1]->GetRelatedRulesetVariables().GetVariableNames());
+    EXPECT_EQ((bvector<Utf8String>{"b", "x"}), provider->GetNodeProviders()[2]->GetRelatedRulesetVariables().GetVariableNames());
+    }

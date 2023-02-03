@@ -8,7 +8,7 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
-%include $(SrcRoot)imodel02/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+%include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 always:
     ~mkdir $(TESTRUNNERS_NUGET_DIR)

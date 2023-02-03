@@ -124,11 +124,11 @@ AS                  {SQL_NEW_KEYWORD(SQL_TOKEN_AS);  }
 ASC                 {SQL_NEW_KEYWORD(SQL_TOKEN_ASC);  }
 AVG                 {SQL_NEW_KEYWORD(SQL_TOKEN_AVG);  }
 
+BACKWARD            {SQL_NEW_KEYWORD(SQL_TOKEN_BACKWARD);  }
 BETWEEN             {SQL_NEW_KEYWORD(SQL_TOKEN_BETWEEN);  }
-
-BOOLEAN             {SQL_NEW_KEYWORD(SQL_TOKEN_BOOLEAN);  }
 BINARY              {SQL_NEW_KEYWORD(SQL_TOKEN_BINARY);  }
 BLOB                {SQL_NEW_KEYWORD(SQL_TOKEN_BLOB);  }
+BOOLEAN             {SQL_NEW_KEYWORD(SQL_TOKEN_BOOLEAN);  }
 BY                  {SQL_NEW_KEYWORD(SQL_TOKEN_BY);  }
 
 CASE                {SQL_NEW_KEYWORD(SQL_TOKEN_CASE);  }
@@ -150,16 +150,15 @@ DOUBLE              {SQL_NEW_KEYWORD(SQL_TOKEN_DOUBLE);  }
 ECSQLOPTIONS        {SQL_NEW_KEYWORD(SQL_TOKEN_ECSQLOPTIONS);  }
 ELSE                {SQL_NEW_KEYWORD(SQL_TOKEN_ELSE);  }
 END                 {SQL_NEW_KEYWORD(SQL_TOKEN_END);  }
-EVERY               {SQL_NEW_KEYWORD(SQL_TOKEN_EVERY);  }
 ESCAPE              {SQL_NEW_KEYWORD(SQL_TOKEN_ESCAPE);  }
+EVERY               {SQL_NEW_KEYWORD(SQL_TOKEN_EVERY);  }
 EXCEPT              {SQL_NEW_KEYWORD(SQL_TOKEN_EXCEPT);  }
 EXISTS              {SQL_NEW_KEYWORD(SQL_TOKEN_EXISTS);  }
-
 FALSE               {SQL_NEW_KEYWORD(SQL_TOKEN_FALSE);  }
 FLOAT               {SQL_NEW_KEYWORD(SQL_TOKEN_FLOAT);  }
-FORWARD             {SQL_NEW_KEYWORD(SQL_TOKEN_FORWARD);  }
-BACKWARD            {SQL_NEW_KEYWORD(SQL_TOKEN_BACKWARD);  }
 
+FOR                 {SQL_NEW_KEYWORD(SQL_TOKEN_FOR);  }
+FORWARD             {SQL_NEW_KEYWORD(SQL_TOKEN_FORWARD);  }
 FROM                {SQL_NEW_KEYWORD(SQL_TOKEN_FROM);  }
 FULL                {SQL_NEW_KEYWORD(SQL_TOKEN_FULL);  }
 
@@ -167,6 +166,7 @@ GROUP               {SQL_NEW_KEYWORD(SQL_TOKEN_GROUP);  }
 
 HAVING              {SQL_NEW_KEYWORD(SQL_TOKEN_HAVING);  }
 
+IIF                 {SQL_NEW_KEYWORD(SQL_TOKEN_IIF);  }
 IN                  {SQL_NEW_KEYWORD(SQL_TOKEN_IN);  }
 INNER               {SQL_NEW_KEYWORD(SQL_TOKEN_INNER);  }
 INSERT              {SQL_NEW_KEYWORD(SQL_TOKEN_INSERT);  }
@@ -183,8 +183,8 @@ LIKE                {SQL_NEW_KEYWORD(SQL_TOKEN_LIKE);  }
 LIMIT               {SQL_NEW_KEYWORD(SQL_TOKEN_LIMIT);  }
 LONG                {SQL_NEW_KEYWORD(SQL_TOKEN_LONG);  }
 
-MAX                 {SQL_NEW_KEYWORD(SQL_TOKEN_MAX);  }
 MATCH               {SQL_NEW_KEYWORD(SQL_TOKEN_MATCH);  }
+MAX                 {SQL_NEW_KEYWORD(SQL_TOKEN_MAX);  }
 MIN                 {SQL_NEW_KEYWORD(SQL_TOKEN_MIN);  }
 
 NATURAL             {SQL_NEW_KEYWORD(SQL_TOKEN_NATURAL);  }
@@ -198,22 +198,23 @@ OR                  {SQL_NEW_KEYWORD(SQL_TOKEN_OR);  }
 ORDER               {SQL_NEW_KEYWORD(SQL_TOKEN_ORDER);  }
 OUTER               {SQL_NEW_KEYWORD(SQL_TOKEN_OUTER);  }
 
+PRAGMA              {SQL_NEW_KEYWORD(SQL_TOKEN_PRAGMA);  }
+
 REAL                {SQL_NEW_KEYWORD(SQL_TOKEN_REAL);  }
 RECURSIVE           {SQL_NEW_KEYWORD(SQL_TOKEN_RECURSIVE);}
-ROLLBACK            {SQL_NEW_KEYWORD(SQL_TOKEN_ROLLBACK);  }
 RIGHT               {SQL_NEW_KEYWORD(SQL_TOKEN_RIGHT);  }
+ROLLBACK            {SQL_NEW_KEYWORD(SQL_TOKEN_ROLLBACK);  }
 
 SELECT              {SQL_NEW_KEYWORD(SQL_TOKEN_SELECT);  }
 SET                 {SQL_NEW_KEYWORD(SQL_TOKEN_SET);  }
 SOME                {SQL_NEW_KEYWORD(SQL_TOKEN_SOME);  }
-SUM                 {SQL_NEW_KEYWORD(SQL_TOKEN_SUM);  }
 STRING              {SQL_NEW_KEYWORD(SQL_TOKEN_STRING);  }
-
-IIF                 {SQL_NEW_KEYWORD(SQL_TOKEN_IIF);  }
+SUM                 {SQL_NEW_KEYWORD(SQL_TOKEN_SUM);  }
 
 THEN                {SQL_NEW_KEYWORD(SQL_TOKEN_THEN);  }
 TIME                {SQL_NEW_KEYWORD(SQL_TOKEN_TIME);  }
 TIMESTAMP           {SQL_NEW_KEYWORD(SQL_TOKEN_TIMESTAMP);  }
+
 TRUE                {SQL_NEW_KEYWORD(SQL_TOKEN_TRUE);  }
 
 UNION               {SQL_NEW_KEYWORD(SQL_TOKEN_UNION);  }
@@ -222,14 +223,14 @@ UNKNOWN             {SQL_NEW_KEYWORD(SQL_TOKEN_UNKNOWN);  }
 UPDATE              {SQL_NEW_KEYWORD(SQL_TOKEN_UPDATE);  }
 USING               {SQL_NEW_KEYWORD(SQL_TOKEN_USING);  }
 
-VARCHAR             {SQL_NEW_KEYWORD(SQL_TOKEN_VARCHAR);  }
 VALUE               {SQL_NEW_KEYWORD(SQL_TOKEN_VALUE);  }
 VALUES              {SQL_NEW_KEYWORD(SQL_TOKEN_VALUES);  }
+VARCHAR             {SQL_NEW_KEYWORD(SQL_TOKEN_VARCHAR);  }
 
-WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);}
 WHEN                {SQL_NEW_KEYWORD(SQL_TOKEN_WHEN);  }
 WHERE               {SQL_NEW_KEYWORD(SQL_TOKEN_WHERE);  }
-
+WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);}
+"$"                 {SQL_NEW_KEYWORD(SQL_TOKEN_DOLLAR);}
 
 "<"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_LESS);return SQL_LESS;}
 ">"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_GREAT);return SQL_GREAT;}
@@ -239,6 +240,7 @@ WHERE               {SQL_NEW_KEYWORD(SQL_TOKEN_WHERE);  }
 "<>"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
 "!="                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
 "||"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_CONCAT);return SQL_CONCAT;}
+"->"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_ARROW);return SQL_ARROW;}
 
 "~"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_NOT);return SQL_BITWISE_NOT;}
 "|"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_OR);return SQL_BITWISE_OR;}
@@ -717,19 +719,13 @@ sal_Int32 OSQLScanner::SQLlex(YYSTYPE* val)
 // -------------------------------------------------------------------------
 OSQLParseNode* OSQLScanner::NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
     {
-    auto newNode = new OSQLParseNode(pNewValue, eNodeType, nNodeID);
-    m_pGarbageCollector.push_back(newNode);
-    newNode->m_container = &m_pGarbageCollector;
-    return newNode;
+    return m_pGarbageCollector.NewNode(pNewValue, eNodeType, nNodeID);
     }
 
 // -------------------------------------------------------------------------
 OSQLParseNode* OSQLScanner::NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
     {
-    auto newNode = new OSQLParseNode(_rNewValue, eNodeType, nNodeID);
-    m_pGarbageCollector.push_back(newNode);
-    newNode->m_container = &m_pGarbageCollector;
-    return newNode;
+    return m_pGarbageCollector.NewNode(_rNewValue.c_str(), eNodeType, nNodeID);
     }
 
 // -------------------------------------------------------------------------

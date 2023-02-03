@@ -44,19 +44,6 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodePtr CreateTreeNode(BeGuidCR nodeId, NavNodeCPtr parent, Utf8CP label = "")
-        {
-        TestNodesFactory nodesFactory(*GetConnection(), "spec-id", "ruleset-id");
-        NavNodePtr node = nodesFactory.CreateCustomNode(parent.IsValid() ? parent->GetKey().get() : nullptr, label, "", "", "test-type");
-        node->SetNodeId(nodeId);
-        if (parent.IsValid())
-            node->SetParentNodeId(parent->GetNodeId());
-        return node;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
     NavNodePtr CreateInstanceNode(ECClassCR ecClass, ECInstanceId instanceId, Utf8CP label)
         {
         return CreateInstanceNode(ECClassInstanceKey(ecClass, instanceId), label);
@@ -164,10 +151,42 @@ struct RulesDrivenECPresentationManagerStubbedImplTests : RulesDrivenECPresentat
     {
     StubRulesDrivenECPresentationManagerImpl* m_impl;
 
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     virtual ECPresentationManager::Impl* _CreateImpl(ECPresentationManager::Impl::Params const& params) override
         {
         m_impl = new StubRulesDrivenECPresentationManagerImpl(params);
         return m_impl;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void SetUp() override
+        {
+        RulesDrivenECPresentationManagerTests::SetUp();
+        m_impl->GetNodesCache().SetGetPhysicalParentNodeHandler([&](BeGuidCR nodeId)
+            {
+            auto node = m_impl->GetParentNode(nodeId);
+            return node.IsValid() ? node->Clone() : nullptr;
+            });
+        m_impl->GetNodesCache().SetGetNodeHandler([&](BeGuidCR nodeId)
+            {
+            auto node = m_impl->GetNode(nodeId);
+            return node.IsValid() ? node->Clone() : nullptr;
+            });
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodePtr CreateTreeNode(BeGuidCR nodeId, NavNodeCPtr parent, Utf8CP label = "")
+        {
+        TestNodesFactory nodesFactory(*GetConnection(), "spec-id", "ruleset-id");
+        NavNodePtr node = nodesFactory.CreateCustomNode(parent.IsValid() ? parent->GetKey().get() : nullptr, label, "", "", "test-type");
+        node->SetNodeId(nodeId);
+        return node;
         }
     };
 

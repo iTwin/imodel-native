@@ -117,8 +117,8 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_TRUE SQL_TOKEN_UNION
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_USING SQL_TOKEN_VALUE SQL_TOKEN_VALUES
-%token <pParseNode> SQL_TOKEN_WHERE
-
+%token <pParseNode> SQL_TOKEN_WHERE 
+%token <pParseNode> SQL_TOKEN_DOLLAR
 %token <pParseNode> SQL_BITWISE_NOT
 
 /* time and date functions */
@@ -131,6 +131,9 @@ using namespace connectivity;
 
 // LIMIT and OFFSET
 %token <pParseNode> SQL_TOKEN_LIMIT SQL_TOKEN_OFFSET SQL_TOKEN_ONLY
+
+// PRAGMA ... FOR
+%token <pParseNode> SQL_TOKEN_PRAGMA SQL_TOKEN_FOR
 
 //non-standard
 %token <pParseNode> SQL_TOKEN_MATCH SQL_TOKEN_ECSQLOPTIONS
@@ -145,6 +148,8 @@ using namespace connectivity;
 
 %left <pParseNode> SQL_TOKEN_OR
 %left <pParseNode> SQL_TOKEN_AND
+
+%left <pParseNode> SQL_ARROW
 
 %left <pParseNode> SQL_BITWISE_OR
 %left <pParseNode> SQL_BITWISE_AND
@@ -202,7 +207,7 @@ using namespace connectivity;
 %type <pParseNode> table_node tablespace_qualified_class_name qualified_class_name class_name table_primary_as_range_column opt_as
 %type <pParseNode> table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
-%type <pParseNode> when_operand_list when_operand case_operand
+%type <pParseNode> when_operand_list when_operand case_operand opt_extract_value
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_disqualify_primary_join opt_disqualify_polymorphic_constraint
 
 /* LIMIT and OFFSET */
@@ -211,6 +216,7 @@ using namespace connectivity;
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
 %type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
+%type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
 %%
 
 /* Parse Tree an OSQLParser zurueckliefern
@@ -218,15 +224,92 @@ using namespace connectivity;
  *
  */
 sql_single_statement:
-        sql
-        { context->setParseTree( $1 ); }
-    |    sql ';'
-        { context->setParseTree( $1 ); }
+        sql         { context->setParseTree( $1 ); }
+    |   sql    ';'  { context->setParseTree( $1 ); }
+    |   pragma      { context->setParseTree( $1 ); }
+    |   pragma ';'  { context->setParseTree( $1 ); }
     ;
 
 sql:
         manipulative_statement
     ;
+
+/* PRAGMA NAME[[= val]|[(val)]] [FOR path]
+ */
+pragma:
+    SQL_TOKEN_PRAGMA SQL_TOKEN_NAME opt_pragma_set opt_pragma_for
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($1);
+        $$->append($2);
+        $$->append($3);
+        $$->append($4);
+    }
+    ;
+
+opt_pragma_for:
+    {
+        $$ = SQL_NEW_RULE;
+    }
+    | SQL_TOKEN_FOR pragma_path
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+opt_pragma_set:
+    {
+        $$ = SQL_NEW_RULE;
+    }
+    | opt_pragma_set_val
+    | opt_pragma_func
+    ;
+
+opt_pragma_set_val:
+    SQL_EQUAL pragma_value
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+opt_pragma_func:
+    '(' pragma_value ')'
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($2);
+    }
+    ;
+
+pragma_value:
+        SQL_TOKEN_INTNUM
+    |   SQL_TOKEN_APPROXNUM
+    |   SQL_TOKEN_NAME
+    |   SQL_TOKEN_STRING
+    |   SQL_TOKEN_TRUE
+    |   SQL_TOKEN_FALSE
+    |   SQL_TOKEN_NULL
+    ;
+
+pragma_path:
+        SQL_TOKEN_NAME
+            {
+            $$ = SQL_NEW_DOTLISTRULE;
+            $$->append($1);
+            }
+    |   pragma_path '.' SQL_TOKEN_NAME %prec '.'
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    |   pragma_path ':' SQL_TOKEN_NAME %prec ':'
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    ;
+
 /*
  * CTE query support
  */
@@ -1179,7 +1262,7 @@ literal:
     |   SQL_TOKEN_REAL_NUM
     |   SQL_TOKEN_INTNUM
     |   SQL_TOKEN_APPROXNUM
-    |    SQL_TOKEN_ACCESS_DATE
+    |   SQL_TOKEN_ACCESS_DATE
 /*    rules for predicate check */
     |    literal SQL_TOKEN_STRING
         {
@@ -1526,6 +1609,16 @@ cast_spec:
             $$->append($4);
             $$->append($5);
             $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    ;
+
+opt_extract_value: 
+      { $$ = SQL_NEW_RULE; }
+    | SQL_ARROW  property_path 
+        {
+           $$ = SQL_NEW_RULE;
+           $$->append($2);
+    
         }
     ;
 value_exp_primary:
@@ -1921,13 +2014,19 @@ property_path_entry:
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
         }
+	|   SQL_TOKEN_DOLLAR
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("$", SQL_NODE_PUNCTUATION));
+        }          
     ;
 
 column_ref:
-		property_path
+		property_path opt_extract_value
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
+            $$->append($2);
 		}
 
 
@@ -2402,7 +2501,7 @@ OParseContext            OSQLParser::s_aDefaultContext;
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     {
-    m_pParseTree =std::unique_ptr<OSQLParseNode>(pNewParseTree->detach());
+    m_pParseTree = pNewParseTree->detach();
     }
 //-----------------------------------------------------------------------------
 
@@ -2467,7 +2566,7 @@ static Utf8String delComment(Utf8String const& rQuery)
     return aBuf;
 }
 //-----------------------------------------------------------------------------
-std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,Utf8String const& rStatement, sal_Bool bInternational) {
+OSQLParseNode* OSQLParser::parseTree (Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational) {
     Utf8String sTemp = delComment(rStatement);
     m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
     m_pParseTree = nullptr;
@@ -2482,7 +2581,7 @@ std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,
         return nullptr;
         }
 
-    return std::move(m_pParseTree);
+    return m_pParseTree;
     }
 //-----------------------------------------------------------------------------
 Utf8String OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext)

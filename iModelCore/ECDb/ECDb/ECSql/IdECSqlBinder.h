@@ -24,9 +24,6 @@ private:
         BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
         return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
         }
-    IdSet<BeInt64Id> m_virtualCopy;
-
-    void _OnClearBindings() override { m_virtualCopy.clear(); }
 
 public:
     ECSqlStatus _BindNull() override;
@@ -41,7 +38,7 @@ public:
     ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
     ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
     ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
-    ECSqlStatus _BindIdSet(IdSet<BeInt64Id> const& idSet) override;
+    ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override;
 
     IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
@@ -50,7 +47,7 @@ public:
 
     public:
         IdECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, bool isNoop, SqlParamNameGenerator&);
-        ~IdECSqlBinder() {}
+        ~IdECSqlBinder() { OnClearBindings(); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

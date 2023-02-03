@@ -1975,10 +1975,10 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 
             return targetUnit;
             };
-        auto comp = Formatting::CompositeValueSpec(*getTargetUnit(sourceComp->GetMajorUnit()),
-                                                    *getTargetUnit(sourceComp->GetMiddleUnit()),
-                                                    *getTargetUnit(sourceComp->GetMinorUnit()),
-                                                    *getTargetUnit(sourceComp->GetSubUnit()));
+        auto comp = Formatting::CompositeValueSpec(getTargetUnit(sourceComp->GetMajorUnit()),
+                                                   getTargetUnit(sourceComp->GetMiddleUnit()),
+                                                   getTargetUnit(sourceComp->GetMinorUnit()),
+                                                   getTargetUnit(sourceComp->GetSubUnit()));
         if (ECObjectsStatus::Success != status)
             return status;
 
@@ -3582,6 +3582,10 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
     BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
+
+    if (xmlWriter.IsNull())
+        return SchemaWriteStatus::FailedToCreateXml;
+
     xmlWriter->SetIndentation(4);
 
     SchemaWriteStatus status;

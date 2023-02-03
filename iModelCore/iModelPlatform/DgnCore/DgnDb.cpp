@@ -10,56 +10,39 @@
 #define CHECK_NON_NAVIGATION_PROPERTY_API
 #endif
 
-static WCharCP s_dgndbExt   = L".bim";
+static WCharCP s_dotBim   = L".bim";
 
 /*---------------------------------------------------------------------------------**//**
 * used to check names saved in categories, models, etc.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDbTable::IsValidName(Utf8StringCR name, Utf8CP invalidChars)
-    {
+bool DgnDbTable::IsValidName(Utf8StringCR name, Utf8CP invalidChars) {
     // empty names, names that start or end with space, or contain an invalid character are illegal.
-    // NOTE: don't use isspace for test below - it is locale specific and finds the non-breaking-space (0xA0) when using Latin-8 locale.
-    return !name.empty() && ' ' != *name.begin() && ' ' != *name.rbegin() &&(Utf8String::npos == name.find_first_of(invalidChars));
+    return !name.empty() && ' ' != *name.begin() && ' ' != *name.rbegin() && Utf8String::npos == name.find_first_of(invalidChars);
 }
-
-/*---------------------------------------------------------------------------------**//**
-* replace invalid characters in a string with a substitute character
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, Utf8Char r)
-    {
-    size_t i, iprev = 0;
-    while ((i = str.find_first_of(invalidChars, iprev)) != Utf8String::npos)
-        {
-        str[i] = r;
-        iprev = i+1;
-        }
-    }
 
 /** Ctor for DgnDbFonts. Can't be in header file. */
 DgnDbFonts::DgnDbFonts(DgnDbR db) : m_fontDb(db, false) {
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDb::DgnDb() : m_profileVersion(0, 0, 0, 0), m_fonts(*this), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
-                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence")
-    {
+                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence") {
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
     AddECDbCacheClearListener(*this);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Object DgnDb::GetJsTxns() {
     VerifyMainThread(); // should never be called except from main thread
     auto jsDb = GetJsIModelDb();
     if (nullptr == jsDb)
-       return Napi::Object();
+        return Napi::Object();
 
     auto txns = jsDb->Get("txns");
     return txns.IsObject() ? txns.As<Napi::Object>() : Napi::Object();
@@ -200,7 +183,37 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
         }
 
     m_geoLocation.Load();
+
+
+    if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
+
     return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::DisqualifyTypeIndexForBisCoreExternalSourceAspect()
+    {
+    if (Schemas().FindClass("BisCore.ExternalSourceAspect") != nullptr)
+        {
+        /*
+        * BisCore.ExternalSourceAspect pollutes SQLite stats for index 'ix_bis_ElementMultiAspect_ecclassid' more than 97% of
+        * rows in bis_ElementMultiAspect is of type BisCore.ExternalSourceAspect. Use this index for querying BisCore.ExternalSourceAspect
+        * cause loop over all the rows for BisCore.ExternalSourceAspect causes the query to slow down severely.
+        * Long term fix for this is to move BisCore.ExternalSourceAspect in its table.
+        * ECSQL PRAGMA disqualify_type_index let us disqualify 'ix_bis_ElementMultiAspect_ecclassid' globally but this setting is not persisted
+        * and therefore it has to be executed when the connection is opened.
+        */
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(*this, "PRAGMA disqualify_type_index=TRUE FOR BisCore.ExternalSourceAspect"))
+            {
+            LOG.error("Failed to execute 'PRAGMA disqualify_type_index=TRUE FOR BisCore.ExternalSourceAspect'.");
+            return BE_SQLITE_ERROR;
+            }
+        }
+        return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
@@ -208,7 +221,8 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     {
-    SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams const&) params).GetSchemaUpgradeOptions();
+    auto const& inParams = ((DgnDb::OpenParams const&)params);
+    SchemaUpgradeOptions const& schemaUpgradeOptions = inParams.GetSchemaUpgradeOptions();
 
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
@@ -229,28 +243,33 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     if (!upgrade)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
 
-    if (std::any_of(schemasToImport.begin(), schemasToImport.end(), [&](ECSchemaPtr schema) { return SchemaRequiresProfileUpgrade(*schema); }))
+    auto const requireProfileUpgrade = std::any_of(schemasToImport.begin(), schemasToImport.end(), [&](ECSchemaPtr schema) { return SchemaRequiresProfileUpgrade(*schema); });
+    if (requireProfileUpgrade)
         {
-        DbResult rc = DoProfileUpgrade();
+        DbResult rc = DoProfileUpgrade(params);
         if (DbResult::BE_SQLITE_OK != rc)
             return rc;
 
-        // Initialize schemas again as profile version might be updated and ECDb can store additional information like original EcXML version
+        // Initialize schemas again as the profile version might be updated and ECDb can store additional information like the original EcXML version
         schemasToImport.clear();
         domainsToImport.clear();
         status = Domains().InitializeSchemas(schemaUpgradeOptions, &schemasToImport, &domainsToImport);
         BeAssert(status == SchemaStatus::SchemaUpgradeRequired || status == SchemaStatus::SchemaUpgradeRecommended);
         }
 
-    status = Domains().UpgradeSchemas(schemasToImport, domainsToImport);
+        auto schemaImportOptions = SchemaManager::SchemaImportOptions::None;
+        if (inParams.m_schemaLockHeld)
+            {
+            schemaImportOptions = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
+            }
 
-    return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
+        status = Domains().UpgradeSchemas(schemasToImport, domainsToImport, schemaImportOptions);
+        return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-// static
 DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
     {
     switch (status)
@@ -265,9 +284,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaUpgradeRequired;
         case SchemaStatus::SchemaUpgradeRecommended:
             return BE_SQLITE_ERROR_SchemaUpgradeRecommended;
-        // case SchemaStatus::SchemaLockFailed:     NEEDS WORK - shouldn't we map this to BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes, too?
-        case SchemaStatus::CouldNotAcquireLocksOrCodes:
-            return BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes;
+       case SchemaStatus::DataTransformRequired:
+           return BE_SQLITE_ERROR_DataTransformRequired;
         default:
             return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
         }
@@ -588,42 +606,39 @@ DbResult DgnDb::DeleteLinkTableRelationships(Utf8CP relClassECSqlName, ECInstanc
 
     const DbResult stat = stmt->Step();
     return BE_SQLITE_DONE == stat ? BE_SQLITE_OK : stat;
-    }
+}
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::DoOpenDgnDb(BeFileNameCR fileNameIn, OpenParams const& params)
-    {
+DbResult DgnDb::DoOpenIModel(BeFileNameCR fileNameIn, OpenParams const& params) {
     BeFileName fileName(fileNameIn);
     if (!params.m_skipFileCheck && !fileName.DoesPathExist())
-        fileName.SupplyDefaultNameParts(s_dgndbExt);
+        fileName.SupplyDefaultNameParts(s_dotBim);
 
     m_fileName = fileName.GetNameUtf8();
 
     DbResult stat = OpenBeSQLiteDb(fileName, params);
-    if (BE_SQLITE_OK != stat)
-        {
+    if (BE_SQLITE_OK != stat) {
         // When it comes to schema upgrades, the caller probably does know what he is doing -- at least the iModelBridge framework does -- so this is not necessarily an "error".
         auto sev = (BE_SQLITE_ERROR_SchemaUpgradeRequired == stat) ? NativeLogging::LOG_INFO : NativeLogging::LOG_WARNING;
         LOG.messagev(sev, "Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
-        }
-
-    return stat;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams const& openParams)
-    {
+    return stat;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr DgnDb::OpenIModelDb(DbResult* outResult, BeFileNameCR fileName, OpenParams const& openParams) {
     DbResult ALLOW_NULL_OUTPUT(status, outResult);
     bool wantReadonly = openParams.IsReadonly();
 
     DgnDbPtr dgnDb = new DgnDb();
 
-    status = dgnDb->DoOpenDgnDb(fileName, openParams);
+    status = dgnDb->DoOpenIModel(fileName, openParams);
     if (status != BE_SQLITE_OK)
         return nullptr;
 
@@ -635,100 +650,93 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
     dgnDb = new DgnDb(); // release old and create a new DgnDb
     OpenParams readonlyParams(openParams);
     readonlyParams.SetOpenMode(Db::OpenMode::Readonly);
-    status = dgnDb->DoOpenDgnDb(fileName, readonlyParams);
+    status = dgnDb->DoOpenIModel(fileName, readonlyParams);
     return (status != BE_SQLITE_OK) ? nullptr : dgnDb;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const& params)
-    {
-    BeFileName projectFile(inFileName);
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateNewIModel(BeFileNameCR inFileName, CreateDgnDbParams const& params) {
+    BeFileName iModelName(inFileName);
 
-    if (inFileName.IsEmpty())
-        {
-        projectFile.SetNameUtf8(BEDB_MemoryDb);
-        }
-    else
-        {
-        projectFile.SupplyDefaultNameParts(s_dgndbExt);
-        if (params.m_overwriteExisting && BeFileName::DoesPathExist(projectFile))
-            {
-            if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(projectFile))
-                {
-                LOG.errorv("Unable to create DgnDb because '%s' cannot be deleted.", projectFile.GetNameUtf8().c_str());
+    bool memoryDb = false;
+    if (inFileName.IsEmpty()) {
+        memoryDb = true;
+        iModelName.SetNameUtf8(BEDB_MemoryDb);
+    } else {
+        iModelName.SupplyDefaultNameParts(s_dotBim);
+        if (params.m_overwriteExisting && BeFileName::DoesPathExist(iModelName)) {
+            if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(iModelName)) {
+                LOG.errorv("Unable to create iModel because '%s' cannot be deleted.", iModelName.GetNameUtf8().c_str());
                 return BE_SQLITE_ERROR_FileExists;
-                }
             }
         }
+    }
 
-    bool useSeedDb = !params.m_seedDb.empty();
-
-    if (useSeedDb)
-        {
-        BeFileNameStatus status = BeFileName::BeCopyFile(params.m_seedDb.c_str(), projectFile);
+    if (!params.m_seedDb.empty()) {
+        BeFileNameStatus status = BeFileName::BeCopyFile(params.m_seedDb.c_str(), iModelName);
         if (BeFileNameStatus::Success != status)
             return BE_SQLITE_ERROR_FileExists;
-        }
+    }
 
-    DbResult rc = CreateNewDb(projectFile, params, params.GetGuid());
+    DbResult rc = CreateNewDb(iModelName, params, params.GetGuid());
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    m_fileName = projectFile.GetNameUtf8();
+    // iModels should always use WAL journal mode
+    if (!memoryDb)
+        EnableWalMode(true);
+
+    m_fileName = iModelName.GetNameUtf8();
 
     rc = CreateDgnDbTables(params);
     if (BE_SQLITE_OK != rc)
         return rc;
 
     InitializeDgnDb(params);
-
     return BE_SQLITE_OK;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDbParams const& params)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr DgnDb::CreateIModel(DbResult* result, BeFileNameCR fileName, CreateDgnDbParams const& params) {
     DbResult ALLOW_NULL_OUTPUT(stat, result);
 
-    if (params.m_rootSubjectName.empty())
-        {
+    if (params.m_rootSubjectName.empty()) {
         BeAssert(false); // required to create the root Subject in the RepositoryModel
         return nullptr;
-        }
-
-    DgnDbPtr dgndb = new DgnDb();
-    stat = dgndb->CreateNewDgnDb(fileName, params);
-
-    return (BE_SQLITE_OK==stat) ? dgndb : nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::CompactFile()
-    {
+    DgnDbPtr dgndb = new DgnDb();
+    stat = dgndb->CreateNewIModel(fileName, params);
+
+    return (BE_SQLITE_OK == stat) ? dgndb : nullptr;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnDb::CompactFile() {
     if (1 < GetCurrentSavepointDepth())
-        return  DgnDbStatus::TransactionActive;
+        return DgnDbStatus::TransactionActive;
 
     Savepoint* savepoint = GetSavepoint(0);
     if (savepoint)
         savepoint->Commit(nullptr);
 
-    DbResult rc= TryExecuteSql("VACUUM");
+    DbResult rc = TryExecuteSql("VACUUM");
 
     if (savepoint)
         savepoint->Begin();
 
     return BE_SQLITE_OK != rc ? DgnDbStatus::SQLiteError : DgnDbStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId DgnImportContext::_RemapClassId(DgnClassId source)
     {
     if (!IsBetweenDbs())

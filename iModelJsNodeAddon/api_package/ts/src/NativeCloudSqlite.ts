@@ -24,7 +24,7 @@ export namespace NativeCloudSqlite {
 
   export const enum LogMask {
     LOG_HTTP = 0x0001, LOG_UPLOAD = 0x0002, LOG_CLEANUP = 0x0004, LOG_EVENT = 0x0008
-  };
+  }
 
   /** Properties that specify how to access the account for a cloud blob-store container. */
   export interface AccountAccessProps {
@@ -51,11 +51,11 @@ export namespace NativeCloudSqlite {
   /** Returned from `CloudContainer.queryDatabase` describing one database in the container */
   export interface CachedDbProps {
     /** The total of (4Mb) blocks in the database. */
-    readonly totalBlocks: number,
+    readonly totalBlocks: number;
     /** the number of blocks of the database that have been downloaded into the CloudCache */
-    readonly localBlocks: number,
+    readonly localBlocks: number;
     /** the number of blocks from this database that have been modified in the CloudCache and need to be uploaded. */
-    readonly dirtyBlocks: number,
+    readonly dirtyBlocks: number;
     /** If true, the database currently has transactions in the WAL file and may not be uploaded until they have been checkPointed. */
     readonly transactions: boolean;
     /** the state of this database. Indicates whether the database is new or deleted since last upload */
@@ -65,31 +65,33 @@ export namespace NativeCloudSqlite {
   /** Properties for accessing a CloudContainer */
   export type ContainerAccessProps = AccountAccessProps & ContainerProps & {
     /** Duration for holding write lock, in seconds. After this time the write lock expires if not refreshed. Default is one hour. */
-    durationSeconds?: number
+    durationSeconds?: number;
   };
 
   /** The name of a CloudSqlite database within a CloudContainer. */
   export interface DbNameProp {
     /** the name of the database within the CloudContainer.
      * @note names of databases within a CloudContainer are always **case sensitive** on all platforms.*/
-    dbName: string
+    dbName: string;
   }
 
   /** Properties for accessing a database within a CloudContainer */
   export interface DbProps extends DbNameProp {
     /** the name of the local file to access the database. */
-    localFileName: LocalFileName
+    localFileName: LocalFileName;
   }
 
   export type TransferDirection = "upload" | "download";
   export interface TransferProgress {
     /** a user-supplied progress function called during the transfer operation. Return a non-0 value to abort the transfer. */
-    onProgress?: (loaded: number, total: number) => number
+    onProgress?: (loaded: number, total: number) => number;
   }
 
   export interface CloudHttpProps {
     /** The number of simultaneous HTTP requests.  Default is 6. */
     nRequests?: number;
+    /** The time in seconds to wait without a response before considering a http request as timed out. Default is 60 seconds. */
+    httpTimeout?: number;
   }
 
   export interface PrefetchProps extends CloudHttpProps {
@@ -159,7 +161,7 @@ export namespace NativeCloudSqlite {
       if (props.noTimeStamps)
         args.push(`-notimestamps`);
       if (props.httptimeout !== undefined)
-        args.push(`-httptimeout`, `${props.httptimeout}`)
+        args.push(`-httptimeout`, `${props.httptimeout}`);
       args.push(`${dir}`); // This MUST be the last arg when starting the daemon.
       return child_process.spawn(this.exeName(props), args, { ...props.spawnOptions, windowsVerbatimArguments: true });
     }

@@ -4,6 +4,9 @@ import os, sys
 bbLoc = os.path.join(os.environ['SrcRoot'], 'BentleyBuild', 'bentleybuild')
 if not os.path.exists (bbLoc):
     bbLoc = os.path.join(os.environ['SrcRoot'], 'BentleyBuild', 'bblib')
+if not os.path.exists (bbLoc):
+    # For open-source builds
+    bbLoc = os.path.join(os.environ['SrcRoot'], 'imodel-native', 'build', 'BentleyBuild', 'bblib')
 sys.path.append(bbLoc)
 import symlinks as symlinks
 

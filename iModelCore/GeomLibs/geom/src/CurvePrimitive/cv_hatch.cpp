@@ -165,15 +165,10 @@ TransformCR transformA,
     {
     bool    boolstat;
     static double s_endTolerance = 1.0e-8;
-    double s_maxGapRelTol = 1.0e-6;
-    double maxGapTol = 1.0;
 
     DRange3d range;
     boundary.GetRange (range);
-    maxGapTol = s_maxGapRelTol * range.low.DistanceXY (range.high);
 
-    //cvHatch_appendWithArcsAsBezier (pBoundary, pBoundary);
-    //cvHatch_forceBezierAndLinestringEndsToNeighbors (pBoundary, maxGapTol);
     transform = transformA;
     zRangeLimits = false;
     altitudeTolerance = s_endTolerance;
@@ -913,7 +908,6 @@ int                             *pPlane0,
 int                             *pPlane1
 )
     {
-    int plane0, plane1;
     if (pContext->zRangeLimits)
         {
         if (*pPlane0 < pContext->minPlane)
@@ -925,8 +919,7 @@ int                             *pPlane1
     /* Watch for integer overflow case!!
         If plane1 is at maxint, "next" integer wraps to negative.
     */
-    plane0 = *pPlane0;
-    plane1 = *pPlane1;
+    int plane1 = *pPlane1;
     plane1++;
     if (plane1 < *pPlane1)
         {

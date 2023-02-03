@@ -4,8 +4,8 @@ REM See LICENSE.md in the repository root for full copyright notice.
 @ECHO on
 REM Attempt to download win_flex_bison tools and extract them if they do not already exist.
 REM Once the tool are avaliable the script build besqlite
-set win_flex_ver=2.5.24
-set bin_root=%appdata%\winflexbison
+set win_flex_ver=2.5.25
+set bin_root=%appdata%\winflexbison\win_flex_ver
 set zip_file=%temp%\win_flex_bison.zip
 set flex_tool=%bin_root%\win_flex.exe
 set bison_tool=%bin_root%\win_bison.exe

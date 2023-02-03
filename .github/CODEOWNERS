@@ -24,7 +24,7 @@
 /iModelCore/ecobjects/                       @calebmshafer @ColinKerr @c-macdonald @rschili
 /iModelCore/ECPresentation/                  @iTwin/itwinjs-core-presentation
 /iModelCore/GeoCoord/                        @kabentley @AlainRobertAtBentley
-/iModelCore/GeomLibs/                        @EarlinLutz @bbastings @kabentley @dassaf4
+/iModelCore/GeomLibs/                        @saeeedtorabi @bbastings @kabentley @dassaf4
 /iModelCore/iModelPlatform/                  @pmconne @swwilson-bsi @kabentley @bbastings
 /iModelCore/Units/                           @calebmshafer @ColinKerr @bbastings @rschili
 /iModelCore/iModelPlatform/**/*Tile*.*       @pmconne @markschlosseratbentley

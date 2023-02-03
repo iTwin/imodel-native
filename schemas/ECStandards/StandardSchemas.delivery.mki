@@ -1,10 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
-#     $Source: StandardSchemas.delivery.mki $
-#
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-#
-#--------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 # Specify the exact name of each schema that is delivered.  This allows makefiles to use this information instead of hardcoding in a version number
 

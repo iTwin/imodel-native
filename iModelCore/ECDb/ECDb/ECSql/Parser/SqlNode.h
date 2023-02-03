@@ -41,15 +41,36 @@ namespace connectivity
 
     typedef ::std::vector< OSQLParseNode* > OSQLParseNodes;
 
-    enum SQLNodeType
-        {
-        SQL_NODE_RULE, SQL_NODE_LISTRULE, SQL_NODE_COMMALISTRULE,
-        SQL_NODE_KEYWORD, SQL_NODE_COMPARISON, SQL_NODE_NAME, SQL_NODE_ARRAY_INDEX, SQL_NODE_DOTLISTRULE,
-        SQL_NODE_STRING, SQL_NODE_INTNUM, SQL_NODE_APPROXNUM,
-        SQL_NODE_EQUAL, SQL_NODE_LESS, SQL_NODE_GREAT, SQL_NODE_LESSEQ, SQL_NODE_GREATEQ, SQL_NODE_NOTEQUAL,
-        SQL_NODE_PUNCTUATION, SQL_NODE_AMMSC, SQL_NODE_ACCESS_DATE, SQL_NODE_DATE, SQL_NODE_BITWISE_NOT,
-        SQL_NODE_BITWISE_OR, SQL_NODE_BITWISE_AND, SQL_NODE_BITWISE_SHIFT_LEFT, SQL_NODE_BITWISE_SHIFT_RIGHT, SQL_NODE_CONCAT
-        };
+    enum SQLNodeType {
+        SQL_NODE_RULE,
+        SQL_NODE_LISTRULE,
+        SQL_NODE_COMMALISTRULE,
+        SQL_NODE_KEYWORD,
+        SQL_NODE_COMPARISON,
+        SQL_NODE_NAME,
+        SQL_NODE_ARRAY_INDEX,
+        SQL_NODE_DOTLISTRULE,
+        SQL_NODE_STRING,
+        SQL_NODE_INTNUM,
+        SQL_NODE_APPROXNUM,
+        SQL_NODE_EQUAL,
+        SQL_NODE_LESS,
+        SQL_NODE_GREAT,
+        SQL_NODE_LESSEQ,
+        SQL_NODE_GREATEQ,
+        SQL_NODE_NOTEQUAL,
+        SQL_NODE_PUNCTUATION,
+        SQL_NODE_AMMSC,
+        SQL_NODE_ACCESS_DATE,
+        SQL_NODE_DATE,
+        SQL_NODE_BITWISE_NOT,
+        SQL_NODE_BITWISE_OR,
+        SQL_NODE_BITWISE_AND,
+        SQL_NODE_BITWISE_SHIFT_LEFT,
+        SQL_NODE_BITWISE_SHIFT_RIGHT,
+        SQL_NODE_ARROW,
+        SQL_NODE_CONCAT,
+    };
 
     typedef ::std::set< Utf8String >   QueryNameSet;
     //==================================================================
@@ -98,8 +119,8 @@ namespace connectivity
         Utf8String m_aNodeValue;    // Token-Name oder leer bei Regeln oder Utf8String bei
         SQLNodeType m_eNodeType;    // s. o.
         sal_uInt32 m_nNodeID;         // ::com::sun::star::chaos::Rule ID (bei IsRule()) oder Token ID (bei !IsRule())
-        OSQLParseNodesContainer* m_container;
-        public:
+
+       public:
             enum Rule
                 {
                 all_or_any_predicate = 0,
@@ -172,16 +193,20 @@ namespace connectivity
                 opt_column_commalist,
                 opt_column_ref_commalist,
                 opt_cte_recursive,
-                opt_disqualify_primary_join,
-                opt_only,
                 opt_disqualify_polymorphic_constraint,
+                opt_disqualify_primary_join,
                 opt_ecsqloptions_clause,
                 opt_escape,
                 opt_group_by_clause,
                 opt_having_clause,
                 opt_limit_offset_clause,
                 opt_member_function_args,
+                opt_only,
                 opt_order_by_clause,
+                opt_pragma_for,
+                opt_pragma_func,
+                opt_pragma_set_val,
+                opt_pragma_set,
                 opt_where_clause,
                 ordering_spec_commalist,
                 ordering_spec,
@@ -189,6 +214,9 @@ namespace connectivity
                 outer_join_type,
                 parameter_ref,
                 parameter,
+                pragma_path,
+                pragma_value,
+                pragma,
                 predicate_check,
                 property_path_entry,
                 property_path,
@@ -232,7 +260,8 @@ namespace connectivity
                 value_exp,
                 values_or_query_spec,
                 where_clause,
-                rule_count,                
+                opt_extract_value,
+                rule_count,
                 UNKNOWN_RULE            // ID indicating that a node is no rule with a matching Rule-enum value (see getKnownRuleID)
                 };
 

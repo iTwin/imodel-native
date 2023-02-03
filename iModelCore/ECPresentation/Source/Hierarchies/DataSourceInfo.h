@@ -94,6 +94,7 @@ public:
     BeGuidCR GetVirtualParentNodeId() const {return m_virtualParentNodeId;}
     void SetVirtualParentNodeId(BeGuid id) {m_virtualParentNodeId = id;}
 
+    CombinedHierarchyLevelIdentifier& GetCombined() {return m_combined;}
     CombinedHierarchyLevelIdentifier const& GetCombined() const {return m_combined;}
     Utf8StringCR GetConnectionId() const {return m_combined.GetConnectionId();}
     Utf8StringCR GetRulesetId() const {return m_combined.GetRulesetId();}
@@ -110,22 +111,16 @@ struct DataSourceIdentifier
 private:
     BeGuid m_id;
     BeGuid m_hierarchyLevelId;
+    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
     bvector<uint64_t> m_index;
 public:
     DataSourceIdentifier() : m_id(), m_hierarchyLevelId() {}
-    DataSourceIdentifier(BeGuid hierarchyLevelId, bvector<uint64_t> index)
-        : m_id(), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
+    DataSourceIdentifier(BeGuid hierarchyLevelId, bvector<uint64_t> index, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
+        : m_id(), m_hierarchyLevelId(hierarchyLevelId), m_index(index), m_instanceFilter(instanceFilter)
         {}
-    DataSourceIdentifier(BeGuid id, BeGuid hierarchyLevelId, bvector<uint64_t> index)
-        : m_id(id), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
+    DataSourceIdentifier(BeGuid id, BeGuid hierarchyLevelId, bvector<uint64_t> index, std::shared_ptr<InstanceFilterDefinition const> instanceFilter)
+        : m_id(id), m_hierarchyLevelId(hierarchyLevelId), m_index(index), m_instanceFilter(instanceFilter)
         {}
-    bool operator<(DataSourceIdentifier const& other) const
-        {
-        NUMERIC_LESS_COMPARE(m_id, other.m_id);
-        NUMERIC_LESS_COMPARE(m_hierarchyLevelId, other.m_hierarchyLevelId);
-        VECTOR_LESS_COMPARE(m_index, other.m_index);
-        return false;
-        }
     bool operator==(DataSourceIdentifier const& other) const
         {
         return Equals(other);
@@ -138,7 +133,10 @@ public:
         {
         return m_id == other.m_id
             && m_hierarchyLevelId == other.m_hierarchyLevelId
-            && m_index == other.m_index;
+            && m_index == other.m_index
+            && (m_instanceFilter == other.m_instanceFilter
+                || m_instanceFilter && other.m_instanceFilter && *m_instanceFilter == *other.m_instanceFilter
+            );
         }
     bool IsValid() const { return m_id.IsValid(); }
     void Invalidate() {m_id.Invalidate();}
@@ -146,6 +144,7 @@ public:
     void SetId(BeGuid id) {m_id = id;}
     BeGuidCR GetHierarchyLevelId() const {return m_hierarchyLevelId;}
     bvector<uint64_t> const& GetIndex() const {return m_index;}
+    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
 };
 
 /*=================================================================================**//**

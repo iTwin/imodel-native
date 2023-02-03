@@ -29,7 +29,7 @@ ContentSpecificationP ContentSpecification::Create(JsonValueCR json)
         Utf8String msg = json.isMember(COMMON_JSON_ATTRIBUTE_SPECTYPE)
             ? Utf8PrintfString("Invalid `" COMMON_JSON_ATTRIBUTE_SPECTYPE "` attribute value: `%s`", type)
             : Utf8String("Missing required attribute: `" COMMON_JSON_ATTRIBUTE_SPECTYPE "`");
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, msg);
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, msg);
         }
     if (!spec || !spec->ReadJson(json))
         DELETE_AND_CLEAR(spec);

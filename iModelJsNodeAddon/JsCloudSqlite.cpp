@@ -67,7 +67,7 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
                 BeNapi::ThrowJsException(info.Env(), "illegal cache size");
         }
         bool curlDiagnostics = boolMember(args, JSON_NAME(curlDiagnostics), false);
-        auto stat = InitCache(name, rootDir, cacheSize, intMember(args, JSON_NAME(nRequests), 0), curlDiagnostics);
+        auto stat = InitCache(name, rootDir, cacheSize, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0), curlDiagnostics);
         if (!stat.IsSuccess()) {
             if (stat.m_status == BE_SQLITE_CANTOPEN)
                 stat.m_error = "Cannot create CloudCache: invalid cache directory or directory does not exist";
@@ -613,7 +613,7 @@ struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
             m_direction = direction;
             m_localFile = requireString(args, JSON_NAME(localFileName));
             m_dbName = requireString(args, JSON_NAME(dbName));
-            auto stat = m_job.Init(container, 0, intMember(args, JSON_NAME(nRequests), 0));
+            auto stat = m_job.Init(container, 0, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0));
             if (!stat.IsSuccess())
                 BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
         }

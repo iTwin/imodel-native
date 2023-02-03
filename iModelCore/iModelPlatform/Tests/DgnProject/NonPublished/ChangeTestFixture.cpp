@@ -69,9 +69,9 @@ void ChangeTestFixture::SetupDgnDb(BeFileName seedFileName, WCharCP newFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::OpenDgnDb(BeFileName fileName, DgnDb::OpenParams openParams) {
+void ChangeTestFixture::OpenIModelDb(BeFileName fileName, DgnDb::OpenParams openParams) {
     DbResult openStatus;
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
@@ -84,8 +84,8 @@ void ChangeTestFixture::OpenDgnDb(BeFileName fileName, DgnDb::OpenParams openPar
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::OpenDgnDb(BeFileName fileName, Db::OpenMode openMode/*=Db::OpenMode::ReadWrite*/) {
-    OpenDgnDb(fileName, DgnDb::OpenParams(openMode));
+void ChangeTestFixture::OpenIModelDb(BeFileName fileName, Db::OpenMode openMode/*=Db::OpenMode::ReadWrite*/) {
+    OpenIModelDb(fileName, DgnDb::OpenParams(openMode));
 }
 
 //---------------------------------------------------------------------------------------

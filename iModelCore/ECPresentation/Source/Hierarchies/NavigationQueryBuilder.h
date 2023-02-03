@@ -22,17 +22,21 @@ struct NavigationQueryBuilderParameters : QueryBuilderParameters
 private:
     IHierarchyCacheCR m_nodesCache;
     IUsedClassesListener* m_usedClassesListener;
+    InstanceFilterDefinitionCP m_instanceFilter;
     bool m_useSpecificationIdentifier;
 public:
     NavigationQueryBuilderParameters(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, ICancelationTokenCP cancellationToken,
         IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, RulesetVariables const& rulesetVariables, IUsedRulesetVariablesListener* variablesListener, ECExpressionsCache& ecexpressionsCache,
         IHierarchyCacheCR nodesCache, IJsonLocalState const* localState = nullptr)
         : QueryBuilderParameters(schemaHelper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, ecexpressionsCache, variablesListener, localState),
-        m_nodesCache(nodesCache), m_usedClassesListener(nullptr), m_useSpecificationIdentifier(true)
+        m_nodesCache(nodesCache), m_usedClassesListener(nullptr), m_useSpecificationIdentifier(true), m_instanceFilter(nullptr)
         {}
     IHierarchyCacheCR GetNodesCache() const {return m_nodesCache;}
     void SetUsedClassesListener(IUsedClassesListener* listener) {m_usedClassesListener = listener;}
     IUsedClassesListener* GetUsedClassesListener() const {return m_usedClassesListener;}
+
+    void SetInstanceFilter(InstanceFilterDefinitionCP instanceFilter) {m_instanceFilter = instanceFilter;}
+    InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter;}
 
     // note: this should only be used in query builder tests to avoid using specification identifiers in
     // query contracts to make produced queries easier to verify
@@ -54,18 +58,18 @@ private:
     RelatedPathsCache* m_relatedPathsCache;
 
 private:
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const;
+    bvector<PresentationQueryBuilderPtr> GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
 
 public:
     ECPRESENTATION_EXPORT NavigationQueryBuilder(NavigationQueryBuilderParameters params);
     ECPRESENTATION_EXPORT ~NavigationQueryBuilder();
     NavigationQueryBuilderParameters const& GetParameters() const {return m_params;}
     NavigationQueryBuilderParameters& GetParameters() {return m_params;}
-    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(RootNodeRuleCR, ChildNodeSpecificationCR) const;
-    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(ChildNodeRuleCR, ChildNodeSpecificationCR, NavNodeCR) const;
+    ECPRESENTATION_EXPORT bvector<PresentationQueryBuilderPtr> GetQueries(RootNodeRuleCR, ChildNodeSpecificationCR) const;
+    ECPRESENTATION_EXPORT bvector<PresentationQueryBuilderPtr> GetQueries(ChildNodeRuleCR, ChildNodeSpecificationCR, NavNodeCR) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

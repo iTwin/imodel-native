@@ -349,7 +349,6 @@ std::unique_ptr<ECPresentationManager> MultiProcessPerformanceAnalysis::CreateMa
 
     ECPresentationManager::Params params(ECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
     params.SetMultiThreadingParams(threadAllocations);
-    params.SetMode(ECPresentationManager::Mode::ReadOnly);
     ECPresentationManager::Params::CachingParams cachingParams;
     cachingParams.SetCacheDirectoryPath(temporaryDirectory);
     params.SetCachingParams(cachingParams);
@@ -401,7 +400,7 @@ folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesNonPaged(bve
     for (ManagerPerformanceMetricsStorage& manager : managers)
         {
         std::shared_ptr<StopWatch> timer = std::make_shared<StopWatch>(true);
-        auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables(), nullptr);
+        auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables());
         futures.push_back(PresentationManagerTestsHelper::GetAllNodes(*manager.m_manager, params, [](double){})
             .then([&manager, timer](size_t nodesCount)
                 {
@@ -418,7 +417,7 @@ folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesNonPaged(bve
 folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesPaged(ECPresentationManager& manager, MultiProcessPagedLoadPerformanceMetricsStorage& metrics)
     {
     std::shared_ptr<StopWatch> timer = std::make_shared<StopWatch>(true);
-    auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables(), nullptr);
+    auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables());
     return PresentationManagerTestsHelper::GatAllNodesPaged(manager, params, NODES_PAGE_SIZE, [&metrics](int pageIndex, double pageTime, double countTime)
         {
         metrics.ReportPageLoad(pageIndex, pageTime, countTime);
@@ -442,24 +441,24 @@ folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesPaged(bvecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MultiProcessPerformanceAnalysis::RunTestCase(TestCase const& testCase)
     {
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Getting nodes using %d managers with %d threads.", testCase.m_processesCount, testCase.m_threadsCount);
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Getting nodes using %d managers with %d threads.", testCase.m_processesCount, testCase.m_threadsCount);
 
     AggregateMultiProcessPerformanceMetricsStorage aggregateMetrics(testCase.m_processesCount);
     bvector<ManagerPerformanceMetricsStorage> managers = CreateManagers(testCase, aggregateMetrics);
     // get all nodes without paging
     GetNodesNonPaged(managers).get();
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Finished loading all nodes without paging.");
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Finished loading all nodes without paging.");
 
     // clear all caches
     ResetManagers(managers, testCase.m_threadsCount);
 
     // get all nodes in pages with cold cache
     GetNodesPaged(managers, HierarchyCacheState::Cold).get();
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Finished loading all nodes in pages with cold cache.");
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Finished loading all nodes in pages with cold cache.");
 
     // get all nodes in pages with warm cache
     GetNodesPaged(managers, HierarchyCacheState::Warm).get();
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Finished loading all nodes in pages with warm cache.");
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Finished loading all nodes in pages with warm cache.");
 
     Report(managers, aggregateMetrics, testCase);
     }

@@ -476,6 +476,48 @@ SELECT [PropertyName]
     return SUCCESS;
     }
 
+BentleyStatus RemapManager::EnsureInvolvedSchemasAreLoaded(bvector<ECSchemaCP> const& schemasToMap)
+    {
+    /*
+    This method ensures that all schemas that we touch in remapping are being loaded before schema mapping takes place.
+    Schema Mapping relies on .DerivedClasses() to navigate to the leaf classes, so we have to make sure the necessary schemas are fully loaded.
+    */
+    if(m_cleanedMappingInfo.empty())
+        return SUCCESS;
+    IdSet<ECClassId> classIdsToMap;
+    IdSet<ECSchemaId> schemasIdsToMap;
+    for(ECSchemaCP schema : schemasToMap)
+        {
+        if(schema->HasId())
+            schemasIdsToMap.insert(schema->GetId());
+        }
+    for(auto& pair : m_cleanedMappingInfo)
+        {
+        auto classId = pair.first;
+        classIdsToMap.insert(classId);
+        }
+        Utf8CP complementarySchemaIdsSql = R"sqlstatement(
+SELECT DISTINCT [s].[Name] from [ec_Class] c
+    JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
+    WHERE NOT InVirtualSet(?,[c].[SchemaId]) AND InVirtualSet(?, [c].[Id])
+    )sqlstatement";
+    CachedStatementPtr complementarySchemaIdsStmt = m_ecdb.GetCachedStatement(complementarySchemaIdsSql);
+    if (complementarySchemaIdsStmt == nullptr)
+        return ERROR;
+    if(BE_SQLITE_OK != complementarySchemaIdsStmt->BindVirtualSet(1, schemasIdsToMap))
+        return ERROR;
+    if(BE_SQLITE_OK != complementarySchemaIdsStmt->BindVirtualSet(2, classIdsToMap))
+        return ERROR;
+    while (complementarySchemaIdsStmt->Step() == BE_SQLITE_ROW)
+        {
+        Utf8String schemaName = complementarySchemaIdsStmt->GetValueText(0);
+        ECSchemaCP schema = m_ecdb.Schemas().GetSchema(schemaName);
+        if(schema == nullptr)
+            return ERROR;
+        }
+    return SUCCESS;
+    }
+
 BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportContext& ctx)
     {
     if(m_cleanedMappingInfo.empty())
@@ -552,7 +594,7 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
     return SUCCESS;
     }
 
-BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties()
+BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties(SchemaImportContext& ctx)
     {
     ECDB_PERF_LOG_SCOPE( "Schema import> Upgrading existing ECInstances with remapped properties to different columns");
     for(auto& pair : m_remappedColumns)
@@ -578,12 +620,12 @@ BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties()
             return ERROR;
             }
 
-        if(UpdateRemappedData(sortedUpdates) != SUCCESS)
+        if(UpdateRemappedData(sortedUpdates, ctx) != SUCCESS)
             {
             return ERROR;
             }
 
-        if(UpdateRemappedCircularData(circularUpdates) != SUCCESS)
+        if(UpdateRemappedCircularData(circularUpdates, ctx) != SUCCESS)
             {
             return ERROR;
             }
@@ -695,7 +737,7 @@ void RemapManager::SortCircularRemappedColumnInfos(std::vector<std::vector<Remap
         }
     }
 
-BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos)
+BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos, SchemaImportContext& ctx)
     {
     if(infos.empty())
         return SUCCESS;
@@ -707,28 +749,24 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
         if (remapInfo->m_isSameTableName)
             {
                 {
-                auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s]=[%s] WHERE([ECClassId]=%s)",
-                                                                remapInfo->m_newTableName.c_str(),
-                                                                remapInfo->m_newColumnName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_columnName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-                if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to update remapped property columns for %s. Error: %s", remapInfo->ToString().c_str(), m_ecdb.GetLastError().c_str());
-                    return ERROR;
-                    }
+                const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",remapInfo->ToString().c_str()).GetUtf8CP();
+                const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s]=[%s] WHERE([ECClassId]=%s)",
+                                                       remapInfo->m_newTableName.c_str(),
+                                                       remapInfo->m_newColumnName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_columnName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str())
+                                           .GetUtf8CP();
+                ctx.GetDataTransform().Append(desc, sql);
                 }
 
                 {
-                auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s]=NULL WHERE([ECClassId]=%s)",
-                                                                remapInfo->m_newTableName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_columnName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-                if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean old column for remapped property %s. Error: %s", remapInfo->ToString().c_str(), m_ecdb.GetLastError().c_str());
-                    return ERROR;
-                    }
+                const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",remapInfo->ToString().c_str()).GetUtf8CP();
+                const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s]=NULL WHERE([ECClassId]=%s)",
+                                                       remapInfo->m_newTableName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_columnName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str())
+                                           .GetUtf8CP();
+                ctx.GetDataTransform().Append(desc, sql);
                 }
             }
         else
@@ -743,7 +781,8 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
                 return ERROR;
                 }
 
-            auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s] = (SELECT [%s] FROM [%s] WHERE [%s].[%s] = [%s].[%s]) WHERE([ECClassId]=%s)",
+            const Utf8String desc = SqlPrintfString("remap property statement to move property data into different table. Property %s.",remapInfo->ToString().c_str()).GetUtf8CP();
+            const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s] = (SELECT [%s] FROM [%s] WHERE [%s].[%s] = [%s].[%s]) WHERE([ECClassId]=%s)",
                                                             remapInfo->m_newTableName.c_str(),
                                                             remapInfo->m_newColumnName.c_str(),
                                                             remapInfo->m_cleanedMapping.m_columnName.c_str(),
@@ -752,26 +791,17 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
                                                             oldInstanceIdColumn.c_str(),
                                                             remapInfo->m_newTableName.c_str(),
                                                             newInstanceIdColumn.c_str(),
-                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-            if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to execute remap property statement to move property data into different table. Property %s. Error: %s", remapInfo->ToString().c_str(),
-                    m_ecdb.GetLastError().c_str());
-                return ERROR;
-                }
+                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()).GetUtf8CP();
+            ctx.GetDataTransform().Append(desc, sql);
             }
 
             {
-            auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s] = NULL WHERE([ECClassId]=%s)",
+            const Utf8String desc = SqlPrintfString("update statement for removing remapped property data from old column. Property %s.",remapInfo->ToString().c_str()).GetUtf8CP();
+            const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s] = NULL WHERE([ECClassId]=%s)",
                                                             remapInfo->m_cleanedMapping.m_tableName.c_str(),
                                                             remapInfo->m_cleanedMapping.m_columnName.c_str(),
-                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-            if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to execute update statement for removing remapped property data from old column. Property %s. Error: %s",
-                    remapInfo->ToString().c_str(), m_ecdb.GetLastError().c_str());
-                return ERROR;
-                }
+                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()).GetUtf8CP();
+            ctx.GetDataTransform().Append(desc, sql);
             }
             } // move between tables
         } //for each remap info
@@ -792,7 +822,7 @@ bool RemapManager::CheckIfAllUpdatesAreWithinSameTable(std::vector<std::vector<R
     return true;
     }
 
-BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos)
+BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos, SchemaImportContext& ctx)
     {
     if(infos.empty())
         return SUCCESS;
@@ -826,12 +856,8 @@ BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<R
             }
         SqlPrintfString classIdPart(" WHERE([ECClassId]=%s)", first->m_cleanedMapping.m_classId.ToHexStr().c_str());
         updateStmt.append(classIdPart.GetUtf8CP());
-        auto rc = m_ecdb.TryExecuteSql(updateStmt.c_str());
-        if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-            {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to update remapped property columns (circular) for %s. Error: %s", first->ToString().c_str(), m_ecdb.GetLastError().c_str());
-            return ERROR;
-            }
+        const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",first->ToString().c_str()).GetUtf8CP();
+        ctx.GetDataTransform().Append(desc, updateStmt);
         }
 
     return SUCCESS;

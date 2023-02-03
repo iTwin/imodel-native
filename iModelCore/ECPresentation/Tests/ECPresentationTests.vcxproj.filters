@@ -63,6 +63,9 @@
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp">
       <Filter>Integration\Hierarchies</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_InstanceFiltering.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
     <ClCompile Include="NonPublished\Integration\Hierarchies\PagingTests.cpp">
       <Filter>Integration\Hierarchies</Filter>
     </ClCompile>

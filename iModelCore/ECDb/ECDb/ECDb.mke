@@ -30,6 +30,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ChangedIdsIterator.h \
                 $(publicApiDir)ChangeIterator.h \
                 $(publicApiDir)ConcurrentQueryManager.h \
+                $(publicApiDir)InstanceReader.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h
 
 ECDbAllHeaders = \
@@ -70,6 +71,7 @@ ECDbAllHeaders = \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ConcurrentQueryManagerImpl.h \
+                $(baseDir)InstanceReaderImpl.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
                 $(baseDir)ECSql/Parser/SqlTypes.h \
                 $(baseDir)ECSql/Parser/IParseContext.h \
@@ -89,6 +91,8 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/InsertStatementExp.h \
                 $(baseDir)ECSql/UpdateStatementExp.h \
                 $(baseDir)ECSql/DeleteStatementExp.h \
+                $(baseDir)ECSql/PragmaStatementExp.h \
+                $(baseDir)ECSql/PragmaECSqlPreparedStatement.h \
                 $(baseDir)ECSql/OptionsExp.h \
                 $(baseDir)ECSql/ExpHelper.h \
                 $(baseDir)ECSql/ECSqlTypeInfo.h \
@@ -110,6 +114,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ArrayECSqlBinder.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlBinder.h \
                 $(baseDir)ECSql/IdECSqlBinder.h \
+                $(baseDir)ECSql/VirtualSetBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
                 $(baseDir)ECSql/ECSqlField.h \
                 $(baseDir)ECSql/PointECSqlField.h \
@@ -267,6 +272,8 @@ $(o)UpdateStatementExp$(oext):                                $(baseDir)ECSql/Up
 
 $(o)DeleteStatementExp$(oext):                                $(baseDir)ECSql/DeleteStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)PragmaECSqlPreparedStatement$(oext):                      $(baseDir)ECSql/PragmaECSqlPreparedStatement.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)OptionsExp$(oext):                                        $(baseDir)ECSql/OptionsExp.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ExpHelper$(oext):                                         $(baseDir)ECSql/ExpHelper.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -337,6 +344,8 @@ $(o)NavigationPropertyECSqlBinder$(oext):                     $(baseDir)ECSql/Na
 
 $(o)IdECSqlBinder$(oext):                                     $(baseDir)ECSql/IdECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)VirtualSetBinder$(oext):                                       $(baseDir)ECSql/VirtualSetBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlField$(oext):                                        $(baseDir)ECSql/ECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -365,6 +374,8 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
@@ -384,18 +395,8 @@ MultiCompileDepends=$(_MakeFileSpec)
     LLVMCommonCompOpts + -Wno-error=unused-function
     LLVMCommonCompOpts + -Wno-error=unused-variable
     LLVMCommonCompOpts + -Wno-error=unknown-pragmas
-
-    # We need to ignore these warnings for Apple LLVM 5.1, but they don't even exist prior, so guard.
-    GreaterThan5_1 = $[@readstdout "python $(SrcRoot)bsicommon/build/DetectClangVersion.py 503.0.38"]
-    %if $(GreaterThan5_1) == "YES"
-        LLVMCommonCompOpts + -Wno-error=deprecated-register
-    %endif
-
-    # We need to ignore these warnings for Apple LLVM 6.1, but they don't even exist prior, so guard.
-    GreaterThan6_1 = $[@readstdout "python $(SrcRoot)bsicommon/build/DetectClangVersion.py 602.0.49"]
-    %if $(GreaterThan6_1) == "YES"
-        LLVMCommonCompOpts + -Wno-error=pointer-bool-conversion
-    %endif
+    LLVMCommonCompOpts + -Wno-error=deprecated-register
+    LLVMCommonCompOpts + -Wno-error=pointer-bool-conversion
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
@@ -407,7 +408,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if ($(BUILD_TOOLSET) == "ANDROID_CLANG") || $(BUILD_TOOLSET) == "LINUX_CLANG"))
+%if ($(BUILD_TOOLSET) == "ANDROID_CLANG") || $(BUILD_TOOLSET) == "LINUX_CLANG"
     OldClangCommonCompOpts =% $(ClangCommonCompOpts)
     ClangCommonCompOpts + -Wno-unknown-pragmas
     ClangCommonCompOpts + -Wno-unused-function
@@ -487,7 +488,8 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
-                              $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext)
+                              $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
+                              $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 
 
 # We support shared or static linking.
@@ -508,4 +510,4 @@ $(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
 #----------------------------------------------------------------------------------------
 
 always:
-    ~linkfile "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml"
+    ~linkfile "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.01.ecschema.xml"

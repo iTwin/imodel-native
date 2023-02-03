@@ -64,7 +64,7 @@ RuleTargetTree CommonToolsInternal::ParseTargetTreeString(Utf8CP targetTreeStrin
     if (0 == strcmp(targetTreeString, COMMON_ATTRIBUTE_VALUE_TARGET_TREE_BOTH))
         return TargetTree_Both;
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"" COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE "\", "
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"" COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE "\", "
         "\"" COMMON_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE "\" or \"" COMMON_ATTRIBUTE_VALUE_TARGET_TREE_BOTH "\".", attributeIdentifier, targetTreeString));
     return TargetTree_MainTree;
     }
@@ -95,7 +95,7 @@ RequiredRelationDirection CommonToolsInternal::ParseRequiredDirectionString(Utf8
     if (0 == strcmp(value, COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD))
         return RequiredRelationDirection_Backward;
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"" COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH "\", "
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"" COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH "\", "
         "\"" COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD "\" or \"" COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD "\".", attributeIdentifier, value));
     return RequiredRelationDirection_Both;
     }
@@ -124,7 +124,7 @@ RelationshipMeaning CommonToolsInternal::ParseRelationshipMeaningString(Utf8CP v
     if (0 == strcmp(value, COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE))
         return RelationshipMeaning::RelatedInstance;
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"" COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE "\" or "
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"" COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE "\" or "
         "\"" COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE "\".", attributeIdentifier, value));
     return RelationshipMeaning::RelatedInstance;
     }
@@ -200,12 +200,12 @@ void CommonToolsInternal::ParseSchemaAndClassName(Utf8StringR schemaName, Utf8St
     bool hasIssues = false;
     if (!json.isMember(SCHEMA_CLASS_SPECIFICATION_SCHEMANAME) || !json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].isString())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Value for `%s.%s` is either missing or invalid. Expected non-empty string", attributeIdentifier, SCHEMA_CLASS_SPECIFICATION_SCHEMANAME));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Value for `%s.%s` is either missing or invalid. Expected non-empty string", attributeIdentifier, SCHEMA_CLASS_SPECIFICATION_SCHEMANAME));
         hasIssues = true;
         }
     if (!json.isMember(SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME) || !json[SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME].isString())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Value for `%s.%s` is either missing or invalid. Expected non-empty string", attributeIdentifier, SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Value for `%s.%s` is either missing or invalid. Expected non-empty string", attributeIdentifier, SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME));
         hasIssues = true;
         }
     if (hasIssues)

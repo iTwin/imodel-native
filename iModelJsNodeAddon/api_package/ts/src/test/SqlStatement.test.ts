@@ -15,12 +15,12 @@ describe("SQLite statements", () => {
   before((done) => {
     dgndb = openDgnDb(dbFileName);
     done();
-  })
+  });
 
   after((done) => {
     dgndb.closeIModel();
     done();
-  })
+  });
 
   it("Select using alias without table", () => {
     const stmt = new iModelJsNative.ECSqlStatement();
@@ -32,8 +32,7 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).eq("foo");
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
@@ -48,9 +47,8 @@ describe("SQLite statements", () => {
       const value = stmt.getValue(0);
       const colInfo = value.getColumnInfo();
 
-      expect(colInfo.getPropertyName()).to.exist; //we generate a pseudo name automatically
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getPropertyName()).to.exist; // we generate a pseudo name automatically
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
@@ -66,13 +64,11 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).to.exist;
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
   });
-
 
   it("Select without table using recursive cte", () => {
     const stmt = new iModelJsNative.ECSqlStatement();
@@ -84,8 +80,7 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).to.exist;
-      expect(colInfo.hasOriginProperty()).to.be.false;
-      expect(() => colInfo.getOriginPropertyName()).to.throw("ECSqlColumnInfo does not have an origin property.");
+      expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
     }
@@ -101,7 +96,6 @@ describe("SQLite statements", () => {
       const colInfo = value.getColumnInfo();
 
       expect(colInfo.getPropertyName()).eq("SchemaName");
-      expect(colInfo.hasOriginProperty()).to.be.true;
       expect(colInfo.getOriginPropertyName()).eq("Name");
     } finally {
       stmt.dispose();
@@ -119,12 +113,12 @@ describe("SQLite statements", () => {
     const stmt = new iModelJsNative.SqliteStatement();
     try {
       const sql = "SELECT 100 from xxx";
-      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table");
       expect(errorLogStub.callCount).eq(1);
 
       Logger.setLevel("BeSQLite", LogLevel.None);
       iModelJsNative.clearLogLevelCache();
-      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table");
       expect(errorLogStub.callCount).eq(1);
     } finally {
       stmt.dispose();

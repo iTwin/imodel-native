@@ -6,7 +6,6 @@
 #include <ECPresentation/Connection.h>
 #include "../../../Source/Shared/Queries/QueryExecutor.h"
 #include "../../../Source/Shared/ECSchemaHelper.h"
-#include "../../../Source/Content/ContentQuery.h"
 #include "../../../Source/Hierarchies/NavigationQuery.h"
 #include "../Helpers/ECDbTestProject.h"
 #include "../Helpers/TestHelpers.h"

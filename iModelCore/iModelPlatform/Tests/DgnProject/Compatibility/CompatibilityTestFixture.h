@@ -24,6 +24,7 @@ protected:
     static void Initialize();
 
     void SetUp() override { Initialize(); }
+    virtual void TearDown() override {}
     };
 
 //=======================================================================================

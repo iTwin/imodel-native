@@ -202,7 +202,7 @@ bool                addVerticesAtCrossings
     VuMask      numberedNodeMask = graphP ? vu_grabMask (graphP) : 0;
     VuP         faceP, originalNodeP;
     StatusInt status = ERROR;
-    int       i, numError;
+    int       i;
     int       originalIndex;
     int       outputIndex;
     int     separator = signedOneBasedIndices ? 0 : -1;
@@ -242,7 +242,6 @@ bool                addVerticesAtCrossings
             vu_flipTrianglesToImproveQuadraticAspectRatio (graphP);
 
         vu_collectInteriorFaceLoops (faceArrayP, graphP);
-        numError = 0;
 
         // force numbered node indices everywhere.  Last one seen at a vertex wins
         // (And this will do each loop at least 2X.)
@@ -1098,7 +1097,7 @@ DPoint3d            *meshOrigin
     VuArrayP    faceArrayP = vu_grabArray (graphP);
     VuP         faceP;
     StatusInt status = SUCCESS;
-    int       i, numError;
+    int       i;
     int     separator = 0;
     int    maxPerFace = 3;
     static double s_shortEdgeToleranceFactor = 1.0e-8;
@@ -1271,7 +1270,6 @@ DPoint3d            *meshOrigin
         }
     END_VU_SET_LOOP (currNode, graphP)
     vu_collectInteriorFaceLoops (faceArrayP, graphP);
-    numError = 0;
     VuMask visibleMask = (NULL == pVisible ? VU_BOUNDARY_EDGE : secondaryMask);
     vu_arrayOpen (faceArrayP);
     for (i = 0; vu_arrayRead (faceArrayP, &faceP); i++)

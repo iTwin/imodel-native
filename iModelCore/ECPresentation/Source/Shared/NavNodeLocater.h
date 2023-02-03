@@ -15,10 +15,10 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct  INavNodeLocater
 {
 protected:
-    virtual NavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR, RulesetVariables const&) const = 0;
+    virtual NavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const = 0;
 public:
     virtual ~INavNodeLocater() {}
-    NavNodeCPtr LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key, RulesetVariables const& variables) const {return _LocateNode(connection, rulesetId, key, variables);}
+    NavNodeCPtr LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeKeyCR key) const {return _LocateNode(connection, rulesetId, key);}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

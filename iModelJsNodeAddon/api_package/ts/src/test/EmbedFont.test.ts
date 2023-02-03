@@ -23,10 +23,10 @@ describe("embed fonts", () => {
         codePage: 100,
         degree: 21,
         diameter: 22,
-        plusMinus: 23
-      }
+        plusMinus: 23,
+      },
     },
-    data: new Uint8Array([100, 2, 233, 200])
+    data: new Uint8Array([100, 2, 233, 200]),
   };
 
   it("embed fonts in SQLiteDb", () => {
@@ -38,10 +38,10 @@ describe("embed fonts", () => {
     tempSQLiteDb.createDb(tempSQLiteDbName);
 
     tempSQLiteDb.embedFont(dummyRsc);
-    tempSQLiteDb.embedFont({fileName: shxFileName});
-    tempSQLiteDb.embedFont({fileName: ttfFileName});
+    tempSQLiteDb.embedFont({ fileName: shxFileName });
+    tempSQLiteDb.embedFont({ fileName: ttfFileName });
     if (os.platform() === "win32") // Embedding system fonts is only supported on windows.
-      tempSQLiteDb.embedFont({systemFont: "Times New Roman"});
+      tempSQLiteDb.embedFont({ systemFont: "Times New Roman" });
 
     tempSQLiteDb.closeDb();
   });
@@ -51,12 +51,12 @@ describe("embed fonts", () => {
     const tempDgnDbName = copyFile("testEmbedFont.bim", dbFileName);
     tempDgnDb.openIModel(tempDgnDbName, OpenMode.ReadWrite);
 
-    tempDgnDb.embedFont({...dummyRsc, compress:true});
-    tempDgnDb.embedFont({fileName: shxFileName, compress: true});
-    tempDgnDb.embedFont({fileName: ttfFileName, compress: true});
+    tempDgnDb.embedFont({ ...dummyRsc, compress: true });
+    tempDgnDb.embedFont({ fileName: shxFileName, compress: true });
+    tempDgnDb.embedFont({ fileName: ttfFileName, compress: true });
     if (os.platform() === "win32") // Embedding system fonts is only supported on windows.
-      tempDgnDb.embedFont({systemFont: "times new roman", compress: true});
-    
-      tempDgnDb.closeIModel();
+      tempDgnDb.embedFont({ systemFont: "times new roman", compress: true });
+
+    tempDgnDb.closeIModel();
   });
 });

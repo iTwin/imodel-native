@@ -202,6 +202,26 @@ BeFileName Profile::GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) c
     return filePath.AppendToPath(fileName);
     }
 
+bool Profile::IsFileCreatedForCurrentTestRun(const TestFile& testFile) const
+    {
+    // Get just the test file directory name
+    auto testFileDirectory = testFile.GetSeedPath().GetDirectoryName();
+    if (testFileDirectory.EndsWith(L"/") || testFileDirectory.EndsWith(L"\\"))
+        testFileDirectory.erase(testFileDirectory.size() - 1, 1);
+
+    const auto separatorPos = testFileDirectory.find_last_of(L"/\\");
+    if (separatorPos != BeFileName::npos)
+        testFileDirectory.erase(0U, separatorPos + 1U);
+
+    // Append the directory and test file name to the created data folder
+    auto createdDataFolder = GetCreatedDataFolder();
+    createdDataFolder.AppendToPath(testFileDirectory.c_str());
+    createdDataFolder.AppendToPath(BeFileName(testFile.GetName()).c_str());
+
+    // Check if the updated created data folder path matches the test file seed path
+    return createdDataFolder.GetNameUtf8().Equals(testFile.GetSeedPath().GetNameUtf8());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -300,7 +320,7 @@ BentleyStatus DgnDbProfile::_Init() const
     temporaryDir.AppendUtf8("temp");
 
     CreateDgnDbParams temp("ProfileVersion");
-    DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, temporaryDir, temp);
+    DgnDbPtr db = DgnDb::CreateIModel(nullptr, temporaryDir, temp);
     if (db == nullptr)
         return ERROR;
 
@@ -313,9 +333,9 @@ BentleyStatus DgnDbProfile::_Init() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TestFile::TestFile(Utf8StringCR name, BeFileName const& path, BeFileName const& seedFilePath, ProfileVersion const& bedbVersion, ProfileVersion const& ecdbVersion, ProfileVersion const& dgndbVersion,
-                   ProfileVersion const& initialBeDbVersion, ProfileVersion const& initialECDbVersion, ProfileVersion const& initialDgnDbVersion) : 
+                   ProfileVersion const& initialBeDbVersion, ProfileVersion const& initialECDbVersion, ProfileVersion const& initialDgnDbVersion) :
     m_name(name), m_path(path), m_seedPath(seedFilePath), m_bedbVersion(bedbVersion), m_ecdbVersion(ecdbVersion), m_dgndbVersion(dgndbVersion),
-    m_initialBeDbVersion(initialBeDbVersion), m_initialECDbVersion(initialECDbVersion), m_initialDgnDbVersion(initialDgnDbVersion) 
+    m_initialBeDbVersion(initialBeDbVersion), m_initialECDbVersion(initialECDbVersion), m_initialDgnDbVersion(initialDgnDbVersion)
     {}
 
 //---------------------------------------------------------------------------------------

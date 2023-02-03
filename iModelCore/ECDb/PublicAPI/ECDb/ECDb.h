@@ -12,7 +12,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaManager;
-
+struct InstanceReader;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
 
@@ -86,13 +86,13 @@ struct ChangeSetArg final
 //+===============+===============+===============+===============+===============+======
 struct ECSqlConfig {
     struct DisableSqlFunctions {
-        private: 
+        private:
             bvector<Utf8String> m_disabledFuncList;
         public:
             DisableSqlFunctions(){}
             DisableSqlFunctions(const DisableSqlFunctions&)=delete;
             DisableSqlFunctions& operator=(const DisableSqlFunctions&)=delete;
-            void Add(Utf8StringCR functionName) { 
+            void Add(Utf8StringCR functionName) {
                 if (!Exists(functionName)) {
                     m_disabledFuncList.push_back(functionName);
                 }
@@ -237,7 +237,7 @@ protected:
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT ProfileState _CheckProfileVersion() const override;
-    ECDB_EXPORT DbResult _UpgradeProfile() override;
+    ECDB_EXPORT DbResult _UpgradeProfile(Db::OpenParams const& params) override;
     ECDB_EXPORT DbResult _OnDbAttached(Utf8CP fileName, Utf8CP dbAlias) const override;
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
@@ -254,7 +254,7 @@ protected:
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
-    
+
     //! @return return true if schema EC version requires does not support current profile version and need profile version to be upgraded.
     ECDB_EXPORT bool SchemaRequiresProfileUpgrade(ECN::ECSchemaCR ecSchema) const;
 #endif
@@ -288,8 +288,19 @@ public:
     //! Gets the version of the ECDb profile of this file.
     ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
 
+    //! Gets ECSQL version
+    //.@remarks ECSql version description for left to right digit in version string i.e. "Major.Minor.Sub1.Sub2"
+    //  Major: Any breaking change to 'Syntax'. This will cause a 'Prepare()' to fail with InvalidECSql which in previous version prepared successfully.
+    //         e.g. Changing or removing support for existing supported ECSql syntax.
+    //  Minor: Any breaking change to 'Runtime' e.g. Removing support for a previously accessible sql function or change it in a way where it will not
+    //         work as before. In this case 'Prepare()' phase may or may not detect a failure but result are not as expected as it use to in previous version.
+    //         e.g. Remove a sql function or change required argument or format of its return value.
+    //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
+    //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
+    static BeVersion GetECSqlVersion() { return BeVersion(1, 0, 1, 1); }
+
     //! Gets the current version of the ECDb profile
-    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 2); }
+    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 3); }
     //! Gets the minimum version of the ECDb profile for which in-situ upgrades are possible.
     //! Files with an older version cannot be upgraded in-situ.
     static ProfileVersion MinimumUpgradableECDbProfileVersion() { return ProfileVersion(4, 0, 0, 0); }
@@ -398,7 +409,7 @@ public:
     ECDB_EXPORT static BeFileName GetDefaultChangeCachePath(Utf8CP ecdbPath);
 
     //! @}
-    
+
     //! Allow to configure settings for ECSql
     ECDB_EXPORT ECSqlConfig& GetECSqlConfig() const;
 
@@ -424,7 +435,7 @@ public:
 
     //! Unique id for current connection.
     ECDB_EXPORT BeGuid GetId() const;
-    
+
     //! Return all registered function
     ECDB_EXPORT bvector<DbFunction*> GetSqlFunctions() const;
 
@@ -490,6 +501,9 @@ public:
     //! @note Calling this method invokes IECDbCacheClearListeners. This allows users of ECDb
     //! to free any items that referred to the objects in the cache.
     ECDB_EXPORT void ClearECDbCache() const;
+
+    //! Instance reader is bare metal to access full instance without requiring to prepare ECSqlStatement
+    ECDB_EXPORT InstanceReader& GetInstanceReader() const;
 
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.

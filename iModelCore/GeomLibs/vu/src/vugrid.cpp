@@ -400,7 +400,6 @@ static void gc_runIncidenceMarkup
 GridContext *pGC
 )
     {
-    VuP pMate;
     VuMask visitMask = vu_grabMask (pGC->pGraph);
     VuMask skipMask  = visitMask;   // | EXTERIOR?
 
@@ -409,7 +408,6 @@ GridContext *pGC
         {
         if (!vu_getMask (pCurrNode, skipMask))
             {
-            pMate = vu_edgeMate (pCurrNode);
             gc_recordEdgeIncidence (pGC, pCurrNode);
             vu_setMask (pCurrNode, visitMask);
             }

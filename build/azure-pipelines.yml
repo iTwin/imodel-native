@@ -15,14 +15,14 @@ pr:
 
 resources:
   repositories:
-    - repository: imodel-internal
+    - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
       ref: refs/heads/release/3.x
       endpoint: github.com_imodel-native
       
 extends:
-  template: /build/templates/pipeline.yml@imodel-internal
+  template: /build/templates/pipeline.yml@imodel-native-internal
   parameters:
-    otherRepo: imodel-internal
+    otherRepo: imodel-native-internal
 
