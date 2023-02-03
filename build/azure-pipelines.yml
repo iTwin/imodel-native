@@ -19,6 +19,7 @@ resources:
       type: github
       name: iTwin/imodel-native-internal
       endpoint: github.com_imodel-native
+      ref: commit-status-change
     - repository: itwinjs-core
       type: github
       name: iTwin/itwinjs-core
