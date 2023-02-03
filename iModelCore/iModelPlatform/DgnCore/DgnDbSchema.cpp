@@ -332,7 +332,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params) {
     BisCoreDomain::GetDomain().SetCreateParams(params);
     // BisCoreDomain is the only domain that requires the create params. They are passed through BisCoreDomain::_OnSchemaImported() -> DgnDb::OnBisCoreSchemaImported()
 
-    SchemaStatus status = Domains().ImportSchemas();
+    SchemaStatus status = Domains().ImportSchemas(SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
     if (SchemaStatus::Success != status) {
         BeAssert(false);
         return SchemaStatusToDbResult(status, false /*=isUpgrade*/);
@@ -546,8 +546,14 @@ ProfileState DgnDb::_CheckProfileVersion() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
+BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
     {
+    if (!params.m_schemaLockHeld)
+        {
+        LOG.error("Upgrading profile requires schema lock that is not held.");
+        return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
+        }
+
     if (AreTxnsEnabled())
         Txns().EnableTracking(true);
 
@@ -574,9 +580,9 @@ BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_UpgradeProfile()
+DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
     {
-    DbResult result = T_Super::_UpgradeProfile();
+    DbResult result = T_Super::_UpgradeProfile(params);
     if (BE_SQLITE_OK != result)
         return result;
 
@@ -609,7 +615,7 @@ BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
+SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool schemaLockHeld)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
@@ -619,7 +625,9 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
         return status;
         }
 
-    return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::None);
+    return Domains().DoImportSchemas(schemasToImport, schemaLockHeld ?
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade:
+        SchemaManager::SchemaImportOptions::None);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //! Use this helper classes instead of BeTest::SetFailOnAssert as it automatically resets
 //! the FailOnAssert state when the ScopedDisableFailOnAssertion object goes out of scope
 // @bsiclass
-//=======================================================================================    
+//=======================================================================================
 struct ScopedDisableFailOnAssertion final
     {
 private:
@@ -37,7 +37,7 @@ public:
 //=======================================================================================
 //! ECDb that requires a schema import token. For testing the schema import token feature
 // @bsiclass
-//=======================================================================================    
+//=======================================================================================
 struct RestrictedSchemaImportECDb : ECDb
     {
     public:
@@ -55,7 +55,7 @@ struct RestrictedSchemaImportECDb : ECDb
 //! All non-static methods operate on ECDb held by the test fixture. The test fixture's ECDb
 //! is created by using SetupECDb.
 // @bsiclass
-//=======================================================================================    
+//=======================================================================================
 struct ECDbTestFixture : public ::testing::Test
     {
 public:
@@ -98,8 +98,8 @@ private:
             return true;
             }
 
-        BeFileNameCR Add(BeFileNameCR schemaFileName, BeFileNameCR seedPath) 
-            { 
+        BeFileNameCR Add(BeFileNameCR schemaFileName, BeFileNameCR seedPath)
+            {
             BeAssert(m_seedFilePathsBySchemaFileName.find(schemaFileName) == m_seedFilePathsBySchemaFileName.end());
             auto ret = m_seedFilePathsBySchemaFileName.insert(bpair<BeFileName, BeFileName>(schemaFileName, seedPath));
             //return the inserted seed path
@@ -131,7 +131,7 @@ protected:
     BentleyStatus ImportSchema(SchemaItem const& schema) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchema(schema); }
     BentleyStatus ImportSchema(SchemaItem const& schema, SchemaManager::SchemaImportOptions const& options) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchema(schema, options); }
     BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchemas(schemas); }
-
+    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas, SchemaManager::SchemaImportOptions const& options) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchemas(schemas, options); }
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
     ECSqlStatus PrepareECSql(Utf8CP ecsql) { ECSqlStatement stmt; return stmt.Prepare(m_ecdb, ecsql); }
     TestHelper const& GetHelper() const { return m_ecdb.GetTestHelper(); }
@@ -158,4 +158,11 @@ public:
     static ECN::ECSchemaPtr GetFormatsSchema(bool recreate = false);
     };
 
+SchemaItem operator"" _schema(const char* s, size_t n);
+Json::Value operator"" _json(const char* s, size_t n);
+Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className);
+ECInstanceKey InsertInstance(ECDbCR ecdb, Json::Value const& v);
+Json::Value ReadInstance(ECDbCR ecdb, ECInstanceKey ik, Utf8CP prop);
+void UpdateInstance(ECDbCR ecdb, ECInstanceKey key, Json::Value const& v);
+void DeleteInstance(ECDbCR ecdb, ECInstanceKey key);
 END_ECDBUNITTESTS_NAMESPACE
