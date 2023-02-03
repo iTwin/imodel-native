@@ -594,20 +594,20 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
         { __LINE__, "SELECT MAX(  )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MAX(  )': syntax error" },
         { __LINE__, "SELECT MAX( \n )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MAX( \n )': syntax error" },
         { __LINE__, "SELECT MAX(4)", ECSqlStatus::Success, { "4" }, "" },
-        { __LINE__, "SELECT MAX(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { "0" }, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MAX(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MAX(4, 2, 1, 5, 3)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
 
         { __LINE__, "SELECT MIN()", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN()': syntax error" },
         { __LINE__, "SELECT MIN(  )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN(  )': syntax error" },
         { __LINE__, "SELECT MIN( \n )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN( \n )': syntax error" },
         { __LINE__, "SELECT MIN(4)", ECSqlStatus::Success, { "4" }, "" },
-        { __LINE__, "SELECT MIN(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { "0" }, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MIN(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN(4, 2, 1, 5, 3)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
         { __LINE__, "SELECT GREATEST(4, 5, 1), GREATEST(6, 7, 9)", ECSqlStatus::Success, { "5", "9" }, "" },
         { __LINE__, "SELECT GREATEST(4, 5, 1), LEAST(4, 5, 1)", ECSqlStatus::Success, { "5", "1" }, "" },
         { __LINE__, "SELECT LEAST(4, 5, 1), GREATEST(4, 5, 1)", ECSqlStatus::Success, { "1", "5" }, "" },
         { __LINE__, "SELECT LEAST(4, 5, 1), LEAST(6, 7, 9)", ECSqlStatus::Success, { "1", "6" }, "" },
-        { __LINE__, "SELECT MAX(4, 5, 1), MIN(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MIN(4, 5, 1), MAX(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MAX(4, 5, 1), MIN(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(4, 5, 1), MIN(4, 5, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(4, 5, 1), MAX(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(4, 5, 1), MAX(4, 5, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
         { __LINE__, "SELECT 'GREATEST(2,3)' AS str", ECSqlStatus::Success, { "GREATEST(2,3)" }, "" },
         { __LINE__, "SELECT 'LEAST(2,3)' AS str", ECSqlStatus::Success, { "LEAST(2,3)" }, "" },
@@ -621,23 +621,23 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
 
         { __LINE__, "-- GREATEST( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- GREATEST( 3, 4)  comment': syntax error" },
         { __LINE__, "-- LEAST( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- LEAST( 3, 4)  comment': syntax error" },
-        { __LINE__, "-- MAX( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "-- MIN( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "-- MAX( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- MAX( 3, 4)  comment': syntax error" },
+        { __LINE__, "-- MIN( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- MIN( 3, 4)  comment': syntax error" },
 
         { __LINE__, "SELECT  GREATEST( 3, 4)", ECSqlStatus::Success, { "4" }, "" },
         { __LINE__, "SELECT  LEAST( 3, 4)", ECSqlStatus::Success, { "3" }, "" },
-        { __LINE__, "SELECT  MAX( 3, 4)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT  MIN( 3, 4)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT  MAX( 3, 4)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT  MAX( 3, 4)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT  MIN( 3, 4)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT  MIN( 3, 4)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
         { __LINE__, "SELECT GREATEST('a', 'b', 'c')", ECSqlStatus::Success, { "c" }, "" },
         { __LINE__, "SELECT LEAST('a', 'b', 'c')", ECSqlStatus::Success, { "a" }, "" },
-        { __LINE__, "SELECT MAX('a', 'b', 'c')", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MIN('a', 'b', 'c')", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MAX('a', 'b', 'c')", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX('a', 'b', 'c')': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN('a', 'b', 'c')", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN('a', 'b', 'c')': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
         { __LINE__, "SELECT GREATEST(1.5, 1.4, 1.1)", ECSqlStatus::Success, { "1.5" }, "" },
         { __LINE__, "SELECT LEAST(1.5, 1.4, 1.1)", ECSqlStatus::Success, { "1.1" }, "" },
-        { __LINE__, "SELECT MAX(1.5, 1.4, 1.1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MIN(1.5, 1.4, 1.1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MAX(1.5, 1.4, 1.1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(1.5, 1.4, 1.1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(1.5, 1.4, 1.1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(1.5, 1.4, 1.1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
         { __LINE__, "SELECT GREATEST(GREATEST(3, 4), GREATEST(5, 9))", ECSqlStatus::Success, { "9" }, "" },
         { __LINE__, "SELECT GREATEST(LEAST(3, 4), GREATEST(5, 9))", ECSqlStatus::Success, { "9" }, "" },
@@ -648,25 +648,25 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
         { __LINE__, "SELECT LEAST(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::Success, { "4" }, "" },
         { __LINE__, "SELECT LEAST(GREATEST(3, 4), GREATEST(5, 9))", ECSqlStatus::Success, { "4" }, "" },
 
-        { __LINE__, "SELECT MAX(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MAX(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(GREATEST(3, 4), LEAST(5, 9))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
         { __LINE__, "SELECT MAX(GREATEST(3, 4))", ECSqlStatus::Success, { "4" }, "" },
-        { __LINE__, "SELECT MIN(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MIN(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(GREATEST(3, 4), LEAST(5, 9))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
         { __LINE__, "SELECT MIN(GREATEST(3, 4))", ECSqlStatus::Success, { "4" }, "" },
 
-        { __LINE__, "SELECT LEAST(MAX(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT LEAST(GREATEST(3, 4), MAX(5, 9))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT LEAST(MIN(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT LEAST(GREATEST(3, 4), MIN(5, 9))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT LEAST(MAX(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(MAX(3, 4), LEAST(5, 9))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT LEAST(GREATEST(3, 4), MAX(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(GREATEST(3, 4), MAX(5, 9))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT LEAST(MIN(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(MIN(3, 4), LEAST(5, 9))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT LEAST(GREATEST(3, 4), MIN(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(GREATEST(3, 4), MIN(5, 9))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
-        { __LINE__, "SELECT MAX(MAX(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MAX(MIN(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MIN(MAX(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MIN(MIN(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MAX(MAX(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MAX(3, 4), 9)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MAX(MIN(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MIN(3, 4), 9)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MAX(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MAX(3, 4), 9)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MIN(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(3, 4), 9)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
-        { __LINE__, "SELECT MAX(MAX(3, 4))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MAX(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MIN(MAX(3, 4))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, "SELECT MIN(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, "SELECT MAX(MAX(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MAX(3, 4))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MAX(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MIN(3, 4))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MAX(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MAX(3, 4))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(3, 4))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
         })
         {
         listener.ClearMessages();
@@ -701,7 +701,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
     IssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
-    for (const auto& [lineNumber, isSelect, sqlStatement, expectedStatus, expectedResult, errorMsg] 
+    for (const auto& [lineNumber, isSelect, sqlStatement, expectedStatus, expectedResult, errorMsg]
     : bvector<std::tuple<const int, const bool, const Utf8String, const ECSqlStatus, const std::vector<std::pair<Utf8String, Utf8String>>, const Utf8String>>
         {
         // Inserts with literals
@@ -738,17 +738,17 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         { __LINE__,  true, "SELECT MIN(LEAST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, {{"0", ""}}, "" },
 
         // Select with column values (Negative tests)
-        { __LINE__,  true, "SELECT MAX(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__,  true, "SELECT MAX(MAX(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__,  true, "SELECT MAX(MIN(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__,  true, "SELECT MIN(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__,  true, "SELECT MIN(MAX(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__,  true, "SELECT MIN(MIN(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__,  true, "SELECT MAX(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(TestCol1, TestCol2) FROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MAX(MAX(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MAX(TestCol1, TestCol2)) FROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MAX(MIN(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MIN(TestCol1, TestCol2)) FROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MIN(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(TestCol1, TestCol2) FROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MIN(MAX(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MAX(TestCol1, TestCol2)) FROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MIN(MIN(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(TestCol1, TestCol2)) FROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
         { __LINE__, true, "select GREATEST\n( 3,\n4)\n FROM ts.TestClass", ECSqlStatus::Success, {{"4", ""}, {"4", ""}, {"4", ""}, {"4", ""}, {"4", ""}, {"4", ""}}, "" },
         { __LINE__, true, "select LEAST\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::Success, { {"3", "" }, {"3", ""}, {"3", ""}, {"3", ""}, {"3", ""}, {"3", ""}}, "" },
-        { __LINE__, true, "select MAX\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, true, "select MIN\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, true, "select MAX\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'select MAX\n( 3, \n4)\nFROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, true, "select MIN\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'select MIN\n( 3, \n4)\nFROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
 
         // Update using least function with multiple literals
         { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=greatest(3, 1, 2)", ECSqlStatus::Success, { {"3", "0"}, {"3", "0"}, {"3", "9"}, {"3", "1"}, {"3", "6"}, {"3", "1"} }, "" },
@@ -759,20 +759,20 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = greatest(3, 2, 1)", ECSqlStatus::Success, { }, "" },
 
         // DML (Negative tests)
-        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MAX(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=max(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = MAX(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = max(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MAX(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MAX(3, 2, 1))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=max(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'UPDATE ts.TestClass SET TestCol1=max(5, 0, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = MAX(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = MAX(3, 0, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = max(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'DELETE FROM ts.TestClass WHERE TestCol1 = max(3, 0, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
 
-        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MIN(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=MIN(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
-        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead." },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MIN(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MIN(3, 2, 1))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=MIN(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'UPDATE ts.TestClass SET TestCol1=MIN(5, 0, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'DELETE FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
         })
         {
         // Reset listener queue for current test case
         listener.ClearMessages();
-        
+
         ECSqlStatement testCaseSQL;
         // Prepare the SQL statement
         EXPECT_EQ(expectedStatus, testCaseSQL.Prepare(m_ecdb, sqlStatement.c_str(), true)) << "Test case at line " << lineNumber << " failed.\n";

@@ -5,7 +5,6 @@
 #include "ECDbPch.h"
 #include "Parser/SqlNode.h"
 #include "Parser/SqlParse.h"
-#include "regex"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -23,13 +22,6 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
 
     if (parseTree == nullptr || !error.empty()) {
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
-
-        // Check if Min/Max function with multiple args was called.
-        std::cmatch regexMatches;
-        if (error.EqualsI("syntax error") && (Utf8String(ecsql).ContainsI("MAX") || Utf8String(ecsql).ContainsI("MIN"))
-            && !std::regex_search(ecsql, regexMatches, std::regex(R"rx(MAX\([\s\n]*\))rx", std::regex_constants::icase))   // Check if Max was called with no args
-            && !std::regex_search(ecsql, regexMatches, std::regex(R"rx(MIN\([\s\n]*\))rx", std::regex_constants::icase)))   // Check if Min was called with no args
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "MAX/MIN function with multiple arguments isn't supported. Please use GREATEST/LEAST instead.");
         return nullptr;
     }
 
@@ -780,9 +772,9 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
     if (isExtractProp) {
         if (lhsExp->GetType() != Exp::Type::PropertyName) {
             Issues().Report(
-                IssueSeverity::Error, 
+                IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECSQL, 
+                IssueType::ECSQL,
                 "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
             return ERROR;
         }
@@ -793,9 +785,9 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
         if (InstanceValueExp::IsInstancePath(lhsPropExp->GetPropertyPath())) {
             if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetPropertyPath())) {
                 Issues().Report(
-                    IssueSeverity::Error, 
+                    IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
-                    IssueType::ECSQL, 
+                    IssueType::ECSQL,
                     "Invalid grammar. Instance exp must be follow syntax '[<alias>.]$'");
                 return ERROR;
             }
@@ -810,9 +802,9 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 }
                 if (rhsExp->GetType() != Exp::Type::PropertyName) {
                     Issues().Report(
-                        IssueSeverity::Error, 
+                        IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
-                        IssueType::ECSQL, 
+                        IssueType::ECSQL,
                         "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
                     return ERROR;
                 }
@@ -986,19 +978,12 @@ BentleyStatus ECSqlParser::ParseFctSpec(std::unique_ptr<ValueExp>& exp, OSQLPars
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function with token ID %" PRIu32 " not yet supported.", tokenId);
         return ERROR;
         }
-    
-    // Replace Greatest with Sqlite's Max function and Least with Sqlite's Min function
-    auto finalFunctionName = Utf8String(functionName.c_str());
-    if (functionName.EqualsI("GREATEST"))
-        finalFunctionName = "MAX";
-    else if (functionName.EqualsI("LEAST"))
-        finalFunctionName = "MIN";
 
     const size_t childCount = parseNode->count();
     if (childCount == 5)
-        return ParseSetFct(exp, *parseNode, finalFunctionName, false);
+        return ParseSetFct(exp, *parseNode, functionName, false);
 
-    std::unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>(finalFunctionName);
+    std::unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>(functionName);
     //parse function args. (if child parse node count is < 4, function doesn't have args)
     if (childCount == 4)
         {

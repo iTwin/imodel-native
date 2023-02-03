@@ -39,7 +39,7 @@ void TypeListExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql("(");
 
     ctx.AppendToECSql("(");
-    
+
     auto classNameList = ClassNames();
     for (auto classNameExp : ClassNames())
         {
@@ -278,7 +278,7 @@ Exp::FinalizeParseStatus SearchedWhenClauseExp::_FinalizeParsing(ECSqlParseConte
         }
 
     if (mode == FinalizeParseMode::AfterFinalizingChildren)
-        {      
+        {
         auto typeInfo = this->Then()->GetTypeInfo();
         if (this->Then()->IsParameterExp())
             {
@@ -643,7 +643,7 @@ Utf8String CastExp::_ToString() const
 BentleyStatus MemberFunctionCallExp::ValidateArgument(ValueExp const& arg, Utf8StringR msg)
     {
     std::vector<Exp const*> expList;
-    if (!m_tableValuedFunc) 
+    if (!m_tableValuedFunc)
         {
         expList = arg.Find (Exp::Type::PropertyName, true);
         if (!expList.empty())
@@ -785,7 +785,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         return FinalizeParseStatus::NotCompleted;
         }
-    
+
     DetermineReturnType(ctx.GetECDb());
     //verify that args are all primitive and handle parameter args
     const size_t argCount = GetChildrenCount();
@@ -924,6 +924,26 @@ void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8StringCR FunctionCallExp::GetSqliteFunctionName() const {
+    auto it = s_substituteECSqlToSqlFuncMap.find(m_functionName);
+    if (it != s_substituteECSqlToSqlFuncMap.end()) {
+        return it->second;
+    }
+    return m_functionName;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+FunctionCallExp::SubstituteFuncMap FunctionCallExp::s_substituteECSqlToSqlFuncMap =
+    FunctionCallExp::SubstituteFuncMap {
+        {"greatest","MAX"},
+        {"least","MIN"}
+    };
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String FunctionCallExp::_ToString() const
     {
@@ -945,46 +965,27 @@ void FunctionCallExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    auto functionNameAppended = false;
+    ctx.AppendToECSql(m_functionName);
+
     if (!m_isGetter)
         {
-        auto hasSingleOrNoArgs = true;
+        ctx.AppendToECSql("(");
+
+        if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+            ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
+
+        bool isFirstItem = true;
         for (Exp const* argExp : GetChildren())
             {
-            if (!hasSingleOrNoArgs)
+            if (!isFirstItem)
                 ctx.AppendToECSql(",");
 
-            hasSingleOrNoArgs = false;
-            if (!functionNameAppended)
-                {
-                // If function called is Max/Min with multiple args, change it to Greatest/Least
-                if (!hasSingleOrNoArgs && m_functionName.EqualsI("MAX"))
-                    ctx.AppendToECSql("GREATEST(");
-                else if (!hasSingleOrNoArgs && m_functionName.EqualsI("MIN"))
-                    ctx.AppendToECSql("LEAST(");
-                else
-                    ctx.AppendToECSql(m_functionName + "(");
-                functionNameAppended = true;
-
-                if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
-                    ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
-                }
-                
             ctx.AppendToECSql(*argExp);
-            }
-        if (hasSingleOrNoArgs)
-            {
-            ctx.AppendToECSql(m_functionName + "(");
-            functionNameAppended = true;
-            if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
-                ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
+            isFirstItem = false;
             }
 
         ctx.AppendToECSql(")");
         }
-
-    if (!functionNameAppended)
-        ctx.AppendToECSql(m_functionName);
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
@@ -1364,7 +1365,7 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing(ECSqlParseContext& ctx, 
         m_parameterIndex = ctx.TrackECSqlParameter(*this);
         return FinalizeParseStatus::NotCompleted;
         }
-    
+
     return FinalizeParseStatus::Completed;
     }
 
