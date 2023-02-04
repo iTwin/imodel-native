@@ -1011,6 +1011,9 @@ TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
         testParams.push_back(params);
         }
 
+    for (auto& params : testParams)
+        params.m_schemaLockHeld = true;
+
     return Iterable(testFile, testParams);
     }
 
