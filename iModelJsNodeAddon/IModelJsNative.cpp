@@ -684,6 +684,8 @@ struct NativeECSchemaXmlContext : BeObjectWrap<NativeECSchemaXmlContext>
             return obj.InstanceOf(Constructor().Value());
             }
 
+        ECN::ECSchemaReadContextPtr GetContext() { return m_context; }
+
         void SetSchemaLocater(NapiInfoCR info)
             {
             REQUIRE_ARGUMENT_FUNCTION(0, locaterCallback);
@@ -1773,8 +1775,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, opts);
-        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::File, BeJsConst(opts));
+        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
+        ECSchemaReadContextPtr customContext = nullptr;
+
+        JsInterop::SchemaImportOptions options;
+        const auto& maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        if (!maybeEcSchemaContextVal.IsUndefined())
+            {
+            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+            }
+
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::File, options);
+
         return Napi::Number::New(Env(), (int)result);
         }
 
@@ -1782,8 +1797,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, opts);
-        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, BeJsConst(opts));
+        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
+        JsInterop::SchemaImportOptions opts;
+        opts.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, opts);
         return Napi::Number::New(Env(), (int)result);
         }
 
@@ -1806,6 +1823,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         REQUIRE_ARGUMENT_STRING(1, exportDirectory);
+        OPTIONAL_ARGUMENT_STRING(2, maybeOutFileName);
 
         ECSchemaCP schema = GetDgnDb().Schemas().GetSchema(schemaName);
         if (nullptr == schema)
@@ -1813,8 +1831,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         BeFileName schemaFileName(exportDirectory);
         schemaFileName.AppendSeparator();
-        schemaFileName.AppendUtf8(schema->GetFullSchemaName().c_str());
-        schemaFileName.AppendExtension(L"ecschema.xml");
+        if (maybeOutFileName == "")
+            {
+            schemaFileName.AppendUtf8(schema->GetFullSchemaName().c_str());
+            schemaFileName.AppendExtension(L"ecschema.xml");
+            }
+        else
+            schemaFileName.AppendUtf8(maybeOutFileName.c_str());
         ECVersion xmlVersion = ECSchema::ECVersionToWrite(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
 
         SchemaWriteStatus status = schema->WriteToXmlFile(schemaFileName.GetName(), xmlVersion);

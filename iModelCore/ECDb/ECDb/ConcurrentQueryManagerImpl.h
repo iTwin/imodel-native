@@ -107,10 +107,21 @@ public:
     QueryJsonAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this;}
     QueryJsonAdaptor& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
     QueryJsonAdaptor& UseJsNames(bool v) { m_useJsName = v; return *this; }
-    BentleyStatus RenderRow(BeJsValue rowJson, ECSqlStatement const& stmt) const;
+    BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;
+    BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
     void GetMetaData(QueryProperty::List& list, ECSqlStatement const& stmt) const;
 };
-
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECSqlStatementRow : public IECSqlRow {
+    private:
+    ECSqlStatementCR m_stmt;
+    public:
+        ECSqlStatementRow(ECSqlStatement const& stmt):m_stmt(stmt){}
+        virtual int GetColumnCount() const override { return m_stmt.GetColumnCount(); }
+        virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_stmt.GetValue(columnIndex);}
+};
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
