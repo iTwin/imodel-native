@@ -142,17 +142,51 @@ TEST_F(SchemaSyncTestFixture, test) {
 
     ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*masterDb, schema1));
     masterDb->SaveChanges();
-
     pushChangesToSyncDb(*masterDb);
+
+	// check if sync db has schema changes
 	syncDb = OpenECDb(synDbFile.c_str());
     auto pipe1 = syncDb->Schemas().GetClass("TestSchema1", "Pipe1");
     ASSERT_NE(pipe1, nullptr);
+	ASSERT_EQ(pipe1->GetPropertyCount(), 2);
+    syncDb = nullptr;
 
-
+	// pull changes from sync db into client db and check if schema changes was there and valid
     pullChangesFromSyncDb(*clientDb);
     clientDb->ClearECDbCache();
+    pipe1 = clientDb->Schemas().GetClass("TestSchema1", "Pipe1");
+    ASSERT_NE(pipe1, nullptr);
+	ASSERT_EQ(pipe1->GetPropertyCount(), 2);
+
+	// add two more properties from client db and push it to sync db.
+    auto schema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+		<ECSchema schemaName="TestSchema1" alias="ts1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+			<ECEntityClass typeName="Pipe1">
+				<ECProperty propertyName="p1" typeName="int" />
+				<ECProperty propertyName="p2" typeName="int" />
+				<ECProperty propertyName="p3" typeName="int" />
+				<ECProperty propertyName="p4" typeName="int" />
+			</ECEntityClass>
+		</ECSchema>)xml");
+    ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*clientDb, schema2));
+    clientDb->SaveChanges();
+	pushChangesToSyncDb(*clientDb);
+
+	// check if sync db has schema changes
+	syncDb = OpenECDb(synDbFile.c_str());
     pipe1 = syncDb->Schemas().GetClass("TestSchema1", "Pipe1");
     ASSERT_NE(pipe1, nullptr);
+	ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+    syncDb = nullptr;
+
+
+	// pull changes from sync db into master db and check if schema changes was there and valid
+    pullChangesFromSyncDb(*masterDb);
+    masterDb->ClearECDbCache();
+    pipe1 = masterDb->Schemas().GetClass("TestSchema1", "Pipe1");
+    ASSERT_NE(pipe1, nullptr);
+	ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+
 }
 
 DbResult Sync::GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, std::vector<std::string>& columnNames) {
