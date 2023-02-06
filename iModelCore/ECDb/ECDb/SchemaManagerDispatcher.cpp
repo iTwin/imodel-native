@@ -1464,7 +1464,8 @@ BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
     stmt.Prepare(m_ecdb, ecsql.c_str());
     if (stmt.Step() == BE_SQLITE_ROW)
         {
-        LOG.errorv("Schema Import> Error importing %s:%s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
+        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Schema Import> Error importing %s:%s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
             stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueInt64(3), maxColumns);
         return ERROR;
         }
