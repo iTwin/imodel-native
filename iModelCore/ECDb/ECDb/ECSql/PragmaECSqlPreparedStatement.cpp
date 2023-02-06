@@ -542,10 +542,10 @@ struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
-                "Could not find navigation relationship class of property %s in class %s", property.name.c_str(), property.className.c_str());
+                "Could not find classId of navigation property %s in class %s", property.name.c_str(), property.className.c_str());
 
                 row.appendValue() = "Failed";
-                row.appendValue() = Utf8PrintfString("Could not find navigation relationship class of property %s in class %s", property.name.c_str(), property.className.c_str()).c_str();
+                row.appendValue() = Utf8PrintfString("Could not find classId of navigation property %s in class %s", property.name.c_str(), property.className.c_str()).c_str();
                 checkSuccessful = false;
                 }
             }
