@@ -57,12 +57,25 @@ TEST_F(ECDbValidityCheckTests, LoadAllSchemas) {
     ASSERT_NE(0, allSchemas.size());
 }
 
+TEST_F(ECDbValidityCheckTests, ClassIdCheck) {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb"));
+
+    ECSqlStatement checkStatement;
+
+  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA classIdCheck"));
+
+    ASSERT_EQ(BE_SQLITE_ROW, checkStatement.Step());
+    ASSERT_STREQ("Passed", checkStatement.GetValueText(0));
+    ASSERT_STREQ("", checkStatement.GetValueText(1));
+}
+
+
 TEST_F(ECDbValidityCheckTests, NavigationPropertyIdCheck) {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb"));
 
     ECSqlStatement checkStatement;
 
-  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA navPropId_check"));
+  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA navPropIdCheck"));
 
     ASSERT_EQ(BE_SQLITE_ROW, checkStatement.Step());
     ASSERT_STREQ("Passed", checkStatement.GetValueText(0));
@@ -120,7 +133,7 @@ TEST_F(ECDbValidityCheckTests, FailingNavigationPropertyIdCheck) {
 
 	ECSqlStatement checkStatement;
 
-  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA navPropId_check"));
+  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA navPropIdCheck"));
 
     ASSERT_EQ(BE_SQLITE_ROW, checkStatement.Step());
     ASSERT_STREQ("Failed", checkStatement.GetValueText(0));
@@ -193,9 +206,21 @@ TEST_F(ECDbValidityCheckTests, ValidateCheckFailingNavPropertyCheck) {
 
   	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA validate"));
 
-    while(BE_SQLITE_ROW == checkStatement.Step()) {
-        ASSERT_STREQ("Passed", checkStatement.GetValueText(1));
-    }
+	struct CheckData {
+		Utf8String name;
+		Utf8String status;
+	};
+
+    std::vector<CheckData> expectedResults = {
+		{"navPropIdCheck", "Failed"},
+		{"classIdCheck", "Did not run"},
+	};
+
+	for(auto result: expectedResults) {
+		checkStatement.Step();
+		ASSERT_STREQ(result.name.c_str(), checkStatement.GetValueText(0));
+		ASSERT_STREQ(result.status.c_str(), checkStatement.GetValueText(1));
+	}
 }
 
 END_ECDBUNITTESTS_NAMESPACE
