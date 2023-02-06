@@ -1316,7 +1316,7 @@ private:
                 }
             if (key->AsGroupingNodeKey() && key->AsGroupingNodeKey()->GetGroupedInstanceKeys() != nullptr)
                 {
-                ContainerHelpers::Push(*key->AsGroupingNodeKey()->GetGroupedInstanceKeys(), instanceKeys);
+                ContainerHelpers::Push(instanceKeys, *key->AsGroupingNodeKey()->GetGroupedInstanceKeys());
                 }
 
             m_nodeInstanceKeysProvider->IterateInstanceKeys(*key, [&](ECInstanceKey k)

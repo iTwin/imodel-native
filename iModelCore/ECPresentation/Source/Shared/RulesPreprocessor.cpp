@@ -1009,12 +1009,13 @@ static bvector<NavNodeKeyCPtr> SplitLabelGroupedKeys(IConnectionCR connection, I
 static bvector<NavNodeKeyCPtr> GetSingleNodeKeys(INavNodeKeysContainerCR inputNodeKeys, IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider)
     {
     bvector<NavNodeKeyCPtr> singleNodeKeys;
+
     for (NavNodeKeyCPtr const& inputNodeKey : inputNodeKeys)
         {
-        if (inputNodeKey->AsLabelGroupingNodeKey())
+        if (inputNodeKey->AsLabelGroupingNodeKey() && instanceKeyProvider == nullptr)
             {
             bvector<NavNodeKeyCPtr> keys = SplitLabelGroupedKeys(connection, instanceKeyProvider, *inputNodeKey->AsLabelGroupingNodeKey());
-            singleNodeKeys.insert(singleNodeKeys.end(), keys.begin(), keys.end());
+            ContainerHelpers::Push(singleNodeKeys, keys);
             }
         else
             {
