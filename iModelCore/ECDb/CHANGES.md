@@ -11,9 +11,9 @@ This document including important changes to syntax or file format.
 
 * ECSql version change to `1.0.2.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * New PRAGMA commands added:
-* `PRAGMA class_id_check`: Runs a test, that checks if there are no classId references to non existing class definitions.
-* `PRAGMA nav_prop_id_check`: Checks if all navigation properties have valid classIds.
-* `PRAGMA validate`: Runs all checks.
+    * `PRAGMA class_id_check`: Checks if there are no classId references to non existing class definitions.
+    * `PRAGMA nav_prop_id_check`: Checks if all navigation properties have valid classIds.
+    * `PRAGMA validate`: Runs all checks.
 
 ## `2/1/2023`: Add support for runtime instance and property accessor in ECSQL (beta)
 
