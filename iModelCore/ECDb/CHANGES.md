@@ -5,7 +5,7 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.2` |
-| ECSQL   | `1.0.2.1` |
+| ECSQL   | `1.0.3.1` |
 
 ## `2/7/2023`: Add ECDb validity/integriy checks
 
