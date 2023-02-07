@@ -5,7 +5,7 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.2` |
-| ECSQL   | `1.0.0.0` |
+| ECSQL   | `1.0.1.0` |
 
 ## `12/06/2022`: Add `PRAGMA` support in `ECSQL`
 + Added support for `PRAGMA` in ECSQL. Syntax is as following
@@ -31,6 +31,13 @@ This document including important changes to syntax or file format.
 * `PRAGMA ecdb_ver`: Return version of the EC Schema.
 
 * `PRAGMA help`: Display all the pragma supported.
+
+* `PRAGMA class_id_check`: Runs a test, that checks if there are no classId references to non existing class definitions.
+
+* `PRAGMA nav_prop_id_check`: Checks if all navigation properties have valid classIds.
+
+* `PRAGMA validate`: Runs all checks.
+
 * Added `ECSQL version` and set it to `1.0.0.0`. In future this version will be incremented as new feature in ECSQL is added or improved.
    1. Type of changes that can be made to ECSQL.
       1. **Syntax change** Change to ECSQL grammar.

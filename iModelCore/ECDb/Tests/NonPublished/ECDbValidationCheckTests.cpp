@@ -62,7 +62,7 @@ TEST_F(ECDbValidityCheckTests, ClassIdCheck) {
 
     ECSqlStatement checkStatement;
 
-  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA classIdCheck"));
+  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA class_id_check"));
 
     ASSERT_EQ(BE_SQLITE_ROW, checkStatement.Step());
     ASSERT_STREQ("Passed", checkStatement.GetValueText(0));
@@ -75,7 +75,7 @@ TEST_F(ECDbValidityCheckTests, NavigationPropertyIdCheck) {
 
     ECSqlStatement checkStatement;
 
-  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA navPropIdCheck"));
+  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA nav_prop_id_check"));
 
     ASSERT_EQ(BE_SQLITE_ROW, checkStatement.Step());
     ASSERT_STREQ("Passed", checkStatement.GetValueText(0));
@@ -133,12 +133,12 @@ TEST_F(ECDbValidityCheckTests, FailingNavigationPropertyIdCheck) {
 
 	ECSqlStatement checkStatement;
 
-  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA navPropIdCheck"));
+  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA nav_prop_id_check"));
 
     ASSERT_EQ(BE_SQLITE_ROW, checkStatement.Step());
     ASSERT_STREQ("Failed", checkStatement.GetValueText(0));
     auto details = checkStatement.GetValueText(1);
-    ASSERT_STREQ(Utf8PrintfString("Could not find navigation relationship class of property %s in class %s:%s", property.c_str(), schemaName.c_str(), classB.c_str()).c_str(), details);
+    ASSERT_STREQ(Utf8PrintfString("Could not find classId of navigation property %s in class %s:%s", property.c_str(), schemaName.c_str(), classB.c_str()).c_str(), details);
 	}
 
 TEST_F(ECDbValidityCheckTests, ValidateCheck) {
@@ -212,8 +212,8 @@ TEST_F(ECDbValidityCheckTests, ValidateCheckFailingNavPropertyCheck) {
 	};
 
     std::vector<CheckData> expectedResults = {
-		{"navPropIdCheck", "Failed"},
-		{"classIdCheck", "Did not run"},
+		{"nav_prop_id_check", "Failed"},
+		{"class_id_check", "Did not run"},
 	};
 
 	for(auto result: expectedResults) {

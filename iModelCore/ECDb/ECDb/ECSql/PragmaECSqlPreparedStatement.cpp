@@ -399,8 +399,8 @@ struct PragmaECDbValidation : PragmaManager::GlobalHandler {
         };
 
         std::vector<CheckData> checks = {
-            {"navPropIdCheck", ""},
-            {"classIdCheck", ""},
+            {"nav_prop_id_check", ""},
+            {"class_id_check", ""},
         };
 
         for(auto & check: checks) {
@@ -442,10 +442,10 @@ struct PragmaECDbValidation : PragmaManager::GlobalHandler {
 };
 
 //================================================================================
-// @bsiclass PragmaECDbValidation
+// @bsiclass PragmaECDbClassIdValidation
 //================================================================================
 struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
-    PragmaECDbClassIdValidation():GlobalHandler("classIdCheck","checks if classIds are valid") {}
+    PragmaECDbClassIdValidation():GlobalHandler("class_id_check","checks if classIds are valid") {}
 
     DbResult ClassIdCheck(std::unique_ptr<StaticPragmaResult>& result, ECDbCR ecdb) {
         bool checkSuccessful = true;
@@ -512,10 +512,10 @@ struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
 };
 
 //================================================================================
-// @bsiclass PragmaECDbValidation
+// @bsiclass PragmaECDbNavPropIdValidation
 //================================================================================
 struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
-    PragmaECDbNavPropIdValidation():GlobalHandler("navPropIdCheck","checks if classIds are valid") {}
+    PragmaECDbNavPropIdValidation():GlobalHandler("nav_prop_id_check","checks if classIds are valid") {}
 
     DbResult NavigationPropertyIdCheck(std::unique_ptr<StaticPragmaResult>& result, ECDbCR ecdb) {
         bool checkSuccessful = true;
