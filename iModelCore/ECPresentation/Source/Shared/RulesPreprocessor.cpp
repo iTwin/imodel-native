@@ -985,15 +985,14 @@ static bvector<NavNodeKeyCPtr> SplitLabelGroupedKey(IConnectionCR connection, IN
     {
     bvector<NavNodeKeyCPtr> result;
     bmap<ECN::ECClassId, bvector<ECInstanceKey>> instanceKeyMap;
-    instanceKeyProvider->IterateInstanceKeys(key,
-        [&instanceKeyMap](ECInstanceKey instanceKey)
-            {
-            if (instanceKeyMap.find(instanceKey.GetClassId()) == instanceKeyMap.end())
-                instanceKeyMap[instanceKey.GetClassId()] = { instanceKey };
-            else
-                instanceKeyMap[instanceKey.GetClassId()].push_back(instanceKey);
-            return true;
-            });
+    instanceKeyProvider->IterateInstanceKeys(key, [&](ECInstanceKey instanceKey)
+        {
+        auto iter = instanceKeyMap.find(instanceKey.GetClassId());
+        if (iter == instanceKeyMap.end())
+            iter = instanceKeyMap.Insert(instanceKey.GetClassId(), {}).first;
+        iter->second.push_back(instanceKey);
+        return true;
+        });
     for (auto& instanceKeys : instanceKeyMap)
         {
         std::unique_ptr<bvector<ECInstanceKey>> keyList = std::make_unique<bvector<ECInstanceKey>>(instanceKeys.second);
