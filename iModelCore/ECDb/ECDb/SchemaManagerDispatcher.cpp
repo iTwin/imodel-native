@@ -877,6 +877,71 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 //*****************************************************************
 //MainSchemaManager
 //*****************************************************************
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SchemaManager::SyncAction action, SchemaImportToken const* schemaImportToken) const {
+    ECDB_PERF_LOG_SCOPE("Sync Schemas");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::SyncSchemas");
+    const bool isPull = (action == SchemaManager::SyncAction::Pull);
+
+    if(isPull) {
+        // pull changes local schema
+        OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+        Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
+        if (!policy.IsSupported()) {
+            LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
+            return SchemaImportResult::ERROR;
+        }
+    }
+
+    auto& ecdb = const_cast<ECDbR>(m_ecdb);
+    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions());
+    BeMutexHolder holder(ecdb.GetImpl().GetMutex());
+    if(isPull) {
+        // pull changes local schema
+        m_ecdb.ClearECDbCache();
+    }
+
+    const auto rc = SchemaSynchronizer::SyncData(
+        ecdb,
+        syncDbUri.c_str(),
+        action,
+        [](const Utf8String& tableName) { return tableName.StartsWithIAscii("ec_"); },
+        false);
+
+    if (rc != BE_SQLITE_OK) {
+        return SchemaImportResult::ERROR_SYNC_SCHEMA;
+    }
+    if(isPull) {
+        // pull changes local schema
+        if (SUCCESS != CreateOrUpdateRequiredTables()) {
+            return SchemaImportResult::ERROR;
+        }
+
+        if (SUCCESS != CreateOrUpdateIndexesInDb(ctx)) {
+            return SchemaImportResult::ERROR;
+        }
+
+        if (SUCCESS != PurgeOrphanTables(ctx)) {
+            return SchemaImportResult::ERROR;
+        }
+
+        if (SUCCESS != DbMapValidator(ctx).Validate()) {
+            return SchemaImportResult::ERROR;
+        }
+
+        m_ecdb.ClearECDbCache();
+        OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+    }
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::SyncSchemas");
+    return SchemaImportResult::OK;
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* schemaImportToken, bool logIssue) const {
     ECDB_PERF_LOG_SCOPE("Drop schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchema");
@@ -937,6 +1002,7 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchema");
     return rc;
 }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

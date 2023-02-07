@@ -34,6 +34,7 @@ struct SchemaImportResult final
         ERROR = BE_SQLITE_ERROR,
         ERROR_DATA_TRANSFORM_REQUIRED = BE_SQLITE_ERROR_DataTransformRequired,
         ERROR_READONLY = BE_SQLITE_READONLY,
+        ERROR_SYNC_SCHEMA,
         };
 
     private:
@@ -50,7 +51,6 @@ struct SchemaImportResult final
         bool operator == (Status r) const { return r == m_status; }
         bool operator != (Status r) const { return r != m_status; }
     };
-
 
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
@@ -290,7 +290,10 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
             AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
             };
-
+        enum class SyncAction {
+            Pull, //!< Pull schema changes to a target db
+            Push //!< Push schema changes to a target db
+        };
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;
 #endif
@@ -317,6 +320,9 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         SchemaManager(ECDb const&, BeMutex&);
         ~SchemaManager();
 #endif
+
+        ECDB_EXPORT SchemaImportResult SyncSchemas(Utf8StringCR syncDbUri, SyncAction action, SchemaImportToken const* token = nullptr) const;
+
         //! Drop a leaf schema from ecdb as long as it has no instances
         //! @param[in] name  name of schema to be dropped.
         //! @param [in] token Token required to perform ECSchema imports if the

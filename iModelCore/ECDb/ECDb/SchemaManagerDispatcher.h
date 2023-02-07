@@ -214,6 +214,7 @@ public:
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportToken const* token, bool logIssue) const;
+    SchemaImportResult SyncSchemas(Utf8StringCR syncDbUri, SchemaManager::SyncAction action, SchemaImportToken const* token = nullptr) const;
     BentleyStatus RepopulateCacheTables() const;
     DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;
