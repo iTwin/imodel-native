@@ -16315,7 +16315,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     // validate content
-    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false);
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -16369,6 +16369,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     // validate content
-    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false);
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
     }
 
