@@ -772,9 +772,9 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
     if (isExtractProp) {
         if (lhsExp->GetType() != Exp::Type::PropertyName) {
             Issues().Report(
-                IssueSeverity::Error, 
+                IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECSQL, 
+                IssueType::ECSQL,
                 "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
             return ERROR;
         }
@@ -785,9 +785,9 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
         if (InstanceValueExp::IsInstancePath(lhsPropExp->GetPropertyPath())) {
             if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetPropertyPath())) {
                 Issues().Report(
-                    IssueSeverity::Error, 
+                    IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
-                    IssueType::ECSQL, 
+                    IssueType::ECSQL,
                     "Invalid grammar. Instance exp must be follow syntax '[<alias>.]$'");
                 return ERROR;
             }
@@ -802,9 +802,9 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 }
                 if (rhsExp->GetType() != Exp::Type::PropertyName) {
                     Issues().Report(
-                        IssueSeverity::Error, 
+                        IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
-                        IssueType::ECSQL, 
+                        IssueType::ECSQL,
                         "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
                     return ERROR;
                 }
