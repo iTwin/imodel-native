@@ -283,11 +283,42 @@ TEST(ConvexHull, GridTest)
                 xyz.pop_back();
             for (auto &xyz1 : xyz)
                 Check::SaveTransformedMarker(xyz1, 0.02);
-            DPoint3dOps::ConvexHullXY (xyz, xyzHull);
+            DPoint3dOps::ConvexHullXY (xyz, xyzHull, true);
+
+            if (xyzHull.size() > 1 && Check::Exact(xyzHull.front(), xyzHull.back(), "ConvexHullXY closure point"))
+                xyzHull.pop_back(); // rest of test assumes no closure point
+
             CheckHull(xyzHull, xyz);
             Check::SaveTransformed(xyzHull);
             Check::Shift(4 * gridCount, 0);
             }
         }
     Check::ClearGeometry("ConvexHull.GridTest");
+    }
+
+static bool testPushBackWithRealloc(bvector<DPoint3d>& v)
+    {
+    if (v.size() != v.capacity())
+        return false;   // no realloc, don't care
+
+    // push_back will reallocate. Does it safely access v[0] before it is freed? VS2010 did not! 
+    v.push_back(v[0]);
+    Check::Exact(v.front(), v.back(), "push_back of first element with reallocate");
+    return true;
+    }
+
+TEST(ConvexHull, VectorPushBackTest)
+    {
+    bvector<DPoint3d> v({DPoint3d::From(41,37,59)});
+    if (!testPushBackWithRealloc(v))
+        {
+        // try shrinkwrap suggestion
+        v.shrink_to_fit();
+        if (!testPushBackWithRealloc(v))
+            {
+            // try the "swap trick" from Item 17 of "Effective STL" by Scott Meyers
+            bvector<DPoint3d>(v).swap(v);
+            testPushBackWithRealloc(v);
+            }
+        }
     }

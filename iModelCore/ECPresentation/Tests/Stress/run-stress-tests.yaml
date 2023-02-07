@@ -13,8 +13,15 @@ schedules:
   displayName: Nightly run
   branches:
     include:
-    - OpenSourceFork
+    - main
   always: true
+
+resources:
+  repositories:
+    - repository: imodel-native-internal
+      type: github
+      name: iTwin/imodel-native-internal
+      endpoint: github.com_imodel-native
 
 jobs:
   - job:
@@ -26,13 +33,18 @@ jobs:
       - Agent.OS -equals Windows_NT
 
     variables:
-      PY_EXE: python
+      PY_EXE: py -3
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
       BB_OUT_ROOT: $(Build.BinariesDirectory)
-      BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
+      BB_ARGS: -a x64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
 
     steps:
-    - template: ../../../../build/templates/prebuild.yml
+    - checkout: self
+    - checkout: imodel-native-internal
+
+    - template: /build/templates/prebuild.yml@imodel-native-internal
+      parameters:
+        otherRepo: imodel-native-internal
 
     - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
       displayName: Pull
@@ -61,10 +73,15 @@ jobs:
       PY_EXE: python3
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
       BB_OUT_ROOT: $(Build.BinariesDirectory)
-      BB_ARGS: -a LinuxX64 -s iModelJsNodeAddon.Dev -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
+      BB_ARGS: -a LinuxX64 -s iModelJsNodeAddon.Dev -r imodel-native -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-GTest-Stress --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)
 
     steps:
-    - template: ../../../../build/templates/prebuild.yml
+    - checkout: self
+    - checkout: imodel-native-internal
+
+    - template: /build/templates/prebuild.yml@imodel-native-internal
+      parameters:
+        otherRepo: imodel-native-internal
 
     - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
       displayName: Pull

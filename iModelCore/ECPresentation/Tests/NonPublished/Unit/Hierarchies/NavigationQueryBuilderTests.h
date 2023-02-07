@@ -42,13 +42,13 @@ struct NavigationQueryBuilderTests : QueryBuilderTest
 
     NavigationQueryBuilder& GetBuilder() {return *m_builder;}
 
-    NavigationQueryPtr PrepareNavigationQuery(std::function<NavigationQueryPtr()> queryFactory);
-    void ValidateQuery(ChildNodeSpecificationCR spec, NavigationQueryPtr actualQuery, std::function<NavigationQueryPtr()> expectedQueryFactory);
+    PresentationQueryBuilderPtr PrepareNavigationQuery(std::function<PresentationQueryBuilderPtr()> queryFactory);
+    void ValidateQuery(ChildNodeSpecificationCR spec, PresentationQueryBuilderPtr actualQuery, std::function<PresentationQueryBuilderPtr()> expectedQueryFactory);
 
     PresentationQueryContractFieldPtr CreateGroupingDisplayLabelField();
     RefCountedPtr<SimpleQueryContract> CreateRelatedInstancesQueryContract();
     RefCountedPtr<SimpleQueryContract> CreateSelect1QueryContract();
-    ComplexNavigationQueryR SetLabelGroupingNodeChildrenWhereClause(ComplexNavigationQueryR query);
+    ComplexQueryBuilderR SetLabelGroupingNodeChildrenWhereClause(ComplexQueryBuilderR query);
 
     Utf8String GetECInstanceNodesOrderByClause();
     Utf8String GetLabelGroupingNodesOrderByClause();

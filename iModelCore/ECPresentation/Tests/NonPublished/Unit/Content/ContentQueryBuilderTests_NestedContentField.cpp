@@ -44,7 +44,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithSingleStepRelationship
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query), RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
         query->From(*classB, true, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
         query->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false));
@@ -108,7 +108,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithMultiStepRelationshipP
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classC, *query), RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0).c_str());
         query->From(*classC, true, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0).c_str());
 
@@ -191,7 +191,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithNestedContentFields)
             CreatePropertiesField(customCategory, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC")))
             }));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query), RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
         query->From(*classB, true, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
         query->Join(bTocPath);

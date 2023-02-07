@@ -95,8 +95,8 @@ protected:
     void InvalidateFullContentSetSize();
     void InvalidateNestedContentProviders();
     virtual ContentDescriptorCP _GetContentDescriptor() const = 0;
-    virtual ContentQuerySet const& _GetContentQuerySet() const = 0;
-    virtual GenericQuerySet _GetCountQuerySet() const = 0;
+    virtual QuerySet const& _GetContentQuerySet() const = 0;
+    virtual QuerySet _GetCountQuerySet() const = 0;
     virtual ContentProviderPtr _Clone() const = 0;
     virtual void _OnDescriptorChanged();
     virtual void _OnPageOptionsChanged();
@@ -130,7 +130,7 @@ struct SpecificationContentProvider : ContentProvider
 private:
     ContentRuleInstanceKeysContainer m_rules;
     mutable ContentDescriptorCPtr m_descriptor;
-    mutable std::unique_ptr<ContentQuerySet> m_queries;
+    mutable std::unique_ptr<QuerySet> m_queries;
     mutable bmap<ContentRuleCP, IParsedInput const*> m_inputCache;
     mutable bmap<Utf8String, bvector<DisplayValueGroupCPtr>> m_distinctValuesCache;
 private:
@@ -139,8 +139,8 @@ private:
     bvector<DisplayValueGroupCPtr> CreateDistinctValues(ContentDescriptor::Field const&) const;
 protected:
     ContentDescriptorCP _GetContentDescriptor() const override;
-    ContentQuerySet const& _GetContentQuerySet() const override;
-    GenericQuerySet _GetCountQuerySet() const override;
+    QuerySet const& _GetContentQuerySet() const override;
+    QuerySet _GetCountQuerySet() const override;
     ContentProviderPtr _Clone() const override {return new SpecificationContentProvider(*this);}
     void _OnDescriptorChanged() override;
 public:
@@ -168,16 +168,16 @@ struct NestedContentProvider : ContentProvider
 private:
     ContentDescriptor::NestedContentField const& m_field;
     bvector<ECClassInstanceKey> m_primaryInstanceKeys;
-    mutable std::unique_ptr<ContentQuerySet> m_unfilteredQueries;
-    mutable std::unique_ptr<ContentQuerySet> m_queries;
+    mutable std::unique_ptr<QuerySet> m_unfilteredQueries;
+    mutable std::unique_ptr<QuerySet> m_queries;
     bool m_mergedResults;
 private:
     ECPRESENTATION_EXPORT NestedContentProvider(ContentProviderContextR, ContentDescriptor::NestedContentField const&);
     ECPRESENTATION_EXPORT NestedContentProvider(NestedContentProviderCR);
 protected:
     ContentDescriptorCP _GetContentDescriptor() const override;
-    ContentQuerySet const& _GetContentQuerySet() const override;
-    GenericQuerySet _GetCountQuerySet() const override;
+    QuerySet const& _GetContentQuerySet() const override;
+    QuerySet _GetCountQuerySet() const override;
     ContentProviderPtr _Clone() const override {return new NestedContentProvider(*this);}
     void _OnDescriptorChanged() override;
 public:

@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "../Shared/Queries/QueryBuilder.h"
-#include "ContentQuery.h"
 #include "ContentQueryContracts.h"
 #include "ContentSpecificationsHandler.h"
 
@@ -121,10 +120,10 @@ public:
     ContentQueryBuilderParameters const& GetParameters() const {return m_params;}
     ContentQueryBuilderParameters& GetParameters() {return m_params;}
 
-    ECPRESENTATION_EXPORT ContentQuerySet CreateQuerySet(SelectedNodeInstancesSpecificationCR, ContentDescriptorCR, IParsedInput const&);
-    ECPRESENTATION_EXPORT ContentQuerySet CreateQuerySet(ContentRelatedInstancesSpecificationCR, ContentDescriptorCR, IParsedInput const&);
-    ECPRESENTATION_EXPORT ContentQuerySet CreateQuerySet(ContentInstancesOfSpecificClassesSpecificationCR, ContentDescriptorCR);
-    ECPRESENTATION_EXPORT ContentQuerySet CreateQuerySet(ContentDescriptor::NestedContentField const&);
+    ECPRESENTATION_EXPORT QuerySet CreateQuerySet(SelectedNodeInstancesSpecificationCR, ContentDescriptorCR, IParsedInput const&);
+    ECPRESENTATION_EXPORT QuerySet CreateQuerySet(ContentRelatedInstancesSpecificationCR, ContentDescriptorCR, IParsedInput const&);
+    ECPRESENTATION_EXPORT QuerySet CreateQuerySet(ContentInstancesOfSpecificClassesSpecificationCR, ContentDescriptorCR);
+    ECPRESENTATION_EXPORT QuerySet CreateQuerySet(ContentDescriptor::NestedContentField const&);
 };
 
 /*=================================================================================**//**
@@ -139,7 +138,7 @@ private:
     ContentDescriptorCPtr m_descriptor;
     PageOptions m_pageOptions;
     bool m_adjustmentsApplied;
-    ContentQuerySet m_unions;
+    QuerySet m_unions;
 
 private:
     static ContentQueryBuilderParameters ClearPageOptions(ContentQueryBuilderParameters params)
@@ -156,7 +155,7 @@ public:
     ECPRESENTATION_EXPORT bool Accept(SelectedNodeInstancesSpecificationCR, IParsedInput const&);
     ECPRESENTATION_EXPORT bool Accept(ContentRelatedInstancesSpecificationCR, IParsedInput const&);
     ECPRESENTATION_EXPORT bool Accept(ContentInstancesOfSpecificClassesSpecificationCR);
-    ECPRESENTATION_EXPORT ContentQuerySet const& GetQuerySet();
+    ECPRESENTATION_EXPORT QuerySet const& GetQuerySet();
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

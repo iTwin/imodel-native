@@ -170,7 +170,7 @@ void RevisionMemTestFixture::ProcessSchemaRevision(DgnRevisionCR revision, Revis
 
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revision, revisionProcessOption));
-    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
@@ -194,7 +194,7 @@ void RevisionMemTestFixture::BackupTestFile()
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb(fileName);
+    OpenIModelDb(fileName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -214,7 +214,7 @@ void RevisionMemTestFixture::RestoreTestFile(Db::OpenMode openMode /*= Db::OpenM
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb(fileName, openMode);
+    OpenIModelDb(fileName, openMode);
     }
 
 //---------------------------------------------------------------------------------------
@@ -238,7 +238,7 @@ TEST_F(RevisionMemTestFixture, Commit_error_cause_auto_rollback_and_exception) {
         m_db = nullptr;
     }
     TxnManager::SetOnCommitCallback(nullptr);
-    OpenDgnDb(dbFileName, Db::OpenMode::Readonly);
+    OpenIModelDb(dbFileName, Db::OpenMode::Readonly);
     // check if the element w3e inserted is still there.
     ASSERT_FALSE(m_db->Elements().Get<TestElement>(elId).IsValid());
 }
@@ -255,7 +255,7 @@ TEST_F(RevisionMemTestFixture, Donot_commit_if_change_tracking_has_changes_on_cl
     BeTest::SetFailOnAssert(false);
     m_db->CloseDb();
     BeTest::SetFailOnAssert(true);
-    OpenDgnDb(dbFileName, Db::OpenMode::Readonly);
+    OpenIModelDb(dbFileName, Db::OpenMode::Readonly);
     // check if the element w3e inserted is still there.
     ASSERT_FALSE(m_db->Elements().Get<TestElement>(elId).IsValid());
 }
@@ -272,7 +272,7 @@ TEST_F(RevisionMemTestFixture, Donot_commit_if_change_tracking_has_changes_when_
     BeTest::SetFailOnAssert(false);
     m_db = nullptr;
     BeTest::SetFailOnAssert(true);
-    OpenDgnDb(dbFileName, Db::OpenMode::Readonly);
+    OpenIModelDb(dbFileName, Db::OpenMode::Readonly);
     // check if the element w3e inserted is still there.
     ASSERT_FALSE(m_db->Elements().Get<TestElement>(elId).IsValid());
 }

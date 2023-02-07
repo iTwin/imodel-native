@@ -24,7 +24,7 @@ BeFileName DynamicSchemaTest::ImportSchema(Utf8CP schemaName, Utf8CP schemaXml)
 
     DbResult result = BE_SQLITE_OK;
 
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    m_db = DgnDb::OpenIModelDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsSchema(schemaName));
 
@@ -36,7 +36,7 @@ BeFileName DynamicSchemaTest::ImportSchema(Utf8CP schemaName, Utf8CP schemaXml)
     EXPECT_EQ(SchemaReadStatus::Success, schemaStatus);
     EXPECT_EQ(true, schema->IsDynamicSchema());
 
-    SchemaStatus schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas());
+    SchemaStatus schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas(), true);
     EXPECT_EQ(SchemaStatus::Success, schemaImportStat);
     m_db->SaveChanges("Imported Test schema");
     CloseDb();
@@ -51,14 +51,14 @@ void DynamicSchemaTest::TestSchemaUpgrade(Utf8CP schemaName, BeFileNameCR fileNa
     {
     DbResult result = BE_SQLITE_OK;
 
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    m_db = DgnDb::OpenIModelDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(schemaName));
 
     ECSchemaPtr updatedSchema = nullptr;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(m_db->GetSchemaLocater());
-    
+
     auto schemaStatus = ECSchema::ReadFromXmlString(updatedSchema, updatedSchemaXml, *context);
     ASSERT_EQ(SchemaReadStatus::Success, schemaStatus);
 
@@ -66,7 +66,7 @@ void DynamicSchemaTest::TestSchemaUpgrade(Utf8CP schemaName, BeFileNameCR fileNa
     SchemaStatus schemaImportStat = SchemaStatus::Success;
     {
     DISABLE_ASSERTS
-    schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas());
+    schemaImportStat = m_db->ImportSchemas(context->GetCache().GetSchemas(), true);
     }
     ASSERT_EQ(expectedImportStatus, schemaImportStat);
     m_db->SaveChanges("Imported updated Test schema");

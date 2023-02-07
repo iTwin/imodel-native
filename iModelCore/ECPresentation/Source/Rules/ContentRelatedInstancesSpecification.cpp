@@ -149,17 +149,17 @@ bool ContentRelatedInstancesSpecification::_ReadJson(JsonValueCR json)
         m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""), _GetJsonElementType());
         if (m_relationshipClassNames.empty() && m_relatedClassNames.empty())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid `%s` specification - either `%s` or `%s` must be specified, but both are empty.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid `%s` specification - either `%s` or `%s` must be specified, but both are empty.",
                 _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_RELATIONSHIPS, COMMON_JSON_ATTRIBUTE_RELATEDCLASSES));
             hasIssues = true;
             }
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Using deprecated attributes of `%s`: `%s`, `%s`, `%s`, `%s`, `%s`. It's recommended to switch to `%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated attributes of `%s`: `%s`, `%s`, `%s`, `%s`, `%s`. It's recommended to switch to `%s`.",
             _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL, CONTENT_RELATED_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ISRECURSIVE, COMMON_JSON_ATTRIBUTE_RELATIONSHIPS,
             COMMON_JSON_ATTRIBUTE_RELATEDCLASSES, COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION, COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS));
         }
     else
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Missing required `%s` attribute: `%s`.", _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Missing required `%s` attribute: `%s`.", _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS));
         hasIssues = true;
         }
 

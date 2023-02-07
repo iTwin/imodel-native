@@ -38,7 +38,7 @@ protected:
         params.SetProjectName("BlankDgnDbTestFixture");
         params.SetOverwriteExisting(false);
         DbResult status;
-        DgnDbPtr db = DgnDb::CreateDgnDb(&status, filename, params);
+        DgnDbPtr db = DgnDb::CreateIModel(&status, filename, params);
         EXPECT_EQ(BE_SQLITE_OK, status) << status;
         return db;
         }

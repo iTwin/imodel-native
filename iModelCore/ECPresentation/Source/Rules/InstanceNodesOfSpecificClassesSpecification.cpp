@@ -148,7 +148,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml(BeXmlNodeP xmlNode)
         !CommonToolsInternal::ParseMultiSchemaClassesFromClassNamesString(classNames, defaultPolymorphism, m_classes, this) ||
         m_classes.empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString(INVALID_XML, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString(INVALID_XML, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES));
         return false;
         }
 
@@ -194,7 +194,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
 
     if (json.isMember(COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s.%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s.%s`.",
             _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC, COMMON_JSON_ATTRIBUTE_CLASSES, COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC));
         }
     bool defaultPolymorphism = json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC].asBool(false);
@@ -204,7 +204,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     // required:
     if (!CommonToolsInternal::ParseMultiSchemaClassesFromJson(json[COMMON_JSON_ATTRIBUTE_CLASSES], defaultPolymorphism, m_classes, this) || m_classes.empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
             _GetJsonElementType(), json.ToString().c_str(), "at least one class"));
         return false;
         }

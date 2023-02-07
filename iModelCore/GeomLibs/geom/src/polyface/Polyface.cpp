@@ -227,13 +227,9 @@ bool &colorsAreBySector
 )
     {
     colorsAreByVertex = colorsAreByFace = colorsAreBySector = false;
-    int select = 0;
     int indexArrayTag = 0;
     if (IntColor ().Active ())
-        {
         indexArrayTag = IntColor ().IndexedBy ();
-        select = 2;
-        }
     else
         return false;
 

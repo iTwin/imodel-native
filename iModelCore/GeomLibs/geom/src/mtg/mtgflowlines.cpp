@@ -349,7 +349,6 @@ bool FaceContainsPoint (MTGNodeId faceSeedNodeId, DPoint3dCR testXYZ, MTGPositio
     //   All areas are doubled, doubling will cancel in ratios.
     int numPositiveHit = 0;
     int numNegativeHit = 0;
-    double areaSum = 0.0;
     while (nodeIdB != faceSeedNodeId)
         {
         DPoint3d xyzB = m_facets.GetXYZ (nodeIdB);
@@ -359,7 +358,6 @@ bool FaceContainsPoint (MTGNodeId faceSeedNodeId, DPoint3dCR testXYZ, MTGPositio
         double areaOriginAB = vectorA.CrossProductXY (vectorB);
         double areaOriginAQ = vectorA.CrossProductXY (vectorQ);
         double areaOriginQB = vectorQ.CrossProductXY (vectorB);
-        areaSum += areaOriginAB;
         double lambdaA, lambdaB, lambdaAB;
         if (DoubleOps::SafeDivide (lambdaA, areaOriginAQ, areaOriginAB, 0.0)
             && DoubleOps::SafeDivide (lambdaB, areaOriginQB, areaOriginAB, 0.0))

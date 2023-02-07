@@ -51,10 +51,16 @@ ECPRESENTATION_TYPEDEFS(INavNodesCache)
 ECPRESENTATION_TYPEDEFS(IHierarchyLevelLocker)
 
 // queries
-ECPRESENTATION_TYPEDEFS(NavigationQuery)
-ECPRESENTATION_TYPEDEFS(ContentQuery)
-ECPRESENTATION_REFCOUNTED_PTR(NavigationQuery)
-ECPRESENTATION_REFCOUNTED_PTR(ContentQuery)
+ECPRESENTATION_TYPEDEFS(PresentationQueryBuilder);
+ECPRESENTATION_TYPEDEFS(ComplexQueryBuilder);
+ECPRESENTATION_TYPEDEFS(UnionQueryBuilder);
+ECPRESENTATION_TYPEDEFS(ExceptQueryBuilder);
+ECPRESENTATION_TYPEDEFS(StringQueryBuilder);
+ECPRESENTATION_REFCOUNTED_PTR(PresentationQueryBuilder)
+ECPRESENTATION_REFCOUNTED_PTR(ComplexQueryBuilder)
+ECPRESENTATION_REFCOUNTED_PTR(UnionQueryBuilder)
+ECPRESENTATION_REFCOUNTED_PTR(ExceptQueryBuilder)
+ECPRESENTATION_REFCOUNTED_PTR(StringQueryBuilder)
 
 // contracts
 ECPRESENTATION_TYPEDEFS(PresentationQueryContractField)
@@ -98,6 +104,14 @@ namespace std
     }
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+
+#ifndef ECPRESENTATION_ANONYMOUS_VARIABLE
+    #ifdef __COUNTER__
+        #define ECPRESENTATION_ANONYMOUS_VARIABLE(str) str ## __COUNTER__
+    #else
+        #define ECPRESENTATION_ANONYMOUS_VARIABLE(str) str ## __LINE__
+    #endif
+#endif
 
 // https://www.sqlite.org/limits.html#max_compound_select
 #define MAX_COMPOUND_STATEMENTS_COUNT       500
@@ -227,7 +241,7 @@ static inline void ThrowIfCancelled(ICancelationTokenCR token)
     {
     if (token.IsCanceled())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_DEBUG, "Cancelled");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_INFO, "Cancelled");
         throw CancellationException();
         }
     }

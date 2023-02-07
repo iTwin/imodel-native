@@ -81,7 +81,7 @@ int checkNoActiveStatements(sqlite3* db)
     if (0 == db->nVdbeActive)
         return SQLITE_OK;
 
-    for (stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
+    for (stmt = db->pVdbe; stmt != NULL; stmt = sqlite3_next_stmt(db, stmt))
         {
         if (stmt->eVdbeState != VDBE_RUN_STATE)
             {

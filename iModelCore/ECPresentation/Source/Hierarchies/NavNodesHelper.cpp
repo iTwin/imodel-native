@@ -126,7 +126,7 @@ NavNodePtr NavNodesFactory::CreateECInstanceNode(IConnectionCR connection, Utf8S
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr NavNodesFactory::CreateECClassGroupingNode(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, ECClassCR ecClass, bool isPolymorphic,
-    LabelDefinitionCR label, uint64_t groupedInstancesCount, PresentationQueryBaseCP instanceKeysSelectQuery) const
+    LabelDefinitionCR label, uint64_t groupedInstancesCount, PresentationQueryCP instanceKeysSelectQuery) const
     {
     NavNodePtr node = NavNode::Create();
     node->SetLabelDefinition(label);
@@ -148,7 +148,7 @@ NavNodePtr NavNodesFactory::CreateECClassGroupingNode(IConnectionCR connection, 
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr NavNodesFactory::CreateECRelationshipGroupingNode(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, ECRelationshipClassCR relationshipClass,
-    LabelDefinitionCR label, uint64_t groupedInstancesCount, PresentationQueryBaseCP instanceKeysSelectQuery) const
+    LabelDefinitionCR label, uint64_t groupedInstancesCount, PresentationQueryCP instanceKeysSelectQuery) const
     {
     NavNodePtr node = NavNode::Create();
     node->SetLabelDefinition(label);
@@ -169,7 +169,7 @@ NavNodePtr NavNodesFactory::CreateECRelationshipGroupingNode(IConnectionCR conne
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr NavNodesFactory::CreateDisplayLabelGroupingNode(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey,
-    LabelDefinitionCR label, uint64_t groupedInstancesCount, PresentationQueryBaseCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys) const
+    LabelDefinitionCR label, uint64_t groupedInstancesCount, PresentationQueryCP instanceKeysSelectQuery, std::unique_ptr<bvector<ECInstanceKey>> groupedInstanceKeys) const
     {
     NavNodePtr node = NavNode::Create();
     node->SetLabelDefinition(label);
@@ -189,7 +189,7 @@ NavNodePtr NavNodesFactory::CreateDisplayLabelGroupingNode(IConnectionCR connect
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr NavNodesFactory::CreateECPropertyGroupingNode(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, ECClassCR ecClass, ECPropertyCR ecProperty,
-    LabelDefinitionCR label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, uint64_t groupedInstancesCount, PresentationQueryBaseCP instanceKeysSelectQuery) const
+    LabelDefinitionCR label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, uint64_t groupedInstancesCount, PresentationQueryCP instanceKeysSelectQuery) const
     {
     NavNodePtr node = NavNode::Create();
     node->SetLabelDefinition(label);
@@ -218,7 +218,7 @@ NavNodePtr NavNodesFactory::CreateECPropertyGroupingNode(IConnectionCR connectio
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr NavNodesFactory::CreateCustomNode(IConnectionCR connection, Utf8StringCR specificationIdentifier, NavNodeKeyCP parentKey, LabelDefinitionCR label,
-    Utf8CP description, Utf8CP imageId, Utf8CP type, PresentationQueryBaseCP instanceKeysSelectQuery) const
+    Utf8CP description, Utf8CP imageId, Utf8CP type, PresentationQueryCP instanceKeysSelectQuery) const
     {
     NavNodePtr node = NavNode::Create();
     node->SetLabelDefinition(label);

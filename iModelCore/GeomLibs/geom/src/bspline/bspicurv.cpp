@@ -216,9 +216,8 @@ double          absTol,             /* absolute tolerance on integration */
 double          relTol              /* => relative tolerance for integration */
 )
     {
-    //bool            startIn = false;
     int             status = SUCCESS;
-    double          error, length, errorFactor;
+    double          error, length;
     double startParam = mdlBspline_fractionParameterToNaturalParameter (curveP, startFraction);
     double endParam   = mdlBspline_fractionParameterToNaturalParameter (curveP, endFraction);
     TangentialFunctionThunk thunk;
@@ -231,8 +230,6 @@ double          relTol              /* => relative tolerance for integration */
     /* Loop each Bezier segment */
     *fP = 0.0;
     *errorAchievedP = 0.0;
-    int numSegments = 1;    // NEEDS WORK -- get true segment count.
-    errorFactor = relTol / numSegments;
     s_maxDepth = 0;
     DRange1d interval = DRange1d::From (startParam, endParam);
     for (size_t i = 0; curveP->AdvanceToBezierInKnotInterval  (thunk.segment, i, interval);)

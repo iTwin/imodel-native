@@ -408,13 +408,13 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    // Parse JSON value using JsonCpp
-    Json::Value jsonInput;
+    // Parse JSON value using BeJsDocument
+    BeJsDocument jsonInput;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(jsonInput, jsonInputFile));
 
     // Parse JSON value using RapidJson
     rapidjson::Document rapidJsonInput;
-    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(rapidJsonInput, Json::FastWriter().write(jsonInput)));
+    ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(rapidJsonInput, jsonInputFile));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);

@@ -1674,7 +1674,7 @@ int             initMethod      /* => 0 for equal parameter step, 1 for equal ar
 )
     {
     bool        converge;
-    int         status = ERROR, i, j, allocSize, numParams;
+    int         status = ERROR, i, j, numParams;
     double      paramTol, step, deltaPlus = 0, deltaMinus;
     DPoint3d    ends[2], tmp;
     outparams.clear ();
@@ -1693,7 +1693,7 @@ int             initMethod      /* => 0 for equal parameter step, 1 for equal ar
         return (SUCCESS);
         }
 
-    allocSize = ((numParams = (int)numSeg - 1)) * sizeof(double);
+    numParams = (int)numSeg - 1;
     ScopedArray <double>upDiagArray (numParams);    double   *upDiag     = upDiagArray.GetData ();
     ScopedArray <double>lowDiagArray (numParams);   double   *lowDiag    = lowDiagArray.GetData ();
     ScopedArray <double>midDiagArray (numParams);   double   *midDiag    = midDiagArray.GetData ();

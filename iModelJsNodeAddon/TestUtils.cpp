@@ -125,7 +125,7 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	BeSQLite::DbResult status;
 	BeFileName dbName(props["outFileName"].asCString(), true);
 	CreateDgnDbParams dgndbParams("DeserializeGeometryStream");
-	DgnDbPtr db = DgnDb::CreateDgnDb(&status, dbName, dgndbParams);
+	DgnDbPtr db = DgnDb::CreateIModel(&status, dbName, dgndbParams);
 	GeometryCollection collection(arrayBuff, *db);
 
 	// Iterate through the buffer making comparisons
@@ -239,7 +239,7 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	BeSQLite::DbResult status;
 	BeFileName dbName(props["outFileName"].asCString(), true);
 	CreateDgnDbParams dgndbParams("BuildKnownGeometryStream");
-	DgnDbPtr db = DgnDb::CreateDgnDb(&status, dbName, dgndbParams);
+	DgnDbPtr db = DgnDb::CreateIModel(&status, dbName, dgndbParams);
 	GeometryBuilder builder = *GeometryBuilder::CreateGeometryPart(*db, true);
 
 	// Append the geometry

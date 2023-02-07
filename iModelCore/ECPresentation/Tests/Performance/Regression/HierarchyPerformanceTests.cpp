@@ -338,7 +338,7 @@ struct NavigatorClassificationHierarchyPerformanceTests : HierarchyPerformanceTe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NavigatorClassificationHierarchyPerformanceTests, GetChildNodes_VSTS38248)
     {
-    NodesResponse rootNodesResponse = m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_project, "Classification", RulesetVariables(), nullptr)).get();
+    NodesResponse rootNodesResponse = m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_project, "Classification", RulesetVariables())).get();
     ASSERT_EQ(2, rootNodesResponse.GetResult().GetSize());
 
     Timer t_hierarchy;

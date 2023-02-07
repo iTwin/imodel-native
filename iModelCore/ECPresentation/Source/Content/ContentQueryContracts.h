@@ -40,6 +40,7 @@ private:
     bool CreateContractFields(bvector<PresentationQueryContractFieldCPtr>&, bvector<ContentDescriptor::Field*> const&, ContentDescriptor::RelatedContentField const*) const;
 
 protected:
+    ContentQueryContract const* _AsContentQueryContract() const override {return this;}
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
 
 public:

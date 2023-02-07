@@ -546,18 +546,22 @@ static CurveVectorPtr CloneChainWithGapsClosed (CurveVectorCR source, CurveGapOp
     double maxAdjustAlongCurve = options.GetMaxAdjustAlongCurve ();
     bool   removePriorGaps = options.GetRemovePriorGapPrimitives ();
     static double s_nearParallelTolerance = 0.001;
+#ifdef DEBUG_CHAIN_GAPS
     size_t numGap = 0;
     double gapSum = 0.0;
     double a;
+#endif
     CurveVectorPtr result = CurveVector::Create (source.GetBoundaryType ());
     for (size_t i = 0, n = source.size (); i < n; i++)
         {
         if (removePriorGaps && source[i]->GetMarkerBit (ICurvePrimitive::CURVE_PRIMITIVE_BIT_GapCurve))
             {
             // skip it!!!
+#ifdef DEBUG_CHAIN_GAPS
             numGap++;
             source[i]->Length (a);
             gapSum += a;
+#endif
             }
         else
             {

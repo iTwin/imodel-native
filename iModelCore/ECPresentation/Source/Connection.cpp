@@ -7,7 +7,6 @@
 #include <Bentley/BeThreadLocalStorage.h>
 #include <Bentley/BeThread.h>
 
-#define LOG_CONNECTIONS (NativeLogging::CategoryLogger(LOGGER_NAMESPACE_ECPRESENTATION_CONNECTIONS))
 #define STATEMENT_CACHE_SIZE 50
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,7 +75,7 @@ private:
         m_ecdb.Schemas().OnAfterSchemaChanges().AddListener(m_eventsScope, [this](ECDbCR, SchemaChangeType){OnAfterSchemaChanges();});
 
         m_isOpen = m_ecdb.IsDbOpen();
-        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] created on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId());
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] created on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
         }
     void OnConnectionClosed();
     void OnBeforeSchemaChanges();
@@ -100,7 +99,7 @@ public:
         }
     ~PrimaryConnection()
         {
-        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] destroyed on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId());
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] destroyed on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
         Close();
         }
     ConnectionManager const& GetManager() const {return m_manager;}
@@ -148,7 +147,7 @@ private:
     +---------------+---------------+---------------+---------------+-----------+------*/
     ProxyConnection(IProxyConnectionsTracker* tracker, PrimaryConnection const& primaryConnection)
         : m_tracker(tracker), m_primaryConnection(primaryConnection), m_threadId((uint64_t)BeThreadUtilities::GetCurrentThreadId()), m_disableThreadVerification(0),
-        m_statementCache(STATEMENT_CACHE_SIZE, Utf8PrintfString("ECPresentation: ProxyConnection(%d)", m_threadId).c_str())
+        m_statementCache(STATEMENT_CACHE_SIZE, Utf8PrintfString("ECPresentation: ProxyConnection(%" PRIu64 ")", m_threadId).c_str())
         {
         // By default we're going to retry 600 times, waiting 100 ms before each retry. This
         // gives us a total of 1 minute before we fail the query with BE_SQLITE_BUSY.
@@ -157,41 +156,42 @@ private:
         RefCountedPtr<BeSQLite::BusyRetry> busyRetry = new BusyRetry(retriesCount, 100);
 
         DbResult openResult = m_primaryConnection.GetDb().OpenSecondaryConnection(m_db, Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No, busyRetry.get()));
-        LOG_CONNECTIONS.messagev((BE_SQLITE_OK == openResult) ? LOG_INFO : LOG_ERROR, "%p ProxyConnection[%s] created on thread %d. OpenBeSQLiteDb result = %s",
-            this, m_primaryConnection.GetId().c_str(), m_threadId, BeSQLite::Db::InterpretDbResult(openResult));
+        if (BE_SQLITE_OK != openResult)
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Failed to open proxy SQLite connection with result `%s`", BeSQLite::Db::InterpretDbResult(openResult)));
 
-        if (m_db.IsDbOpen())
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p ProxyConnection[%s] created on thread " PRIu64, this, m_primaryConnection.GetId().c_str(), m_threadId));
+
+        uint64_t mmapSize = 0;
+        if (primaryConnection.GetManager().GetProps().GetMmapFileSize().IsNull())
             {
-            uint64_t mmapSize = 0;
-            if (primaryConnection.GetManager().GetProps().GetMmapFileSize().IsNull())
-                {
-                BeFileNameStatus fileSizeResult = BeFileName(m_db.GetDbFileName()).GetFileSize(mmapSize);
-                if (BeFileNameStatus::Success != fileSizeResult)
-                    LOG_CONNECTIONS.errorv("%p ProxyConnection[%s] failed to get file size, result = %d", this, m_primaryConnection.GetId().c_str(), (int)fileSizeResult);
-                }
+            BeFileNameStatus fileSizeResult = BeFileName(m_db.GetDbFileName()).GetFileSize(mmapSize);
+            if (BeFileNameStatus::Success != fileSizeResult)
+                DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, false, Utf8PrintfString("%p ProxyConnection[%s] failed to get file size, result = %d", this, m_primaryConnection.GetId().c_str(), (int)fileSizeResult));
+            }
+        else
+            {
+            mmapSize = primaryConnection.GetManager().GetProps().GetMmapFileSize().Value();
+            }
+        if (0 != mmapSize)
+            {
+            Savepoint txn(m_db, "set mmap_size");
+            DbResult mmapResult = m_db.ExecuteSql(Utf8PrintfString("PRAGMA mmap_size = %" PRIu64, mmapSize).c_str());
+            if (BE_SQLITE_OK == mmapResult)
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p ProxyConnection[%s] set mmap_size = %" PRIu64, this, m_primaryConnection.GetId().c_str(), mmapSize))
             else
-                {
-                mmapSize = primaryConnection.GetManager().GetProps().GetMmapFileSize().Value();
-                }
-            if (0 != mmapSize)
-                {
-                Savepoint txn(m_db, "set mmap_size");
-                DbResult mmapResult = m_db.ExecuteSql(Utf8PrintfString("PRAGMA mmap_size = %" PRIu64, mmapSize).c_str());
-                LOG_CONNECTIONS.messagev((BE_SQLITE_OK == mmapResult) ? LOG_INFO : LOG_ERROR, "%p ProxyConnection[%s] set mmap_size = %" PRIu64 ", result = %s",
-                    this, m_primaryConnection.GetId().c_str(), mmapSize, BeSQLite::Db::InterpretDbResult(mmapResult));
-                }
-            else
-                {
-                LOG_CONNECTIONS.infov("%p ProxyConnection[%s] not using mmap", this, m_primaryConnection.GetId().c_str());
-                }
+                DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, false, Utf8PrintfString("Failed to set mmap_size = %" PRIu64 " with result `%s`" , mmapSize, BeSQLite::Db::InterpretDbResult(mmapResult)));
+            }
+        else
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p ProxyConnection[%s] not using mmap", this, m_primaryConnection.GetId().c_str()));
+            }
 
-            auto const& memoryCacheSize = primaryConnection.GetManager().GetProps().GetMemoryCacheSize();
-            if (!memoryCacheSize.IsNull())
-                {
-                Savepoint savepoint(m_db, "Set memory cache size");
-                uint64_t cacheSizeInKb = memoryCacheSize.Value() / 1024;
-                m_db.ExecuteSql(Utf8PrintfString("PRAGMA cache_size=-%" PRIu64, cacheSizeInKb).c_str());
-                }
+        auto const& memoryCacheSize = primaryConnection.GetManager().GetProps().GetMemoryCacheSize();
+        if (!memoryCacheSize.IsNull())
+            {
+            Savepoint savepoint(m_db, "Set memory cache size");
+            uint64_t cacheSizeInKb = memoryCacheSize.Value() / 1024;
+            m_db.ExecuteSql(Utf8PrintfString("PRAGMA cache_size=-%" PRIu64, cacheSizeInKb).c_str());
             }
         }
     void ValidateCurrentThread() const
@@ -235,7 +235,7 @@ public:
         {
         m_statementCache.Empty();
         m_db.CloseDb();
-        LOG_CONNECTIONS.infov("%p ProxyConnection[%s] closed on thread %" PRIu64, this, GetId().c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId());
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p ProxyConnection[%s] closed on thread %" PRIu64, this, GetId().c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -338,7 +338,7 @@ void PrimaryConnection::OnConnectionClosed()
     if (!m_isOpen)
         return;
 
-    LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] closed on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId());
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] closed on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
 
     IConnectionPtr ref = this; // keep refcount of this instance so it doesnt get destroyed after NotifyConnectionClosed call
     m_statementCache.Empty();
@@ -355,7 +355,7 @@ void PrimaryConnection::OnBeforeSchemaChanges()
     if (!m_isOpen)
         return;
 
-    LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] started schema changes on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId());
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] started schema changes on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, 0 == m_isSuspended, Utf8PrintfString("Expected `m_isSuspended == 0`, but got %d", m_isSuspended));
     ++m_isSuspended;
     m_manager.NotifyConnectionSuspended(m_id);
@@ -369,7 +369,7 @@ void PrimaryConnection::OnAfterSchemaChanges()
     if (!m_isOpen)
         return;
 
-    LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] finished schema changes on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId());
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] finished schema changes on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, 1 == m_isSuspended, Utf8PrintfString("Expected `m_isSuspended == 1`, but got %d", m_isSuspended));
     --m_isSuspended;
     m_manager.NotifyConnectionResumed(m_id);

@@ -20,17 +20,6 @@ PolyfaceQueryCR mesh,
         {
         // Repeat 3 times:  Everything is visible.  We are not looking for coordinate overlap.  We are not looking at edge lengths.
         size_t numVertex = (size_t)mesh.GetPointCount ();
-        size_t numFacet;
-        size_t numPerFacet;
-        if (indexStyle == MESH_ELM_STYLE_TRIANGLE_GRID)
-            {
-            numPerFacet = 3;
-            }
-        else
-            {
-            numPerFacet = 4;
-            }
-        numFacet = numVertex / numPerFacet;
         numPolygonEdge = numVertex;   // yes, its just one to one.  Each vertex is the base of a one edge...
         numMatedPair = 0;
         num1 = numPolygonEdge;

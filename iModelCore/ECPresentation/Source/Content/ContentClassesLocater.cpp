@@ -252,7 +252,7 @@ protected:
             ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (modifierClass == nullptr)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Content modifier %s specifies non-existing class: %s.%s.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier %s specifies non-existing class: %s.%s.",
                     modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
                 continue;
                 }
@@ -265,7 +265,7 @@ protected:
                 ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
                 }
             }
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
         // finally, build the response
         return ContainerHelpers::MoveTransformContainer<bvector<std::unique_ptr<RelatedPropertySpecificationPaths>>>(flatSpecs, [this, &propertyClass](auto&& spec)
@@ -360,14 +360,14 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(IRulesPreprocessor& 
 bvector<SelectClassInfo> ContentClassesLocater::Locate(bvector<ECClassCP> const& classes) const
     {
     auto scope = Diagnostics::Scope::Create("Get content classes from given input classes");
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Total input classes: %" PRIu64, (uint64_t)classes.size()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Total input classes: %" PRIu64, (uint64_t)classes.size()));
 
     NodeLabelCalculator nodeLabelCalculator(m_context.GetSchemaHelper(), m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset().GetRuleSetId(),
         m_context.GetRulesPreprocessor(), m_context.GetRulesetVariables(), m_context.GetSchemaHelper().GetECExpressionsCache(), m_context.GetNavNodeFactory());
     IRulesPreprocessor::ContentRuleParameters params(*NavNodeKeyListContainer::Create(GetClassKeys(m_context.GetRulesPreprocessor(), classes)),
         m_context.GetPreferredDisplayType(), nullptr, nodeLabelCalculator, &m_context.GetNodesLocater());
     ContentRuleInputKeysContainer ruleSpecs = m_context.GetRulesPreprocessor().GetContentSpecifications(params);
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_DEBUG, LOG_INFO, Utf8PrintfString("Total content rules matching the input: %" PRIu64, (uint64_t)ruleSpecs.size()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Total content rules matching the input: %" PRIu64, (uint64_t)ruleSpecs.size()));
 
     ContentClassesLocaterImpl locater(m_context);
     for (ContentRuleInputKeys const& rule : ruleSpecs)

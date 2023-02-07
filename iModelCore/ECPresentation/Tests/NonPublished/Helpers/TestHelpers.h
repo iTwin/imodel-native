@@ -78,7 +78,7 @@ struct InstanceInputAndResult
 +===============+===============+===============+===============+===============+======*/
 struct RulesEngineTestHelpers
     {
-    typedef std::function<void(ComplexNavigationQueryR)> ComplexQueryHandler;
+    typedef std::function<void(ComplexQueryBuilderR)> ComplexQueryHandler;
 
     static void InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8String, Utf8String>> const& schemas);
 
@@ -101,11 +101,11 @@ struct RulesEngineTestHelpers
     static PresentationQueryContractFieldPtr CreateDisplayLabelField(ECSchemaHelper const&, SelectClass<ECClass> const&,
         bvector<RelatedClassPath> const& = {}, bvector<InstanceLabelOverrideValueSpecification const*> const& = {});
     static PresentationQueryContractFieldPtr CreateNullDisplayLabelField();
-    static ComplexNavigationQueryPtr CreateMultiECInstanceNodesQuery(ECClassCR ecClass, NavigationQueryR instanceNodesQuery);
-    static NavigationQueryPtr CreateECInstanceNodesQueryForClasses(ECSchemaHelper const&, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
-    static ComplexNavigationQueryPtr CreateECInstanceNodesQueryForClass(ECSchemaHelper const&, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
-    static NavigationQueryPtr CreateQuery(NavigationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
-    static NavigationQueryPtr CreateQuery(NavigationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static ComplexQueryBuilderPtr CreateMultiECInstanceNodesQuery(ECClassCR ecClass, PresentationQueryBuilderR instanceNodesQuery);
+    static PresentationQueryBuilderPtr CreateECInstanceNodesQueryForClasses(ECSchemaHelper const&, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static ComplexQueryBuilderPtr CreateECInstanceNodesQueryForClass(ECSchemaHelper const&, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
+    static PresentationQueryBuilderPtr CreateQuery(NavigationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static PresentationQueryBuilderPtr CreateQuery(NavigationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
 
     static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel = nullptr, Utf8CP expectedImageId = nullptr);
     static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false);

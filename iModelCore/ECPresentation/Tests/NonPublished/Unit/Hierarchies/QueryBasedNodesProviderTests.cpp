@@ -55,7 +55,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
 
     ICancelationTokenPtr cancelationToken = new TestCancelationToken([&nodesCached]()
@@ -101,8 +101,8 @@ TEST_F(QueryBasedNodesProviderTests, HasNodesDoesntQueryChildrenIfAlwaysReturnsC
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     EXPECT_TRUE(provider->HasNodes());
@@ -119,8 +119,8 @@ TEST_F(QueryBasedNodesProviderTests, DoesntFlagProviderAsInitializedInCacheIfPro
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(selectClass);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
+    query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     provider->SetPageOptions(std::make_shared<NavNodesProviderContext::PageOptions>(0, 1));

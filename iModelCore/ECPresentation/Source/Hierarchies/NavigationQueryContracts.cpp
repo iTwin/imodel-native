@@ -183,7 +183,7 @@ Utf8CP ECClassGroupingNodesQueryContract::GroupedInstancesCountFieldName = "/Gro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodesQueryContract::ECClassGroupingNodesQueryContract(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase, ECClassId customClassId, bool isPolymorphic)
+ECClassGroupingNodesQueryContract::ECClassGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase, ECClassId customClassId, bool isPolymorphic)
     : T_Super(specificationIdentifier), m_instanceKeysSelectQueryBase(instanceKeysSelectQueryBase), m_customClassId(customClassId), m_isPolymorphic(isPolymorphic)
     {
     auto actualClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId");
@@ -217,7 +217,7 @@ bvector<PresentationQueryContractFieldCPtr> ECClassGroupingNodesQueryContract::_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr ECClassGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
+PresentationQueryBuilderPtr ECClassGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
     {
     if (m_instanceKeysSelectQueryBase.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Class grouping contract has no instance keys select query.");
@@ -227,12 +227,12 @@ NavigationQueryPtr ECClassGroupingNodesQueryContract::CreateInstanceKeysSelectQu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr ECClassGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(ECClassCR ecClass, bool isPolymorphic) const
+PresentationQueryBuilderPtr ECClassGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(ECClassCR ecClass, bool isPolymorphic) const
     {
     if (m_instanceKeysSelectQueryBase.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Class grouping contract has no instance keys select query.");
 
-    auto query = ComplexNavigationQuery::Create();
+    auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(*m_instanceKeysSelectQueryBase->Clone());
     query->Where(Utf8PrintfString("ECClassId IS (%s%s)", isPolymorphic ? "" : "ONLY ", ecClass.GetFullName()).c_str(), BoundQueryValuesList());
@@ -258,7 +258,7 @@ Utf8CP DisplayLabelGroupingNodesQueryContract::GroupedInstanceKeysFieldName = "/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase, ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField)
+DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase, ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField)
     : T_Super(specificationIdentifier), m_instanceKeysSelectQueryBase(instanceKeysSelectQueryBase)
     {
     auto maxInstanceKeysField = PresentationQueryContractSimpleField::Create("", std::to_string(MAX_LABEL_GROUPED_INSTANCE_KEYS).c_str(), false, false, FieldVisibility::Inner);
@@ -302,7 +302,7 @@ bvector<PresentationQueryContractFieldCPtr> DisplayLabelGroupingNodesQueryContra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr DisplayLabelGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
+PresentationQueryBuilderPtr DisplayLabelGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
     {
     if (m_instanceKeysSelectQueryBase.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Label grouping contract has no instance keys select query.");
@@ -312,12 +312,12 @@ NavigationQueryPtr DisplayLabelGroupingNodesQueryContract::CreateInstanceKeysSel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr DisplayLabelGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(LabelDefinitionCR label) const
+PresentationQueryBuilderPtr DisplayLabelGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(LabelDefinitionCR label) const
     {
     if (m_instanceKeysSelectQueryBase.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Label grouping contract has no instance keys select query.");
 
-    auto query = ComplexNavigationQuery::Create();
+    auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(*m_instanceKeysSelectQueryBase->Clone());
     query->Where(Utf8PrintfString("json_extract([%s], '$.DisplayValue') = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(),
@@ -350,7 +350,7 @@ Utf8CP ECPropertyGroupingNodesQueryContract::GroupedInstancesCountFieldName = "/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(Utf8String specificationIdentifier, NavigationQueryCPtr instanceKeysSelectQueryBase, SelectClass<ECClass> const& propertyClass, ECPropertyCR prop, PropertyGroupCR spec, SelectClass<ECClass> const* foreignKeyClass)
+ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase, SelectClass<ECClass> const& propertyClass, ECPropertyCR prop, PropertyGroupCR spec, SelectClass<ECClass> const* foreignKeyClass)
     : T_Super(specificationIdentifier), m_instanceKeysSelectQueryBase(instanceKeysSelectQueryBase), m_property(prop), m_specification(spec), m_groupingPropertyClassAlias(propertyClass.GetAlias())
     {
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId", true, false, FieldVisibility::Inner);
@@ -516,7 +516,7 @@ bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupingNodesQueryContract
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
+PresentationQueryBuilderPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
     {
     if (m_instanceKeysSelectQueryBase.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Properties grouping contract has no instance keys select query.");
@@ -526,12 +526,12 @@ NavigationQueryPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(RapidJsonValueCR groupingValuesJson) const
+PresentationQueryBuilderPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(RapidJsonValueCR groupingValuesJson) const
     {
     if (m_instanceKeysSelectQueryBase.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Properties grouping contract has no instance keys select query.");
 
-    auto query = ComplexNavigationQuery::Create();
+    auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(*m_instanceKeysSelectQueryBase->Clone());
     query->Where(QueryBuilderHelpers::CreatePropertyGroupFilteringClause(m_property, "[PropertyValue]",

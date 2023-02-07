@@ -14,7 +14,7 @@
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//=======================================================================================    
+//=======================================================================================
 //! Provides testing methods that can be used in the ATPs to test certain aspects of the ECDb APIs
 //! using the ASSERT_ macros.
 //! Their return values are compatible with the ASSERT_ macros. This allows you to write single-line
@@ -26,7 +26,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //! In order to avoid the ECDb argument for every call to TestHelper, you construct a TestHelper with an ECDb
 //! which is then used by each method of TestHelper.
 // @bsiclass
-//=======================================================================================    
+//=======================================================================================
 struct TestHelper final
     {
     private:
@@ -51,7 +51,7 @@ struct TestHelper final
         BentleyStatus ImportSchema(ECN::ECSchemaPtr, SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None) const;
         //! Imports the specified schemas into this Test's ECDb
         //! Changes are committed in case of success, and rolled back in case of error
-        BentleyStatus ImportSchemas(std::vector<SchemaItem> const&) const;
+        BentleyStatus ImportSchemas(std::vector<SchemaItem> const&, SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None) const;
 
         ECSqlStatus PrepareECSql(Utf8CP ecsql) const { ECSqlStatement stmt;  return stmt.Prepare(m_ecdb, ecsql); }
         Utf8String ECSqlToSql(Utf8CP ecsql) const;
@@ -106,10 +106,10 @@ struct TestHelper final
         int GetFrequencyCount(Utf8StringCR source, Utf8StringCR target) const;
     };
 
-//=======================================================================================    
+//=======================================================================================
 //! Misc test utilities
 // @bsiclass
-//=======================================================================================    
+//=======================================================================================
 struct TestUtilities final
     {
     private:
@@ -119,9 +119,16 @@ struct TestUtilities final
     public:
         static BentleyStatus ReadFile(Utf8StringR, BeFileNameCR);
         static BentleyStatus ReadFile(Json::Value&, BeFileNameCR);
+        static BentleyStatus ReadFile(BeJsDocument&, BeFileNameCR);
         static BentleyStatus ReadFile(rapidjson::Document&, BeFileNameCR);
 
         static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
+        static BentleyStatus ParseJson(BeJsDocument& json, Utf8StringCR jsonStr) 
+            { 
+                json.Parse(jsonStr.c_str()); 
+                return json.hasParseError() ? ERROR : SUCCESS;
+            }
+
         static BentleyStatus ParseJson(rapidjson::Document& json, Utf8StringCR jsonStr) { return json.Parse<0>(jsonStr.c_str()).HasParseError() ? ERROR : SUCCESS; }
         static Utf8String ToString(rapidjson::Value const& json)
             {
@@ -161,10 +168,10 @@ struct TestUtilities final
     };
 
 
-//=======================================================================================    
+//=======================================================================================
 //! Utility to populate an ECInstance with random values
 // @bsiclass
-//=======================================================================================    
+//=======================================================================================
 struct ECInstancePopulator final
     {
     private:

@@ -213,7 +213,7 @@ InstanceLabelOverrideValueSpecification* InstanceLabelOverrideValueSpecification
         Utf8String msg = json.isMember(INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_TYPE)
             ? Utf8PrintfString("Invalid `" INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_TYPE "` attribute value: `%s`", type)
             : Utf8String("Missing required attribute: `" INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_TYPE "`");
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, msg);
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, msg);
         }
     if (!spec || !spec->ReadJson(json))
         DELETE_AND_CLEAR(spec);
