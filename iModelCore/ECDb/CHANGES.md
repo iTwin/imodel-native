@@ -9,11 +9,21 @@ This document including important changes to syntax or file format.
 
 ## `2/7/2023`: Add ECDb validity/integriy checks
 
-* ECSql version change to `1.0.2.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
+* ECSql version change to `1.0.3.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * New PRAGMA commands added:
     * `PRAGMA class_id_check`: Checks if there are no classId references to non existing class definitions.
     * `PRAGMA nav_prop_id_check`: Checks if all navigation properties have valid classIds.
     * `PRAGMA validate`: Runs all checks.
+
+## `2/6/2023`: Add support for GREATEST/LEAST Sql functions
+
+The function let you find inline a greatest or least value out of specified values.
+
+ECSQL version change from  `1.0.1.1` to  `1.0.2.1`
+
+```sql
+    SELECT GREATEST(1,2,3), LEAST (1,2,3)
+```
 
 ## `2/1/2023`: Add support for runtime instance and property accessor in ECSQL (beta)
 

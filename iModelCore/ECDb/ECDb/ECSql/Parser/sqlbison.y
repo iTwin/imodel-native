@@ -117,7 +117,7 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_TRUE SQL_TOKEN_UNION
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_USING SQL_TOKEN_VALUE SQL_TOKEN_VALUES
-%token <pParseNode> SQL_TOKEN_WHERE 
+%token <pParseNode> SQL_TOKEN_WHERE
 %token <pParseNode> SQL_TOKEN_DOLLAR
 %token <pParseNode> SQL_BITWISE_NOT
 
@@ -1386,7 +1386,39 @@ function_name:
 
 
 general_set_fct:
-        set_fct_type '(' opt_all_distinct function_arg ')'
+        SQL_TOKEN_MAX '(' opt_all_distinct  function_args_commalist ')'
+        {
+            if($4->count() != 1)
+                {
+                SQLyyerror(context, "Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])");
+                YYERROR;
+                }
+
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = $4->getChild(0));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+
+        }
+    |   SQL_TOKEN_MIN '(' opt_all_distinct  function_args_commalist ')'
+        {
+            if($4->count() != 1)
+                {
+                SQLyyerror(context, "Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])");
+                YYERROR;
+                }
+
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = $4->getChild(0));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+
+        }
+    |   set_fct_type '(' opt_all_distinct function_arg ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1416,8 +1448,6 @@ general_set_fct:
 
 set_fct_type:
         SQL_TOKEN_AVG
-    |   SQL_TOKEN_MAX
-    |   SQL_TOKEN_MIN
     |   SQL_TOKEN_SUM
     |   SQL_TOKEN_EVERY
     |   SQL_TOKEN_ANY
@@ -1612,13 +1642,13 @@ cast_spec:
         }
     ;
 
-opt_extract_value: 
+opt_extract_value:
       { $$ = SQL_NEW_RULE; }
-    | SQL_ARROW  property_path 
+    | SQL_ARROW  property_path
         {
            $$ = SQL_NEW_RULE;
            $$->append($2);
-    
+
         }
     ;
 value_exp_primary:
@@ -2018,7 +2048,7 @@ property_path_entry:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("$", SQL_NODE_PUNCTUATION));
-        }          
+        }
     ;
 
 column_ref:
