@@ -16315,10 +16315,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     // validate content
-    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-    ASSERT_EQ(1, contentSet[0]->GetKeys().size());
-    EXPECT_EQ(contentSet[0]->GetKeys()[0], instanceBKey);
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -16372,9 +16369,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     // validate content
-    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-    ASSERT_EQ(1, contentSet[0]->GetKeys().size());
-    EXPECT_EQ(contentSet[0]->GetKeys()[0], instanceBKey);
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false);
     }
 
