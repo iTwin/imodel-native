@@ -981,7 +981,7 @@ bvector<ContentRuleCP> RulesPreprocessor::_GetContentRules()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<NavNodeKeyCPtr> SplitLabelGroupedKeys(IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider, LabelGroupingNodeKey const& key)
+static bvector<NavNodeKeyCPtr> SplitLabelGroupedKey(IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider, LabelGroupingNodeKey const& key)
     {
     bvector<NavNodeKeyCPtr> result;
     bmap<ECN::ECClassId, bvector<ECInstanceKey>> instanceKeyMap;
