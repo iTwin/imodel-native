@@ -400,7 +400,7 @@ folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesNonPaged(bve
     for (ManagerPerformanceMetricsStorage& manager : managers)
         {
         std::shared_ptr<StopWatch> timer = std::make_shared<StopWatch>(true);
-        auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables(), nullptr);
+        auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables());
         futures.push_back(PresentationManagerTestsHelper::GetAllNodes(*manager.m_manager, params, [](double){})
             .then([&manager, timer](size_t nodesCount)
                 {
@@ -417,7 +417,7 @@ folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesNonPaged(bve
 folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesPaged(ECPresentationManager& manager, MultiProcessPagedLoadPerformanceMetricsStorage& metrics)
     {
     std::shared_ptr<StopWatch> timer = std::make_shared<StopWatch>(true);
-    auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables(), nullptr);
+    auto params = AsyncHierarchyRequestParams::Create(m_project, m_ruleset->GetRuleSetId(), RulesetVariables());
     return PresentationManagerTestsHelper::GatAllNodesPaged(manager, params, NODES_PAGE_SIZE, [&metrics](int pageIndex, double pageTime, double countTime)
         {
         metrics.ReportPageLoad(pageIndex, pageTime, countTime);

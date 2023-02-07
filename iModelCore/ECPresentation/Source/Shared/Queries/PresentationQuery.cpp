@@ -9,7 +9,6 @@
 #include "PresentationQuery.h"
 #include "../ValueHelpers.h"
 #include "../../Hierarchies/NavigationQuery.h"
-#include "../../Content/ContentQuery.h"
 
 // *** NEEDS WORK: clang for android complains that GetECClassClause and ContractHasNonAggregateFields are unused
 // ***              and that ConstraintSupportsClass "is not needed and will not be emitted". I don't understand
@@ -27,42 +26,10 @@ BentleyStatus BoundQueryValuesList::Bind(ECSqlStatement& stmt) const
     for (size_t i = 0; i < size(); ++i)
         {
         auto const& value = at(i);
+
         ECSqlStatus status = value->Bind(stmt, (uint32_t)(i + 1));
         if (!status.IsSuccess())
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind value. Result: %d", status.GetSQLiteError()));
-        }
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundQueryValuesList::ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetArray();
-    for (size_t i = 0; i < size(); ++i)
-        {
-        auto const& value = at(i);
-        json.PushBack(value->ToJson(&json.GetAllocator()), json.GetAllocator());
-        }
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BoundQueryValuesList::FromJson(RapidJsonValueCR json)
-    {
-    clear();
-    if (!json.IsArray())
-        return ERROR;
-
-    for (rapidjson::SizeType i = 0; i < json.Size(); ++i)
-        {
-        auto value = BoundQueryValue::FromJson(json[i]);
-        if (value)
-            push_back(std::move(value));
         }
     return SUCCESS;
     }
@@ -90,8 +57,7 @@ ECSqlStatus BoundQueryECValue::_Bind(ECSqlStatement& stmt, uint32_t index) const
         case PRIMITIVETYPE_Point3d: return stmt.BindPoint3d((int)index, m_value.GetPoint3d());
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled ECValue type: %d", (int)m_value.GetPrimitiveType()));
-    return ECSqlStatus::Error;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled ECValue type: %d", (int)m_value.GetPrimitiveType()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,19 +86,6 @@ bool BoundQueryECValue::_Equals(BoundQueryValue const& other) const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundQueryECValue::_ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "ec-value", json.GetAllocator());
-    json.AddMember("value-type", (int)m_value.GetPrimitiveType(), json.GetAllocator());
-    json.AddMember("value", ValueHelpers::GetJsonFromECValue(m_value, &json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundQueryId::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
     return stmt.BindId((int)index, m_id);
@@ -153,18 +106,6 @@ bool BoundQueryId::_Equals(BoundQueryValue const& other) const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundQueryId::_ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "id", json.GetAllocator());
-    json.AddMember("value", rapidjson::Value(m_id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundQueryIdSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
     return stmt.BindVirtualSet((int)index, m_set);
@@ -180,22 +121,6 @@ bool BoundQueryIdSet::_Equals(BoundQueryValue const& other) const
         return false;
 
     return m_set == otherVirtualSet->m_set;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundQueryIdSet::_ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "id-set", json.GetAllocator());
-    rapidjson::Value idsJson;
-    idsJson.SetArray();
-    for (auto const& id : m_set)
-        idsJson.PushBack(rapidjson::Value(id.ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("value", idsJson, json.GetAllocator());
-    return json;
     }
 
 /*=================================================================================**//**
@@ -404,7 +329,7 @@ bool QueryHelpers::IsLiteral(Utf8StringCR clause)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryHelpers::IsWrapped(Utf8StringCR clause)
     {
-    return (clause.StartsWith("[") || clause.StartsWith("+[")) 
+    return (clause.StartsWith("[") || clause.StartsWith("+["))
         && clause.EndsWith("]");
     }
 
@@ -420,6 +345,15 @@ Utf8String QueryHelpers::Wrap(Utf8StringCR str)
         return Utf8String("[").append(str).append("]");
 
     return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AppendQuery(PresentationQuery& target, PresentationQuery const& source)
+    {
+    target.GetQueryString().append(source.GetQueryString());
+    ContainerHelpers::Push(target.GetBindings(), source.GetBindings());
     }
 
 /*=================================================================================**//**
@@ -451,10 +385,10 @@ struct ECPresentation::JoinClassWithRelationshipClause : JoinClassClause
 +===============+===============+===============+===============+===============+======*/
 struct ECPresentation::JoinQueryClause : JoinClause
     {
-    PresentationQueryBaseCPtr m_query;
+    std::unique_ptr<PresentationQuery> m_query;
     Utf8String m_alias;
-    JoinQueryClause(PresentationQueryBaseCR query, Utf8String alias, QueryClauseAndBindings joinFilter, JoinType joinType)
-        : JoinClause(joinFilter, joinType), m_query(&query), m_alias(alias)
+    JoinQueryClause(std::unique_ptr<PresentationQuery> query, Utf8String alias, QueryClauseAndBindings joinFilter, JoinType joinType)
+        : JoinClause(joinFilter, joinType), m_query(std::move(query)), m_alias(alias)
         {}
     JoinQueryClause const* _AsQueryJoin() const override { return this; }
     };
@@ -499,23 +433,52 @@ static bool AreEqual(JoinClause const& lhs, JoinClause const& rhs)
     }
 
 /*---------------------------------------------------------------------------------**//**
+// Note: need these here to avoid compiler from complaining regarding unknown type of
+// `m_navigationResultParams`.
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PresentationQueryBase::BindValues(ECSqlStatement& stmt) const
+PresentationQueryBuilder::PresentationQueryBuilder() : m_isOuterQuery(true) {}
+PresentationQueryBuilder::PresentationQueryBuilder(PresentationQueryBuilder const& other)
+    : m_isOuterQuery(other.m_isOuterQuery)
     {
-    return GetBoundValues().Bind(stmt);
+    if (other.m_navigationResultParams != nullptr)
+        m_navigationResultParams = std::make_unique<NavigationQueryResultParameters>(*other.m_navigationResultParams);
+    }
+PresentationQueryBuilder::~PresentationQueryBuilder() {}
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<PresentationQueryBuilder> PresentationQueryBuilder::Clone() const
+    {
+    if (nullptr != AsComplexQueryBuilder())
+        return new ComplexQueryBuilder(*AsComplexQueryBuilder());
+    if (nullptr != AsUnionQueryBuilder())
+        return new UnionQueryBuilder(*AsUnionQueryBuilder());
+    if (nullptr != AsExceptQueryBuilder())
+        return new ExceptQueryBuilder(*AsExceptQueryBuilder());
+    return StringQueryBuilder::Create(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document PresentationQueryBase::ToJson(rapidjson::Document::AllocatorType* allocator) const
+NavigationQueryResultParameters const& PresentationQueryBuilder::GetNavigationResultParameters() const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("query", rapidjson::Value(ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("bindings", GetBoundValues().ToJson(&json.GetAllocator()), json.GetAllocator());
-    return json;
+    if (m_navigationResultParams != nullptr)
+        return *m_navigationResultParams;
+    static NavigationQueryResultParameters const s_empty;
+    return s_empty;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+NavigationQueryResultParameters& PresentationQueryBuilder::GetNavigationResultParameters()
+    {
+    if (m_navigationResultParams == nullptr)
+        m_navigationResultParams = std::make_unique<NavigationQueryResultParameters>();
+    return *m_navigationResultParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -538,8 +501,7 @@ static Utf8String GetECClassClause(ECClassCR ecClass)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-typename TBase::Contract const* ComplexPresentationQuery<TBase>::_GetContract(size_t contractId) const
+PresentationQueryContract const* ComplexQueryBuilder::_GetContract(size_t contractId) const
     {
     if (m_selectContract.IsValid() && (0 == contractId || m_selectContract->GetId() == contractId))
         return m_selectContract.get();
@@ -553,8 +515,7 @@ typename TBase::Contract const* ComplexPresentationQuery<TBase>::_GetContract(si
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-typename TBase::Contract const* ComplexPresentationQuery<TBase>::_GetGroupingContract() const
+PresentationQueryContract const* ComplexQueryBuilder::_GetGroupingContract() const
     {
     if (m_groupingContract.IsValid())
         return m_groupingContract.get();
@@ -582,8 +543,7 @@ static bool ContractHasNonAggregateFields(PresentationQueryContractCR contract)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bool ComplexPresentationQuery<TBase>::HasClause(PresentationQueryClauses clauses) const
+bool ComplexQueryBuilder::HasClause(PresentationQueryClauses clauses) const
     {
     if (CLAUSE_Select == (CLAUSE_Select & clauses))
         return m_isSelectAll || m_selectContract.IsValid();
@@ -609,8 +569,7 @@ bool ComplexPresentationQuery<TBase>::HasClause(PresentationQueryClauses clauses
     if (CLAUSE_Having == (CLAUSE_Having & clauses))
         return !m_havingClause.GetClause().empty();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled presentation query clause type: %d", (int)clauses));
-    return false;
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled presentation query clause type: %d", (int)clauses));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -633,10 +592,9 @@ static void SelectField(bvector<QueryClauseAndBindings>& output, QueryClauseAndB
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::SelectAll()
+ComplexQueryBuilder& ComplexQueryBuilder::SelectAll()
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_isSelectAll = true;
     return *this;
     }
@@ -644,13 +602,13 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::SelectAll()
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::SelectContract(Contract const& contract, Utf8CP prefix)
+ComplexQueryBuilder& ComplexQueryBuilder::SelectContract(PresentationQueryContract const& contract, Utf8CP prefix)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_selectContract = &contract;
     m_selectPrefix = prefix;
-    TBase::GetResultParametersR().OnContractSelected(contract);
+    if (contract.AsNavigationQueryContract())
+        GetNavigationResultParameters().OnContractSelected(*contract.AsNavigationQueryContract());
     return *this;
     }
 
@@ -681,8 +639,7 @@ bool ShouldSelectWithClause(PresentationQueryContractFieldCR field, Presentation
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TQuery>
-static std::function<bool(Utf8CP)> CreateQueryFieldLookupFunc(TQuery const* nestedQuery)
+static std::function<bool(Utf8CP)> CreateQueryFieldLookupFunc(PresentationQueryBuilder const* nestedQuery)
     {
     if (!nestedQuery || !nestedQuery->GetContract())
         return nullptr;
@@ -705,8 +662,7 @@ static std::function<bool(Utf8CP)> CreateQueryFieldLookupFunc(TQuery const* nest
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase, typename TContract, typename TResultParameters>
-static bool DoesQuerySelectInnerFields(PresentationQuery<TBase, TContract, TResultParameters> const& query)
+static bool DoesQuerySelectInnerFields(PresentationQueryBuilder const& query)
     {
     auto contract = query.GetContract();
     if (!contract || !contract->HasInnerFields())
@@ -714,28 +670,27 @@ static bool DoesQuerySelectInnerFields(PresentationQuery<TBase, TContract, TResu
 
     // at this point we know the query has a select contract and it has inner fields.
     // now we need to check whether the query is 'inner' itself. that means checking if it doesn't have any nested queries
-    bool hasNestedQuery = query.AsComplexQuery() && query.AsComplexQuery()->GetNestedQuery();
+    bool hasNestedQuery = query.AsComplexQueryBuilder() && query.AsComplexQueryBuilder()->GetNestedQuery();
     return !hasNestedQuery;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void ComplexPresentationQuery<TBase>::InitSelectClause() const
+void ComplexQueryBuilder::InitSelectClause() const
     {
     if (!m_selectClause.GetClause().empty())
         return;
 
     int position = QueryPosition::None;
-    if (nullptr == TBase::GetGroupingContract())
+    if (nullptr == GetGroupingContract())
         position |= QueryPosition::Inner;
-    if (TBase::IsOuterQuery())
+    if (IsOuterQuery())
         position |= QueryPosition::Outer;
 
     bool hasNestedInnerFields = false;
-    Contract const* contract = m_selectContract.get();
-    Contract const* nestedContract = nullptr;
+    PresentationQueryContract const* contract = m_selectContract.get();
+    PresentationQueryContract const* nestedContract = nullptr;
     if (m_nestedQuery.IsValid())
         {
         nestedContract = m_nestedQuery->GetContract();
@@ -782,7 +737,7 @@ void ComplexPresentationQuery<TBase>::InitSelectClause() const
             }
         }
 
-    Contract const* groupingContract = m_groupingContract.get();
+    PresentationQueryContract const* groupingContract = m_groupingContract.get();
     if (nullptr != groupingContract)
         {
         bvector<PresentationQueryContractFieldCPtr> groupingFields = groupingContract->GetFields();
@@ -848,10 +803,10 @@ static Utf8String CreateClassSelectorClause(SelectClassWithExcludes<ECClass> con
         {
         SelectClassWithExcludes<ECClass> noExcludes(select);
         noExcludes.GetDerivedExcludedClasses().clear();
-        auto nested = ComplexGenericQuery::Create();
+        auto nested = ComplexQueryBuilder::Create();
         nested->SelectAll().From(noExcludes)
             .Where(CreateExcludedClassesQueryClause(select.GetDerivedExcludedClasses(), select.GetAlias().c_str()));
-        clause.append("(").append(nested->ToString()).append(")");
+        clause.append("(").append(nested->GetQuery()->GetQueryString()).append(")");
         }
     else
         {
@@ -876,8 +831,7 @@ static Utf8String CreateClassSelectorClause(SelectClassWithExcludes<ECRelationsh
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void ComplexPresentationQuery<TBase>::InitFromClause() const
+void ComplexQueryBuilder::InitFromClause() const
     {
     if (!m_fromClause.GetClause().empty())
         return;
@@ -889,10 +843,9 @@ void ComplexPresentationQuery<TBase>::InitFromClause() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(SelectClassWithExcludes<ECClass> const& fromClass)
+ComplexQueryBuilder& ComplexQueryBuilder::From(SelectClassWithExcludes<ECClass> const& fromClass)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_fromClause.Reset();
     m_from.push_back(std::make_unique<SelectClassWithExcludes<ECClass>>(fromClass));
     return *this;
@@ -901,8 +854,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(SelectCla
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(ECClassCR fromClass, bool polymorphic, Utf8CP alias)
+ComplexQueryBuilder& ComplexQueryBuilder::From(ECClassCR fromClass, bool polymorphic, Utf8CP alias)
     {
     return From(SelectClass<ECClass>(fromClass, alias, polymorphic));
     }
@@ -910,25 +862,34 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(ECClassCR
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(TBase& nestedQuery, Utf8CP alias)
+ComplexQueryBuilder& ComplexQueryBuilder::From(PresentationQueryBuilder& nestedQuery, Utf8CP alias)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     nestedQuery.SetIsOuterQuery(false);
 
     m_nestedQuery = &nestedQuery;
     m_nestedQueryAlias = alias;
 
-    TBase::GetResultParametersR().MergeWith(m_nestedQuery->GetResultParameters());
-    nestedQuery.GetResultParametersR() = ResultParameters();
+    if (nestedQuery.GetContract() && nestedQuery.GetContract()->AsNavigationQueryContract())
+        {
+        GetNavigationResultParameters().MergeWith(m_nestedQuery->GetNavigationResultParameters());
+        nestedQuery.GetNavigationResultParameters() = GetNavigationResultParameters();
+        }
     return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings)
+ComplexQueryBuilder& ComplexQueryBuilder::From(PresentationQuery const& nestedQuery, Utf8CP alias)
+    {
+    return From(*StringQueryBuilder::Create(nestedQuery.GetQueryString(), nestedQuery.GetBindings()), alias);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ComplexQueryBuilder& ComplexQueryBuilder::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings)
     {
     return Where(QueryClauseAndBindings(whereClause, BoundQueryValuesList(bindings)));
     }
@@ -936,10 +897,9 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP w
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(QueryClauseAndBindings clause)
+ComplexQueryBuilder& ComplexQueryBuilder::Where(QueryClauseAndBindings clause)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     clause.GetClause().assign(Utf8String("(").append(clause.GetClause()).append(")"));
     m_whereClause.Append(clause, " AND ");
     return *this;
@@ -948,8 +908,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(QueryCla
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClass const& relatedClass)
+ComplexQueryBuilder& ComplexQueryBuilder::Join(RelatedClass const& relatedClass)
     {
     RelatedClassPath path;
     path.push_back(relatedClass);
@@ -959,10 +918,9 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedCl
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClassPath const& path, bool shouldJoinLastTargetClass)
+ComplexQueryBuilder& ComplexQueryBuilder::Join(RelatedClassPath const& path, bool shouldJoinLastTargetClass)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_joinClause.Reset();
     bool isJoinOptional = false; // inner join by default
     bvector<std::shared_ptr<JoinClause>> rootJoins;
@@ -1006,10 +964,9 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedCl
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(SelectClass<ECClass> const& join, QueryClauseAndBindings joinClause, bool isOuter)
+ComplexQueryBuilder& ComplexQueryBuilder::Join(SelectClass<ECClass> const& join, QueryClauseAndBindings joinClause, bool isOuter)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_joinClause.Reset();
     m_joins.push_back({ std::make_unique<JoinClassClause>(join, joinClause, isOuter ? JoinType::Outer : JoinType::Inner) });
     return *this;
@@ -1018,22 +975,31 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(SelectCla
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(TBase& nestedQuery, Utf8CP alias, QueryClauseAndBindings joinClause, bool isOuter)
+ComplexQueryBuilder& ComplexQueryBuilder::Join(PresentationQueryBuilder const& nestedQuery, Utf8CP alias, QueryClauseAndBindings joinClause, bool isOuter)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_joinClause.Reset();
-    m_joins.push_back({ std::make_unique<JoinQueryClause>(nestedQuery, alias, joinClause, isOuter ? JoinType::Outer : JoinType::Inner) });
+    m_joins.push_back({ std::make_unique<JoinQueryClause>(nestedQuery.CreateQuery(), alias, joinClause, isOuter ? JoinType::Outer : JoinType::Inner) });
     return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause)
+ComplexQueryBuilder& ComplexQueryBuilder::Join(PresentationQuery const& nestedQuery, Utf8CP alias, QueryClauseAndBindings joinClause, bool isOuter)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
+    m_joinClause.Reset();
+    m_joins.push_back({ std::make_unique<JoinQueryClause>(std::make_unique<PresentationQuery>(nestedQuery), alias, joinClause, isOuter ? JoinType::Outer : JoinType::Inner) });
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ComplexQueryBuilder& ComplexQueryBuilder::OrderBy(Utf8CP orderByClause)
+    {
+    InvalidateQuery();
     m_orderByClause = orderByClause;
     return *this;
     }
@@ -1041,10 +1007,9 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::OrderBy(Utf8CP
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::GroupByContract(Contract const& contract)
+ComplexQueryBuilder& ComplexQueryBuilder::GroupByContract(PresentationQueryContract const& contract)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_groupingContract = &contract;
     return *this;
     }
@@ -1052,8 +1017,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::GroupByContrac
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
+Utf8String ComplexQueryBuilder::CreateGroupByClause() const
     {
     if (m_groupingContract.IsNull())
         return "";
@@ -1075,20 +1039,18 @@ Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause, BoundQueryValuesListCR bindings)
+ComplexQueryBuilder& ComplexQueryBuilder::Having(Utf8CP havingClause, BoundQueryValuesListCR bindings)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     return Having(QueryClauseAndBindings(havingClause, BoundQueryValuesList(bindings)));
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(QueryClauseAndBindings clause)
+ComplexQueryBuilder& ComplexQueryBuilder::Having(QueryClauseAndBindings clause)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_havingClause = clause;
     return *this;
     }
@@ -1096,10 +1058,9 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(QueryCl
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Limit(uint64_t limit, uint64_t offset)
+ComplexQueryBuilder& ComplexQueryBuilder::Limit(uint64_t limit, uint64_t offset)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_limit = std::make_unique<BoundQueryECValue>(ECValue(limit));
     m_offset = std::make_unique<BoundQueryECValue>(ECValue(offset));
     return *this;
@@ -1152,9 +1113,8 @@ static std::unique_ptr<JoinInfo> DetermineJoinTarget(bvector<std::shared_ptr<Sel
             return std::make_unique<JoinInfo>(fromClause.GetClass(), fromClause.GetAlias().empty() ? fromClause.GetClass().GetName() : fromClause.GetAlias(), true);
             }
         }
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Tried to JOIN on a relationship whose neither target nor source exists in the FROM clause"
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Tried to JOIN on a relationship whose neither target nor source exists in the FROM clause"
         "Relationship: '%s'", joinClause.m_using.GetClass().GetFullName()));
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1219,8 +1179,7 @@ static Utf8String GetOppositeNavigationPropertyName(NavigationECPropertyCR navig
         return wasPreviousJoinForward ? "[TargetECInstanceId]" : "[SourceECInstanceId]";
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Previously joined class is not an Entity and not a Relationship class: '%s'", previouslyJoinedClass.GetFullName()));
-    return "[ECInstanceId]";
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Previously joined class is not an Entity and not a Relationship class: '%s'", previouslyJoinedClass.GetFullName()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1368,7 +1327,7 @@ static QueryClauseAndBindings CreateJoinsClause(bvector<std::shared_ptr<JoinClau
         else if (auto queryJoin = join._AsQueryJoin())
             {
             joinClause.append(CreateJoinClause(queryJoin->GetJoinType()));
-            joinClause.append("(").append(queryJoin->m_query->ToString()).append(") ").append(queryJoin->m_alias);
+            joinClause.append("(").append(queryJoin->m_query->GetQueryString()).append(") ").append(queryJoin->m_alias);
             if (!joinFilterClause.empty())
                 joinClause.append(" ON ").append(joinFilterClause);
             }
@@ -1380,8 +1339,7 @@ static QueryClauseAndBindings CreateJoinsClause(bvector<std::shared_ptr<JoinClau
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void ComplexPresentationQuery<TBase>::InitJoinClause() const
+void ComplexQueryBuilder::InitJoinClause() const
     {
     if (!m_joinClause.GetClause().empty() || m_joins.empty())
         return;
@@ -1389,12 +1347,12 @@ void ComplexPresentationQuery<TBase>::InitJoinClause() const
     // TODO: we should not need to have a FROM clause to create a JOIN clause... especially when
     // thinking about joining on wrapped queries
     bvector<std::shared_ptr<SelectClassWithExcludes<ECClass>>> const* fromClauses = nullptr;
-    RefCountedCPtr<ThisType> fromClauseSource = this;
+    RefCountedCPtr<ComplexQueryBuilder> fromClauseSource = this;
     while (!fromClauses && fromClauseSource.IsValid())
         {
         fromClauses = &fromClauseSource->m_from;
-        RefCountedCPtr<TBase> nestedQuery = fromClauseSource->GetNestedQuery();
-        fromClauseSource = (nestedQuery.IsValid() && nullptr != nestedQuery->AsComplexQuery()) ? nestedQuery->AsComplexQuery() : nullptr;
+        RefCountedCPtr nestedQuery = fromClauseSource->GetNestedQuery();
+        fromClauseSource = (nestedQuery.IsValid() && nullptr != nestedQuery->AsComplexQueryBuilder()) ? nestedQuery->AsComplexQueryBuilder() : nullptr;
         }
     if (!fromClauses || fromClauses->empty())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Join is only valid when used with 'FROM'"));
@@ -1410,8 +1368,7 @@ void ComplexPresentationQuery<TBase>::InitJoinClause() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses clause) const
+Utf8String ComplexQueryBuilder::GetClause(PresentationQueryClauses clause) const
     {
     if (CLAUSE_Select == (CLAUSE_Select & clause))
         {
@@ -1424,7 +1381,7 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
         if (m_nestedQuery.IsValid())
             {
             Utf8String nestedClause;
-            nestedClause.append("(").append(m_nestedQuery->ToString()).append(")");
+            nestedClause.append("(").append(m_nestedQuery->GetQuery()->GetQueryString()).append(")");
             if (!m_nestedQueryAlias.empty())
                 nestedClause.append(" ").append(QueryHelpers::Wrap(m_nestedQueryAlias));
             return nestedClause;
@@ -1461,50 +1418,69 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
     if (CLAUSE_Having == (CLAUSE_Having & clause))
         return m_havingClause.GetClause();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid presentation query clause: '%d'", (int)clause));
-    return "";
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid presentation query clause: '%d'", (int)clause));
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-Utf8String ComplexPresentationQuery<TBase>::_ToString() const
+std::unique_ptr<PresentationQuery> ComplexQueryBuilder::_CreateQuery() const
     {
-    Utf8String query;
-    query.reserve(1024);
+    auto query = std::make_unique<PresentationQuery>();
 
     // SELECT
     if (HasClause(CLAUSE_Select))
-        query.append("SELECT ").append(GetClause(CLAUSE_Select));
+        {
+        query->GetQueryString().append("SELECT ").append(GetClause(CLAUSE_Select));
+        ContainerHelpers::Push(query->GetBindings(), m_selectClause.GetBindings());
+        }
 
     // FROM
     if (HasClause(CLAUSE_From))
-        query.append(" FROM ").append(GetClause(CLAUSE_From));
+        {
+        query->GetQueryString().append(" FROM ").append(GetClause(CLAUSE_From));
+        if (m_nestedQuery.IsValid())
+            ContainerHelpers::Push(query->GetBindings(), m_nestedQuery->GetQuery()->GetBindings());
+        }
 
     // JOIN
     if (HasClause(CLAUSE_JoinUsing))
-        query.append(GetClause(CLAUSE_JoinUsing));
+        {
+        query->GetQueryString().append(GetClause(CLAUSE_JoinUsing));
+        ContainerHelpers::Push(query->GetBindings(), m_joinClause.GetBindings());
+        }
 
     // WHERE
     if (HasClause(CLAUSE_Where))
-        query.append(" WHERE ").append(GetClause(CLAUSE_Where));
+        {
+        query->GetQueryString().append(" WHERE ").append(GetClause(CLAUSE_Where));
+        ContainerHelpers::Push(query->GetBindings(), m_whereClause.GetBindings());
+        }
 
     // GROUP BY
     if (HasClause(CLAUSE_GroupBy))
-        query.append(" GROUP BY ").append(GetClause(CLAUSE_GroupBy));
+        query->GetQueryString().append(" GROUP BY ").append(GetClause(CLAUSE_GroupBy));
 
     // HAVING
     if (HasClause(CLAUSE_Having))
-        query.append(" HAVING ").append(GetClause(CLAUSE_Having));
+        {
+        query->GetQueryString().append(" HAVING ").append(GetClause(CLAUSE_Having));
+        ContainerHelpers::Push(query->GetBindings(), m_havingClause.GetBindings());
+        }
 
     // ORDER BY
     if (HasClause(CLAUSE_OrderBy))
-        query.append(" ORDER BY ").append(GetClause(CLAUSE_OrderBy));
+        query->GetQueryString().append(" ORDER BY ").append(GetClause(CLAUSE_OrderBy));
 
     // LIMIT
     if (HasClause(CLAUSE_Limit))
-        query.append(" LIMIT ").append(GetClause(CLAUSE_Limit));
+        {
+        query->GetQueryString().append(" LIMIT ").append(GetClause(CLAUSE_Limit));
+        if (nullptr != m_limit)
+            query->GetBindings().push_back(m_limit);
+        if (nullptr != m_offset)
+            query->GetBindings().push_back(m_offset);
+        }
 
     return query;
     }
@@ -1512,41 +1488,39 @@ Utf8String ComplexPresentationQuery<TBase>::_ToString() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bool ComplexPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& otherBase) const
+bool ComplexQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) const
     {
-    if (!TBase::_IsEqual(otherBase))
+    if (!PresentationQueryBuilder::_IsEqual(otherBase))
         return false;
 
-    if (nullptr == static_cast<TBase const&>(otherBase).AsComplexQuery())
+    auto other = otherBase.AsComplexQueryBuilder();
+    if (!other)
         return false;
-
-    ComplexPresentationQuery const& other = *static_cast<TBase const&>(otherBase).AsComplexQuery();
 
     // SELECT
     InitSelectClause();
-    other.InitSelectClause();
-    if (m_selectClause != other.m_selectClause)
+    other->InitSelectClause();
+    if (m_selectClause != other->m_selectClause)
         return false;
 
     // FROM
     if (m_nestedQuery.IsValid())
         {
-        if (other.m_nestedQuery.IsNull() || !m_nestedQuery->IsEqual(*other.m_nestedQuery))
+        if (other->m_nestedQuery.IsNull() || !m_nestedQuery->IsEqual(*other->m_nestedQuery))
             return false;
 
-        if (!m_nestedQueryAlias.Equals(other.m_nestedQueryAlias))
+        if (!m_nestedQueryAlias.Equals(other->m_nestedQueryAlias))
             return false;
         }
     else
         {
-        if (m_from.size() != other.m_from.size())
+        if (m_from.size() != other->m_from.size())
             return false;
 
         for (auto const& clause : m_from)
             {
             bool found = false;
-            for (auto const& otherFromClause : other.m_from)
+            for (auto const& otherFromClause : other->m_from)
                 {
                 if (*otherFromClause == *clause)
                     {
@@ -1560,13 +1534,13 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& othe
         }
 
     // JOIN
-    if (m_joins.size() != other.m_joins.size())
+    if (m_joins.size() != other->m_joins.size())
         return false;
 
     for (auto const& joinGroup : m_joins)
         {
         bool foundGroup = false;
-        for (auto const& otherJoinGroup : other.m_joins)
+        for (auto const& otherJoinGroup : other->m_joins)
             {
             if (joinGroup.size() != otherJoinGroup.size())
                 continue;
@@ -1601,25 +1575,25 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& othe
         }
 
     // WHERE
-    if (m_whereClause != other.m_whereClause)
+    if (m_whereClause != other->m_whereClause)
         return false;
 
     // LIMIT
-    if (!AreEqual(m_limit.get(), other.m_limit.get()))
+    if (!AreEqual(m_limit.get(), other->m_limit.get()))
         return false;
-    if (!AreEqual(m_offset.get(), other.m_offset.get()))
+    if (!AreEqual(m_offset.get(), other->m_offset.get()))
         return false;
 
     // GROUP BY
-    if (!CreateGroupByClause().Equals(other.CreateGroupByClause()))
+    if (!CreateGroupByClause().Equals(other->CreateGroupByClause()))
         return false;
 
     // HAVING
-    if (m_havingClause != other.m_havingClause)
+    if (m_havingClause != other->m_havingClause)
         return false;
 
     // ORDER BY
-    if (!m_orderByClause.Equals(other.m_orderByClause))
+    if (!m_orderByClause.Equals(other->m_orderByClause))
         return false;
 
     return true;
@@ -1628,8 +1602,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& othe
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bvector<Utf8CP> ComplexPresentationQuery<TBase>::GetAliases(int flags, bool isRelationship) const
+bvector<Utf8CP> ComplexQueryBuilder::GetAliases(int flags, bool isRelationship) const
     {
     bvector<Utf8CP> list;
 
@@ -1672,60 +1645,126 @@ bvector<Utf8CP> ComplexPresentationQuery<TBase>::GetAliases(int flags, bool isRe
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bvector<Utf8CP> ComplexPresentationQuery<TBase>::_GetSelectAliases(int flags) const {return GetAliases(flags, false);}
+bvector<Utf8CP> ComplexQueryBuilder::_GetSelectAliases(int flags) const {return GetAliases(flags, false);}
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bvector<Utf8CP> ComplexPresentationQuery<TBase>::_GetRelationshipAliases(int flags) const {return GetAliases(flags, true);}
+bvector<Utf8CP> ComplexQueryBuilder::_GetRelationshipAliases(int flags) const {return GetAliases(flags, true);}
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-BoundQueryValuesList ComplexPresentationQuery<TBase>::_GetBoundValues() const
+void UnionQueryBuilder::Init(PresentationQueryBuilder* initQuery)
     {
-    BoundQueryValuesList values;
-    InitSelectClause();
-    ContainerHelpers::Push(values, m_selectClause.GetBindings());
-    if (m_nestedQuery.IsValid())
+    if (nullptr == initQuery)
         {
-        BoundQueryValuesList nestedValues = m_nestedQuery->GetBoundValues();
-        values.insert(values.end(), nestedValues.begin(), nestedValues.end());
+        for (auto& query : m_queries)
+            Init(query.get());
+        return;
         }
-    InitJoinClause();
-    ContainerHelpers::Push(values, m_joinClause.GetBindings());
-    ContainerHelpers::Push(values, m_whereClause.GetBindings());
-    ContainerHelpers::Push(values, m_havingClause.GetBindings());
-    if (nullptr != m_limit)
-        values.push_back(m_limit);
-    if (nullptr != m_offset)
-        values.push_back(m_offset);
-    return values;
+
+    if (initQuery->GetContract() && initQuery->GetContract()->AsNavigationQueryContract())
+        {
+        GetNavigationResultParameters().MergeWith(initQuery->GetNavigationResultParameters());
+        initQuery->GetNavigationResultParameters() = NavigationQueryResultParameters();
+        }
+
+    if (nullptr != initQuery->AsComplexQueryBuilder())
+        {
+        m_orderByClause = initQuery->AsComplexQueryBuilder()->GetClause(CLAUSE_OrderBy);
+        initQuery->AsComplexQueryBuilder()->OrderBy("");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bool UnionPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& otherBase) const
+UnionQueryBuilder& UnionQueryBuilder::OrderBy(Utf8CP orderByClause)
     {
-    if (!TBase::_IsEqual(otherBase))
+    InvalidateQuery();
+    m_orderByClause = orderByClause;
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+UnionQueryBuilder& UnionQueryBuilder::Limit(uint64_t limit, uint64_t offset)
+    {
+    InvalidateQuery();
+    m_limit = std::make_unique<BoundQueryECValue>(ECValue(limit));
+    m_offset = std::make_unique<BoundQueryECValue>(ECValue(offset));
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryContract const* UnionQueryBuilder::_GetContract(size_t contractId) const
+    {
+    for (auto const& query : m_queries)
+        {
+        PresentationQueryContract const* contract = query->GetContract(contractId);
+        if (nullptr != contract)
+            return contract;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryContract const* UnionQueryBuilder::_GetGroupingContract() const
+    {
+    for (auto const& query : m_queries)
+        {
+        PresentationQueryContract const* contract = query->GetGroupingContract();
+        if (nullptr != contract)
+            return contract;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnionQueryBuilder::_OnIsOuterQueryValueChanged()
+    {
+    for (auto& query : m_queries)
+        query->SetIsOuterQuery(IsOuterQuery());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8CP> UnionQueryBuilder::_GetSelectAliases(int flags) const
+    {
+    bvector<Utf8CP> list;
+    for (auto const& query : m_queries)
+        ContainerHelpers::Push(list, query->GetSelectAliases(flags));
+    return list;
+    }
+
+// /*---------------------------------------------------------------------------------**//**
+// @bsimethod
+// +---------------+---------------+---------------+---------------+---------------+------*/
+bool UnionQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) const
+    {
+    if (!PresentationQueryBuilder::_IsEqual(otherBase))
         return false;
 
-    UnionPresentationQuery const* other = static_cast<TBase const&>(otherBase).AsUnionQuery();
-    if (nullptr == other)
+    auto other = otherBase.AsUnionQueryBuilder();
+    if (!other)
         return false;
 
     if (m_queries.size() != other->m_queries.size())
         return false;
 
-    for (RefCountedPtr<TBase> const& query : m_queries)
+    for (auto const& query : m_queries)
         {
         bool found = false;
-        for (RefCountedPtr<TBase> const& otherQuery : other->m_queries)
+        for (auto const& otherQuery : other->m_queries)
             {
             if (query->IsEqual(*otherQuery))
                 {
@@ -1745,67 +1784,71 @@ bool UnionPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& otherB
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-Utf8String UnionPresentationQuery<TBase>::_ToString() const
+std::unique_ptr<PresentationQuery> UnionQueryBuilder::_CreateQuery() const
     {
-    Utf8String clause;
+    auto query = std::make_unique<PresentationQuery>();
+
     if (!m_orderByClause.empty())
         {
         // note: wrapping queries in a subquery is required until the TFS#291221 is fixed
-        clause.append("SELECT * FROM (");
+        query->GetQueryString().append("SELECT * FROM (");
         }
 
     for (size_t i = 0; i < m_queries.size(); ++i)
         {
         if (i > 0)
-            clause.append(" UNION ALL ");
-        clause.append(m_queries[i]->ToString());
+            query->GetQueryString().append(" UNION ALL ");
+        AppendQuery(*query, *m_queries[i]->GetQuery());
         }
 
     if (!m_orderByClause.empty())
-        clause.append(") ORDER BY ").append(m_orderByClause);
+        query->GetQueryString().append(") ORDER BY ").append(m_orderByClause);
 
     if (nullptr != m_limit)
         {
-        clause.append(" LIMIT ?");
+        query->GetQueryString().append(" LIMIT ?");
+        query->GetBindings().push_back(m_limit);
+
         if (nullptr != m_offset)
-            clause.append(" OFFSET ?");
+            {
+            query->GetQueryString().append(" OFFSET ?");
+            query->GetBindings().push_back(m_offset);
+            }
         }
 
-    return clause;
+    return query;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void UnionPresentationQuery<TBase>::Init(TBase* initQuery)
+void ExceptQueryBuilder::Init()
     {
-    if (nullptr == initQuery)
+    if (m_base->GetContract() && m_base->GetContract()->AsNavigationQueryContract())
         {
-        for (RefCountedPtr<TBase>& query : m_queries)
-            Init(query.get());
-        return;
+        GetNavigationResultParameters().MergeWith(m_base->GetNavigationResultParameters());
+        m_base->GetNavigationResultParameters() = NavigationQueryResultParameters();
+        m_except->GetNavigationResultParameters() = NavigationQueryResultParameters();
         }
 
-
-    TBase::GetResultParametersR().MergeWith(initQuery->GetResultParameters());
-    initQuery->GetResultParametersR() = ResultParameters();
-
-    if (nullptr != initQuery->AsComplexQuery())
+    if (nullptr != m_base->AsComplexQueryBuilder())
         {
-        m_orderByClause = initQuery->AsComplexQuery()->GetClause(CLAUSE_OrderBy);
-        initQuery->AsComplexQuery()->OrderBy("");
+        m_orderByClause = m_base->AsComplexQueryBuilder()->GetClause(CLAUSE_OrderBy);
+        m_base->AsComplexQueryBuilder()->OrderBy("");
+        }
+    if (nullptr != m_except->AsComplexQueryBuilder())
+        {
+        m_orderByClause = m_except->AsComplexQueryBuilder()->GetClause(CLAUSE_OrderBy);
+        m_except->AsComplexQueryBuilder()->OrderBy("");
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause)
+ExceptQueryBuilder& ExceptQueryBuilder::OrderBy(Utf8CP orderByClause)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_orderByClause = orderByClause;
     return *this;
     }
@@ -1813,10 +1856,9 @@ UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::OrderBy(Utf8CP ord
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::Limit(uint64_t limit, uint64_t offset)
+ExceptQueryBuilder& ExceptQueryBuilder::Limit(uint64_t limit, uint64_t offset)
     {
-    TBase::InvalidateQueryString();
+    InvalidateQuery();
     m_limit = std::make_unique<BoundQueryECValue>(ECValue(limit));
     m_offset = std::make_unique<BoundQueryECValue>(ECValue(offset));
     return *this;
@@ -1825,168 +1867,9 @@ UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::Limit(uint64_t lim
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetContract(size_t contractId) const
+PresentationQueryContract const* ExceptQueryBuilder::_GetContract(size_t contractId) const
     {
-    for (RefCountedPtr<TBase> const& query : m_queries)
-        {
-        Contract const* contract = query->GetContract(contractId);
-        if (nullptr != contract)
-            return contract;
-        }
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetGroupingContract() const
-    {
-    for (RefCountedPtr<TBase> const& query : m_queries)
-        {
-        Contract const* contract = query->GetGroupingContract();
-        if (nullptr != contract)
-            return contract;
-        }
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void UnionPresentationQuery<TBase>::_OnIsOuterQueryValueChanged()
-    {
-    for (RefCountedPtr<TBase>& query : m_queries)
-        query->SetIsOuterQuery(TBase::IsOuterQuery());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bvector<Utf8CP> UnionPresentationQuery<TBase>::_GetSelectAliases(int flags) const
-    {
-    bvector<Utf8CP> list;
-    for (RefCountedPtr<TBase> const& query : m_queries)
-        ContainerHelpers::Push(list, query->GetSelectAliases(flags));
-    return list;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-BoundQueryValuesList UnionPresentationQuery<TBase>::_GetBoundValues() const
-    {
-    BoundQueryValuesList values;
-    for (RefCountedPtr<TBase> const& query : m_queries)
-        ContainerHelpers::Push(values, query->GetBoundValues());
-    if (nullptr != m_limit)
-        values.push_back(m_limit);
-    if (nullptr != m_offset)
-        values.push_back(m_offset);
-    return values;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bool ExceptPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& otherBase) const
-    {
-    if (!TBase::_IsEqual(otherBase))
-        return false;
-
-    ExceptPresentationQuery const* other = static_cast<TBase const&>(otherBase).AsExceptQuery();
-    if (nullptr == other)
-        return false;
-
-    return m_orderByClause.Equals(other->m_orderByClause)
-        && AreEqual(m_limit.get(), other->m_limit.get())
-        && AreEqual(m_offset.get(), other->m_offset.get())
-        && m_base->IsEqual(*other->m_base) && m_except->IsEqual(*other->m_except);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-Utf8String ExceptPresentationQuery<TBase>::_ToString() const
-    {
-    Utf8PrintfString clause("%s EXCEPT %s", m_base->ToString().c_str(), m_except->ToString().c_str());
-
-    if (!m_orderByClause.empty())
-        {
-        // note: wrapping queries in a subquery is required until the TFS#291221 is fixed
-        clause = Utf8PrintfString("SELECT * FROM (%s EXCEPT %s) this ORDER BY %s",
-            m_base->ToString().c_str(), m_except->ToString().c_str(), m_orderByClause.c_str());
-        }
-
-    if (nullptr != m_limit)
-        {
-        clause.append(" LIMIT ?");
-        if (nullptr != m_offset)
-            clause.append(" OFFSET ?");
-        }
-
-    return clause;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void ExceptPresentationQuery<TBase>::Init()
-    {
-    TBase::GetResultParametersR().MergeWith(m_base->GetResultParameters());
-
-    m_base->GetResultParametersR() = ResultParameters();
-    m_except->GetResultParametersR() = ResultParameters();
-
-    if (nullptr != m_base->AsComplexQuery())
-        {
-        m_orderByClause = m_base->AsComplexQuery()->GetClause(CLAUSE_OrderBy);
-        m_base->AsComplexQuery()->OrderBy("");
-        }
-    if (nullptr != m_except->AsComplexQuery())
-        {
-        m_orderByClause = m_except->AsComplexQuery()->GetClause(CLAUSE_OrderBy);
-        m_except->AsComplexQuery()->OrderBy("");
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ExceptPresentationQuery<TBase>& ExceptPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause)
-    {
-    TBase::InvalidateQueryString();
-    m_orderByClause = orderByClause;
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-ExceptPresentationQuery<TBase>& ExceptPresentationQuery<TBase>::Limit(uint64_t limit, uint64_t offset)
-    {
-    TBase::InvalidateQueryString();
-    m_limit = std::make_unique<BoundQueryECValue>(ECValue(limit));
-    m_offset = std::make_unique<BoundQueryECValue>(ECValue(offset));
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-typename TBase::Contract const* ExceptPresentationQuery<TBase>::_GetContract(size_t contractId) const
-    {
-    Contract const* contract = m_base->GetContract(contractId);
+    PresentationQueryContract const* contract = m_base->GetContract(contractId);
     if (nullptr != contract)
         return contract;
 
@@ -2000,10 +1883,9 @@ typename TBase::Contract const* ExceptPresentationQuery<TBase>::_GetContract(siz
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-typename TBase::Contract const* ExceptPresentationQuery<TBase>::_GetGroupingContract() const
+PresentationQueryContract const* ExceptQueryBuilder::_GetGroupingContract() const
     {
-    Contract const* contract = m_base->GetGroupingContract();
+    PresentationQueryContract const* contract = m_base->GetGroupingContract();
     if (nullptr != contract)
         return contract;
 
@@ -2017,18 +1899,16 @@ typename TBase::Contract const* ExceptPresentationQuery<TBase>::_GetGroupingCont
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void ExceptPresentationQuery<TBase>::_OnIsOuterQueryValueChanged()
+void ExceptQueryBuilder::_OnIsOuterQueryValueChanged()
     {
-    m_base->SetIsOuterQuery(TBase::IsOuterQuery());
-    m_except->SetIsOuterQuery(TBase::IsOuterQuery());
+    m_base->SetIsOuterQuery(IsOuterQuery());
+    m_except->SetIsOuterQuery(IsOuterQuery());
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bvector<Utf8CP> ExceptPresentationQuery<TBase>::_GetSelectAliases(int flags) const
+bvector<Utf8CP> ExceptQueryBuilder::_GetSelectAliases(int flags) const
     {
     bvector<Utf8CP> first = m_base->GetSelectAliases(flags);
     bvector<Utf8CP> second = m_except->GetSelectAliases(flags);
@@ -2041,292 +1921,148 @@ bvector<Utf8CP> ExceptPresentationQuery<TBase>::_GetSelectAliases(int flags) con
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-BoundQueryValuesList ExceptPresentationQuery<TBase>::_GetBoundValues() const
+bool ExceptQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) const
     {
-    BoundQueryValuesList lhsValues = m_base->GetBoundValues();
-    BoundQueryValuesList rhsValues = m_except->GetBoundValues();
-    BoundQueryValuesList values;
-    values.reserve(lhsValues.size() + rhsValues.size() + 2);
-    values.insert(values.end(), lhsValues.begin(), lhsValues.end());
-    values.insert(values.end(), rhsValues.begin(), rhsValues.end());
+    if (!PresentationQueryBuilder::_IsEqual(otherBase))
+        return false;
+
+    auto other = otherBase.AsExceptQueryBuilder();
+    if (!other)
+        return false;
+
+    return m_orderByClause.Equals(other->m_orderByClause)
+        && AreEqual(m_limit.get(), other->m_limit.get())
+        && AreEqual(m_offset.get(), other->m_offset.get())
+        && m_base->IsEqual(*other->m_base) && m_except->IsEqual(*other->m_except);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<PresentationQuery> ExceptQueryBuilder::_CreateQuery() const
+    {
+    auto query = std::make_unique<PresentationQuery>();
+
+    AppendQuery(*query, *m_base->GetQuery());
+    query->GetQueryString().append(" EXCEPT ");
+    AppendQuery(*query, *m_except->GetQuery());
+
+    if (!m_orderByClause.empty())
+        {
+        // note: wrapping queries in a subquery is required until the TFS#291221 is fixed
+        query->GetQueryString() = Utf8PrintfString("SELECT * FROM (%s) this ORDER BY %s",
+            query->GetQueryString().c_str(), m_orderByClause.c_str());
+        }
+
     if (nullptr != m_limit)
-        values.push_back(m_limit);
-    if (nullptr != m_offset)
-        values.push_back(m_offset);
-    return values;
+        {
+        query->GetQueryString().append(" LIMIT ?");
+        query->GetBindings().push_back(m_limit);
+
+        if (nullptr != m_offset)
+            {
+            query->GetQueryString().append(" OFFSET ?");
+            query->GetBindings().push_back(m_offset);
+            }
+        }
+
+    return query;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-bool StringPresentationQuery<TBase>::_IsEqual(PresentationQueryBase const& otherBase) const
+bool StringQueryBuilder::_IsEqual(PresentationQueryBuilder const& otherBase) const
     {
-    if (!TBase::_IsEqual(otherBase))
+    if (!PresentationQueryBuilder::_IsEqual(otherBase))
         return false;
 
-    StringPresentationQuery const* other = static_cast<TBase const&>(otherBase).AsStringQuery();
-    if (nullptr == other)
+    auto other = otherBase.AsStringQueryBuilder();
+    if (!other)
         return false;
 
-    return m_query.Equals(other->m_query);
+    return m_query->IsEqual(*other->m_query);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-Utf8String StringPresentationQuery<TBase>::_ToString() const {return m_query;}
+BentleyStatus BoundQueryValuesList::FromJson(IBoundQueryValueSerializer& serializer, BeJsConst json)
+    {
+    clear();
+
+    if (!json.isArray())
+        return ERROR;
+
+    for (uint32_t i = 0; i < json.size(); ++i)
+        {
+        auto value = serializer._FromJson(json[i]);
+        if (value)
+            push_back(std::move(value));
+        }
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-RefCountedPtr<StringPresentationQuery<TBase>> StringPresentationQuery<TBase>::FromJson(RapidJsonValueCR json)
+std::unique_ptr<PresentationQuery> StringQueryBuilder::_CreateQuery() const
     {
-    if (!json.IsObject())
-        return nullptr;
-
-    BoundQueryValuesList bindings;
-    bindings.FromJson(json["bindings"]);
-    Utf8CP query = json["query"].GetString();
-    return StringPresentationQuery<TBase>::Create(query, bindings);
+    return std::make_unique<PresentationQuery>(*m_query);
     }
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct RapidJsonValueComparer
-{
-    bool operator() (rapidjson::Value const* left, rapidjson::Value const* right) const
-        {
-        if (left->IsNull())
-            return !right->IsNull();
-        if (right->IsNull())
-            return false;
+size_t PrimitiveECValueHasher::operator()(ECValueCR value) const
+    {
+    if (value.IsNull())
+        return 0;
 
-        switch (left->GetType())
+    if (!value.IsPrimitive())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected only primitive values, got: %s", value.ToString().c_str()));
+
+    PrimitiveType type = value.GetPrimitiveType();
+    size_t hash = type;
+    switch (type)
+        {
+        case PRIMITIVETYPE_Boolean:
+            hash ^= std::hash<bool>{}(value.GetBoolean()) << 2;
+            break;
+        case PRIMITIVETYPE_DateTime:
+            hash ^= std::hash<int64_t>{}(value.GetDateTimeTicks()) << 2;
+            break;
+        case PRIMITIVETYPE_Double:
+            hash ^= std::hash<double>{}(value.GetDouble()) << 2;
+            break;
+        case PRIMITIVETYPE_Integer:
+            hash ^= std::hash<int32_t>{}(value.GetInteger()) << 2;
+            break;
+        case PRIMITIVETYPE_Long:
+            hash ^= std::hash<int64_t>{}(value.GetLong()) << 2;
+            break;
+        case PRIMITIVETYPE_String:
+            hash ^= std::hash<std::string>{}(value.GetUtf8CP()) << 2;
+            break;
+        case PRIMITIVETYPE_Point2d:
             {
-            case rapidjson::kFalseType:
-            case rapidjson::kTrueType:
-                {
-                return (int)left->GetBool() < (int)right->GetBool();
-                }
-            case rapidjson::kNumberType:
-                {
-                if (left->IsInt())
-                    return left->GetInt() < right->GetInt();
-                if (left->IsInt64())
-                    return left->GetInt64() < right->GetInt64();
-                if (left->IsDouble())
-                    return (fabs(left->GetDouble() - right->GetDouble()) > 0.0000001 && (left->GetDouble() - right->GetDouble()) < 0);
-                }
-            case rapidjson::kStringType:
-                {
-                return strcmp(left->GetString(), right->GetString()) < 0;
-                }
-            case rapidjson::kObjectType:
-            case rapidjson::kArrayType:
-                {
-                return BeRapidJsonUtilities::ToString(*left).CompareTo(BeRapidJsonUtilities::ToString(*right));
-                }
+            DPoint2d point2d = value.GetPoint2d();
+            hash ^= (std::hash<double>{}(point2d.x) ^ (std::hash<double>{}(point2d.y) << 8)) << 2;
+            break;
             }
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unhandled rapidjson value type: %d", (int)left->GetType()));
-        return false;
-        }
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct RapidJsonValueSet : BeSQLite::VirtualSet
-{
-private:
-    PrimitiveType m_type;
-    rapidjson::Document m_jsonValues;
-    bset<rapidjson::Value*, RapidJsonValueComparer> m_keys;
-public:
-    RapidJsonValueSet(RapidJsonValueCR values, PrimitiveType type) : m_type(type)
-        {
-        m_jsonValues.SetArray();
-        for (rapidjson::SizeType i = 0; i < values.Size(); i++)
+        case PRIMITIVETYPE_Point3d:
             {
-            if (PRIMITIVETYPE_Point2d == m_type || PRIMITIVETYPE_Point3d == m_type)
-                {
-                if (values[i].IsString())
-                    m_jsonValues.PushBack(rapidjson::Value(values[i], m_jsonValues.GetAllocator()), m_jsonValues.GetAllocator());
-                else if (values[i].IsObject())
-                    m_jsonValues.PushBack(rapidjson::Value(BeRapidJsonUtilities::ToString(values[i]).c_str(), m_jsonValues.GetAllocator()), m_jsonValues.GetAllocator());
-                else
-                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected Point value type to be a JSON object or JSON string. Actual: %d", (int)values[i].GetType()));
-                }
-            else
-                m_jsonValues.PushBack(rapidjson::Value(values[i], m_jsonValues.GetAllocator()), m_jsonValues.GetAllocator());
-            m_keys.insert(&m_jsonValues[i]);
+            DPoint3d point3d = value.GetPoint3d();
+            hash ^= (std::hash<double>{}(point3d.x) ^ (std::hash<double>{}(point3d.y) << 8) ^ (std::hash<double>{}(point3d.z) << 16)) << 2;
+            break;
             }
+        case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
+            break;
+        default:
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
         }
-    RapidJsonValueSet(RapidJsonValueSet const& other)
-        : m_type(other.m_type)
-        {
-        m_jsonValues.CopyFrom(other.m_jsonValues, m_jsonValues.GetAllocator());
-        for (rapidjson::SizeType i = 0; i < m_jsonValues.Size(); i++)
-            m_keys.insert(&m_jsonValues[i]);
-        }
-    PrimitiveType GetValuesType() const {return m_type;}
-    RapidJsonDocumentCR GetValuesJson() const {return m_jsonValues;}
-    bool Equals(RapidJsonValueSet const& otherSet) const
-        {
-        return m_jsonValues == otherSet.m_jsonValues;
-        }
-    bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override
-        {
-        if (nVals < 1)
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
-        if (nVals > 1)
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
-
-        rapidjson::Document jsonValue;
-        if (!vals[0].IsNull())
-            {
-            switch (m_type)
-                {
-                case PRIMITIVETYPE_Double:
-                case PRIMITIVETYPE_DateTime:
-                    jsonValue.SetDouble(vals[0].GetValueDouble());
-                    break;
-                case PRIMITIVETYPE_Boolean:
-                    jsonValue.SetBool(vals[0].GetValueInt() != 0);
-                    break;
-                case PRIMITIVETYPE_Integer:
-                    jsonValue.SetInt(vals[0].GetValueInt());
-                    break;
-                case PRIMITIVETYPE_Long:
-                    jsonValue.SetInt64(vals[0].GetValueInt64());
-                    break;
-                case PRIMITIVETYPE_String:
-                    jsonValue.SetString(vals[0].GetValueText(), jsonValue.GetAllocator());
-                    break;
-                case PRIMITIVETYPE_Point2d:
-                case PRIMITIVETYPE_Point3d:
-                    jsonValue.SetString(vals[0].GetValueText(), jsonValue.GetAllocator());
-                    break;
-                default:
-                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unhandled primitive value type: %d", (int)m_type));
-                }
-            }
-        return (m_keys.end() != m_keys.find(&jsonValue));
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BoundRapidJsonValueSet::BoundRapidJsonValueSet(RapidJsonValueCR values, PrimitiveType type)
-    {
-    m_set = std::make_unique<RapidJsonValueSet>(values, type);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BoundRapidJsonValueSet::BoundRapidJsonValueSet(BoundRapidJsonValueSet const& other)
-    {
-    RapidJsonValueSet const* otherVirtualSet = static_cast<RapidJsonValueSet const*>(other.m_set.get());
-    m_set = std::make_unique<RapidJsonValueSet>(*otherVirtualSet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatus BoundRapidJsonValueSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
-    {
-    return stmt.BindVirtualSet((int)index, *m_set);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BoundRapidJsonValueSet::_Equals(BoundQueryValue const& other) const
-    {
-    BoundRapidJsonValueSet const* otherVirtualSet = dynamic_cast<BoundRapidJsonValueSet const*>(&other);
-    if (nullptr == otherVirtualSet)
-        return false;
-
-    RapidJsonValueSet const* firstSet = static_cast<RapidJsonValueSet const*>(m_set.get());
-    RapidJsonValueSet const* secondSet = static_cast<RapidJsonValueSet const*>(otherVirtualSet->m_set.get());
-    return firstSet->Equals(*secondSet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundRapidJsonValueSet::_ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    auto const& set = static_cast<RapidJsonValueSet const&>(*m_set);
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "value-set", json.GetAllocator());
-    json.AddMember("value-type", (int)set.GetValuesType(), json.GetAllocator());
-    json.AddMember("value", rapidjson::Value(set.GetValuesJson(), json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct PrimitiveECValueHasher
-    {
-    size_t operator()(ECValueCR value) const
-        {
-        if (!value.IsPrimitive())
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected only primitive values, got: %s", value.ToString().c_str()));
-
-        if (value.IsNull())
-            return 0;
-
-        PrimitiveType type = value.GetPrimitiveType();
-        size_t hash = type;
-        switch (type)
-            {
-            case PRIMITIVETYPE_Boolean:
-                hash ^= std::hash<bool>{}(value.GetBoolean()) << 2;
-                break;
-            case PRIMITIVETYPE_DateTime:
-                hash ^= std::hash<int64_t>{}(value.GetDateTimeTicks()) << 2;
-                break;
-            case PRIMITIVETYPE_Double:
-                hash ^= std::hash<double>{}(value.GetDouble()) << 2;
-                break;
-            case PRIMITIVETYPE_Integer:
-                hash ^= std::hash<int32_t>{}(value.GetInteger()) << 2;
-                break;
-            case PRIMITIVETYPE_Long:
-                hash ^= std::hash<int64_t>{}(value.GetLong()) << 2;
-                break;
-            case PRIMITIVETYPE_String:
-                hash ^= std::hash<std::string>{}(value.GetUtf8CP()) << 2;
-                break;
-            case PRIMITIVETYPE_Point2d:
-                {
-                DPoint2d point2d = value.GetPoint2d();
-                hash ^= (std::hash<double>{}(point2d.x) ^ (std::hash<double>{}(point2d.y) << 8)) << 2;
-                break;
-                }
-            case PRIMITIVETYPE_Point3d:
-                {
-                DPoint3d point3d = value.GetPoint3d();
-                hash ^= (std::hash<double>{}(point3d.x) ^ (std::hash<double>{}(point3d.y) << 8) ^ (std::hash<double>{}(point3d.z) << 16)) << 2;
-                break;
-                }
-            case PRIMITIVETYPE_Binary:
-            case PRIMITIVETYPE_IGeometry:
-                break;
-            default:
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
-            }
-        return hash;
-        }
+    return hash;
     };
 
 /*=================================================================================**//**
@@ -2340,31 +2076,59 @@ public:
     ECValueVirtualSet(bvector<ECValue> values)
         : m_values(ContainerHelpers::MoveTransformContainer<std::unordered_set<ECValue, PrimitiveECValueHasher>>(values))
         {}
-    std::unordered_set<ECValue, PrimitiveECValueHasher> const& GetValues() const {return m_values;}
-    bool Equals(ECValueVirtualSet const& otherSet) const
-        {
-        return m_values == otherSet.m_values;
-        }
-    void Insert(ECValue value) {m_values.insert(std::move(value));}
-    bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override
-        {
-        if (nVals < 1)
+    std::unordered_set<ECValue, PrimitiveECValueHasher> const& GetValues() const { return m_values; }
+    bool Equals(ECValueVirtualSet const& otherSet) const { return m_values == otherSet.m_values; }
+    void Insert(ECValue value) { m_values.insert(std::move(value)); }
+    bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const {
+        if (nVals < 1 || nVals > 1)
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
-        if (nVals > 1)
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_ERROR, Utf8PrintfString("Invalid number of arguments. Expected 1, got: %d", nVals));
 
         if (m_values.empty())
             return false;
 
-        // note: we expect all values to be of the same type - just pick the first
-        // value and use it's type to parse sql value
-        ECValueCR firstValue = *m_values.begin();
-        PrimitiveType type = firstValue.GetPrimitiveType();
+        if (vals[0].IsNull())
+            return (m_values.end() != m_values.find(ECValue()));
 
-        ECValue value = ValueHelpers::GetECValueFromSqlValue(type, vals[0]);
-        return (m_values.end() != m_values.find(value));
+        for (ECValueCR value : m_values)
+            {
+            // note: we expect all values to be of the same type - just pick the first
+            // value and use it's type to parse sql value
+            if (value.IsPrimitive())
+                {
+                return (m_values.end() != m_values.find(ValueHelpers::GetECValueFromSqlValue(value.GetPrimitiveType(), vals[0])));
+                }
+            }
+
+        return false;
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Nullable<PrimitiveType> BoundECValueSet::GetValueType() const 
+    {
+    auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
+
+    for (ECValue const& value : values)
+        {
+        if (value.IsPrimitive())
+            return value.GetPrimitiveType();
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb) const 
+    {
+    auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
+
+    for (auto const& value : values)
+        cb(value);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -2387,7 +2151,7 @@ BoundECValueSet::BoundECValueSet(BoundECValueSet const& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus BoundECValueSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
     {
-    return stmt.BindVirtualSet((int)index, *m_set);
+    return stmt.BindVirtualSet((int)index, m_set);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2403,63 +2167,3 @@ bool BoundECValueSet::_Equals(BoundQueryValue const& other) const
     ECValueVirtualSet const* secondSet = static_cast<ECValueVirtualSet const*>(otherVirtualSet->m_set.get());
     return firstSet->Equals(*secondSet);
     }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document BoundECValueSet::_ToJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("type", "value-set", json.GetAllocator());
-    json.AddMember("value-type", values.empty() ? 0 : (int)(*values.begin()).GetPrimitiveType(), json.GetAllocator());
-    rapidjson::Value valuesJson;
-    valuesJson.SetArray();
-    for (auto const& value : values)
-        valuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
-    json.AddMember("value", valuesJson, json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BoundQueryValue> BoundQueryValue::FromJson(RapidJsonValueCR json)
-    {
-    if (!json.IsObject() || !json.HasMember("type"))
-        return nullptr;
-
-    Utf8CP type = json["type"].GetString();
-    if (0 == strcmp("ec-value", type))
-        {
-        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), json["value"]);
-        return std::make_unique<BoundQueryECValue>(std::move(value));
-        }
-    if (0 == strcmp("value-set", type))
-        {
-        int valueType = json["value-type"].GetInt();
-        if (0 == valueType)
-            return std::make_unique<BoundECValueSet>(bvector<ECValue>());
-        return std::make_unique<BoundRapidJsonValueSet>(json["value"], (PrimitiveType)valueType);
-        }
-    if (0 == strcmp("id", type))
-        {
-        return std::make_unique<BoundQueryId>(json["value"].GetString());
-        }
-    if (0 == strcmp("id-set", type))
-        {
-        RapidJsonValueCR idsJson = json["value"];
-        bvector<BeInt64Id> ids;
-        for (rapidjson::SizeType i = 0; i < idsJson.Size(); ++i)
-            ids.push_back(BeInt64Id::FromString(idsJson[i].GetString()));
-        return std::make_unique<BoundQueryIdSet>(ids);
-        }
-    return nullptr;
-    }
-
-BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
-    INSTANTIATE_QUERY_SUBCLASS(GenericQuery, , )
-    INSTANTIATE_QUERY_SUBCLASS(NavigationQuery, , )
-    INSTANTIATE_QUERY_SUBCLASS(ContentQuery, , )
-END_BENTLEY_ECPRESENTATION_NAMESPACE

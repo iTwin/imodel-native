@@ -154,7 +154,7 @@ BentleyStatus   TestDataManager::OpenTestFile(bool needTxns)
     {
     DbResult stat;
     DgnDb::OpenParams params(m_openMode);
-    m_dgndb = DgnDb::OpenDgnDb(&stat, BeFileName(m_fileName), params);
+    m_dgndb = DgnDb::OpenIModelDb(&stat, BeFileName(m_fileName), params);
     if (m_dgndb == NULL)
         {
         if (stat == BE_SQLITE_ERROR_ProfileTooOld)

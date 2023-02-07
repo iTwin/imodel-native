@@ -165,12 +165,16 @@ private:
 protected:
     PresentationQueryContract(uint64_t id = 0) : m_id(id) {}
     virtual ~PresentationQueryContract() {}
+    virtual NavigationQueryContract const* _AsNavigationQueryContract() const {return nullptr;}
+    virtual ContentQueryContract const* _AsContentQueryContract() const {return nullptr;}
     virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const = 0;
+    ECPRESENTATION_EXPORT PresentationQueryFieldType _GetFieldType(Utf8StringCR name) const override;
     virtual void _SetECInstanceIdFieldName(Utf8CP name){}
     virtual void _SetECClassIdFieldName(Utf8CP name){}
-    ECPRESENTATION_EXPORT PresentationQueryFieldType _GetFieldType(Utf8StringCR name) const override;
 
 public:
+    NavigationQueryContract const* AsNavigationQueryContract() const {return _AsNavigationQueryContract();}
+    ContentQueryContract const* AsContentQueryContract() const {return _AsContentQueryContract();}
     uint64_t GetId() const {return m_id;}
     ECPRESENTATION_EXPORT uint8_t GetIndex(Utf8CP fieldName) const;
     void SetECInstanceIdFieldName(Utf8CP name) {_SetECInstanceIdFieldName(name);}
@@ -226,6 +230,43 @@ protected:
 public:
     virtual ~IContractProvider() {}
     TContract const* GetContract(size_t contractId = 0) const {return _GetContract(contractId);}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct NavigationQueryContractsFilter : IContractProvider<NavigationQueryContract>
+{
+private:
+    IContractProvider<PresentationQueryContract> const& m_source;
+protected:
+    NavigationQueryContract const* _GetContract(size_t contractId) const override
+        {
+        auto contract = m_source.GetContract(contractId);
+        return contract ? contract->AsNavigationQueryContract() : nullptr;
+        }
+public:
+    NavigationQueryContractsFilter(IContractProvider<PresentationQueryContract> const& source)
+        : m_source(source)
+        {}
+};
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct ContentQueryContractsFilter : IContractProvider<ContentQueryContract>
+{
+private:
+    IContractProvider<PresentationQueryContract> const& m_source;
+protected:
+    ContentQueryContract const* _GetContract(size_t contractId) const override
+        {
+        auto contract = m_source.GetContract(contractId);
+        return contract ? contract->AsContentQueryContract() : nullptr;
+        }
+public:
+    ContentQueryContractsFilter(IContractProvider<PresentationQueryContract> const& source)
+        : m_source(source)
+        {}
 };
 
 /*=================================================================================**//**

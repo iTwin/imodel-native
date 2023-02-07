@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentation/Rules/PresentationRules.h>
 #include "../../../../Source/Hierarchies/NavigationQuery.h"
-#include "../../../../Source/Content/ContentQuery.h"
 #include "../../Helpers/TestHelpers.h"
 #include "../ECSchemaHelperTests.h"
 
@@ -128,14 +127,14 @@ struct NavigationQueryTests : ECPresentationTest
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct ComplexNavigationQueryTests : NavigationQueryTests
+struct ComplexQueryBuilderTests : NavigationQueryTests
     {
-    DECLARE_SCHEMA_REGISTRY(ComplexNavigationQueryTests)
+    DECLARE_SCHEMA_REGISTRY(ComplexQueryBuilderTests)
     static ECDbTestProject* s_project;
     static void SetUpTestCase()
         {
         s_project = new ECDbTestProject();
-        s_project->Create("ComplexNavigationQueryTests");
+        s_project->Create("ComplexQueryBuilderTests");
         INIT_SCHEMA_REGISTRY(s_project->GetECDb())
         }
     static void TearDownTestCase()
@@ -143,81 +142,81 @@ struct ComplexNavigationQueryTests : NavigationQueryTests
         DELETE_AND_CLEAR(s_project);
         }
     };
-ECDbTestProject* ComplexNavigationQueryTests::s_project = nullptr;
-DEFINE_SCHEMA_REGISTRY(ComplexNavigationQueryTests)
-#define DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(ComplexNavigationQueryTests, name, schema_xml)
+ECDbTestProject* ComplexQueryBuilderTests::s_project = nullptr;
+DEFINE_SCHEMA_REGISTRY(ComplexQueryBuilderTests)
+#define DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(ComplexQueryBuilderTests, name, schema_xml)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_Where_WrapsConditionWithBraces)
+TEST_F(ComplexQueryBuilderTests, ToString_Where_WrapsConditionWithBraces)
     {
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->Where("Test1", BoundQueryValuesList());
     query->Where("Test2", BoundQueryValuesList());
 
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(" WHERE (Test1) AND (Test2)", str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_From_NoAliasPolymorphic)
+TEST_F(ComplexQueryBuilderTests, ToString_From_NoAliasPolymorphic)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *m_schemaContext));
     ECClassCR class1 = *schema->GetClassCP("Class1");
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", true));
 
-    ASSERT_STREQ(" FROM [b1].[Class1]", query->ToString().c_str());
+    ASSERT_STREQ(" FROM [b1].[Class1]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_From_WithAliasPolymorphic)
+TEST_F(ComplexQueryBuilderTests, ToString_From_WithAliasPolymorphic)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *m_schemaContext));
     ECClassCR class1 = *schema->GetClassCP("Class1");
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "test", true));
 
-    ASSERT_STREQ(" FROM [b1].[Class1] [test]", query->ToString().c_str());
+    ASSERT_STREQ(" FROM [b1].[Class1] [test]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_From_NonPolymorphic)
+TEST_F(ComplexQueryBuilderTests, ToString_From_NonPolymorphic)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *m_schemaContext));
     ECClassCR class1 = *schema->GetClassCP("Class1");
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", false));
 
-    ASSERT_STREQ(" FROM ONLY [b1].[Class1]", query->ToString().c_str());
+    ASSERT_STREQ(" FROM ONLY [b1].[Class1]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_From_Disqualified)
+TEST_F(ComplexQueryBuilderTests, ToString_From_Disqualified)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *m_schemaContext));
     ECClassCR class1 = *schema->GetClassCP("Class1");
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", true, true));
 
-    ASSERT_STREQ(" FROM +[b1].[Class1]", query->ToString().c_str());
+    ASSERT_STREQ(" FROM +[b1].[Class1]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,7 +237,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_From_WithExcludes, R"*(
         <BaseClass>A</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_From_WithExcludes)
+TEST_F(ComplexQueryBuilderTests, ToString_From_WithExcludes)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -249,19 +248,19 @@ TEST_F(ComplexNavigationQueryTests, ToString_From_WithExcludes)
     selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classB, "b", true));
     selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classC, "c", false));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(selectClass);
 
     ASSERT_STREQ(
         Utf8PrintfString(" FROM (SELECT * FROM [%s].[%s] [a] WHERE ([a].[ECClassId] IS NOT ([%s].[%s], ONLY [%s].[%s]))) [a]",
             schemaAlias, classA->GetName().c_str(), schemaAlias, classB->GetName().c_str(), schemaAlias, classC->GetName().c_str()).c_str(),
-        query->ToString().c_str());
+        query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_ForwardRelationship)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_SingleClause_ForwardRelationship)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -270,21 +269,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_ForwardRelat
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", true));
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship1, "rel_alias"), true, SelectClass<ECClass>(class2, "target_alias", true), false));
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
         " INNER JOIN [sc2].[Class2] [target_alias] ON [target_alias].[C1].[Id] = [Class1].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_BackwardRelationship)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_SingleClause_BackwardRelationship)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -293,21 +292,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_BackwardRela
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class2, "", true));
     query->Join(RelatedClass(class2, SelectClass<ECRelationshipClass>(relationship1, "rel_alias"), false, SelectClass<ECClass>(class1, "target_alias", true), false));
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
         " INNER JOIN [sc2].[Class1] [target_alias] ON [target_alias].[ECInstanceId] = [Class2].[C1].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRelationshipDirection_Forward)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_SingleClause_RespectsRelationshipDirection_Forward)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -315,21 +314,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass1")->GetRelationshipClassCP();
     ECEntityClassCR entity = *schema->GetClassCP("Class1")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(entity, true, "source");
     query->Join(RelatedClass(entity, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), true, SelectClass<ECClass>(entity, "target", true), false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [source]"
         " INNER JOIN [sc3].[Class1] [target] ON [target].[Parent].[Id] = [source].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRelationshipDirection_Backward)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_SingleClause_RespectsRelationshipDirection_Backward)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -337,21 +336,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass1")->GetRelationshipClassCP();
     ECEntityClassCR entity = *schema->GetClassCP("Class1")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(entity, true, "target");
     query->Join(RelatedClass(entity, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), false, SelectClass<ECClass>(entity, "source", true), false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [target]"
         " INNER JOIN [sc3].[Class1] [source] ON [source].[ECInstanceId] = [target].[Parent].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_MultipleClauses)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -362,7 +361,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses)
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", true));
 
     RelatedClassPath path;
@@ -374,14 +373,14 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses)
         " FROM [sc2].[Class1]"
         " INNER JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
         " INNER JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntIncludeMultipleTimes)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_MultipleClauses_DoesntIncludeMultipleTimes)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -392,7 +391,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntInc
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", true));
 
     RelatedClassPath path1;
@@ -408,7 +407,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntInc
         " FROM [sc2].[Class1]"
         " INNER JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
         " INNER JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -439,14 +438,14 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_InnerJoin_MultipleClauses_DoesntInc
         <BaseClass>Child</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
     ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
     ECRelationshipClassCP relationship = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_Has_Children")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(*classA, true, "a");
     query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relationship, "rel"), true, SelectClass<ECClass>(*classB, "b"), false));
     query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relationship, "rel"), true, SelectClass<ECClass>(*classC, "c"), false));
@@ -456,14 +455,14 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntInc
         " INNER JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[A_Has_Children] [rel] ON [a].[ECInstanceId] = [rel].[SourceECInstanceId]"
         " INNER JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[B] [b] ON [b].[ECInstanceId] = [rel].[TargetECInstanceId]"
         " INNER JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[C] [c] ON [c].[ECInstanceId] = [rel].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_UsesAliases)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_UsesAliases)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -472,21 +471,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_UsesAliases)
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class1, true, "Class1Alias");
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship1, "rel_alias"), true, SelectClass<ECClass>(class2, "Class2Alias", true), false));
 
     Utf8String expected(
         " FROM [sc2].[Class1] [Class1Alias]"
         " INNER JOIN [sc2].[Class2] [Class2Alias] ON [Class2Alias].[C1].[Id] = [Class1Alias].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_BackwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerForwardJoin_BackwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -495,21 +494,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_BackwardNavigation
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class1, true, "Class1Alias");
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), true, SelectClass<ECClass>(class2, "Class2Alias", true), false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
         " INNER JOIN [sc3].[Class2] [Class2Alias] ON [Class2Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_BackwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerBackwardJoin_BackwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -518,21 +517,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_BackwardNavigatio
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class2, true, "Class2Alias");
     query->Join(RelatedClass(class2, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), false, SelectClass<ECClass>(class1, "Class1Alias", true), false));
 
     Utf8String expected(
         " FROM [sc3].[Class2] [Class2Alias]"
         " INNER JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class2Alias].[Parent].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_ForwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerBackwardJoin_ForwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -541,21 +540,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_ForwardNavigation
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class1, true, "Class1Alias");
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), false, SelectClass<ECClass>(class3, "Class3Alias", true), false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
         " INNER JOIN [sc3].[Class3] [Class3Alias] ON [Class3Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_ForwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerForwardJoin_ForwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -564,21 +563,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_ForwardNavigationP
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class3, true, "Class3Alias");
     query->Join(RelatedClass(class3, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), true, SelectClass<ECClass>(class1, "Class1Alias", true), false));
 
     Utf8String expected(
         " FROM [sc3].[Class3] [Class3Alias]"
         " INNER JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class3Alias].[Parent].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_ForwardRelationship)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_SingleClause_ForwardRelationship)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -587,21 +586,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_ForwardRelat
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", true));
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship1, "rel_alias"), true, SelectClass<ECClass>(class2, "target_alias")));
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
         " LEFT JOIN [sc2].[Class2] [target_alias] ON [target_alias].[C1].[Id] = [Class1].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_BackwardRelationship)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_SingleClause_BackwardRelationship)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -610,21 +609,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_BackwardRela
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class2, "", true));
     query->Join(RelatedClass(class2, SelectClass<ECRelationshipClass>(relationship1, "rel_alias"), false, SelectClass<ECClass>(class1, "target_alias")));
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
         " LEFT JOIN [sc2].[Class1] [target_alias] ON [target_alias].[ECInstanceId] = [Class2].[C1].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRelationshipDirection_Forward)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_SingleClause_RespectsRelationshipDirection_Forward)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -632,21 +631,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass1")->GetRelationshipClassCP();
     ECEntityClassCR entity = *schema->GetClassCP("Class1")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(entity, true, "source");
     query->Join(RelatedClass(entity, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), true, SelectClass<ECClass>(entity, "target")));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [source]"
         " LEFT JOIN [sc3].[Class1] [target] ON [target].[Parent].[Id] = [source].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRelationshipDirection_Backward)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_SingleClause_RespectsRelationshipDirection_Backward)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -654,21 +653,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass1")->GetRelationshipClassCP();
     ECEntityClassCR entity = *schema->GetClassCP("Class1")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(entity, true, "target");
     query->Join(RelatedClass(entity, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), false, SelectClass<ECClass>(entity, "source")));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [target]"
         " LEFT JOIN [sc3].[Class1] [source] ON [source].[ECInstanceId] = [target].[Parent].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_MultipleClauses)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -679,7 +678,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses)
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(class1, "", true));
 
     RelatedClassPath path;
@@ -691,14 +690,14 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses)
         " FROM [sc2].[Class1]"
         " LEFT JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
         " LEFT JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses_DoesntIncludeMultipleTimes_WithNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_MultipleClauses_DoesntIncludeMultipleTimes_WithNavigationProperty)
     {
     ECSchemaPtr schema;
     BeFileName ecSchemaPath;
@@ -722,7 +721,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses_DoesntInc
     ECEntityClassCR ret_Gadget = *schema->GetClassCP("Gadget")->GetEntityClassCP();
     ECEntityClassCR ret_Sprocket = *schema->GetClassCP("Sprocket")->GetEntityClassCP();
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(ret_Widget, false, "this");
 
     RelatedClassPath gadgetRelationshipPath;
@@ -743,7 +742,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses_DoesntInc
         ") [relationship_alias1] ON [this].[ECInstanceId] = [relationship_alias1].[SourceECInstanceId]"
         " LEFT JOIN [RET].[Gadget] [target_alias1] ON [target_alias1].[ECInstanceId] = [relationship_alias1].[TargetECInstanceId]"
         " LEFT JOIN [RET].[Sprocket] [target_alias2] ON [target_alias2].[Gadget].[Id] = [relationship_alias1].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     m_schemaContext->RemoveSchemaLocater(*schemaLocater);
     }
@@ -774,7 +773,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_OuterJoin_MultiStepPath_WithNavigat
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultiStepPath_WithNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_MultiStepPath_WithNavigationProperty)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema(BeTest::GetNameOfCurrentTest());
     ECEntityClassCR classA = *schema->GetClassCP("A")->GetEntityClassCP();
@@ -783,7 +782,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultiStepPath_WithNavigat
     ECRelationshipClassCR relAB = *schema->GetClassCP("A_Has_B")->GetRelationshipClassCP();
     ECRelationshipClassCR relBC = *schema->GetClassCP("B_Has_C")->GetRelationshipClassCP();
 
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(classA, false, "this");
 
     RelatedClassPath joinPath{
@@ -801,14 +800,14 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultiStepPath_WithNavigat
         ") [rel_ab_alias] ON [this].[ECInstanceId] = [rel_ab_alias].[SourceECInstanceId]"
         " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[B] [b_alias] ON [b_alias].[ECInstanceId] = [rel_ab_alias].[TargetECInstanceId]"
         " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[C] [c_alias] ON [c_alias].[B].[Id] = [b_alias].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_UsesAliases)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_UsesAliases)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *m_schemaContext));
@@ -817,21 +816,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_UsesAliases)
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class1, true, "Class1Alias");
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship1, "rel_alias"), true, SelectClass<ECClass>(class2, "Class2Alias")));
 
     Utf8String expected(
         " FROM [sc2].[Class1] [Class1Alias]"
         " LEFT JOIN [sc2].[Class2] [Class2Alias] ON [Class2Alias].[C1].[Id] = [Class1Alias].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_BackwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterForwardJoin_BackwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -840,21 +839,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_BackwardNavigation
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class1, true, "Class1Alias");
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), true, SelectClass<ECClass>(class2, "Class2Alias")));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
         " LEFT JOIN [sc3].[Class2] [Class2Alias] ON [Class2Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_BackwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterBackwardJoin_BackwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -863,21 +862,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_BackwardNavigatio
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class2, true, "Class2Alias");
     query->Join(RelatedClass(class2, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), false, SelectClass<ECClass>(class1, "Class1Alias")));
 
     Utf8String expected(
         " FROM [sc3].[Class2] [Class2Alias]"
         " LEFT JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class2Alias].[Parent].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_ForwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterBackwardJoin_ForwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -886,21 +885,21 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_ForwardNavigation
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class1, true, "Class1Alias");
     query->Join(RelatedClass(class1, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), false, SelectClass<ECClass>(class3, "Class3Alias")));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
         " LEFT JOIN [sc3].[Class3] [Class3Alias] ON [Class3Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_ForwardNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterForwardJoin_ForwardNavigationProperty)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *m_schemaContext));
@@ -909,14 +908,14 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_ForwardNavigationP
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(class3, true, "Class3Alias");
     query->Join(RelatedClass(class3, SelectClass<ECRelationshipClass>(relationship, "rel_alias"), true, SelectClass<ECClass>(class1, "Class1Alias")));
 
     Utf8String expected(
         " FROM [sc3].[Class3] [Class3Alias]"
         " LEFT JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class3Alias].[Parent].[Id]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -948,7 +947,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_WithTargetInstanceFilter, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_WithTargetInstanceFilter)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_WithTargetInstanceFilter)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -962,7 +961,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_WithTargetInstanceFilter)
     rc2.SetTargetInstanceFilter("tgt2.PropC LIKE 'xxx%'");
     RelatedClassPath path = { rc1, rc2 };
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(*classA, true, "src");
     query->Join(path);
 
@@ -977,7 +976,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_WithTargetInstanceFilter)
         ") [rel_bc] ON [tgt1].[ECInstanceId] = [rel_bc].[SourceECInstanceId]"
         " LEFT JOIN [alias_ToString_Join_WithTargetInstanceFilter].[C] [tgt2] ON [tgt2].[ECInstanceId] = [rel_bc].[TargetECInstanceId] AND (tgt2.PropC LIKE 'xxx%')"
     );
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -999,7 +998,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_NavigationProperty_WithTargetI
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_NavigationProperty_WithTargetInstanceFilter)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_NavigationProperty_WithTargetInstanceFilter)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -1009,7 +1008,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_NavigationProperty_WithTargetI
     rc.SetTargetInstanceFilter("tgt.PropB = 999");
     RelatedClassPath path = { rc };
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(*classA, true, "src");
     query->Join(path);
 
@@ -1017,7 +1016,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_NavigationProperty_WithTargetI
         " FROM [alias_ToString_Join_NavigationProperty_WithTargetInstanceFilter].[A] [src]"
         " INNER JOIN [alias_ToString_Join_NavigationProperty_WithTargetInstanceFilter].[B] [tgt] ON [tgt].[NavPropA].[Id] = [src].[ECInstanceId] AND (tgt.PropB = 999)"
     );
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1036,7 +1035,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_ClassWithTargetIds, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_ClassWithTargetIds)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_ClassWithTargetIds)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -1046,7 +1045,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_ClassWithTargetIds)
     targetIds.push_back(ECInstanceId((uint64_t)123));
     targetIds.push_back(ECInstanceId((uint64_t)456));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(*classA, true, "src");
     query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "rel"), true, SelectClass<ECClass>(*classB, "tgt"), targetIds));
 
@@ -1058,7 +1057,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_ClassWithTargetIds)
             "INNER JOIN [alias_ToString_Join_ClassWithTargetIds].[B] [tgt] ON [tgt].[ECInstanceId] = [rel].[TargetECInstanceId] AND ([tgt].[ECInstanceId] IN (?,?))"
         ") [rel] ON [src].[ECInstanceId] = [rel].[SourceECInstanceId]"
         " LEFT JOIN [alias_ToString_Join_ClassWithTargetIds].[B] [tgt] ON [tgt].[ECInstanceId] = [rel].[TargetECInstanceId] AND ([tgt].[ECInstanceId] IN (?,?))");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1086,7 +1085,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_PathWithTargetIds, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_PathWithTargetIds)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_PathWithTargetIds)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -1101,7 +1100,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_PathWithTargetIds)
         RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, "rel_bc"), true, SelectClass<ECClass>(*classC, "tgt2"), false),
         };
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(*classA, true, "src");
     query->Join(path);
 
@@ -1111,7 +1110,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_PathWithTargetIds)
         " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B] [tgt1] ON [tgt1].[ECInstanceId] = [rel_ab].[TargetECInstanceId] AND ([tgt1].[ECInstanceId] IN (?))"
         " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B_Has_C] [rel_bc] ON [tgt1].[ECInstanceId] = [rel_bc].[SourceECInstanceId]"
         " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[C] [tgt2] ON [tgt2].[ECInstanceId] = [rel_bc].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1124,19 +1123,19 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_ClassWithJoinClause, R"*(
         <ECProperty propertyName="Prop" typeName="int" />
     </ECEntityClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_ClassWithJoinClause)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_ClassWithJoinClause)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join(SelectClass<ECClass>(*classB, "b", false), QueryClauseAndBindings("[b].[Prop] > ?", { std::make_shared<BoundQueryECValue>(ECValue(123)) }), true);
 
     Utf8String expected(
         " FROM [alias_ToString_Join_ClassWithJoinClause].[A] [a]"
         " LEFT JOIN ONLY [alias_ToString_Join_ClassWithJoinClause].[B] [b] ON ([b].[Prop] > ?)");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1154,12 +1153,12 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_InnerToOuter, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_InnerToOuter)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_InnerToOuter)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECRelationshipClassCP relAA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_A")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a0"));
 
     query->Join({
@@ -1185,7 +1184,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_InnerToOuter)
         schemaName.c_str(), schemaName.c_str(),
         schemaName.c_str(), schemaName.c_str(), schemaName.c_str()
     );
-    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
+    ASSERT_STREQ(expected.c_str(), query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1215,7 +1214,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_WithExcludes, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_WithExcludes)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_WithExcludes)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -1228,7 +1227,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_WithExcludes)
     joinTarget.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classC, "c", true));
     joinTarget.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classD, "d", false));
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join({
         RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "r"), true, joinTarget, false)
@@ -1245,11 +1244,11 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_WithExcludes)
         ,
         schemaAlias, classA->GetName().c_str(),
         schemaAlias, relAB->GetName().c_str(),
-        schemaAlias, classB->GetName().c_str(), 
+        schemaAlias, classB->GetName().c_str(),
         schemaAlias, classC->GetName().c_str(),
         schemaAlias, classD->GetName().c_str()
     );
-    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
+    ASSERT_STREQ(expected.c_str(), query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1259,19 +1258,19 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_DisqualifiedTarget_NoRelations
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B" />
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_DisqualifiedTarget_NoRelationship)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_DisqualifiedTarget_NoRelationship)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join(SelectClass<ECClass>(*classB, "b", true, true), QueryClauseAndBindings(), false);
 
     Utf8String expected(
         " FROM [alias_ToString_Join_DisqualifiedTarget_NoRelationship].[A] [a]"
         " INNER JOIN +[alias_ToString_Join_DisqualifiedTarget_NoRelationship].[B] [b]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1292,20 +1291,20 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_DisqualifiedTarget_SingleStepW
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_DisqualifiedTarget_SingleStepWithNavigationProperty)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_DisqualifiedTarget_SingleStepWithNavigationProperty)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*rel, "r", true), true, SelectClass<ECClass>(*classB, "b", true, true)));
 
     Utf8String expected(
         " FROM [alias_ToString_Join_DisqualifiedTarget_SingleStepWithNavigationProperty].[A] [a]"
         " LEFT JOIN +[alias_ToString_Join_DisqualifiedTarget_SingleStepWithNavigationProperty].[B] [b] ON [b].[NavPropA].[Id] = [a].[ECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1324,13 +1323,13 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_OuterJoin_DisqualifiedTarget_Single
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_DisqualifiedTarget_SingleStep)
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_DisqualifiedTarget_SingleStep)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*rel, "r", true), true, SelectClass<ECClass>(*classB, "b", true, true), true));
 
@@ -1342,7 +1341,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_DisqualifiedTarget_Single
         "INNER JOIN +[alias_ToString_OuterJoin_DisqualifiedTarget_SingleStep].[B] [b] ON [b].[ECInstanceId] = [r].[TargetECInstanceId]) [r]"
         " ON [a].[ECInstanceId] = [r].[SourceECInstanceId]"
         " LEFT JOIN +[alias_ToString_OuterJoin_DisqualifiedTarget_SingleStep].[B] [b] ON [b].[ECInstanceId] = [r].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1361,13 +1360,13 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_InnerJoin_DisqualifiedTarget_Single
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedTarget_SingleStep)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_DisqualifiedTarget_SingleStep)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*rel, "r", true), true, SelectClass<ECClass>(*classB, "b", true, true), false));
 
@@ -1375,7 +1374,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedTarget_Single
         " FROM [alias_ToString_InnerJoin_DisqualifiedTarget_SingleStep].[A] [a]"
         " INNER JOIN [alias_ToString_InnerJoin_DisqualifiedTarget_SingleStep].[A_B] [r] ON [a].[ECInstanceId] = [r].[SourceECInstanceId]"
         " INNER JOIN +[alias_ToString_InnerJoin_DisqualifiedTarget_SingleStep].[B] [b] ON [b].[ECInstanceId] = [r].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1394,13 +1393,13 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_InnerJoin_DisqualifiedRelationship_
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedRelationship_SingleStep)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_DisqualifiedRelationship_SingleStep)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join(RelatedClass(*classA, SelectClass<ECRelationshipClass>(*rel, "r", true, true), true, SelectClass<ECClass>(*classB, "b", true), false));
 
@@ -1408,7 +1407,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedRelationship_
         " FROM [alias_ToString_InnerJoin_DisqualifiedRelationship_SingleStep].[A] [a]"
         " INNER JOIN +[alias_ToString_InnerJoin_DisqualifiedRelationship_SingleStep].[A_B] [r] ON [a].[ECInstanceId] = [r].[SourceECInstanceId]"
         " INNER JOIN [alias_ToString_InnerJoin_DisqualifiedRelationship_SingleStep].[B] [b] ON [b].[ECInstanceId] = [r].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1436,7 +1435,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_InnerJoin_DisqualifiedTarget_MultiS
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedTarget_MultiStep)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_DisqualifiedTarget_MultiStep)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -1444,7 +1443,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedTarget_MultiS
     ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
     ECRelationshipClassCP relBC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_C")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join({
         RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "rAB", true), true, SelectClass<ECClass>(*classB, "b", true, true), false),
@@ -1457,7 +1456,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedTarget_MultiS
         " INNER JOIN +[alias_ToString_InnerJoin_DisqualifiedTarget_MultiStep].[B] [b] ON [b].[ECInstanceId] = [rAB].[TargetECInstanceId]"
         " INNER JOIN [alias_ToString_InnerJoin_DisqualifiedTarget_MultiStep].[B_C] [rBC] ON [b].[ECInstanceId] = [rBC].[SourceECInstanceId]"
         " INNER JOIN [alias_ToString_InnerJoin_DisqualifiedTarget_MultiStep].[C] [c] ON [c].[ECInstanceId] = [rBC].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1485,7 +1484,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_InnerJoin_DisqualifiedRelationship_
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedRelationship_MultiStep)
+TEST_F(ComplexQueryBuilderTests, ToString_InnerJoin_DisqualifiedRelationship_MultiStep)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -1493,7 +1492,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedRelationship_
     ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
     ECRelationshipClassCP relBC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_C")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join({
         RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "rAB", true, false), true, SelectClass<ECClass>(*classB, "b", true, false), false),
@@ -1506,7 +1505,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedRelationship_
         " INNER JOIN [alias_ToString_InnerJoin_DisqualifiedRelationship_MultiStep].[B] [b] ON [b].[ECInstanceId] = [rAB].[TargetECInstanceId]"
         " INNER JOIN +[alias_ToString_InnerJoin_DisqualifiedRelationship_MultiStep].[B_C] [rBC] ON [b].[ECInstanceId] = [rBC].[SourceECInstanceId]"
         " INNER JOIN [alias_ToString_InnerJoin_DisqualifiedRelationship_MultiStep].[C] [c] ON [c].[ECInstanceId] = [rBC].[TargetECInstanceId]");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1516,15 +1515,15 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_DisqualifiedRelationship_
 DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_NestedQuery, R"*(
     <ECEntityClass typeName="A" />
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_Join_NestedQuery)
+TEST_F(ComplexQueryBuilderTests, ToString_Join_NestedQuery)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     SelectClass<ECClass> selectClass(*classA, "a");
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(selectClass);
 
-    ComplexNavigationQueryPtr joinQuery = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr joinQuery = ComplexQueryBuilder::Create();
     joinQuery->SelectAll();
     joinQuery->From(selectClass);
     query->Join(*joinQuery, "x", QueryClauseAndBindings("x.ECInstanceId = a.ECInstanceId"), false);
@@ -1532,7 +1531,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_NestedQuery)
     Utf8String expected(
         " FROM [alias_ToString_Join_NestedQuery].[A] [a]"
         " INNER JOIN (SELECT * FROM [alias_ToString_Join_NestedQuery].[A] [a]) x ON (x.ECInstanceId = a.ECInstanceId)");
-    Utf8String str = query->ToString();
+    Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
@@ -1557,7 +1556,7 @@ typedef RefCountedPtr<TestNavigationContract> TestNavigationContractPtr;
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, SelectAllDoesntIncludeInternalFieldsInOuterQuery)
+TEST_F(ComplexQueryBuilderTests, SelectAllDoesntIncludeInternalFieldsInOuterQuery)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_2, *m_schemaContext));
@@ -1570,12 +1569,12 @@ TEST_F(ComplexNavigationQueryTests, SelectAllDoesntIncludeInternalFieldsInOuterQ
     contract->AddField(PresentationQueryContractSimpleField::Create("OuterField", "GetOuterField()", false, false, FieldVisibility::Outer));
     contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField", "GetAggregateField()", false, true, FieldVisibility::Both));
 
-    ComplexNavigationQueryPtr innerQuery = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr innerQuery = ComplexQueryBuilder::Create();
     innerQuery->SelectContract(*contract);
     innerQuery->From(SelectClass<ECClass>(*ecClass, "", true));
-    innerQuery->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    innerQuery->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
-    ComplexNavigationQueryPtr outerQuery = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr outerQuery = ComplexQueryBuilder::Create();
     outerQuery->SelectAll().From(*innerQuery);
     outerQuery->GroupByContract(*contract);
 
@@ -1586,30 +1585,30 @@ TEST_F(ComplexNavigationQueryTests, SelectAllDoesntIncludeInternalFieldsInOuterQ
             "FROM [b2].[Class2]"
         ") "
         "GROUP BY [GeneralField]");
-    Utf8String str = outerQuery->ToString();
+    Utf8String str = outerQuery->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_SelectingUniqueValues_GroupsByFieldName)
+TEST_F(ComplexQueryBuilderTests, ToString_SelectingUniqueValues_GroupsByFieldName)
     {
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     TestNavigationContractPtr contract = TestNavigationContract::Create();
     contract->AddField(PresentationQueryContractSimpleField::Create("DistinctField", "GetDistinctField()", false, false, FieldVisibility::Both));
     query->GroupByContract(*contract);
 
     ASSERT_FALSE(contract->IsAggregating());
-    ASSERT_STREQ(" GROUP BY [DistinctField]", query->ToString().c_str());
+    ASSERT_STREQ(" GROUP BY [DistinctField]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_SelectingUniqueValues_GroupsByGroupingClause)
+TEST_F(ComplexQueryBuilderTests, ToString_SelectingUniqueValues_GroupsByGroupingClause)
     {
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     TestNavigationContractPtr contract = TestNavigationContract::Create();
     PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create("DistinctField", "GetDistinctField()", false, false, FieldVisibility::Both);
     field->SetGroupingClause("GroupingClause");
@@ -1617,15 +1616,15 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingUniqueValues_GroupsByGroup
     query->GroupByContract(*contract);
 
     ASSERT_FALSE(contract->IsAggregating());
-    ASSERT_STREQ(" GROUP BY [GroupingClause]", query->ToString().c_str());
+    ASSERT_STREQ(" GROUP BY [GroupingClause]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_GroupsByDisqualifiedWrappedGroupingClause)
+TEST_F(ComplexQueryBuilderTests, ToString_GroupsByDisqualifiedWrappedGroupingClause)
     {
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     TestNavigationContractPtr contract = TestNavigationContract::Create();
     PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create("DistinctField", "GetDistinctField()", false, false, FieldVisibility::Both);
     field->SetGroupingClause("+[GroupingClause]");
@@ -1633,30 +1632,30 @@ TEST_F(ComplexNavigationQueryTests, ToString_GroupsByDisqualifiedWrappedGrouping
     query->GroupByContract(*contract);
 
     ASSERT_FALSE(contract->IsAggregating());
-    ASSERT_STREQ(" GROUP BY +[GroupingClause]", query->ToString().c_str());
+    ASSERT_STREQ(" GROUP BY +[GroupingClause]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateField_AggregateFieldIsNotGroupedWhenNoOtherFieldsAreSelected)
+TEST_F(ComplexQueryBuilderTests, ToString_SelectingAggregateField_AggregateFieldIsNotGroupedWhenNoOtherFieldsAreSelected)
     {
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     TestNavigationContractPtr contract = TestNavigationContract::Create();
     contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField", "GetAggregateField()", false, true, FieldVisibility::Both));
     query->SelectContract(*contract, "this");
     query->GroupByContract(*contract);
 
     ASSERT_TRUE(contract->IsAggregating());
-    ASSERT_STREQ("SELECT GetAggregateField() AS [AggregateField]", query->ToString().c_str());
+    ASSERT_STREQ("SELECT GetAggregateField() AS [AggregateField]", query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateField_AggregateFieldIsGroupedByNotAggregateField)
+TEST_F(ComplexQueryBuilderTests, ToString_SelectingAggregateField_AggregateFieldIsGroupedByNotAggregateField)
     {
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     TestNavigationContractPtr contract = TestNavigationContract::Create();
     contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField", "GetGeneralField()", false, false, FieldVisibility::Both));
     contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField", "GetAggregateField()", false, true, FieldVisibility::Both));
@@ -1667,15 +1666,15 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateField_AggregateFi
     Utf8String expected(
         "SELECT GetGeneralField() AS [GeneralField], GetAggregateField() AS [AggregateField]"
         " GROUP BY [GeneralField]");
-    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
+    ASSERT_STREQ(expected.c_str(), query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComplexNavigationQueryTests, ToString_SelectingMultipleAggregateFields_AggregateFieldsAreGroupedByMultipleNotAggregateFields)
+TEST_F(ComplexQueryBuilderTests, ToString_SelectingMultipleAggregateFields_AggregateFieldsAreGroupedByMultipleNotAggregateFields)
     {
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     TestNavigationContractPtr contract = TestNavigationContract::Create();
     contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField1", "GetGeneralField1()", false, false, FieldVisibility::Both));
     contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField2", "GetGeneralField2()", false, false, FieldVisibility::Both));
@@ -1688,7 +1687,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingMultipleAggregateFields_Ag
     Utf8String expected(
         "SELECT GetGeneralField1() AS [GeneralField1], GetGeneralField2() AS [GeneralField2], GetAggregateField1() AS [AggregateField1], GetAggregateField2() AS [AggregateField2]"
         " GROUP BY [GeneralField1], [GeneralField2]");
-    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
+    ASSERT_STREQ(expected.c_str(), query->GetQuery()->GetQueryString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1715,7 +1714,7 @@ DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_DoNotJoinLastTargetClass, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ComplexNavigationQueryTests, ToString_DoNotJoinLastTargetClass)
+TEST_F(ComplexQueryBuilderTests, ToString_DoNotJoinLastTargetClass)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
@@ -1723,7 +1722,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_DoNotJoinLastTargetClass)
     ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
     ECRelationshipClassCP relBC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_C")->GetRelationshipClassCP();
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->From(SelectClass<ECClass>(*classA, "a"));
     query->Join({
         RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "rAB", true, false), true, SelectClass<ECClass>(*classB, "b", true, false), false),
@@ -1735,5 +1734,5 @@ TEST_F(ComplexNavigationQueryTests, ToString_DoNotJoinLastTargetClass)
         " INNER JOIN [alias_ToString_DoNotJoinLastTargetClass].[A_B] [rAB] ON [a].[ECInstanceId] = [rAB].[SourceECInstanceId]"
         " INNER JOIN [alias_ToString_DoNotJoinLastTargetClass].[B] [b] ON [b].[ECInstanceId] = [rAB].[TargetECInstanceId]"
         " INNER JOIN [alias_ToString_DoNotJoinLastTargetClass].[B_C] [rBC] ON [b].[ECInstanceId] = [rBC].[SourceECInstanceId]");
-    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
+    ASSERT_STREQ(expected.c_str(), query->GetQuery()->GetQueryString().c_str());
     }

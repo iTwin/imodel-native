@@ -255,7 +255,7 @@ public:
             fullAttributeName.append(attributeName);
             }
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid type for `%s`: `%s`. Expected `%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid type for `%s`: `%s`. Expected `%s`.",
             fullAttributeName.c_str(), GetJsonValueTypeStr(attributeValue.type()), GetJsonValueTypeStr(expectedType)));
         return false;
         }
@@ -265,7 +265,7 @@ public:
         if (!issueCondition)
             return false;
 
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
             ruleName, attributeName, attributeValue.ToString().c_str(), expectation));
         return true;
         }

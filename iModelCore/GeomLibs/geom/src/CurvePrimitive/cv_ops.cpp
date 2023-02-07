@@ -637,6 +637,54 @@ bool GetNonZeroTangent (DVec3dR tangent, DVec3dCR derivative1, DVec3dCR derivati
         }
     return false;
     }
+
+// Get ANY frame, but really try for one that is stable ...
+// EXCEPT -- if the very first one has cross product magnitude within crossFraction of best, take it . . . .
+// 
+static bool GetStableFrameOnCurve(ICurvePrimitiveCR curve, TransformR frame, double crossFraction)
+    {
+    auto linestring = curve.GetLineStringCP ();
+    if (linestring)
+        {
+        double a0 = 0.0;
+        auto n = linestring->size ();
+        if (n > 2)
+            {
+            // look for best contiguous triple ..
+            double aMax = 0.0;
+            DVec3d vector0Max = DVec3d::FromZero ();
+            DVec3d vector1Max = DVec3d::FromZero ();
+            DPoint3d basePoint = DVec3d::FromZero ();
+            for (size_t i0 = 0; i0 + 2 < n; i0++)
+                {
+                DVec3d vector0 = DVec3d::FromStartEnd (linestring->at(i0), linestring->at(i0+1));
+                DVec3d vector1 = DVec3d::FromStartEnd(linestring->at(i0), linestring->at(i0 + 2));
+                DVec3d cross = DVec3d::FromCrossProduct (vector0, vector1);
+                double a = cross.MagnitudeSquared();
+                if (i0 == 0)
+                    a0 = a;
+                if (a > aMax)
+                    {
+                    aMax = a;
+                    basePoint = linestring->at(i0);
+                    vector0Max = vector0;
+                    vector1Max = vector1;
+                    }
+                }
+            if (a0 > crossFraction * aMax)
+                {
+                // The first one looks pretty good.
+                basePoint = linestring->at(0);
+                vector0Max = DVec3d::FromStartEnd(linestring->at(0), linestring->at(1));
+                vector1Max = DVec3d::FromStartEnd(linestring->at(1), linestring->at(2));
+                return CompleteFrame(basePoint, vector0Max, vector1Max, frame);
+                }
+            return CompleteFrame(basePoint, vector0Max, vector1Max, frame);
+            }
+        }
+    return false;
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -645,6 +693,9 @@ static bool GetNeighborhoodFrenetFrame(CurveVectorCR curves, size_t i, Transform
     if (i >= curves.size ())
         return false;
     ICurvePrimitiveCP curveA = curves.at (i).get ();
+    static double s_goodCrossProductFraction = 1.0e-4;
+    if (GetStableFrameOnCurve(*curveA, frame, s_goodCrossProductFraction))
+        return true;
     DPoint3d pointA, pointB;
     DVec3d   derivativeA1, derivativeA2, derivativeA3;
     DVec3d   derivativeB1, derivativeB2, derivativeB3;

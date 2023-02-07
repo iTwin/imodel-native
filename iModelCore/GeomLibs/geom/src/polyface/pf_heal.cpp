@@ -195,18 +195,17 @@ bool GetA01B01PlaneNormal (DVec3d &unitNormal, DVec3dR vectorA0A1, DVec3dR vecto
     {
     vectorA0A1.DifferenceOf (m_A1.m_xyz, m_A0.m_xyz);
     vectorB0B1.DifferenceOf (m_B1.m_xyz, m_B0.m_xyz);
-    double d;
     if (vectorA0A1.IsParallelTo (vectorB0B1))
         {
         if (!m_A0.IsSameNode (m_B0))
             {
             DVec3d edge;
             edge.DifferenceOf (m_B0.m_xyz, m_A0.m_xyz);
-            d = unitNormal.NormalizedCrossProduct (vectorA0A1, edge);
+            unitNormal.NormalizedCrossProduct (vectorA0A1, edge);
             return !vectorA0A1.IsParallelTo (edge);
             }
         }
-    d = unitNormal.NormalizedCrossProduct (vectorA0A1, vectorB0B1);
+    unitNormal.NormalizedCrossProduct (vectorA0A1, vectorB0B1);
     return !vectorA0A1.IsParallelTo (vectorB0B1);
     }
 

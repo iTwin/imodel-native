@@ -76,7 +76,7 @@ bool PropertyCategoryIdentifier::_ReadJson(JsonValueCR json)
     {
     if (!json.isObject() || json.isNull())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
             _GetJsonElementType(), json.ToString().c_str(), "an object with a `type` attribute"));
         return false;
         }
@@ -90,7 +90,7 @@ bool PropertyCategoryIdentifier::_ReadJson(JsonValueCR json)
         m_type = PropertyCategoryIdentifierType::Id;
     else
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
             _GetJsonElementType(), PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE, json.ToString().c_str(), "one of \"Root\", \"DefaultParent\" or \"Id\""));
         return false;
         }
@@ -146,7 +146,7 @@ bool IdPropertyCategoryIdentifier::_ReadJson(JsonValueCR json)
         m_categoryId = json.asCString("");
         if (m_categoryId.empty())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
                 _GetJsonElementType(), json.ToString().c_str(), "non-empty string or an object"));
             return false;
             }

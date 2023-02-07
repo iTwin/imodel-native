@@ -230,7 +230,7 @@ VARCHAR             {SQL_NEW_KEYWORD(SQL_TOKEN_VARCHAR);  }
 WHEN                {SQL_NEW_KEYWORD(SQL_TOKEN_WHEN);  }
 WHERE               {SQL_NEW_KEYWORD(SQL_TOKEN_WHERE);  }
 WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);}
-
+"$"                 {SQL_NEW_KEYWORD(SQL_TOKEN_DOLLAR);}
 
 "<"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_LESS);return SQL_LESS;}
 ">"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_GREAT);return SQL_GREAT;}
@@ -240,6 +240,7 @@ WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);}
 "<>"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
 "!="                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
 "||"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_CONCAT);return SQL_CONCAT;}
+"->"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_ARROW);return SQL_ARROW;}
 
 "~"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_NOT);return SQL_BITWISE_NOT;}
 "|"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_OR);return SQL_BITWISE_OR;}
@@ -718,19 +719,13 @@ sal_Int32 OSQLScanner::SQLlex(YYSTYPE* val)
 // -------------------------------------------------------------------------
 OSQLParseNode* OSQLScanner::NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
     {
-    auto newNode = new OSQLParseNode(pNewValue, eNodeType, nNodeID);
-    m_pGarbageCollector.push_back(newNode);
-    newNode->m_container = &m_pGarbageCollector;
-    return newNode;
+    return m_pGarbageCollector.NewNode(pNewValue, eNodeType, nNodeID);
     }
 
 // -------------------------------------------------------------------------
 OSQLParseNode* OSQLScanner::NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
     {
-    auto newNode = new OSQLParseNode(_rNewValue, eNodeType, nNodeID);
-    m_pGarbageCollector.push_back(newNode);
-    newNode->m_container = &m_pGarbageCollector;
-    return newNode;
+    return m_pGarbageCollector.NewNode(_rNewValue.c_str(), eNodeType, nNodeID);
     }
 
 // -------------------------------------------------------------------------

@@ -538,7 +538,7 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
-    BeVersion expectedVersion (1, 0, 0, 0);
+    BeVersion expectedVersion (1, 0, 1, 1);
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 
@@ -547,7 +547,7 @@ TEST_F(ECDbTestFixture, CurrentECSqlVersion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
     {
-    ProfileVersion expectedVersion (4, 0, 0, 2);
+    ProfileVersion expectedVersion (4, 0, 0, 3);
     ASSERT_EQ(ECDb::CurrentECDbProfileVersion(), expectedVersion);
     }
 
@@ -557,7 +557,7 @@ TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
 TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
-    ProfileVersion expectedVersion (4, 0, 0, 2);
+    ProfileVersion expectedVersion (4, 0, 0, 3);
     ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
 

@@ -296,14 +296,13 @@ DgnDbStatus JsInterop::GetSchemaItem(BeJsValue mjson, DgnDbR dgndb, Utf8CP schem
         }
 
     return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Object obj) {
     BeJsConst inOpts(obj);
-
     DgnElementCPtr elem;
     DgnElementId eid = inOpts[json_id()].GetId64<DgnElementId>();
 
@@ -314,7 +313,7 @@ DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Obj
             federationGuid.FromString(fedJson.asCString());
             elem = dgndb.Elements().QueryElementByFederationGuid(federationGuid);
         } else {
-            eid = dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson(inOpts[json_code()], dgndb));
+            eid = dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson(inOpts[json_code()], dgndb, false));
         }
     }
 
@@ -363,16 +362,12 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             throwWrongClass();
 
         ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(dgndb, params.m_classId);
-        if (nullptr == elHandler) {
-            BeAssert(false);
+        if (nullptr == elHandler)
             throwWrongClass();
-        }
 
         DgnElementPtr el = elHandler->Create(params);
-        if (!el.IsValid()) {
-            BeAssert(false);
+        if (!el.IsValid())
             throwBadArg();
-        }
 
         el->FromJson(inJson);
 
@@ -1032,7 +1027,7 @@ DgnDbStatus JsInterop::GetModel(Napi::Object modelObj, DgnDbR dgndb, BeJsConst i
         if (codeVal.isNull())
             return DgnDbStatus::NotFound;
 
-        modelId = dgndb.Models().QuerySubModelId(DgnCode::FromJson(codeVal, dgndb));
+        modelId = dgndb.Models().QuerySubModelId(DgnCode::FromJson(codeVal, dgndb, false));
     }
 
     //  Look up the model

@@ -12,6 +12,24 @@
 #include <json/json.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+//=======================================================================================
+//! IECSqlRow represent a single row that can be read. It can be pass around to allow
+//! only reading a instance.
+//+======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlRow {
+    public:
+        //! Gets the number of ECSQL columns in the result set returned after calling Step on a SELECT statement.
+        //! @return Number of ECSQL columns in the result set
+        virtual int GetColumnCount() const = 0;
+
+                //! Gets the value of the specified column.
+        //! @remarks This is the generic way of getting the value of a specified column in the result set.
+        //! All other GetValueXXX methods are convenience methods around GetValue.
+        //! @return Value for the column
+        //! @note Possible errors:
+        //! - @p columnIndex is out of bounds
+        virtual IECSqlValue const& GetValue(int columnIndex) const =0;
+};
 
 //=======================================================================================
 //! ECSqlStatement is used to perform Create, Read, Update, Delete operations (@b CRUD)
@@ -100,7 +118,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //!
         //! @see @ref ECDbCodeSampleExecuteECSqlSelectMultiThreaded for a code example
         //! @param[in] schemaManager SchemaManager that is to be used to parse the ECSQL. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
-        //! @param[in] dataSourceECDb Connection to the same %ECDb file which is to be used to execute ECSqlStatment. Must be read-only, but can be in a
+        //! @param[in] dataSourceECDb Connection to the same %ECDb file which is to be used to execute ECSqlStatement. Must be read-only, but can be in a
         //! another thread than @p schemaManager
         //! @param[in] selectECSql SELECT ECSQL
         //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
@@ -239,14 +257,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] virtualSet to bind
         //! @return ECSqlStatus::Success or error codes
         //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
-        ECSqlStatus BindVirtualSet(int parameterIndex, VirtualSet const& virtualSet) { return GetBinder(parameterIndex).BindVirtualSet(virtualSet); }
-
-        //! Binds an IdSet to the SQL function @b InVirtualSet.
-        //! The parameter must be the first parameter in the InVirtualSet function.
-        //! @param[in] parameterIndex Parameter index
-        //! @param[in] idSet to bind
-        //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus BindIdSet(int parameterIndex, IdSet<BeInt64Id> const& idSet) { return GetBinder(parameterIndex).BindIdSet(idSet); }
+        ECSqlStatus BindVirtualSet(int parameterIndex, std::shared_ptr<VirtualSet> virtualSet) { return GetBinder(parameterIndex).BindVirtualSet(virtualSet); }
 
         //! Gets a binder to bind a value to the parameter at the specified index.
         //! @param[in] parameterIndex Parameter index
@@ -632,7 +643,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
         //! @see BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP)
         //! @param[in] schemaManager SchemaManager that is to be used to parse the ECSQL. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
-        //! @param[in] dataSourceECDb Connection to the same ECDb file which is to be used to execute ECSqlStatment. Must be read-only, but can be in a
+        //! @param[in] dataSourceECDb Connection to the same ECDb file which is to be used to execute ECSqlStatement. Must be read-only, but can be in a
         //! another thread than @p schemaManager
         //! @param[in] selectECSql SELECT ECSQL
         //! @param[in] logPrepareErrors It determines when attempt to prepare statement, if to log errors or not

@@ -39,7 +39,7 @@ struct TestNodesCache : INavNodesCache
         bmap<BeGuid, bvector<uint64_t>> m_nodeIndexes;
         bmap<CombinedHierarchyLevelIdentifier, bvector<DataSourceIdentifier>> m_physicalHierarchy;
         bmap<HierarchyLevelIdentifier, bvector<DataSourceIdentifier>> m_virtualHierarchy;
-        bmap<DataSourceIdentifier, bpair<DataSourceInfo, bvector<NavNodePtr>>> m_partialHierarchies;
+        bvector<bpair<DataSourceIdentifier, bpair<DataSourceInfo, bvector<NavNodePtr>>>> m_partialHierarchies;
         bset<BeGuid> m_finalizedDataSources;
         Savepoint(TestNodesCache& cache)
             : m_cache(cache)
@@ -71,7 +71,7 @@ private:
     bmap<BeGuid, bvector<uint64_t>> m_nodeIndexes;
     bmap<CombinedHierarchyLevelIdentifier, bvector<DataSourceIdentifier>> m_physicalHierarchy;
     bmap<HierarchyLevelIdentifier, bvector<DataSourceIdentifier>> m_virtualHierarchy;
-    bmap<DataSourceIdentifier, bpair<DataSourceInfo, bvector<NavNodePtr>>> m_partialHierarchies;
+    bvector<bpair<DataSourceIdentifier, bpair<DataSourceInfo, bvector<NavNodePtr>>>> m_partialHierarchies;
     bset<BeGuid> m_finalizedDataSources;
     bmap<BeGuid, NodeVisibility> m_nodeVisibilities;
 
@@ -85,7 +85,7 @@ private:
     HierarchyLevelIdentifier GetHierarchyLevelIdentifier(NavNodeCR node) const
         {
         NavNodeExtendedData ex(node);
-        auto physicalParentNode = GetPhysicalParentNode(node.GetNodeId(), RulesetVariables(), "");
+        auto physicalParentNode = GetPhysicalParentNode(node.GetNodeId(), RulesetVariables(), nullptr);
         return HierarchyLevelIdentifier(
             ex.GetConnectionId(),
             ex.GetRulesetId(),
@@ -108,7 +108,7 @@ private:
         bvector<NavNodePtr> vec;
         for (auto const& partialInfo : partialInfos)
             {
-            auto iter = m_partialHierarchies.find(partialInfo);
+            auto iter = std::find_if(m_partialHierarchies.begin(), m_partialHierarchies.end(), [&](auto const& entry){return entry.first == partialInfo;});
             if (iter == m_partialHierarchies.end())
                 continue;
 
@@ -128,19 +128,19 @@ protected:
         auto iter = m_nodes.find(nodeId);
         return (m_nodes.end() != iter) ? iter->second : nullptr;
         }
-    NodeVisibility _GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) const override
+    NodeVisibility _GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_nodeVisibilities.find(nodeId);
         return (m_nodeVisibilities.end() != iter) ? iter->second : NodeVisibility::Hidden;
         }
-    bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) const override
+    bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_nodeIndexes.find(nodeId);
         return (m_nodeIndexes.end() != iter) ? iter->second : bvector<uint64_t>();
         }
-    NavNodePtr _GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& v, Utf8StringCR instanceFilter) const override
+    NavNodePtr _GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& v, InstanceFilterDefinitionCP instanceFilter) const override
         {
         BeMutexHolder lock(m_mutex);
         if (m_getPhysicalParentNodeHandler)
@@ -269,7 +269,7 @@ protected:
         if (!IsDataSourceInitialized(identifier.GetId()))
             return nullptr;
 
-        auto iter = m_partialHierarchies.find(identifier);
+        auto iter = std::find_if(m_partialHierarchies.begin(), m_partialHierarchies.end(), [&](auto const& entry){return entry.first == identifier;});
         return (m_partialHierarchies.end() != iter) ? std::make_unique<BVectorDirectNodesIterator>(iter->second.second) : nullptr;
         }
 
@@ -287,7 +287,7 @@ protected:
         {
         BeMutexHolder lock(m_mutex);
         info.GetIdentifier().SetId(BeGuid(true));
-        m_partialHierarchies[info.GetIdentifier()] = bpair<DataSourceInfo, bvector<NavNodePtr>>(info, bvector<NavNodePtr>());
+        m_partialHierarchies.push_back(make_bpair(info.GetIdentifier(), bpair<DataSourceInfo, bvector<NavNodePtr>>(info, bvector<NavNodePtr>())));
         bvector<DataSourceIdentifier>& physicalHierarchy = m_physicalHierarchy[GetHierarchyLevelIdentifier(info.GetIdentifier()).GetCombined()];
         physicalHierarchy.insert(physicalHierarchy.begin() + info.GetIdentifier().GetIndex().back(), info.GetIdentifier());
         bvector<DataSourceIdentifier>& virtualHierarchy = m_virtualHierarchy[GetHierarchyLevelIdentifier(info.GetIdentifier())];
@@ -306,27 +306,27 @@ protected:
 
         m_nodes[nodeId] = &node;
         m_nodeIndexes[nodeId] = index;
-        m_partialHierarchies[dsInfo].second.push_back(&node);
+        std::find_if(m_partialHierarchies.begin(), m_partialHierarchies.end(), [&](auto const& entry){return entry.first == dsInfo;})->second.second.push_back(&node);
         m_nodeVisibilities.Insert(node.GetNodeId(), visibility);
 
         if (m_cacheNodeHandler)
             m_cacheNodeHandler(node, visibility);
         }
 
-    void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) override
+    void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override
         {
         BeMutexHolder lock(m_mutex);
         m_nodeVisibilities.erase(nodeId);
         m_nodeVisibilities.Insert(nodeId, NodeVisibility::Virtual);
         }
-    void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, Utf8StringCR) override
+    void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override
         {
         BeMutexHolder lock(m_mutex);
         m_nodeVisibilities.erase(nodeId);
         m_nodeVisibilities.Insert(nodeId, NodeVisibility::Hidden);
         }
 
-    bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables, Utf8StringCR instanceFilter) const override
+    bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_physicalHierarchy.find(info);
@@ -334,14 +334,16 @@ protected:
             return false;
         for (auto const& dsInfo : iter->second)
             {
-            if (dsInfo.GetInstanceFilter() != instanceFilter)
+            bool instanceFiltersEqual = !dsInfo.GetInstanceFilter() && !instanceFilter
+                || dsInfo.GetInstanceFilter() && instanceFilter && *dsInfo.GetInstanceFilter() == *instanceFilter;
+            if (!instanceFiltersEqual)
                 continue;
             if (!IsDataSourceInitialized(dsInfo.GetId()))
                 return false;
             }
         return true;
         }
-    bool _IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& variables, Utf8StringCR instanceFilter) const override
+    bool _IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter) const override
         {
         BeMutexHolder lock(m_mutex);
         for (auto const& entry : m_virtualHierarchy)
@@ -350,7 +352,9 @@ protected:
                 {
                 for (auto const& dsInfo : entry.second)
                     {
-                    if (dsInfo.GetInstanceFilter() != instanceFilter)
+                    bool instanceFiltersEqual = !dsInfo.GetInstanceFilter() && !instanceFilter
+                        || dsInfo.GetInstanceFilter() && instanceFilter && *dsInfo.GetInstanceFilter() == *instanceFilter;
+                    if (!instanceFiltersEqual)
                         continue;
                     if (!IsDataSourceInitialized(dsInfo.GetId()))
                         return false;
@@ -402,7 +406,7 @@ public:
                 {
                 for (auto const& dsId : phEntry.second)
                     {
-                    auto dsIter = m_partialHierarchies.find(dsId);
+                    auto dsIter = std::find_if(m_partialHierarchies.begin(), m_partialHierarchies.end(), [&](auto const& entry){return entry.first == dsId;});
                     if (dsIter != m_partialHierarchies.end())
                         count += dsIter->second.second.size();
                     }

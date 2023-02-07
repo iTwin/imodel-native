@@ -137,7 +137,7 @@ private:
     mutable IProvidersIndexAllocatorPtr m_providersIndexAllocator;
     bset<ArtifactsCapturer*> m_artifactsCapturers;
     std::function<void(NavNodesProviderContextR)> m_onHierarchyLevelLoaded;
-    Utf8String m_instanceFilter;
+    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
 
     // optimization flags
     OptimizationFlagsContainer m_optFlags;
@@ -198,8 +198,9 @@ public:
     BeGuidCR GetRemovalId() const {return m_removalId;}
     std::function<void(NavNodesProviderContextR)> const& GetHierarchyLevelLoadedCallback() const {return m_onHierarchyLevelLoaded;}
     void SetHierarchyLevelLoadedCallback(std::function<void(NavNodesProviderContextR)> cb) {m_onHierarchyLevelLoaded = cb;}
-    Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
-    void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
+    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilterPtr() const {return m_instanceFilter;}
+    InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter.get();}
+    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
 
     // page options
     void SetPageOptions(std::shared_ptr<PageOptions> value) {m_pageOptions = value;}
@@ -756,8 +757,9 @@ public:
     ECPRESENTATION_EXPORT bool HasSimilarNodeInHierarchy(NavNodeCR) const;
     ECPRESENTATION_EXPORT void DetermineChildren(NavNodeR) const;
     ECPRESENTATION_EXPORT void Customize(NavNodeR) const;
+    ECPRESENTATION_EXPORT void DetermineFilteringSupport(NavNodeR) const;
 
-    // DetermineChildren + Customize
+    // DetermineChildren + Customize + DetermineFilteringSupport
     ECPRESENTATION_EXPORT NavNodePtr Finalize(NavNodeR node) const;
 };
 
@@ -891,13 +893,13 @@ struct QueryBasedNodesProvider : CachingNavNodesProviderBase<NodesCreatingMultiN
     struct NodeCounts;
 
 private:
-    NavigationQueryCPtr m_query;
+    PresentationQueryBuilderCPtr m_query;
     mutable bmap<ECClassId, bool> m_usedClassIds;
     size_t m_offset;
     DataSourceIdentifier m_parentDatasourceIdentifier;
 
 private:
-    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextR, NavigationQuery const&, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier);
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextR, PresentationQueryBuilderCR, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier);
     NodeCounts QueryNodeCounts() const;
     BentleyStatus InitializePartialProviders(bvector<PageNodeCounts> const&);
 
@@ -913,12 +915,12 @@ protected:
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextR context,
-        NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>(), DataSourceIdentifier parentDatasourceIdentifier = {})
+        PresentationQueryBuilderCR query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>(), DataSourceIdentifier parentDatasourceIdentifier = {})
         {
         return CallOnCreated(*new QueryBasedNodesProvider(context, query, usedClassIds, parentDatasourceIdentifier));
         }
     bmap<ECClassId, bool> const& GetUsedClassIds() const {return m_usedClassIds;}
-    void SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const&);
+    void SetQuery(PresentationQueryBuilderCP query, bmap<ECClassId, bool> const&);
     void SetOffset(size_t value) {m_offset = value;}
 };
 
@@ -936,7 +938,7 @@ private:
 private:
     ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextR context, ChildNodeSpecificationCR specification);
     std::unique_ptr<NavigationQueryBuilder> CreateQueryBuilder(IUsedClassesListener&) const;
-    bvector<NavigationQueryPtr> CreateQueries(NavigationQueryBuilderCR) const;
+    QuerySet CreateQueries(NavigationQueryBuilderCR) const;
 
 protected:
     Utf8CP _GetName() const override {return "Query-based specification nodes provider";}

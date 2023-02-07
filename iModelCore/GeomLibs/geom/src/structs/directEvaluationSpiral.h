@@ -104,7 +104,7 @@ double DSpiral2dDirectEvaluation::FractionToVelocity(double fraction) const
         {
         velocity = uvD1.Magnitude ();
         }
-    return 0.0;
+    return velocity;
     }    
 
 double DSpiral2dDirectEvaluation::FractionToLocalAngle(double fraction) const

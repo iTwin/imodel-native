@@ -284,15 +284,16 @@ MTGNodeId     nodeId
     bool myStat = false;
     int curveIndex;
     DPoint3d point[2];
-    //int parentId;
-    /* MSBsplineCurve curve; */
     DEllipse3d ellipse;
     MSBsplineCurve curve;
+
+#ifdef DEBUG_EXTRACT_EDGE
     static int s_numChords = 0; // to trigger length debug.
     double quickLength = 0.0;
     double realLength = 0.0;
     if (s_numChords > 0)
         quickLength = jmdlRG_quickChordLength (m_rgContext, nodeId, s_numChords);
+#endif
 
     if (   jmdlRG_getCurveData
 	    (m_rgContext, &curveIndex, &isReversed, &point[0], &point[1], nodeId)
@@ -317,8 +318,10 @@ MTGNodeId     nodeId
 	          }
         else if (jmdlRIMSBS_getDEllipse3d (m_rimsbsCurves, &ellipse, curveIndex, isReversed))
 	          {
+#ifdef DEBUG_EXTRACT_EDGE
 	          if (s_numChords > 0)
 	              realLength = ellipse.ArcLength ();
+#endif
             lineString.Flush (*this, dest);
             dest.push_back (ICurvePrimitive::CreateArc (ellipse));
             RecordNewCurve (dest.back (), callerCurveIndex);
@@ -629,7 +632,6 @@ const char * name = "op"
     
     CurveVectorPtr result;
     bvector<int> faceNodeIdArray;
-    bool myStat = false;
     MTGGraph * pGraph = context.GetGraph ();
 
     context.SetNextGroupId (0);
@@ -657,7 +659,7 @@ const char * name = "op"
         bvector<int> nodeIdToDepthArray;
         jmdlRG_collectAndNumberExtendedFaceLoops (context.m_rgContext, &startArray, &sequenceArray, &faceSet);
         jmdlRG_setMarksetDepthByInwardSearch (context.m_rgContext, &nodeIdToDepthArray, &faceSet);
-        myStat = context.TryAssembleComponents (sequenceArray, nodeIdToDepthArray, result);
+        context.TryAssembleComponents (sequenceArray, nodeIdToDepthArray, result);
 	}
 
     return result;
@@ -677,7 +679,6 @@ const char * name = "op"
     
     CurveVectorPtr result;
     bvector<int> faceNodeIdArray;
-    bool myStat = false;
     context.SetNextGroupId (0);
     context.Load (regionA);
     int numGroup = context.GetNextGroupId ();
@@ -697,7 +698,7 @@ const char * name = "op"
         bvector<int> nodeIdToDepthArray;
         jmdlRG_collectAndNumberExtendedFaceLoops (context.m_rgContext, &startArray, &sequenceArray, &faceSet);
         jmdlRG_setMarksetDepthByInwardSearch (context.m_rgContext, &nodeIdToDepthArray, &faceSet);
-        myStat = context.TryAssembleComponents (sequenceArray, nodeIdToDepthArray, result);
+        context.TryAssembleComponents (sequenceArray, nodeIdToDepthArray, result);
 	}
 
     return result;
@@ -721,7 +722,6 @@ const char * name = "op"
     
     CurveVectorPtr result;
     bvector<int> faceNodeIdArray;
-    bool myStat = false;
     context.SetNextGroupId (0);
 
     BoolSelect finalBoolOp = boolOp;
@@ -749,7 +749,7 @@ const char * name = "op"
         bvector<int> nodeIdToDepthArray;
         jmdlRG_collectAndNumberExtendedFaceLoops (context.m_rgContext, &startArray, &sequenceArray, &faceSet);
         jmdlRG_setMarksetDepthByInwardSearch (context.m_rgContext, &nodeIdToDepthArray, &faceSet);
-        myStat = context.TryAssembleComponents (sequenceArray, nodeIdToDepthArray, result);
+        context.TryAssembleComponents (sequenceArray, nodeIdToDepthArray, result);
 	}
 
     return result;

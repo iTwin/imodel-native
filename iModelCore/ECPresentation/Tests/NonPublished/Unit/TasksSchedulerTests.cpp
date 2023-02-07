@@ -1120,7 +1120,7 @@ TEST_F(ECPresentationTaskTests, SupportsCancellationThroughChainedFuturesWhenUsi
         ASSERT_TRUE(t.GetCancelationToken()->IsCanceled());
         didExecute = true;
         });
-    task->SetExecutor(&executor);
+    task->SetFutureExecutor(&executor);
     task->SetIsCancelable(true);
     auto taskFuture = task->GetFuture();
 

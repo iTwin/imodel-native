@@ -566,7 +566,6 @@ double          &toleranceOut
             return false;
         DVec3d vectorYMax, vectorY, vectorZ;
         vectorYMax.Zero ();
-        size_t iMax = 0;
         double a, aMax = 0.0;
         for (size_t i = 1; i < (size_t)numPoint; i++)
             {
@@ -575,7 +574,6 @@ double          &toleranceOut
             a = vectorZ.MagnitudeSquared ();
             if (a > aMax)
                 {
-                iMax = i;
                 aMax = a;
                 vectorYMax = vectorY;
                 }

@@ -84,7 +84,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsForwardRelatedI
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classC, *classC->GetPropertyP("PropC")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classC, *query, nullptr, {}, "related"), "this");
         query->From(*classC, true, "this");
         query->Join(ReverseRelationshipPath({bToc}, "related", false));
@@ -153,7 +153,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsBackwardRelated
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, nullptr, {}, "related"), "this");
         query->From(*classA, true, "this");
         query->Join(ReverseRelationshipPath({bToa},"related", false));
@@ -227,19 +227,19 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsBothDirectionsR
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classC, *classC->GetPropertyP("PropC")));
 
-        ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query1 = ComplexQueryBuilder::Create();
         query1->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query1, nullptr, {}, "related"), "this");
         query1->From(*classA, true, "this");
         query1->Join(ReverseRelationshipPath({bToa}, "related", false));
         query1->Where("[related].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
 
-        ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query2 = ComplexQueryBuilder::Create();
         query2->SelectContract(*CreateQueryContract(2, *descriptor, classC, *query2, nullptr, {}, "related"), "this");
         query2->From(*classC, true, "this");
         query2->Join(ReverseRelationshipPath({bToc}, "related", false));
         query2->Where("[related].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -289,7 +289,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsRelatedInstance
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query, nullptr, {}, "related"), "this");
         query->From(*classB, true, "this");
         query->Join(ReverseRelationshipPath({aTob}, "related", false));
@@ -364,19 +364,19 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsRelatedInstance
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
 
-        ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query1 = ComplexQueryBuilder::Create();
         query1->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query1, nullptr, {}, "related"), "this");
         query1->From(*classB, true, "this");
         query1->Join(ReverseRelationshipPath({aTob}, "related", false));
         query1->Where("[related].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
 
-        ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query2 = ComplexQueryBuilder::Create();
         query2->SelectContract(*CreateQueryContract(2, *descriptor, classB, *query2, nullptr, {}, "related"), "this");
         query2->From(*classB, true, "this");
         query2->Join(ReverseRelationshipPath({cTob}, "related", false));
         query2->Where("[related].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)125))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create({ query1, query2 });
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ query1, query2 });
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -426,7 +426,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_AppliesInstanceFilter)
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query, nullptr, {}, "related"), "this");
         query->From(*classB, true, "this");
         query->Join(ReverseRelationshipPath({aTob}, "related", false));
@@ -498,7 +498,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_AppliesInstanceFilterU
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, ContentDescriptor::Property("this", *classB, *classB->GetPropertyP("PropB")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         auto contract = CreateQueryContract(1, *descriptor, classB, *query, nullptr, { {bToc} });
         contract->SetInputClassAlias("related");
         query->SelectContract(*contract, "this");
@@ -572,7 +572,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SkipsRelatedLevel)
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classC, *classC->GetPropertyP("PropC")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classC, *query, nullptr, {}, "related"), "this");
         query->From(*classC, true, "this");
         query->Join(ReverseRelationshipPath(aTocPath, "related", false));
@@ -642,7 +642,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SkipsRelatedLevelWithS
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, nullptr, {}, "related"), "this");
         query->From(*classA, true, "this");
         query->Join(ReverseRelationshipPath(cToaPath, "related", false));
@@ -707,7 +707,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQuery)
         bset<ECRelationshipClassCP> relationships;
         relationships.insert(rel);
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, ecClass, *query), "this");
         query->From(*ecClass, true, "this");
         query->Join(RelatedClass(*ecClass, SelectClass<ECRelationshipClass>(*rel, RULES_ENGINE_NAV_CLASS_ALIAS(*rel, 0)), false, SelectClass<ECClass>(*ecClass, RULES_ENGINE_NAV_CLASS_ALIAS(*ecClass, 0), true)));
@@ -789,7 +789,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQueryW
         bset<ECRelationshipClassCP> relationships;
         relationships.insert(rel);
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, baseClass, *query), "this");
         query->From(*baseClass, true, "this");
         query->Join(RelatedClass(*baseClass, SelectClass<ECRelationshipClass>(*rel, RULES_ENGINE_NAV_CLASS_ALIAS(*rel, 0)), false, SelectClass<ECClass>(*baseClass, RULES_ENGINE_NAV_CLASS_ALIAS(*baseClass, 0), true)));
@@ -872,7 +872,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_DoesntSplitRecursiveQu
         bset<ECRelationshipClassCP> relationships;
         relationships.insert(rel);
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, baseClass, *query), "this");
         query->From(*baseClass, true, "this");
         query->Join(RelatedClass(*baseClass, SelectClass<ECRelationshipClass>(*rel, RULES_ENGINE_NAV_CLASS_ALIAS(*rel, 0)), false, SelectClass<ECClass>(*baseClass, RULES_ENGINE_NAV_CLASS_ALIAS(*baseClass, 0), true)));
@@ -946,7 +946,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_DoesntDuplicateRecursi
 
         bvector<ECInstanceId> selectedIds = {ECInstanceId((uint64_t)123)};
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, entityClass, *query), "this");
         query->From(*entityClass, true, "this");
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -999,14 +999,14 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SelectPointPropertyRaw
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PointPropB")));
 
-        ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr nestedQuery = ComplexQueryBuilder::Create();
         ContentQueryContractPtr contract = CreateQueryContract(1, *descriptor, classB, *nestedQuery, nullptr, {}, "related");
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(*classB, true, "this");
         nestedQuery->Join(ReverseRelationshipPath({aTob}, "related", false));
         nestedQuery->Where("[related].[ECInstanceId] IN (?)", {std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123))});
 
-        ComplexContentQueryPtr groupedQuery = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr groupedQuery = ComplexQueryBuilder::Create();
         groupedQuery->SelectAll();
         groupedQuery->From(*nestedQuery);
         groupedQuery->GroupByContract(*contract);
@@ -1073,7 +1073,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
 
         SelectClass<ECClass> selectClass(*classB, "this", true);
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         auto contract = CreateQueryContract(1, *descriptor, classB, *query, CreateDisplayLabelField(selectClass, {}, labelOverride.GetValueSpecifications()));
         contract->SetInputClassAlias("related");
         query->SelectContract(*contract, "this");
@@ -1137,7 +1137,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_NAV_CLASS_ALIAS(*classA, 0), *classB, *classB->GetPropertyP("NavA")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query, nullptr, {}, "related"), "this");
         query->From(*classB, true, "this");
         query->Join(navbToa);

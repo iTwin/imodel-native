@@ -21,7 +21,7 @@ Utf8StringCR HashableBase::GetHash() const
         {
         const_cast<HashableBase*>(this)->ComputeHash();
         if (m_hash.empty())
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Rules, LOG_ERROR, "Failed to calculate rule's hash");
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Rules, "Failed to calculate rule's hash");
         }
     return m_hash;
     }

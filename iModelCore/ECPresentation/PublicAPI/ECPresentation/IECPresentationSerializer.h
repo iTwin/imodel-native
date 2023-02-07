@@ -79,6 +79,11 @@ protected:
     virtual void _AsJson(ContextR, LabelGroupingNodeKey const&, RapidJsonDocumentR) const = 0;
     virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(BeJsConst) const = 0;
 
+    virtual rapidjson::Document _AsJson(ContextR, PresentationQuery const&, rapidjson::Document::AllocatorType*) const = 0;
+    virtual std::unique_ptr<PresentationQuery> _GetPresentationQueryFromJson(BeJsConst) const = 0;
+
+    virtual rapidjson::Document _AsJson(ContextR, BoundQueryValuesList const&, rapidjson::Document::AllocatorType*) const = 0;
+
     virtual rapidjson::Document _AsJson(ContextR, NavNode const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _AsJson(ContextR, NodesPathElement const&, rapidjson::Document::AllocatorType*) const = 0;
 
@@ -97,6 +102,9 @@ protected:
     virtual rapidjson::Value _AsJson(ContextR, RelatedClassPathCR, rapidjson::Document::AllocatorType&) const = 0;
 
     virtual rapidjson::Value _AsJson(ContextR, SelectionInfo const&, rapidjson::Document::AllocatorType&) const = 0;
+
+    virtual rapidjson::Document _AsJson(ContextR, InstanceFilterDefinitionCR, rapidjson::Document::AllocatorType*) const = 0;
+    virtual std::unique_ptr<InstanceFilterDefinition> _GetInstanceFilterFromJson(IConnectionCR, BeJsConst) const = 0;
 
 public:
     virtual ~IECPresentationSerializer() {}
@@ -161,6 +169,11 @@ public:
     rapidjson::Document AsJson(ContextR ctx, LabelGroupingNodeKey const& labelGroupingNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(BeJsConst json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
 
+    rapidjson::Document AsJson(ContextR ctx, PresentationQuery const& presentationQuery, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, presentationQuery, allocator); };
+    std::unique_ptr<PresentationQuery> GetPresentationQueryFromJson(BeJsConst json) const {return _GetPresentationQueryFromJson(json);}
+
+    rapidjson::Document AsJson(ContextR ctx, BoundQueryValuesList const& boundQueryValuesList, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, boundQueryValuesList, allocator); };
+
     rapidjson::Document AsJson(ContextR ctx, LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, labelDefinition, allocator);}
     rapidjson::Document AsJson(ContextR ctx, LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, value, allocator); }
     rapidjson::Document AsJson(ContextR ctx, LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(ctx, value, allocator); }
@@ -170,6 +183,9 @@ public:
 
     rapidjson::Document AsJson(ContextR ctx, KeySet const& keySet, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, keySet, allocator);}
     KeySetPtr GetKeySetFromJson(IConnectionCR connection, BeJsConst json) const {return _GetKeySetFromJson(connection, json);}
+
+    rapidjson::Document AsJson(ContextR ctx, InstanceFilterDefinitionCR instanceFilter, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, instanceFilter, allocator);}
+    std::unique_ptr<InstanceFilterDefinition> GetInstanceFilterFromJson(IConnectionCR connection, BeJsConst json) const {return _GetInstanceFilterFromJson(connection, json);}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

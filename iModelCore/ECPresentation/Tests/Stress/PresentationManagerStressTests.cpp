@@ -362,11 +362,11 @@ static folly::Future<folly::Unit> RunFuture(std::function<folly::Future<folly::U
     {
     return function().then([requestId]()
         {
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Future %d finished successfuly", requestId);
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d finished successfully", requestId);
         })
     .onError([requestId](folly::exception_wrapper const& e)
         {
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Future %d finished with exception: %s", requestId, e.class_name().c_str());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d finished with exception: %s", requestId, e.class_name().c_str());
         });
     }
 
@@ -406,7 +406,7 @@ static void PrintStrategy(bvector<unsigned> const& indexes)
             strategy.append(" ");
         strategy.append(std::to_string(indexes[i]).c_str());
         }
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->info(strategy.c_str());
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).info(strategy.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -430,7 +430,7 @@ TEST_F(PresentationManagerStressTests, ExecutingMultipleRequests)
     for (size_t i = 0; i < functionIndexes.size(); ++i)
         {
         int functionIndex = functionIndexes[i];
-        NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Future %d (function index %d) scheduled.", i, functionIndex);
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d (function index %d) scheduled.", i, functionIndex);
         futures.push_back(RunFuture(m_functions[functionIndex], i));
         }
     PresentationManagerTestsHelper::WaitForAllFutures(futures, false);

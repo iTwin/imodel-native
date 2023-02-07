@@ -333,6 +333,11 @@ enum class ProcessPolyfaceResult {
   Ok, // polyface was processed
 };
 
+enum class SchemaSourceType {
+    File,
+    XmlString
+};
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -361,6 +366,12 @@ struct JsInterop {
         bool m_needsVectorExceptionHandler;
         };
 
+    struct SchemaImportOptions
+        {
+        bool m_schemaLockHeld = true;
+        ECSchemaReadContextPtr m_customSchemaContext = nullptr;
+        };
+
     BE_JSON_NAME(accessName)
     BE_JSON_NAME(accessToken)
     BE_JSON_NAME(alias)
@@ -385,6 +396,7 @@ struct JsInterop {
     BE_JSON_NAME(description)
     BE_JSON_NAME(durationSeconds)
     BE_JSON_NAME(ecefLocation)
+    BE_JSON_NAME(ecSchemaXmlContext)
     BE_JSON_NAME(element)
     BE_JSON_NAME(errorNumber)
     BE_JSON_NAME(expires)
@@ -395,6 +407,7 @@ struct JsInterop {
     BE_JSON_NAME(forceUseId)
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
+    BE_JSON_NAME(httpTimeout)
     BE_JSON_NAME(id)
     BE_JSON_NAME(index)
     BE_JSON_NAME(localFileName)
@@ -420,6 +433,7 @@ struct JsInterop {
     BE_JSON_NAME(rootSubject)
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
+    BE_JSON_NAME(schemaLockHeld)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
     BE_JSON_NAME(state)
@@ -450,7 +464,7 @@ public:
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, BeJsConst jsonInstance);
     static void InitLogging();
     static void Initialize(BeFileNameCR, Napi::Env, BeFileNameCR);
-    static DgnDbPtr CreateDgnDb(Utf8StringCR filename, BeJsConst props);
+    static DgnDbPtr CreateIModel(Utf8StringCR filename, BeJsConst props);
     static DgnDbStatus GetECClassMetaData(BeJsValue results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     static DgnDbStatus GetSchemaItem(BeJsValue results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
@@ -491,8 +505,7 @@ public:
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
-    static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames);
-    static DbResult ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const &serializedXmlSchemas);
+    static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
     static DbResult ImportFunctionalSchema(DgnDbR);
     static DgnRevisionPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);
     static bvector<DgnRevisionPtr> GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);

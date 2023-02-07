@@ -66,15 +66,15 @@ TEST_F (NavigationQueryResultsReaderTests, GetInstanceNodes)
     classes[m_widgetClass] = true;
     classes[m_gadgetClass] = true;
 
-    NavigationQueryPtr query = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(*m_schemaHelper, classes, "this");
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::MultiECInstanceNodes);
+    auto query = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(*m_schemaHelper, classes, "this");
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::MultiECInstanceNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -112,23 +112,23 @@ TEST_F (NavigationQueryResultsReaderTests, GetInstanceNodes_GroupsByInstanceKey)
         };
     RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
     contract->SetPathFromSelectToParentClass(relationshipPath);
-    ComplexNavigationQueryPtr inner = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr inner = ComplexQueryBuilder::Create();
     inner->SelectContract(*contract, "widget2")
         .From(selectClass)
         .Join(relationshipPath)
         .Where("widget1.ECInstanceId = ?", {std::make_shared<BoundQueryId>(widget1->GetInstanceId())});
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*contract)
         .From(*inner)
         .GroupByContract(*contract);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -153,24 +153,24 @@ TEST_F (NavigationQueryResultsReaderTests, GetClassGroupingNodes)
     classes.push_back(m_gadgetClass);
     classes.push_back(m_widgetClass);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = RulesEngineTestHelpers::CreateQuery(*ECClassGroupedInstancesQueryContract::Create(), classes, false, "keys");
+    auto groupedInstanceKeysQuery = RulesEngineTestHelpers::CreateQuery(*ECClassGroupedInstancesQueryContract::Create(), classes, false, "keys");
     NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery);
-    ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
     nested->SelectAll();
     nested->From(*RulesEngineTestHelpers::CreateQuery(*contract, classes, false, "this"));
     nested->GroupByContract(*contract);
 
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(*nested);
     query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr gadgetNode;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(gadgetNode, *reader));
@@ -213,36 +213,36 @@ TEST_F (NavigationQueryResultsReaderTests, GetDisplayLabelGroupingNodes)
     SelectClass<ECClass> widgetSelectClass(*m_widgetClass, "this", false);
     auto widgetLabelField = CreateDisplayLabelField(widgetSelectClass, {}, { &labelOverrideSpec });
 
-    NavigationQueryPtr groupedInstanceKeysQuery = UnionNavigationQuery::Create({
-        &ComplexNavigationQuery::Create()
+    auto groupedInstanceKeysQuery = UnionQueryBuilder::Create({
+        &ComplexQueryBuilder::Create()
             ->SelectContract(*DisplayLabelGroupedInstancesQueryContract::Create(gadgetLabelField))
             .From(gadgetSelectClass),
-        &ComplexNavigationQuery::Create()
+        &ComplexQueryBuilder::Create()
             ->SelectContract(*DisplayLabelGroupedInstancesQueryContract::Create(widgetLabelField))
             .From(widgetSelectClass),
         });
 
     auto contract = DisplayLabelGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, nullptr, RulesEngineTestHelpers::CreateNullDisplayLabelField());
-    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*contract);
-    query->From(*UnionNavigationQuery::Create({
-        &ComplexNavigationQuery::Create()
+    query->From(*UnionQueryBuilder::Create({
+        &ComplexQueryBuilder::Create()
             ->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", nullptr, m_gadgetClass, gadgetLabelField))
             .From(gadgetSelectClass),
-        &ComplexNavigationQuery::Create()
+        &ComplexQueryBuilder::Create()
             ->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", nullptr, m_widgetClass, widgetLabelField))
             .From(widgetSelectClass),
         }));
     query->GroupByContract(*contract);
     query->OrderBy(Utf8String("[").append(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr gadgetNode;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(gadgetNode, *reader));
@@ -271,15 +271,15 @@ TEST_F (NavigationQueryResultsReaderTests, OverridesLabel)
     classes[m_widgetClass] = true;
     classes[m_gadgetClass] = true;
 
-    NavigationQueryPtr query = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(*m_schemaHelper, classes, "this");
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::MultiECInstanceNodes);
+    auto query = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(*m_schemaHelper, classes, "this");
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::MultiECInstanceNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -308,24 +308,24 @@ TEST_F(NavigationQueryResultsReaderTests, PropertyGroupingByBooleanProperty)
     PropertyGroup propertyGroup("", "TestImageId", false, "BoolProperty", "");
     SelectClass<ECClass> selectClass(*m_widgetClass, "alias", false);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("BoolProperty"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, *m_widgetClass->GetPropertyP("BoolProperty"), propertyGroup, nullptr);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectContract(*contract)
-        .From(ComplexNavigationQuery::Create()->SelectContract(*contract, "alias").From(selectClass))
+        .From(ComplexQueryBuilder::Create()->SelectContract(*contract, "alias").From(selectClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -354,24 +354,24 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByIntProperty)
     PropertyGroup propertyGroup("", "TestImageId", false, "IntProperty", "");
     SelectClass<ECClass> selectClass(*m_widgetClass, "alias", false);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("IntProperty"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, *m_widgetClass->GetPropertyP("IntProperty"), propertyGroup, nullptr);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectContract(*contract)
-        .From(ComplexNavigationQuery::Create()->SelectContract(*contract, "alias").From(selectClass))
+        .From(ComplexQueryBuilder::Create()->SelectContract(*contract, "alias").From(selectClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -410,25 +410,25 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyRangeGrouping)
     ECPropertyCR groupingProperty = *m_widgetClass->GetPropertyP("IntProperty");
     SelectClass<ECClass> selectClass(*m_widgetClass, "alias", false);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("IntProperty"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, nullptr);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()->SelectContract(*contract, "alias").From(selectClass))
+        .From(ComplexQueryBuilder::Create()->SelectContract(*contract, "alias").From(selectClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, propertyGroup);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -467,25 +467,25 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyRangeGroupingWithCustomLabels
     ECPropertyCR groupingProperty = *m_widgetClass->GetPropertyP("IntProperty");
     SelectClass<ECClass> selectClass(*m_widgetClass, "alias", false);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("IntProperty"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, nullptr);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()->SelectContract(*contract, "alias").From(selectClass))
+        .From(ComplexQueryBuilder::Create()->SelectContract(*contract, "alias").From(selectClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, propertyGroup);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -531,27 +531,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithoutDi
     SelectClass<ECClass> navPropSelectClass(*m_gadgetClass, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*gadgetHasSprockets, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[Gadget].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -590,27 +590,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*widgetHasGadgets, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[Widget].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -652,27 +652,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*widgetHasGadgets, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[Widget].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -708,27 +708,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
     SelectClass<ECClass> navPropSelectClass(*classD, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*classDHasClassE, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[ClassD].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -764,27 +764,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithLabel
     SelectClass<ECClass> navPropSelectClass(*classD, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*classDHasClassE, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[ClassD].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -820,27 +820,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithInsta
     SelectClass<ECClass> navPropSelectClass(*classD, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*classDHasClassE, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[ClassD].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -882,27 +882,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*widgetHasGadgets, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[Widget].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -941,27 +941,27 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);
     RelatedClass navRelatedClass(selectClass.GetClass(), SelectClass<ECRelationshipClass>(*widgetHasGadgets, "rel"), false, navPropSelectClass, true);
 
-    NavigationQueryPtr groupedInstanceKeysQuery = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
         ->SelectContract(*ECPropertyGroupedInstancesQueryContract::Create("[Widget].[Id]"))
         .From(selectClass);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create("", groupedInstanceKeysQuery, selectClass, groupingProperty, propertyGroup, &navPropSelectClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()
+    ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()
         ->SelectAll()
-        .From(ComplexNavigationQuery::Create()
+        .From(ComplexQueryBuilder::Create()
             ->SelectContract(*contract, "alias")
             .From(selectClass)
             .Join(navRelatedClass))
         .GroupByContract(*contract)
         .OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
         m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    QueryExecutor executor(*m_connection, *query);
+    QueryExecutor executor(*m_connection, *query->GetQuery());
 
-    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract(),
-        query->GetResultParameters().GetResultType(), query->GetResultParameters().GetNavNodeExtendedData(), nullptr);
+    auto reader = NavNodesReader::Create(m_nodesFactory, *m_connection, *query->GetContract()->AsNavigationQueryContract(),
+        query->GetNavigationResultParameters().GetResultType(), query->GetNavigationResultParameters().GetNavNodeExtendedData(), nullptr);
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));

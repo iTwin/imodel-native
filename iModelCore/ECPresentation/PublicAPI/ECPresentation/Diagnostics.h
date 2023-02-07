@@ -29,9 +29,11 @@ enum class DiagnosticsCategory
 
     Hierarchies,
     HierarchiesCache,
-    HierarchiesUpdate,
 
     Content,
+
+    Update,
+    HierarchiesUpdate,
     ContentUpdate,
     };
 
@@ -65,10 +67,10 @@ struct Diagnostics
     struct ILogItem
     {
     protected:
-        virtual rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) const = 0;
+        virtual rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) = 0;
     public:
         virtual ~ILogItem() {}
-        rapidjson::Document BuildJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _BuildJson(allocator);}
+        rapidjson::Document BuildJson(rapidjson::Document::AllocatorType* allocator = nullptr) {return _BuildJson(allocator);}
     };
 
     /*=================================================================================**//**
@@ -83,7 +85,7 @@ struct Diagnostics
         uint64_t m_timestamp;
         Utf8String m_message;
     protected:
-        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType* allocator) const override;
+        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType* allocator) override;
     public:
         Message(DiagnosticsCategory, NativeLogging::SEVERITY const* devSeverity, NativeLogging::SEVERITY const* editorSeverity, Utf8String message);
     };
@@ -143,7 +145,7 @@ struct Diagnostics
         void AddItem(std::shared_ptr<ILogItem>);
 
     protected:
-        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) const override;
+        rapidjson::Document _BuildJson(rapidjson::Document::AllocatorType*) override;
 
     public:
         Scope(std::shared_ptr<Scope> parentScope, Utf8String name, std::shared_ptr<Options> options);
@@ -158,14 +160,13 @@ struct Diagnostics
         Holder Hold() {return Holder(shared_from_this());}
 
         std::weak_ptr<Scope> GetParentScope() const {return m_parentScope;}
-        uint64_t GetElapsedTime() const {return (m_end ? m_end : BeTimeUtilities::GetCurrentTimeAsUnixMillis()) - m_start;}
+        uint64_t GetElapsedTime() const {BeMutexHolder lock(m_mutex); return (m_end ? m_end : BeTimeUtilities::GetCurrentTimeAsUnixMillis()) - m_start;}
 
-        ECPRESENTATION_EXPORT bool IsEnabled(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity) const;
-        ECPRESENTATION_EXPORT void Log(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg);
-        ECPRESENTATION_EXPORT void DevLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
-        ECPRESENTATION_EXPORT void EditorLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
-        ECPRESENTATION_EXPORT void SetCapturedAttributes(bvector<Utf8CP> const& attributes);
-        ECPRESENTATION_EXPORT void AddValueToArrayAttribute(Utf8CP name, Utf8String value, bool unique);
+        void Log(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg);
+        void DevLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
+        void EditorLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
+        void SetCapturedAttributes(bvector<Utf8CP> const& attributes);
+        void AddValueToArrayAttribute(Utf8CP name, Utf8String value, bool unique);
     };
 
 private:
@@ -183,7 +184,6 @@ public:
 
 #define DIAGNOSTICS_LOG(category, devSeverity, editorSeverity, msg)     Diagnostics::Log(category, devSeverity, editorSeverity, msg);
 #define DIAGNOSTICS_DEV_LOG(category, severity, msg)                    Diagnostics::DevLog(category, severity, msg);
-#define DIAGNOSTICS_EDITOR_LOG(category, severity, msg)                 Diagnostics::EditorLog(category, severity, msg);
 #define DIAGNOSTICS_ASSERT_SOFT(category, condition, failureMsg)        { if (!(condition)) { BeAssert(false); Diagnostics::DevLog(category, LOG_ERROR, failureMsg); } }
 #define DIAGNOSTICS_HANDLE_FAILURE(category, msg)                       { Diagnostics::DevLog(category, LOG_ERROR, msg); throw InternalError(msg); }
 

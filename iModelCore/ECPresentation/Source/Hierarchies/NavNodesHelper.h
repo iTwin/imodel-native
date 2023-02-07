@@ -20,11 +20,11 @@ public:
     ECPRESENTATION_EXPORT NavNodePtr CreateECInstanceNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, bvector<ECInstanceKey> const&, LabelDefinitionCR label) const;
     ECPRESENTATION_EXPORT NavNodePtr CreateECInstanceNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, ECClassId, ECInstanceId, LabelDefinitionCR label) const;
     ECPRESENTATION_EXPORT NavNodePtr CreateECInstanceNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, IECInstanceCR, LabelDefinitionCR label) const;
-    ECPRESENTATION_EXPORT NavNodePtr CreateECClassGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, ECClassCR, bool, LabelDefinitionCR label, uint64_t, PresentationQueryBaseCP) const;
-    ECPRESENTATION_EXPORT NavNodePtr CreateECRelationshipGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, ECRelationshipClassCR, LabelDefinitionCR label, uint64_t, PresentationQueryBaseCP) const;
-    ECPRESENTATION_EXPORT NavNodePtr CreateECPropertyGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, ECClassCR, ECPropertyCR, LabelDefinitionCR label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, uint64_t, PresentationQueryBaseCP) const;
-    ECPRESENTATION_EXPORT NavNodePtr CreateDisplayLabelGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, LabelDefinitionCR label, uint64_t, PresentationQueryBaseCP, std::unique_ptr<bvector<ECInstanceKey>> = nullptr) const;
-    ECPRESENTATION_EXPORT NavNodePtr CreateCustomNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, LabelDefinitionCR label, Utf8CP description, Utf8CP imageId, Utf8CP type, PresentationQueryBaseCP) const;
+    ECPRESENTATION_EXPORT NavNodePtr CreateECClassGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, ECClassCR, bool, LabelDefinitionCR label, uint64_t, PresentationQueryCP) const;
+    ECPRESENTATION_EXPORT NavNodePtr CreateECRelationshipGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, ECRelationshipClassCR, LabelDefinitionCR label, uint64_t, PresentationQueryCP) const;
+    ECPRESENTATION_EXPORT NavNodePtr CreateECPropertyGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, ECClassCR, ECPropertyCR, LabelDefinitionCR label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, uint64_t, PresentationQueryCP) const;
+    ECPRESENTATION_EXPORT NavNodePtr CreateDisplayLabelGroupingNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, LabelDefinitionCR label, uint64_t, PresentationQueryCP, std::unique_ptr<bvector<ECInstanceKey>> = nullptr) const;
+    ECPRESENTATION_EXPORT NavNodePtr CreateCustomNode(IConnectionCR, Utf8StringCR, NavNodeKeyCP, LabelDefinitionCR label, Utf8CP description, Utf8CP imageId, Utf8CP type, PresentationQueryCP) const;
     ECPRESENTATION_EXPORT NavNodePtr CreateFromJson(IConnectionCR, RapidJsonValueCR, NavNodeKeyR) const;
 };
 typedef NavNodesFactory const& NavNodesFactoryCR;

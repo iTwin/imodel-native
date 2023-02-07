@@ -350,6 +350,17 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
     return (BE_SQLITE_ROW != statement->Step()) ? nullptr : GetElement(statement->GetValueId<DgnElementId>(0));
     }
 
+/** Return true if an element with the supplied Id exists */
+bool DgnElements::ElementExists(DgnElementId id) {
+    // the root subject element always exists. Don't bother to check.
+    if (id == GetRootSubjectId())
+        return true;
+
+    CachedStatementPtr statement = GetStatement("SELECT 1 FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    statement->BindId(1, id);
+    return BE_SQLITE_ROW == statement->Step();
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

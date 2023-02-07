@@ -1107,7 +1107,6 @@ void RetriangulateFromBaseVertex (VuP edgeNode, VuMarkedEdgeSetP edgeSet)
     int numEdge = numNode - 3;
     VuP farNode = vu_fsucc (edgeNode);
     VuP nearNode = edgeNode;
-    double lambda;
     for (int i = 0; i < numEdge; i++)
         {
         farNode = vu_fsucc (farNode);
@@ -1115,10 +1114,10 @@ void RetriangulateFromBaseVertex (VuP edgeNode, VuMarkedEdgeSetP edgeSet)
         vu_join (m_graph, nearNode, farNode, &newA, &newB);
         if (nullptr != edgeSet)
             vu_markedEdgeSetTestAndAdd(edgeSet,newA);
-        lambda = AssessFace (newB);
+        AssessFace (newB);
         nearNode = newA;
         }
-    lambda = AssessFace (nearNode);
+    AssessFace (nearNode);
     }
 
 public:

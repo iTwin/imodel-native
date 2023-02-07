@@ -75,10 +75,10 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                     {
                     IECInstancePtr selectedInstance = dataAdapter.GetInstance();
 
-                    Json::Value expectedInstanceJson, selectedInstanceJson;
+                    BeJsDocument expectedInstanceJson, selectedInstanceJson;
                     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedInstanceJson, *instance, nullptr, true));
                     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(selectedInstanceJson, *selectedInstance, nullptr, true));
-                    ASSERT_EQ(JsonValue(expectedInstanceJson), JsonValue(selectedInstanceJson)) << "Updated instance from ecdb not as expected.";
+                    ASSERT_EQ(expectedInstanceJson, selectedInstanceJson) << "Updated instance from ecdb not as expected.";
                     }
                 }
             delete updater;

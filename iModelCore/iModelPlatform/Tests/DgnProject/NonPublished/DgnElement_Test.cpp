@@ -1634,7 +1634,7 @@ TEST_F(DgnElementTests, ElementIterator)
         Utf8PrintfString userLabel("UserLabel%d", i);
         element->SetUserLabel(userLabel.c_str());
         Utf8PrintfString codeValue("CodeValue%d", i);
-        element->SetCode(CodeSpec::CreateCode(*m_db, "TestCodeSpec", codeValue));
+        element->SetCode(CodeSpec::CreateRepositoryScopedCode(*m_db, "TestCodeSpec", codeValue));
         ASSERT_TRUE(element->Insert().IsValid());
         }
 
@@ -2399,7 +2399,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
         Placement3d().ToJson(BeJsValue{placementJson});
         inPropsJson["placement"] = placementJson;
         inPropsJson["federationGuid"] = "00000000-0000-0000-0000-000000000000";
-        DgnCode().ToJson(inPropsJson["code"]);
+        DgnCode::CreateEmpty().ToJson(inPropsJson["code"]);
         Json::Value geomJson;
         ECN::ECJsonUtilities::IGeometryToJson(geomJson, *inGeom);
         inPropsJson["geomProp"] = geomJson;
@@ -2434,7 +2434,7 @@ TEST_F(DgnElementTests, AutoHandledGeometryJsonRoundTrip)
 
         {
         BeSQLite::DbResult reopenStatus;
-        db = DgnDb::OpenDgnDb(&reopenStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        db = DgnDb::OpenIModelDb(&reopenStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
         ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, reopenStatus);
 
         auto el = db->Elements().GetElement(elId);

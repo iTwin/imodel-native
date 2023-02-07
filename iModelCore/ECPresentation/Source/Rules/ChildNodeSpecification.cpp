@@ -35,7 +35,7 @@ ChildNodeSpecificationP ChildNodeSpecification::Create(JsonValueCR json)
         Utf8String msg = json.isMember(COMMON_JSON_ATTRIBUTE_SPECTYPE)
             ? Utf8PrintfString("Invalid `" COMMON_JSON_ATTRIBUTE_SPECTYPE "` attribute value: `%s`", type)
             : Utf8String("Missing required attribute: `" COMMON_JSON_ATTRIBUTE_SPECTYPE "`");
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, msg);
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, msg);
         }
     if (!spec || !spec->ReadJson(json))
         DELETE_AND_CLEAR(spec);
@@ -109,7 +109,7 @@ static ChildrenHint ParseChildrenHint(Utf8CP str, Utf8CP attributeIdentifier)
     if (0 == strcmp("Unknown", str))
         return ChildrenHint::Unknown;
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"Always\", \"Never\" or \"Unknown\".", attributeIdentifier, str));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"Always\", \"Never\" or \"Unknown\".", attributeIdentifier, str));
     return ChildrenHint::Unknown;
     }
 
@@ -185,7 +185,7 @@ bool ChildNodeSpecification::_ReadJson(JsonValueCR json)
     else if (json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_ALWAYSRETURNSCHILDREN].asBool(false))
         {
         m_hasChildren = ChildrenHint::Always;
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             _GetJsonElementType(), CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_ALWAYSRETURNSCHILDREN, CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN));
         }
 

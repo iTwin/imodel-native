@@ -17,17 +17,17 @@ struct HierarchyLevelState
 {
 private:
     bool m_isExpanded;
-    bvector<Utf8String> m_instanceFilters;
+    bvector<std::shared_ptr<InstanceFilterDefinition const>> m_instanceFilters;
 public:
     HierarchyLevelState() : m_isExpanded(false) {}
     bool IsExpanded() const {return m_isExpanded;}
     void SetIsExpanded(bool value) {m_isExpanded = value;}
-    bvector<Utf8String> const& GetInstanceFilters() const
+    bvector<std::shared_ptr<InstanceFilterDefinition const>> const& GetInstanceFilters() const
         {
-        static bvector<Utf8String> const s_emptyInstanceFilter{ "" };
+        static bvector<std::shared_ptr<InstanceFilterDefinition const>> const s_emptyInstanceFilter{ nullptr };
         return m_instanceFilters.empty() ? s_emptyInstanceFilter : m_instanceFilters;
         }
-    void SetInstanceFilters(bvector<Utf8String> value) {m_instanceFilters = value;}
+    void SetInstanceFilters(bvector<std::shared_ptr<InstanceFilterDefinition const>> value) {m_instanceFilters = value;}
 };
 
 //=======================================================================================

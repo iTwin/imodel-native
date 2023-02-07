@@ -54,7 +54,7 @@ DgnDbPtr TestIModelCreator::CreateNewTestFile(Utf8StringCR fileName)
 
     CreateDgnDbParams createParam(fileName.c_str());
     DbResult stat = BE_SQLITE_OK;
-    DgnDbPtr bim = DgnDb::CreateDgnDb(&stat, filePath, createParam);
+    DgnDbPtr bim = DgnDb::CreateIModel(&stat, filePath, createParam);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("Failed to create new test file '%s'.", filePath.GetNameUtf8().c_str());
@@ -171,7 +171,8 @@ BentleyStatus TestIModelCreator::_UpgradeSchemas() const
         {
         if (testFile.GetInitialDgnDbVersion().CompareTo(DgnDbProfile::Get().GetExpectedVersion()) == 0)
             {
-            auto dgnDbPtr = DgnDb::OpenDgnDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            UnregisterDomainsForTest();
+            auto dgnDbPtr = DgnDb::OpenIModelDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
             if (dgnDbPtr == nullptr || status != BE_SQLITE_OK)
                 return ERROR;
             if (TestIModelCreator::LoadDomainsAndSchemas(*dgnDbPtr) != SUCCESS)
@@ -204,14 +205,15 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
 
         DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
         params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
-        DgnDbPtr bim = nullptr;
+        params.m_schemaLockHeld = true;
         DbResult stat = BE_SQLITE_OK;
-        DgnDb::OpenDgnDb(&stat, targetPath, params);
-        if (BE_SQLITE_OK != stat)
+        auto dgnDb = DgnDb::OpenIModelDb(&stat, targetPath, params);
+        if (BE_SQLITE_OK != stat || !dgnDb.IsValid())
             {
             LOG.errorv("Failed to create new upgraded test file '%s': Upgrading the old test file failed: %s", targetPath.GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
             return ERROR;
             }
+        dgnDb->SaveChanges(); // Commit the profile upgrade change
 
         LOG.infov("Created new upgraded test file '%s'.", targetPath.GetNameUtf8().c_str());
         }
@@ -237,7 +239,7 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
 
 
         DbResult stat = BE_SQLITE_OK;
-        DgnDbPtr bim = DgnDb::OpenDgnDb(&stat, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        DgnDbPtr bim = DgnDb::OpenIModelDb(&stat, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         if (BE_SQLITE_OK != stat)
             {
             LOG.errorv("Failed to upgrade schema in test file '%s': Could not open the test file read-write: %s", testFile.GetSeedPath().GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
@@ -263,13 +265,14 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
             return ERROR;
             }
         }
-        
+
     auto status = BE_SQLITE_OK;
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(DgnDbProfile::Get().GetCreatedDataFolder(), TESTIMODEL_EC32ENUMS_PROFILEUPGRADED, true))
         {
         if (testFile.GetInitialDgnDbVersion().CompareTo(DgnDbProfile::Get().GetExpectedVersion()) == 0)
             {
-            auto dgnDbPtr = DgnDb::OpenDgnDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            UnregisterDomainsForTest();
+            auto dgnDbPtr = DgnDb::OpenIModelDb(&status, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
             if (dgnDbPtr == nullptr || status != BE_SQLITE_OK)
                 return ERROR;
             if (TestIModelCreator::LoadDomainsAndSchemas(*dgnDbPtr) != SUCCESS)

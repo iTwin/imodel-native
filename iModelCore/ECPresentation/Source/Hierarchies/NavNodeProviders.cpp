@@ -16,6 +16,7 @@
 #include "NavNodesDataSource.h"
 #include "NavNodesCache.h"
 #include "NavNodesHelper.h"
+#include "HierarchiesFiltering.h"
 
 //#define CHECK_ORDERED_QUERY_PLANS
 #ifdef CHECK_ORDERED_QUERY_PLANS
@@ -38,7 +39,7 @@ static void CheckQueryPlan(Db& db, Utf8CP query, StatementCache const& stmtCache
 
     if (lastLine.ContainsI("ORDER BY"))
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, SEVERITY::LOG_ERROR, "Slow query plan");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "Possibly a slow query plan");
         }
     }
 #endif
@@ -53,15 +54,23 @@ private:
     NavNodesProviderContext* m_context;
 
 private:
+    void EnsureFilteringSupported(ChildNodeSpecificationCR spec) const
+        {
+        // the hierarchy level was requested with an instance filter - ensure the specification supports filtering
+        if (m_context->GetInstanceFilter())
+            ENSURE_SUPPORTS_FILTERING(spec);
+        }
     void AddQueryBasedNodeProvider(ChildNodeSpecification const& specification)
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create nodes provider for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
+        EnsureFilteringSupported(specification);
         NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, specification);
         m_nodeProviders.push_back(provider);
         }
     void AddCustomNodeProvider(CustomNodeSpecification const& specification)
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create nodes provider for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
+        EnsureFilteringSupported(specification);
         NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, specification);
         m_nodeProviders.push_back(provider);
         }
@@ -230,7 +239,7 @@ void NavNodesProviderContext::Init()
     m_childNodeRule = nullptr;
     m_usedClassesListener = nullptr;
     m_pageOptions = nullptr;
-    m_mayHaveArtifacts = false;
+    m_mayHaveArtifacts = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -398,13 +407,13 @@ void NavNodesProvider::InitializeNodes()
 
     if (m_nodesInitialized)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes already initialized");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes already initialized");
         return;
         }
 
     if (GetContext().HasPageOptions() && GetContext().GetPageOptions()->HasSize() && 0 == GetContext().GetPageOptions()->GetSize())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Skipping initialization due to 0 page size");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Skipping initialization due to 0 page size");
         _ResetInitializedNodes();
         return;
         }
@@ -413,7 +422,7 @@ void NavNodesProvider::InitializeNodes()
     NodesInitializationState initState = _InitializeNodes();
     if (SUCCESS != initState.GetStatus())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes not initialized - _InitializeNodes returned 'false'");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes not initialized - _InitializeNodes returned 'false'");
         return;
         }
 
@@ -422,16 +431,16 @@ void NavNodesProvider::InitializeNodes()
     if (initState.IsFullyInitialized())
         {
         m_nodesInitialized = true;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes initialized fully");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes initialized fully");
         }
     else if (GetContext().HasPageOptions() && initState.IsPageInitialized(*GetContext().GetPageOptions()))
         {
         m_nodesInitialized = true;
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Page of nodes initialized");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Page of nodes initialized");
         }
     else
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes initialized partially");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes initialized partially");
         }
     }
 
@@ -450,7 +459,7 @@ static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesPr
     else
         ctx->SetPhysicalParentNode(&parentNode);
     if (!NavNodeExtendedData(parentNode).HideNodesInHierarchy() && nullptr == parentNode.GetKey()->AsGroupingNodeKey())
-        ctx->SetInstanceFilter("");
+        ctx->SetInstanceFilter(nullptr);
     ctx->SetRemovalId(ancestorContext.GetRemovalId());
     return ctx;
     }
@@ -551,7 +560,7 @@ bool NavNodesProvider::HasNodes() const
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Has nodes?", GetName()));
     if (m_cachedHasNodes.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "'Has nodes' flag not cached in memory");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "'Has nodes' flag not cached in memory");
 
         Nullable<bool> cachedHasNodesInfo = GetResultOrLockHierarchy<Nullable<bool>>(GetContext().GetHierarchyLevelLocker(),
             [&]()
@@ -566,7 +575,7 @@ bool NavNodesProvider::HasNodes() const
         if (cachedHasNodesInfo.IsValid())
             {
             m_cachedHasNodes = cachedHasNodesInfo.Value();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag found in persistent cache: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag found in persistent cache: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
             }
         else
             {
@@ -576,7 +585,7 @@ bool NavNodesProvider::HasNodes() const
                 if (parent->DeterminedChildren())
                     {
                     m_cachedHasNodes = parent->HasChildren();
-                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag determined from parent: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag determined from parent: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
                     }
                 else if (!RequiresFullLoad())
                     {
@@ -586,14 +595,14 @@ bool NavNodesProvider::HasNodes() const
                         case ChildrenHint::Never: m_cachedHasNodes = false; break;
                         }
                     if (m_cachedHasNodes.IsValid())
-                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag determined from children hint: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+                        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag determined from children hint: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
                     }
                 }
             if (m_cachedHasNodes.IsNull())
                 {
                 MaxNodesToLoadContext checkingNodes(*this, 1);
                 m_cachedHasNodes = _HasNodes();
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("'Has nodes' flag calculated: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("'Has nodes' flag calculated: `%s`", m_cachedHasNodes.Value() ? "TRUE" : "FALSE"));
                 }
             const_cast<NavNodesProviderP>(this)->_OnHasNodesFlagSet(m_cachedHasNodes.Value());
             }
@@ -609,7 +618,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Get nodes count", GetName()));
     if (m_cachedNodesCount.IsNull())
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Nodes count not cached in memory");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes count not cached in memory");
         Nullable<size_t> cachedTotalNodesCount = GetResultOrLockHierarchy<Nullable<size_t>>(GetContext().GetHierarchyLevelLocker(),
             [&]()
             {
@@ -623,7 +632,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
         if (cachedTotalNodesCount.IsValid())
             {
             m_cachedNodesCount = cachedTotalNodesCount.Value();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Nodes count found in persistent cache: %" PRIu64, m_cachedNodesCount.Value()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count found in persistent cache: %" PRIu64, m_cachedNodesCount.Value()));
             }
         else if (GetContext().GetOptimizationFlags().GetMaxNodesToLoad() == 1)
             {
@@ -634,7 +643,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
                 return CountInfo(1, false);
 
             m_cachedNodesCount = (uint64_t)0;
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Nodes count deduced from 'has nodes' flag: %" PRIu64, m_cachedNodesCount.Value()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count deduced from 'has nodes' flag: %" PRIu64, m_cachedNodesCount.Value()));
             }
         else
             {
@@ -644,7 +653,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
 
             m_cachedNodesCount = count.GetCount();
             const_cast<NavNodesProviderP>(this)->_OnNodesCountSet(m_cachedNodesCount.Value());
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Calculated nodes count: %" PRIu64, m_cachedNodesCount.Value()));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Calculated nodes count: %" PRIu64, m_cachedNodesCount.Value()));
             }
         }
     return CountInfo(m_cachedNodesCount.Value(), true);
@@ -689,6 +698,7 @@ NavNodePtr NodesFinalizer::Finalize(NavNodeR node) const
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Finalize node %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
     Customize(node);
     DetermineChildren(node);
+    DetermineFilteringSupport(node);
     return &node;
     }
 
@@ -794,6 +804,25 @@ void NodesFinalizer::DetermineChildren(NavNodeR node) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void NodesFinalizer::DetermineFilteringSupport(NavNodeR node) const
+    {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Determine filtering support for %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
+
+    NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(*m_context, node);
+    // we consider that this provider depends on a variable if we need the variable to determine
+    // if node supports filtering
+    childrenContext->InitUsedVariablesListener({}, &m_context->GetUsedVariablesListener());
+
+    node.SetSupportsFiltering(HierarchiesFilteringHelper::SupportsFiltering(
+        &node,
+        TraverseHierarchyRulesProps(childrenContext->GetNodesFactory(), childrenContext->GetRulesPreprocessor(), childrenContext->GetSchemaHelper()),
+        nullptr
+        ));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentNode, int suppressCount) const
     {
     Utf8StringCR nodeHash = node.GetKey()->GetHash();
@@ -804,7 +833,7 @@ bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentN
         areNodesSimilar = (node.GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount() == parentNode.GetKey()->AsGroupingNodeKey()->GetGroupedInstancesCount());
         if (areNodesSimilar)
             {
-            if (node.GetInstanceKeysSelectQuery().IsNull() || parentNode.GetInstanceKeysSelectQuery().IsNull())
+            if (node.GetKey()->GetInstanceKeysSelectQuery() == nullptr || parentNode.GetKey()->GetInstanceKeysSelectQuery() == nullptr)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "Grouping node has no instance keys select query.");
                 areNodesSimilar = false;
@@ -812,13 +841,13 @@ bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node, NavNodeCR parentN
             else
                 {
                 // the query returns all rows that are only returned by one of the queries
-                auto query = UnionGenericQuery::Create({
-                    ExceptGenericQuery::Create(*StringGenericQuery::Create(*node.GetInstanceKeysSelectQuery()), *StringGenericQuery::Create(*parentNode.GetInstanceKeysSelectQuery())),
-                    ExceptGenericQuery::Create(*StringGenericQuery::Create(*parentNode.GetInstanceKeysSelectQuery()), *StringGenericQuery::Create(*node.GetInstanceKeysSelectQuery())),
+                auto query = UnionQueryBuilder::Create({
+                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*node.GetKey()->GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*parentNode.GetKey()->GetInstanceKeysSelectQuery())),
+                    ExceptQueryBuilder::Create(*StringQueryBuilder::Create(*parentNode.GetKey()->GetInstanceKeysSelectQuery()), *StringQueryBuilder::Create(*node.GetKey()->GetInstanceKeysSelectQuery())),
                     });
                 static GenericQueryResultReader<bool> s_rowsExistReader([](ECSqlStatementCR){return true;});
                 SetupCustomFunctionsContext fnContext(*m_context, query->GetExtendedData());
-                QueryExecutor executor(m_context->GetConnection(), *query);
+                QueryExecutor executor(m_context->GetConnection(), *query->GetQuery());
                 areNodesSimilar = !executor.ReadNext<bool>(s_rowsExistReader);
                 }
             }
@@ -1110,14 +1139,14 @@ DataSourceIdentifier const& CachingNavNodesProviderBase<TProvider>::GetOrCreateD
         // try to get data source identifier from cache and lock hierarchy level if it's not cached yet
         m_datasourceIdentifier = GetResultOrLockHierarchy<DataSourceIdentifier>(context.GetHierarchyLevelLocker(), [&]()
             {
-            DataSourceIdentifier identifier = context.GetNodesCache().FindDataSource(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilter()), context.GetRulesetVariables()).GetIdentifier();
+            DataSourceIdentifier identifier = context.GetNodesCache().FindDataSource(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilterPtr()), context.GetRulesetVariables()).GetIdentifier();
             return make_bpair(identifier.IsValid(), identifier);
             });
 
         if (!m_datasourceIdentifier.IsValid())
             {
             IHierarchyCache::SavepointPtr savepoint = context.GetNodesCache().CreateSavepoint();
-            DataSourceInfo datasourceInfo(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilter()), context.GetRelatedRulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
+            DataSourceInfo datasourceInfo(DataSourceIdentifier(GetOrCreateHierarchyLevelIdentifier().GetId(), index, context.GetInstanceFilterPtr()), context.GetRelatedRulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
             context.GetNodesCache().Cache(datasourceInfo);
             m_datasourceIdentifier = datasourceInfo.GetIdentifier();
             if (nullptr != createdNew)
@@ -1460,13 +1489,13 @@ std::unique_ptr<DirectNodesIterator> CustomNodesProvider::_CreateDirectNodesIter
 
     if (m_specification.GetNodeType().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "Type is a required attribute for custom node specifications and is not set. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Type is a required attribute for custom node specifications and is not set. Returning empty list.");
         return nullptr;
         }
 
     if (m_specification.GetLabel().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, LOG_ERROR, "Label is a required attribute for custom node specifications and is not set. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Label is a required attribute for custom node specifications and is not set. Returning empty list.");
         return nullptr;
         }
 
@@ -1493,16 +1522,16 @@ std::unique_ptr<DirectNodesIterator> CustomNodesProvider::_CreateDirectNodesIter
     GetContext().GetNodesCache().Cache(*node, GetIdentifier(), 0, NodeVisibility::Visible);
     nodes.push_back(node);
     const_cast<CustomNodesProvider*>(this)->_OnDirectNodesRead(1);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Created 1 direct node based on CustomNode specification");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Created 1 direct node based on CustomNode specification");
     return std::make_unique<BVectorDirectNodesIterator>(nodes);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBasedNodesProvider::SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds)
+void QueryBasedNodesProvider::SetQuery(PresentationQueryBuilderCP query, bmap<ECClassId, bool> const& usedClassIds)
     {
-    m_query = &query;
+    m_query = query;
     m_usedClassIds = usedClassIds;
     }
 
@@ -1514,9 +1543,9 @@ struct SpecificationFiltersBuilder : PresentationRuleSpecificationVisitor
 private:
     IHierarchyCache const& m_nodesCache;
     RulesetVariables const& m_rulesetVariables;
-    Utf8StringCR m_instanceFilter;
+    InstanceFilterDefinitionCP m_instanceFilter;
     NavNodeCP m_parent;
-    NavigationQueryCR m_query;
+    PresentationQueryBuilderCR m_query;
     DataSourceFilter m_filter;
 
 private:
@@ -1547,7 +1576,7 @@ protected:
             return;
 
         bvector<ECClassId> usedRelationshipIds = ContainerHelpers::TransformContainer<bvector<ECClassId>>(
-            m_query.GetResultParameters().GetUsedRelationshipClasses(), [](ECRelationshipClassCP rel){return rel->GetId();});
+            m_query.GetNavigationResultParameters().GetUsedRelationshipClasses(), [](ECRelationshipClassCP rel){return rel->GetId();});
         m_filter = DataSourceFilter(std::make_unique<DataSourceFilter::RelatedInstanceInfo>(usedRelationshipIds,
             specification.GetRequiredRelationDirection(), parent->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys()), nullptr);
         }
@@ -1572,7 +1601,7 @@ protected:
             return;
 
         bvector<ECClassId> usedRelationshipIds = ContainerHelpers::TransformContainer<bvector<ECClassId>>(
-            m_query.GetResultParameters().GetUsedRelationshipClasses(), [](ECRelationshipClassCP rel) {return rel->GetId(); });
+            m_query.GetNavigationResultParameters().GetUsedRelationshipClasses(), [](ECRelationshipClassCP rel) {return rel->GetId(); });
         m_filter = DataSourceFilter(std::make_unique<DataSourceFilter::RelatedInstanceInfo>(usedRelationshipIds,
             specification.GetRequiredRelationDirection(), parent->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys()), nullptr);
         }
@@ -1586,7 +1615,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    SpecificationFiltersBuilder(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, NavigationQueryCR query)
+    SpecificationFiltersBuilder(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
         : m_nodesCache(nodesCache), m_parent(parent), m_query(query), m_rulesetVariables(rulesetVariables), m_instanceFilter(instanceFilter)
         {}
     DataSourceFilter GetFilter() const {return m_filter;}
@@ -1595,13 +1624,14 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DataSourceFilter GetSpecificationFilter(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, NavigationQueryCR query)
+static DataSourceFilter GetSpecificationFilter(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
-    if (nullptr == query.GetResultParameters().GetSpecification())
+    auto const& params = query.GetNavigationResultParameters();
+    if (nullptr == params.GetSpecification())
         return DataSourceFilter();
 
     SpecificationFiltersBuilder filtersBuilder(nodesCache, rulesetVariables, instanceFilter, parent, query);
-    query.GetResultParameters().GetSpecification()->Accept(filtersBuilder);
+    params.GetSpecification()->Accept(filtersBuilder);
     return filtersBuilder.GetFilter();
     }
 
@@ -1621,7 +1651,7 @@ struct QueryBasedNodesProvider::Savepoint
         if (m_shouldCancel)
             {
             m_cacheSavepoint->Cancel();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Cancelled hierarchy cache savepoint");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Cancelled hierarchy cache savepoint");
             }
         }
     void Commit() {m_shouldCancel = false;}
@@ -1630,9 +1660,9 @@ struct QueryBasedNodesProvider::Savepoint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8CP GetNodesTypeFromNavigationQuery(NavigationQueryCR query)
+static Utf8CP GetNodesTypeFromNavigationQuery(PresentationQueryBuilderCR query)
     {
-    switch (query.GetResultParameters().GetResultType())
+    switch (query.GetNavigationResultParameters().GetResultType())
         {
         case NavigationQueryResultType::ECInstanceNodes:
         case NavigationQueryResultType::MultiECInstanceNodes:
@@ -1650,28 +1680,29 @@ static Utf8CP GetNodesTypeFromNavigationQuery(NavigationQueryCR query)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8StringCR GetSpecificationHashFromNavigationQuery(NavigationQueryCR query)
+static Utf8StringCR GetSpecificationHashFromNavigationQuery(PresentationQueryBuilderCR query)
     {
     static const Utf8String s_empty;
-    ChildNodeSpecificationCP spec = query.GetResultParameters().GetSpecification();
+    ChildNodeSpecificationCP spec = query.GetNavigationResultParameters().GetSpecification();
     return spec ? spec->GetHash() : s_empty;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NodesCountMightChangeToZeroCheap(NavigationQueryCR query)
+static bool NodesCountMightChangeToZeroCheap(PresentationQueryBuilderCR query)
     {
-    bool hasHideFlags = query.GetResultParameters().GetNavNodeExtendedData().HideIfNoChildren()
-        || query.GetResultParameters().GetNavNodeExtendedData().HideNodesInHierarchy()
-        || query.GetResultParameters().GetNavNodeExtendedData().HasHideExpression();
+    auto const& params = query.GetNavigationResultParameters();
+    bool hasHideFlags = params.GetNavNodeExtendedData().HideIfNoChildren()
+        || params.GetNavNodeExtendedData().HideNodesInHierarchy()
+        || params.GetNavNodeExtendedData().HasHideExpression();
     return hasHideFlags;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NodesCountMightChangeToZeroExpensive(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, NavigationQueryCR query)
+static bool NodesCountMightChangeToZeroExpensive(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
     // we may also need to hide nodes if they're being created by the same specification as
     // one of the parent nodes
@@ -1690,7 +1721,7 @@ static bool NodesCountMightChangeToZeroExpensive(IHierarchyCache const& nodesCac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NodesCountMightChangeToZero(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, NavigationQueryCR query)
+static bool NodesCountMightChangeToZero(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
     return NodesCountMightChangeToZeroCheap(query) || NodesCountMightChangeToZeroExpensive(nodesCache, rulesetVariables, instanceFilter, parent, query);
     }
@@ -1698,11 +1729,12 @@ static bool NodesCountMightChangeToZero(IHierarchyCache const& nodesCache, Rules
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NodesCountMightChange(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, Utf8StringCR instanceFilter, NavNodeCP parent, NavigationQueryCR query)
+static bool NodesCountMightChange(IHierarchyCache const& nodesCache, RulesetVariables const& rulesetVariables, InstanceFilterDefinitionCP instanceFilter, NavNodeCP parent, PresentationQueryBuilderCR query)
     {
+    auto const& params = query.GetNavigationResultParameters();
     bool hasHideFlags = NodesCountMightChangeToZeroCheap(query)
-        || query.GetResultParameters().GetNavNodeExtendedData().HideIfGroupingValueNotSpecified() && query.GetResultParameters().GetResultType() == NavigationQueryResultType::PropertyGroupingNodes
-        || query.GetResultParameters().GetNavNodeExtendedData().HideIfOnlyOneChild();
+        || params.GetNavNodeExtendedData().HideIfGroupingValueNotSpecified() && params.GetResultType() == NavigationQueryResultType::PropertyGroupingNodes
+        || params.GetNavNodeExtendedData().HideIfOnlyOneChild();
     return hasHideFlags || NodesCountMightChangeToZeroExpensive(nodesCache, rulesetVariables, instanceFilter, parent, query);
     }
 
@@ -1719,10 +1751,11 @@ std::unique_ptr<DirectNodesIterator> QueryBasedNodesProvider::_CreateDirectNodes
     SetupCustomFunctionsContext fnContext(GetContext(), m_query->GetExtendedData());
 
     // read all nodes in this provider
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Query for direct nodes: `%s`", m_query->ToString().c_str()));
-    auto nodesReader = NavNodesReader::Create(GetContext().GetNodesFactory(), GetContext().GetConnection(), *m_query->GetContract(),
-        m_query->GetResultParameters().GetResultType(), m_query->GetResultParameters().GetNavNodeExtendedData(), parent.IsValid() ? parent->GetKey().get() : nullptr);
-    QueryExecutor executor(GetContext().GetConnection(), *m_query);
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Query for direct nodes: `%s`", m_query->GetQuery()->GetQueryString().c_str()));
+    auto contract = NavigationQueryContractsFilter(*m_query).GetContract();
+    auto nodesReader = NavNodesReader::Create(GetContext().GetNodesFactory(), GetContext().GetConnection(), *contract,
+        m_query->GetNavigationResultParameters().GetResultType(), m_query->GetNavigationResultParameters().GetNavNodeExtendedData(), parent.IsValid() ? parent->GetKey().get() : nullptr);
+    QueryExecutor executor(GetContext().GetConnection(), *m_query->GetQuery());
     NavNodePtr node;
     while (QueryExecutorStatus::Row == executor.ReadNext(node, *nodesReader))
         {
@@ -1743,7 +1776,7 @@ std::unique_ptr<DirectNodesIterator> QueryBasedNodesProvider::_CreateDirectNodes
     const_cast<QueryBasedNodesProvider*>(this)->_OnDirectNodesRead(nodes.size());
     savepoint.Commit();
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Created %" PRIu64 " direct nodes based on query based specification", (uint64_t)nodes.size()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " direct nodes based on query based specification", (uint64_t)nodes.size()));
     return std::make_unique<BVectorDirectNodesIterator>(nodes);
     }
 
@@ -1779,7 +1812,7 @@ BentleyStatus QueryBasedNodesProvider::InitializePartialProviders(bvector<PageNo
     size_t offset = 0;
     for (auto const& pageCounts : pageSizes)
         {
-        ComplexNavigationQueryPtr pageQuery = ComplexNavigationQuery::Create();
+        auto pageQuery = ComplexQueryBuilder::Create();
         pageQuery->SelectAll();
         pageQuery->From(*m_query->Clone());
         pageQuery->Limit(pageCounts.total, offset);
@@ -1799,7 +1832,7 @@ size_t const QueryBasedNodesProvider::PartialProviderSize = 1000;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier)
+QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextR context, PresentationQueryBuilderCR query, bmap<ECClassId, bool> const& usedClassIds, DataSourceIdentifier parentDatasourceIdentifier)
     : T_Super(context), m_query(&query), m_usedClassIds(usedClassIds), m_offset(0), m_parentDatasourceIdentifier(parentDatasourceIdentifier)
     {}
 
@@ -1957,7 +1990,7 @@ QueryBasedNodesProvider::NodeCounts QueryBasedNodesProvider::QueryNodeCounts() c
     SetupCustomFunctionsContext fnContext(GetContext(), m_query->GetExtendedData());
 
     RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create();
-    switch (m_query->GetContract()->GetResultType())
+    switch (m_query->GetNavigationResultParameters().GetResultType())
         {
         case NavigationQueryResultType::ECInstanceNodes:
             contract->AddField(*PresentationQueryContractSimpleField::Create("NodeIdentifier", ECInstanceNodesQueryContract::ECInstanceIdFieldName));
@@ -1968,12 +2001,12 @@ QueryBasedNodesProvider::NodeCounts QueryBasedNodesProvider::QueryNodeCounts() c
         default:
             contract->AddField(*PresentationQueryContractSimpleField::Create("NodeIdentifier", "NULL"));
         }
-    ComplexGenericQueryPtr countQuery = ComplexGenericQuery::Create();
+    auto countQuery = ComplexQueryBuilder::Create();
     countQuery->SelectContract(*contract);
-    countQuery->From(*StringGenericQuery::Create(m_query->ToString(), m_query->GetBoundValues()));
+    countQuery->From(*m_query->Clone());
 
     PageCountsAccumulator pageCountsAccumulator;
-    QueryExecutorHelper::ExecuteQuery(GetContext().GetConnection(), *countQuery, pageCountsAccumulator, GetContext().GetCancelationToken());
+    QueryExecutorHelper::ExecuteQuery(GetContext().GetConnection(), *countQuery->GetQuery(), pageCountsAccumulator, GetContext().GetCancelationToken());
     NodeCounts counts{ pageCountsAccumulator.GetTotalUniqueRecordsCount(), pageCountsAccumulator.GetPageCounts() };
 
     dsInfo.SetTotalNodesCount(counts.totalUnique);
@@ -2005,55 +2038,60 @@ CountInfo QueryBasedNodesProvider::_GetTotalNodesCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ComplexGenericQueryPtr ToGenericQuery(NavigationQueryCR navigationQuery, PresentationQueryContractCR contract)
+static std::unique_ptr<PresentationQuery> CreateSelect1Query(PresentationQueryBuilderCR navigationQuery)
     {
-    auto queryWithoutOrdering = navigationQuery.Clone();
-    QueryBuilderHelpers::RemoveOrdering<NavigationQuery>(*queryWithoutOrdering);
+    RefCountedPtr<SimpleQueryContract> select1 = SimpleQueryContract::Create({ PresentationQueryContractSimpleField::Create("", "1", false) });
 
-    ComplexGenericQueryPtr genericQuery = ComplexGenericQuery::Create();
-    genericQuery->SelectContract(contract);
-    genericQuery->From(*StringGenericQuery::Create(queryWithoutOrdering->ToString(), queryWithoutOrdering->GetBoundValues()));
-    return genericQuery;
+    auto queryWithoutOrdering = navigationQuery.Clone();
+    QueryBuilderHelpers::RemoveOrdering(*queryWithoutOrdering);
+
+    auto genericQuery = ComplexQueryBuilder::Create();
+    genericQuery->SelectContract(*select1);
+    genericQuery->From(*queryWithoutOrdering);
+    return genericQuery->CreateQuery();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static GenericQueryPtr CreateRowsCheckQuery(NavigationQueryCR source)
+static std::unique_ptr<PresentationQuery> CreateRowsCheckQuery(PresentationQueryBuilderCR source)
     {
-    if (source.AsUnionQuery())
+    if (source.AsUnionQueryBuilder())
         {
-        return UnionGenericQuery::Create(ContainerHelpers::TransformContainer<bvector<GenericQueryPtr>>(source.AsUnionQuery()->GetQueries(), [](NavigationQueryPtr const& nestedQuery)
+        return UnionQueryBuilder::Create(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(source.AsUnionQueryBuilder()->GetQueries(), [](auto const& nestedQuery)
             {
-            return CreateRowsCheckQuery(*nestedQuery);
-            }));
+            return StringQueryBuilder::Create(*CreateRowsCheckQuery(*nestedQuery));
+            }))->CreateQuery();
         }
-    if (source.AsExceptQuery())
+    if (source.AsExceptQueryBuilder())
         {
-        return ExceptGenericQuery::Create(*CreateRowsCheckQuery(*source.AsExceptQuery()->GetBase()), *CreateRowsCheckQuery(*source.AsExceptQuery()->GetExcept()));
-        }
-
-    RefCountedPtr<SimpleQueryContract> select1 = SimpleQueryContract::Create({ PresentationQueryContractSimpleField::Create("", "1", false) });
-    if (source.AsStringQuery())
-        {
-        return ToGenericQuery(source, *select1);
+        return ExceptQueryBuilder::Create(
+            *StringQueryBuilder::Create(*CreateRowsCheckQuery(*source.AsExceptQueryBuilder()->GetBase())),
+            *StringQueryBuilder::Create(*CreateRowsCheckQuery(*source.AsExceptQueryBuilder()->GetExcept()))
+            )->CreateQuery();
         }
 
-    if (source.AsComplexQuery())
+    if (source.AsStringQueryBuilder())
         {
-        ComplexNavigationQueryCR complexSource = *source.AsComplexQuery();
+        return CreateSelect1Query(source);
+        }
+
+    if (source.AsComplexQueryBuilder())
+        {
+        auto const& complexSource = *source.AsComplexQueryBuilder();
         auto contract = complexSource.GetContract();
+        auto resultType = source.GetNavigationResultParameters().GetResultType();
 
-        if (contract && contract->GetResultType() == NavigationQueryResultType::ClassGroupingNodes && dynamic_cast<ECClassGroupingNodesQueryContract const*>(contract))
-            return ToGenericQuery(*static_cast<ECClassGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery(), *select1);
+        if (resultType == NavigationQueryResultType::ClassGroupingNodes && dynamic_cast<ECClassGroupingNodesQueryContract const*>(contract))
+            return CreateSelect1Query(*static_cast<ECClassGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery());
 
-        if (contract && contract->GetResultType() == NavigationQueryResultType::DisplayLabelGroupingNodes && dynamic_cast<DisplayLabelGroupingNodesQueryContract const*>(contract))
-            return ToGenericQuery(*static_cast<DisplayLabelGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery(), *select1);
+        if (resultType == NavigationQueryResultType::DisplayLabelGroupingNodes && dynamic_cast<DisplayLabelGroupingNodesQueryContract const*>(contract))
+            return CreateSelect1Query(*static_cast<DisplayLabelGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery());
 
-        if (contract && contract->GetResultType() == NavigationQueryResultType::PropertyGroupingNodes && dynamic_cast<ECPropertyGroupingNodesQueryContract const*>(contract))
-            return ToGenericQuery(*static_cast<ECPropertyGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery(), *select1);
+        if (resultType == NavigationQueryResultType::PropertyGroupingNodes && dynamic_cast<ECPropertyGroupingNodesQueryContract const*>(contract))
+            return CreateSelect1Query(*static_cast<ECPropertyGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery());
 
-        return ToGenericQuery(source, *select1);
+        return CreateSelect1Query(source);
         }
 
     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Invalid query type");
@@ -2062,7 +2100,7 @@ static GenericQueryPtr CreateRowsCheckQuery(NavigationQueryCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static size_t QueryHasNodes(NavNodesProviderContextCR context, NavNodeCP virtualParent, NavigationQueryCR query, DataSourceIdentifier const& dsIdentifier)
+static size_t QueryHasNodes(NavNodesProviderContextCR context, NavNodeCP virtualParent, PresentationQueryBuilderCR query, DataSourceIdentifier const& dsIdentifier)
     {
     auto scope = Diagnostics::Scope::Create("Query has nodes");
 
@@ -2070,7 +2108,7 @@ static size_t QueryHasNodes(NavNodesProviderContextCR context, NavNodeCP virtual
     SetupCustomFunctionsContext fnContext(context, query.GetExtendedData());
 
     auto rowsCheckQuery = CreateRowsCheckQuery(query);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Rows check query: `%s`", rowsCheckQuery->ToString().c_str()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Rows check query: `%s`", rowsCheckQuery->GetQueryString().c_str()));
 
     int value;
     static GenericQueryResultReader<int> s_emptyReader([](ECSqlStatementCR){return 0;});
@@ -2099,7 +2137,7 @@ bool QueryBasedNodesProvider::_HasNodes() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::unordered_set<ECClassCP> QueryBasedNodesProvider::_GetResultInstanceNodesClasses() const
     {
-    return m_query->GetResultParameters().GetSelectInstanceClasses();
+    return m_query->GetNavigationResultParameters().GetSelectInstanceClasses();
     }
 
 /*=================================================================================**//**
@@ -2131,11 +2169,11 @@ QueryBasedSpecificationNodesProvider::QueryBasedSpecificationNodesProvider(NavNo
 
     SpecificationUsedClassesListener usedClasses(GetContext().GetUsedClassesListener());
     auto queryBuilder = CreateQueryBuilder(usedClasses);
-    bvector<NavigationQueryPtr> queries = CreateQueries(*queryBuilder);
+    auto queries = CreateQueries(*queryBuilder);
 
     bset<Utf8String> usedVariables = GetContext().GetRelatedVariablesIds();
 
-    for (NavigationQueryPtr const& query : queries)
+    for (auto const& query : queries.GetQueries())
         {
         NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), usedVariables, true);
         AddProvider(*QueryBasedNodesProvider::Create(*nestedContext, *query, usedClasses.GetUsedClassIds()));
@@ -2161,7 +2199,7 @@ std::unique_ptr<NavigationQueryBuilder> QueryBasedSpecificationNodesProvider::Cr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> QueryBasedSpecificationNodesProvider::CreateQueries(NavigationQueryBuilderCR queryBuilder) const
+QuerySet QueryBasedSpecificationNodesProvider::CreateQueries(NavigationQueryBuilderCR queryBuilder) const
     {
     auto scope = Diagnostics::Scope::Create("Create queries");
 
@@ -2188,8 +2226,7 @@ bvector<NavigationQueryPtr> QueryBasedSpecificationNodesProvider::CreateQueries(
         return queryBuilder.GetQueries(*GetContext().GetChildNodeRule(), m_specification, *parent);
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "Attempting to create queries for provider which has neither root nor child nodes context");
-    return bvector<NavigationQueryPtr>();
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Attempting to create queries for provider which has neither root nor child nodes context");
     }
 
 /*=================================================================================**//**
@@ -2333,11 +2370,11 @@ std::unique_ptr<DirectNodesIterator> NodesCreatingMultiNavNodesProvider::GetDire
         });
     if (cachedDirectNodesIterator)
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Direct nodes found in cache");
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Direct nodes found in cache");
         return cachedDirectNodesIterator;
         }
 
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, "Direct nodes not found in cache, creating");
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Direct nodes not found in cache, creating");
     return _CreateDirectNodesIterator();
     }
 
@@ -2424,7 +2461,7 @@ NodesInitializationState NodesCreatingMultiNavNodesProvider::_InitializeNodes()
             if (GetContext().GetOptimizationFlags().GetMaxNodesToLoad() <= loadedNodesCount)
                 {
                 // found what we're looking for - no need to handle other nodes
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_DEBUG, Utf8PrintfString("Found provider with nodes while looking for children. Break at %" PRIu64 " after handling %" PRIu64 " / %" PRIu64 " nodes.",
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Found provider with nodes while looking for children. Break at %" PRIu64 " after handling %" PRIu64 " / %" PRIu64 " nodes.",
                     (uint64_t)providerIndex, (uint64_t)handledNodesCount, (uint64_t)nodesIterator->NodesCount()));
                 break;
                 }
@@ -3240,11 +3277,6 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     NavNodeExtendedData targetExtendedData(target);
     NavNodeExtendedData sourceExtendedData(source);
 
-    target.SetInstanceKeysSelectQuery(UnionGenericQuery::Create({
-        StringGenericQuery::Create(*target.GetInstanceKeysSelectQuery()),
-        StringGenericQuery::Create(*source.GetInstanceKeysSelectQuery()),
-        }));
-
     bvector<ECClassInstanceKey> instanceKeys = target.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
     for (auto const& sourceInstanceKey : source.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys())
         {
@@ -3262,8 +3294,15 @@ static void MergeInstanceKeys(NavNodesProviderContextCR context, NavNodeR target
     targetExtendedData.AddMergedNodeId(source.GetNodeId());
 
     NavNodeCPtr parent = context.GetVirtualParentNode();
-    target.SetNodeKey(*ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
-        parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys));
+    ECInstancesNodeKeyPtr nodeKey = ECInstancesNodeKey::Create(context.GetConnection(), target.GetKey()->GetSpecificationIdentifier(),
+        parent.IsValid() ? parent->GetKey().get() : nullptr, instanceKeys);
+
+    nodeKey->SetInstanceKeysSelectQuery(UnionQueryBuilder::Create({
+        StringQueryBuilder::Create(*target.GetKey()->GetInstanceKeysSelectQuery()),
+        StringQueryBuilder::Create(*source.GetKey()->GetInstanceKeysSelectQuery()),
+        })->CreateQuery());
+
+    target.SetNodeKey(*nodeKey);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -3345,7 +3384,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
     // it's more efficient to use the cached version compared to loading and merging everything again, so just return the cached provider.
-    DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilter());
+    DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilterPtr());
     DataSourceInfo mergedDatasourceInfo = context->GetNodesCache().FindDataSource(mergedDatasourceIdentifier, context->GetRulesetVariables());
     if (mergedDatasourceInfo.GetIdentifier().IsValid())
         {
@@ -3822,7 +3861,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetResultInstanceNodes
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId]"
         "  CROSS JOIN [" NODESCACHE_TABLENAME_NodeInstances "] ni on [ni].[NodeId] = [n].[Id]"
-        " WHERE [ds].[InstanceFilter] = ? "
+        " WHERE [ds].[InstanceFilter] IS ? "
         "       AND [dsn].[Visibility] = ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
@@ -3835,7 +3874,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetResultInstanceNodes
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_physicalHierarchyLevelId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, GetContext().GetRemovalId());
-    stmt->BindText(bindingIndex++, GetContext().GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
     stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
@@ -3860,7 +3899,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
-        " WHERE [ds].[InstanceFilter] = ? "
+        " WHERE [ds].[InstanceFilter] IS ? "
         "       AND [dsn].[Visibility] = ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
         " ORDER BY " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "], [dsn].[NodeIndex]) ";
@@ -3880,7 +3919,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
     int bindingIndex = 1;
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_physicalHierarchyLevelId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, GetContext().GetRemovalId());
-    stmt->BindText(bindingIndex++, GetContext().GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
     stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
     if (GetContext().GetPageOptions())
@@ -3908,7 +3947,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         " WHERE [dsn].[Visibility] = ? "
-        "       AND [ds].[InstanceFilter] = ? "
+        "       AND [ds].[InstanceFilter] IS ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count query: `%s`", query));
@@ -3921,7 +3960,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, m_physicalHierarchyLevelId);
     NodesCacheHelpers::BindGuid(*stmt, bindingIndex++, GetContext().GetRemovalId());
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
-    stmt->BindText(bindingIndex++, GetContext().GetInstanceFilter(), Statement::MakeCopy::No);
+    NodesCacheHelpers::BindInstanceFilter(*stmt, bindingIndex++, GetContext().GetInstanceFilter());
     stmt->BindText(bindingIndex++, GetContext().GetRulesetVariables().GetSerializedInternalJsonObjectString(), Statement::MakeCopy::No);
 
     return stmt;
