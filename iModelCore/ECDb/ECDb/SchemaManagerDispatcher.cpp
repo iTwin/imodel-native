@@ -977,7 +977,7 @@ VirtualSchemaManager const& MainSchemaManager::GetVirtualSchemaManager() const {
     return m_vsm;
 }
 
-#ifndef NDEBUG
+#if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
 void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> const& schemas, Utf8CP suffix)
     {
     BeFileName directory(parentDirectory);

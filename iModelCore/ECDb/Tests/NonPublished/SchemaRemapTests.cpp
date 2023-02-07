@@ -4218,13 +4218,13 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-/*TEST_F(SchemaRemapTestFixture, ImportSchemasFromExternalFolders)
+TEST_F(SchemaRemapTestFixture, ImportSchemasFromExternalFolders)
     {
     //This and the next test are used to diagnose problems with a single or a set of schemas loaded from the local file system.
     //That is useful so the file can be modified and executed many times without the need to rebuild the test.
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
     ASSERT_EQ(SUCCESS, SetupECDb("ImportSchemasFromExternalFolders.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"));
     BeFileName schemasFolder(L"F:\\data\\input1\\");
@@ -4232,7 +4232,7 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
 
     BeFileName importFolder(L"F:\\data\\input2\\");
     ASSERT_EQ(SUCCESS, ImportSchemasFromFolder(importFolder));
-    }*/
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
