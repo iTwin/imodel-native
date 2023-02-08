@@ -5,7 +5,17 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.2` |
-| ECSQL   | `1.0.1.1` |
+| ECSQL   | `1.0.2.1` |
+
+## `2/6/2023`: Add support for GREATEST/LEAST Sql functions
+
+The function let you find inline a greatest or least value out of specified values.
+
+ECSQL version change from  `1.0.1.1` to  `1.0.2.1`
+
+```sql
+    SELECT GREATEST(1,2,3), LEAST (1,2,3)
+```
 
 ## `2/1/2023`: Add support for runtime instance and property accessor in ECSQL (beta)
 
