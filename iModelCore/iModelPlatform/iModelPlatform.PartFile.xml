@@ -145,8 +145,8 @@
     <!-- Entry point part -->
     <Part Name="RunIModelEvolutionTests" PrgOutputDir="IModelEvolutionTests">
         <SubPart PartName="IModelEvolutionRunAllTestRunners"/>
-        <SubNuGetProduct NuGetProductName="IModelEvolutionTestRunnerNuget_imodelNative"/>
-        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget_imodelNative"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestRunnerNuget"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget"/>
     </Part>
 
     <!-- Runs all compatibility tests:
@@ -239,13 +239,13 @@
         </Bindings>
     </Part>
 
-    <NuGetProduct Name="IModelEvolutionTestRunnerNuget_imodelNative" Description="Create nuget that contains the current test runner">
+    <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Create nuget that contains the current test runner">
         <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BuildIModelEvolutionGTest"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     </NuGetProduct>
 
-    <NuGetProduct Name="IModelEvolutionTestFilesNuget_imodelNative" Description="Create the test files nuget">
+    <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Create the test files nuget">
         <Directories DirectoryListName="IModelEvolutionTestFilesForNugetPackage"/>
         <SubPart PartName="PrepareIModelEvolutionTestFilesNugetPackaging"/>
     </NuGetProduct>
