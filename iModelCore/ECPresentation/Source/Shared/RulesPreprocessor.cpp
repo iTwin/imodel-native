@@ -1013,7 +1013,6 @@ static bvector<NavNodeKeyCPtr> GetInputNodeKeys(INavNodeKeysContainerCR inputNod
         {
         if (inputNodeKey->AsLabelGroupingNodeKey() && instanceKeyProvider != nullptr)
             {
-
             bvector<NavNodeKeyCPtr> keys = SplitLabelGroupedKey(connection, *instanceKeyProvider, *inputNodeKey->AsLabelGroupingNodeKey());
             ContainerHelpers::Push(singleNodeKeys, keys);
             }
