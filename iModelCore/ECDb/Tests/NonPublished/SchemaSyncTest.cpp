@@ -70,7 +70,7 @@ struct SchemaSyncTestFixture : public ECDbTestFixture {
 };
 
 
-TEST_F(SchemaSyncTestFixture, test) {
+TEST_F(SchemaSyncTestFixture, Test) {
     auto syncDb = CreateECDb("sync.db");
     const auto synDbFile = std::string{syncDb->GetDbFileName()};
     syncDb = nullptr;
@@ -85,66 +85,120 @@ TEST_F(SchemaSyncTestFixture, test) {
         ASSERT_EQ(SchemaImportResult::OK, ecdb.Schemas().SyncSchemas(synDbFile, SchemaManager::SyncAction::Pull));
         ecdb.SaveChanges();
     };
+    auto getIndexDDL = [&](ECDbCR ecdb, Utf8CP indexName) -> std::string {
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "select sql from sqlite_master where name=?"));
+        stmt.BindText(1, indexName, Statement::MakeCopy::No);
+        if (stmt.Step() == BE_SQLITE_ROW) {
+            return stmt.GetValueText(0);
+        }
+        return "";
+    };
 
     pushChangesToSyncDb(*b1);
 
-    auto schema1 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-		<ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-			<ECEntityClass typeName="Pipe1">
-				<ECProperty propertyName="p1" typeName="int" />
-				<ECProperty propertyName="p2" typeName="int" />
-			</ECEntityClass>
-		</ECSchema>)xml");
+    if ("import schema into b1") {
+        auto schema1 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Pipe1">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <DbIndexList xmlns="ECDbMap.02.00.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>idx_pipe1_p1</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>p1</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="p1" typeName="int" />
+                    <ECProperty propertyName="p2" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml");
+        ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b1, schema1));
+        b1->SaveChanges();
+        ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
+        ASSERT_STRCASEEQ(getIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
+        pushChangesToSyncDb(*b1);
+    }
 
+    if("check if sync-db has changes but not tables and index") {
+        syncDb = OpenECDb(synDbFile.c_str());
+        auto pipe1 = syncDb->Schemas().GetClass("TestSchema1", "Pipe1");
+        ASSERT_NE(pipe1, nullptr);
+        ASSERT_EQ(pipe1->GetPropertyCount(), 2);
+        ASSERT_FALSE(syncDb->TableExists("ts_Pipe1"));
+        ASSERT_STRCASEEQ(getIndexDDL(*syncDb, "idx_pipe1_p1").c_str(), "");
+        syncDb = nullptr;
+    }
 
-    ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b1, schema1));
-    b1->SaveChanges();
-	ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
-    pushChangesToSyncDb(*b1);
+	if("pull changes from sync-db into b2 and verify class, table and index exists") {
+        pullChangesFromSyncDb(*b2);
+        auto pipe1 = b2->Schemas().GetClass("TestSchema1", "Pipe1");
+        ASSERT_NE(pipe1, nullptr);
+        ASSERT_EQ(pipe1->GetPropertyCount(), 2);
+        ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
+        ASSERT_STRCASEEQ(getIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
+    }
 
-	// check if sync db has schema changes
-	syncDb = OpenECDb(synDbFile.c_str());
-    auto pipe1 = syncDb->Schemas().GetClass("TestSchema1", "Pipe1");
-    ASSERT_NE(pipe1, nullptr);
-	ASSERT_EQ(pipe1->GetPropertyCount(), 2);
-	ASSERT_FALSE(syncDb->TableExists("ts_Pipe1"));
-    syncDb = nullptr;
+    if ("update schema by adding more properties and expand index in b2") {
+        auto schema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Pipe1">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <DbIndexList xmlns="ECDbMap.02.00.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>idx_pipe1_p1</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>p1</string>
+                                        <string>p2</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="p1" typeName="int" />
+                    <ECProperty propertyName="p2" typeName="int" />
+                    <ECProperty propertyName="p3" typeName="int" />
+                    <ECProperty propertyName="p4" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml");
+        ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b2, schema2));
+        b2->SaveChanges();
+        ASSERT_STRCASEEQ(getIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+        pushChangesToSyncDb(*b2);
+    }
 
-	// pull changes from sync db into client db and check if schema changes was there and valid
-    pullChangesFromSyncDb(*b2);
-    pipe1 = b2->Schemas().GetClass("TestSchema1", "Pipe1");
-    ASSERT_NE(pipe1, nullptr);
-	ASSERT_EQ(pipe1->GetPropertyCount(), 2);
-	ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
+	if("check if sync-db has changes but not tables and index") {
+        syncDb = OpenECDb(synDbFile.c_str());
+        auto pipe1 = syncDb->Schemas().GetClass("TestSchema1", "Pipe1");
+        ASSERT_NE(pipe1, nullptr);
+        ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+        ASSERT_STRCASEEQ(getIndexDDL(*syncDb, "idx_pipe1_p1").c_str(), "");
+        syncDb = nullptr;
+    }
 
-	// add two more properties from client db and push it to sync db.
-    auto schema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-		<ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-			<ECEntityClass typeName="Pipe1">
-				<ECProperty propertyName="p1" typeName="int" />
-				<ECProperty propertyName="p2" typeName="int" />
-				<ECProperty propertyName="p3" typeName="int" />
-				<ECProperty propertyName="p4" typeName="int" />
-			</ECEntityClass>
-		</ECSchema>)xml");
-    ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b2, schema2));
-    b2->SaveChanges();
-	pushChangesToSyncDb(*b2);
-
-	// check if sync db has schema changes
-	syncDb = OpenECDb(synDbFile.c_str());
-    pipe1 = syncDb->Schemas().GetClass("TestSchema1", "Pipe1");
-    ASSERT_NE(pipe1, nullptr);
-	ASSERT_EQ(pipe1->GetPropertyCount(), 4);
-    syncDb = nullptr;
-
-
-	// pull changes from sync db into master db and check if schema changes was there and valid
-    pullChangesFromSyncDb(*b1);
-    pipe1 = b1->Schemas().GetClass("TestSchema1", "Pipe1");
-    ASSERT_NE(pipe1, nullptr);
-	ASSERT_EQ(pipe1->GetPropertyCount(), 4);
-    ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
+	if("pull changes from sync db into master db and check if schema changes was there and valid") {
+        pullChangesFromSyncDb(*b1);
+        auto pipe1 = b1->Schemas().GetClass("TestSchema1", "Pipe1");
+        ASSERT_NE(pipe1, nullptr);
+        ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+        ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
+        ASSERT_STRCASEEQ(getIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+    }
 }
 
 
