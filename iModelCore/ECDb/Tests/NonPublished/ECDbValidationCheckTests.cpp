@@ -194,9 +194,9 @@ TEST_F(ECDbValidityCheckTests, ValidateCheckFailingNavPropertyCheck) {
     SqlPrintfString ecsqlQuery("SELECT NavigationRelationshipClass.id FROM meta.ECPropertyDef WHERE class.Id = %s AND Name = '%s'",
         classBId.ToHexStr().c_str(), property.c_str());
 
-	ECSqlStatement illegalModificationCheck;
+    ECSqlStatement illegalModificationCheck;
 
-  	ASSERT_EQ(ECSqlStatus::Success, illegalModificationCheck.Prepare(m_ecdb, ecsqlQuery));
+    ASSERT_EQ(ECSqlStatus::Success, illegalModificationCheck.Prepare(m_ecdb, ecsqlQuery));
 
     ASSERT_EQ(BE_SQLITE_ROW, illegalModificationCheck.Step());
     auto newId = illegalModificationCheck.GetValueUInt64(0);
@@ -204,23 +204,23 @@ TEST_F(ECDbValidityCheckTests, ValidateCheckFailingNavPropertyCheck) {
 
     ECSqlStatement checkStatement;
 
-  	ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA validate"));
+    ASSERT_EQ(ECSqlStatus::Success, checkStatement.Prepare(m_ecdb, "PRAGMA validate"));
 
-	struct CheckData {
-		Utf8String name;
-		Utf8String status;
-	};
+    struct CheckData {
+        Utf8String name;
+        Utf8String status;
+    };
 
     std::vector<CheckData> expectedResults = {
-		{"nav_prop_id_check", "Failed"},
-		{"class_id_check", "Did not run"},
-	};
+        {"nav_prop_id_check", "Failed"},
+        {"class_id_check", "Did not run"},
+    };
 
-	for(auto result: expectedResults) {
-		checkStatement.Step();
-		ASSERT_STREQ(result.name.c_str(), checkStatement.GetValueText(0));
-		ASSERT_STREQ(result.status.c_str(), checkStatement.GetValueText(1));
-	}
+    for(auto result: expectedResults) {
+        checkStatement.Step();
+        ASSERT_STREQ(result.name.c_str(), checkStatement.GetValueText(0));
+        ASSERT_STREQ(result.status.c_str(), checkStatement.GetValueText(1));
+    }
 }
 
 END_ECDBUNITTESTS_NAMESPACE

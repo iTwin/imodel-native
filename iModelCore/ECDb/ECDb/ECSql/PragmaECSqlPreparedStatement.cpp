@@ -391,44 +391,19 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
 struct PragmaECDbValidation : PragmaManager::GlobalHandler {
     PragmaECDbValidation():GlobalHandler("validate","performs validation checks on ECDb"){}
 
-    DbResult PerformChecks(std::unique_ptr<StaticPragmaResult>& result, ECDbCR ecdb) {
-
-        struct CheckData {
-            BentleyM0200::Utf8String checkName;
-            BentleyM0200::Utf8String checkStatus;
-        };
-
-        std::vector<CheckData> checks = {
-            {"nav_prop_id_check", ""},
-            {"class_id_check", ""},
-        };
-
-        for(auto & check: checks) {
-            ECSqlStatement checkStatement;
-            checkStatement.Prepare(ecdb, SqlPrintfString("PRAGMA %s", check.checkName.c_str()));
-            checkStatement.Step();
-            check.checkStatus = checkStatement.GetValueText(0);
-
-            if(check.checkStatus == "Failed") 
-                break;
-        }
-
-        for(auto & check: checks) {
-            auto row = result->AppendRow();
-            row.appendValue() = check.checkName;
-            row.appendValue() = check.checkStatus != "" ? check.checkStatus : "Did not run";
-        }
-
-        return BE_SQLITE_OK;
-    }
-
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
         result->AppendProperty("check", PRIMITIVETYPE_String);
         result->AppendProperty("result", PRIMITIVETYPE_String);
         result->FreezeSchemaChanges();
 
-        PerformChecks(result, ecdb);
+        auto checkResults = ECDbValidationChecks::PerformAllChecks(ecdb);
+
+        for(auto& checkResult: checkResults) {
+            auto row = result->AppendRow();
+            row.appendValue() = checkResult.checkName;
+            row.appendValue() = checkResult.status;
+        }
 
         rowSet = std::move(result);
         return BE_SQLITE_OK;
@@ -447,58 +422,19 @@ struct PragmaECDbValidation : PragmaManager::GlobalHandler {
 struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
     PragmaECDbClassIdValidation():GlobalHandler("class_id_check","checks if classIds are valid") {}
 
-    DbResult ClassIdCheck(std::unique_ptr<StaticPragmaResult>& result, ECDbCR ecdb) {
-        bool checkSuccessful = true;
-
-        ECSqlStatement classDefStatement;
-
-        classDefStatement.Prepare(ecdb,
-        SqlPrintfString("SELECT DISTINCT ec_classname(ECClassDef.ECInstanceId, 's.c') FROM meta.ClassHasAllBaseClasses INNER JOIN meta.ECClassDef ON ECClassDef.ECInstanceId = ClassHasAllBaseClasses.TargetECInstanceId WHERE ECClassDef.Type != %d AND ECClassDef.Type != %d AND ec_classname(ECClassDef.ECInstanceId, 's') != 'ECDbSystem'",
-            ECClassType::CustomAttribute, ECClassType::Struct));
-
-        std::vector<BentleyM0200::Utf8String> classNames = {};
-
-        while(BE_SQLITE_ROW == classDefStatement.Step()) {
-            classNames.push_back(classDefStatement.GetValueText(0));
-            }
-
-        for(auto& className : classNames) {
-            ECSqlStatement CheckStatement;
-            CheckStatement.Prepare(ecdb,
-            SqlPrintfString("SELECT COUNT(*) FROM %s as c LEFT JOIN meta.ECClassDef on c.ECClassId = ECClassDef.ECInstanceId WHERE ECClassDef.ECInstanceId IS NULL", className.c_str()));
-            CheckStatement.Step();
-            if(CheckStatement.GetValueInt(0) != 0) {
-                auto row = result->AppendRow();
-                ecdb.GetImpl().Issues().ReportV(
-                    IssueSeverity::Error,
-                    IssueCategory::BusinessProperties,
-                    IssueType::ECDbIssue,
-                    "Could not find definition of class %s", className.c_str());
-
-                row.appendValue() = "Failed";
-                row.appendValue() = Utf8PrintfString("Could not find definition of class %s", className.c_str()).c_str();
-                checkSuccessful = false;
-                }
-            }
-
-        if(checkSuccessful)
-            {
-            auto row = result->AppendRow();
-            row.appendValue() = "Passed";
-            row.appendValue() = "";
-            return BE_SQLITE_OK;
-            }
-
-        return BE_SQLITE_ERROR;
-    }
-
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
         result->AppendProperty("result", PRIMITIVETYPE_String);
         result->AppendProperty("details", PRIMITIVETYPE_String);
         result->FreezeSchemaChanges();
 
-        ClassIdCheck(result,ecdb);
+        auto checkResults = ECDbValidationChecks::ClassIdCheck(ecdb);
+
+        for(auto& checkResult: checkResults) {
+            auto row = result->AppendRow();
+            row.appendValue() = checkResult.status;
+            row.appendValue() = checkResult.details;
+        }
 
         rowSet = std::move(result);
         return BE_SQLITE_OK;
@@ -517,57 +453,19 @@ struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
 struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
     PragmaECDbNavPropIdValidation():GlobalHandler("nav_prop_id_check","checks if classIds are valid") {}
 
-    DbResult NavigationPropertyIdCheck(std::unique_ptr<StaticPragmaResult>& result, ECDbCR ecdb) {
-        bool checkSuccessful = true;
-
-        ECSqlStatement navigationValidityCheck;
-
-        navigationValidityCheck.Prepare(ecdb, "SELECT ec_classname(propdef.Class.id), propdef.Name FROM meta.ECPropertyDef as propdef LEFT JOIN meta.ECClassdef as classdef ON propdef.NavigationRelationshipClass.id = classdef.ECInstanceId WHERE propdef.NavigationRelationshipClass IS NOT NULL AND (classdef.ECInstanceId IS NULL OR classdef.Type != 1)");
-
-        struct PropertyData {
-            BentleyM0200::Utf8String className;
-            BentleyM0200::Utf8String name;
-        };
-
-        std::vector<PropertyData> properties = {};
-
-        while(BE_SQLITE_ROW == navigationValidityCheck.Step()) {
-            properties.push_back({navigationValidityCheck.GetValueText(0), navigationValidityCheck.GetValueText(1)});
-            }
-
-        if(properties.size() != 0) {
-            for(auto& property : properties) {
-                auto row = result->AppendRow();
-                ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error,
-                IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue,
-                "Could not find classId of navigation property %s in class %s", property.name.c_str(), property.className.c_str());
-
-                row.appendValue() = "Failed";
-                row.appendValue() = Utf8PrintfString("Could not find classId of navigation property %s in class %s", property.name.c_str(), property.className.c_str()).c_str();
-                checkSuccessful = false;
-                }
-            }
-
-        if(checkSuccessful)
-            {
-            auto row = result->AppendRow();
-            row.appendValue() = "Passed";
-            row.appendValue() = "";
-            return BE_SQLITE_OK;
-            }
-
-        return BE_SQLITE_ERROR;
-    }
-
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
         result->AppendProperty("result", PRIMITIVETYPE_String);
         result->AppendProperty("details", PRIMITIVETYPE_String);
         result->FreezeSchemaChanges();
 
-        NavigationPropertyIdCheck(result,ecdb);
+        auto checkResults = ECDbValidationChecks::NavigationPropertyIdCheck(ecdb);
+
+        for(auto& checkResult: checkResults) {
+            auto row = result->AppendRow();
+            row.appendValue() = checkResult.status;
+            row.appendValue() = checkResult.details;
+        }
 
         rowSet = std::move(result);
         return BE_SQLITE_OK;
