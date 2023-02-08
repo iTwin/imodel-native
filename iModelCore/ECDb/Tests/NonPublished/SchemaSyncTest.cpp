@@ -12,8 +12,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 
 struct SchemaSyncTestFixture : public ECDbTestFixture {
-
-
 	static std::unique_ptr<ECDb> CreateECDb(Utf8CP asFileName) {
         auto fileName = BuildECDbPath(asFileName);
         if (fileName.DoesPathExist()) {
@@ -85,6 +83,7 @@ TEST_F(SchemaSyncTestFixture, test) {
     };
     auto pullChangesFromSyncDb = [&](ECDbR ecdb) {
         ASSERT_EQ(SchemaImportResult::OK, ecdb.Schemas().SyncSchemas(synDbFile, SchemaManager::SyncAction::Pull));
+        ecdb.SaveChanges();
     };
 
     pushChangesToSyncDb(*b1);
@@ -108,7 +107,7 @@ TEST_F(SchemaSyncTestFixture, test) {
     auto pipe1 = syncDb->Schemas().GetClass("TestSchema1", "Pipe1");
     ASSERT_NE(pipe1, nullptr);
 	ASSERT_EQ(pipe1->GetPropertyCount(), 2);
-	ASSERT_FALSE(b1->TableExists("ts_Pipe1"));
+	ASSERT_FALSE(syncDb->TableExists("ts_Pipe1"));
     syncDb = nullptr;
 
 	// pull changes from sync db into client db and check if schema changes was there and valid

@@ -914,6 +914,9 @@ SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, Schema
         return SchemaImportResult::ERROR_SYNC_SCHEMA;
     }
     if(isPull) {
+        if (SUCCESS != GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
+            return SchemaImportResult::ERROR;
+        }
         // pull changes local schema
         if (SUCCESS != CreateOrUpdateRequiredTables()) {
             return SchemaImportResult::ERROR;

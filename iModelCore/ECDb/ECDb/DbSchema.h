@@ -56,8 +56,8 @@ public:
     DbSchemaNameGenerator() {}
     //! @param[in] namePrefix Prefix for the names to be generated. The generator appends a number to it.
     //! Must not include a placeholder for the number appended.
-    explicit DbSchemaNameGenerator(Utf8CP namePrefix) :m_format(namePrefix) 
-        { 
+    explicit DbSchemaNameGenerator(Utf8CP namePrefix) :m_format(namePrefix)
+        {
         BeAssert(!Utf8String::IsNullOrEmpty(namePrefix));
         if (!Utf8String::IsNullOrEmpty(namePrefix))
             m_format.assign(namePrefix).append("%" PRIu32);
@@ -176,7 +176,7 @@ private:
     Constraints m_constraints;
     PersistenceType m_persistenceType;
     PrimaryKeyDbConstraint const* m_pkConstraint = nullptr;
-   
+
     //not copyable
     DbColumn(DbColumn const&) = delete;
     DbColumn& operator=(DbColumn const&) = delete;
@@ -402,7 +402,7 @@ public:
         {
         Primary = 0,
         Joined = 1, //! Joined Table cannot exist without a primary table
-        Existing = 2, 
+        Existing = 2,
         Overflow = 3, //! Overflow table cannot exist without a primary or joined table
         Virtual = 4 //for abstract classes not using TPH and mixins
         };
@@ -643,7 +643,7 @@ public:
     BentleyStatus SaveOrUpdateTables() const;
     BentleyStatus LoadIndexDefs() const;
     BentleyStatus PersistIndexDef(DbIndex const&) const;
-
+    BentleyStatus ForceReloadTableAndIndexesFromDisk() const;
     void ClearCache() const;
     };
 

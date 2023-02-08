@@ -621,6 +621,33 @@ BentleyStatus DbSchema::LoadIndexDefs() const
 //-------------------------------------------------------------------------------------- -
 // @bsimethod
 //--------------------------------------------------------------------------------------
+BentleyStatus DbSchema::ForceReloadTableAndIndexesFromDisk() const
+    {
+    ClearCache();
+    bvector<Utf8String> tables;
+    CachedStatementPtr stmt = GetCachedStatement("SELECT Name FROM main." TABLE_Table);
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        tables.push_back(stmt->GetValueText(0));
+        }
+
+    for (auto& table : tables)
+        {
+            if (FindTable(table) == nullptr)
+                return ERROR;
+        }
+    return LoadIndexDefs();
+    }
+
+//-------------------------------------------------------------------------------------- -
+// @bsimethod
+//--------------------------------------------------------------------------------------
 BentleyStatus DbSchema::LoadIndexDefs(std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>>& indexDefs, Utf8CP sqlWhereOrJoinClause) const
     {
     //Index defs are only needed during schema import or when recreating temp indexes. This is always done on the main table space
