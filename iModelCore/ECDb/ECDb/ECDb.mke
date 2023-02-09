@@ -128,7 +128,8 @@ ECDbAllHeaders = \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
-                $(baseDir)ClassMapColumnFactory.h
+                $(baseDir)ClassMapColumnFactory.h \
+                $(baseDir)ECDbValidationChecks.h 
 
 
 #----------------------------------------------------------------------
@@ -375,6 +376,8 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECDbValidationChecks$(oext):                              $(baseDir)ECDbValidationChecks.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

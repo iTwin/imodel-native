@@ -375,6 +375,7 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
             rowSet = std::move(result);
             return BE_SQLITE_OK;
     }
+
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
         rowSet = std::make_unique<StaticPragmaResult>(ecdb);
@@ -382,6 +383,99 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
         return BE_SQLITE_READONLY;
     }
     static std::unique_ptr<PragmaManager::Handler> Create (PragmaManager& mgr) { return std::make_unique<PragmaHelp>(mgr); }
+};
+
+//================================================================================
+// @bsiclass PragmaECDbValidation
+//================================================================================
+struct PragmaECDbValidation : PragmaManager::GlobalHandler {
+    PragmaECDbValidation():GlobalHandler("validate","performs validation checks on ECDb"){}
+
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
+        auto result = std::make_unique<StaticPragmaResult>(ecdb);
+        result->AppendProperty("check", PRIMITIVETYPE_String);
+        result->AppendProperty("result", PRIMITIVETYPE_String);
+        result->FreezeSchemaChanges();
+
+        auto checkResults = ECDbValidationChecks::PerformAllChecks(ecdb);
+
+        for(auto& checkResult: checkResults) {
+            auto row = result->AppendRow();
+            row.appendValue() = checkResult.checkName;
+            row.appendValue() = checkResult.status;
+        }
+
+        rowSet = std::move(result);
+        return BE_SQLITE_OK;
+    }
+
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
+        return BE_SQLITE_READONLY;
+    }
+
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbValidation>(); }
+};
+
+//================================================================================
+// @bsiclass PragmaECDbClassIdValidation
+//================================================================================
+struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
+    PragmaECDbClassIdValidation():GlobalHandler("class_id_check","checks if classIds are valid") {}
+
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
+        auto result = std::make_unique<StaticPragmaResult>(ecdb);
+        result->AppendProperty("result", PRIMITIVETYPE_String);
+        result->AppendProperty("details", PRIMITIVETYPE_String);
+        result->FreezeSchemaChanges();
+
+        auto checkResults = ECDbValidationChecks::ClassIdCheck(ecdb);
+
+        for(auto& checkResult: checkResults) {
+            auto row = result->AppendRow();
+            row.appendValue() = checkResult.status;
+            row.appendValue() = checkResult.details;
+        }
+
+        rowSet = std::move(result);
+        return BE_SQLITE_OK;
+    }
+
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
+        return BE_SQLITE_READONLY;
+    }
+
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbClassIdValidation>(); }
+};
+
+//================================================================================
+// @bsiclass PragmaECDbNavPropIdValidation
+//================================================================================
+struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
+    PragmaECDbNavPropIdValidation():GlobalHandler("nav_prop_id_check","checks if classIds are valid") {}
+
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
+        auto result = std::make_unique<StaticPragmaResult>(ecdb);
+        result->AppendProperty("result", PRIMITIVETYPE_String);
+        result->AppendProperty("details", PRIMITIVETYPE_String);
+        result->FreezeSchemaChanges();
+
+        auto checkResults = ECDbValidationChecks::NavigationPropertyIdCheck(ecdb);
+
+        for(auto& checkResult: checkResults) {
+            auto row = result->AppendRow();
+            row.appendValue() = checkResult.status;
+            row.appendValue() = checkResult.details;
+        }
+
+        rowSet = std::move(result);
+        return BE_SQLITE_OK;
+    }
+
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
+        return BE_SQLITE_READONLY;
+    }
+
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbNavPropIdValidation>(); }
 };
 
 //---------------------------------------------------------------------------------------
@@ -394,6 +488,9 @@ void PragmaManager::InitSystemPragmas() {
     // Register(PragmaFileInfo::Create());
     Register(DisqualifyTypeIndex::Create());
     Register(PragmaHelp::Create(*this));
+    Register(PragmaECDbValidation::Create());
+    Register(PragmaECDbClassIdValidation::Create());
+    Register(PragmaECDbNavPropIdValidation::Create());
 }
 
 //---------------------------------------------------------------------------------------
