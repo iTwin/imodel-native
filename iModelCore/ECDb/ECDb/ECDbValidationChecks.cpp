@@ -96,7 +96,7 @@ std::vector<ECDbValidationChecks::CheckResult> ECDbValidationChecks::ClassIdChec
     ECSqlStatement classDefStatement;
 
     classDefStatement.Prepare(ecdb,
-    SqlPrintfString("SELECT DISTINCT ec_classname(c.ECInstanceId, 's.c')" 
+    SqlPrintfString("SELECT ec_classname(c.ECInstanceId, 's.c')" 
         "FROM meta.ECClassDef as c "
         "WHERE c.Type != %d AND c.Type != %d AND ec_classname(c.ECInstanceId, 's') != 'ECDbSystem'",
         ECClassType::CustomAttribute, ECClassType::Struct));
