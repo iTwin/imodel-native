@@ -297,7 +297,7 @@ WHERE [ecp].[Name] = ? AND [col].[ColumnKind] = 4 AND [pm].[ClassId] IN (SELECT 
 
 BentleyStatus RemapManager::CleanAddedBaseClass(RemapInfosForClass& remapInfo, AddedBaseClass& addedBaseClass, std::set<ECPropertyId>& cleanedPropertyIds)
     {
-    #define ALLOW_ECDB_SCHEMAIMPORT_DIAGNOSTICS
+    //#define ALLOW_ECDB_SCHEMAIMPORT_DIAGNOSTICS
     #if defined(ALLOW_ECDB_SCHEMAIMPORT_DIAGNOSTICS)
 
     LOG.warning("----------------------------ECDB_SCHEMAIMPORT_DIAGNOSTICS-----------------------------------");
