@@ -96,10 +96,9 @@ std::vector<ECDbValidationChecks::CheckResult> ECDbValidationChecks::ClassIdChec
     ECSqlStatement classDefStatement;
 
     classDefStatement.Prepare(ecdb,
-    SqlPrintfString("SELECT DISTINCT ec_classname(ECClassDef.ECInstanceId, 's.c')" 
-        "FROM meta.ClassHasAllBaseClasses"
-        "INNER JOIN meta.ECClassDef ON ECClassDef.ECInstanceId = ClassHasAllBaseClasses.TargetECInstanceId"
-        "WHERE ECClassDef.Type != %d AND ECClassDef.Type != %d AND ec_classname(ECClassDef.ECInstanceId, 's') != 'ECDbSystem'",
+    SqlPrintfString("SELECT DISTINCT ec_classname(c.ECInstanceId, 's.c')" 
+        "FROM meta.ECClassDef as c "
+        "WHERE c.Type != %d AND c.Type != %d AND ec_classname(c.ECInstanceId, 's') != 'ECDbSystem'",
         ECClassType::CustomAttribute, ECClassType::Struct));
 
     std::vector<BentleyM0200::Utf8String> classNames = {};
@@ -109,11 +108,16 @@ std::vector<ECDbValidationChecks::CheckResult> ECDbValidationChecks::ClassIdChec
         }
 
     for(auto& className : classNames) {
-        ECSqlStatement CheckStatement;
-        CheckStatement.Prepare(ecdb,
-        SqlPrintfString("SELECT COUNT(*) FROM %s as c LEFT JOIN meta.ECClassDef on c.ECClassId = ECClassDef.ECInstanceId WHERE ECClassDef.ECInstanceId IS NULL", className.c_str()));
-        CheckStatement.Step();
-        if(CheckStatement.GetValueInt(0) != 0) {
+        ECSqlStatement checkStatement;
+        checkStatement.Prepare(ecdb,
+        SqlPrintfString("SELECT COUNT(*) "
+            "FROM %s as c "
+            "LEFT JOIN meta.ECClassDef on c.ECClassId = ECClassDef.ECInstanceId "
+            "WHERE ECClassDef.ECInstanceId IS NULL", 
+            className.c_str()));
+
+        checkStatement.Step();
+        if(checkStatement.GetValueInt(0) != 0) {
             ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
