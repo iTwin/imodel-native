@@ -466,7 +466,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("b.PropB = 2", *classA, bvector<RelatedClassPath>
         {
-        RelatedClassPath({ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "r"), true, SelectClass<>(*classB, "b")) }),
+        RelatedClassPath({ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, ""), true, SelectClass<>(*classB, "b")) }),
         }));
     ValidateHierarchy(params,
         {
@@ -1022,7 +1022,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     // verify getting child nodes with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("c.Prop = 2", *classB, bvector<RelatedClassPath>
         {
-        RelatedClassPath{ RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, "r"), true, SelectClass<>(*classC, "c")) },
+        RelatedClassPath{ RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, ""), true, SelectClass<>(*classC, "c"))},
         }));
     params.SetParentNode(hierarchy[0].node.get());
     ValidateHierarchy(params,
@@ -1305,7 +1305,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     // verify with instance filter
     params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("b.Prop = 2", *classA, bvector<RelatedClassPath>
         {
-        RelatedClassPath{ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "r"), true, SelectClass<>(*classB, "b")) },
+        RelatedClassPath{ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, ""), true, SelectClass<>(*classB, "b")) },
         }));
     ValidateHierarchy(params,
         {
