@@ -287,8 +287,8 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_ByInstance
 
     */
     StubRulesDrivenECPresentationManagerImpl::Hierarchy hierarchy;
-    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Widget"), "A", { instanceKey1, instanceKey2, instanceKey3, instanceKey4, instanceKey5 }));
-    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Gadget"), "B", { instanceKey6 }));
+    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Widget"), "A", {instanceKey1, instanceKey2, instanceKey3, instanceKey4, instanceKey5}));
+    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Gadget"), "B", {instanceKey6}));
     NavNodePtr node1 = hierarchy[nullptr].front();
     hierarchy[node1].push_back(CreatePropertyGroupingNode(*GetClass("Widget"), "IntProperty", "A_1", true, {ECValue(1)}, {instanceKey4}));
     hierarchy[node1].push_back(CreatePropertyGroupingNode(*GetClass("Widget"), "BoolProperty", "A_2", true, {ECValue(2)}, {instanceKey1, instanceKey2, instanceKey3}));
