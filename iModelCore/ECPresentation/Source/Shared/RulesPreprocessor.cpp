@@ -981,7 +981,7 @@ bvector<ContentRuleCP> RulesPreprocessor::_GetContentRules()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<NavNodeKeyCPtr> SplitLabelGroupedKey(IConnectionCR connection, INodeInstanceKeysProvider const& instanceKeyProvider, LabelGroupingNodeKey const& key)
+static bvector<NavNodeKeyCPtr> SplitLabelGroupedKeyByClass(IConnectionCR connection, INodeInstanceKeysProvider const& instanceKeyProvider, LabelGroupingNodeKey const& key)
     {
     bvector<NavNodeKeyCPtr> result;
     bmap<ECN::ECClassId, bvector<ECInstanceKey>> instanceKeyMap;
@@ -1005,23 +1005,23 @@ static bvector<NavNodeKeyCPtr> SplitLabelGroupedKey(IConnectionCR connection, IN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<NavNodeKeyCPtr> GetInputNodeKeys(INavNodeKeysContainerCR inputNodeKeys, IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider)
+static bvector<NavNodeKeyCPtr> ProcessNodeKeysForContent(INavNodeKeysContainerCR inputNodeKeys, IConnectionCR connection, INodeInstanceKeysProvider const* instanceKeyProvider)
     {
-    bvector<NavNodeKeyCPtr> singleNodeKeys;
+    bvector<NavNodeKeyCPtr> contentNodeKeys;
 
     for (NavNodeKeyCPtr const& inputNodeKey : inputNodeKeys)
         {
         if (inputNodeKey->AsLabelGroupingNodeKey() && instanceKeyProvider != nullptr)
             {
-            bvector<NavNodeKeyCPtr> keys = SplitLabelGroupedKey(connection, *instanceKeyProvider, *inputNodeKey->AsLabelGroupingNodeKey());
-            ContainerHelpers::Push(singleNodeKeys, keys);
+            bvector<NavNodeKeyCPtr> keys = SplitLabelGroupedKeyByClass(connection, *instanceKeyProvider, *inputNodeKey->AsLabelGroupingNodeKey());
+            ContainerHelpers::Push(contentNodeKeys, keys);
             }
         else
             {
-            singleNodeKeys.push_back(inputNodeKey);
+            contentNodeKeys.push_back(inputNodeKey);
             }
         }
-    return singleNodeKeys;
+    return contentNodeKeys;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1031,9 +1031,9 @@ ContentRuleInputKeysContainer RulesPreprocessor::_GetContentSpecifications(Conte
     {
     ContentRuleInputKeysContainer specs;
     bset<NavNodeKeyCP> handledNodes;
-    bvector<NavNodeKeyCPtr> singleNodeKeys = GetInputNodeKeys(params.GetInputNodeKeys(), m_connection, params.GetInstanceKeyProvider());
+    bvector<NavNodeKeyCPtr> contentNodeKeys = ProcessNodeKeysForContent(params.GetInputNodeKeys(), m_connection, params.GetInstanceKeyProvider());
    
-    for (NavNodeKeyCPtr const& inputNodeKey : singleNodeKeys)
+    for (NavNodeKeyCPtr const& inputNodeKey : contentNodeKeys)
         {
         std::function<ExpressionContextPtr()> contextPreparer = [&]()
             {

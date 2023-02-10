@@ -1314,9 +1314,10 @@ private:
                     });
                 continue;
                 }
-            if (key->AsGroupingNodeKey() && key->AsGroupingNodeKey()->GetGroupedInstanceKeys() != nullptr)
+            if (key->AsLabelGroupingNodeKey() && key->AsLabelGroupingNodeKey()->GetGroupedInstanceKeys() != nullptr)
                 {
-                ContainerHelpers::Push(instanceKeys, *key->AsGroupingNodeKey()->GetGroupedInstanceKeys());
+                ContainerHelpers::Push(instanceKeys, *key->AsLabelGroupingNodeKey()->GetGroupedInstanceKeys());
+                continue;
                 }
 
             m_nodeInstanceKeysProvider->IterateInstanceKeys(*key, [&](ECInstanceKey k)

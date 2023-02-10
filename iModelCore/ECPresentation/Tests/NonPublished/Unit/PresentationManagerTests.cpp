@@ -287,8 +287,8 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_ByInstance
 
     */
     StubRulesDrivenECPresentationManagerImpl::Hierarchy hierarchy;
-    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Widget"), "A", {instanceKey1, instanceKey2, instanceKey3, instanceKey4, instanceKey5}));
-    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Gadget"), "B", {instanceKey6}));
+    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Widget"), "A", { instanceKey1, instanceKey2, instanceKey3, instanceKey4, instanceKey5 }));
+    hierarchy[nullptr].push_back(CreateClassGroupingNode(*GetClass("Gadget"), "B", { instanceKey6 }));
     NavNodePtr node1 = hierarchy[nullptr].front();
     hierarchy[node1].push_back(CreatePropertyGroupingNode(*GetClass("Widget"), "IntProperty", "A_1", true, {ECValue(1)}, {instanceKey4}));
     hierarchy[node1].push_back(CreatePropertyGroupingNode(*GetClass("Widget"), "BoolProperty", "A_2", true, {ECValue(2)}, {instanceKey1, instanceKey2, instanceKey3}));
@@ -304,21 +304,21 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_ByInstance
     m_impl->SetNodeInstanceKeysProviderFactory([&]()
         {
         auto provider = std::make_unique<StubNodeInstanceKeysProvider>();
-        provider->SetContainsFunc([&](NavNodeCR node, ECInstanceKeyCR key)
+        provider->SetContainsFunc([&](NavNodeKeyCR nodeKey, ECInstanceKeyCR key)
             {
-            if (node.GetLabelDefinition().GetDisplayValue().Equals("A"))
+            if (nodeKey == *hierarchy[nullptr].at(0)->GetKey()) // Grouping node A
                 return key == instanceKey1 || key == instanceKey2 || key == instanceKey3 || key == instanceKey4 || key == instanceKey5;
-            if (node.GetLabelDefinition().GetDisplayValue().Equals("A_1"))
+            if (nodeKey == *hierarchy[node1].at(0)->GetKey()) // Grouping node A_1
                 return key == instanceKey4;
-            if (node.GetLabelDefinition().GetDisplayValue().Equals("A_2"))
+            if (nodeKey == *hierarchy[node1].at(1)->GetKey()) // Grouping node A_2
                 return key == instanceKey1 || key == instanceKey2 || key == instanceKey3;
-            if (node.GetLabelDefinition().GetDisplayValue().Equals("A_2_1"))
+            if (nodeKey == *hierarchy[node2].at(0)->GetKey()) // Grouping node A_2_1
                 return key == instanceKey3;
-            if (node.GetLabelDefinition().GetDisplayValue().Equals("A_2_2"))
+            if (nodeKey == *hierarchy[node2].at(1)->GetKey()) // Grouping node A_2_2
                 return key == instanceKey1 || key == instanceKey2;
-            if (node.GetLabelDefinition().GetDisplayValue().Equals("A_3"))
+            if (nodeKey == *hierarchy[node1].at(2)->GetKey()) // Grouping node A_3
                 return key == instanceKey5;
-            if (node.GetLabelDefinition().GetDisplayValue().Equals("B"))
+            if (nodeKey == *hierarchy[nullptr].at(2)->GetKey()) // Grouping node B
                 return key == instanceKey6;
             return false;
             });
