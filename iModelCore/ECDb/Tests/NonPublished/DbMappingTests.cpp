@@ -11386,4 +11386,67 @@ TEST_F(DbMappingTestFixture, LinkTable_NoDuplicateRelationshipsForChildHierarchy
     ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel3(e4, e3));
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, CreateTableWith2kProperties)
+    {
+    Utf8String bisCoreXml = R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="BisCore" alias="bis" version="01.00.15" description="The BIS core schema contains classes that all other domain schemas extend." displayLabel="BIS Core" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00" />
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>GeometricElement</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="x" typeName="long"/>
+                <ECProperty propertyName="y" typeName="long"/>
+            </ECEntityClass>
+        </ECSchema>
+        )schema";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("Bisification.ecdb", SchemaItem(bisCoreXml)));
+
+    SchemaKey bisCoreKey("BisCore", 1, 0, 15);
+    ECSchemaReadContextPtr schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
+    ECSchemaPtr bisCorePtr = m_ecdb.GetSchemaLocater().LocateSchema(bisCoreKey, SchemaMatchType::Latest, *schemaReadContext);
+
+    ECSchemaPtr testSchema;
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 0);
+    testSchema->AddReferencedSchema(*bisCorePtr);
+    ECEntityClassP geomElementClass;
+    testSchema->CreateEntityClass(geomElementClass, "GeomElement");
+    ASSERT_TRUE(geomElementClass != nullptr);
+    geomElementClass->AddBaseClass(*bisCorePtr->GetClassP("GeometricElement3d"));
+    ASSERT_TRUE(geomElementClass->HasBaseClasses());
+
+    ASSERT_EQ(0, geomElementClass->GetPropertyCount(false));
+    for (int propCount = 1; propCount <= 2001; propCount++) {
+        PrimitiveECPropertyP doubleProp = nullptr;
+        ASSERT_EQ(ECObjectsStatus::Success, geomElementClass->CreatePrimitiveProperty(doubleProp, Utf8PrintfString("Prop%d", propCount), PRIMITIVETYPE_Double));
+    }
+    ASSERT_EQ(2001, geomElementClass->GetPropertyCount(false));
+
+    ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas({testSchema.get()})) << "Import should fail because there are more than 2001 properties present, which exceeds our current limit of 2000 columns in a table.";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+    m_ecdb.CloseDb();
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
