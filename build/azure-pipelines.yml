@@ -20,9 +20,11 @@ resources:
       name: iTwin/imodel-native-internal
       ref: refs/heads/release/3.x
       endpoint: github.com_imodel-native
-      
+    - repository: imodeljs-build-pipeline-scripts
+      type: git
+      name: iModelTechnologies/imodeljs-build-pipeline-scripts  
+
 extends:
   template: /build/templates/pipeline.yml@imodel-native-internal
   parameters:
     otherRepo: imodel-native-internal
-
