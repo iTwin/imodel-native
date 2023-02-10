@@ -507,4 +507,18 @@ public:
 typedef bvector<ECInstanceKey> GroupedInstanceKeysList;
 typedef GroupedInstanceKeysList const& GroupedInstanceKeysListCR;
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct INodeInstanceKeysProvider
+{
+protected:
+    virtual void _IterateInstanceKeys(NavNodeKeyCR, std::function<bool(ECInstanceKey)>) const = 0;
+    virtual bool _ContainsInstanceKey(NavNodeKeyCR, ECInstanceKeyCR) const = 0;
+public:
+    virtual ~INodeInstanceKeysProvider() {}
+    void IterateInstanceKeys(NavNodeKeyCR nodeKey, std::function<bool(ECInstanceKey)> cb) const { _IterateInstanceKeys(nodeKey, cb); }
+    bool ContainsInstanceKey(NavNodeKeyCR nodeKey, ECInstanceKeyCR instanceKey) const { return _ContainsInstanceKey(nodeKey, instanceKey); }
+};
+
 END_BENTLEY_ECPRESENTATION_NAMESPACE
