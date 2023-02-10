@@ -21,6 +21,8 @@ struct ECSqlPrepareTestFixture : public ECDbTestFixture
         void SetUp() override
             {
             EXPECT_EQ(SUCCESS, SetupECDb("ecsqlpreparetests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+            // Due to properties in ECSqlTest schema such as "DtUnspec", "local", "unspecified", "garbagekind" and "garbagecomponent", et cetera, as well as negative tests, we expect some error messages to be reported when setting date time values.
+            // Since we have set the ECInstance to be populated 10 times in the ecdb file being created, these errors will hence be reported x10 times as well.
             EXPECT_EQ(SUCCESS, PopulateECDb(10));
             }
     };
