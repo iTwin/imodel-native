@@ -17,6 +17,9 @@ PragmaManager& ECDb::Impl::GetPragmaManager() const
     return *m_pragmaProcessor;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
     {
     m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
@@ -158,9 +161,7 @@ bool ECDb::Impl::s_isInitialized = false;
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
     {
-    m_id.Create();
-    RegisterBuiltinFunctions();
-
+    OnInit();
     DbResult stat = m_idSequenceManager.InitializeSequences();
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -179,9 +180,30 @@ DbResult ECDb::Impl::OnDbCreated() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbOpening() const
     {
+    OnInit();
+    return m_idSequenceManager.InitializeSequences();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::OnInit() const
+    {
     m_id.Create();
     RegisterBuiltinFunctions();
-    return m_idSequenceManager.InitializeSequences();
+    RegisterECSqlPragmas();
+    }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::RegisterECSqlPragmas() const
+    {
+    GetPragmaManager().Register(PragmaExplainQuery::Create());
+    GetPragmaManager().Register(DisqualifyTypeIndex::Create());
+    GetPragmaManager().Register(PragmaECDbVersion::Create());
+    GetPragmaManager().Register(PragmaChecksum::Create());
     }
 
 //--------------------------------------------------------------------------------------

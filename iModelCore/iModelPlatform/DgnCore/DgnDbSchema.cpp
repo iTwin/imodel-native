@@ -615,6 +615,13 @@ BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::SchemaImportResult DgnDb::SyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const {
+    return Domains().DoSyncSchemas(syncDbUri, action);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool schemaLockHeld)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;

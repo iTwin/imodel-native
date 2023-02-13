@@ -8,6 +8,58 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+
+// void CheckSchemas() {
+
+// }
+// void CheckClasses () {
+
+// }
+
+// void CheckProperties() {
+
+// }
+struct SqlIndexDef final {
+	private:
+        std::string m_createSql;
+        std::string m_name;
+	public:
+        SqlIndexDef(SqlIndexDef&&) = default;
+		SqlIndexDef(SqlIndexDef const&) = default;
+		SqlIndexDef& operator = (SqlIndexDef&&) = default;
+		SqlIndexDef& operator = (SqlIndexDef const&) = default;
+        SqlIndexDef(std::string const& indexName, std::string const& createSql) : m_name(indexName), m_createSql(createSql){}
+		DbResult Drop(DbCR db) const {
+            return db.ExecuteSql(SqlPrintfString("DROP INDEX %s", m_name.c_str()).GetUtf8CP());
+        }
+		DbResult Create(DbCR db) const {
+			return db.ExecuteSql(m_createSql.c_str());
+		}
+		static DbResult GetSystemUniqueIndexes(std::vector<SqlIndexDef>& indexes, DbCR db , std::string const& dbAlias = "main") {
+            const auto sql = std::string {SqlPrintfString(R"z(
+				SELECT
+					[name],
+					[sql]
+				FROM   [%s].[sqlite_master]
+				WHERE  [tbl_name] LIKE 'ec\_%%' ESCAPE '\'
+						AND [type] = 'index'
+						AND [sql] LIKE 'CREATE UNIQUE %%';
+			)z", dbAlias.c_str()).GetUtf8CP()};
+
+			Statement stmt;
+            indexes.clear();
+            auto rc = stmt.Prepare(db, sql.c_str());
+			if (rc != BE_SQLITE_OK) {
+                printf("%s\n", sql.c_str());
+                return rc;
+            }
+			while(stmt.Step() == BE_SQLITE_ROW) {
+                indexes.emplace_back(stmt.GetValueText(0), stmt.GetValueText(1));
+            }
+            return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+        }
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -139,19 +191,27 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 	const auto targetColsSql = Join(targetCols);
 
 	std::vector<std::string> setClauseExprs;
+	std::vector<std::string> delClauseExprs;
 	for(auto& col : targetCols) {
-        setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
+		setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
+
     }
+
+	for(auto& col : sourcePkCols) {
+  		delClauseExprs.push_back(SqlPrintfString("%s=[source].%s", col.c_str(), col.c_str()).GetUtf8CP());
+    }
+
 	const auto updateColsSql = Join(setClauseExprs);
+	const auto deleteColsSql = Join(delClauseExprs, " AND ");
     const auto targetPkColsSql = Join(targetPkCols);
 
-	if (sourcePkColCount == 1) {
+    const auto allowDelete = true;
+    if (allowDelete) {
 		const auto deleteTargetSql = std::string {
-			SqlPrintfString("DELETE FROM %s WHERE [%s] NOT IN (SELECT [%s] FROM %s)",
+			SqlPrintfString("DELETE FROM %s WHERE NOT EXISTS (SELECT 1 FROM %s [source] WHERE %s)",
 				targetTableSql.c_str(),
-				targetPkCols.front().c_str(),
-				sourcePkCols.front().c_str(),
-				sourceTableSql.c_str()
+				sourceTableSql.c_str(),
+				deleteColsSql.c_str()
 				).GetUtf8CP()
 			};
 		Statement stmt;
@@ -161,24 +221,18 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 		}
 		rc = stmt.Step();
 		if (rc != BE_SQLITE_DONE) {
+			printf("SQL (%s): %s \n", conn.GetLastError().c_str(), deleteTargetSql.c_str());
             return rc;
         }
-	} else {
-		conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error,
-			IssueCategory::SchemaSynchronization,
-			IssueType::ECDbIssue,
-			"Sync does not support tables with composite primary keys. %s table has composite primary key.", sourceTableSql.c_str());
-        return BE_SQLITE_SCHEMA;
-    }
+	}
 
     const auto sql = std::string{SqlPrintfString(
-		"insert into %s(%s) select %s from %s where 1 on conflict(%s) do update set %s",
+		"insert into %s(%s) select %s from %s where 1 on conflict do update set %s",
 		targetTableSql.c_str(),
 		targetColsSql.c_str(),
 		sourceColsSql.c_str(),
 		sourceTableSql.c_str(),
-		targetPkColsSql.c_str(),
+		//targetPkColsSql.c_str(),
 		updateColsSql.c_str()
 	).GetUtf8CP()};
 
@@ -188,6 +242,9 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 		return rc;
 	}
     rc = stmt.Step();
+	if (rc != BE_SQLITE_DONE) {
+        printf("SQL (%s): %s \n", conn.GetLastError().c_str(), sql.c_str());
+    }
     return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
 }
 
@@ -212,7 +269,31 @@ DbResult SchemaSynchronizer::TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction action, std::function<bool(const Utf8String&)> tableFilter, bool useNestedSafePoint) {
+DbResult SchemaSynchronizer::GetECTables(DbR conn, std::vector<std::string>& tables, Utf8CP dbAlias) {
+    const auto queryECTableSql = std::string {
+		SqlPrintfString(R"z(
+			SELECT
+				[name]
+			FROM   [%s].[sqlite_master]
+			WHERE  [tbl_name] LIKE 'ec\_%%' ESCAPE '\'
+					AND [type] = 'table'
+		)z", dbAlias).GetUtf8CP()
+	};
+
+    Statement iuStmt;
+	auto rc = iuStmt.Prepare(conn, queryECTableSql.c_str());
+	if (rc != BE_SQLITE_OK) {
+        return rc;
+    }
+	while((rc = iuStmt.Step()) == BE_SQLITE_ROW) {
+		tables.push_back(iuStmt.GetValueText(0));
+	}
+    return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction action) {
 	const auto kSyncDbAlias = "sync_db";
 	const auto kMainDbAlias = "main";
 
@@ -316,51 +397,119 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 			"Unable to attach sync db '%s' as '%s' to primary connection: %s", syncDbPath, kSyncDbAlias, conn.GetLastError().c_str());
         return rc;
 	}
-    auto detachAndReturn = [&](DbResult result) {
-        conn.DetachDb(kSyncDbAlias);
-		if (result == BE_SQLITE_OK) {
-            conn.SaveChanges();
-        }
-        return result;
-    };
-
-    std::unique_ptr<Savepoint> savePoint;
-	if (useNestedSafePoint) {
-		savePoint = std::make_unique<Savepoint>(conn, "sync-db-conn");
-	}
 
     const auto fromAlias = action == SyncAction::Pull ? kSyncDbAlias : kMainDbAlias;
 	const auto toAlias = action == SyncAction::Pull ?  kMainDbAlias: kSyncDbAlias;
-
-    const auto enumTblSql = std::string {
-		SqlPrintfString(R"sql(
-			SELECT [target].[tbl_name]
-			FROM   [%s].[sqlite_master] [target], [%s].[sqlite_master] [source]
-			WHERE  [target].[type] = 'table'
-					AND [target].[rootpage] != 0
-					AND [target].[tbl_name] NOT LIKE 'sqlite_%%'
-					AND [source].[type] = 'table'
-					AND [source].[rootpage] != 0
-					AND [source].[tbl_name] NOT LIKE 'sqlite_%%'
-					AND [source].[tbl_name] = [target].[tbl_name]
-			ORDER  BY [target].[tbl_name];
-	)sql", toAlias , fromAlias).GetUtf8CP()};
+    auto detachAndReturn = [&](DbResult result) {
+		if (result != BE_SQLITE_OK) {
+			// rollback before detach
+        	conn.AbandonChanges();
+        }
+        conn.DetachDb(kSyncDbAlias);
+        return result;
+    };
 
     std::vector<std::string> tables;
-    Statement iuStmt;
-	rc = iuStmt.Prepare(conn, enumTblSql.c_str());
-	if (rc != BE_SQLITE_OK) {
+    rc = GetECTables(conn, tables, fromAlias);
+    if (rc != BE_SQLITE_OK) {
 		return detachAndReturn(rc);
 	}
 
-	while(iuStmt.Step() == BE_SQLITE_ROW) {
-		Utf8String tbl = iuStmt.GetValueText(0);
-		if (tableFilter(tbl)) {
-			tables.push_back(tbl);
-		}
+    tables.push_back("be_Prop");
+    return detachAndReturn(SyncData(conn, tables, fromAlias, toAlias));
+}
+
+DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
+	// we need to create syncDbUri
+
+    Db syncDb;
+
+    auto rc = syncDb.OpenBeSQLiteDb(syncDbUri, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
+	if (rc != BE_SQLITE_OK) {
+        return rc;
 	}
-	return detachAndReturn(SyncData(conn, tables, fromAlias, toAlias));
+
+    auto dropDataTables = [](DbR db) {
+		Statement stmt;
+		auto rc = stmt.Prepare(db, "SELECT [Name] FROM [ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow ") ORDER BY [Type] DESC");
+		if (rc != BE_SQLITE_OK) {
+			return rc;
+		}
+		while(stmt.Step() == BE_SQLITE_OK) {
+			rc = db.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", stmt.GetValueText(0)).GetUtf8CP());
+			if (rc != BE_SQLITE_OK) {
+				return rc;
+			}
+		}
+        return BE_SQLITE_OK;
+    };
+    auto dropMetaTables = [&](DbR db) {
+        std::vector<std::string> tables;
+        auto rc = GetECTables(db, tables, "main");
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+        std::reverse(tables.begin(), tables.end());
+        for(auto& table: tables) {
+			rc = db.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
+			if (rc != BE_SQLITE_OK) {
+				return rc;
+			}
+		}
+        return BE_SQLITE_OK;
+    };
+
+    auto createMetaTables = [](ECDbR fromDb, DbR syncDb) {
+		const auto sql = std::string {R"z(
+			SELECT
+				[sql]
+			FROM   [sqlite_master]
+			WHERE  [tbl_name] LIKE 'ec\_%' ESCAPE '\'
+					AND ([type] = 'table'
+					OR [type] = 'index')
+					AND [sql] IS NOT NULL
+			ORDER  BY [RootPage];
+		)z"};
+        Statement stmt;
+        auto rc = stmt.Prepare(fromDb, sql.c_str());
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            const auto ddl = stmt.GetValueText(0);
+            rc = syncDb.ExecuteSql(ddl);
+			if(rc != BE_SQLITE_OK) {
+                return rc;
+            }
+        }
+        return BE_SQLITE_OK;
+    };
+
+    rc = dropDataTables(syncDb);
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+    rc = dropMetaTables(syncDb);
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+    rc = createMetaTables(conn, syncDb);
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+    rc = syncDb.SaveChanges();
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+	syncDb.CloseDb();
+    return SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push);
 }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
+

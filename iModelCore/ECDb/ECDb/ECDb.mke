@@ -125,6 +125,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/CommonTableExp.h \
+                $(baseDir)ECSql/ECSqlPragmas.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \
@@ -345,7 +346,7 @@ $(o)NavigationPropertyECSqlBinder$(oext):                     $(baseDir)ECSql/Na
 
 $(o)IdECSqlBinder$(oext):                                     $(baseDir)ECSql/IdECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)VirtualSetBinder$(oext):                                       $(baseDir)ECSql/VirtualSetBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)VirtualSetBinder$(oext):                                  $(baseDir)ECSql/VirtualSetBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -365,6 +366,8 @@ $(o)CommonTableExp$(oext):                                    $(baseDir)ECSql/Co
 
 $(o)NavigationPropertyECSqlField$(oext):                      $(baseDir)ECSql/NavigationPropertyECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECSqlPragmas$(oext):                                      $(baseDir)ECSql/ECSqlPragmas.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)DbSchema$(oext):                                          $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbSchemaPersistenceManager$(oext):                        $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -378,6 +381,7 @@ $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)Concurre
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaSynchronizer$(oext):                                $(baseDir)SchemaSynchronizer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

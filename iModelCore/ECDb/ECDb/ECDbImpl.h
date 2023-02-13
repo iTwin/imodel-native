@@ -193,6 +193,8 @@ private:
     void ClearECDbCache() const;
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
+    void RegisterECSqlPragmas() const;
+    void OnInit() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     DbResult OnDbDetached(Utf8CP tableSpaceName) const;
 
@@ -226,14 +228,14 @@ public:
     //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
     //! an error from any of its methods.
     ClearCacheCounter const& GetClearCacheCounter() const { return m_clearCacheCounter; }
-    InstanceReader& GetInstanceReader() const { 
+    InstanceReader& GetInstanceReader() const {
         if (m_instanceReader == nullptr) {
             BeMutexHolder holder(m_mutex);
             if (m_instanceReader == nullptr) {
                 m_instanceReader = std::make_unique<InstanceReader>(m_ecdb);
             }
         }
-        return *m_instanceReader; 
+        return *m_instanceReader;
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
 

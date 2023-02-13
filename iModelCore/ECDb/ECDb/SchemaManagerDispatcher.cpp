@@ -903,12 +903,7 @@ SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, Schema
         m_ecdb.ClearECDbCache();
     }
 
-    const auto rc = SchemaSynchronizer::SyncData(
-        ecdb,
-        syncDbUri.c_str(),
-        action,
-        [](const Utf8String& tableName) { return tableName.StartsWithIAscii("ec_"); },
-        false);
+    const auto rc = SchemaSynchronizer::SyncData(ecdb, syncDbUri.c_str(), action);
 
     if (rc != BE_SQLITE_OK) {
         return SchemaImportResult::ERROR_SYNC_SCHEMA;

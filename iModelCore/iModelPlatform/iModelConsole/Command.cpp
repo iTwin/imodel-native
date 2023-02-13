@@ -269,6 +269,105 @@ void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         IModelConsole::WriteLine("Closed '%s'.", path.c_str());
         }
     }
+//******************************* SyncCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String SyncCommand::_GetUsage() const
+    {
+    return  " .sync [schema] [pull|push] <file path>\r\n"
+        COMMAND_USAGE_IDENT "Sync schema by pushing or pulling changes to and from sync-db.\r\n";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    if (args.empty())
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded() || session.GetFile().GetECDbHandle()->IsReadonly())
+        {
+        IModelConsole::WriteErrorLine("There is should a file already loaded.");
+        return;
+        }
+    if ( session.GetFile().GetECDbHandle()->IsReadonly())
+        {
+        IModelConsole::WriteErrorLine("The loaded file should be open in read/write mode.");
+        return;
+        }
+
+    if (!args[0].EqualsIAscii("schema"))
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+
+    if (args.size() < 2 ||  (!args[1].EqualsIAscii("pull") && !args[1].EqualsIAscii("push")))
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    SchemaManager::SyncAction action = args[1].EqualsIAscii("pull")  ? SchemaManager::SyncAction::Pull : SchemaManager::SyncAction::Push;
+    if (args.size() < 3 )
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    BeFileName syncDbFileName;
+    syncDbFileName.AssignUtf8(args[2].c_str());
+    if(!syncDbFileName.DoesPathExist())
+        {
+        ECDb temp;
+        if (BE_SQLITE_OK == temp.CreateNewDb(syncDbFileName))
+            {
+            temp.SaveChanges();
+            temp.CloseDb();
+            }
+        else
+            {
+            IModelConsole::WriteErrorLine("unable to create or open sync db: %s", syncDbFileName.GetNameUtf8().c_str());
+            return;
+            }
+        }
+
+    const auto isPull = SchemaManager::SyncAction::Pull == action;
+
+    if (session.GetFile().GetType() == SessionFile::Type::IModel)
+        {
+        Dgn::DgnDbCR iModelFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
+        if (iModelFile.SyncSchemas(syncDbFileName.GetNameUtf8(), action) != SchemaImportResult::OK)
+            {
+            session.GetFileR().GetHandleR().AbandonChanges();
+            IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        else
+            {
+            IModelConsole::WriteLine("successfully %s changes %s %s.", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        }
+    else
+        {
+        if (session.GetFile().GetECDbHandle()->Schemas().SyncSchemas( syncDbFileName.GetNameUtf8(), action) != SchemaImportResult::OK)
+            {
+            session.GetFileR().GetHandleR().AbandonChanges();
+            IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        else
+            {
+            IModelConsole::WriteLine("successfully %s changes %s %s.", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        }
+    }
 
 //******************************* CreateCommand ******************
 //---------------------------------------------------------------------------------------

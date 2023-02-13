@@ -5,6 +5,7 @@
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 #include "ECDbPublishedTests.h"
 #include <numeric>
+#include <Bentley/SHA1.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -67,10 +68,41 @@ struct SchemaSyncTestFixture : public ECDbTestFixture {
         }
         return std::move(ecdb);
     }
+    static Utf8String GetSchemaHash(ECDbCR db) {
+        ECSqlStatement stmt;
+        if (stmt.Prepare(db, "PRAGMA checksum(ec_schema)") != ECSqlStatus::Success) {
+            return "";
+        }
+        if (stmt.Step() == BE_SQLITE_ROW) {
+            return stmt.GetValueText(0);
+        }
+        return "";
+    }
+    static Utf8String GetMapHash(ECDbCR db) {
+        ECSqlStatement stmt;
+        if (stmt.Prepare(db, "PRAGMA checksum(ec_map)") != ECSqlStatus::Success) {
+            return "";
+        }
+        if (stmt.Step() == BE_SQLITE_ROW) {
+            return stmt.GetValueText(0);
+        }
+        return "";
+    }
+    static Utf8String GetDbSchemaHash(ECDbCR db) {
+        ECSqlStatement stmt;
+        if (stmt.Prepare(db, "PRAGMA checksum(db_schema)") != ECSqlStatus::Success) {
+            return "";
+        }
+        if (stmt.Step() == BE_SQLITE_ROW) {
+            return stmt.GetValueText(0);
+        }
+        return "";
+    }
 };
 
 
 TEST_F(SchemaSyncTestFixture, Test) {
+
     auto syncDb = CreateECDb("sync.db");
     const auto synDbFile = std::string{syncDb->GetDbFileName()};
     syncDb = nullptr;
@@ -85,10 +117,18 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_EQ(SchemaImportResult::OK, ecdb.Schemas().SyncSchemas(synDbFile, SchemaManager::SyncAction::Pull));
         ecdb.SaveChanges();
     };
+
+
+
+    auto printHash = [&](ECDbR ecdb, Utf8CP desc) {
+        printf("\tSchema: SHA1-%s\n", GetSchemaHash(ecdb).c_str());
+        printf("\t   Map: SHA1-%s\n", GetMapHash(ecdb).c_str());
+        printf("\t    Db: SHA1-%s\n", GetDbSchemaHash(ecdb).c_str());
+    };
     auto getIndexDDL = [&](ECDbCR ecdb, Utf8CP indexName) -> std::string {
         Statement stmt;
         EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "select sql from sqlite_master where name=?"));
-        stmt.BindText(1, indexName, Statement::MakeCopy::No);
+        stmt.BindText(1, indexName, Statement::MakeCopy::Yes);
         if (stmt.Step() == BE_SQLITE_ROW) {
             return stmt.GetValueText(0);
         }
@@ -127,6 +167,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(getIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
         pushChangesToSyncDb(*b1);
+        printHash(*b1, "b1-import");
     }
 
     if("check if sync-db has changes but not tables and index") {
@@ -136,6 +177,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_EQ(pipe1->GetPropertyCount(), 2);
         ASSERT_FALSE(syncDb->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(getIndexDDL(*syncDb, "idx_pipe1_p1").c_str(), "");
+        printHash(*syncDb, "syncDb");
         syncDb = nullptr;
     }
 
@@ -146,6 +188,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_EQ(pipe1->GetPropertyCount(), 2);
         ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(getIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
+        printHash(*b2, "b2-pull");
     }
 
     if ("update schema by adding more properties and expand index in b2") {
@@ -180,6 +223,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         b2->SaveChanges();
         ASSERT_STRCASEEQ(getIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
         pushChangesToSyncDb(*b2);
+        printHash(*b2, "b2-import");
     }
 
 	if("check if sync-db has changes but not tables and index") {
@@ -188,6 +232,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_NE(pipe1, nullptr);
         ASSERT_EQ(pipe1->GetPropertyCount(), 4);
         ASSERT_STRCASEEQ(getIndexDDL(*syncDb, "idx_pipe1_p1").c_str(), "");
+        printHash(*syncDb, "syncDb");
         syncDb = nullptr;
     }
 
@@ -198,6 +243,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_EQ(pipe1->GetPropertyCount(), 4);
         ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(getIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+        printHash(*b1, "b1-pull");
     }
 }
 

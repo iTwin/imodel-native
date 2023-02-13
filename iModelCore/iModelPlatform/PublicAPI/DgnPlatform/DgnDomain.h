@@ -475,6 +475,8 @@ private:
     SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
     SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
     BeSQLite::EC::DropSchemaResult DoDropSchema(Utf8StringCR name, bool logIssue = true);
+    BeSQLite::EC::SchemaImportResult DoSyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const;
+
     ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;
 
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_allowSchemaImport(true) {}
