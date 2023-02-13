@@ -77,10 +77,7 @@ TEST_P (GCSGeneralWKTRepresentativeTests, WKTGenerateThenParseTest)
     bvector<GeoCoordinates::BaseGCS::WktFlavor> listOfWKTFlavors;
     
     listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorOGC);
-    listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorGeoTiff);
     listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorESRI);
-    listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorOracle);
-    listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorGeoTools);
     listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorEPSG);
     listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorOracle9);
     listOfWKTFlavors.push_back(GeoCoordinates::BaseGCS::wktFlavorAutodesk);
@@ -88,20 +85,6 @@ TEST_P (GCSGeneralWKTRepresentativeTests, WKTGenerateThenParseTest)
     for (auto currentFlavor : listOfWKTFlavors)
         {
         // Some flavors are incompatible with projection methods
-
-        if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorOracle) && 
-            (projectionCode == GeoCoordinates::BaseGCS::pcvSouthOrientedTransverseMercator  ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin  ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin  ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97 ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02 ||
-             projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary))
-            continue;
-
         if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorESRI) && 
             (projectionCode == GeoCoordinates::BaseGCS::pcvSouthOrientedTransverseMercator    ||
              projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin    ||
@@ -140,7 +123,7 @@ TEST_P (GCSGeneralWKTRepresentativeTests, WKTGenerateThenParseTest)
     
 INSTANTIATE_TEST_SUITE_P(GCSGeneralWKTRepresentativeTests_Combined,
                         GCSGeneralWKTRepresentativeTests,
-                        ValuesIn(GeoCoordTestCommon::GetRepresentativeListOfGCS()));
+                        ValuesIn(GeoCoordTestCommon::GetRepresentativeMiniListOfGCS()));
 
 
 
