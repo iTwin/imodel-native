@@ -19,22 +19,22 @@ struct StubNodeInstanceKeysProvider : INodeInstanceKeysProvider
     {
     private:
         std::function<void(NavNodeKeyCR, std::function<bool(ECInstanceKey)>)> m_iterate;
-        std::function<bool(NavNodeCR, ECInstanceKeyCR)> m_contains;
+        std::function<bool(NavNodeKeyCR, ECInstanceKeyCR)> m_contains;
     protected:
         void _IterateInstanceKeys(NavNodeKeyCR nodeKey, std::function<bool(ECInstanceKey)> cb) const override
             {
             if (m_iterate)
                 m_iterate(nodeKey, cb);
             }
-        bool _ContainsInstanceKey(NavNodeCR node, ECInstanceKeyCR key) const override
+        bool _ContainsInstanceKey(NavNodeKeyCR nodeKey, ECInstanceKeyCR key) const override
             {
             if (m_contains)
-                return m_contains(node, key);
+                return m_contains(nodeKey, key);
             return false;
             }
     public:
         void SetIterateFunc(std::function<void(NavNodeKeyCR, std::function<bool(ECInstanceKey)>)> func) { m_iterate = func; }
-        void SetContainsFunc(std::function<bool(NavNodeCR, ECInstanceKeyCR)> func) { m_contains = func; }
+        void SetContainsFunc(std::function<bool(NavNodeKeyCR, ECInstanceKeyCR)> func) { m_contains = func; }
     };
 
 /*=================================================================================**//**

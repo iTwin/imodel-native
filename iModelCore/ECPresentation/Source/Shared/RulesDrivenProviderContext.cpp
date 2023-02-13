@@ -95,11 +95,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool _ContainsInstanceKey(NavNodeCR node, ECInstanceKeyCR instanceKey) const override
+    bool _ContainsInstanceKey(NavNodeKeyCR nodeKey, ECInstanceKeyCR instanceKey) const override
         {
         auto scope = Diagnostics::Scope::Create("Checking if node contains given instance key");
 
-        if (node.GetKey()->GetInstanceKeysSelectQuery() == nullptr)
+        if (nodeKey.GetInstanceKeysSelectQuery() == nullptr)
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, "Node has no instance keys query assigned - nothing to iterate over.");
             return false;
@@ -107,7 +107,7 @@ protected:
 
         auto query = ComplexQueryBuilder::Create();
         query->SelectAll();
-        query->From(*node.GetKey()->GetInstanceKeysSelectQuery(), "keys");
+        query->From(*nodeKey.GetInstanceKeysSelectQuery(), "keys");
         query->Where("[keys].[ECClassId] = ? AND [keys].[ECInstanceId] = ?", { std::make_shared<BoundQueryId>(instanceKey.GetClassId()), std::make_shared<BoundQueryId>(instanceKey.GetInstanceId()) });
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();
