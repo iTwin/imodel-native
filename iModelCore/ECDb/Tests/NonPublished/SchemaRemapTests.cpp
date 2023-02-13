@@ -6960,6 +6960,9 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenario)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_INFO);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_INFO);
     //Reproduces a bug found in a revit smoketest, simplified version
     SchemaItem schemaV1(R"schema(<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
