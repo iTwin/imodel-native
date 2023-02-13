@@ -130,7 +130,8 @@ ECDbAllHeaders = \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
-                $(baseDir)ClassMapColumnFactory.h
+                $(baseDir)ClassMapColumnFactory.h \
+                $(baseDir)ECDbValidationChecks.h
 
 
 #----------------------------------------------------------------------
@@ -382,6 +383,7 @@ $(o)InstanceReaderImpl$(oext):                                $(baseDir)Instance
 
 $(o)SchemaSynchronizer$(oext):                                $(baseDir)SchemaSynchronizer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECDbValidationChecks$(oext):                              $(baseDir)ECDbValidationChecks.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

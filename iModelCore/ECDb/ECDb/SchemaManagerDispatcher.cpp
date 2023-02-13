@@ -1499,6 +1499,46 @@ ClassMappingStatus MainSchemaManager::MapDerivedClasses(SchemaImportContext& ctx
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
+    {
+    ECDB_PERF_LOG_SCOPE("Schema import> Can create or update tables");
+    const int maxColumns = m_ecdb.GetLimit(DbLimits::Column);
+
+    Utf8String ecsql;
+    ecsql.Sprintf(R"sql(
+        SELECT
+            [sc].[Name] [SchemaName],
+            [cl].[Name] [ClassName],
+            tb.name [Table],
+            COUNT (*) [PersistedColumns]
+        FROM
+            [ec_PropertyMap] [pm]
+            JOIN [ec_Column] [co] ON [co].[Id] = [pm].[ColumnId]
+            JOIN [ec_Table] [tb] ON [tb].[Id] = [co].[TableId]
+            JOIN [ec_Class] [cl] ON [cl].[Id] = [pm].[ClassId]
+            JOIN [ec_Schema] [sc] ON [sc].[Id] = [cl].[SchemaId]
+            JOIN [ec_ClassMap] [cm] ON [cm].[ClassId] = [cl].[id]
+        WHERE
+            [co].[IsVirtual] = 0
+            AND [cm].[MapStrategy] <> 3
+        GROUP BY [cl].[Id], tb.Id
+        HAVING COUNT (*) >= %d;)sql", maxColumns);
+
+    Statement stmt;
+    stmt.Prepare(m_ecdb, ecsql.c_str());
+    if (stmt.Step() == BE_SQLITE_ROW)
+        {
+        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Schema Import> Error importing %s:%s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
+            stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueInt64(3), maxColumns);
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Create or update tables");
@@ -1507,6 +1547,9 @@ BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
     int nCreated = 0;
     int nUpdated = 0;
     int nWasUpToDate = 0;
+
+    if (SUCCESS != CanCreateOrUpdateRequiredTables())
+        return ERROR;
 
     for (DbTable const* table : GetDbSchema().Tables().GetTablesInDependencyOrder())
         {

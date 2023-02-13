@@ -436,6 +436,101 @@ DbResult DataSHA1::ComputeTableHash(SHA1& hash, DbCR db, Utf8CP tableName, Utf8C
 	}
 	return AppendRows(hash, stmt, includeNulls);
 }
+//=======================================================================================
+// PragmaECDbValidation
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaECDbValidation::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty("check", PRIMITIVETYPE_String);
+	result->AppendProperty("result", PRIMITIVETYPE_String);
+	result->FreezeSchemaChanges();
+
+	auto checkResults = ECDbValidationChecks::PerformAllChecks(ecdb);
+
+	for(auto& checkResult: checkResults) {
+		auto row = result->AppendRow();
+		row.appendValue() = checkResult.checkName;
+		row.appendValue() = checkResult.status;
+	}
+
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaECDbValidation::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+	return BE_SQLITE_READONLY;
+}
+
+//=======================================================================================
+// PragmaECDbClassIdValidation
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaECDbClassIdValidation::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty("result", PRIMITIVETYPE_String);
+	result->AppendProperty("details", PRIMITIVETYPE_String);
+	result->FreezeSchemaChanges();
+
+	auto checkResults = ECDbValidationChecks::ClassIdCheck(ecdb);
+
+	for(auto& checkResult: checkResults) {
+		auto row = result->AppendRow();
+		row.appendValue() = checkResult.status;
+		row.appendValue() = checkResult.details;
+	}
+
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaECDbClassIdValidation::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+	return BE_SQLITE_READONLY;
+}
+
+
+//=======================================================================================
+// PragmaECDbClassIdValidation
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaECDbNavPropIdValidation::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty("result", PRIMITIVETYPE_String);
+	result->AppendProperty("details", PRIMITIVETYPE_String);
+	result->FreezeSchemaChanges();
+
+	auto checkResults = ECDbValidationChecks::NavigationPropertyIdCheck(ecdb);
+
+	for(auto& checkResult: checkResults) {
+		auto row = result->AppendRow();
+		row.appendValue() = checkResult.status;
+		row.appendValue() = checkResult.details;
+	}
+
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaECDbNavPropIdValidation::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+	return BE_SQLITE_READONLY;
+}
+
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

@@ -5,7 +5,25 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.2` |
-| ECSQL   | `1.0.1.1` |
+| ECSQL   | `1.0.3.1` |
+
+## `2/7/2023`: Add ECDb validity/integriy checks
+
+* ECSql version change to `1.0.3.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
+* New PRAGMA commands added:
+    * `PRAGMA class_id_check`: Checks if there are no classId references to non existing class definitions.
+    * `PRAGMA nav_prop_id_check`: Checks if all navigation properties have valid classIds.
+    * `PRAGMA validate`: Runs all checks.
+
+## `2/6/2023`: Add support for GREATEST/LEAST Sql functions
+
+The function let you find inline a greatest or least value out of specified values.
+
+ECSQL version change from  `1.0.1.1` to  `1.0.2.1`
+
+```sql
+    SELECT GREATEST(1,2,3), LEAST (1,2,3)
+```
 
 ## `2/1/2023`: Add support for runtime instance and property accessor in ECSQL (beta)
 
@@ -68,6 +86,7 @@ For primitive types that has single value, following will return typed value whi
 * `PRAGMA ecdb_ver`: Return version of the EC Schema.
 
 * `PRAGMA help`: Display all the pragma supported.
+
 * Added `ECSQL version` and set it to `1.0.0.0`. In future this version will be incremented as new feature in ECSQL is added or improved.
    1. Type of changes that can be made to ECSQL.
       1. **Syntax change** Change to ECSQL grammar.

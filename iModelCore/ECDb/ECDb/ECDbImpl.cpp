@@ -204,6 +204,9 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(DisqualifyTypeIndex::Create());
     GetPragmaManager().Register(PragmaECDbVersion::Create());
     GetPragmaManager().Register(PragmaChecksum::Create());
+    GetPragmaManager().Register(PragmaECDbValidation::Create());
+    GetPragmaManager().Register(PragmaECDbClassIdValidation::Create());
+    GetPragmaManager().Register(PragmaECDbNavPropIdValidation::Create());
     }
 
 //--------------------------------------------------------------------------------------

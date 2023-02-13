@@ -192,6 +192,7 @@ private:
     ClassMappingStatus MapClass(SchemaImportContext&, ClassMappingInfo const&) const;
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
+    BentleyStatus CanCreateOrUpdateRequiredTables() const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
     BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;

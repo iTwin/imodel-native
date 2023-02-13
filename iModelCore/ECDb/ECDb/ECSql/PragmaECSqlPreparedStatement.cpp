@@ -32,6 +32,7 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
             rowSet = std::move(result);
             return BE_SQLITE_OK;
     }
+
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
         rowSet = std::make_unique<StaticPragmaResult>(ecdb);

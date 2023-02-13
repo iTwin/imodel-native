@@ -47,6 +47,47 @@ struct PragmaECDbVersion : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
+// @bsiclass PragmaChecksum
+//+===============+===============+===============+===============+===============+======
+struct PragmaChecksum : PragmaManager::GlobalHandler {
+    PragmaChecksum():GlobalHandler("checksum", "checksum([ec_schema|ec_map|db_schema]) return sha1 checksum for data."){}
+    ~PragmaChecksum(){}
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaChecksum>(); }
+};
+//================================================================================
+// @bsiclass PragmaECDbValidation
+//================================================================================
+struct PragmaECDbValidation : PragmaManager::GlobalHandler {
+    PragmaECDbValidation():GlobalHandler("validate","performs validation checks on ECDb"){}
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbValidation>(); }
+};
+
+//================================================================================
+// @bsiclass PragmaECDbClassIdValidation
+//================================================================================
+struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
+    PragmaECDbClassIdValidation():GlobalHandler("class_id_check","checks if classIds are valid") {}
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbClassIdValidation>(); }
+};
+
+//================================================================================
+// @bsiclass PragmaECDbNavPropIdValidation
+//================================================================================
+struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
+    PragmaECDbNavPropIdValidation():GlobalHandler("nav_prop_id_check","checks if classIds are valid") {}
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbNavPropIdValidation>(); }
+};
+
+
+//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct DataSHA1 final {
@@ -59,18 +100,6 @@ struct DataSHA1 final {
         static DbResult ComputeSchemaHash(SHA1& hash, DbCR db, Utf8CP dbAlias = "main");
         static DbResult ComputeMapHash(SHA1& hash, DbCR db, Utf8CP dbAlias = "main");
         static DbResult ComputeDbSchemaHash(SHA1& hash, DbCR db, Utf8CP dbAlias = "main");
-};
-
-
-//=======================================================================================
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct PragmaChecksum : PragmaManager::GlobalHandler {
-    PragmaChecksum():GlobalHandler("checksum", "checksum([ec_schema|ec_map|db_schema]) return sha1 checksum for data."){}
-    ~PragmaChecksum(){}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaChecksum>(); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

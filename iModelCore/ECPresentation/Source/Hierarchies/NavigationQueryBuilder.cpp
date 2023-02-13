@@ -1176,6 +1176,8 @@ public:
         if (selectInfo.GetInstanceFilterDefinitions().empty())
             return;
 
+        ECClassUseCounter relatedInstanceClassesCounter;
+
         for (auto const& instanceFilterDef : selectInfo.GetInstanceFilterDefinitions())
             {
             if (!instanceFilterDef || instanceFilterDef->GetExpression().empty())
@@ -1186,8 +1188,17 @@ public:
             if (!usedParentInstanceLevels.empty() && (!parentInstanceNode || SUCCESS != AppendParents(query, usedParentInstanceLevels, params, *parentInstanceNode)))
                 continue;
 
-            for (auto const& relatedInstancePath : instanceFilterDef->GetRelatedInstances())
+            for (RelatedClassPath relatedInstancePath : instanceFilterDef->GetRelatedInstances())
+                {
+                for (auto& step : relatedInstancePath)
+                    {
+                    if (step.GetRelationship().GetAlias().empty())
+                        step.GetRelationship().SetAlias(RULES_ENGINE_RELATED_CLASS_ALIAS(step.GetRelationship().GetClass(), relatedInstanceClassesCounter.Inc(&step.GetRelationship().GetClass())));
+                    if (step.GetTargetClass().GetAlias().empty())
+                        step.GetTargetClass().SetAlias(RULES_ENGINE_RELATED_CLASS_ALIAS(step.GetTargetClass().GetClass(), relatedInstanceClassesCounter.Inc(&step.GetTargetClass().GetClass())));
+                    }
                 query.Join(relatedInstancePath);
+                }
 
             ECExpressionContextsProvider::NodeRulesContextParameters contextParams(parentNode, params.GetConnection(),
                 params.GetRulesetVariables(), params.GetUsedVariablesListener());
