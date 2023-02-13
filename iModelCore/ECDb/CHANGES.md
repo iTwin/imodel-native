@@ -5,9 +5,17 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.2` |
-| ECSQL   | `1.0.3.1` |
+| ECSQL   | `1.0.4.1` |
 
-## `2/7/2023`: Add ECDb validity/integriy checks
+## `2/2/2023`: Add PRAGMA checksum(ec_schema|ec_map|db_schema)
+* ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
+* PRAGMA checksum(ec_schema|ec_map|db_schema)
+    * `PRAGMA checksum(ec_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
+    * `PRAGMA checksum(ec_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
+    * `PRAGMA checksum(db_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
+
+
+## `2/7/2023`: Add ECDb validity/integrity checks
 
 * ECSql version change to `1.0.3.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * New PRAGMA commands added:
