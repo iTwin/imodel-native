@@ -275,7 +275,7 @@ void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //---------------------------------------------------------------------------------------
 Utf8String SyncCommand::_GetUsage() const
     {
-    return  " .sync [schema] [pull|push] <file path>\r\n"
+    return  " .sync [schema] [pull|push|init] <file path>\r\n"
         COMMAND_USAGE_IDENT "Sync schema by pushing or pulling changes to and from sync-db.\r\n";
     }
 
@@ -310,11 +310,21 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         }
 
 
-    if (args.size() < 2 ||  (!args[1].EqualsIAscii("pull") && !args[1].EqualsIAscii("push")))
+    if (args.size() < 2 ||  (!args[1].EqualsIAscii("pull") && !args[1].EqualsIAscii("push") && !args[1].EqualsIAscii("init")))
         {
         IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
+
+    if (args[1].EqualsIAscii("init"))
+        {
+        if (BE_SQLITE_OK != session.GetFile().GetECDbHandle()->Schemas().InitSyncDb(args[2].c_str()))
+            {
+            IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
+            }
+        return;
+        }
+
 
     SchemaManager::SyncAction action = args[1].EqualsIAscii("pull")  ? SchemaManager::SyncAction::Pull : SchemaManager::SyncAction::Push;
     if (args.size() < 3 )

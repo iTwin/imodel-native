@@ -7,7 +7,7 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.2` |
 | ECSQL   | `1.0.4.1` |
 
-## `2/2/2023`: Add PRAGMA checksum(ec_schema|ec_map|db_schema)
+## `2/13/2023`: Add PRAGMA checksum(ec_schema|ec_map|db_schema)
 * ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * PRAGMA checksum(ec_schema|ec_map|db_schema)
     * `PRAGMA checksum(ec_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.

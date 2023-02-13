@@ -44,6 +44,13 @@ SchemaImportResult SchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SyncAction
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaManager::InitSyncDb(Utf8StringCR syncDbUri) const {
+    return Main().InitSyncDb(syncDbUri);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DropSchemaResult SchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* token, bool logIssue) const {
     return Main().DropSchema(name, token, logIssue);
 }

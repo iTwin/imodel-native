@@ -880,6 +880,18 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MainSchemaManager::InitSyncDb(Utf8StringCR syncDbUri) const {
+    ECDB_PERF_LOG_SCOPE("Create SyncDb");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::InitSyncDb");
+    auto& ecdb = const_cast<ECDbR>(m_ecdb);
+    BeMutexHolder holder(ecdb.GetImpl().GetMutex());
+    const auto rc = SchemaSynchronizer::InitSynDb(ecdb, syncDbUri.c_str());
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::InitSyncDb");
+    return rc;
+}
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SchemaManager::SyncAction action, SchemaImportToken const* schemaImportToken) const {
     ECDB_PERF_LOG_SCOPE("Sync Schemas");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::SyncSchemas");

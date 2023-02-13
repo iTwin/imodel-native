@@ -293,7 +293,7 @@ DbResult SchemaSynchronizer::GetECTables(DbR conn, std::vector<std::string>& tab
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction action) {
+DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction action, bool verifySynDb) {
 	const auto kSyncDbAlias = "sync_db";
 	const auto kMainDbAlias = "main";
 
@@ -336,27 +336,30 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 			return rc;
 		}
 	}
-
-	ECSqlStatement stmt;
-	auto ecsqlRc = stmt.Prepare(syncDb, "SELECT * FROM ECDbMeta.ECClassDef");
-	if (!ecsqlRc.IsSuccess()) {
-		conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error,
-			IssueCategory::SchemaSynchronization,
-			IssueType::ECDbIssue,
-			"SyncDb does not seem to be a valid iModel '%s': %s", syncDbPath, conn.GetLastError().c_str());
-		return BE_SQLITE_ERROR;
+	DbResult rc;
+	if (verifySynDb) {
+		ECSqlStatement stmt;
+		auto ecsqlRc = stmt.Prepare(syncDb, "SELECT * FROM ECDbMeta.ECClassDef");
+		if (!ecsqlRc.IsSuccess()) {
+			conn.GetImpl().Issues().ReportV(
+				IssueSeverity::Error,
+				IssueCategory::SchemaSynchronization,
+				IssueType::ECDbIssue,
+				"SyncDb does not seem to be a valid iModel '%s': %s", syncDbPath, conn.GetLastError().c_str());
+			return BE_SQLITE_ERROR;
+		}
+		rc = stmt.Step();
+		if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE) {
+			conn.GetImpl().Issues().ReportV(
+				IssueSeverity::Error,
+				IssueCategory::SchemaSynchronization,
+				IssueType::ECDbIssue,
+				"Unable to read from SyncDb '%s': %s", syncDbPath, conn.GetLastError().c_str());
+			return rc;
+		}
+		stmt.Finalize();
 	}
-    auto rc = stmt.Step();
-	if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE) {
-		conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error,
-			IssueCategory::SchemaSynchronization,
-			IssueType::ECDbIssue,
-			"Unable to read from SyncDb '%s': %s", syncDbPath, conn.GetLastError().c_str());
-        return rc;
-    }
-    stmt.Finalize();
+
     syncDb.CloseDb();
 
     AliasMap aliasMap;
@@ -435,7 +438,7 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 		if (rc != BE_SQLITE_OK) {
 			return rc;
 		}
-		while(stmt.Step() == BE_SQLITE_OK) {
+		while(stmt.Step() == BE_SQLITE_ROW) {
 			rc = db.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", stmt.GetValueText(0)).GetUtf8CP());
 			if (rc != BE_SQLITE_OK) {
 				return rc;
@@ -506,7 +509,7 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 	}
 
 	syncDb.CloseDb();
-    return SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push);
+    return SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push, false);
 }
 
 

@@ -26,7 +26,7 @@ private:
     static DbResult GetECTables(DbR conn, std::vector<std::string>& tables, Utf8CP dbAlias);
 
 public:
-    static DbResult SyncData(ECDbR conn, Utf8CP syncDbUri, SyncAction action);
+    static DbResult SyncData(ECDbR conn, Utf8CP syncDbUri, SyncAction action, bool verifySynDb = true);
     static DbResult InitSynDb(ECDbR conn, Utf8CP syncDb);
 };
 
