@@ -6946,7 +6946,7 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenario)
     </ECEntityClass>
 </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2));
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (Description,RevitId) VALUES ('D','RevitId2')");
 
@@ -6960,9 +6960,6 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenario)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_INFO);
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_INFO);
     //Reproduces a bug found in a revit smoketest, simplified version
     SchemaItem schemaV1(R"schema(<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
@@ -7218,7 +7215,7 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     </ECEntityClass>
 </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2));
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
     ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
