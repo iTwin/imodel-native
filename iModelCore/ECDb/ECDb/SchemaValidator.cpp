@@ -88,25 +88,9 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
     if (baseClasses.empty())
         return true;
 
-    const bool isAbstract = ecClass.GetClassModifier() == ECClassModifier::Abstract;
     bool isFirstBaseClass = true;
     for (ECClassCP baseClass : baseClasses)
         {
-        if (isAbstract && baseClass->GetClassModifier() == ECClassModifier::None)
-            {
-            if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues))
-                {
-                //in legacy mode we log all issues as warning, so do not return on first issue
-                LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
-                             ecClass.GetFullName());
-                continue;
-                }
-
-            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECClass '%s' has invalid base class: An abstract class must not have a non-abstract base class.",
-                              ecClass.GetFullName());
-            return false;
-            }
-
         if (isFirstBaseClass)
             {
             isFirstBaseClass = false;

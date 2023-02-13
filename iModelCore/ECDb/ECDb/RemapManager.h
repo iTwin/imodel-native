@@ -159,13 +159,13 @@ private:
     void SortRemappedColumnInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort);
     void SortCircularRemappedColumnInfos(std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort);
     BentleyStatus SortRemapInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::map<Utf8String, RemappedColumnInfo*>& remainingInfos);
-    BentleyStatus UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos);
+    BentleyStatus UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos, SchemaImportContext& ctx);
     bool CheckIfAllUpdatesAreWithinSameTable(std::vector<std::vector<RemappedColumnInfo*>>& infos);
-    BentleyStatus UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos);
+    BentleyStatus UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos, SchemaImportContext& ctx);
     Utf8String GetInstanceIdColumnName(Utf8StringCR tableName);
 
 public:
-    BentleyStatus UpgradeExistingECInstancesWithRemappedProperties();
+    BentleyStatus UpgradeExistingECInstancesWithRemappedProperties(SchemaImportContext& ctx);
     };
 
 

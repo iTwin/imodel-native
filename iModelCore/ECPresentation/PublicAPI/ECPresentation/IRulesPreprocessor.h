@@ -8,6 +8,7 @@
 #include <ECPresentation/RuleSetLocater.h>
 #include <ECPresentation/UserSettings.h>
 #include <ECPresentation/Rules/PresentationRules.h>
+#include <ECPresentation/NavNodeKey.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -255,14 +256,15 @@ struct IRulesPreprocessor
         Utf8StringCR m_preferredContentDisplayType;
         SelectionInfo const* m_selectionInfo;
         INodeLabelCalculator const& m_nodeLabelCalculator;
+        INodeInstanceKeysProvider const* m_instanceKeysProvider;
     public:
         //! Constructor.
         //! @param[in] inputNodeKeys A container of input nodes.
         //! @param[in] preferredContentDisplayType Type of content display that the content is going to be displayed in.
         //! @param[in] selectionInfo Info about last selection.
         //! @param[in] nodeLocater (optional) Nodes locater.
-        ContentRuleParameters(INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType, SelectionInfo const* selectionInfo, INodeLabelCalculator const& nodeLabelCalculator, INavNodeLocaterCP nodeLocater = nullptr)
-            : m_inputNodeKeys(&inputNodeKeys), m_preferredContentDisplayType(preferredContentDisplayType), m_selectionInfo(selectionInfo), m_nodeLocater(nodeLocater), m_nodeLabelCalculator(nodeLabelCalculator)
+        ContentRuleParameters(INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType, SelectionInfo const* selectionInfo, INodeLabelCalculator const& nodeLabelCalculator, INavNodeLocaterCP nodeLocater = nullptr, INodeInstanceKeysProvider const* instanceKeysProvider = nullptr)
+            : m_inputNodeKeys(&inputNodeKeys), m_preferredContentDisplayType(preferredContentDisplayType), m_selectionInfo(selectionInfo), m_nodeLocater(nodeLocater), m_nodeLabelCalculator(nodeLabelCalculator), m_instanceKeysProvider(instanceKeysProvider)
             {}
         //! Do these parameters contain selection info.
         bool HasSelectionInfo() const {return nullptr != m_selectionInfo;}
@@ -278,6 +280,8 @@ struct IRulesPreprocessor
         bool IsSubSelection() const {return HasSelectionInfo() ? m_selectionInfo->IsSubSelection() : false;}
         //! Get the node label calculator
         INodeLabelCalculator const& GetNodeLabelCalculator() const {return m_nodeLabelCalculator;}
+        //! Get the node instance key provider
+        INodeInstanceKeysProvider const* GetInstanceKeyProvider() const { return m_instanceKeysProvider; }
     };
 
     typedef RootNodeRuleParameters const&               RootNodeRuleParametersCR;

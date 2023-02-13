@@ -15,7 +15,7 @@ always:
 %if defined(BMAKE_DELETE_ALL_TARGETS)
     npm run clean
 %endif
-    npm run build
+    npm run buildAndLint
 
 $(BuildContext)Delivery/lib : $(outDir)
     $(LinkFirstDepToFirstTargetAsDirectory)

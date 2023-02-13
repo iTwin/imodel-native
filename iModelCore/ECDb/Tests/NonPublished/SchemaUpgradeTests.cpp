@@ -51,7 +51,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             assertMessageFull.append(assertMessage);
             SchemaItem schemaItem(schemaXml);
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
             else
                 ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
 
@@ -68,9 +68,9 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             assertMessageFull.assign("[schema import with disallowed major schema changes] ").append(assertMessage);
 
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
@@ -352,8 +352,8 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_Check_Table_Drop) {
     </ECSchema>)xml";
 
     ASSERT_EQ(SUCCESS, SetupECDb("schema_del.ecdb", SchemaItem(bisCoreXml)));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXml)));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXml1)));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXml), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXml1), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     ASSERT_TRUE(m_ecdb.TableExists("bis_Element"));
     ASSERT_TRUE(m_ecdb.TableExists("bis_GeometricElement3d"));
     ASSERT_TRUE(m_ecdb.TableExists("bis_GeometricElement3d_Overflow"));
@@ -3114,7 +3114,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteProperties_TPH)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     //Make sure ECClass definition is updated correctly
     ASSERT_PROPERTIES_STRICT(m_ecdb, "TestSchema:Koo -> L1, S1, +D1");
@@ -3231,7 +3231,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteProperties_JoinedTable)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     //Make sure ECClass definition is updated correctly
     ASSERT_PROPERTIES_STRICT(m_ecdb, "TestSchema:Koo -> L1, S1, +D1");
@@ -4888,7 +4888,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
                 <ECProperty propertyName="PropA" typeName="string" />
                 <ECProperty propertyName="PropB" typeName="int" />
            </ECEntityClass>
-        </ECSchema>)xml")));
+        </ECSchema>)xml"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     ECInstanceKey sub1Row2;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2,Prop3) VALUES (102,2,2,'Sub1 2','1', '2', 3)"));
@@ -4947,7 +4947,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
                 <ECProperty propertyName="PropA" typeName="string" />
                 <ECProperty propertyName="PropB" typeName="int" />
            </ECEntityClass>
-        </ECSchema>)xml")));
+        </ECSchema>)xml"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     ECInstanceKey sub1Row3, sub2Row2;
@@ -5163,7 +5163,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
                 <ECProperty propertyName="PropA" typeName="string" />
                 <ECProperty propertyName="PropB" typeName="int" />
            </ECEntityClass>
-        </ECSchema>)xml")));
+        </ECSchema>)xml"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     ECInstanceKey sub1Row3, sub2Row2;
@@ -6196,7 +6196,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "</ECSchema>"))) << "Delete derived class should be successful";
+        "</ECSchema>"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << "Delete derived class should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Sub"), nullptr);
@@ -6294,7 +6294,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='FL' typeName='long' />"
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
-        "</ECSchema>"))) << "New derived entity class is expected to be supported";
+        "</ECSchema>"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << "New derived entity class is expected to be supported";
 
     //Table should not exist
     ASSERT_FALSE(GetHelper().TableExists("ts_Sub"));
@@ -6476,7 +6476,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
         "       <ECProperty propertyName='FI1' typeName='int' />"//Extra column to verify that sharedcolumn count should be incremented
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "New derived entity class is expected to be supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << "New derived entity class is expected to be supported";
 
     //Table should not exist
     ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
@@ -6829,7 +6829,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete a class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << "Delete a class should be successful";
 
     //Following should not exist
     ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
@@ -6989,7 +6989,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported now";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << "Adding new derived Entity class is supported now";
 
     //Table should not exist
     ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
@@ -7256,7 +7256,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
         "       <ECProperty propertyName='FI1' typeName='int' />"//Extra column to verify that sharedcolumn count should be incremented
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << "Adding new derived Entity class is supported";
 
     //Table should not exist
     ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
@@ -9484,7 +9484,6 @@ TEST_F(SchemaUpgradeTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     m_ecdb.ResetBriefcaseId(BeBriefcaseId(123));
-
     //Update schema
     SchemaItem schemaItem2(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -10730,7 +10729,7 @@ TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
     auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
-        << "Illegal KoQ modification should not fail when DoNotFail flag is on";   
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";
 
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
     KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
@@ -10759,7 +10758,7 @@ TEST_F(SchemaUpgradeTestFixture, KoQModificationWithDoNotFailFlag)
     auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
-        << "Illegal KoQ modification should not fail when DoNotFail flag is on";   
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";
 
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
     KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
@@ -10785,12 +10784,12 @@ TEST_F(SchemaUpgradeTestFixture, IllegalKoQModificationWithDoNotFailFlag)
             <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
             <KindOfQuantity typeName="KoQ1" description="KoQ1" relativeError=".5" persistenceUnit="u:M" />
         </ECSchema>)schema");
-                                    
+
 
     auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
-        << "Illegal KoQ modification should not fail when DoNotFail flag is on";   
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";
 
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
     KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
@@ -12483,7 +12482,7 @@ TEST_F(SchemaUpgradeTestFixture, LegalPropertyCategoryDeleteWithDoNotFailFlag)
                                             <ECProperty propertyName="P4" typeName="double" category="C5" />
                                         </ECEntityClass>
                                     </ECSchema>)xml";
-                                    
+
     SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(SchemaSourceWithDeletion), options))
         << "PropertyCategory deletion should work if there are no dangling references";
@@ -12534,7 +12533,7 @@ TEST_F(SchemaUpgradeTestFixture, IllegalPropertyCategoryDeleteWithDoNotFailFlag)
     SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Schema1SourceWithDeletion), options))
         << "Illegal Property Category should be ignored when DoNotFailForDeletionsOrModifications flag is set";
-        
+
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
@@ -15590,67 +15589,7 @@ TEST_F(SchemaUpgradeTestFixture, FailMixinRelationshipConstraintMultiFileVersion
     }
 
 //=============================================================================================================================
-Json::Value operator "" _json(const char* s, size_t n) {
-    Json::Value json;
-    Json::Reader reader;
-    EXPECT_TRUE(reader.Parse(s, json, false));
-    return json;
-}
 
-SchemaItem operator "" _schema(const char* s, size_t n) {
-    return SchemaItem(s);
-}
-
-Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className) {
-    Utf8CP sql = R"(
-        SELECT json_group_array(schemaName||':' || className|| ':' || accessString || ':' || tableName || ':' || columnName)
-            FROM (
-                SELECT s.Name schemaName, cl.Name className, p.AccessString accessString, t.Name tableName, c.Name columnName
-                    FROM   [ec_PropertyMap] [pp]
-                            JOIN [ec_Column] [c] ON [c].[Id] = [pp].[ColumnId]
-                            JOIN [ec_Table] [t] ON [t].[Id] = [c].[TableId]
-                            JOIN [ec_Class] [cl] ON [cl].[Id] = [pp].[ClassId]
-                            JOIN [ec_PropertyPath] [p] ON [p].[Id] = [pp].[PropertyPathId]
-                            JOIN [ec_Schema] [s] ON [cl].[SchemaId] = [s].[Id]
-                    WHERE  [s].[Name] ||'.' || [cl].[Name]  = ?1 OR [s].[Alias]||'.' || [cl].[Name]= ?1
-                    ORDER BY s.Name, cl.Name, p.AccessString, t.Name, c.Name
-            )
-    )";
-
-    auto stmt = ecdb.GetCachedStatement(sql);
-    stmt->BindText(1, className, Statement::MakeCopy::No);
-    EXPECT_EQ(BE_SQLITE_ROW, stmt->Step());
-    Json::Value json;
-    Json::Reader reader;
-    EXPECT_TRUE(reader.Parse(stmt->GetValueText(0), json, false));
-    return json;
-}
-
-ECInstanceKey insertInst(ECDbCR ecdb, Json::Value const& v) {
-    auto className = v["className"].asString();
-    auto data = v["data"];
-    bvector<Utf8String> parts;
-    BeStringUtilities::Split(className.c_str(), ".", parts);
-    auto ecClass = ecdb.Schemas().GetClass(parts[0], parts[1], SchemaLookupMode::AutoDetect);
-    EXPECT_TRUE(ecClass != nullptr);
-    JsonInserter inserter(ecdb, *ecClass, nullptr);
-    ECInstanceKey key;
-    EXPECT_EQ(SUCCESS, inserter.Insert(key, data));
-    const_cast<ECDbR>(ecdb).SaveChanges();
-    return key;
-};
-
-Json::Value readInst(ECDbCR ecdb,ECInstanceKey ik, Utf8CP prop) {
-    auto ecClass = ecdb.Schemas().GetClass(ik.GetClassId());
-    ECSqlStatement stmt;
-    Utf8String sql = SqlPrintfString("SELECT %s FROM %s WHERE ECInstanceId=%s", prop, ecClass->GetFullName(), ik.GetInstanceId().ToString().c_str()).GetUtf8CP();
-    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql.c_str())) << "ECSQL:" << sql.c_str();
-    EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW)  << "ECSQL:" << sql.c_str();
-    JsonECSqlSelectAdapter sl(stmt);
-    Json::Value v;
-    EXPECT_EQ(SUCCESS, sl.GetRowInstance(v, ecClass->GetId()));
-    return v;
-};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -15722,9 +15661,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
         }
     })"_json;
 
-    auto key1 = insertInst(m_ecdb, inst1);
+    auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify instance was written correctlye") {
-        auto out = readInst(m_ecdb, key1, "S");
+        auto out = ReadInstance(m_ecdb, key1, "S");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -15754,7 +15693,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
                     </ECStructClass>
                 </ECSchema>)"_schema;
 
-    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     m_ecdb.SaveChanges();
 
     if ("verify property map after schema upgrade") {
@@ -15808,14 +15747,14 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
             }
         }
     })"_json;
-    auto key2 = insertInst(m_ecdb, inst2);
+    auto key2 = InsertInstance(m_ecdb, inst2);
 
     if ("verify instance was transformed correctly after schema import") {
-        auto out = readInst(m_ecdb, key1, "S");
+        auto out = ReadInstance(m_ecdb, key1, "S");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("verify instance inserted after schema upgrade") {
-        auto out = readInst(m_ecdb, key2, "L,S");
+        auto out = ReadInstance(m_ecdb, key2, "L,S");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("Make sure the column where property used to reside is set to null") {
@@ -15882,9 +15821,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
         }
     })"_json;
 
-    auto key1 = insertInst(m_ecdb, inst1);
+    auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify instance was written correctlye") {
-        auto out = readInst(m_ecdb, key1, "structProp");
+        auto out = ReadInstance(m_ecdb, key1, "structProp");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -15911,7 +15850,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
                     </ECStructClass>
                 </ECSchema>)"_schema;
 
-    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     m_ecdb.SaveChanges();
 
     if ("verify property map after schema upgrade") {
@@ -15946,14 +15885,14 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
             }
         }
     })"_json;
-    auto key2 = insertInst(m_ecdb, inst2);
+    auto key2 = InsertInstance(m_ecdb, inst2);
 
     if ("verify instance was transformed correctly after schema import") {
-        auto out = readInst(m_ecdb, key1, "structProp");
+        auto out = ReadInstance(m_ecdb, key1, "structProp");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("verify instance inserted after schema upgrade") {
-        auto out = readInst(m_ecdb, key2, "structProp");
+        auto out = ReadInstance(m_ecdb, key2, "structProp");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("Make sure the column where property used to reside is set to null") {
@@ -16039,9 +15978,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
             }
         }
     })"_json;
-    auto key1 = insertInst(m_ecdb, inst1);
+    auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify element instance") {
-        auto out = readInst(m_ecdb, key1, "structProp");
+        auto out = ReadInstance(m_ecdb, key1, "structProp");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16057,9 +15996,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
             }
         }
     })"_json;
-    auto key2 = insertInst(m_ecdb, inst2);
+    auto key2 = InsertInstance(m_ecdb, inst2);
     if ("verify geom2d instance") {
-        auto out = readInst(m_ecdb, key2, "G1, structProp");
+        auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16090,7 +16029,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
                     </ECStructClass>
                 </ECSchema>)"_schema;
 
-    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     m_ecdb.SaveChanges();
 
     if ("verify map for element") {
@@ -16144,7 +16083,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
             }
         }
     })"_json;
-    auto key3 = insertInst(m_ecdb, inst3);
+    auto key3 = InsertInstance(m_ecdb, inst3);
 
     auto inst4 = R"({
         "className": "ts.Geom2d",
@@ -16160,22 +16099,22 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
             }
         }
     })"_json;
-    auto key4 = insertInst(m_ecdb, inst4);
+    auto key4 = InsertInstance(m_ecdb, inst4);
 
     if ("check element before schema upgrade") {
-        auto out = readInst(m_ecdb, key1, "structProp");
+        auto out = ReadInstance(m_ecdb, key1, "structProp");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom2d before schema upgrade") {
-        auto out = readInst(m_ecdb, key2, "G1, structProp");
+        auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check element after schema upgrade") {
-        auto out = readInst(m_ecdb, key3, "structProp");
+        auto out = ReadInstance(m_ecdb, key3, "structProp");
         ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom3d after schema upgrade") {
-        auto out = readInst(m_ecdb, key4, "G1, structProp");
+        auto out = ReadInstance(m_ecdb, key4, "G1, structProp");
         ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check data was moved and left behind") {
@@ -16345,9 +16284,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
             }
         }
     })"_json;
-    auto key1 = insertInst(m_ecdb, inst1);
+    auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify element instance") {
-        auto out = readInst(m_ecdb, key1, "structProp");
+        auto out = ReadInstance(m_ecdb, key1, "structProp");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16363,9 +16302,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
             }
         }
     })"_json;
-    auto key2 = insertInst(m_ecdb, inst2);
+    auto key2 = InsertInstance(m_ecdb, inst2);
     if ("verify geom2d instance") {
-        auto out = readInst(m_ecdb, key2, "G1, structProp");
+        auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16396,7 +16335,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
                     </ECStructClass>
                 </ECSchema>)"_schema;
 
-    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     m_ecdb.SaveChanges();
 
     if ("verify map for element") {
@@ -16450,7 +16389,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
             }
         }
     })"_json;
-    auto key3 = insertInst(m_ecdb, inst3);
+    auto key3 = InsertInstance(m_ecdb, inst3);
 
     auto inst4 = R"({
         "className": "ts.Geom2d",
@@ -16466,22 +16405,22 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableAlreadyExist
             }
         }
     })"_json;
-    auto key4 = insertInst(m_ecdb, inst4);
+    auto key4 = InsertInstance(m_ecdb, inst4);
 
     if ("check element before schema upgrade") {
-        auto out = readInst(m_ecdb, key1, "structProp");
+        auto out = ReadInstance(m_ecdb, key1, "structProp");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom2d before schema upgrade") {
-        auto out = readInst(m_ecdb, key2, "G1, structProp");
+        auto out = ReadInstance(m_ecdb, key2, "G1, structProp");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check element after schema upgrade") {
-        auto out = readInst(m_ecdb, key3, "structProp");
+        auto out = ReadInstance(m_ecdb, key3, "structProp");
         ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom3d after schema upgrade") {
-        auto out = readInst(m_ecdb, key4, "G1, structProp");
+        auto out = ReadInstance(m_ecdb, key4, "G1, structProp");
         ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check data was moved and left behind - element") {
@@ -16643,9 +16582,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             }
         }
     })"_json;
-    auto key1 = insertInst(m_ecdb, inst1);
+    auto key1 = InsertInstance(m_ecdb, inst1);
     if ("verify element instance") {
-        auto out = readInst(m_ecdb, key1, "S");
+        auto out = ReadInstance(m_ecdb, key1, "S");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16664,9 +16603,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             }
         }
     })"_json;
-    auto key2 = insertInst(m_ecdb, inst2);
+    auto key2 = InsertInstance(m_ecdb, inst2);
     if ("verify geom2d instance") {
-        auto out = readInst(m_ecdb, key2, "S, G");
+        auto out = ReadInstance(m_ecdb, key2, "S, G");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16686,9 +16625,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             "I": 9154
         }
     })"_json;
-    auto key3 = insertInst(m_ecdb, inst3);
+    auto key3 = InsertInstance(m_ecdb, inst3);
     if ("verify geom2da instance") {
-        auto out = readInst(m_ecdb, key3, "S, G, I");
+        auto out = ReadInstance(m_ecdb, key3, "S, G, I");
         ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16707,9 +16646,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             }
         }
     })"_json;
-    auto key4 = insertInst(m_ecdb, inst4);
+    auto key4 = InsertInstance(m_ecdb, inst4);
     if ("verify geom3d instance") {
-        auto out = readInst(m_ecdb, key4, "S, G");
+        auto out = ReadInstance(m_ecdb, key4, "S, G");
         ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16729,9 +16668,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             "I": 4478
         }
     })"_json;
-    auto key5 = insertInst(m_ecdb, inst5);
+    auto key5 = InsertInstance(m_ecdb, inst5);
     if ("verify geom3da instance") {
-        auto out = readInst(m_ecdb, key5, "S, G, I");
+        auto out = ReadInstance(m_ecdb, key5, "S, G, I");
         ASSERT_STREQ(inst5["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16778,7 +16717,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
                     </ECStructClass>
                 </ECSchema>)"_schema;
 
-    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     m_ecdb.SaveChanges();;
 
     if ("verify element mapping before schema upgrade") {
@@ -16895,9 +16834,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             }
         }
     })"_json;
-    auto key6 = insertInst(m_ecdb, inst6);
+    auto key6 = InsertInstance(m_ecdb, inst6);
     if ("verify element instance") {
-        auto out = readInst(m_ecdb, key6, "S");
+        auto out = ReadInstance(m_ecdb, key6, "S");
         ASSERT_STREQ(inst6["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16918,9 +16857,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             }
         }
     })"_json;
-    auto key7 = insertInst(m_ecdb, inst7);
+    auto key7 = InsertInstance(m_ecdb, inst7);
     if ("verify geom2d instance") {
-        auto out = readInst(m_ecdb, key7, "S, G");
+        auto out = ReadInstance(m_ecdb, key7, "S, G");
         ASSERT_STREQ(inst7["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16942,9 +16881,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             "I": 8480
         }
     })"_json;
-    auto key8 = insertInst(m_ecdb, inst8);
+    auto key8 = InsertInstance(m_ecdb, inst8);
     if ("verify geom2da instance") {
-        auto out = readInst(m_ecdb, key8, "S, G, I");
+        auto out = ReadInstance(m_ecdb, key8, "S, G, I");
         ASSERT_STREQ(inst8["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16965,9 +16904,9 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             }
         }
     })"_json;
-    auto key9 = insertInst(m_ecdb, inst9);
+    auto key9 = InsertInstance(m_ecdb, inst9);
     if ("verify geom3d instance") {
-        auto out = readInst(m_ecdb, key9, "S, G");
+        auto out = ReadInstance(m_ecdb, key9, "S, G");
         ASSERT_STREQ(inst9["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
@@ -16989,29 +16928,29 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
             "I": 5249
         }
     })"_json;
-    auto key10 = insertInst(m_ecdb, inst10);
+    auto key10 = InsertInstance(m_ecdb, inst10);
     if ("verify geom3da instance") {
-        auto out = readInst(m_ecdb, key10, "S, G, I");
+        auto out = ReadInstance(m_ecdb, key10, "S, G, I");
         ASSERT_STREQ(inst10["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check element before schema upgrade") {
-        auto out = readInst(m_ecdb, key1, "S");
+        auto out = ReadInstance(m_ecdb, key1, "S");
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom2d before schema upgrade") {
-        auto out = readInst(m_ecdb, key2, "S, G");
+        auto out = ReadInstance(m_ecdb, key2, "S, G");
         ASSERT_STREQ(inst2["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom2da after schema upgrade") {
-        auto out = readInst(m_ecdb, key3, "S, G, I");
+        auto out = ReadInstance(m_ecdb, key3, "S, G, I");
         ASSERT_STREQ(inst3["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom3d after schema upgrade") {
-        auto out = readInst(m_ecdb, key4, "S, G");
+        auto out = ReadInstance(m_ecdb, key4, "S, G");
         ASSERT_STREQ(inst4["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check geom3da after schema upgrade") {
-        auto out = readInst(m_ecdb, key5, "S, G, I");
+        auto out = ReadInstance(m_ecdb, key5, "S, G, I");
         ASSERT_STREQ(inst5["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
     if ("check data was moved and left behind - element") {

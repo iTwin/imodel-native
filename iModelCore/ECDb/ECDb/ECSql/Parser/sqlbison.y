@@ -118,7 +118,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_TRUE SQL_TOKEN_UNION
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_USING SQL_TOKEN_VALUE SQL_TOKEN_VALUES
 %token <pParseNode> SQL_TOKEN_WHERE
-
+%token <pParseNode> SQL_TOKEN_DOLLAR
 %token <pParseNode> SQL_BITWISE_NOT
 
 /* time and date functions */
@@ -148,6 +148,8 @@ using namespace connectivity;
 
 %left <pParseNode> SQL_TOKEN_OR
 %left <pParseNode> SQL_TOKEN_AND
+
+%left <pParseNode> SQL_ARROW
 
 %left <pParseNode> SQL_BITWISE_OR
 %left <pParseNode> SQL_BITWISE_AND
@@ -205,7 +207,7 @@ using namespace connectivity;
 %type <pParseNode> table_node tablespace_qualified_class_name qualified_class_name class_name table_primary_as_range_column opt_as
 %type <pParseNode> table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
-%type <pParseNode> when_operand_list when_operand case_operand
+%type <pParseNode> when_operand_list when_operand case_operand opt_extract_value
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_disqualify_primary_join opt_disqualify_polymorphic_constraint
 
 /* LIMIT and OFFSET */
@@ -1384,7 +1386,39 @@ function_name:
 
 
 general_set_fct:
-        set_fct_type '(' opt_all_distinct function_arg ')'
+        SQL_TOKEN_MAX '(' opt_all_distinct  function_args_commalist ')'
+        {
+            if($4->count() != 1)
+                {
+                SQLyyerror(context, "Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])");
+                YYERROR;
+                }
+
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = $4->getChild(0));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+
+        }
+    |   SQL_TOKEN_MIN '(' opt_all_distinct  function_args_commalist ')'
+        {
+            if($4->count() != 1)
+                {
+                SQLyyerror(context, "Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])");
+                YYERROR;
+                }
+
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = $4->getChild(0));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+
+        }
+    |   set_fct_type '(' opt_all_distinct function_arg ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1414,8 +1448,6 @@ general_set_fct:
 
 set_fct_type:
         SQL_TOKEN_AVG
-    |   SQL_TOKEN_MAX
-    |   SQL_TOKEN_MIN
     |   SQL_TOKEN_SUM
     |   SQL_TOKEN_EVERY
     |   SQL_TOKEN_ANY
@@ -1607,6 +1639,16 @@ cast_spec:
             $$->append($4);
             $$->append($5);
             $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    ;
+
+opt_extract_value:
+      { $$ = SQL_NEW_RULE; }
+    | SQL_ARROW  property_path
+        {
+           $$ = SQL_NEW_RULE;
+           $$->append($2);
+
         }
     ;
 value_exp_primary:
@@ -2002,13 +2044,19 @@ property_path_entry:
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
         }
+	|   SQL_TOKEN_DOLLAR
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("$", SQL_NODE_PUNCTUATION));
+        }
     ;
 
 column_ref:
-		property_path
+		property_path opt_extract_value
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
+            $$->append($2);
 		}
 
 
