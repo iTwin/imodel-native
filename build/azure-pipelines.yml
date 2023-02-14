@@ -18,6 +18,7 @@ resources:
     - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
+      # Temp for testing
       ref: refs/heads/fix-validation-status
       endpoint: github.com_imodel-native
     - repository: itwinjs-core
