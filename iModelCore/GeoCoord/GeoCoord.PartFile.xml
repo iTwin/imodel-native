@@ -26,6 +26,12 @@
     <Part Name="GeoCoord-Dev">
         <SubPart PartName= "GeoCoord-Tested" />
     </Part>
+    
+    <Part Name="GeoCoord-FullyTested">
+        <SubPart PartName= "GeoCoord-Dev" />
+        <SubPart PartName= "GeoCoord-ExtensiveTested" />
+    </Part>
+    
     <!-- ******************************** Unit Tests ************************************** -->
 
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
@@ -82,4 +88,61 @@
     <ProductDirectoryList ListName="GeoCoordGTestsDir" >
         <ProductDirectory Name="CSMap"                Deliver="false" />
     </ProductDirectoryList>
+
+    <!-- ******************************** Dictionary Tests ************************************** -->
+
+    <Part Name="UnitTests-ExtensiveTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=ExtensiveTests">
+        <SubPart PartName="GeoCoord" />
+        <SubPart PartName="GeoCoordWorkspaceData"            PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/ExtensiveTests" SourceName="Delivery/UnitTests/Objects/ExtensiveTests"/>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="GeoCoord/ExtensiveTests" SubPartDirectory="UnitTests/GeoCoord">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests-Extensive">
+         <SubPart PartName="UnitTests-ExtensiveTests"/>
+        <!-- Not yet SubPart PartName="UnitTests-Published"/-->
+    </Part>
+
+    <Product Name="GeoCoord-ExtensiveTests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base"/>
+        <SubPart PartName="Tests-Extensive"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Directories DirectoryListName="GeoCoordExtensiveGTestsDir"/>
+    </Product>
+
+    <!-- Define a gtest program to run the tests -->
+    <Part Name="GtestExtensive" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordExtensiveTests -dTEST_COLLECTION_PRODUCT=GeoCoord-ExtensiveTests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="GeoCoord-ExtensiveTests"/>
+         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeoCoordExtensiveTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeoCoordExtensiveTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="GeoCoord-ExtensiveGTest">
+        <SubPart PartName="GtestExtensive"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Directories DirectoryListName="GeoCoordExtensiveGTestsDir"/>
+    </Product>
+
+    <Part Name="RunExtensiveGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeoCoord-ExtensiveGTest -dGTEST_NAME=GeoCoordExtensiveTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="GeoCoord-ExtensiveGTest"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeoCoordExtensiveTests.log</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="GeoCoord-ExtensiveTested">
+        <SubPart PartName="RunExtensiveGtest" />
+    </Part>
+    
+    <ProductDirectoryList ListName="GeoCoordExtensiveGTestsDir" >
+        <ProductDirectory Name="CSMap"                Deliver="false" />
+    </ProductDirectoryList>
+    
 </BuildContext>

@@ -5,30 +5,30 @@
 #include <Bentley/BeTest.h>
 
 #include <GeoCoord/BaseGeoCoord.h>
-#include "GeoCoordTestCommon.h"
+#include "GeoCoordExtensiveTestCommon.h"
 
 using namespace ::testing;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-class GCSGeneralSDKTests : public ::testing::TestWithParam< Utf8String >
+class GCSGeneralSDKExtensiveTests : public ::testing::TestWithParam< Utf8String >
     {   
     public:
-        virtual void SetUp() { GeoCoordTestCommon::Initialize(); };
-        virtual void TearDown() {GeoCoordTestCommon::Shutdown();};
+        virtual void SetUp() { GeoCoordExtensiveTestCommon::Initialize(); };
+        virtual void TearDown() {GeoCoordExtensiveTestCommon::Shutdown();};
 
-        GCSGeneralSDKTests() {};
-        ~GCSGeneralSDKTests() {};
+        GCSGeneralSDKExtensiveTests() {};
+        ~GCSGeneralSDKExtensiveTests() {};
     };
 
 /*---------------------------------------------------------------------------------**//**
 * test all transformation to full json then back
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (GCSGeneralSDKTests, GCSTransformToFullJsonThenBack)
+TEST_F (GCSGeneralSDKExtensiveTests, GCSTransformToFullJsonThenBack)
     {
-    const bvector<Utf8String>& listOfGCS = GeoCoordTestCommon::GetRepresentativeMiniListOfGCS();
+    const bvector<Utf8String>& listOfGCS = GeoCoordExtensiveTestCommon::GetRepresentativeListOfGCS();
 
     double parameters[12] = {1.0, 0.0, 10.0, 20.0, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
@@ -116,15 +116,15 @@ TEST_F (GCSGeneralSDKTests, GCSTransformToFullJsonThenBack)
 
                 EXPECT_TRUE(currentGCS->IsEquivalent(*resultGCS));
                 
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMinimumLatitude(), resultGCS->GetMinimumLatitude()));
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMinimumLongitude(), resultGCS->GetMinimumLongitude()));
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMaximumLatitude(), resultGCS->GetMaximumLatitude()));
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMaximumLongitude(), resultGCS->GetMaximumLongitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMinimumLatitude(), resultGCS->GetMinimumLatitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMinimumLongitude(), resultGCS->GetMinimumLongitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMaximumLatitude(), resultGCS->GetMaximumLatitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMaximumLongitude(), resultGCS->GetMaximumLongitude()));
 
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMinimumUsefulLatitude(), resultGCS->GetMinimumUsefulLatitude()));
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMinimumUsefulLongitude(), resultGCS->GetMinimumUsefulLongitude()));
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMaximumUsefulLatitude(), resultGCS->GetMaximumUsefulLatitude()));
-                EXPECT_TRUE(GeoCoordTestCommon::doubleSame(currentGCS->GetMaximumUsefulLongitude(), resultGCS->GetMaximumUsefulLongitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMinimumUsefulLatitude(), resultGCS->GetMinimumUsefulLatitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMinimumUsefulLongitude(), resultGCS->GetMinimumUsefulLongitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMaximumUsefulLatitude(), resultGCS->GetMaximumUsefulLatitude()));
+                EXPECT_TRUE(GeoCoordExtensiveTestCommon::doubleSame(currentGCS->GetMaximumUsefulLongitude(), resultGCS->GetMaximumUsefulLongitude()));
 
                 EXPECT_STREQ(currentGCS->GetDescription(), resultGCS->GetDescription());
                 Utf8String source1, source2;
