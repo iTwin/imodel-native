@@ -908,7 +908,7 @@ SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, Schema
     }
 
     auto& ecdb = const_cast<ECDbR>(m_ecdb);
-    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions());
+    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
     BeMutexHolder holder(ecdb.GetImpl().GetMutex());
     if(isPull) {
         // pull changes local schema
@@ -1742,9 +1742,12 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (!sqliteIndexItor->second.EqualsIAscii(ddl))
                     {
                     LOG.debugv("Schema Import> Recreating index '%s'. The index definition has changed.", index.GetName().c_str());
-                    // Delete its entry from ec_index table
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
-                        return ERROR;
+                    if (!ctx.IsSynchronizeSchemas())
+                        {
+                        // Delete its entry from ec_index table
+                        if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                            return ERROR;
+                        }
 
                     // Drop the existing index as its defintion has modified and need to be recreated.
                     if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
@@ -1753,8 +1756,11 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                     if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
                         return ERROR;
 
-                    if (SUCCESS != m_dbSchema.PersistIndexDef(index))
-                        return ERROR;
+                    if (!ctx.IsSynchronizeSchemas())
+                        {
+                        if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                            return ERROR;
+                        }
                     }
                 else
                     {
@@ -1771,26 +1777,31 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
                     return ERROR;
 
-                // Delete its entry from ec_index table
-                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
-                    return ERROR;
+                if (!ctx.IsSynchronizeSchemas())
+                    {
+                    // Delete its entry from ec_index table
+                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                        return ERROR;
 
-                if (SUCCESS != m_dbSchema.PersistIndexDef(index))
-                    return ERROR;
-
+                    if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                        return ERROR;
+                    }
                 }
             }
         else
             {
-            //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
-            //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
-                              // Delete its entry from ec_index table
-            if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
-                return ERROR;
+            if (!ctx.IsSynchronizeSchemas())
+                {
+                //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
+                //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
+                                // Delete its entry from ec_index table
+                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                    return ERROR;
 
-            LOG.debugv("Schema Import> Virtual index '%s'. NOP SQLite Index", index.GetName().c_str());
-            if (SUCCESS != m_dbSchema.PersistIndexDef(index))
-                return ERROR;
+                LOG.debugv("Schema Import> Virtual index '%s'. NOP SQLite Index", index.GetName().c_str());
+                if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                    return ERROR;
+                }
             }
         }
 

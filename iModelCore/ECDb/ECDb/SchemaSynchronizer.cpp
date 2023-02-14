@@ -7,18 +7,30 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+/*
+SQL to reconstruct index from ec_tables
 
 
-// void CheckSchemas() {
+SELECT idx.id, idx.Name name, tb.Name tbl_name, 'index' type,
+       FORMAT ('CREATE %s INDEX %s ON %s (%s)',
+              IIF ([idx].[IsUnique], 'UNIQUE', ''),
+              [idx].[Name],
+              [tb].[Name],
+              (SELECT GROUP_CONCAT ([col].[Name], ',')
+                      FROM   [ec_IndexColumn] [ic]
+                      JOIN [ec_Column] [col] ON [col].[Id] = [ic].[ColumnId]
+                      AND [ic].[IndexId] = [idx].[Id]
+                      ORDER  BY [ic].[Ordinal])) sql
+FROM   [ec_index] [idx]
+       JOIN [ec_table] [tb] ON [tb].[Id] = [idx].[TableId];
 
-// }
-// void CheckClasses () {
 
-// }
 
-// void CheckProperties() {
 
-// }
+*/
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct SqlIndexDef final {
 	private:
         std::string m_createSql;
@@ -60,6 +72,9 @@ struct SqlIndexDef final {
         }
 };
 
+//=======================================================================================
+// 	SchemaSynchronizer
+//+===============+===============+===============+===============+===============+======
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -194,16 +209,14 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 	std::vector<std::string> delClauseExprs;
 	for(auto& col : targetCols) {
 		setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
-
     }
-
 	for(auto& col : sourcePkCols) {
   		delClauseExprs.push_back(SqlPrintfString("%s=[source].%s", col.c_str(), col.c_str()).GetUtf8CP());
     }
 
 	const auto updateColsSql = Join(setClauseExprs);
-	const auto deleteColsSql = Join(delClauseExprs, " AND ");
     const auto targetPkColsSql = Join(targetPkCols);
+	const auto deleteColsSql = Join(delClauseExprs, " AND ");
 
     const auto allowDelete = true;
     if (allowDelete) {
@@ -214,6 +227,7 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 				deleteColsSql.c_str()
 				).GetUtf8CP()
 			};
+
 		Statement stmt;
 		rc = stmt.Prepare(conn, deleteTargetSql.c_str());
 		if (rc != BE_SQLITE_OK) {
@@ -224,7 +238,8 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 			printf("SQL (%s): %s \n", conn.GetLastError().c_str(), deleteTargetSql.c_str());
             return rc;
         }
-	}
+        // printf("deleted rows (%s): %d\n", targetTableSql.c_str(), conn.GetModifiedRowCount());
+    }
 
     const auto sql = std::string{SqlPrintfString(
 		"insert into %s(%s) select %s from %s where 1 on conflict do update set %s",
@@ -245,6 +260,7 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 	if (rc != BE_SQLITE_DONE) {
         printf("SQL (%s): %s \n", conn.GetLastError().c_str(), sql.c_str());
     }
+	// printf("upsert rows  (%s): %d\n",targetTableSql.c_str(), conn.GetModifiedRowCount());
     return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
 }
 
@@ -293,10 +309,9 @@ DbResult SchemaSynchronizer::GetECTables(DbR conn, std::vector<std::string>& tab
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction action, bool verifySynDb) {
+DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction action, bool verifySynDb, std::vector<std::string> const& additionTables) {
 	const auto kSyncDbAlias = "sync_db";
 	const auto kMainDbAlias = "main";
-
 
     BeFileName syncDbFile(syncDbPath);
 	if (!syncDbFile.DoesPathExist()) {
@@ -312,7 +327,7 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 		return BE_SQLITE_READONLY;
 	}
 
-	ECDb syncDb;
+    ECDb syncDb;
 	if (action == SyncAction::Pull) {
 		// check if sync db can be open in readonly mode and run a query to make sure its valid
         auto rc = syncDb.OpenBeSQLiteDb(syncDbFile, Db::OpenParams(Db::OpenMode::Readonly));
@@ -338,6 +353,26 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 	}
 	DbResult rc;
 	if (verifySynDb) {
+        const auto syncInfo = SchemaSyncInfo::From(syncDb);
+		if (syncInfo.IsEmpty()) {
+			conn.GetImpl().Issues().ReportV(
+				IssueSeverity::Error,
+				IssueCategory::SchemaSynchronization,
+				IssueType::ECDbIssue,
+				"SyncInfo not found. Not valid SyncDb %s. ", syncDbPath);
+            return BE_SQLITE_ERROR;
+        }
+		if (syncInfo.GetSourceProjectGuid() != conn.QueryProjectGuid()) {
+			conn.GetImpl().Issues().ReportV(
+				IssueSeverity::Error,
+				IssueCategory::SchemaSynchronization,
+				IssueType::ECDbIssue,
+				"SyncInfo project guid does not match. %s <> %s",
+				 syncInfo.GetSourceProjectGuid().ToString().c_str(),
+				 conn.QueryProjectGuid().ToString().c_str());
+			return BE_SQLITE_ERROR;
+		}
+
 		ECSqlStatement stmt;
 		auto ecsqlRc = stmt.Prepare(syncDb, "SELECT * FROM ECDbMeta.ECClassDef");
 		if (!ecsqlRc.IsSuccess()) {
@@ -418,28 +453,35 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 		return detachAndReturn(rc);
 	}
 
-    tables.push_back("be_Prop");
+    tables.insert(tables.end(), additionTables.begin(), additionTables.end());
     return detachAndReturn(SyncData(conn, tables, fromAlias, toAlias));
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
-	// we need to create syncDbUri
-
     Db syncDb;
-
     auto rc = syncDb.OpenBeSQLiteDb(syncDbUri, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
 	if (rc != BE_SQLITE_OK) {
         return rc;
 	}
+	syncDb.GetStatementCache().Empty();
 
     auto dropDataTables = [](DbR db) {
 		Statement stmt;
-		auto rc = stmt.Prepare(db, "SELECT [Name] FROM [ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow ") ORDER BY [Type] DESC");
+        std::vector<std::string> tables;
+        auto rc = stmt.Prepare(db, "SELECT [Name] FROM [ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow R"x() AND Name NOT LIKE 'ecdbf\_%' ESCAPE '\' ORDER BY [Type] DESC)x");
 		if (rc != BE_SQLITE_OK) {
 			return rc;
 		}
 		while(stmt.Step() == BE_SQLITE_ROW) {
-			rc = db.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", stmt.GetValueText(0)).GetUtf8CP());
+            tables.push_back(stmt.GetValueText(0));
+        }
+
+        stmt.Finalize();
+        for(auto& table : tables) {
+			rc = db.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
 			if (rc != BE_SQLITE_OK) {
 				return rc;
 			}
@@ -461,7 +503,6 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 		}
         return BE_SQLITE_OK;
     };
-
     auto createMetaTables = [](ECDbR fromDb, DbR syncDb) {
 		const auto sql = std::string {R"z(
 			SELECT
@@ -503,15 +544,119 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 		return rc;
 	}
 
+	auto syncInfo = SchemaSyncInfo::New();
+    syncInfo.SetSource(conn);
+    rc = syncInfo.SaveTo(syncDb);
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
     rc = syncDb.SaveChanges();
 	if (rc != BE_SQLITE_OK) {
 		return rc;
 	}
 
-	syncDb.CloseDb();
-    return SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push, false);
+    syncDb.CloseDb();
+    return SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push, false, {"be_Prop"});
 }
 
+//=======================================================================================
+// 	SyncInfo
+//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSyncInfo SchemaSyncInfo::New() {
+	SchemaSyncInfo info;
+	info.m_syncId.Create();
+	info.m_created = DateTime::GetCurrentTimeUtc();
+	info.m_modified = DateTime::GetCurrentTimeUtc();
+	info.m_version = BeInt64Id(1u);
+	return info;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaSyncInfo::SetSource(DbCR db) {
+	m_sourceProjectGuid = db.QueryProjectGuid();
+	m_sourceDbGuid = db.GetDbGuid();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncInfo::SaveTo(DbR db) const {
+	BeJsDocument doc;
+    const auto propSpec = PropertySpec(JPropertyName, JPropertyNamespace);
+    doc[JSyncId] = m_syncId.ToString();
+	doc[JCreatedOnUtc] = m_created.ToTimestampString();
+	doc[JModifiedOnUtc] = DateTime::GetCurrentTimeUtc().ToTimestampString();
+	doc[JVersion] = m_version.ToHexStr();
+	doc[JSourceProjectGuid] = m_sourceProjectGuid.ToString();
+	doc[JSourceDbGuid] = m_sourceDbGuid.ToString();
+	return db.SavePropertyString(propSpec, doc.Stringify());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSyncInfo const& SchemaSyncInfo::Empty() {
+    static SchemaSyncInfo s_empty;
+    return s_empty;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSyncInfo SchemaSyncInfo::From(DbCR db) {
+	Utf8String strData;
+    SchemaSyncInfo info;
+
+    const auto propSpec = PropertySpec(JPropertyName, JPropertyNamespace);
+	auto rc = db.QueryProperty(strData, propSpec);
+	if (rc != BE_SQLITE_ROW) {
+		return SchemaSyncInfo::Empty();
+	}
+
+	BeJsDocument doc;
+	doc.Parse(strData);
+	if (!doc.isObject()){
+		return SchemaSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JSyncId)) {
+		info.m_syncId.FromString(doc[JSyncId].asCString());
+	} else {
+		return SchemaSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JCreatedOnUtc)){
+		info.m_created.FromString(doc[JCreatedOnUtc].asCString());
+	} else {
+		return SchemaSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JModifiedOnUtc)){
+		info.m_modified.FromString(doc[JModifiedOnUtc].asCString());
+	} else {
+		return SchemaSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JSourceProjectGuid)){
+		info.m_sourceProjectGuid.FromString(doc[JSourceProjectGuid].asCString());
+	} else {
+		return SchemaSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JSourceDbGuid)){
+		info.m_sourceDbGuid.FromString(doc[JSourceDbGuid].asCString());
+	} else {
+		return SchemaSyncInfo::Empty();
+	}
+
+	return info;
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

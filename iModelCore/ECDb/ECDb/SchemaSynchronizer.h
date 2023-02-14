@@ -26,78 +26,54 @@ private:
     static DbResult GetECTables(DbR conn, std::vector<std::string>& tables, Utf8CP dbAlias);
 
 public:
-    static DbResult SyncData(ECDbR conn, Utf8CP syncDbUri, SyncAction action, bool verifySynDb = true);
+    static DbResult SyncData(ECDbR conn, Utf8CP syncDbUri, SyncAction action, bool verifySynDb = true, std::vector<std::string> const& additionTables = std::vector<std::string>());
     static DbResult InitSynDb(ECDbR conn, Utf8CP syncDb);
+
+
 };
 
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaSyncInfo final {
+	private:
+		constexpr static char JCreatedOnUtc[] = "created_on_utc";
+		constexpr static char JModifiedOnUtc[] = "modified_on_utc";
+		constexpr static char JSyncId[] = "id";
+		constexpr static char JVersion[] = "version";
+        constexpr static char JPropertyName[] = "sync_info";
+        constexpr static char JPropertyNamespace[] = "ec_Db";
+        constexpr static char JSourceDbGuid[] = "source_db_guid";
+        constexpr static char JSourceProjectGuid[] = "source_project_guid";
 
-// struct SyncDbInfo {
-// 	private:
-// 		constexpr static char* JPropertyName = "sync_info";
-// 		constexpr static char* JNamespace = "ec_Db";
-// 		constexpr static char* JSyncId = "id";
-// 		constexpr static char* JCreatedOn = "created_on";
-// 		constexpr static char* JModifiedOn = "modified_on";
-// 		constexpr static char* JVer = "ver";
+		BeGuid m_syncId;
+		DateTime m_created;
+		DateTime m_modified;
+		BeInt64Id m_version;
+        BeGuid m_sourceProjectGuid;
+        BeGuid m_sourceDbGuid;
 
-// 		BeGuid m_syncId;
-// 		DateTime m_created;
-// 		DateTime m_modified;
-// 		BeInt64Id m_ver;
+        SchemaSyncInfo(){}
 
-// 	public:
-// 		static SyncDbInfo New() {
-//         	SyncDbInfo info;
-//             info.m_syncId.Create();
-//             info.m_created = DateTime::GetCurrentTimeUtc();
-//             info.m_modified = DateTime::GetCurrentTimeUtc();
-//             info.m_ver = BeInt64Id(1u);
-//             return info;
-//         }
-// 		DbResult WriteTo(DbR db) const {
-// 			BeJsDocument doc;
-// 			doc[JSyncId] = m_syncId.ToString();
-// 			doc[JCreatedOn] = m_created.ToTimestampString();
-// 			doc[JModifiedOn] = DateTime::GetCurrentTimeUtc().ToTimestampString();
-// 			doc[JVer] = m_ver.ToHexStr();
-// 			PropertySpec spec(JPropertyName, JNamespace);
-// 			return db.SavePropertyString(spec, doc.Stringify());
-// 		}
-// 		DbResult ReadFrom(DbR db) {
-// 			Utf8String strData;
-// 			PropertySpec spec(JPropertyName, JNamespace);
-// 			auto rc = db.QueryProperty(strData, spec);
-// 			if (rc != BE_SQLITE_ROW) {
-// 				return rc;
-// 			}
+	public:
+        SchemaSyncInfo(SchemaSyncInfo&&) = default;
+        SchemaSyncInfo(SchemaSyncInfo const&) = default;
+        SchemaSyncInfo& operator =(SchemaSyncInfo&&) = default;
+        SchemaSyncInfo& operator =(SchemaSyncInfo const&) = default;
+		DbResult SaveTo(DbR syncDb) const;
+        BeGuidCR GetSyncId() const { return m_syncId; }
+		DateTimeCR GetCreatedOn() const { return m_created; }
+		DateTimeCR GetModifiedOn() const {return m_modified; }
+		BeInt64Id GetVersion() const { return m_version; }
+        BeGuidCR GetSourceProjectGuid() const { return m_sourceProjectGuid; }
+        BeGuidCR GetSourceDbGuid() const {return m_sourceDbGuid; }
+        bool IsEmpty() const {return !m_syncId.IsValid();}
+        void SetSource(DbCR db);
+        static SchemaSyncInfo New();
+        static SchemaSyncInfo From(DbCR);
+        static SchemaSyncInfo const& Empty();
 
-// 			BeJsDocument doc;
-//             doc.Parse(strData);
-// 			if (!doc.isObject()){
-//                 return BE_SQLITE_ERROR;
-//             }
-
-// 			if (doc.hasMember(JSyncId)) {
-//             	m_syncId.FromString(doc[JSyncId].asCString());
-// 			} else {
-// 				 return BE_SQLITE_ERROR;
-// 			}
-
-// 			if (doc.hasMember(JCreatedOn)){
-//             	m_created.FromString(doc[JCreatedOn].asCString());
-// 			} else {
-// 				 return BE_SQLITE_ERROR;
-// 			}
-
-// 			if (doc.hasMember(JModifiedOn)){
-//             	m_modified.FromString(doc[JModifiedOn].asCString());
-// 			} else {
-// 				 return BE_SQLITE_ERROR;
-// 			}
-//             return BE_SQLITE_OK;
-//         };
-
-// };
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
