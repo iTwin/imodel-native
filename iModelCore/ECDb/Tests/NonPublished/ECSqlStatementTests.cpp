@@ -8184,18 +8184,18 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         ASSERT_TRUE (stmt.GetColumnInfo(10).IsSystemProperty());// D.TargetECClassId            CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo(11).IsSystemProperty());// D.TargetECClassId    a6      CORRECT
 
-        EXPECT_STREQ(stmt.GetColumnInfo( 0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId               CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId       a1      CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 2).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId"       );// D.ECClassId                  CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECClassId          a2      WRONG?
-        EXPECT_STREQ(stmt.GetColumnInfo( 4).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceId"      );// D.SourceECInstanceId         CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.SourceECInstanceId a3      WRONG?
-        EXPECT_STREQ(stmt.GetColumnInfo( 6).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceClassId" );// D.SourceECClassId            CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 7).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.SourceECClassId    a4      WRONG?
-        EXPECT_STREQ(stmt.GetColumnInfo( 8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetId"      );// D.TargetECInstanceId         CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.TargetECInstanceId a5      WRONG?
-        EXPECT_STREQ(stmt.GetColumnInfo(10).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetClassId" );// D.TargetECClassId            CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo(11).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.TargetECClassId    a6      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId
+        EXPECT_STREQ(stmt.GetColumnInfo( 1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId       a1
+        EXPECT_STREQ(stmt.GetColumnInfo( 2).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId"       );// D.ECClassId
+        EXPECT_STREQ(stmt.GetColumnInfo( 3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId"       );// D.ECClassId          a2
+        EXPECT_STREQ(stmt.GetColumnInfo( 4).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceId"      );// D.SourceECInstanceId
+        EXPECT_STREQ(stmt.GetColumnInfo( 5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceId"      );// D.SourceECInstanceId a3
+        EXPECT_STREQ(stmt.GetColumnInfo( 6).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceClassId" );// D.SourceECClassId
+        EXPECT_STREQ(stmt.GetColumnInfo( 7).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceClassId" );// D.SourceECClassId    a4
+        EXPECT_STREQ(stmt.GetColumnInfo( 8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetId"      );// D.TargetECInstanceId
+        EXPECT_STREQ(stmt.GetColumnInfo( 9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetId"      );// D.TargetECInstanceId a5
+        EXPECT_STREQ(stmt.GetColumnInfo(10).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetClassId" );// D.TargetECClassId
+        EXPECT_STREQ(stmt.GetColumnInfo(11).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetClassId" );// D.TargetECClassId    a6
     }
 
     if ("top level subquery relationship") {
@@ -8351,13 +8351,13 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         EXPECT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId,
         EXPECT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId Goo,
         EXPECT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId");      // D.ECClassId,
-        EXPECT_STREQ(stmt.GetColumnInfo(3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECClassId Boo,             WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId");      // D.ECClassId Boo,
         ASSERT_TRUE (stmt.GetColumnInfo(4).GetProperty()->GetIsNavigation());                                                       // D.Schema,
         EXPECT_STREQ(stmt.GetColumnInfo(5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");        // D.Schema.Id,
         EXPECT_STREQ(stmt.GetColumnInfo(6).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavRelClassId");// D.Schema.RelECClassId,
         ASSERT_TRUE (stmt.GetColumnInfo(7).GetProperty()->GetIsNavigation());                                                       // D.Schema S,
-        EXPECT_STREQ(stmt.GetColumnInfo(8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.Schema.Id SID,             WRONG?
-        EXPECT_STREQ(stmt.GetColumnInfo(9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.Schema.RelECClassId SRID   WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");        // D.Schema.Id SID,
+        EXPECT_STREQ(stmt.GetColumnInfo(9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavRelClassId");// D.Schema.RelECClassId SRID
     }
 }
 //---------------------------------------------------------------------------------------
