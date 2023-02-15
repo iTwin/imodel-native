@@ -620,34 +620,6 @@ static int serverinfoex_srv_parse_cb(SSL *s, unsigned int ext_type,
     return 1;
 }
 
-static size_t extension_contextoff(unsigned int version)
-{
-    return version == SSL_SERVERINFOV1 ? 4 : 0;
-}
-
-static size_t extension_append_length(unsigned int version, size_t extension_length)
-{
-    return extension_length + extension_contextoff(version);
-}
-
-static void extension_append(unsigned int version,
-                             const unsigned char *extension,
-                             const size_t extension_length,
-                             unsigned char *serverinfo)
-{
-    const size_t contextoff = extension_contextoff(version);
-
-    if (contextoff > 0) {
-        /* We know this only uses the last 2 bytes */
-        serverinfo[0] = 0;
-        serverinfo[1] = 0;
-        serverinfo[2] = (SYNTHV1CONTEXT >> 8) & 0xff;
-        serverinfo[3] = SYNTHV1CONTEXT & 0xff;
-    }
-
-    memcpy(serverinfo + contextoff, extension, extension_length);
-}
-
 static int serverinfo_srv_parse_cb(SSL *s, unsigned int ext_type,
                                    const unsigned char *in,
                                    size_t inlen, int *al, void *arg)

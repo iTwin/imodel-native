@@ -76,9 +76,9 @@ extern "C" {
 # ifndef OPENSSL_NO_KTLS
 #  define OPENSSL_NO_KTLS
 # endif
-# ifndef OPENSSL_NO_MD2
-#  define OPENSSL_NO_MD2
-# endif
+// # ifndef OPENSSL_NO_MD2
+// #  define OPENSSL_NO_MD2
+// # endif
 # ifndef OPENSSL_NO_MSAN
 #  define OPENSSL_NO_MSAN
 # endif
