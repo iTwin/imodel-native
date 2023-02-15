@@ -78,6 +78,28 @@ struct SqlIndexDef final {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+int SchemaSynchronizer::ForeignKeyCheck(DbCR conn, std::vector<std::string>const& tables, Utf8CP dbAlias) {
+	int fkViolations = 0;
+	for(auto& table : tables) {
+        Statement stmt;
+        stmt.Prepare(conn, SqlPrintfString("PRAGMA [%s].foreign_key_check(%s)", dbAlias, table.c_str()));
+		while(BE_SQLITE_ROW == stmt.Step()) {
+            ++fkViolations;
+            printf("%s\n",
+                   SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
+                                   stmt.GetValueText(0),
+                                   stmt.GetValueInt64(1),
+                                   stmt.GetValueText(2),
+                                   stmt.GetValueInt(3))
+                       .GetUtf8CP());
+        }
+    }
+    return fkViolations;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSynchronizer::GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, std::vector<std::string>& columnNames) {
 	Statement stmt;
     const auto sql = std::string{SqlPrintfString("pragma %s.table_info(%s)", dbAlias, tableName).GetUtf8CP()};
@@ -145,11 +167,10 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, std::vector<std::string> const
 	for (auto& tbl : tables) {
 		rc = SyncData(conn, tbl.c_str(), sourceDbAlias, targetDbAlias);
 		if (rc != BE_SQLITE_OK) {
-			conn.ExecuteSql("PRAGMA defer_foreign_keys=0");
 			return rc;
 		}
 	}
-	return conn.ExecuteSql("PRAGMA defer_foreign_keys=0");
+    return conn.SaveChanges();
 }
 
 //---------------------------------------------------------------------------------------
@@ -211,7 +232,7 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
 		setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
     }
 	for(auto& col : sourcePkCols) {
-  		delClauseExprs.push_back(SqlPrintfString("%s=[source].%s", col.c_str(), col.c_str()).GetUtf8CP());
+  		delClauseExprs.push_back(SqlPrintfString("[T].%s=[S].%s", col.c_str(), col.c_str()).GetUtf8CP());
     }
 
 	const auto updateColsSql = Join(setClauseExprs);
@@ -221,7 +242,7 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
     const auto allowDelete = true;
     if (allowDelete) {
 		const auto deleteTargetSql = std::string {
-			SqlPrintfString("DELETE FROM %s WHERE NOT EXISTS (SELECT 1 FROM %s [source] WHERE %s)",
+			SqlPrintfString("DELETE FROM %s AS [T] WHERE NOT EXISTS (SELECT 1 FROM %s [S] WHERE %s)",
 				targetTableSql.c_str(),
 				sourceTableSql.c_str(),
 				deleteColsSql.c_str()
@@ -239,6 +260,7 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourc
             return rc;
         }
         // printf("deleted rows (%s): %d\n", targetTableSql.c_str(), conn.GetModifiedRowCount());
+        // printf("%s\n", deleteTargetSql.c_str());
     }
 
     const auto sql = std::string{SqlPrintfString(
@@ -544,20 +566,30 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 		return rc;
 	}
 
-	auto syncInfo = SchemaSyncInfo::New();
-    syncInfo.SetSource(conn);
-    rc = syncInfo.SaveTo(syncDb);
-	if (rc != BE_SQLITE_OK) {
-		return rc;
-	}
-
     rc = syncDb.SaveChanges();
 	if (rc != BE_SQLITE_OK) {
 		return rc;
 	}
 
     syncDb.CloseDb();
-    return SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push, false, {"be_Prop"});
+    rc = SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push, false, {"be_Prop"});
+	if (rc != BE_SQLITE_OK) {
+        return rc;
+	}
+
+    rc = syncDb.OpenBeSQLiteDb(syncDbUri, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
+	if (rc != BE_SQLITE_OK) {
+        return rc;
+	}
+
+    rc = SchemaSyncInfo::New(conn).SaveTo(syncDb);
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+    syncDb.SaveChanges();
+    syncDb.CloseDb();
+    return BE_SQLITE_OK;
 }
 
 //=======================================================================================
@@ -566,21 +598,18 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSyncInfo SchemaSyncInfo::New() {
+SchemaSyncInfo SchemaSyncInfo::New(DbCR db) {
+	if (!db.IsDbOpen()) {
+        return Empty();
+    }
 	SchemaSyncInfo info;
 	info.m_syncId.Create();
 	info.m_created = DateTime::GetCurrentTimeUtc();
 	info.m_modified = DateTime::GetCurrentTimeUtc();
 	info.m_version = BeInt64Id(1u);
+	info.m_sourceProjectGuid = db.QueryProjectGuid();
+	info.m_sourceDbGuid = db.GetDbGuid();
 	return info;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaSyncInfo::SetSource(DbCR db) {
-	m_sourceProjectGuid = db.QueryProjectGuid();
-	m_sourceDbGuid = db.GetDbGuid();
 }
 
 //---------------------------------------------------------------------------------------

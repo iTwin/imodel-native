@@ -98,6 +98,26 @@ struct SchemaSyncTestFixture : public ECDbTestFixture {
         }
         return "";
     }
+    static bool ForeignkeyCheck(ECDbCR db) {
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA foreign_key_check"));
+        auto rc = stmt.Step();
+        if (rc == BE_SQLITE_DONE) {
+            return true;
+        }
+        while(rc == BE_SQLITE_ROW) {
+            printf("%s\n",
+                   SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
+                                   stmt.GetValueText(0),
+                                   stmt.GetValueInt64(1),
+                                   stmt.GetValueText(2),
+                                   stmt.GetValueInt(3))
+                       .GetUtf8CP());
+
+            rc = stmt.Step();
+        }
+        return false;
+    }
 };
 /**
  * =====b1-import======
@@ -161,10 +181,11 @@ TEST_F(SchemaSyncTestFixture, Test) {
 
     auto pushChangesToSyncDb = [&](ECDbR ecdb) {
         ASSERT_EQ(SchemaImportResult::OK, ecdb.Schemas().SyncSchemas(synDbFile, SchemaManager::SyncAction::Push));
+        ASSERT_TRUE(ForeignkeyCheck(ecdb));
     };
     auto pullChangesFromSyncDb = [&](ECDbR ecdb) {
         ASSERT_EQ(SchemaImportResult::OK, ecdb.Schemas().SyncSchemas(synDbFile, SchemaManager::SyncAction::Pull));
-        ecdb.SaveChanges();
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
     };
 
     auto getIndexDDL = [&](ECDbCR ecdb, Utf8CP indexName) -> std::string {
@@ -212,7 +233,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("58378b2ff3c9c4ad9664395274173d2c9dee1970", GetSchemaHash(*b1).c_str());
         EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*b1).c_str());
         EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b1).c_str());
-
+        ASSERT_TRUE(ForeignkeyCheck(*b1));
     }
 
     if("check if sync-db has changes but not tables and index") {
@@ -225,6 +246,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("58378b2ff3c9c4ad9664395274173d2c9dee1970", GetSchemaHash(*syncDb).c_str());
         EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*syncDb).c_str());
         EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(*syncDb).c_str()); // It should not change
+        ASSERT_TRUE(ForeignkeyCheck(*syncDb));
     }
 
 	if("pull changes from sync-db into b2 and verify class, table and index exists") {
@@ -237,6 +259,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("58378b2ff3c9c4ad9664395274173d2c9dee1970", GetSchemaHash(*b2).c_str());
         EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*b2).c_str());
         EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b2).c_str());
+        ASSERT_TRUE(ForeignkeyCheck(*b2));
     }
 
     if ("update schema by adding more properties and expand index in b2") {
@@ -274,7 +297,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b2).c_str());   // CORRECT
         EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b2).c_str());      // CORRECT
         EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b2).c_str()); // CORRECT
-
+        ASSERT_TRUE(ForeignkeyCheck(*b2));
     }
 
 	if("check if sync-db has changes but not tables and index") {
@@ -284,8 +307,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_EQ(pipe1->GetPropertyCount(), 4);
         ASSERT_STRCASEEQ(getIndexDDL(*syncDb, "idx_pipe1_p1").c_str(), "");
         EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*syncDb).c_str());   // CORRECT
-        EXPECT_STREQ("48c61859858c52efb43c1c407cf39051dd2a983d", GetMapHash(*syncDb).c_str());      // WRONG
+        EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*syncDb).c_str());      // CORRECT
         EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(*syncDb).c_str()); // CORRECT It should not change
+        ASSERT_TRUE(ForeignkeyCheck(*syncDb));
     }
 
 	if("pull changes from sync db into master db and check if schema changes was there and valid") {
@@ -296,8 +320,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(getIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
         EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b1).c_str());   // CORRECT
-        EXPECT_STREQ("48c61859858c52efb43c1c407cf39051dd2a983d", GetMapHash(*b1).c_str());      // WRONG
+        EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b1).c_str());      // CORRECT
         EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b1).c_str()); // CORRECT
+        ASSERT_TRUE(ForeignkeyCheck(*b1));
     }
 }
 

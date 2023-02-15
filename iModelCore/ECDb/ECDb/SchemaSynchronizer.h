@@ -24,6 +24,7 @@ private:
     static DbResult SyncData(ECDbR conn, std::vector<std::string> const& tables, Utf8CP sourceDbAlias, Utf8CP targetDbAlias = "main");
     static DbResult SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourceDbAlias, Utf8CP targetDbAlias = "main");
     static DbResult GetECTables(DbR conn, std::vector<std::string>& tables, Utf8CP dbAlias);
+    static int ForeignKeyCheck(DbCR conn, std::vector<std::string>const& tables, Utf8CP dbAlias);
 
 public:
     static DbResult SyncData(ECDbR conn, Utf8CP syncDbUri, SyncAction action, bool verifySynDb = true, std::vector<std::string> const& additionTables = std::vector<std::string>());
@@ -69,8 +70,7 @@ struct SchemaSyncInfo final {
         BeGuidCR GetSourceProjectGuid() const { return m_sourceProjectGuid; }
         BeGuidCR GetSourceDbGuid() const {return m_sourceDbGuid; }
         bool IsEmpty() const {return !m_syncId.IsValid();}
-        void SetSource(DbCR db);
-        static SchemaSyncInfo New();
+        static SchemaSyncInfo New(DbCR db);
         static SchemaSyncInfo From(DbCR);
         static SchemaSyncInfo const& Empty();
 
