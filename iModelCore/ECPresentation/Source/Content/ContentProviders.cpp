@@ -209,7 +209,7 @@ static void MergeField(RapidJsonValueR targetValue, RapidJsonValueR targetDispla
     rapidjson::Document::AllocatorType& targetDisplayValueAllocator)
     {
     targetValue.SetNull();
-    static Utf8String const variesLabel = Utf8PrintfString(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES).c_str();
+    static Utf8String const variesLabel = Utf8PrintfString(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES).c_str();
     targetDisplayValue.SetString(variesLabel.c_str(), targetDisplayValueAllocator);
     }
 

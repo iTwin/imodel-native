@@ -194,7 +194,7 @@ public:
 
             if (!labelDefinition->IsDefinitionValid())
                 {
-                labelDefinition->SetStringValue(CommonStrings::RULESENGINE_NOTSPECIFIED);
+                labelDefinition->SetStringValue(CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED);
                 }
 
             iter = GetCache().Insert(key, std::make_shared<Utf8String>(labelDefinition->ToJsonString())).first;
@@ -248,7 +248,7 @@ public:
                 }
 
             if (!label.IsValid())
-                label = LabelDefinition::Create(CommonStrings::RULESENGINE_NOTSPECIFIED);
+                label = LabelDefinition::Create(CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED);
 
             iter = GetCache().Insert(key, std::make_shared<Utf8String>(label->ToJsonString())).first;
             }
@@ -300,7 +300,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, std:
 
             if (!labelDefinition->IsDefinitionValid())
                 {
-                labelDefinition->SetStringValue(CommonStrings::RULESENGINE_NOTSPECIFIED);
+                labelDefinition->SetStringValue(CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED);
                 }
 
             iter = GetCache().Insert(classId, std::make_shared<Utf8String>(labelDefinition->ToJsonString())).first;
@@ -512,7 +512,7 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
                 if (-1 == rangeIndex)
                     {
                     // no matching range - use "Other"
-                    labelDefinition->SetStringValue(CommonStrings::RULESENGINE_OTHER);
+                    labelDefinition->SetStringValue(CommonStrings::PRESENTATION_LABEL_OTHER);
                     }
                 else
                     {
@@ -543,7 +543,7 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
 
             if (!labelDefinition->IsDefinitionValid())
                 {
-                labelDefinition->SetStringValue(CommonStrings::RULESENGINE_NOTSPECIFIED);
+                labelDefinition->SetStringValue(CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED);
                 }
 
             iter = GetCache().Insert(key, std::make_shared<Utf8String>(labelDefinition->ToJsonString())).first;
@@ -685,7 +685,7 @@ public:
             Utf8String inputStr = LabelDefinition::FromString(input)->GetDisplayValue();
             iter = GetCache().Insert(inputStr, std::make_shared<Utf8String>(ValueHelpers::PadNumbersInString(inputStr))).first;
             }
-        if (CommonStrings::RULESENGINE_NOTSPECIFIED == iter->first || CommonStrings::RULESENGINE_OTHER == iter->first)
+        if (CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED == iter->first || CommonStrings::PRESENTATION_LABEL_OTHER == iter->first)
             ctx.SetResultNull();
         else
             ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);

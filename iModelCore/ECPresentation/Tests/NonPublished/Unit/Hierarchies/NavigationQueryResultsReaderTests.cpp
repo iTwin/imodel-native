@@ -438,7 +438,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyRangeGrouping)
     VerifyPropertyGroupingNode(*node, "6 - 10", { widget3, widget4, widget5 });
 
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
-    VerifyPropertyGroupingNode(*node, CommonStrings::RULESENGINE_OTHER, { widget1, widget6, widget7 });
+    VerifyPropertyGroupingNode(*node, CommonStrings::PRESENTATION_LABEL_OTHER, { widget1, widget6, widget7 });
 
     EXPECT_EQ(QueryExecutorStatus::Done, executor.ReadNext(node, *reader));
     EXPECT_TRUE(node.IsNull());
@@ -489,7 +489,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyRangeGroupingWithCustomLabels
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
-    EXPECT_STREQ(CommonStrings::RULESENGINE_OTHER, node->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::PRESENTATION_LABEL_OTHER, node->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("", node->GetImageId().c_str());
 
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
@@ -555,7 +555,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithoutDi
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
-    VerifyPropertyGroupingNode(*node, CommonStrings::RULESENGINE_NOTSPECIFIED, { sprocket1, sprocket2, sprocket3, sprocket4 });
+    VerifyPropertyGroupingNode(*node, CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED, { sprocket1, sprocket2, sprocket3, sprocket4 });
 
     EXPECT_EQ(QueryExecutorStatus::Done, executor.ReadNext(node, *reader));
     EXPECT_TRUE(node.IsNull());
@@ -732,7 +732,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
-    VerifyPropertyGroupingNode(*node,  CommonStrings::RULESENGINE_NOTSPECIFIED, { instanceE2 });
+    VerifyPropertyGroupingNode(*node,  CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED, { instanceE2 });
 
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
     VerifyPropertyGroupingNode(*node, "ClassD_Label", { instanceE1 });
@@ -788,7 +788,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithLabel
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
-    VerifyPropertyGroupingNode(*node, CommonStrings::RULESENGINE_NOTSPECIFIED, { instanceE2 });
+    VerifyPropertyGroupingNode(*node, CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED, { instanceE2 });
 
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
     VerifyPropertyGroupingNode(*node, "MyLabel", { instanceE1 });
@@ -844,7 +844,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithInsta
 
     NavNodePtr node;
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
-    VerifyPropertyGroupingNode(*node, CommonStrings::RULESENGINE_NOTSPECIFIED, { instanceE2 });
+    VerifyPropertyGroupingNode(*node, CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED, { instanceE2 });
 
     EXPECT_EQ(QueryExecutorStatus::Row, executor.ReadNext(node, *reader));
     VerifyPropertyGroupingNode(*node, "ClassD_StringProperty", { instanceE1 });

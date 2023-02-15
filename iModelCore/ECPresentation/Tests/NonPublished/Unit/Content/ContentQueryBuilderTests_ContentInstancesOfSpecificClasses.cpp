@@ -26,7 +26,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -61,7 +61,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", true), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -101,7 +101,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryW
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -138,7 +138,7 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
         AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_1", "CalculatedProperty_0", "\"Value\" & 1", nullptr, 1200));
         AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_2", "CalculatedProperty_1", "this.Prop & \"Test\"", nullptr, 1500));
@@ -224,7 +224,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
         descriptor->AddSelectClass(SelectClassInfo(*classB, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
 
@@ -277,7 +277,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
         descriptor->AddSelectClass(SelectClassInfo(*classA1, "this", false), "");
         descriptor->AddSelectClass(SelectClassInfo(*classA2, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA1, *classA1->GetPropertyP("PropA1")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA2, *classA2->GetPropertyP("PropA2")));
 
@@ -319,7 +319,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInsta
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -374,7 +374,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInsta
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
             .SetRelatedInstancePaths({ {aTob} }), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -451,7 +451,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SetsMergeRes
 
         descriptor->AddContentFlag(ContentFlags::MergeResults);
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -515,7 +515,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SelectPointP
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PointProp")));
 
         ComplexQueryBuilderPtr nestedQuery = ComplexQueryBuilder::Create();
@@ -564,7 +564,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0);
         displayLabelField->SetLabelOverrideSpecs(CreateLabelOverrideSpecificationsMap(*classA, labelOverride));
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop1")));
@@ -612,7 +612,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
         descriptor->AddSelectClass(SelectClassInfo(*classB, "this", false), "");
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0);
         displayLabelField->SetLabelOverrideSpecs(CreateLabelOverrideSpecificationsMap(*classA, labelOverride));
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
@@ -675,7 +675,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
             .SetNavigationPropertyClasses({aTob}), "");
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0);
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_NAV_CLASS_ALIAS(*classB, 0), *classA, *classA->GetPropertyP("NavB")));
@@ -794,7 +794,7 @@ TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_DoesNotJoinCl
                     navigationPropertyPathAE,
                     }), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_NAV_CLASS_ALIAS(*classE, 0), *classA, *classA->GetPropertyP("NavE")));
         descriptor->GetCategories().push_back(CreateCategory(*classB)); // not needed, but included by the library (order is also important)

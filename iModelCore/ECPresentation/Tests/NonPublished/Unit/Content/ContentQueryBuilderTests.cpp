@@ -316,7 +316,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesDontCollideWhenSelectingInstanceAndR
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false).SetRelatedPropertyPaths({aTob}), "");
         descriptor->AddSelectClass(SelectClassInfo(*classB, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(rootCategory, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(rootCategory, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(rootCategory, NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, { aTob },
             {
             CreatePropertiesField(nestedPropertyCategory, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop"))),
@@ -413,7 +413,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
         descriptor->AddSelectClass(SelectClassInfo(*classC, "this", false)
             .SetRelatedPropertyPaths({cTob}), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(CreateCategory(*classB), NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, { aTob },
             {
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop"))),
@@ -491,7 +491,7 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedPropertiesSpecificationFromConte
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
             .SetRelatedPropertyPaths({aTob}), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(CreateCategory(*classB), NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, {aTob},
             {
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop"))),
@@ -574,7 +574,7 @@ TEST_F (ContentQueryBuilderTests, DoesntApplyRelatedPropertiesSpecificationFromC
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
             .SetRelatedPropertyPaths({ aTob }), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(CreateCategory(*classB), NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, { aTob },
             {
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB"))),
@@ -637,7 +637,7 @@ TEST_F (ContentQueryBuilderTests, CreatesContentFieldsForXToManyRelatedInstanceP
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
             .SetRelatedPropertyPaths({aTob}), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(CreateCategory(*classB), NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, {aTob},
             {
             CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop")))
@@ -726,7 +726,7 @@ TEST_F (ContentQueryBuilderTests, CreatesNestedContentFieldsForXToManyRelatedIns
                 {aTob, bToc},
                 }), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(bCategory, NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, {aTob},
             {
             CreatePropertiesField(bCategory, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB"))),
@@ -820,7 +820,7 @@ TEST_F(ContentQueryBuilderTests, CreatesNestedContentFieldsForXToManySameInstanc
                 {aTob, bToc},
                 }), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(bCategory, NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, {aTob},
             {
             CreatePropertiesField(bCategory, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB"))),
@@ -867,7 +867,7 @@ TEST_F (ContentQueryBuilderTests, SetsShowImagesFlag)
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
         descriptor->AddContentFlag(ContentFlags::ShowImages);
 
@@ -908,7 +908,7 @@ TEST_F (ContentQueryBuilderTests, SetsShowLabelsFlagForGridContentType)
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
         descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
@@ -957,7 +957,7 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndKeysOnlyFlagForGraphicsContentT
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
         descriptor->AddContentFlag(ContentFlags::KeysOnly);
         descriptor->AddContentFlag(ContentFlags::NoFields);
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
@@ -994,7 +994,7 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndShowLabelsFlagsForListContentTy
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
         descriptor->AddContentFlag(ContentFlags::ShowLabels);
         descriptor->AddContentFlag(ContentFlags::NoFields);
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
@@ -1057,7 +1057,7 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedInstanceSpecificationForTheSameX
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
             .SetRelatedInstancePaths({ {aTob1}, {aTob2} }), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, nullptr, { {aTob1}, {aTob2} }), "this");
@@ -1141,7 +1141,7 @@ TEST_F (ContentQueryBuilderTests, JoinsRelationshipsThatHaveOnlyOneTarget)
                 {aToc}
                 }), "");
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::ECPRESENTATION_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, ContentDescriptor::Property("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, *CreateRelatedField(CreateCategory(*classB), NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, aTobPath,
             {
