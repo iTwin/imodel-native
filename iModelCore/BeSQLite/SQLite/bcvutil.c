@@ -3295,7 +3295,7 @@ int bcvOpenLocal(
   memset(pFd, 0, nByte);
   zOpen = &((char*)pFd)[pVfs->szOsFile + 4];
   rc = pVfs->xFullPathname(pVfs, zFile, pVfs->mxPathname+1, zOpen);
-  if( rc==SQLITE_OK ){
+  if( (rc & 0xFF)==SQLITE_OK ){
     int n = strlen(zOpen);
     zOpen[n+1] = '\0';
     rc = pVfs->xOpen(pVfs, zOpen, pFd, flags, &flags);
