@@ -41,7 +41,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithSingleStepRelationship
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
         descriptor->AddSelectClass(SelectClassInfo(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), "");
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -105,7 +105,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithMultiStepRelationshipP
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
         descriptor->AddSelectClass(SelectClassInfo(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), true), "");
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -184,7 +184,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithNestedContentFields)
 
         auto customCategory = std::make_shared<ContentDescriptor::Category>("name", "label", "", 1);
 
-        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, 0));
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, ContentDescriptor::Property(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB")));
         AddField(*descriptor, *new ContentDescriptor::RelatedContentField(customCategory, "classC_field_name", "classC_field_label", bTocPath,
             {

@@ -1319,20 +1319,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         NESTED_CONTENT_FIELD_NAME(parentClass, childClass1),
         childClass1->GetId().ToString().c_str(), child1->GetInstanceId().c_str(),
         FIELD_NAME(childClass1, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(),
-        FIELD_NAME(childClass1, "Parent"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED,
+        FIELD_NAME(childClass1, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(parentClass, childClass2),
         childClass2->GetId().ToString().c_str(), child2->GetInstanceId().c_str(),
         FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(),
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
-        FIELD_NAME(childClass2, "Parent"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED,
+        FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
         childClass2->GetId().ToString().c_str(), child3->GetInstanceId().c_str(),
         FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(),  parent->GetInstanceId().c_str(),
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
-        FIELD_NAME(childClass2, "Parent"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED,
+        FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty")).c_str());
         EXPECT_EQ(expectedValues, recordJson["Values"])
@@ -1363,7 +1363,7 @@ DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenArraySiz
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenArraySizeIsOneElementAndValuesAreEqual)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
@@ -1480,7 +1480,7 @@ DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenSizesNot
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenSizesNotEqual)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
@@ -1579,7 +1579,7 @@ DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenValuesNo
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenValuesNotEqual)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("A");
@@ -1791,10 +1791,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
         classC->GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
         FIELD_NAME(classC, "PropertyC"),
         FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED,
-        FIELD_NAME(classB, "PropertyB"), FIELD_NAME(classB, "A"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED,
+        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
+        FIELD_NAME(classB, "PropertyB"), FIELD_NAME(classB, "A"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(classB, classC),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED
+        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -1914,9 +1914,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
         NESTED_CONTENT_FIELD_NAME(classB, classC), classC->GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
         FIELD_NAME(classC, "PropertyC"),
         FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED,
+        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(classB, classC),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::PRESENTATION_LABEL_NOTSPECIFIED
+        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -2332,7 +2332,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentW
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
@@ -5834,7 +5834,7 @@ DEFINE_SCHEMA(LoadsRelatedPropertiesForMultipleInstancesOfSameClasses, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMultipleInstancesOfSameClasses)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP elementClass = GetClass("Element");
@@ -5961,7 +5961,7 @@ DEFINE_SCHEMA(LoadsRelatedPropertiesForMultipleInstancesOfDifferentClassesDerivi
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMultipleInstancesOfDifferentClassesDerivingFromSameBaseClass)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP baseElementClass = GetClass("Element");
@@ -6215,7 +6215,7 @@ DEFINE_SCHEMA(LoadsNestedRelatedPropertiesForMultipleInstancesOfDifferentClasses
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertiesForMultipleInstancesOfDifferentClasses)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP baseModelClass = GetClass("Model");
@@ -6354,7 +6354,7 @@ DEFINE_SCHEMA(LoadsRelatedPropertiesForMultipleInstancesOfSameClassesOnlySecondI
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMultipleInstancesOfSameClassesOnlySecondInstanceHasAspect)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP elementClass = GetClass("Element");
@@ -8752,7 +8752,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntDuplicateRelatedPrope
     EXPECT_EQ(classA, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
 
     ASSERT_EQ(2, descriptor->GetAllFields().size());
-    ASSERT_EQ(CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
+    ASSERT_EQ(CommonStrings::FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
 
     ASSERT_TRUE(descriptor->GetAllFields()[1]->IsNestedContentField());
     ASSERT_EQ(classB2->GetDisplayLabel(), descriptor->GetAllFields()[1]->GetLabel());
@@ -8854,7 +8854,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CorrectlyHandlesDifferentLe
     EXPECT_EQ(classA, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
 
     ASSERT_EQ(3, descriptor->GetAllFields().size());
-    ASSERT_EQ(CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
+    ASSERT_EQ(CommonStrings::FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
 
     ASSERT_TRUE(descriptor->GetAllFields()[1]->IsNestedContentField());
     ASSERT_EQ(classC->GetDisplayLabel(), descriptor->GetAllFields()[1]->GetLabel());
@@ -8966,7 +8966,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, NestsRelatedPropertyWhenDif
     EXPECT_EQ(classA, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
 
     ASSERT_EQ(2, descriptor->GetAllFields().size());
-    ASSERT_EQ(CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
+    ASSERT_EQ(CommonStrings::FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
     ASSERT_TRUE(descriptor->GetAllFields()[1]->IsNestedContentField());
     ASSERT_EQ(classB2->GetDisplayLabel(), descriptor->GetAllFields()[1]->GetLabel());
 
@@ -9078,7 +9078,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CorrectlyHandlesRelatedProp
     EXPECT_EQ(classA, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
 
     ASSERT_EQ(3, descriptor->GetAllFields().size());
-    ASSERT_EQ(CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
+    ASSERT_EQ(CommonStrings::FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
 
     ASSERT_TRUE(descriptor->GetAllFields()[1]->IsNestedContentField());
     ASSERT_EQ(classB2->GetDisplayLabel(), descriptor->GetAllFields()[1]->GetLabel());
@@ -9169,7 +9169,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CorrectlyHandlesRelatedProp
     EXPECT_EQ(classA, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
 
     ASSERT_EQ(3, descriptor->GetAllFields().size());
-    ASSERT_EQ(CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
+    ASSERT_EQ(CommonStrings::FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
 
     ASSERT_TRUE(descriptor->GetAllFields()[1]->IsNestedContentField());
     ASSERT_EQ(classB2->GetDisplayLabel(), descriptor->GetAllFields()[1]->GetLabel());
@@ -9260,7 +9260,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntDuplicateRelatedPrope
     EXPECT_EQ(classA, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
 
     ASSERT_EQ(2, descriptor->GetAllFields().size());
-    ASSERT_EQ(CommonStrings::PRESENTATION_FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
+    ASSERT_EQ(CommonStrings::FIELD_DISPLAYLABEL, descriptor->GetAllFields()[0]->GetLabel());
 
     ASSERT_TRUE(descriptor->GetAllFields()[1]->IsNestedContentField());
     ASSERT_EQ(classB2->GetDisplayLabel(), descriptor->GetAllFields()[1]->GetLabel());

@@ -535,13 +535,13 @@ public:
 +===============+===============+===============+===============+===============+======*/
 namespace CommonStrings
     {
-    constexpr Utf8CP PRESENTATION_LABEL_NOTSPECIFIED = "@Presentation:label.notSpecified@";
-    constexpr Utf8CP PRESENTATION_LABEL_OTHER = "@Presentation:label.other@";
-    constexpr Utf8CP PRESENTATION_LABEL_VARIES = "@Presentation:label.varies@";
-    constexpr Utf8CP PRESENTATION_LABEL_MULTIPLEINSTANCES = "@Presentation:label.multipleInstances@";
-    constexpr Utf8CP PRESENTATION_FIELD_DISPLAYLABEL = "@Presentation:field.label@";
-    constexpr Utf8CP PRESENTATION_SELECTEDITEMS_LABEL = "@Presentation:selectedItems.categoryLabel@";
-    constexpr Utf8CP PRESENTATION_SELECTEDITEMS_DESCRIPTION = "@Presentation:selectedItems.categoryDescription@";
+    constexpr Utf8CP LABEL_NOTSPECIFIED = "@Presentation:label.notSpecified@";
+    constexpr Utf8CP LABEL_OTHER = "@Presentation:label.other@";
+    constexpr Utf8CP LABEL_VARIES = "@Presentation:label.varies@";
+    constexpr Utf8CP LABEL_MULTIPLEINSTANCES = "@Presentation:label.multipleInstances@";
+    constexpr Utf8CP FIELD_DISPLAYLABEL = "@Presentation:field.label@";
+    constexpr Utf8CP SELECTEDITEMS_LABEL = "@Presentation:selectedItems.categoryLabel@";
+    constexpr Utf8CP SELECTEDITEMS_DESCRIPTION = "@Presentation:selectedItems.categoryDescription@";
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

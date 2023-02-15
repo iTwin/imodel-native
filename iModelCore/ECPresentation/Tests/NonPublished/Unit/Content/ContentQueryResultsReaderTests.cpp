@@ -87,7 +87,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromOneClass)
         instance.SetValue("Description", ECValue("Gadget 2"));
         });
 
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ContentDescriptorPtr descriptor = CreateContentDescriptor();
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
@@ -150,7 +150,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromMultipleClasses)
         instance.SetValue("Description", ECValue("Description"));
         });
 
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ContentDescriptorPtr innerDescriptor = CreateContentDescriptor();
     ContentDescriptor::Field* f1 = new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreateDefaultCategory(), "MyID", "MyID");
@@ -404,7 +404,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsRelatedProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedProperties)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Test Widget 1")); });
@@ -473,7 +473,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedPropertiesOfTheSameRelatedInstance)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Test Widget")); });
@@ -678,7 +678,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPropertiesWhenThereIsOneRelatedItemAndValuesDifferent)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Test Widget 1")); });
@@ -747,7 +747,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPropertiesWhenValuesEqualAndNumberOfRelatedItemsIsEqualButLargerThanOne)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Test Widget 1")); });
@@ -819,7 +819,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPropertiesWhenSizesDifferentAndIncrease)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Test Widget 1")); });
@@ -889,7 +889,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPropertiesWhenSizesDifferentAndDecrease)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Test Widget 1")); });
@@ -1107,7 +1107,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_DeepTre
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedProperties_DeepTreeCase)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     ECRelationshipClassCP gadgetHasSprocketsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
@@ -1323,7 +1323,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_Diamond
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedProperties_DiamondCase)
     {
-    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::PRESENTATION_LABEL_VARIES);
+    Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     ECRelationshipClassCP widgetsHaveGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetsHaveGadgets")->GetRelationshipClassCP();
