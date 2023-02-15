@@ -368,6 +368,8 @@ $(o)bss_bio$(oext) : $(vendorSrc)crypto/bio/bss_bio.c ${MultiCompileDepends}
 
 $(o)bss_conn$(oext) : $(vendorSrc)crypto/bio/bss_conn.c ${MultiCompileDepends}
 
+$(o)bss_core$(oext) : $(vendorSrc)crypto/bio/bss_core.c ${MultiCompileDepends}
+
 $(o)bss_dgram$(oext) : $(vendorSrc)crypto/bio/bss_dgram.c ${MultiCompileDepends}
 
 $(o)bss_dgram_pair$(oext) : $(vendorSrc)crypto/bio/bss_dgram_pair.c ${MultiCompileDepends}
@@ -750,6 +752,8 @@ $(o)tb_asnmth$(oext) : $(vendorSrc)crypto/engine/tb_asnmth.c ${MultiCompileDepen
 
 $(o)tb_digest$(oext) : $(vendorSrc)crypto/engine/tb_digest.c ${MultiCompileDepends}
 
+$(o)tb_dsa$(oext) : $(vendorSrc)crypto/engine/tb_dsa.c ${MultiCompileDepends}
+
 $(o)tb_rsa$(oext) : $(vendorSrc)crypto/engine/tb_rsa.c ${MultiCompileDepends}
 
 $(o)err$(oext) : $(vendorSrc)crypto/err/err.c ${MultiCompileDepends}
@@ -845,6 +849,8 @@ $(o)evp_pkey$(oext) : $(vendorSrc)crypto/evp/evp_pkey.c ${MultiCompileDepends}
 $(o)evp_rand$(oext) : $(vendorSrc)crypto/evp/evp_rand.c ${MultiCompileDepends}
 
 $(o)exchange$(oext) : $(vendorSrc)crypto/evp/exchange.c ${MultiCompileDepends}
+
+$(o)kdf_meth$(oext) : $(vendorSrc)crypto/evp/kdf_meth.c ${MultiCompileDepends}
 
 $(o)keymgmt_lib$(oext) : $(vendorSrc)crypto/evp/keymgmt_lib.c ${MultiCompileDepends}
 
@@ -1093,6 +1099,8 @@ $(o)pkcs7err$(oext) : $(vendorSrc)crypto/pkcs7/pkcs7err.c ${MultiCompileDepends}
 $(o)poly1305$(oext) : $(vendorSrc)crypto/poly1305/poly1305.c ${MultiCompileDepends}
 
 $(o)property$(oext) : $(vendorSrc)crypto/property/property.c ${MultiCompileDepends}
+
+$(o)property_parse$(oext) : $(vendorSrc)crypto/property/property_parse.c ${MultiCompileDepends}
 
 $(o)drbg_lib$(oext) : $(vendorSrc)crypto/rand/drbg_lib.c ${MultiCompileDepends}
 
