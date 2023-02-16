@@ -892,7 +892,7 @@ DbResult MainSchemaManager::InitSyncDb(Utf8StringCR syncDbUri) const {
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SchemaManager::SyncAction action, SchemaImportToken const* schemaImportToken) const {
+DbResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SchemaManager::SyncAction action, SchemaImportToken const* schemaImportToken) const {
     ECDB_PERF_LOG_SCOPE("Sync Schemas");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::SyncSchemas");
     const bool isPull = (action == SchemaManager::SyncAction::Pull);
@@ -903,7 +903,7 @@ SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, Schema
         Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
         if (!policy.IsSupported()) {
             LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
-            return SchemaImportResult::ERROR;
+            return BE_SQLITE_ERROR;
         }
     }
 
@@ -918,27 +918,27 @@ SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, Schema
     const auto rc = SchemaSynchronizer::SyncData(ecdb, syncDbUri.c_str(), action);
 
     if (rc != BE_SQLITE_OK) {
-        return SchemaImportResult::ERROR_SYNC_SCHEMA;
+        return rc;
     }
     if(isPull) {
         if (SUCCESS != GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
-            return SchemaImportResult::ERROR;
+            return BE_SQLITE_ERROR;
         }
         // pull changes local schema
         if (SUCCESS != CreateOrUpdateRequiredTables()) {
-            return SchemaImportResult::ERROR;
+            return BE_SQLITE_ERROR;
         }
 
         if (SUCCESS != CreateOrUpdateIndexesInDb(ctx)) {
-            return SchemaImportResult::ERROR;
+            return BE_SQLITE_ERROR;
         }
 
         if (SUCCESS != PurgeOrphanTables(ctx)) {
-            return SchemaImportResult::ERROR;
+            return BE_SQLITE_ERROR;
         }
 
         if (SUCCESS != DbMapValidator(ctx).Validate()) {
-            return SchemaImportResult::ERROR;
+            return BE_SQLITE_ERROR;
         }
 
         m_ecdb.ClearECDbCache();
@@ -946,7 +946,7 @@ SchemaImportResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, Schema
     }
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::SyncSchemas");
-    return SchemaImportResult::OK;
+    return BE_SQLITE_OK;
 }
 
 /*---------------------------------------------------------------------------------------

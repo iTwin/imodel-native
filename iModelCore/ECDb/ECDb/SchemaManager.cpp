@@ -37,7 +37,7 @@ SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult SchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SyncAction action, SchemaImportToken const* token) const {
+DbResult SchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SyncAction action, SchemaImportToken const* token) const {
     return Main().SyncSchemas(syncDbUri, action, token);
 }
 

@@ -608,14 +608,14 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
+DbResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
     return Domains().DoDropSchema(name, logIssue);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::SchemaImportResult DgnDb::SyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const {
+BeSQLite::DbResult DgnDb::SyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const {
     return Domains().DoSyncSchemas(syncDbUri, action);
 }
 

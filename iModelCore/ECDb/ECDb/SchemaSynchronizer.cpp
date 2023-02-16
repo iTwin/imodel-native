@@ -170,7 +170,8 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, std::vector<std::string> const
 			return rc;
 		}
 	}
-    return conn.SaveChanges();
+    //return conn.SaveChanges();
+	return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -465,7 +466,10 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 			// rollback before detach
         	conn.AbandonChanges();
         }
-        conn.DetachDb(kSyncDbAlias);
+        auto rc = conn.DetachDb(kSyncDbAlias);
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
         return result;
     };
 

@@ -110,6 +110,14 @@ export const enum WalCheckpointMode {
   Truncate = 3,  /* Like RESTART but also truncate WAL */
 }
 
+/** Schema sync action
+ * @internal
+ */
+export const enum SyncAction {
+  Pull = 0, /* Pull schema changes to a target db */
+  Push = 1  /* Push schema changes to a target db */
+}
+
 /** Possible outcomes of generateElementGraphics.
 * Must be kept in sync with Dgn::Tile::Graphics::TileGraphicsStatus.
 * @internal
@@ -479,6 +487,8 @@ export declare namespace IModelJsNative {
     public deleteModel(modelIdJson: string): void;
     public detachChangeCache(): number;
     public dropSchema(schemaName: string): void;
+    public schemaSync(syncDbUri: string, action: SyncAction): DbResult;
+    public initSyncDb(syncDbUri: string): DbResult;
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
@@ -639,6 +649,8 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
+    public schemaSync(syncDbUri: string, action: SyncAction): DbResult;
+    public initSyncDb(syncDbUri: string): DbResult;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

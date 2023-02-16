@@ -667,7 +667,7 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::SchemaImportResult DgnDomains::DoSyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const {
+DbResult DgnDomains::DoSyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const {
     DgnDbR dgndb = GetDgnDb();
     if (action == SchemaManager::SyncAction::Pull) {
         dgndb.Txns().SetHasEcSchemaChanges(true);

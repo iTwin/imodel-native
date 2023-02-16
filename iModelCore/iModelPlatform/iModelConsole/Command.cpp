@@ -355,7 +355,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     if (session.GetFile().GetType() == SessionFile::Type::IModel)
         {
         Dgn::DgnDbCR iModelFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
-        if (iModelFile.SyncSchemas(syncDbFileName.GetNameUtf8(), action) != SchemaImportResult::OK)
+        if (iModelFile.SyncSchemas(syncDbFileName.GetNameUtf8(), action) != BE_SQLITE_OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();
             IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
@@ -367,7 +367,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         }
     else
         {
-        if (session.GetFile().GetECDbHandle()->Schemas().SyncSchemas( syncDbFileName.GetNameUtf8(), action) != SchemaImportResult::OK)
+        if (session.GetFile().GetECDbHandle()->Schemas().SyncSchemas( syncDbFileName.GetNameUtf8(), action) != BE_SQLITE_OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();
             IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
