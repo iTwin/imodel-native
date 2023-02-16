@@ -486,7 +486,7 @@ public:
     }
     Napi::Value InitSyncDb(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, syncDbUri);
-        auto rc = m_ecdb.Schemas().SyncSchemas(syncDbUri);
+        auto rc = m_ecdb.Schemas().InitSyncDb(syncDbUri);
         return Napi::Number::New(Env(), (int)rc);
     }
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
@@ -1793,7 +1793,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     Napi::Value InitSyncDb(NapiInfoCR info) {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, syncDbUri);
-        auto rc = GetDgnDb().Schemas().SyncSchemas(syncDbUri);
+        auto rc = GetDgnDb().Schemas().InitSyncDb(syncDbUri);
         return Napi::Number::New(Env(), (int)rc);
     }
     Napi::Value ImportSchemas(NapiInfoCR info)
