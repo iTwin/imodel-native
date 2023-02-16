@@ -608,7 +608,7 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
+DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
     return Domains().DoDropSchema(name, logIssue);
 }
 
