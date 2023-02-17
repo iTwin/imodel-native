@@ -376,7 +376,7 @@ public:
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false);
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult SyncSchemas(Utf8StringCR sharedSchemaDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const;
 
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.

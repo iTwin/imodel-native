@@ -479,14 +479,14 @@ public:
         }
     }
     Napi::Value SyncSchemas(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, syncDbUri);
+        REQUIRE_ARGUMENT_STRING(0, sharedSchemaDbUri);
         REQUIRE_ARGUMENT_INTEGER(1, action);
-        auto rc = m_ecdb.Schemas().SyncSchemas(syncDbUri, (SchemaManager::SyncAction)action);
+        auto rc = m_ecdb.Schemas().SyncSchemas(sharedSchemaDbUri, (SchemaManager::SyncAction)action);
         return Napi::Number::New(Env(), (int)rc);
     }
-    Napi::Value InitSyncDb(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, syncDbUri);
-        auto rc = m_ecdb.Schemas().InitSyncDb(syncDbUri);
+    Napi::Value InitSharedSchemaDb(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, sharedSchemaDbUri);
+        auto rc = m_ecdb.Schemas().InitSharedSchemaDb(sharedSchemaDbUri);
         return Napi::Number::New(Env(), (int)rc);
     }
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
@@ -511,7 +511,7 @@ public:
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSync", &NativeECDb::SyncSchemas),
-            InstanceMethod("initSyncDb", &NativeECDb::InitSyncDb),
+            InstanceMethod("initSharedSchemaDb", &NativeECDb::InitSharedSchemaDb),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
@@ -1785,15 +1785,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
     Napi::Value SyncSchemas(NapiInfoCR info) {
         RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING(0, syncDbUri);
+        REQUIRE_ARGUMENT_STRING(0, sharedSchemaDbUri);
         REQUIRE_ARGUMENT_INTEGER(1, action);
-        auto rc = GetDgnDb().SyncSchemas(syncDbUri, (SchemaManager::SyncAction)action);
+        auto rc = GetDgnDb().SyncSchemas(sharedSchemaDbUri, (SchemaManager::SyncAction)action);
         return Napi::Number::New(Env(), (int)rc);
     }
-    Napi::Value InitSyncDb(NapiInfoCR info) {
+    Napi::Value InitSharedSchemaDb(NapiInfoCR info) {
         RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING(0, syncDbUri);
-        auto rc = GetDgnDb().Schemas().InitSyncDb(syncDbUri);
+        REQUIRE_ARGUMENT_STRING(0, sharedSchemaDbUri);
+        auto rc = GetDgnDb().Schemas().InitSharedSchemaDb(sharedSchemaDbUri);
         return Napi::Number::New(Env(), (int)rc);
     }
     Napi::Value ImportSchemas(NapiInfoCR info)
@@ -2449,7 +2449,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("startProfiler", &NativeDgnDb::StartProfiler),
             InstanceMethod("stopProfiler", &NativeDgnDb::StopProfiler),
             InstanceMethod("syncSchemas", &NativeDgnDb::SyncSchemas),
-            InstanceMethod("initSyncDb", &NativeDgnDb::InitSyncDb),
+            InstanceMethod("initSharedSchemaDb", &NativeDgnDb::InitSharedSchemaDb),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),

@@ -487,8 +487,8 @@ export declare namespace IModelJsNative {
     public deleteModel(modelIdJson: string): void;
     public detachChangeCache(): number;
     public dropSchema(schemaName: string): void;
-    public schemaSync(syncDbUri: string, action: SyncAction): DbResult;
-    public initSyncDb(syncDbUri: string): DbResult;
+    public schemaSync(sharedSchemaDbUri: string, action: SyncAction): DbResult;
+    public initSharedSchemaDb(sharedSchemaDbUri: string): DbResult;
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
@@ -649,8 +649,8 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
-    public schemaSync(syncDbUri: string, action: SyncAction): DbResult;
-    public initSyncDb(syncDbUri: string): DbResult;
+    public schemaSync(sharedSchemaDbUri: string, action: SyncAction): DbResult;
+    public initSharedSchemaDb(sharedSchemaDbUri: string): DbResult;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

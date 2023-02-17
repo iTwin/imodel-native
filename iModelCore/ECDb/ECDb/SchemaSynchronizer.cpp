@@ -28,49 +28,7 @@ FROM   [ec_index] [idx]
 
 
 */
-//=======================================================================================
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct SqlIndexDef final {
-	private:
-        std::string m_createSql;
-        std::string m_name;
-	public:
-        SqlIndexDef(SqlIndexDef&&) = default;
-		SqlIndexDef(SqlIndexDef const&) = default;
-		SqlIndexDef& operator = (SqlIndexDef&&) = default;
-		SqlIndexDef& operator = (SqlIndexDef const&) = default;
-        SqlIndexDef(std::string const& indexName, std::string const& createSql) : m_name(indexName), m_createSql(createSql){}
-		DbResult Drop(DbCR db) const {
-            return db.ExecuteSql(SqlPrintfString("DROP INDEX %s", m_name.c_str()).GetUtf8CP());
-        }
-		DbResult Create(DbCR db) const {
-			return db.ExecuteSql(m_createSql.c_str());
-		}
-		static DbResult GetSystemUniqueIndexes(std::vector<SqlIndexDef>& indexes, DbCR db , std::string const& dbAlias = "main") {
-            const auto sql = std::string {SqlPrintfString(R"z(
-				SELECT
-					[name],
-					[sql]
-				FROM   [%s].[sqlite_master]
-				WHERE  [tbl_name] LIKE 'ec\_%%' ESCAPE '\'
-						AND [type] = 'index'
-						AND [sql] LIKE 'CREATE UNIQUE %%';
-			)z", dbAlias.c_str()).GetUtf8CP()};
 
-			Statement stmt;
-            indexes.clear();
-            auto rc = stmt.Prepare(db, sql.c_str());
-			if (rc != BE_SQLITE_OK) {
-                printf("%s\n", sql.c_str());
-                return rc;
-            }
-			while(stmt.Step() == BE_SQLITE_ROW) {
-                indexes.emplace_back(stmt.GetValueText(0), stmt.GetValueText(1));
-            }
-            return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
-        }
-};
 
 //=======================================================================================
 // 	SchemaSynchronizer
@@ -376,7 +334,7 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 	}
 	DbResult rc;
 	if (verifySynDb) {
-        const auto syncInfo = SchemaSyncInfo::From(syncDb);
+        const auto syncInfo = SharedSchemaDbInfo::From(syncDb);
 		if (syncInfo.IsEmpty()) {
 			conn.GetImpl().Issues().ReportV(
 				IssueSeverity::Error,
@@ -476,19 +434,50 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
     std::vector<std::string> tables;
     rc = GetECTables(conn, tables, fromAlias);
     if (rc != BE_SQLITE_OK) {
-		return detachAndReturn(rc);
-	}
+		conn.AbandonChanges();
+		 conn.DetachDb(kSyncDbAlias);
+         return rc;
+    }
 
     tables.insert(tables.end(), additionTables.begin(), additionTables.end());
-    return detachAndReturn(SyncData(conn, tables, fromAlias, toAlias));
+    rc = SyncData(conn, tables, fromAlias, toAlias);
+
+	if (rc != BE_SQLITE_OK) {
+		// rollback before detach
+		conn.AbandonChanges();
+		conn.DetachDb(kSyncDbAlias);
+        return rc;
+    }
+	rc = conn.DetachDb(kSyncDbAlias);
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+	rc = syncDb.OpenBeSQLiteDb(syncDbPath, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
+	if (rc != BE_SQLITE_OK) {
+        return rc;
+	}
+
+	rc = SharedSchemaDbInfo::UpdateVersion(syncDb);
+	if (rc != BE_SQLITE_OK) {
+        return rc;
+	}
+
+    const auto sharedDbInfo = SharedSchemaDbInfo::From(syncDb);
+    syncDb.SaveChanges();
+    syncDb.CloseDb();
+
+    auto syncInfo = SourceSyncInfo::From(conn);
+    rc = syncInfo.Update(sharedDbInfo, conn);
+    return rc;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
+DbResult SchemaSynchronizer::InitSharedSchemaDb(ECDbR conn, Utf8CP sharedSchemaDbUri) {
     Db syncDb;
-    auto rc = syncDb.OpenBeSQLiteDb(syncDbUri, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
+    auto rc = syncDb.OpenBeSQLiteDb(sharedSchemaDbUri, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
 	if (rc != BE_SQLITE_OK) {
         return rc;
 	}
@@ -576,17 +565,17 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 	}
 
     syncDb.CloseDb();
-    rc = SyncData(conn, syncDbUri, SchemaManager::SyncAction::Push, false, {"be_Prop"});
+    rc = SyncData(conn, sharedSchemaDbUri, SchemaManager::SyncAction::Push, false, {"be_Prop"});
 	if (rc != BE_SQLITE_OK) {
         return rc;
 	}
 
-    rc = syncDb.OpenBeSQLiteDb(syncDbUri, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
+    rc = syncDb.OpenBeSQLiteDb(sharedSchemaDbUri, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
 	if (rc != BE_SQLITE_OK) {
         return rc;
 	}
 
-    rc = SchemaSyncInfo::New(conn).SaveTo(syncDb);
+    rc = SharedSchemaDbInfo::New(conn).SaveTo(syncDb);
 	if (rc != BE_SQLITE_OK) {
 		return rc;
 	}
@@ -599,14 +588,44 @@ DbResult SchemaSynchronizer::InitSynDb(ECDbR conn, Utf8CP syncDbUri) {
 //=======================================================================================
 // 	SyncInfo
 //+===============+===============+===============+===============+===============+======
+
+DbResult SharedSchemaDbInfo::UpdateVersion(ECDbR syncDb) {
+	auto info = SharedSchemaDbInfo::From(syncDb);
+	ECSqlStatement stmt;
+	if (ECSqlStatus::Success != stmt.Prepare(syncDb, "PRAGMA checksum(ec_schema)")) {
+		return BE_SQLITE_ERROR;
+	}
+	if (stmt.Step() != BE_SQLITE_ROW) {
+		return BE_SQLITE_ERROR;
+	}
+	const Utf8String schemaSHA1 = stmt.GetValueText(0);
+
+	stmt.Finalize();
+	if (ECSqlStatus::Success != stmt.Prepare(syncDb, "PRAGMA checksum(ec_map)")) {
+		return BE_SQLITE_ERROR;
+	}
+	if (stmt.Step() != BE_SQLITE_ROW) {
+		return BE_SQLITE_ERROR;
+	}
+	const Utf8String mapSHA1 = stmt.GetValueText(0);
+	if (schemaSHA1.empty() || mapSHA1.empty()) {
+		return BE_SQLITE_ERROR;
+	}
+	if (info.m_schemaSHA1 != schemaSHA1 || info.m_mapSHA1 != mapSHA1) {
+		info.m_version = BeInt64Id(info.m_version.GetValueUnchecked() + 1);
+		info.m_mapSHA1 = mapSHA1;
+		info.m_schemaSHA1 = schemaSHA1;
+	}
+	return info.SaveTo(syncDb);
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSyncInfo SchemaSyncInfo::New(DbCR db) {
+SharedSchemaDbInfo SharedSchemaDbInfo::New(DbCR db) {
 	if (!db.IsDbOpen()) {
         return Empty();
     }
-	SchemaSyncInfo info;
+	SharedSchemaDbInfo info;
 	info.m_syncId.Create();
 	info.m_created = DateTime::GetCurrentTimeUtc();
 	info.m_modified = DateTime::GetCurrentTimeUtc();
@@ -619,7 +638,7 @@ SchemaSyncInfo SchemaSyncInfo::New(DbCR db) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSyncInfo::SaveTo(DbR db) const {
+DbResult SharedSchemaDbInfo::SaveTo(DbR db) const {
 	BeJsDocument doc;
     const auto propSpec = PropertySpec(JPropertyName, JPropertyNamespace);
     doc[JSyncId] = m_syncId.ToString();
@@ -628,69 +647,164 @@ DbResult SchemaSyncInfo::SaveTo(DbR db) const {
 	doc[JVersion] = m_version.ToHexStr();
 	doc[JSourceProjectGuid] = m_sourceProjectGuid.ToString();
 	doc[JSourceDbGuid] = m_sourceDbGuid.ToString();
+	doc[JSchemaSHA1] = m_schemaSHA1;
+	doc[JMapSHA1] = m_mapSHA1;
 	return db.SavePropertyString(propSpec, doc.Stringify());
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSyncInfo const& SchemaSyncInfo::Empty() {
-    static SchemaSyncInfo s_empty;
+SharedSchemaDbInfo const& SharedSchemaDbInfo::Empty() {
+    static SharedSchemaDbInfo s_empty;
     return s_empty;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSyncInfo SchemaSyncInfo::From(DbCR db) {
+SharedSchemaDbInfo SharedSchemaDbInfo::From(DbCR db) {
 	Utf8String strData;
-    SchemaSyncInfo info;
+    SharedSchemaDbInfo info;
 
     const auto propSpec = PropertySpec(JPropertyName, JPropertyNamespace);
 	auto rc = db.QueryProperty(strData, propSpec);
 	if (rc != BE_SQLITE_ROW) {
-		return SchemaSyncInfo::Empty();
+		return SharedSchemaDbInfo::Empty();
 	}
 
 	BeJsDocument doc;
 	doc.Parse(strData);
 	if (!doc.isObject()){
-		return SchemaSyncInfo::Empty();
+		return SharedSchemaDbInfo::Empty();
 	}
 
 	if (doc.hasMember(JSyncId)) {
 		info.m_syncId.FromString(doc[JSyncId].asCString());
 	} else {
-		return SchemaSyncInfo::Empty();
+		return SharedSchemaDbInfo::Empty();
 	}
 
 	if (doc.hasMember(JCreatedOnUtc)){
 		info.m_created.FromString(doc[JCreatedOnUtc].asCString());
 	} else {
-		return SchemaSyncInfo::Empty();
+		return SharedSchemaDbInfo::Empty();
 	}
 
 	if (doc.hasMember(JModifiedOnUtc)){
 		info.m_modified.FromString(doc[JModifiedOnUtc].asCString());
 	} else {
-		return SchemaSyncInfo::Empty();
+		return SharedSchemaDbInfo::Empty();
 	}
 
 	if (doc.hasMember(JSourceProjectGuid)){
 		info.m_sourceProjectGuid.FromString(doc[JSourceProjectGuid].asCString());
 	} else {
-		return SchemaSyncInfo::Empty();
+		return SharedSchemaDbInfo::Empty();
 	}
 
 	if (doc.hasMember(JSourceDbGuid)){
 		info.m_sourceDbGuid.FromString(doc[JSourceDbGuid].asCString());
 	} else {
-		return SchemaSyncInfo::Empty();
+		return SharedSchemaDbInfo::Empty();
+	}
+
+	if (doc.hasMember(JVersion)){
+		info.m_version = BeInt64Id::FromString(doc[JVersion].asCString());
+	} else {
+		return SharedSchemaDbInfo::Empty();
+	}
+
+	if (doc.hasMember(JSchemaSHA1)){
+		info.m_schemaSHA1 = doc[JSchemaSHA1].asCString();
+	} else {
+		return SharedSchemaDbInfo::Empty();
+	}
+
+	if (doc.hasMember(JMapSHA1)){
+		info.m_mapSHA1 = doc[JMapSHA1].asCString();
+	} else {
+		return SharedSchemaDbInfo::Empty();
+	}
+	return info;
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SourceSyncInfo const& SourceSyncInfo::Empty() {
+    static SourceSyncInfo s_empty;
+    return s_empty;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SourceSyncInfo::Update(SharedSchemaDbInfo const& info, ECDbR conn) {
+	BeJsDocument doc;
+    const auto propSpec = PropertySpec(JPropertyName, JPropertyNamespace);
+	if (m_syncId.IsValid() && info.GetSyncId() != m_syncId) {
+        return BE_SQLITE_ERROR;
+    } else {
+        m_syncId = info.GetSyncId();
+        m_created = DateTime::GetCurrentTimeUtc();
+    }
+
+	m_modified = DateTime::GetCurrentTimeUtc();
+    m_version = info.GetVersion();
+
+    doc[JSyncId] = m_syncId.ToString();
+    doc[JCreatedOnUtc] = m_created.ToTimestampString();
+    doc[JModifiedOnUtc] = m_modified.ToTimestampString();
+    doc[JVersion] = m_version.ToHexStr();
+    return conn.SavePropertyString(propSpec, doc.Stringify());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SourceSyncInfo SourceSyncInfo::From(DbCR db) {
+	Utf8String strData;
+    SourceSyncInfo info;
+
+    const auto propSpec = PropertySpec(JPropertyName, JPropertyNamespace);
+	auto rc = db.QueryProperty(strData, propSpec);
+	if (rc != BE_SQLITE_ROW) {
+		return SourceSyncInfo::Empty();
+	}
+
+	BeJsDocument doc;
+	doc.Parse(strData);
+	if (!doc.isObject()){
+		return SourceSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JSyncId)) {
+		info.m_syncId.FromString(doc[JSyncId].asCString());
+	} else {
+		return SourceSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JCreatedOnUtc)){
+		info.m_created.FromString(doc[JCreatedOnUtc].asCString());
+	} else {
+		return SourceSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JModifiedOnUtc)){
+		info.m_modified.FromString(doc[JModifiedOnUtc].asCString());
+	} else {
+		return SourceSyncInfo::Empty();
+	}
+
+	if (doc.hasMember(JVersion)){
+		info.m_version = BeInt64Id::FromString(doc[JVersion].asCString());
+	} else {
+		return SourceSyncInfo::Empty();
 	}
 
 	return info;
 };
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 

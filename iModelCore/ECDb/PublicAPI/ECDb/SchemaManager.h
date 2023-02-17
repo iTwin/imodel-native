@@ -322,8 +322,8 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 #endif
 
         //! Following will create the sync-db file from current file.
-        ECDB_EXPORT DbResult InitSyncDb(Utf8StringCR syncDbUri) const;
-        ECDB_EXPORT DbResult SyncSchemas(Utf8StringCR syncDbUri, SyncAction action, SchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT DbResult InitSharedSchemaDb(Utf8StringCR sharedSchemaDbUri) const;
+        ECDB_EXPORT DbResult SyncSchemas(Utf8StringCR sharedSchemaDbUri, SyncAction action, SchemaImportToken const* token = nullptr) const;
 
         //! Drop a leaf schema from ecdb as long as it has no instances
         //! @param[in] name  name of schema to be dropped.

@@ -37,15 +37,15 @@ SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SyncAction action, SchemaImportToken const* token) const {
-    return Main().SyncSchemas(syncDbUri, action, token);
+DbResult SchemaManager::SyncSchemas(Utf8StringCR sharedSchemaDbUri, SyncAction action, SchemaImportToken const* token) const {
+    return Main().SyncSchemas(sharedSchemaDbUri, action, token);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaManager::InitSyncDb(Utf8StringCR syncDbUri) const {
-    return Main().InitSyncDb(syncDbUri);
+DbResult SchemaManager::InitSharedSchemaDb(Utf8StringCR sharedSchemaDbUri) const {
+    return Main().InitSharedSchemaDb(sharedSchemaDbUri);
 }
 
 //---------------------------------------------------------------------------------------

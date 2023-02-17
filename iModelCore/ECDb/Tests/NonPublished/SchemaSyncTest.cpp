@@ -513,7 +513,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
 
     auto b1 = CreateECDb("b1.db");
     auto b2 = CopyAs(*b1, "b2.db");
-    ASSERT_EQ(BE_SQLITE_OK, b1->Schemas().InitSyncDb(synDbFile));
+    ASSERT_EQ(BE_SQLITE_OK, b1->Schemas().InitSharedSchemaDb(synDbFile));
 
     if ("check syn db hash") {
         auto syncDb = OpenECDb(synDbFile.c_str());

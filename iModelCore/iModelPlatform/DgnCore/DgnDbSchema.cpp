@@ -615,8 +615,8 @@ DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::SyncSchemas(Utf8StringCR syncDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const {
-    return Domains().DoSyncSchemas(syncDbUri, action);
+BeSQLite::DbResult DgnDb::SyncSchemas(Utf8StringCR sharedSchemaDbUri, BeSQLite::EC::SchemaManager::SyncAction action) const {
+    return Domains().DoSyncSchemas(sharedSchemaDbUri, action);
 }
 
 /*---------------------------------------------------------------------------------**//**

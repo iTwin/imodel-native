@@ -880,19 +880,19 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult MainSchemaManager::InitSyncDb(Utf8StringCR syncDbUri) const {
+DbResult MainSchemaManager::InitSharedSchemaDb(Utf8StringCR sharedSchemaDbUri) const {
     ECDB_PERF_LOG_SCOPE("Create SyncDb");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::InitSyncDb");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::InitSharedSchemaDb");
     auto& ecdb = const_cast<ECDbR>(m_ecdb);
     BeMutexHolder holder(ecdb.GetImpl().GetMutex());
-    const auto rc = SchemaSynchronizer::InitSynDb(ecdb, syncDbUri.c_str());
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::InitSyncDb");
+    const auto rc = SchemaSynchronizer::InitSharedSchemaDb(ecdb, sharedSchemaDbUri.c_str());
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::InitSharedSchemaDb");
     return rc;
 }
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SchemaManager::SyncAction action, SchemaImportToken const* schemaImportToken) const {
+DbResult MainSchemaManager::SyncSchemas(Utf8StringCR sharedSchemaDbUri, SchemaManager::SyncAction action, SchemaImportToken const* schemaImportToken) const {
     ECDB_PERF_LOG_SCOPE("Sync Schemas");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::SyncSchemas");
     const bool isPull = (action == SchemaManager::SyncAction::Pull);
@@ -915,7 +915,7 @@ DbResult MainSchemaManager::SyncSchemas(Utf8StringCR syncDbUri, SchemaManager::S
         m_ecdb.ClearECDbCache();
     }
 
-    const auto rc = SchemaSynchronizer::SyncData(ecdb, syncDbUri.c_str(), action);
+    const auto rc = SchemaSynchronizer::SyncData(ecdb, sharedSchemaDbUri.c_str(), action);
 
     if (rc != BE_SQLITE_OK) {
         return rc;

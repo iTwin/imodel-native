@@ -318,7 +318,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (args[1].EqualsIAscii("init"))
         {
-        if (BE_SQLITE_OK != session.GetFile().GetECDbHandle()->Schemas().InitSyncDb(args[2].c_str()))
+        if (BE_SQLITE_OK != session.GetFile().GetECDbHandle()->Schemas().InitSharedSchemaDb(args[2].c_str()))
             {
             IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
             }
