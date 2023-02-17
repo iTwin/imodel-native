@@ -116,6 +116,8 @@ struct ConversionCustomAttributeHelper final
         ConversionCustomAttributeHelper();
         ~ConversionCustomAttributeHelper();
 
+        static ECSchemaPtr m_schema;
+        static bool Initialize();
     public:
         //! Creates a custom attribute instance for the given custom attribute from the ECv3ConversionAttributes schema
         //! @remarks The only supported custom attribute at this time is PropertyRenamed. 

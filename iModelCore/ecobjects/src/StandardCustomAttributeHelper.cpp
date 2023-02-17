@@ -314,55 +314,22 @@ IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP a
     return CoreCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
     }
 
-//*********************** ConversionCustomAttributesSchemaHolder *************************************
+const Utf8CP s_convSchemaName = "ECv3ConversionAttributes";
+const Utf8CP s_renamedAccessor = "RenamedPropertiesMapping";
+const Utf8CP s_oldUnitAccessor = "OldPersistenceUnit";
+const Utf8CP s_oldDerivedClasses = "OldDerivedClasses";
+const Utf8CP s_isFlattened = "IsFlattened";
 
-//=======================================================================================
-//! Helper class to hold the ECv3ConversionAttributes schema
-//! The primary use-case is to facilitate adding the PropertyRenamed CA to an ECProperty
-//! for Instance transformation.
-//! @bsiclass
-//=======================================================================================
-struct ConversionCustomAttributesSchemaHolder
-    {
-    const Utf8CP s_convSchemaName = "ECv3ConversionAttributes";
-    const Utf8CP s_renamedAccessor = "RenamedPropertiesMapping";
-    const Utf8CP s_oldUnitAccessor = "OldPersistenceUnit";
-    const Utf8CP s_oldDerivedClasses = "OldDerivedClasses";
-    const Utf8CP s_isFlattened = "IsFlattened";
+const uint32_t s_convVersionRead = 1;
+const uint32_t s_convVersionMinor = 0;
 
-    const uint32_t s_convVersionRead = 1;
-    const uint32_t s_convVersionMinor = 0;
-
-    private:
-        ECSchemaPtr m_schema;
-        bmap<Utf8String, StandaloneECEnablerPtr> m_enablers;
-
-        ConversionCustomAttributesSchemaHolder();
-        ECSchemaPtr _GetSchema() {return m_schema;}
-        IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
-        bool Initialize();
-
-    public:
-        static ConversionCustomAttributesSchemaHolder* GetHolder();
-        static bool HasHolder() { return true; }
-        static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
-        static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute) {return GetHolder()->_CreateCustomAttributeInstance(attribute);}
-        void Reset();
-    };
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
-    {
-    Initialize();
-    }
-
+ECSchemaPtr ConversionCustomAttributeHelper::m_schema = nullptr;
+//*********************** ConversionCustomAttributeHelper *************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ConversionCustomAttributesSchemaHolder::Initialize()
+//static
+bool ConversionCustomAttributeHelper::Initialize()
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->SetCalculateChecksum(true);
@@ -374,56 +341,14 @@ bool ConversionCustomAttributesSchemaHolder::Initialize()
         LOG.errorv("Could not load the standard schema '%s'", s_convSchemaName);
         return false;
     }
-
-    ECClassP metaDataClass = m_schema->GetClassP(s_renamedAccessor);
-    StandaloneECEnablerPtr enabler;
-    if (nullptr != metaDataClass)
-        enabler = metaDataClass->GetDefaultStandaloneEnabler();
-
-    m_enablers.Insert(s_renamedAccessor, enabler);
-
-    ECClassP oldUnitClass = m_schema->GetClassP(s_oldUnitAccessor);
-    StandaloneECEnablerPtr oldUnitEnabler;
-    if (nullptr != oldUnitClass)
-        oldUnitEnabler = oldUnitClass->GetDefaultStandaloneEnabler();
-    m_enablers.Insert(s_oldUnitAccessor, oldUnitEnabler);
-
-    ECClassP oldDerivedClass = m_schema->GetClassP(s_oldDerivedClasses);
-    StandaloneECEnablerPtr oldDerivedEnabler;
-    if (nullptr != oldDerivedClass)
-        oldDerivedEnabler = oldDerivedClass->GetDefaultStandaloneEnabler();
-    m_enablers.Insert(s_oldDerivedClasses, oldDerivedEnabler);
-
-    ECClassP isFlattened = m_schema->GetClassP(s_isFlattened);
-    StandaloneECEnablerPtr isFlattenedEnabler;
-    if (nullptr != isFlattened)
-        isFlattenedEnabler = isFlattened->GetDefaultStandaloneEnabler();
-    m_enablers.Insert(s_isFlattened, isFlattenedEnabler);
     return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-void ConversionCustomAttributesSchemaHolder::Reset()
-    {
-    m_schema = nullptr;
-    m_enablers.clear();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ConversionCustomAttributesSchemaHolder* ConversionCustomAttributesSchemaHolder::GetHolder()
-    {
-    static auto s_schemaHolder = new ConversionCustomAttributesSchemaHolder();
-    return s_schemaHolder;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr ConversionCustomAttributesSchemaHolder::_CreateCustomAttributeInstance(Utf8CP attribute)
+//static
+IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
     {
     if (!m_schema.IsValid() && !Initialize())
         {
@@ -431,37 +356,33 @@ IECInstancePtr ConversionCustomAttributesSchemaHolder::_CreateCustomAttributeIns
         return nullptr;
         }
 
-    auto enablerIterator = m_enablers.find(attribute);
-    if (enablerIterator == m_enablers.end())
+    if (0 != strcmp(attributeName, s_renamedAccessor) &&
+        0 != strcmp(attributeName, s_oldUnitAccessor) &&
+        0 != strcmp(attributeName, s_oldDerivedClasses) &&
+        0 != strcmp(attributeName, s_isFlattened))
         {
-        BeDataAssert(false && "Unknown custom attribute class name. Currently only RenamedPropertiesMapping is supported.");
-        LOG.errorv("Could not find an enabler for Custom Attribute class '%s'", attribute);
+        BeDataAssert(false && "Unknown custom attribute class name. Currently only RenamedPropertiesMapping, OldPersistenceUnit, OldDerivedClasses, and IsFlattened are supported.");
         return nullptr;
         }
 
-    StandaloneECEnablerPtr enabler = enablerIterator->second;
+    ECClassP ecClass = m_schema->GetClassP(attributeName);
+    StandaloneECEnablerPtr enabler;
+    if (nullptr != ecClass)
+        enabler = ecClass->GetDefaultStandaloneEnabler();
+
     if (!enabler.IsValid())
         return nullptr;
 
     return enabler->CreateInstance().get();
     }
 
-//*********************** ConversionCustomAttributeHelper *************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
-    {
-    return ConversionCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
+//static
 void ConversionCustomAttributeHelper::Reset()
     {
-    ConversionCustomAttributesSchemaHolder::GetHolder()->Reset();
+    m_schema = nullptr;
     }
 
 
