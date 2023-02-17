@@ -39,7 +39,7 @@ void TypeListExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql("(");
 
     ctx.AppendToECSql("(");
-    
+
     auto classNameList = ClassNames();
     for (auto classNameExp : ClassNames())
         {
@@ -278,7 +278,7 @@ Exp::FinalizeParseStatus SearchedWhenClauseExp::_FinalizeParsing(ECSqlParseConte
         }
 
     if (mode == FinalizeParseMode::AfterFinalizingChildren)
-        {      
+        {
         auto typeInfo = this->Then()->GetTypeInfo();
         if (this->Then()->IsParameterExp())
             {
@@ -643,7 +643,7 @@ Utf8String CastExp::_ToString() const
 BentleyStatus MemberFunctionCallExp::ValidateArgument(ValueExp const& arg, Utf8StringR msg)
     {
     std::vector<Exp const*> expList;
-    if (!m_tableValuedFunc) 
+    if (!m_tableValuedFunc)
         {
         expList = arg.Find (Exp::Type::PropertyName, true);
         if (!expList.empty())
@@ -785,7 +785,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         return FinalizeParseStatus::NotCompleted;
         }
-    
+
     DetermineReturnType(ctx.GetECDb());
     //verify that args are all primitive and handle parameter args
     const size_t argCount = GetChildrenCount();
@@ -927,6 +927,26 @@ void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
 
     SetTypeInfo(it->second);
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8StringCR FunctionCallExp::GetSqliteFunctionName() const {
+    auto it = s_substituteECSqlToSqlFuncMap.find(m_functionName);
+    if (it != s_substituteECSqlToSqlFuncMap.end()) {
+        return it->second;
+    }
+    return m_functionName;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+FunctionCallExp::SubstituteFuncMap FunctionCallExp::s_substituteECSqlToSqlFuncMap =
+    FunctionCallExp::SubstituteFuncMap {
+        {"greatest","MAX"},
+        {"least","MIN"}
+    };
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1351,7 +1371,7 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing(ECSqlParseContext& ctx, 
         m_parameterIndex = ctx.TrackECSqlParameter(*this);
         return FinalizeParseStatus::NotCompleted;
         }
-    
+
     return FinalizeParseStatus::Completed;
     }
 

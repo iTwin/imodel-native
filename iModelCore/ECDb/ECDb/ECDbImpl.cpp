@@ -483,6 +483,7 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_ecdb.AddFunction(StrToGuid::GetSingleton());
     m_ecdb.AddFunction(IdToHex::GetSingleton());
     m_ecdb.AddFunction(HexToId::GetSingleton());
+
     m_changeManager.RegisterSqlFunctions();
 
     m_classNameFunc = ClassNameFunc::Create(m_ecdb);
@@ -504,6 +505,18 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_xmlCAToJsonFunc = XmlCAToJson::Create(m_ecdb.Schemas());
     if (m_xmlCAToJsonFunc != nullptr)
         m_ecdb.AddFunction(*m_xmlCAToJsonFunc);
+
+    m_extractInstFunc = ExtractInstFunc::Create(m_ecdb);
+    if (m_extractInstFunc != nullptr)
+        m_ecdb.AddFunction(*m_extractInstFunc);
+
+    m_extractPropFunc = ExtractPropFunc::Create(m_ecdb);
+    if (m_extractPropFunc != nullptr)
+        m_ecdb.AddFunction(*m_extractPropFunc);
+
+    m_propExistsFunc = PropExistsFunc::Create(m_ecdb);
+    if (m_propExistsFunc != nullptr)
+        m_ecdb.AddFunction(*m_propExistsFunc);
    }
 
 //---------------------------------------------------------------------------------------
@@ -518,35 +531,41 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     m_ecdb.RemoveFunction(StrToGuid::GetSingleton());
     m_ecdb.RemoveFunction(IdToHex::GetSingleton());
     m_ecdb.RemoveFunction(HexToId::GetSingleton());
+
     m_changeManager.UnregisterSqlFunction();
 
-    if (m_classNameFunc != nullptr)
-        {
+    if (m_classNameFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_classNameFunc);
         m_classNameFunc = nullptr;
-        }
-    if (m_classIdFunc != nullptr)
-        {
+    }
+    if (m_classIdFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_classIdFunc);
         m_classIdFunc = nullptr;
-        }
-    if (m_instanceOfFunc != nullptr)
-        {
+    }
+    if (m_instanceOfFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_instanceOfFunc);
         m_instanceOfFunc = nullptr;
-        }
-
-    if (m_ecJsonFunc != nullptr)
-        {
+    }
+    if (m_ecJsonFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_ecJsonFunc);
         m_ecJsonFunc = nullptr;
-        }
-
-    if (m_xmlCAToJsonFunc != nullptr)
-        {
+    }
+    if (m_xmlCAToJsonFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_xmlCAToJsonFunc);
         m_xmlCAToJsonFunc = nullptr;
-        }
+    }
+    if (m_extractInstFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_extractInstFunc);
+        m_extractInstFunc = nullptr;
+    }
+    if (m_extractPropFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_extractPropFunc);
+        m_extractPropFunc = nullptr;
+    }
+    if (m_propExistsFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_propExistsFunc);
+        m_propExistsFunc = nullptr;
+    }
     }
 
 //---------------------------------------------------------------------------------------

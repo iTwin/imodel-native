@@ -1029,7 +1029,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     while (rc == BE_SQLITE_ROW) {
         auto& rowsDoc = cachedAdaptor.ClearAndGetCachedXmlDocument();
         BeJsValue rows(rowsDoc);
-        if (adaptor.RenderRow(rows, stmt) != SUCCESS) {
+        if (adaptor.RenderRow(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
             return;
         } else {
@@ -2084,10 +2084,13 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, ECSqlStatement const& stmt, bool asArray) const {
-    const int count = stmt.GetColumnCount();
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray) const {
     if (asArray) {
         rowJson.SetEmptyArray();
+        const int count = stmt.GetColumnCount();
         int consecutiveNulls = 0;
         for (int columnIndex = 0; columnIndex < count; columnIndex++) {
             IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
@@ -2105,17 +2108,16 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, ECSqlStatement cons
         }
     } else {
         rowJson.SetEmptyObject();
+        const int count = stmt.GetColumnCount();
         for (int columnIndex = 0; columnIndex < count; columnIndex++) {
             IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
             if (ecsqlValue.IsNull()) {
                 continue;
             }
-            auto memberProp = stmt.GetColumnInfo(columnIndex).GetProperty();
-            if (memberProp == nullptr) {
-                return ERROR;
-            }
+
+            auto memberProp = ecsqlValue.GetColumnInfo().GetProperty();
             if (m_useJsName) {
-                Utf8String memberName = memberProp->GetName();  
+                Utf8String memberName = memberProp->GetName();
                 ECN::ECJsonUtilities::LowerFirstChar(memberName);
                 if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
                     return ERROR;
@@ -2187,7 +2189,7 @@ BentleyStatus QueryJsonAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlVal
         return SUCCESS;
     }
     if (propType == ECN::PRIMITIVETYPE_Integer) {
-        out = std::trunc(in.GetDouble());
+        out = in.GetInt64();
         return SUCCESS;
     }
     if (propType == ECN::PRIMITIVETYPE_Boolean) {

@@ -61,11 +61,179 @@ std::unique_ptr<ECJsonFunction> ECJsonFunction::Create(ECDbCR db) {
 
 //=======================================================================================
 ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, DbValueType::TextVal), m_db(&db) 
+//================================[PropExistsFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<PropExistsFunc> PropExistsFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<PropExistsFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropExistsFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 2) {
+        ctx.SetResultError("prop_exists(I,S]) expect two args");
+        return;
+    }
+
+    DbValue const& classIdVal = args[0];
+    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    DbValue const& propVal = args[1];
+    if (propVal.IsNull() || propVal.GetValueType() != DbValueType::TextVal )
+        return;
+
+    ECN::ECClassId classId(classIdVal.GetValueUInt64());
+    ctx.SetResultInt(m_propMap.Exist(classId, propVal.GetValueText()) ? 1 : 0);
+}
+
+//===============================[ExtractPropFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<ExtractPropFunc> ExtractPropFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<ExtractPropFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 3) {
+        ctx.SetResultError("extract_prop(I,I,S]) expect three args");
+        return;
+    }
+
+    DbValue const& classIdVal = args[0];
+    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    DbValue const& instanceIdVal = args[1];
+    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    DbValue const& accessStringVal = args[2];
+    if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
+        return;
+
+
+    ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
+    ECN::ECClassId classId(classIdVal.GetValueUInt64());
+
+    m_ecdb.GetInstanceReader().Seek(
+        InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
+        [&](InstanceReader::IRowContext const& row){
+        auto& val = row.GetValue(0);
+        if (val.IsNull()) {
+            return;
+        }
+        auto& ci = val.GetColumnInfo();
+        if (ci.GetDataType().IsPrimitive()){
+            const auto type = ci.GetDataType().GetPrimitiveType();
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Binary) {
+                int blobSize = 0;
+                auto blob = val.GetBlob(&blobSize);
+                ctx.SetResultBlob(blob, blobSize);
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Boolean) {
+                ctx.SetResultInt(val.GetBoolean()?1:0);
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_DateTime) {
+                double jdt;
+                val.GetDateTime().ToJulianDay(jdt);
+                ctx.SetResultDouble(jdt);
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Double) {
+                ctx.SetResultDouble(val.GetDouble());
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Integer ||
+                type == ECN::PrimitiveType::PRIMITIVETYPE_Long) {
+                ctx.SetResultInt64(val.GetInt64());
+                return;
+            }
+            if (type == ECN::PrimitiveType::PRIMITIVETYPE_String) {
+                ctx.SetResultText(val.GetText(), (int)strlen(val.GetText()), Context::CopyData::Yes );
+                return;
+            }
+        }
+        const auto json = row.GetJson().Stringify();
+        ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
+    });
+}
+
+//==================================[ExtractInstFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<ExtractInstFunc> ExtractInstFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<ExtractInstFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs < 2 || nArgs > 3) {
+        ctx.SetResultError("extract_inst(I,I]) expect two args");
+        return;
+    }
+
+    DbValue const& classIdVal = args[0];
+    if (classIdVal.IsNull())
+        return;
+
+
+    DbValue const& instanceIdVal = args[1];
+    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
+        return;
+
+    InstanceReader::JsonParams opts;
+    if (nArgs == 3) {
+        DbValue const& optsVal = args[2];
+        if (optsVal.IsNull() || optsVal.GetValueType() != DbValueType::TextVal){
+            return;
+        }
+    }
+
+    auto setResult = [&](InstanceReader::IRowContext const& row){
+        const auto json = row.GetJson().Stringify();
+        ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
+    };
+
+    ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
+    if (classIdVal.GetValueType() == DbValueType::IntegerVal) {
+        ECN::ECClassId classId(classIdVal.GetValueUInt64());
+        m_ecdb.GetInstanceReader().Seek(
+            InstanceReader::Position(instanceId,classId, nullptr),
+            setResult);
+        return;
+    }
+
+    if (classIdVal.GetValueType() == DbValueType::TextVal) {
+        m_ecdb.GetInstanceReader().Seek(
+            InstanceReader::Position(instanceId, classIdVal.GetValueText(), nullptr),
+            setResult);
+
+    }
+}
+
+//=================================[ClassNameFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, DbValueType::TextVal), m_db(&db)
     {
     m_options["s:c"] = FormatOptions::s_semicolon_c;
     m_options["a:c"] = FormatOptions::a_semicolon_c;
     m_options["s.c"] = FormatOptions::s_dot_c;
-    m_options["a.c"] = FormatOptions::a_dot_c;        
+    m_options["a.c"] = FormatOptions::a_dot_c;
     m_options["a"] = FormatOptions::a;
     m_options["s"] = FormatOptions::s;
     m_options["c"] = FormatOptions::c;
@@ -111,14 +279,14 @@ void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     auto stmt = m_db->GetCachedStatement(R"sql(
-        select 
+        select
                s.name  || ':' || c.name sn_semicolon_cn,
                s.alias || ':' || c.name sa_semicolon_cn,
                s.name                   sn,
                s.alias                  sa,
                c.name                   cn,
                s.name  || '.' || c.name sn_dot_cn,
-               s.alias || '.' || c.name sa_dot_cn 
+               s.alias || '.' || c.name sa_dot_cn
         from ec_class c join ec_schema s on c.SchemaId = s.Id where c.Id = ?)sql");
     if (stmt == nullptr)
         {
@@ -128,7 +296,7 @@ void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     stmt->BindUInt64(1, classId.GetValueUInt64());
     if (stmt->Step() != BE_SQLITE_ROW)
         return;
-    
+
     const auto strOut = stmt->GetValueText((int)fmt);
     const auto strSize = stmt->GetColumnBytes((int)fmt);
     ctx.SetResultText(strOut, strSize, DbFunction::Context::CopyData::Yes);
@@ -150,7 +318,7 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         ctx.SetResultError("ec_classid(X[,Y]) expect one or two args.");
         return;
         }
-    
+
     DbValue const& a0 = args[0];
     if (a0.GetValueType() != DbValueType::TextVal)
         return;
@@ -191,7 +359,7 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         schemaNameOrAlias = tokenFirst;
         className = tokenSecond;
         }
-    
+
     auto stmt = m_db->GetCachedStatement("select c.id from ec_class c join ec_schema s on c.SchemaId = s.Id where c.name= ?1 and (s.name =?2 or s.alias = ?2)");
     if (stmt == nullptr)
         {
@@ -265,7 +433,7 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
             auto className = BeStringUtilities::Strtok(nullptr, delimiters, &ctxTok);
             if (className == nullptr)
                 return;
-            
+
             auto stmt = m_db->GetCachedStatement("select c.id from ec_class c join ec_schema s on c.SchemaId = s.Id where c.name= ?1 and (s.name =?2 or s.alias = ?2)");
             if (stmt == nullptr)
                 {
@@ -318,7 +486,7 @@ StrToGuid& StrToGuid::GetSingleton()
 void StrToGuid::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultNull();
         return;
@@ -354,7 +522,7 @@ GuidToStr& GuidToStr::GetSingleton()
 void GuidToStr::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::BlobVal || v.GetValueBytes() != sizeof(BeGuid)) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::BlobVal || v.GetValueBytes() != sizeof(BeGuid))
         {
         ctx.SetResultNull();
         return;
@@ -385,7 +553,7 @@ IdToHex& IdToHex::GetSingleton()
 void IdToHex::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal)
         {
         ctx.SetResultNull();
         return;
@@ -416,7 +584,7 @@ HexToId& HexToId::GetSingleton()
 void HexToId::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) 
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultNull();
         return;
@@ -467,7 +635,7 @@ void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArg
         ctx.SetResultError(msg.c_str());
         return;
         }
-        
+
     ctx.SetResultInt(Enum::ToInt(opCode.Value()));
     }
 

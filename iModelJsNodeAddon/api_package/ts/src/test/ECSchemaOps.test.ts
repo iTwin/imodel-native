@@ -4,12 +4,12 @@
 *--------------------------------------------------------------------------------------------*/
 import { expect } from "chai";
 import { join } from "path";
-import { iModelJsNative, getAssetsDir } from "./utils";
+import { getAssetsDir, iModelJsNative } from "./utils";
 
 describe("ECSchemaOps", () => {
 
   it("computeSchemaChecksum", () => {
-    const assetsDir = join(getAssetsDir(), 'ECSchemaOps');
+    const assetsDir = join(getAssetsDir(), "ECSchemaOps");
     const schemaXmlPath = join(assetsDir, "SchemaA.ecschema.xml");
     let referencePaths = [assetsDir];
     let sha1 = iModelJsNative.computeSchemaChecksum({ schemaXmlPath, referencePaths });

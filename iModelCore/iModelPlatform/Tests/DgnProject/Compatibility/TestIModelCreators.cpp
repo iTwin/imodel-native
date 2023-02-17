@@ -205,6 +205,7 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
 
         DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
         params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
+        params.m_schemaLockHeld = true;
         DbResult stat = BE_SQLITE_OK;
         auto dgnDb = DgnDb::OpenIModelDb(&stat, targetPath, params);
         if (BE_SQLITE_OK != stat || !dgnDb.IsValid())

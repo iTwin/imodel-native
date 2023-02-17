@@ -16,6 +16,12 @@ ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+InstanceReader& ECDb::GetInstanceReader() const { return m_pimpl->GetInstanceReader(); }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 ECDb::~ECDb()
     {
     m_appData.Clear();
@@ -162,13 +168,13 @@ ProfileState ECDb::_CheckProfileVersion() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_UpgradeProfile()
+DbResult ECDb::_UpgradeProfile(Db::OpenParams const& params)
     {
-    DbResult stat = Db::_UpgradeProfile();
+    DbResult stat = Db::_UpgradeProfile(params);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return m_pimpl->GetProfileManager().UpgradeProfile();
+    return m_pimpl->GetProfileManager().UpgradeProfile(params);
     }
 
 //--------------------------------------------------------------------------------------
