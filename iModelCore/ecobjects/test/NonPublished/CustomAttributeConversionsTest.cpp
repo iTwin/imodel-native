@@ -2601,7 +2601,7 @@ TEST_F(StandardCustomAttributeConversionTests, DropAllOldCustomAttributesWithout
     ECClassCP relClass = schema->GetClassCP("ARelB");
     EXPECT_TRUE(nullptr != relClass);
 
-    ECClassCP caClass = StandardCustomAttributeHelper::GetCustomAttributeClass("ReferenceTypeRelationship");
+    ECClassCP caClass = StandardCustomAttributeHelper::GetCustomAttributeClass(context, "ReferenceTypeRelationship");
     EXPECT_TRUE(nullptr != caClass);
     EXPECT_TRUE(relClass->IsDefinedLocal(*caClass));
 

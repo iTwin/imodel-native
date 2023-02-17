@@ -6,117 +6,24 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//*********************** StandardCustomAttributesSchemaHolder *************************************
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-* Helper class to hold the schema
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct StandardCustomAttributesSchemaHolder
-    {
-    const Utf8CP kBentleyStandardCustomAttributes = "Bentley_Standard_CustomAttributes";
-    const Utf8CP kSupplementalMetaDataAccessor = "SupplementalSchemaMetaData";
-    const Utf8CP kSupplementalProvenanceAccessor = "SupplementalProvenance";
-    const uint32_t kBscaVersionRead = 1u;
-    const uint32_t kBscaVersionMinor = 8u;
-
-    private:
-        ECSchemaPtr m_schema;
-        bmap<Utf8String, StandaloneECEnablerPtr> m_enablers;
-
-
-        StandardCustomAttributesSchemaHolder();
-        ECSchemaPtr _GetSchema();
-        IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
-
-    public:
-
-        static StandardCustomAttributesSchemaHolder* GetHolder();
-        static ECSchemaPtr GetSchema();
-        static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute);
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
-    {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaKey key(kBentleyStandardCustomAttributes, kBscaVersionRead, kBscaVersionMinor);
-
-    m_schema = ECSchema::LocateSchema(key, *schemaContext);
-
-    ECClassP metaDataClass = m_schema->GetClassP(kSupplementalMetaDataAccessor);
-    StandaloneECEnablerPtr enabler;
-    if (nullptr != metaDataClass)
-        enabler = metaDataClass->GetDefaultStandaloneEnabler();
-
-    m_enablers.Insert(kSupplementalMetaDataAccessor, enabler);
-
-    ECClassP provenanceClass = m_schema->GetClassP(kSupplementalProvenanceAccessor);
-    StandaloneECEnablerPtr provenanceEnabler;
-    if (nullptr != provenanceClass)
-        provenanceEnabler = provenanceClass->GetDefaultStandaloneEnabler();
-    m_enablers.Insert(kSupplementalProvenanceAccessor, provenanceEnabler);
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-StandardCustomAttributesSchemaHolder* StandardCustomAttributesSchemaHolder::GetHolder()
-    {
-    static auto s_schemaHolder = new StandardCustomAttributesSchemaHolder();
-    return s_schemaHolder;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr StandardCustomAttributesSchemaHolder::_GetSchema()
-    {
-    return m_schema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr StandardCustomAttributesSchemaHolder::GetSchema()
-    {
-    return GetHolder()->_GetSchema();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr StandardCustomAttributesSchemaHolder::_CreateCustomAttributeInstance(Utf8CP attribute)
-    {
-    if (!m_schema.IsValid())
-        _GetSchema();
-
-    auto enablerIterator = m_enablers.find(attribute);
-    if (enablerIterator == m_enablers.end())
-        {
-        BeDataAssert(false && "Unknown supplemental schema custom attribute class name. Currently only SupplementalSchemaMetaData and SupplementalProvenance are supported.");
-        return nullptr;
-        }
-
-    StandaloneECEnablerPtr enabler = enablerIterator->second;
-    if (!enabler.IsValid())
-        return nullptr;
-
-    return enabler->CreateInstance().get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstance(Utf8CP attribute)
-    {
-    return GetHolder()->_CreateCustomAttributeInstance(attribute);
-    }
+const Utf8CP kBentleyStandardCustomAttributes = "Bentley_Standard_CustomAttributes";
+const Utf8CP kSupplementalMetaDataAccessor = "SupplementalSchemaMetaData";
+const Utf8CP kSupplementalProvenanceAccessor = "SupplementalProvenance";
+const uint32_t kBscaVersionRead = 1u;
+const uint32_t kBscaVersionMinor = 8u;
 
 //*********************** StandardCustomAttributeHelper *************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSchemaPtr StandardCustomAttributeHelper::_GetSchema(ECSchemaReadContextPtr schemaContext)
+    {
+    SchemaKey key(kBentleyStandardCustomAttributes, kBscaVersionRead, kBscaVersionMinor);
+    ECSchemaPtr schema = ECSchema::LocateSchema(key, *schemaContext);
+    return schema;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -129,18 +36,42 @@ ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo(DateTime::Info& d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP StandardCustomAttributeHelper::GetCustomAttributeClass(Utf8CP attributeName)
+ECClassCP StandardCustomAttributeHelper::GetCustomAttributeClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
     {
-    return StandardCustomAttributesSchemaHolder::GetSchema()->GetClassCP(attributeName);
+    ECSchemaPtr schema = _GetSchema(schemaContext);
+    return schema->GetClassCP(attributeName);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr StandardCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
+IECInstancePtr StandardCustomAttributeHelper::CreateCustomAttributeInstance(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
     {
-    return StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
+    ECSchemaPtr schema = _GetSchema(schemaContext);
+    if (!schema.IsValid())
+        {
+        LOG.errorv("Cannot load standard schema '%s'", kBentleyStandardCustomAttributes);
+        return nullptr;
+        }
+
+    if (0 != strcmp(attributeName, kSupplementalMetaDataAccessor) &&
+        0 != strcmp(attributeName, kSupplementalProvenanceAccessor))
+        {
+        BeDataAssert(false && "Unknown supplemental schema custom attribute class name. Currently only SupplementalSchemaMetaData and SupplementalProvenance are supported.");
+        return nullptr;
+        }
+
+    ECClassP ecClass = schema->GetClassP(attributeName);
+    StandaloneECEnablerPtr enabler;
+    if (nullptr != ecClass)
+        enabler = ecClass->GetDefaultStandaloneEnabler();
+
+    if (!enabler.IsValid())
+        return nullptr;
+
+    return enabler->CreateInstance().get();
     }
+
 static  Utf8CP kCoreCustomAttributes = "CoreCustomAttributes";
 //*********************** CoreCustomAttributesSchemaHolder *************************************
 

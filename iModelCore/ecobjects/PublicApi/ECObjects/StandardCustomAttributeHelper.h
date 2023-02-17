@@ -25,6 +25,8 @@ private:
     StandardCustomAttributeHelper ();
     ~StandardCustomAttributeHelper ();
 
+    static ECSchemaPtr _GetSchema(ECSchemaReadContextPtr schemaContext);
+
 public:
     //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
     //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
@@ -35,17 +37,17 @@ public:
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
     //! @return ECObjectsStatus::Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
     //! is not of type ::PRIMITIVETYPE_DateTime. 
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo(DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty);
 
     //! Returns the specified CustomAttribute ECClass
     //! @param[in] attributeName The name of the CustomAttribute ECClass
     //! @return An ECClassCP, if the attribute is found.  NULL otherwise.
-    ECOBJECTS_EXPORT static ECClassCP GetCustomAttributeClass(Utf8CP attributeName);
+    ECOBJECTS_EXPORT static ECClassCP GetCustomAttributeClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName);
 
     //! Creates a custom attribute instance for the given attribute
     //! @param[in] attributeName The name of the custom attribute to create
     //! @return An instance of the given custom attribute
-    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName);
     };
 
 //=======================================================================================    
