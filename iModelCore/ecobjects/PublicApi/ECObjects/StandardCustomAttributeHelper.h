@@ -62,6 +62,7 @@ private:
     CoreCustomAttributeHelper();
     ~CoreCustomAttributeHelper();
 
+    static ECSchemaPtr m_schema;
 public:
     //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
     //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
