@@ -63,7 +63,7 @@ void PresentationKey::WriteXml(BeXmlNodeP parentXmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationKey::ReadJson(JsonValueCR json)
+bool PresentationKey::ReadJson(BeJsConst json)
     {
     Utf8CP jsonRuleTypeAttributeName = _GetJsonElementTypeAttributeName();
     if (nullptr != jsonRuleTypeAttributeName)
@@ -140,7 +140,7 @@ void PrioritizedPresentationKey::_WriteXml(BeXmlNodeP xmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrioritizedPresentationKey::_ReadJson(JsonValueCR json)
+bool PrioritizedPresentationKey::_ReadJson(BeJsConst json)
     {
     m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
     return true;
@@ -253,7 +253,7 @@ Utf8CP PresentationRule::_GetJsonElementTypeAttributeName() const {return COMMON
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRule::_ReadJson(JsonValueCR json)
+bool PresentationRule::_ReadJson(BeJsConst json)
     {
     if (!PrioritizedPresentationKey::_ReadJson(json))
         return false;
@@ -362,7 +362,7 @@ void ConditionalPresentationRule::_WriteXml(BeXmlNodeP xmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalPresentationRule::_ReadJson(JsonValueCR json)
+bool ConditionalPresentationRule::_ReadJson(BeJsConst json)
     {
     if (!PresentationRule::_ReadJson(json))
         return false;

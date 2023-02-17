@@ -275,7 +275,7 @@ Utf8CP RelatedPropertiesSpecification::_GetJsonElementType() const {return "Rela
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedPropertiesSpecification::ParsePropertiesFromPropertyJson(PropertySpecificationsList& properties, JsonValueCR propertySpecsJson, Utf8CP propertySpecJsonAttributeName)
+void RelatedPropertiesSpecification::ParsePropertiesFromPropertyJson(PropertySpecificationsList& properties, BeJsConst propertySpecsJson, Utf8CP propertySpecJsonAttributeName)
     {
     if (propertySpecsJson.isString() && 0 == BeStringUtilities::Stricmp(propertySpecsJson.asCString(), INCLUDE_NO_PROPERTIES_SPEC))
         return;
@@ -303,7 +303,7 @@ void RelatedPropertiesSpecification::ParsePropertiesFromPropertyJson(PropertySpe
             else
                 {
                 Utf8PrintfString msg("Invalid value for `%s.%s[" PRIu64 "]`: `%s`. Expected property specification, name, '" INCLUDE_NO_PROPERTIES_SPEC "' or '" INCLUDE_ALL_PROPERTIES_SPEC "'.",
-                        _GetJsonElementType(), propertySpecJsonAttributeName, (uint64_t)i, propertySpecsJson[i].ToString().c_str());
+                        _GetJsonElementType(), propertySpecJsonAttributeName, (uint64_t)i, propertySpecsJson[i].Stringify().c_str());
                 DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, msg);
                 }
             }
@@ -313,7 +313,7 @@ void RelatedPropertiesSpecification::ParsePropertiesFromPropertyJson(PropertySpe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedPropertiesSpecification::_ReadJson(JsonValueCR json)
+bool RelatedPropertiesSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -358,24 +358,24 @@ bool RelatedPropertiesSpecification::_ReadJson(JsonValueCR json)
     if (json.isMember(COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING))
         m_relationshipMeaning = CommonToolsInternal::ParseRelationshipMeaningString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING].asCString(""), Utf8PrintfString("%s.%s", _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING).c_str());
 
-    JsonValueCP propertyAttributeJson = nullptr;
     if (json.isMember(RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES))
-        propertyAttributeJson = &json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES];
+        {
+        BeJsConst propertyAttributeJson = json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES];
+        ParsePropertiesFromPropertyJson(m_properties, propertyAttributeJson, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES);
+        }
     else if (json.isMember(RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES))
         {
-        propertyAttributeJson = &json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
+        BeJsConst propertyAttributeJson = json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             _GetJsonElementType(), RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES));
+        ParsePropertiesFromPropertyJson(m_properties, propertyAttributeJson, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES);
         }
-
-    if (propertyAttributeJson == nullptr)
+    else
         {
         PropertySpecificationP spec = nullptr;
         CreatePropertySpecFromPropertyName(spec, INCLUDE_ALL_PROPERTIES_SPEC, this);
         m_properties.push_back(spec);
         }
-    else
-        ParsePropertiesFromPropertyJson(m_properties, *propertyAttributeJson, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES);
 
     if (json.isMember(RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES))
         {

@@ -128,7 +128,7 @@ Utf8CP ContentRelatedInstancesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentRelatedInstancesSpecification::_ReadJson(JsonValueCR json)
+bool ContentRelatedInstancesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ContentSpecification::_ReadJson(json))
         return false;

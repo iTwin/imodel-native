@@ -41,7 +41,7 @@ PropertyEditorSpecification::~PropertyEditorSpecification()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyEditorParametersSpecification* PropertyEditorParametersSpecification::Create(JsonValueCR json)
+PropertyEditorParametersSpecification* PropertyEditorParametersSpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_PARAMSTYPE].asCString("");
     PropertyEditorParametersSpecification* spec = nullptr;
@@ -117,7 +117,7 @@ Utf8CP PropertyEditorSpecification::_GetJsonElementType() const {return "Propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSpecification::_ReadJson(JsonValueCR json)
+bool PropertyEditorSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -236,9 +236,9 @@ Utf8CP PropertyEditorJsonParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorJsonParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorJsonParameters::_ReadJson(BeJsConst json)
     {
-    m_json = json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON];
+    // JSON:VALUE m_json = json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON];
     return true;
     }
 
@@ -307,7 +307,7 @@ Utf8CP PropertyEditorMultilineParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorMultilineParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorMultilineParameters::_ReadJson(BeJsConst json)
     {
     m_height = json[PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_ATTRIBUTE_HEIGHT].asUInt(1);
     return true;
@@ -384,15 +384,15 @@ Utf8CP PropertyEditorRangeParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorRangeParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorRangeParameters::_ReadJson(BeJsConst json)
     {
-    JsonValueCR minJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
-    if (!minJson.isNull() && minJson.isConvertibleTo(Json::ValueType::realValue))
-        m_min = minJson.asDouble();
+    BeJsConst minJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
+    if (!minJson.isNull() && minJson.isNumeric())
+        m_min = minJson.GetDouble();
 
-    JsonValueCR maxJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
-    if (!maxJson.isNull() && maxJson.isConvertibleTo(Json::ValueType::realValue))
-        m_max = maxJson.asDouble();
+    BeJsConst maxJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
+    if (!maxJson.isNull() && minJson.isNumeric())
+        m_max = maxJson.GetDouble();
 
     return true;
     }
@@ -486,15 +486,15 @@ Utf8CP PropertyEditorSliderParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSliderParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorSliderParameters::_ReadJson(BeJsConst json)
     {
     // required:
-    JsonValueCR minJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
-    JsonValueCR maxJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
+    BeJsConst minJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
+    BeJsConst maxJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
 
     bool hasIssues = false
-        || CommonToolsInternal::CheckRuleIssue(minJson.isNull() || !minJson.isConvertibleTo(Json::ValueType::realValue), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM, minJson, "floating point value")
-        || CommonToolsInternal::CheckRuleIssue(maxJson.isNull() || !maxJson.isConvertibleTo(Json::ValueType::realValue), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM, maxJson, "floating point value");
+        || CommonToolsInternal::CheckRuleIssue(minJson.isNull() || !minJson.isNumeric(), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM, minJson, "floating point value")
+        || CommonToolsInternal::CheckRuleIssue(maxJson.isNull() || !maxJson.isNumeric(), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM, maxJson, "floating point value");
     if (hasIssues)
         return false;
 

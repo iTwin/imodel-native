@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeSpecificationP ChildNodeSpecification::Create(JsonValueCR json)
+ChildNodeSpecificationP ChildNodeSpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString("");
     ChildNodeSpecificationP spec = nullptr;
@@ -175,7 +175,7 @@ void ChildNodeSpecification::_WriteXml(BeXmlNodeP specificationNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::_ReadJson(JsonValueCR json)
+bool ChildNodeSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationRuleSpecification::_ReadJson(json))
         return false;

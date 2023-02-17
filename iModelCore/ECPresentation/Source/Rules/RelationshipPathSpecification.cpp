@@ -18,7 +18,7 @@ Utf8CP RelationshipStepSpecification::_GetJsonElementType() const { return "Rela
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipStepSpecification::_ReadJson(JsonValueCR json)
+bool RelationshipStepSpecification::_ReadJson(BeJsConst json)
     {
     if (!T_Super::_ReadJson(json))
         return false;
@@ -89,7 +89,7 @@ Utf8CP RepeatableRelationshipStepSpecification::_GetJsonElementType() const { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RepeatableRelationshipStepSpecification::_ReadJson(JsonValueCR json)
+bool RepeatableRelationshipStepSpecification::_ReadJson(BeJsConst json)
     {
     if (!RelationshipStepSpecification::_ReadJson(json))
         return false;
@@ -99,7 +99,17 @@ bool RepeatableRelationshipStepSpecification::_ReadJson(JsonValueCR json)
     else if (json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].isString() && 0 == strcmp("*", json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asCString()))
         m_count = 0;
     else
-        m_count = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asInt(1);
+        {
+        BeJsConst object = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT];
+        if (object.isNumeric())
+            m_count = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asInt();
+        else
+            {
+            int32_t intValue = 1;;
+            Utf8String::Sscanf_safe(object.asCString(), "%" PRId32, &intValue);
+            m_count = intValue;
+            }
+        }
     return true;
     }
 
@@ -194,7 +204,7 @@ Utf8CP RelationshipPathSpecification::_GetJsonElementType() const { return "Rela
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipPathSpecification::_ReadJson(JsonValueCR json)
+bool RelationshipPathSpecification::_ReadJson(BeJsConst json)
     {
     // note: intentionally not calling base
     if (json.isArray())
@@ -203,7 +213,7 @@ bool RelationshipPathSpecification::_ReadJson(JsonValueCR json)
         if (m_steps.empty())
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), json.ToString().c_str(), "at least one step specification"));
+                _GetJsonElementType(), json.Stringify().c_str(), "at least one step specification"));
             return false;
             }
         return true;
@@ -320,7 +330,7 @@ Utf8CP RepeatableRelationshipPathSpecification::_GetJsonElementType() const { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RepeatableRelationshipPathSpecification::_ReadJson(JsonValueCR json)
+bool RepeatableRelationshipPathSpecification::_ReadJson(BeJsConst json)
     {
     // note: intentionally not calling base
     if (json.isArray())
@@ -329,7 +339,7 @@ bool RepeatableRelationshipPathSpecification::_ReadJson(JsonValueCR json)
         if (m_steps.empty())
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), json.ToString().c_str(), "at least one step specification"));
+                _GetJsonElementType(), json.Stringify().c_str(), "at least one step specification"));
             return false;
             }
         return true;

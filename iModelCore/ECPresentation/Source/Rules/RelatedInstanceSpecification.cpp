@@ -80,7 +80,7 @@ Utf8CP RelatedInstanceSpecification::_GetJsonElementType() const { return "Relat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceSpecification::_ReadJson(JsonValueCR json)
+bool RelatedInstanceSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;

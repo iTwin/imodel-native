@@ -202,7 +202,7 @@ Utf8CP RelatedInstanceNodesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+bool RelatedInstanceNodesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;

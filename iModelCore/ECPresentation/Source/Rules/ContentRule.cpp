@@ -91,7 +91,7 @@ Utf8CP ContentRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentRule::_ReadJson(JsonValueCR json)
+bool ContentRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalPresentationRule::_ReadJson(json))
         return false;

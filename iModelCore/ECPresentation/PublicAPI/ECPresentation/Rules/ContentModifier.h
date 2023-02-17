@@ -23,7 +23,7 @@ public:
     ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
     ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP xmlNode) const;
 
-    ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+    ECPRESENTATION_EXPORT bool ReadJson(BeJsConst json);
     ECPRESENTATION_EXPORT void WriteJson(JsonValueR json) const;
 
     //! Computes rule hash.
@@ -79,7 +79,7 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;

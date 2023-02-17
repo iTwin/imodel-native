@@ -88,7 +88,7 @@ Utf8CP CheckBoxRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetIsEnabledExpression(JsonValueCR json)
+static Utf8String GetIsEnabledExpression(BeJsConst json)
     {
     if (json.isBool())
         return json.asBool() ? "true" : "false";
@@ -110,7 +110,7 @@ static Json::Value GetIsEnabledJsonValue(Utf8StringCR expr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CheckBoxRule::_ReadJson(JsonValueCR json)
+bool CheckBoxRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;

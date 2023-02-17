@@ -130,7 +130,7 @@ void ContentModifiersList::WriteXml(BeXmlNodeP xmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PropertySpecificationP CreatePropertyEditorSpecification(JsonValueCR json)
+static PropertySpecificationP CreatePropertyEditorSpecification(BeJsConst json)
     {
     return CommonToolsInternal::LoadRuleFromJson(json, &PropertySpecification::ReadEditorSpecificationJson);
     }
@@ -138,11 +138,11 @@ static PropertySpecificationP CreatePropertyEditorSpecification(JsonValueCR json
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void LoadPropertyDisplaySpecifications(JsonValueCR json, bvector<PropertySpecificationP>& specs, HashableBase const* parentSpec)
+static void LoadPropertyDisplaySpecifications(BeJsConst json, bvector<PropertySpecificationP>& specs, HashableBase const* parentSpec)
     {
-    for (Json::ArrayIndex i = 0; i < json.size(); ++i)
+    for (BeJsConst::ArrayIndex i = 0; i < json.size(); ++i)
         {
-        JsonValueCR propertyNamesJson = json[i][PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
+        BeJsConst propertyNamesJson = json[i][PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
         if (propertyNamesJson.isNull() || !propertyNamesJson.isArray() || 0 == propertyNamesJson.size())
             continue;
 
@@ -161,7 +161,7 @@ static void LoadPropertyDisplaySpecifications(JsonValueCR json, bvector<Property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentModifiersList::ReadJson(JsonValueCR json)
+bool ContentModifiersList::ReadJson(BeJsConst json)
     {
     if (json.isMember(CONTENTMODIFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES))
         {
@@ -191,7 +191,7 @@ bool ContentModifiersList::ReadJson(JsonValueCR json)
         }
     if (json.isMember(CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS))
         {
-        if (CommonToolsInternal::ValidateJsonValueType(CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], Json::arrayValue))
+        if (CommonToolsInternal::ValidateJsonValueType(CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS]))
             LoadPropertyDisplaySpecifications(json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], m_propertyOverrides, this);
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES));
@@ -315,7 +315,7 @@ Utf8CP ContentModifier::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentModifier::_ReadJson(JsonValueCR json)
+bool ContentModifier::_ReadJson(BeJsConst json)
     {
     if (!PrioritizedPresentationKey::_ReadJson(json))
         return false;

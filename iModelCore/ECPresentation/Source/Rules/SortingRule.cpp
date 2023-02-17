@@ -86,7 +86,7 @@ Utf8CP SortingRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SortingRule::_ReadJson(JsonValueCR json)
+bool SortingRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;

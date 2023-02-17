@@ -65,7 +65,7 @@ Utf8CP ImageIdOverride::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ImageIdOverride::_ReadJson(JsonValueCR json)
+bool ImageIdOverride::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;

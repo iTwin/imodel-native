@@ -370,7 +370,7 @@ bool PresentationRuleSet::WriteToXmlFile (BeFileNameCR xmlFilePath) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRuleSet::ReadJson(JsonValueCR json)
+bool PresentationRuleSet::ReadJson(BeJsConst json)
     {
     // required:
     m_ruleSetId = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID].asCString("");
@@ -388,7 +388,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
         if (SUCCESS != Version::FromString(m_schemaVersion, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].asCString()))
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].ToString().c_str(),
+                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].Stringify().c_str(),
                 "version string in format {major}.{minor}.{patch}"));
             m_schemaVersion = GetCurrentRulesetSchemaVersion();
             }
@@ -400,7 +400,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
         if (SUCCESS != Version::FromString(rulesetVersion, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].asCString()))
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].ToString().c_str(),
+                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].Stringify().c_str(),
                 "version string in format {major}.{minor}.{patch}"));
             }
         else
@@ -415,8 +415,8 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
 
     if (json.isMember(PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES))
         {
-        JsonValueCR rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
-        if (CommonToolsInternal::ValidateJsonValueType("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, Json::arrayValue))
+        BeJsConst rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
+        if (CommonToolsInternal::ValidateJsonValueType("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson))
             {
             CommonToolsInternal::LoadFromJsonByPriority("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, m_childNodesRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>, this);
             CommonToolsInternal::LoadFromJsonByPriority("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, m_rootNodesRules, CommonToolsInternal::LoadRuleFromJson<RootNodeRule>, this);
@@ -481,7 +481,7 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
+PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(BeJsConst json)
     {
     auto scope = Diagnostics::Scope::Create("Read PresentationRuleSet from JSON value");
 
@@ -492,7 +492,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
         return ruleSet;
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to read: ", json.ToString().c_str()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to read: ", json.Stringify().c_str()));
     return nullptr;
     }
 

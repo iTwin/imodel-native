@@ -33,7 +33,7 @@ std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateFo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::Create(JsonValueCR json)
+std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::Create(BeJsConst json)
     {
     if (json.isObject() && 0 == strcmp(PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_NONE, json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString()))
         return nullptr;
@@ -72,12 +72,12 @@ Utf8CP PropertyCategoryIdentifier::_GetJsonElementType() const {return "Property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyCategoryIdentifier::_ReadJson(JsonValueCR json)
+bool PropertyCategoryIdentifier::_ReadJson(BeJsConst json)
     {
     if (!json.isObject() || json.isNull())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-            _GetJsonElementType(), json.ToString().c_str(), "an object with a `type` attribute"));
+            _GetJsonElementType(), json.Stringify().c_str(), "an object with a `type` attribute"));
         return false;
         }
 
@@ -91,7 +91,7 @@ bool PropertyCategoryIdentifier::_ReadJson(JsonValueCR json)
     else
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-            _GetJsonElementType(), PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE, json.ToString().c_str(), "one of \"Root\", \"DefaultParent\" or \"Id\""));
+            _GetJsonElementType(), PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE, json.Stringify().c_str(), "one of \"Root\", \"DefaultParent\" or \"Id\""));
         return false;
         }
     return true;
@@ -139,7 +139,7 @@ MD5 IdPropertyCategoryIdentifier::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IdPropertyCategoryIdentifier::_ReadJson(JsonValueCR json)
+bool IdPropertyCategoryIdentifier::_ReadJson(BeJsConst json)
     {
     if (json.isString())
         {
@@ -147,7 +147,7 @@ bool IdPropertyCategoryIdentifier::_ReadJson(JsonValueCR json)
         if (m_categoryId.empty())
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), json.ToString().c_str(), "non-empty string or an object"));
+                _GetJsonElementType(), json.asCString(), "non-empty string or an object"));
             return false;
             }
         return true;
@@ -240,7 +240,7 @@ Utf8CP PropertyCategorySpecification::_GetJsonElementType() const {return "Prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyCategorySpecification::_ReadJson(JsonValueCR json)
+bool PropertyCategorySpecification::_ReadJson(BeJsConst json)
     {
     if (!T_Super::_ReadJson(json))
         return false;

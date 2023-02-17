@@ -69,7 +69,7 @@ Utf8CP LabelOverride::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LabelOverride::_ReadJson(JsonValueCR json)
+bool LabelOverride::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;

@@ -92,7 +92,7 @@ Utf8CP SelectedNodeInstancesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
+bool SelectedNodeInstancesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ContentSpecification::_ReadJson(json))
         return false;
@@ -102,8 +102,8 @@ bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
 
     if (json.isMember(SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES))
         {
-        JsonValueCR acceptableClassNamesJson = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
-        for (Json::ArrayIndex i = 0; i < acceptableClassNamesJson.size(); ++i)
+        BeJsConst acceptableClassNamesJson = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
+        for (BeJsConst::ArrayIndex i = 0; i < acceptableClassNamesJson.size(); ++i)
             {
             if (!m_acceptableClassNames.empty())
                 m_acceptableClassNames.append(",");

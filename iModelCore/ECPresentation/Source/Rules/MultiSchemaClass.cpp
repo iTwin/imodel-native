@@ -68,7 +68,7 @@ Utf8CP MultiSchemaClass::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MultiSchemaClass::_ReadJson(JsonValueCR json)
+bool MultiSchemaClass::_ReadJson(BeJsConst json)
     {
     bool hasIssues = false
         || CommonToolsInternal::CheckRuleIssue(!(json.isMember(SCHEMA_CLASS_SPECIFICATION_SCHEMANAME) && json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].isString()), _GetJsonElementType(),
@@ -83,9 +83,14 @@ bool MultiSchemaClass::_ReadJson(JsonValueCR json)
 
     m_schemaName = json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].asCString();
 
-    bvector<Utf8String> classNames;
-    for (auto const& className : json["classNames"])
+    // bvector<Utf8String> classNames;
+    json["classNames"].ForEachArrayMember(
+        [&](BeJsConst::ArrayIndex i, BeJsConst className)
+        {
         m_classNames.push_back(className.asCString());
+        return false;
+        }
+    );
 
     InvalidateHash();
     return true;
@@ -114,7 +119,7 @@ void MultiSchemaClass::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-MultiSchemaClass* MultiSchemaClass::LoadFromJson(JsonValueCR json, bool defaultPolymorphism)
+MultiSchemaClass* MultiSchemaClass::LoadFromJson(BeJsConst json, bool defaultPolymorphism)
     {
     MultiSchemaClass* rule = new MultiSchemaClass();
     rule->SetArePolymorphic(defaultPolymorphism);

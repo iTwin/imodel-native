@@ -54,7 +54,7 @@ Utf8CP CalculatedPropertiesSpecification::_GetJsonElementType() const {return "C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CalculatedPropertiesSpecification::_ReadJson(JsonValueCR json)
+bool CalculatedPropertiesSpecification::_ReadJson(BeJsConst json)
     {
     if (!PrioritizedPresentationKey::_ReadJson(json))
         return false;

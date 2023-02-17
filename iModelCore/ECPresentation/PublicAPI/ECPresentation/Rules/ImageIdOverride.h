@@ -27,7 +27,7 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     //! Accecpt nested customization rule visitor

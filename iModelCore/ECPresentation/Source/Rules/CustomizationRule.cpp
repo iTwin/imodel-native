@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomizationRuleP CustomizationRule::Create(JsonValueCR json)
+CustomizationRuleP CustomizationRule::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_RULETYPE].asCString("");
     CustomizationRuleP spec = nullptr;
@@ -83,7 +83,7 @@ void ConditionalCustomizationRule::_WriteXml(BeXmlNodeP xmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalCustomizationRule::_ReadJson(JsonValueCR json)
+bool ConditionalCustomizationRule::_ReadJson(BeJsConst json)
     {
     if (!CustomizationRule::_ReadJson(json))
         return false;

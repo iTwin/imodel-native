@@ -108,7 +108,7 @@ Utf8CP SubCondition::_GetJsonElementType() const {return "SubCondition";}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SubCondition::_ReadJson(JsonValueCR json)
+bool SubCondition::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -335,7 +335,7 @@ Utf8CP ChildNodeRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeRule::_ReadJson(JsonValueCR json)
+bool ChildNodeRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalPresentationRule::_ReadJson(json))
         return false;
@@ -507,7 +507,7 @@ Utf8CP RootNodeRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootNodeRule::_ReadJson(JsonValueCR json)
+bool RootNodeRule::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeRule::_ReadJson(json))
         return false;

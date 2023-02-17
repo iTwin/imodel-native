@@ -35,7 +35,7 @@ protected:
     virtual PropertyEditorParametersSpecification* _Clone() const = 0;
 
 public:
-    static PropertyEditorParametersSpecification* Create(JsonValueCR);
+    static PropertyEditorParametersSpecification* Create(BeJsConst);
     PropertyEditorParametersSpecification* Clone() const {return _Clone();}
     void Accept(Visitor& visitor) const {_Accept(visitor);}
 };
@@ -57,7 +57,7 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
@@ -68,7 +68,7 @@ protected:
 public:
     PropertyEditorJsonParameters() {}
     PropertyEditorJsonParameters(Json::Value json) : m_json(json) {}
-    JsonValueCR GetJson() const {return m_json;}
+    BeJsConst GetJson() const {return m_json;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -89,7 +89,7 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
@@ -122,7 +122,7 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
@@ -159,7 +159,7 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
@@ -201,7 +201,7 @@ protected:
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
 
 public:

@@ -85,7 +85,7 @@ Utf8CP UserSettingsGroup::_GetJsonElementType() const {return USER_SETTINGS_JSON
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserSettingsGroup::_ReadJson(JsonValueCR json)
+bool UserSettingsGroup::_ReadJson(BeJsConst json)
     {
     if (!PrioritizedPresentationKey::_ReadJson(json))
         return false;
@@ -241,7 +241,7 @@ Utf8CP UserSettingsItem::_GetJsonElementType() const { return "UserSettingsItem"
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserSettingsItem::_ReadJson(JsonValueCR json)
+bool UserSettingsItem::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;

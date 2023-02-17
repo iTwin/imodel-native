@@ -51,7 +51,7 @@ private:
     bool m_forceCreateRelationshipCategory;
 
 private:
-    ECPRESENTATION_EXPORT void ParsePropertiesFromPropertyJson(PropertySpecificationsList&, JsonValueCR, Utf8CP);
+    ECPRESENTATION_EXPORT void ParsePropertiesFromPropertyJson(PropertySpecificationsList&, BeJsConst, Utf8CP);
 
 protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
@@ -63,7 +63,7 @@ protected:
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
 
 public:

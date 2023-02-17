@@ -64,7 +64,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         void WriteXml (BeXmlDomR xmlDom) const;
 
         //Reads PresentationRuleSet from Json. Returns false if it is not able to load it.
-        bool ReadJson(JsonValueCR json);
+        bool ReadJson(BeJsConst json);
 
         //Writes PresentationRuleSet to JSON.
         void WriteJson(JsonValueR json) const;
@@ -131,8 +131,8 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         //! Writes PresentationRuleSet to XmlFile.
         ECPRESENTATION_EXPORT bool                           WriteToXmlFile (BeFileNameCR xmlFilePath) const;
 
-        //! Reads PresentationRuleSet from Json::Value.
-        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonValue(JsonValueCR json);
+        // !Reads PresentationRuleSet from Json::Value.
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonValue(BeJsConst json);
 
         //! Reads PresentationRuleSet from JSON string.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonString(Utf8StringCR jsonString);

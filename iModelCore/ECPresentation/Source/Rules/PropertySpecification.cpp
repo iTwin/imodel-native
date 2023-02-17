@@ -66,7 +66,7 @@ Utf8CP PropertySpecification::_GetJsonElementType() const { return "PropertySpec
 * note: this is only needed to support deprecated PropertyEditorsSpecification
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertySpecification::ReadEditorSpecificationJson(JsonValueCR json)
+bool PropertySpecification::ReadEditorSpecificationJson(BeJsConst json)
     {
     // required:
     m_propertyName = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME].asCString();
@@ -83,7 +83,7 @@ bool PropertySpecification::ReadEditorSpecificationJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertySpecification::_ReadJson(JsonValueCR json)
+bool PropertySpecification::_ReadJson(BeJsConst json)
     {
     if (!T_Super::_ReadJson(json))
         return false;

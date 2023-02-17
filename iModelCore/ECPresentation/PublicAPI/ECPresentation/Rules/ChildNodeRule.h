@@ -40,7 +40,7 @@ protected:
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
 
 public:
@@ -99,7 +99,7 @@ protected:
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT virtual Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
 
     //! Computes rule hash.
@@ -168,7 +168,7 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     //! Computes rule hash.

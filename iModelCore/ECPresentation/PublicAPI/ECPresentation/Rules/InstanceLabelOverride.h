@@ -31,7 +31,7 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
     //! Accept nested customization rule visitor
@@ -106,7 +106,7 @@ protected:
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
 
 public:
-    static InstanceLabelOverrideValueSpecification* Create(JsonValueCR json);
+    static InstanceLabelOverrideValueSpecification* Create(BeJsConst json);
 
     //! Allows the visitor to visit this specification.
     void Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const { _Accept(visitor); }
@@ -130,7 +130,7 @@ struct InstanceLabelOverrideCompositeValueSpecification : InstanceLabelOverrideV
     protected:
         Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
         Utf8CP _GetJsonElementType() const override {return nullptr;}
-        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
         ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
         ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
@@ -153,7 +153,7 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 public:
     InstanceLabelOverrideCompositeValueSpecification(): m_separator(" ") {}
@@ -181,7 +181,7 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 public:
     InstanceLabelOverridePropertyValueSpecification() {}
@@ -206,7 +206,7 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 public:
     InstanceLabelOverrideClassNameValueSpecification() : m_full(false) {}
@@ -261,7 +261,7 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 public:
     InstanceLabelOverrideStringValueSpecification() {}
@@ -283,7 +283,7 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 public:
     InstanceLabelOverrideRelatedInstanceLabelSpecification() {}

@@ -106,7 +106,7 @@ Utf8CP CustomNodeSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomNodeSpecification::_ReadJson(JsonValueCR json)
+bool CustomNodeSpecification::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;

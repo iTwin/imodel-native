@@ -45,7 +45,7 @@ protected:
     virtual CustomizationRule* _Clone() const = 0;
 
 public:
-    ECPRESENTATION_EXPORT static CustomizationRuleP Create(JsonValueCR);
+    ECPRESENTATION_EXPORT static CustomizationRuleP Create(BeJsConst);
     CustomizationRule() {}
     CustomizationRule(int priority, bool onlyIfNotHandled) : PresentationRule(priority, onlyIfNotHandled) {}
     void Accept(CustomizationRuleVisitor& visitor) const { _Accept(visitor); }
@@ -67,7 +67,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
 
     //! Compute rule hash.

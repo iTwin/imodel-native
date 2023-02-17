@@ -43,20 +43,20 @@ public:
     //! Parse properties names from string value to vector of properties names.
     static bvector<Utf8String> ParsePropertiesNames(Utf8StringCR value);
 
-    static Utf8String SupportedSchemasToString(JsonValueCR json);
+    static Utf8String SupportedSchemasToString(BeJsConst json);
     static Json::Value SupportedSchemasToJson(Utf8StringCR str);
 
-    static void ParseSchemaAndClassName(Utf8StringR schemaName, Utf8StringR className, JsonValueCR json, Utf8CP attributeIdentifier);
-    static Utf8String SchemaAndClassNameToString(JsonValueCR json, Utf8CP attributeIdentifier);
+    static void ParseSchemaAndClassName(Utf8StringR schemaName, Utf8StringR className, BeJsConst json, Utf8CP attributeIdentifier);
+    static Utf8String SchemaAndClassNameToString(BeJsConst json, Utf8CP attributeIdentifier);
     static Json::Value SchemaAndClassNameToJson(Utf8StringCR str);
     static Json::Value SchemaAndClassNameToJson(Utf8StringCR schemaName, Utf8StringCR className);
 
-    static bool ParseMultiSchemaClassesFromJson(JsonValueCR json, bool defaultPoly, bvector<MultiSchemaClass*>& classes, HashableBase* parent);
+    static bool ParseMultiSchemaClassesFromJson(BeJsConst json, bool defaultPoly, bvector<MultiSchemaClass*>& classes, HashableBase* parent);
     static bool ParseMultiSchemaClassesFromClassNamesString(Utf8StringCR classNames, bool defaultPolymorphism, bvector<MultiSchemaClass*>& classes, HashableBase* parent);
 
     static Json::Value MultiSchemaClassesToJson(bvector<MultiSchemaClass*> const& multiSchemaClasses);
 
-    static Utf8String SchemaAndClassNamesToString(JsonValueCR json);
+    static Utf8String SchemaAndClassNamesToString(BeJsConst json);
     static Json::Value SchemaAndClassNamesToJson(Utf8StringCR str);
 
     //! Copies the rules in source vector into the target vector.
@@ -173,12 +173,12 @@ public:
             CommonTools::AddToListByPriority(collection, *rule);
         }
 
-    template<typename TRule> static TRule* LoadRuleFromJson(JsonValueCR json)
+    template<typename TRule> static TRule* LoadRuleFromJson(BeJsConst json)
         {
         return LoadRuleFromJson<TRule>(json, &TRule::ReadJson);
         }
 
-    template<typename TRule> static TRule* LoadRuleFromJson(JsonValueCR json, bool(TRule::*reader)(JsonValueCR))
+    template<typename TRule> static TRule* LoadRuleFromJson(BeJsConst json, bool(TRule::*reader)(BeJsConst))
         {
         TRule* rule = new TRule();
         if (!(rule->*reader)(json))
@@ -188,12 +188,12 @@ public:
 
     //! Load rules from json array and add them to collection
     template<typename TRule>
-    static void LoadFromJson(Utf8CP ruleName, Utf8CP attributeName, JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)
+    static void LoadFromJson(Utf8CP ruleName, Utf8CP attributeName, BeJsConst json, bvector<TRule*>& collection, TRule*(*factory)(BeJsConst), HashableBase* parentHashable)
         {
-        if (!ValidateJsonValueType(ruleName, attributeName, json, Json::arrayValue))
+        if (!ValidateJsonValueType(ruleName, attributeName, json))
             return;
 
-        for (Json::ArrayIndex i = 0; i < json.size(); i++)
+        for (BeJsConst::ArrayIndex i = 0; i < json.size(); i++)
             {
             TRule* rule = factory(json[i]);
             if (nullptr != rule)
@@ -204,12 +204,12 @@ public:
 
     //! Load rules from json array and add them to collection by priority
     template<typename TRule>
-    static void LoadFromJsonByPriority(Utf8CP ruleName, Utf8CP attributeName, JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)
+    static void LoadFromJsonByPriority(Utf8CP ruleName, Utf8CP attributeName, BeJsConst json, bvector<TRule*>& collection, TRule*(*factory)(BeJsConst), HashableBase* parentHashable)
         {
-        if (!ValidateJsonValueType(ruleName, attributeName, json, Json::arrayValue))
+        if (!ValidateJsonValueType(ruleName, attributeName, json))
             return;
 
-        for (Json::ArrayIndex i = 0; i < json.size(); i++)
+        for (BeJsConst::ArrayIndex i = 0; i < json.size(); i++)
             {
             TRule* rule = factory(json[i]);
             if (nullptr != rule)
@@ -226,25 +226,20 @@ public:
             rulesList.append(rule->WriteJson());
         }
 
-    static Utf8CP GetJsonValueTypeStr(Json::ValueType type)
+    static Utf8CP GetRapidJsonTypeStr(BeJsConst json)
         {
-        switch (type)
-            {
-            case Json::nullValue: return "null";
-            case Json::intValue: return "int";
-            case Json::uintValue: return "uint";
-            case Json::realValue: return "real";
-            case Json::stringValue: return "string";
-            case Json::booleanValue: return "boolean";
-            case Json::arrayValue: return "array";
-            case Json::objectValue: return "object";
-            };
+        if (json.isNull()) return "null";
+        else if (json.isNumeric()) return "number";
+        else if (json.isString()) return "string";
+        else if (json.isBool()) return "bool";
+        else if (json.isArray()) return "array";
+        else if (json.isObject()) return "object";
         return "<invalid>";
         }
 
-    static bool ValidateJsonValueType(Utf8CP ruleName, Utf8CP attributeName, JsonValueCR attributeValue, Json::ValueType expectedType)
+    static bool ValidateJsonValueType(Utf8CP ruleName, Utf8CP attributeName, BeJsConst attributeValue)
         {
-        if (attributeValue.type() == expectedType)
+        if (attributeValue.isArray())
             return true;
 
         Utf8String fullAttributeName(ruleName ? ruleName : "");
@@ -256,17 +251,17 @@ public:
             }
 
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid type for `%s`: `%s`. Expected `%s`.",
-            fullAttributeName.c_str(), GetJsonValueTypeStr(attributeValue.type()), GetJsonValueTypeStr(expectedType)));
+            fullAttributeName.c_str(), GetRapidJsonTypeStr(attributeValue), "array"));
         return false;
         }
 
-    static bool CheckRuleIssue(bool issueCondition, Utf8CP ruleName, Utf8CP attributeName, JsonValueCR attributeValue, Utf8CP expectation)
+    static bool CheckRuleIssue(bool issueCondition, Utf8CP ruleName, Utf8CP attributeName, BeJsConst attributeValue, Utf8CP expectation)
         {
         if (!issueCondition)
             return false;
 
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-            ruleName, attributeName, attributeValue.ToString().c_str(), expectation));
+            ruleName, attributeName, attributeValue.Stringify().c_str(), expectation));
         return true;
         }
 };

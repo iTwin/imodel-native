@@ -46,7 +46,7 @@ Utf8CP DefaultPropertyCategoryOverride::_GetJsonElementType() const {return DEFA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DefaultPropertyCategoryOverride::_ReadJson(JsonValueCR json)
+bool DefaultPropertyCategoryOverride::_ReadJson(BeJsConst json)
     {
     if (!PresentationRule::_ReadJson(json))
         return false;

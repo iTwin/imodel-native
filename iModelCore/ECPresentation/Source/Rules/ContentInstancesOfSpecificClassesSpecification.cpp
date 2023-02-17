@@ -152,7 +152,7 @@ Utf8CP ContentInstancesOfSpecificClassesSpecification::_GetJsonElementType() con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
+bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ContentSpecification::_ReadJson(json))
         return false;
@@ -184,7 +184,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     if (!CommonToolsInternal::ParseMultiSchemaClassesFromJson(json[COMMON_JSON_ATTRIBUTE_CLASSES], defaultPolymorphism, m_classes, this) || m_classes.empty())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-            _GetJsonElementType(), json.ToString().c_str(), "at least one class"));
+            _GetJsonElementType(), json.Stringify().c_str(), "at least one class"));
         return false;
         }
     return true;

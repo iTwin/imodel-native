@@ -107,7 +107,7 @@ protected:
 
     virtual Utf8CP _GetJsonElementTypeAttributeName() const = 0;
     virtual Utf8CP _GetJsonElementType() const = 0;
-    virtual bool _ReadJson(JsonValueCR json) {return true;}
+    virtual bool _ReadJson(BeJsConst json) {return true;}
     virtual void _WriteJson(JsonValueR) const {}
 
 public:
@@ -124,7 +124,7 @@ public:
     Utf8CP GetJsonElementType() const {return _GetJsonElementType();}
 
     //! Reads rule information from json, returns true if it can read it successfully.
-    ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+    ECPRESENTATION_EXPORT bool ReadJson(BeJsConst json);
 
     //! Writes rule information to json
     ECPRESENTATION_EXPORT Json::Value WriteJson() const;
@@ -162,7 +162,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
 
 public:
@@ -195,7 +195,7 @@ protected:
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
 
 public:
@@ -234,7 +234,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
 
     //! Compute rule hash.

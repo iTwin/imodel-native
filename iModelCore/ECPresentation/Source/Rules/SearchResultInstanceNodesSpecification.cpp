@@ -123,7 +123,7 @@ Utf8CP SearchResultInstanceNodesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+bool SearchResultInstanceNodesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;
@@ -201,7 +201,7 @@ MD5 SearchResultInstanceNodesSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuerySpecification* QuerySpecification::Create(JsonValueCR json)
+QuerySpecification* QuerySpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString("");
     QuerySpecification* spec = nullptr;
@@ -262,7 +262,7 @@ Utf8CP QuerySpecification::_GetJsonElementTypeAttributeName() const {return COMM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QuerySpecification::_ReadJson(JsonValueCR json)
+bool QuerySpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -348,7 +348,7 @@ Utf8CP StringQuerySpecification::_GetJsonElementType() const {return STRING_QUER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool StringQuerySpecification::_ReadJson(JsonValueCR json)
+bool StringQuerySpecification::_ReadJson(BeJsConst json)
     {
     if (!QuerySpecification::_ReadJson(json))
         return false;
@@ -434,7 +434,7 @@ Utf8CP ECPropertyValueQuerySpecification::_GetJsonElementType() const {return EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECPropertyValueQuerySpecification::_ReadJson(JsonValueCR json)
+bool ECPropertyValueQuerySpecification::_ReadJson(BeJsConst json)
     {
     if (!QuerySpecification::_ReadJson(json))
         return false;
