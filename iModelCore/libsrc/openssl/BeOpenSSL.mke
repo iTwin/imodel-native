@@ -1152,6 +1152,8 @@ $(o)ocb128$(oext) : $(vendorSrc)crypto/modes/ocb128.c ${MultiCompileDepends}
 
 $(o)ofb128$(oext) : $(vendorSrc)crypto/modes/ofb128.c ${MultiCompileDepends}
 
+$(o)siv128$(oext) : $(vendorSrc)crypto/modes/siv128.c ${MultiCompileDepends}
+
 $(o)wrap128$(oext) : $(vendorSrc)crypto/modes/wrap128.c ${MultiCompileDepends}
 
 $(o)xts128gb$(oext) : $(vendorSrc)crypto/modes/xts128gb.c ${MultiCompileDepends}
@@ -1759,6 +1761,8 @@ $(o)securitycheck$(oext) : $(vendorSrc)providers/common/securitycheck.c ${MultiC
 $(o)securitycheck_default$(oext) : $(vendorSrc)providers/common/securitycheck_default.c ${MultiCompileDepends}
 
 $(o)der_digests_gen$(oext) : $(vendorSrc)providers/common/der/der_digests_gen.c ${MultiCompileDepends}
+
+$(o)der_dsa_gen$(oext) : $(vendorSrc)providers/common/der/der_dsa_gen.c ${MultiCompileDepends}
 
 $(o)der_dsa_key$(oext) : $(vendorSrc)providers/common/der/der_dsa_key.c ${MultiCompileDepends}
 
