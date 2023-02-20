@@ -7013,7 +7013,7 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
 
     //import edited schema with some changes.
     Utf8PrintfString schemaV2Xml(schemaBaseline, "01.00.01", "FacilityPart", "Facility");
-    SchemaItem schemaV2();
+    SchemaItem schemaV2(schemaV2Xml);
     ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
