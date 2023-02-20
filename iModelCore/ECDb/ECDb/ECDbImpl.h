@@ -154,7 +154,6 @@ private:
     mutable ClearCacheCounter m_clearCacheCounter;
     bvector<IECDbCacheClearListener*> m_ecdbCacheClearListeners;
     IssueDataSource m_issueReporter;
-    mutable std::unique_ptr<ECJsonFunction> m_ecJsonFunc;
     mutable std::unique_ptr<ClassNameFunc> m_classNameFunc;
     mutable std::unique_ptr<ClassIdFunc> m_classIdFunc;
     mutable std::unique_ptr<InstanceOfFunc> m_instanceOfFunc;
