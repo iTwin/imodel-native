@@ -63,6 +63,8 @@ private:
     ~CoreCustomAttributeHelper();
 
     static ECSchemaPtr m_schema;
+    static ECSchemaPtr _GetSchema();
+
 public:
     //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
     //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
@@ -118,7 +120,8 @@ struct ConversionCustomAttributeHelper final
         ~ConversionCustomAttributeHelper();
 
         static ECSchemaPtr m_schema;
-        static bool Initialize();
+        static ECSchemaPtr _GetSchema();
+
     public:
         //! Creates a custom attribute instance for the given custom attribute from the ECv3ConversionAttributes schema
         //! @remarks The only supported custom attribute at this time is PropertyRenamed. 

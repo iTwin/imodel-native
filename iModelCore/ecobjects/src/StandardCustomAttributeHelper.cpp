@@ -87,6 +87,21 @@ ECSchemaPtr CoreCustomAttributeHelper::m_schema = nullptr;
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSchemaPtr CoreCustomAttributeHelper::_GetSchema()
+    {
+    if (m_schema == nullptr)
+        {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaKey key(kCoreCustomAttributes, kCoreCAVersionRead, kCoreCAVersionWrite, kCoreCAVersionMinor);
+        m_schema = ECSchema::LocateSchema(key, *schemaContext);
+        }
+    return m_schema;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECObjectsStatus CoreCustomAttributeHelper::GetDateTimeInfo(DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     return DateTimeInfoAccessor::GetFrom(dateTimeInfo, dateTimeProperty);
@@ -176,13 +191,7 @@ ECClassCP CoreCustomAttributeHelper::GetClass(Utf8CP attributeName)
 //static
 ECSchemaPtr CoreCustomAttributeHelper::GetSchema()
     {
-    if (m_schema == nullptr)
-        {
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-        SchemaKey key(kCoreCustomAttributes, kCoreCAVersionRead, kCoreCAVersionWrite, kCoreCAVersionMinor);
-        m_schema = ECSchema::LocateSchema(key, *schemaContext);
-        }
-    return m_schema;
+    return _GetSchema();
     }
 
 //---------------------------------------------------------------------------------------
@@ -231,21 +240,18 @@ ECSchemaPtr ConversionCustomAttributeHelper::m_schema = nullptr;
 //*********************** ConversionCustomAttributeHelper *************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ConversionCustomAttributeHelper::Initialize()
+ECSchemaPtr ConversionCustomAttributeHelper::_GetSchema()
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->SetCalculateChecksum(true);
-    SchemaKey key(kConvSchemaName, kConvVersionRead, kConvVersionMinor);
-
-    m_schema = ECSchema::LocateSchema(key, *schemaContext);
-    if (!m_schema.IsValid())
+    if (m_schema == nullptr)
         {
-        LOG.errorv("Could not load the standard schema '%s'", kConvSchemaName);
-        return false;
-    }
-    return true;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        schemaContext->SetCalculateChecksum(true);
+        SchemaKey key(kConvSchemaName, kConvVersionRead, kConvVersionMinor);
+        m_schema = ECSchema::LocateSchema(key, *schemaContext);
+        }
+    return m_schema;
     }
 
 //---------------------------------------------------------------------------------------
@@ -254,7 +260,8 @@ bool ConversionCustomAttributeHelper::Initialize()
 //static
 IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
     {
-    if (!m_schema.IsValid() && !Initialize())
+    ECSchemaPtr schema = _GetSchema();
+    if (!schema.IsValid())
         {
         LOG.errorv("Could not load standard schema '%s'", kConvSchemaName);
         return nullptr;
@@ -269,7 +276,7 @@ IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Ut
         return nullptr;
         }
 
-    ECClassP ecClass = m_schema->GetClassP(attributeName);
+    ECClassP ecClass = schema->GetClassP(attributeName);
     StandaloneECEnablerPtr enabler;
     if (nullptr != ecClass)
         enabler = ecClass->GetDefaultStandaloneEnabler();
