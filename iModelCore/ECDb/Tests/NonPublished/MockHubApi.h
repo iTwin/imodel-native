@@ -180,4 +180,5 @@ struct SchemaSyncTestFixture : public ECDbTestFixture {
     static std::string GetLastChangesetAsSql(TrackedECDb& db);
     static void PrintHash(ECDbR ecdb, Utf8CP desc);
     static std::string GetIndexDDL(ECDbCR ecdb, Utf8CP indexName);
+    static void Test(Utf8CP name, std::function<void()> test);
 };

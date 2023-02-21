@@ -45,7 +45,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
     EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(*b2).c_str());
 
     ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Push(*b1)) << "Push changes to from b1 to schemaChannel";
-    if ("import schema into b1") {
+    Test("import schema into b1", [&]() {
         auto schema1 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -80,10 +80,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("58378b2ff3c9c4ad9664395274173d2c9dee1970", GetSchemaHash(*b1).c_str());
         EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*b1).c_str());
         EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b1).c_str());
+    });
 
-    }
-
-    if("check if sync-db has changes but not tables and index") {
+    Test("check if sync-db has changes but not tables and index", [&]() {
         schemaChannel.WithReadOnly([&](ECDbR syncDb) {
             auto pipe1 = syncDb.Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
@@ -95,9 +94,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
             EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(syncDb).c_str()); // It should not change
             ASSERT_TRUE(ForeignkeyCheck(syncDb));
         });
-    }
+    });
 
-	if("pull changes from sync-db into b2 and verify class, table and index exists") {
+    Test("pull changes from sync-db into b2 and verify class, table and index exists", [&]() {
         ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Pull(*b2,[&](){
             auto pipe1 = b2->Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
@@ -109,10 +108,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
             EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b2).c_str());
             ASSERT_TRUE(ForeignkeyCheck(*b2));
         })) << "Pull changes from schemaChannel into b2";
+    });
 
-    }
-
-    if ("update schema by adding more properties and expand index in b2") {
+    Test("update schema by adding more properties and expand index in b2", [&]() {
         auto schema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -150,9 +148,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b2).c_str());
         EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b2).c_str());
         EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b2).c_str());
-    }
+    });
 
-	if("check if sync-db has changes but not tables and index") {
+    Test("check if sync-db has changes but not tables and index", [&]() {
         schemaChannel.WithReadOnly([&](ECDbR syncDb) {
             auto pipe1 = syncDb.Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
@@ -163,9 +161,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
             EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(syncDb).c_str());
             ASSERT_TRUE(ForeignkeyCheck(syncDb));
         });
-    }
+    });
 
-    if("pull changes from sync db into master db and check if schema changes was there and valid") {
+    Test("pull changes from sync db into master db and check if schema changes was there and valid", [&]() {
         ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Pull(*b1, [&]() {
             auto pipe1 = b1->Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
@@ -179,11 +177,13 @@ TEST_F(SchemaSyncTestFixture, Test) {
             EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b1).c_str());
             ASSERT_TRUE(ForeignkeyCheck(*b1));
         })) << "Pull changes from schemaChannel into b1";
-    }
+    });
 
-    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 import schema"))  << "b1->PullMergePush()";
+    Test("PullMergePush for b1", [&]() {
+        ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 import schema"))  << "b1->PullMergePush()";
+    });
 
-    if("b3 pull changes from hub") {
+    Test("b3 pull changes from hub", [&]() {
         ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("add new schema"))  << "b3->PullMergePush()";
         auto pipe1 = b3->Schemas().GetClass("TestSchema1", "Pipe1");
         ASSERT_NE(pipe1, nullptr);
@@ -193,9 +193,14 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b3).c_str());
         EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b3).c_str());
         EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b3).c_str());
-    }
-    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 import schema")) << "b2->PullMergePush()";
-    b2->AbandonChanges();
+    });
+
+
+    Test("PullMergePush for b2", [&]() {
+        ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 import schema")) << "b2->PullMergePush()";
+        b2->AbandonChanges();
+
+    });
 }
 
 END_ECDBUNITTESTS_NAMESPACE
