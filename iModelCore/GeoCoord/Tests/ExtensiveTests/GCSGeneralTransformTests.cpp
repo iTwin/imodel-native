@@ -6,7 +6,7 @@
 
 #include <GeoCoord/BaseGeoCoord.h>
 
-#include "GeoCoordTestCommon.h"
+#include "GeoCoordExtensiveTestCommon.h"
 
 using namespace ::testing;
 
@@ -50,8 +50,8 @@ static bool s_AngleInDegreesEqual (double angle1, double angle2, double toleranc
 class GCSGeneralTransformTests : public ::testing::TestWithParam< Utf8String >
     {   
       public:
-        virtual void SetUp() { GeoCoordTestCommon::Initialize(false); };
-        virtual void TearDown() {GeoCoordTestCommon::Shutdown();};
+        virtual void SetUp() { GeoCoordExtensiveTestCommon::Initialize(false); };
+        virtual void TearDown() {GeoCoordExtensiveTestCommon::Shutdown();};
 
         GCSGeneralTransformTests() {};
         ~GCSGeneralTransformTests() {};
@@ -287,5 +287,5 @@ TEST_P (GCSGeneralTransformTests, MathematicalDomainConvertionTest)
     
 INSTANTIATE_TEST_SUITE_P(GCSGeneralTransformTests_Combined,
                         GCSGeneralTransformTests,
-                        ValuesIn(GeoCoordTestCommon::GetListOfGCS()));
+                        ValuesIn(GeoCoordExtensiveTestCommon::GetListOfGCS()));
 

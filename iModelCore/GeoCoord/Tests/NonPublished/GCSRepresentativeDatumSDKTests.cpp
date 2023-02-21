@@ -11,69 +11,99 @@
 
 using namespace ::testing;
 
-class GCSGeneralDatumSDKTests : public ::testing::TestWithParam< Utf8String >
+class GCSRepresentativeDatumSDKTests : public ::testing::TestWithParam< Utf8String >
     {   
     public:
         virtual void SetUp() { GeoCoordTestCommon::Initialize(); };
         virtual void TearDown() {GeoCoordTestCommon::Shutdown();};
 
-        GCSGeneralDatumSDKTests() {};
-        ~GCSGeneralDatumSDKTests() {};
+        GCSRepresentativeDatumSDKTests() {};
+        ~GCSRepresentativeDatumSDKTests() {};
     };
 
 /*---------------------------------------------------------------------------------**//**
 * test all transformation paths are obtainable from datum to WGS84
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (GCSGeneralDatumSDKTests, GeodeticTransformForAllDatum)
+TEST_F (GCSRepresentativeDatumSDKTests, GeodeticTransformForAllDatum)
     {
-    const bvector<Utf8String>& listOfDatums = GeoCoordTestCommon::GetListOfDatums();
-    const bvector<Utf8String>& listOfNotSupported = GeoCoordTestCommon::GetListOfUnsupportedDatums();
+    const bvector<Utf8String>& listOfDatums = GeoCoordTestCommon::GetListOfRepresentativeDatums();
 
     for (int index = 0 ; index < listOfDatums.size() ; index++)
         {
         Utf8String theKeyname(listOfDatums[index]);
         static GeoCoordinates::DatumCP wgs84 = GeoCoordinates::Datum::CreateDatum("WGS84");
 
-        // Check if not in exclusion list (datum that require grid files not installed by default
-        bool found = false;
-        for (int index2 = 0 ; !found && (index2 < listOfNotSupported.size()) ; index2++)
-            {
-            if (theKeyname.CompareTo(listOfNotSupported[index2]) == 0)
-                found = true;
-            }
-
-        if (!found)
-            {
-            GeoCoordinates::DatumCP theDatum = GeoCoordinates::Datum::CreateDatum(theKeyname.c_str());
+        GeoCoordinates::DatumCP theDatum = GeoCoordinates::Datum::CreateDatum(theKeyname.c_str());
     
-            // Check transformation properties
-            ASSERT_TRUE(theDatum != NULL && theDatum->IsValid()) << "Datum: " << theKeyname.c_str();
+        // Check transformation properties
+        ASSERT_TRUE(theDatum != NULL && theDatum->IsValid()) << "Datum: " << theKeyname.c_str();
     
-            // Create a Datum converter between the two datums
-            GeoCoordinates::DatumConverterP theConverter = GeoCoordinates::DatumConverter::Create(*theDatum, *wgs84, GeoCoordinates::vdcGeoid, GeoCoordinates::vdcGeoid);
+        // Create a Datum converter between the two datums
+        GeoCoordinates::DatumConverterP theConverter = GeoCoordinates::DatumConverter::Create(*theDatum, *wgs84, GeoCoordinates::vdcGeoid, GeoCoordinates::vdcGeoid);
 
-            // Check converter properties
-            ASSERT_TRUE(theConverter != NULL) << "Datum: " << theKeyname.c_str();
+        // Check converter properties
+        ASSERT_TRUE(theConverter != NULL) << "Datum: " << theKeyname.c_str();
 
-            // Expect any transformation not to be fully empty (except from self)
-            // TODO This text causes intermittent issues on PRG machines ... possibly a file concurrent access related failure.
-            if(!(theConverter->GetGeodeticTransformCount() > 0) && (theKeyname.CompareTo("WGS84") != 0))
-                EXPECT_TRUE(false); 
+        // Expect any transformation not to be fully empty (except from self)
+        // TODO This text causes intermittent issues on PRG machines ... possibly a file concurrent access related failure.
+        if(!(theConverter->GetGeodeticTransformCount() > 0) && (theKeyname.CompareTo("WGS84") != 0))
+            EXPECT_TRUE(false); 
         
-            theConverter->Destroy();
-            theDatum->Destroy();
-            }
+        theConverter->Destroy();
+        theDatum->Destroy();
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Test specific to grid file based transformations
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (GCSRepresentativeDatumSDKTests, GeodeticTransformGetAllThroughPath)
+    {
+    const bvector<Utf8String>& listOfDatums = GeoCoordTestCommon::GetListOfRepresentativeDatums();
+    GeoCoordinates::DatumCP wgs84 = GeoCoordinates::Datum::CreateDatum("WGS84");
+
+    ASSERT_TRUE(wgs84 != nullptr);
+
+    for (int index = 0 ; index < listOfDatums.size() ; index++)
+        {
+        Utf8String theKeyname(listOfDatums[index]);
+
+        GeoCoordinates::DatumCP theDatum = GeoCoordinates::Datum::CreateDatum(theKeyname.c_str());
+
+        // Check transformation properties
+        ASSERT_TRUE(theDatum != NULL && theDatum->IsValid());
+
+        // Create a Datum converter between the two datums
+        GeoCoordinates::GeodeticTransformPathP theTransformPath = GeoCoordinates::GeodeticTransformPath::Create(*theDatum, *wgs84);
+
+        // Check converter properties
+        ASSERT_TRUE(theTransformPath != NULL);
+
+        for (int indexTrf = 0 ; indexTrf < theTransformPath->GetGeodeticTransformCount() ; indexTrf++)
+            {
+            GeoCoordinates::GeodeticTransformCP theTransform = theTransformPath->GetGeodeticTransform(indexTrf);
+
+            ASSERT_TRUE(theTransform != NULL);
+
+            EXPECT_TRUE(theTransform->GetDataAvailability() == GeoCoordinates::GeodeticTransformDataAvailability::DataAvailable) << "Data unavailable for " << theKeyname.c_str();
+            }
+
+        theTransformPath->Destroy();
+        theDatum->Destroy();
+        }
+
+        wgs84->Destroy();
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * test all transformation to json then back
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GCSGeneralDatumSDKTests, DatumTransformtoJsonThenBack)
+TEST_F(GCSRepresentativeDatumSDKTests, DatumTransformtoJsonThenBack)
 {
-    const bvector<Utf8String>& listOfDatums = GeoCoordTestCommon::GetListOfDatums();
+    const bvector<Utf8String>& listOfDatums = GeoCoordTestCommon::GetListOfRepresentativeDatums();
 
     for (int index = 0; index < listOfDatums.size(); index++)
     {
@@ -333,7 +363,7 @@ bvector<datumPair> listOfDatumPairs = {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransformAllTests)
+TEST_F(GCSRepresentativeDatumSDKTests, DatumAdditionalTransformAllTests)
 {
     for (auto thePair : listOfDatumPairs)
         {
@@ -368,7 +398,7 @@ TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransformAllTests)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransformAllTestsToWgs84)
+TEST_F(GCSRepresentativeDatumSDKTests, DatumAdditionalTransformAllTestsToWgs84)
 {
     GeoCoordinates::DatumCP wgs84Datum = GeoCoordinates::Datum::CreateDatum("WGS84");
 
@@ -420,9 +450,9 @@ TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransformAllTestsToWgs84)
 * test all transformation to json then back
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransform)
+TEST_F(GCSRepresentativeDatumSDKTests, DatumAdditionalTransform)
 {
-    const bvector<Utf8String>& listOfDatums = GeoCoordTestCommon::GetListOfDatums();
+    const bvector<Utf8String>& listOfDatums = GeoCoordTestCommon::GetListOfRepresentativeDatums();
     const bvector<Utf8String>& listOfAdditionalPathsDatum = GeoCoordTestCommon::GetListOfDatumsWithAdditionalPaths();
 
     for (int index = 0; index < listOfDatums.size(); index++)
@@ -459,7 +489,7 @@ TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransform)
 * correctly to OSTN/2015 - OSTN/2002 without a path definition.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransformBiStageWithoutPath)
+TEST_F(GCSRepresentativeDatumSDKTests, DatumAdditionalTransformBiStageWithoutPath)
     {
     bvector<Utf8String> listOfNR_HS2_Datums = {
         "MRH21-IRF",
@@ -555,7 +585,7 @@ TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransformBiStageWithoutPath)
     * without paths.
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    TEST_F(GCSGeneralDatumSDKTests, DatumXR09WithoutPath)
+    TEST_F(GCSRepresentativeDatumSDKTests, DatumXR09WithoutPath)
     {
         GeoCoordinates::DatumCP XR09_2015Datum = GeoCoordinates::Datum::CreateDatum("XR09SD_2015");
         GeoCoordinates::DatumCP XR09_2002Datum = GeoCoordinates::Datum::CreateDatum("XR09SD_2002");
@@ -606,7 +636,7 @@ TEST_F(GCSGeneralDatumSDKTests, DatumAdditionalTransformBiStageWithoutPath)
     * without paths.
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    TEST_F(GCSGeneralDatumSDKTests, DatumHS2WithoutPath)
+    TEST_F(GCSRepresentativeDatumSDKTests, DatumHS2WithoutPath)
     {
         GeoCoordinates::DatumCP HS2_2015Datum = GeoCoordinates::Datum::CreateDatum("HS2SD_2015");
         GeoCoordinates::DatumCP HS2_2002Datum = GeoCoordinates::Datum::CreateDatum("HS2SD_2002");

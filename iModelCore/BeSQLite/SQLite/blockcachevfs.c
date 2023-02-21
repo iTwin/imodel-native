@@ -3588,6 +3588,7 @@ char *bcvGetFullpath(int *pRc, const char *zDir){
   zRet = bcvMallocRc(pRc, pVfs->mxPathname+1);
   if( zRet ){
     int rc = pVfs->xFullPathname(pVfs, zDir, pVfs->mxPathname, zRet);
+    rc = (rc & 0xFF);
     if( rc ){
       sqlite3_free(zRet);
       zRet = 0;
