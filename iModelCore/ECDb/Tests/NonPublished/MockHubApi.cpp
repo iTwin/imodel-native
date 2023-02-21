@@ -4,6 +4,255 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC;
 //***************************************************************************************
+// SharedSchemaDb
+//***************************************************************************************
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts) {
+    auto schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
+    bvector<ECSchemaCP> importSchemas;
+    for(auto& item: items) {
+        ECSchemaPtr schema;
+        ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *schemaReadContext);
+        if (!schema.IsValid()) {
+            return SchemaImportResult::ERROR;
+        }
+        importSchemas.push_back(schema.get());
+    }
+    return ecdb.Schemas().ImportSchemas(importSchemas, opts);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts) {
+    return ImportSchemas(ecdb, std::vector<SchemaItem>{item}, opts);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<TrackedECDb> SchemaSyncTestFixture::OpenECDb(Utf8CP asFileNam) {
+    auto ecdb = std::make_unique<TrackedECDb>();
+    if (BE_SQLITE_OK != ecdb->OpenBeSQLiteDb(asFileNam, Db::OpenParams(Db::OpenMode::ReadWrite))) {
+        return nullptr;
+    }
+    return std::move(ecdb);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaSyncTestFixture::GetSchemaHash(ECDbCR db) {
+    ECSqlStatement stmt;
+    if (stmt.Prepare(db, "PRAGMA checksum(ec_schema)") != ECSqlStatus::Success) {
+        return "";
+    }
+    if (stmt.Step() == BE_SQLITE_ROW) {
+        return stmt.GetValueText(0);
+    }
+    return "";
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaSyncTestFixture::GetMapHash(ECDbCR db) {
+    ECSqlStatement stmt;
+    if (stmt.Prepare(db, "PRAGMA checksum(ec_map)") != ECSqlStatus::Success) {
+        return "";
+    }
+    if (stmt.Step() == BE_SQLITE_ROW) {
+        return stmt.GetValueText(0);
+    }
+    return "";
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaSyncTestFixture::GetDbSchemaHash(ECDbCR db) {
+    ECSqlStatement stmt;
+    if (stmt.Prepare(db, "PRAGMA checksum(db_schema)") != ECSqlStatus::Success) {
+        return "";
+    }
+    if (stmt.Step() == BE_SQLITE_ROW) {
+        return stmt.GetValueText(0);
+    }
+    return "";
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchemaSyncTestFixture::ForeignkeyCheck(ECDbCR db) {
+    Statement stmt;
+    EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA foreign_key_check"));
+    auto rc = stmt.Step();
+    if (rc == BE_SQLITE_DONE) {
+        return true;
+    }
+    while(rc == BE_SQLITE_ROW) {
+        printf("%s\n",
+                SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
+                                stmt.GetValueText(0),
+                                stmt.GetValueInt64(1),
+                                stmt.GetValueText(2),
+                                stmt.GetValueInt(3))
+                    .GetUtf8CP());
+
+        rc = stmt.Step();
+    }
+    return false;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string SchemaSyncTestFixture::GetLastChangesetAsSql(TrackedECDb& db) {
+    std::vector<std::string> sqlList;
+    const auto changesets = db.GetTracker()->GetLocalChangesets();
+    if (changesets.size() == 0) {
+        return "";
+    }
+    changesets.back()->ToSQL(db, [&](std::string const& tbl, std::string const& sql) {
+        sqlList.push_back(sql);
+    });
+    std::sort(sqlList.begin(), sqlList.end());
+    return std::accumulate(
+        std::next(sqlList.begin()),
+        std::end(sqlList),
+        std::string{sqlList.front()},
+        [&](std::string const& acc, const std::string& piece) {
+            return acc + "\n" + piece;
+        }
+    );
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::PrintHash(ECDbR ecdb, Utf8CP desc) {
+    printf("=====%s======\n", desc);
+    printf("\tSchema: SHA1-%s\n", GetSchemaHash(ecdb).c_str());
+    printf("\t   Map: SHA1-%s\n", GetMapHash(ecdb).c_str());
+    printf("\t    Db: SHA1-%s\n", GetDbSchemaHash(ecdb).c_str());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string SchemaSyncTestFixture::GetIndexDDL(ECDbCR ecdb, Utf8CP indexName) {
+    Statement stmt;
+    EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "select sql from sqlite_master where name=?"));
+    stmt.BindText(1, indexName, Statement::MakeCopy::Yes);
+    if (stmt.Step() == BE_SQLITE_ROW) {
+        return stmt.GetValueText(0);
+    }
+    return "";
+};
+
+//***************************************************************************************
+// SharedSchemaDb
+//***************************************************************************************
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SharedSchemaDb::SharedSchemaDb(Utf8CP name){
+    BeFileName outPath;
+    BeTest::GetHost().GetOutputRoot(outPath);
+    outPath.AppendToPath(WPrintfString(L"%s.ecdb", name).GetWCharCP());
+    if (outPath.DoesPathExist()) {
+        if (outPath.BeDeleteFile() != BeFileNameStatus::Success) {
+            throw std::runtime_error("unable to delete file");
+        }
+    }
+    m_fileName = outPath;
+    auto ecdb = std::make_unique<ECDb>();
+    if (BE_SQLITE_OK != ecdb->CreateNewDb(m_fileName)) {
+        throw std::runtime_error("unable to create file");
+    }
+    ecdb->SaveChanges();
+    ecdb->CloseDb();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName SharedSchemaDb::GetFileName() const { return m_fileName;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<ECDb> SharedSchemaDb::OpenReadOnly(DefaultTxn mode) {
+    auto ecdb = std::make_unique<ECDb>();
+    if (ecdb->OpenBeSQLiteDb(m_fileName, Db::OpenParams(Db::OpenMode::Readonly, mode)) != BE_SQLITE_OK) {
+        return nullptr;
+    }
+    return std::move(ecdb);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<ECDb> SharedSchemaDb::OpenReadWrite(DefaultTxn mode) {
+    auto ecdb = std::make_unique<ECDb>();
+    if (ecdb->OpenBeSQLiteDb(m_fileName, Db::OpenParams(Db::OpenMode::ReadWrite, mode)) != BE_SQLITE_OK) {
+        return nullptr;
+    }
+    return std::move(ecdb);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SharedSchemaDb::WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode) {
+    auto ecdb = OpenReadOnly(mode);
+    if (ecdb == nullptr) {
+        throw std::runtime_error("unable to open file");
+    }
+    cb(*ecdb);
+    ecdb->CloseDb();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode) {
+    auto ecdb = OpenReadWrite(mode);
+    if (ecdb == nullptr) {
+        throw std::runtime_error("unable to open file");
+    }
+    cb(*ecdb);
+    ecdb->CloseDb();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SharedSchemaDb::Push(ECDbR ecdb, std::function<void()> cb) {
+    auto rc = ecdb.Schemas().SyncSchemas(GetFileName().GetNameUtf8(), SchemaManager::SyncAction::Push);
+    if (rc == BE_SQLITE_OK && cb != nullptr) {
+        cb();
+    }
+    return rc;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SharedSchemaDb::Pull(ECDbR ecdb, std::function<void()> cb) {
+    auto rc = ecdb.Schemas().SyncSchemas(GetFileName().GetNameUtf8(), SchemaManager::SyncAction::Pull);
+    if (rc == BE_SQLITE_OK && cb != nullptr) {
+        cb();
+    }
+    return rc;
+}
+
+
+//***************************************************************************************
 // InMemoryECDb
 //***************************************************************************************
 /*---------------------------------------------------------------------------------**//**

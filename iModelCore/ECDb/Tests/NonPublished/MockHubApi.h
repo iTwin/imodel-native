@@ -147,3 +147,37 @@ struct InMemoryECDb final: public BentleyApi::BeSQLite::EC::ECDb {
     virtual ~InMemoryECDb();
     static Ptr Create();
 };
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SharedSchemaDb final {
+    private:
+        BeFileName m_fileName;
+
+    public:
+        explicit SharedSchemaDb(Utf8CP name);
+        BeFileName GetFileName() const;
+        std::unique_ptr<ECDb> OpenReadOnly(DefaultTxn mode = DefaultTxn::Yes);
+        std::unique_ptr<ECDb> OpenReadWrite(DefaultTxn mode = DefaultTxn::Yes);
+        void WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode = DefaultTxn::Yes);
+        void WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode = DefaultTxn::Yes);
+        DbResult Push(ECDbR ecdb, std::function<void()> cb = nullptr);
+        DbResult Pull(ECDbR ecdb, std::function<void()> cb = nullptr);
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaSyncTestFixture : public ECDbTestFixture {
+    static SchemaImportResult ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
+    static SchemaImportResult ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
+    static std::unique_ptr<TrackedECDb> OpenECDb(Utf8CP asFileNam);
+    static Utf8String GetSchemaHash(ECDbCR db);
+    static Utf8String GetMapHash(ECDbCR db);
+    static Utf8String GetDbSchemaHash(ECDbCR db);
+    static bool ForeignkeyCheck(ECDbCR db);
+    static std::string GetLastChangesetAsSql(TrackedECDb& db);
+    static void PrintHash(ECDbR ecdb, Utf8CP desc);
+    static std::string GetIndexDDL(ECDbCR ecdb, Utf8CP indexName);
+};
