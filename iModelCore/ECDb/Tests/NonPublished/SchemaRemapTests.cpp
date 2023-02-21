@@ -4222,9 +4222,9 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
     {
     //This and the next test are used to diagnose problems with a single or a set of schemas loaded from the local file system.
     //That is useful so the file can be modified and executed many times without the need to rebuild the test.
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
     ASSERT_EQ(SUCCESS, SetupECDb("ImportSchemasFromExternalFolders.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"));
     BeFileName schemasFolder(L"F:\\data\\input1\\");
@@ -6722,6 +6722,322 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified)
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
     ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, RevitStoryScenario)
+    {
+    //Reproduces a bug found in a revit smoketest, simplified version
+    //This schema represents a join of RevitDynamic and its references to reflect an update of the Story class.
+    //"Level" has incoming new properties due to a base class change to FacilityPart clashing with properties from the mixin class "RevitIdPropertyMixinClass"
+
+    //String has 2 placeholders: version, and baseclass of story
+    Utf8CP schemaBaseline = R"schema(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="TestSchema" alias="ts" version="%s"
+    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+    <ECEntityClass typeName="Element" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+        <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+        <BaseClass>GeometricElement</BaseClass>
+        <ECCustomAttributes>
+            <ShareColumns xmlns="ECDbMap.2.0.0">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="InSpatialIndex" typeName="boolean" />
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialElement" modifier="Abstract">
+        <BaseClass>GeometricElement3d</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
+        <BaseClass>SpatialElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="CompositeElement" description="a spatial element that may be Composite of other CompositeElements" modifier="Abstract">
+        <BaseClass>SpatialLocationElement</BaseClass>
+        <ECProperty propertyName="FootprintArea" typeName="double" displayLabel="FootprintArea" readOnly="true"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ICompositeVolume" description="An interface that indicates that the CompositeElement is delimited by a volume" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                <AppliesToEntityClass>CompositeElement</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ISpatialOrganizer" description="An bis:SpatialLocation that organizes bis:SpatialElements using 'SpatialOrganizerHoldsSpatialElements' and 'SpatialOrganizerReferencesSpatialElements'" displayLabel="Spatial Organizer" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                <AppliesToEntityClass>SpatialLocationElement</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SpatialStructureElement" description="An Element used to form a spatial breakdown structure. As an ISpatialOrganizer, it may explicitly 'hold' or 'reference' SpatialElements." displayLabel="Spatial Structure Element" modifier="Abstract">
+        <BaseClass>CompositeElement</BaseClass>
+        <BaseClass>ISpatialOrganizer</BaseClass>
+        <ECProperty propertyName="Description" typeName="string" description="A human-readable description of this Spatial Structure Element"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Facility" description="A volume occupied by a built facility, such as a building, bridge, road, factory/plant, railway, tunnel, etc." modifier="Abstract">
+        <BaseClass>SpatialStructureElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FacilityPart" description="A volume that breaks a Facility down into major parts that are larger than Spaces.  Its meaning varies widely depending on the kind of Facility, but for Buildings it is a Storey." displayLabel="Facility Part" modifier="Abstract">
+        <BaseClass>SpatialStructureElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Story" description="A building Story that is an aggregation of spaces that are vertically bound" modifier="Abstract">
+        <BaseClass>%s</BaseClass>
+        <BaseClass>ICompositeVolume</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="RevitIdPropertyMixinClass" description="Common Revit properties" displayLabel="Revit" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECProperty propertyName="RevitId" typeName="string" displayLabel="Element Identifier" readOnly="true"/>
+        <ECProperty propertyName="TypeId" typeName="string" displayLabel="Type Identifier" readOnly="true"/>
+        <ECProperty propertyName="Timestamp" typeName="dateTime" displayLabel="Modified" readOnly="true"/>
+        <ECProperty propertyName="LastModifier" typeName="string" displayLabel="Modified By" readOnly="true"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Level">
+        <BaseClass>Story</BaseClass>
+        <BaseClass>RevitIdPropertyMixinClass</BaseClass>
+        <ECProperty propertyName="ELEM_CATEGORY_PARAM" typeName="string" displayLabel="Category" />
+        <ECProperty propertyName="IFC_GUID" typeName="string" displayLabel="IfcGUID" />
+        <ECProperty propertyName="PHASE_CREATED" typeName="string" displayLabel="Phase Created" />
+        <ECProperty propertyName="PHASE_DEMOLISHED" typeName="string" displayLabel="Phase Demolished" />
+        <ECProperty propertyName="LEVEL_IS_BUILDING_STORY" typeName="boolean" displayLabel="Building Story"/>
+        <ECProperty propertyName="LEVEL_ELEV" typeName="double" displayLabel="Elevation"/>
+        <ECProperty propertyName="LEVEL_IS_GROUND_PLANE" typeName="boolean" displayLabel="Is ground plane"/>
+        <ECProperty propertyName="LEVEL_ROOM_COMPUTATION_HEIGHT" typeName="double" displayLabel="Computation Height"/>
+        <ECProperty propertyName="DATUM_TEXT" typeName="string" displayLabel="Name"/>
+        <ECProperty propertyName="STRUCTURAL_ANALYTICAL_MODEL" typeName="boolean" displayLabel="Enable Analytical Model"/>
+        <ECProperty propertyName="LEVEL_IS_STRUCTURAL" typeName="boolean" displayLabel="Structural" readOnly="true"/>
+    </ECEntityClass>
+</ECSchema>
+        )schema";
+        
+    Utf8PrintfString schemaV1Xml(schemaBaseline, "01.00.00", "CompositeElement");
+    SchemaItem schemaV1(schemaV1Xml);
+
+    ASSERT_EQ(SUCCESS, SetupECDb("RevitStoryScenario.ecdb", schemaV1));
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId) VALUES ('RevitId')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId"}])json"), result);
+    }
+
+    //import edited schema with some changes.
+    Utf8PrintfString schemaV2Xml(schemaBaseline, "01.00.01", "FacilityPart");
+    SchemaItem schemaV2(schemaV2Xml);
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (Description,RevitId) VALUES ('D','RevitId2')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Description,RevitId FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId"},{"Description":"D","RevitId":"RevitId2"}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
+    {
+    //Reproduces a bug found in a revit smoketest, simplified version
+    //Like the previous test, but put the failicy class alongside story as its sibling to provoke more clashes.
+    //Also added an IHasLabel mixin to the hierarchy to increase complexity.
+
+    //3 placeholders: version, story-baseclass, building-baseclass
+    Utf8CP schemaBaseline = R"schema(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="TestSchema" alias="ts" version="%s"
+    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+    <ECEntityClass typeName="Element" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+        <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0.0" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+        <BaseClass>GeometricElement</BaseClass>
+        <ECCustomAttributes>
+            <ShareColumns xmlns="ECDbMap.2.0.0">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="InSpatialIndex" typeName="boolean" />
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialElement" modifier="Abstract">
+        <BaseClass>GeometricElement3d</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
+        <BaseClass>SpatialElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="IHasLabel" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="CompositeElement" description="a spatial element that may be Composite of other CompositeElements" modifier="Abstract">
+        <BaseClass>SpatialLocationElement</BaseClass>
+        <BaseClass>IHasLabel</BaseClass>
+        <ECProperty propertyName="FootprintArea" typeName="double" displayLabel="FootprintArea" readOnly="true"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ICompositeVolume" description="An interface that indicates that the CompositeElement is delimited by a volume" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                <AppliesToEntityClass>CompositeElement</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ISpatialOrganizer" description="An bis:SpatialLocation that organizes bis:SpatialElements using 'SpatialOrganizerHoldsSpatialElements' and 'SpatialOrganizerReferencesSpatialElements'" displayLabel="Spatial Organizer" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                <AppliesToEntityClass>SpatialLocationElement</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SpatialStructureElement" description="An Element used to form a spatial breakdown structure. As an ISpatialOrganizer, it may explicitly 'hold' or 'reference' SpatialElements." displayLabel="Spatial Structure Element" modifier="Abstract">
+        <BaseClass>CompositeElement</BaseClass>
+        <BaseClass>ISpatialOrganizer</BaseClass>
+        <ECProperty propertyName="Description" typeName="string" description="A human-readable description of this Spatial Structure Element"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FacilityPart" description="A volume that breaks a Facility down into major parts that are larger than Spaces.  Its meaning varies widely depending on the kind of Facility, but for Buildings it is a Storey." displayLabel="Facility Part" modifier="Abstract">
+        <BaseClass>SpatialStructureElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Facility" modifier="Abstract">
+        <BaseClass>SpatialStructureElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Story" description="A building Story that is an aggregation of spaces that are vertically bound" modifier="Abstract">
+        <BaseClass>%s</BaseClass>
+        <BaseClass>ICompositeVolume</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Building" description="A building Story that is an aggregation of spaces that are vertically bound" modifier="Abstract">
+        <BaseClass>%s</BaseClass>
+        <BaseClass>ICompositeVolume</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="RevitIdPropertyMixinClass" description="Common Revit properties" displayLabel="Revit" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00.03">
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECProperty propertyName="RevitId" typeName="string" displayLabel="Element Identifier" readOnly="true"/>
+        <ECProperty propertyName="TypeId" typeName="string" displayLabel="Type Identifier" readOnly="true"/>
+        <ECProperty propertyName="Timestamp" typeName="dateTime" displayLabel="Modified" readOnly="true"/>
+        <ECProperty propertyName="LastModifier" typeName="string" displayLabel="Modified By" readOnly="true"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Level">
+        <BaseClass>Story</BaseClass>
+        <BaseClass>RevitIdPropertyMixinClass</BaseClass>
+        <ECProperty propertyName="ELEM_CATEGORY_PARAM" typeName="string" displayLabel="Category" />
+        <ECProperty propertyName="IFC_GUID" typeName="string" displayLabel="IfcGUID" />
+        <ECProperty propertyName="PHASE_CREATED" typeName="string" displayLabel="Phase Created" />
+        <ECProperty propertyName="LEVEL_IS_STRUCTURAL" typeName="string" displayLabel="Structural" readOnly="true"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="MyBuilding">
+        <BaseClass>Building</BaseClass>
+        <BaseClass>RevitIdPropertyMixinClass</BaseClass>
+        <ECProperty propertyName="ELEM_CATEGORY_PARAM" typeName="string" displayLabel="Category" />
+        <ECProperty propertyName="IFC_GUID" typeName="string" displayLabel="IfcGUID" />
+        <ECProperty propertyName="FOO" typeName="string" />
+    </ECEntityClass>
+</ECSchema>
+        )schema";
+
+    Utf8PrintfString schemaV1Xml(schemaBaseline, "01.00.00", "CompositeElement", "CompositeElement");
+    SchemaItem schemaV1(schemaV1Xml);
+
+    ASSERT_EQ(SUCCESS, SetupECDb("RevitStoryScenario.ecdb", schemaV1));
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL) VALUES ('RevitId','Label','ELEM_CATEGORY_PARAM','IFC_GUID','PHASE_CREATED','LEVEL_IS_STRUCTURAL')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
+    }
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyBuilding (RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO) VALUES ('RevitId','Label','ELEM_CATEGORY_PARAM','IFC_GUID','FOO')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
+    }
+
+    //import edited schema with some changes.
+    Utf8PrintfString schemaV2Xml(schemaBaseline, "01.00.01", "FacilityPart", "Facility");
+    SchemaItem schemaV2(schemaV2Xml);
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
+    }
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
+    }
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM TestSchema.Level");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL) VALUES ('RevitId','Description','Label','ELEM_CATEGORY_PARAM','IFC_GUID','PHASE_CREATED','LEVEL_IS_STRUCTURAL')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Description":"Description","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
+    }
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM TestSchema.MyBuilding");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyBuilding (RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO) VALUES ('RevitId','Description','Label','ELEM_CATEGORY_PARAM','IFC_GUID','FOO')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Description":"Description","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
     }
     }
 END_ECDBUNITTESTS_NAMESPACE
