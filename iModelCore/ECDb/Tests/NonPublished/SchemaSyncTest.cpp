@@ -15,6 +15,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 
 struct DbChangeTracker;
+struct ECDbHub;
 struct DbChangeset : public BeSQLite::ChangeSet {
     using Ptr = std::unique_ptr<DbChangeset>;
     private:
@@ -200,9 +201,12 @@ private:
     Ptr Clone(ECDbR) const;
     static Ptr Create(ECDbR db) { return std::make_unique<DbChangeTracker>(db); }
 };
+
 struct TrackedECDb : ECDb {
     private:
         std::unique_ptr<DbChangeTracker> m_tracker;
+        ECDbHub* m_hub;
+        int m_changesetId = 0;
         void SetupTracker(std::unique_ptr<DbChangeTracker> tracker = nullptr);
         virtual void _OnDbClose() override;
         virtual DbResult _OnDbCreated(CreateParams const& params) override {
@@ -220,9 +224,45 @@ struct TrackedECDb : ECDb {
         }
     public:
         DbChangeTracker* GetTracker() { return m_tracker.get(); }
+        void SetHub(ECDbHub& hub) { m_hub = &hub; }
+        ECDbHub* GetHub() { return m_hub; }
+        DbResult PullMergePush(Utf8CP comment);
         virtual ~TrackedECDb();
 };
+struct ECDbHub {
+    private:
+        std::vector<DbChangeset::Ptr> m_changesets;
+        BeGuid m_id;
+        BeFileName m_basePath;
+        BeFileName m_seedFile;
+        BeBriefcaseId m_briefcaseid;
 
+    private:
+        DbResult CreateSeedFile();
+        BeFileName BuildECDbPath(Utf8CP name) const;
+        BeBriefcaseId GetNextBriefcaseId() {
+            return (m_briefcaseid = m_briefcaseid.GetNextBriefcaseId());
+        }
+
+    public:
+        ECDbHub();
+        std::unique_ptr<TrackedECDb> CreateBriefcase();
+        std::vector<DbChangeset*> Query(int afterChangesetId = 1) {
+            std::vector<DbChangeset*> results;
+            const auto cid = afterChangesetId - 1;
+            if (cid < 0 || cid > (int)m_changesets.size() - 1) {
+                return results;
+            }
+            for (auto i = cid; i < m_changesets.size(); ++i) {
+                results.push_back(m_changesets[i].get());
+            }
+            return results;
+        }
+        int PushNewChangeset(DbChangeset::Ptr changeset) {
+            m_changesets.push_back(std::move(changeset));
+            return (int)(m_changesets.size()) - 1;
+        }
+};
 struct SchemaSyncTestFixture : public ECDbTestFixture {
 	static std::unique_ptr<TrackedECDb> CreateECDb(Utf8CP asFileName) {
         auto fileName = BuildECDbPath(asFileName);
@@ -467,10 +507,16 @@ ChangeStream::ConflictResolution DbChangeset::_OnConflict(ConflictCause cause, B
     BeAssert(result == BE_SQLITE_OK);
 
     if (cause == ChangeSet::ConflictCause::Conflict) {
-        return ChangeSet::ConflictResolution::Abort;
+        return ChangeSet::ConflictResolution::Replace;
     }
     if (cause == ChangeSet::ConflictCause::ForeignKey) {
-        return ChangeSet::ConflictResolution::Abort;
+        // Note: No current or conflicting row information is provided if it's a FKey conflict
+        // Since we abort on FKey conflicts, always try and provide details about the error
+        int nConflicts = 0;
+        result = iter.GetFKeyConflicts(&nConflicts);
+        BeAssert(result == BE_SQLITE_OK);
+        LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+        return ChangeSet::ConflictResolution::Abort ;
     }
     if(cause == ChangeSet::ConflictCause::NotFound) {
         if (opcode == DbOpcode::Delete) {
@@ -492,6 +538,85 @@ ChangeStream::ConflictResolution DbChangeset::_OnConflict(ConflictCause cause, B
 
 
 
+BeFileName ECDbHub::BuildECDbPath(Utf8CP name) const {
+    BeFileName outPath = m_basePath;
+    outPath.AppendToPath(WPrintfString(L"%s.ecdb", name).GetWCharCP());
+    return outPath;
+}
+
+DbResult ECDbHub::CreateSeedFile() {
+    m_seedFile = BuildECDbPath("seed");
+    if (m_seedFile.DoesPathExist()) {
+        if (m_seedFile.BeDeleteFile() != BeFileNameStatus::Success) {
+            throw std::runtime_error("unable to delete file");
+        }
+    }
+    auto ecdb = std::make_unique<TrackedECDb>();
+    if (BE_SQLITE_OK != ecdb->CreateNewDb(m_seedFile)) {
+        return BE_SQLITE_ERROR;
+    }
+    ecdb->SaveChanges();
+    ecdb->CloseDb();
+    return BE_SQLITE_OK;
+}
+ECDbHub::ECDbHub():m_id(true), m_briefcaseid(10) {
+    BeFileName outPath;
+    BeTest::GetHost().GetOutputRoot(outPath);
+    outPath.AppendToPath(WString(m_id.ToString().c_str(), true).c_str());
+    if (!outPath.DoesPathExist()) {
+        BeFileName::CreateNewDirectory(outPath.GetName());
+    }
+    m_basePath = outPath;
+    CreateSeedFile();
+}
+std::unique_ptr<TrackedECDb> ECDbHub::CreateBriefcase() {
+    const auto briefcaseId = GetNextBriefcaseId();
+    const auto fileName = BuildECDbPath(SqlPrintfString("%d", briefcaseId.GetValue()).GetUtf8CP());
+    BeFileName::BeCopyFile(m_seedFile, fileName);
+    auto ecdb = std::make_unique<TrackedECDb>();
+    if (BE_SQLITE_OK != ecdb->OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite))) {
+        fileName.BeDeleteFile();
+        return nullptr;
+    }
+    ecdb->ResetBriefcaseId(briefcaseId);
+    ecdb->SaveChanges();
+    ecdb->SetHub(*this);
+    return std::move(ecdb);
+}
+DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
+    if (m_hub == nullptr || m_tracker == nullptr) {
+        return BE_SQLITE_ERROR;
+    }
+    auto changesetsToApply = m_hub->Query(m_changesetId + 1);
+    m_tracker->EnableTracking(false);
+    for (auto& changesetToApply : changesetsToApply) {
+        for (auto& ddl : changesetToApply->GetDDLs()) {
+            auto rc = TryExecuteSql(ddl.c_str());
+            if (rc != BE_SQLITE_OK && false) {
+                m_tracker->EnableTracking(true);
+                LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
+                return rc;
+            }
+        }
+        auto rc = changesetToApply->ApplyChanges(*this);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
+            return rc;
+        }
+    }
+
+    m_tracker->EnableTracking(true);
+    if (!m_tracker->GetLocalChangesets().empty()){
+        auto changeset = m_tracker->MakeChangeset(true, comment);
+        if (changeset == nullptr) {
+            m_tracker->EnableTracking(true);
+            return BE_SQLITE_ERROR;
+        }
+        m_changesetId = m_hub->PushNewChangeset(std::move(changeset));
+    }
+    return BE_SQLITE_OK;
+
+}
 //=============================================================================================================================
 //=============================================================================================================================
 //=============================================================================================================================
@@ -505,14 +630,21 @@ TEST_F(SchemaSyncTestFixture, Test) {
         printf("\t    Db: SHA1-%s\n", GetDbSchemaHash(ecdb).c_str());
     };
 
+    ECDbHub hub;
+
     std::string synDbFile;
     if ("create syncdb") {
         auto syncDb = CreateECDb("sync.db");
         synDbFile = std::string{syncDb->GetDbFileName()};
     }
 
-    auto b1 = CreateECDb("b1.db");
-    auto b2 = CopyAs(*b1, "b2.db");
+    auto b1 = hub.CreateBriefcase();
+    auto b2 = hub.CreateBriefcase();
+    auto b3 = hub.CreateBriefcase();
+
+    ASSERT_EQ(b1->GetBriefcaseId().GetValue(), 11);
+    ASSERT_EQ(b2->GetBriefcaseId().GetValue(), 12);
+    ASSERT_EQ(b3->GetBriefcaseId().GetValue(), 13);
     ASSERT_EQ(BE_SQLITE_OK, b1->Schemas().InitSharedSchemaDb(synDbFile));
 
     if ("check syn db hash") {
@@ -553,7 +685,6 @@ TEST_F(SchemaSyncTestFixture, Test) {
     };
 
     pushChangesToSyncDb(*b1);
-
     if ("import schema into b1") {
         auto schema1 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -588,8 +719,10 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*b1).c_str());
         EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b1).c_str());
         ASSERT_TRUE(ForeignkeyCheck(*b1));
-        printf("======================\n");
-        printf("%s\n", GetLastChangesetAsSql(*b1).c_str());
+        // printf("======================\n");
+        // printf("%s\n", GetLastChangesetAsSql(*b1).c_str());
+
+
     }
 
     if("check if sync-db has changes but not tables and index") {
@@ -616,8 +749,8 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*b2).c_str());
         EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b2).c_str());
         ASSERT_TRUE(ForeignkeyCheck(*b2));
-        printf("======================\n");
-        printf("%s\n", GetLastChangesetAsSql(*b2).c_str());
+        // printf("======================\n");
+        // printf("%s\n", GetLastChangesetAsSql(*b2).c_str());
 
     }
 
@@ -683,7 +816,21 @@ TEST_F(SchemaSyncTestFixture, Test) {
         EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b1).c_str()); // CORRECT
         ASSERT_TRUE(ForeignkeyCheck(*b1));
     }
-}
 
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 import schema"));
+    if("b3 pull changes from hub") {
+        ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("add new schema"));
+        auto pipe1 = b3->Schemas().GetClass("TestSchema1", "Pipe1");
+        ASSERT_NE(pipe1, nullptr);
+        ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+        ASSERT_TRUE(b3->TableExists("ts_Pipe1"));
+        ASSERT_STRCASEEQ(getIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+        EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b3).c_str());   // CORRECT
+        EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b3).c_str());      // CORRECT
+        EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b3).c_str()); // CORRECT
+    }
+
+
+}
 
 END_ECDBUNITTESTS_NAMESPACE

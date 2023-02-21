@@ -769,7 +769,9 @@ SourceSyncInfo SourceSyncInfo::From(DbCR db) {
 
     const auto propSpec = PropertySpec(JPropertyName, JPropertyNamespace);
 	auto rc = db.QueryProperty(strData, propSpec);
-	if (rc != BE_SQLITE_ROW) {
+
+    rc = db.QueryBriefcaseLocalValue(strData, JPropertyName);
+    if (rc != BE_SQLITE_ROW) {
 		return SourceSyncInfo::Empty();
 	}
 
