@@ -4904,14 +4904,14 @@ TEST_F(SchemaMergerTests, CustomAttributesAddedLocalSchema)
     // Result : Display label should be updated.
     SchemaMergeResult testCase2Result;
     SchemaMergeOptions options;
-    options.SetOverwriteDisplayLabel(true);
+    options.SetPreferRightSideDisplayLabel(true);
     EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase2Result, leftSchema, rightSchema, options));
     CompareResults({expectedSchemaXmlLabelUpdated}, testCase2Result);
 
     // Test Case 3 : OverwriteDisplayLabel set to false
     // Result : Display label should NOT be overwritten.
     SchemaMergeResult testCase3Result;
-    options.SetOverwriteDisplayLabel(false);
+    options.SetPreferRightSideDisplayLabel(false);
     EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase3Result, leftSchema, rightSchema, options));
     CompareResults({expectedSchemaXmlLabelNotUpdated}, testCase3Result);
     }

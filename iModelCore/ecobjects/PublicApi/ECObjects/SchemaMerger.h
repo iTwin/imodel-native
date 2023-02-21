@@ -21,7 +21,7 @@
 
 #define SCHEMAMERGER_RENAMESCHEMAITEMONCONFLICT               "#renameSchemaItemOnConflict"
 #define SCHEMAMERGER_RENAMEPROPERTYONCONFLICT               "#renamePropertyOnConflict"
-#define SCHEMAMERGER_OVERWRITEDISPLAYLABEL               "#overwriteDisplayLabel"
+#define SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL               "#preferRightSideDisplayLabel"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -90,8 +90,8 @@ public:
     //! Setting this flag makes the merger overwrite display labels. 
     //! The schema and/or primitives will be assigned the display labels of the corresponding rightmost schema and/or primitive in the merge process.
     //! Defaults to false
-    void SetOverwriteDisplayLabel(bool flag) { m_json[SCHEMAMERGER_OVERWRITEDISPLAYLABEL] = flag; }
-    bool GetOverwriteDisplayLabel() const { return m_json[SCHEMAMERGER_OVERWRITEDISPLAYLABEL].asBool(false); }
+    void SetPreferRightSideDisplayLabel(bool flag) { m_json[SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL] = flag; }
+    bool PreferRightSideDisplayLabel() const { return m_json[SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL].asBool(false); }
 
     Utf8String GetJson() const { return m_json.ToUtf8CP(); }
     void ReadFromJson(Utf8CP json) { return m_json.Parse(json); }

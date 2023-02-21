@@ -58,10 +58,8 @@ BentleyStatus SchemaMerger::MergePrimitive(PrimitiveChange<T>& change, TParent* 
     if(opCode == ECChange::OpCode::Deleted)
         return BentleyStatus::SUCCESS;
 
-    // If the change type we're looking at is DisplayLabel and the "OverwriteDisplayLabel" flag is set in the merge options, we want to set the display label with the rightmost label value.
-    // Else, if we prefer left values or "OverwriteDisplayLabel" flag is unset, and there is a valid old value, we keep it.
-    if(!(change.GetType() == ECChange::Type::DisplayLabel && options.GetOverwriteDisplayLabel())
-        && preferLeftValue && opCode == ECChange::OpCode::Modified && change.GetOld().IsValid())
+    //if we prefer left values, and there is a valid old value, we keep it.
+    if(preferLeftValue && opCode == ECChange::OpCode::Modified && change.GetOld().IsValid())
         return BentleyStatus::SUCCESS;
 
     auto newValue = change.GetNew();
@@ -402,7 +400,7 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
 
     if (MergePrimitive(schemaChange->Description(), left, &ECSchema::SetDescription, left->GetName().c_str(), result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
-    if (MergePrimitive(schemaChange->DisplayLabel(), left, &ECSchema::SetDisplayLabel, left->GetName().c_str(), result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(schemaChange->DisplayLabel(), left, &ECSchema::SetDisplayLabel, left->GetName().c_str(), result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 
     if(schemaChange->References().IsChanged())
@@ -542,7 +540,7 @@ BentleyStatus SchemaMerger::MergeRelationshipConstraint(SchemaMergeResult& resul
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left, ECClassCP right, RefCountedPtr<ClassChange> classChange, SchemaMergeOptions const& options)
     {
-    if (MergePrimitive(classChange->DisplayLabel(), left, &ECClass::SetDisplayLabel, left->GetFullName(), result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(classChange->DisplayLabel(), left, &ECClass::SetDisplayLabel, left->GetFullName(), result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
     if (MergePrimitive(classChange->Description(), left, &ECClass::SetDescription, left->GetFullName(), result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -730,7 +728,7 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
 BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP left, ECPropertyCP right, RefCountedPtr<PropertyChange> propertyChange, SchemaMergeOptions const& options)
     {
     Utf8PrintfString key("%s:%s", left->GetClass().GetFullName(), left->GetName().c_str());
-    if (MergePrimitive(propertyChange->DisplayLabel(), left, &ECProperty::SetDisplayLabel, key.c_str(), result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(propertyChange->DisplayLabel(), left, &ECProperty::SetDisplayLabel, key.c_str(), result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
     if (MergePrimitive(propertyChange->Description(), left, &ECProperty::SetDescription, key.c_str(), result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -788,7 +786,7 @@ BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP
 BentleyStatus SchemaMerger::MergeKindOfQuantity(SchemaMergeResult& result, KindOfQuantityP left, KindOfQuantityCP right, RefCountedPtr<KindOfQuantityChange> change, SchemaMergeOptions const& options)
   {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &KindOfQuantity::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(change->DisplayLabel(), left, &KindOfQuantity::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
     if (MergePrimitive(change->Description(), left, &KindOfQuantity::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -862,7 +860,7 @@ BentleyStatus SchemaMerger::MergeKindOfQuantity(SchemaMergeResult& result, KindO
 BentleyStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumerationP left, ECEnumerationCP right, RefCountedPtr<EnumerationChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &ECEnumeration::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(change->DisplayLabel(), left, &ECEnumeration::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
     if (MergePrimitive(change->Description(), left, &ECEnumeration::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -917,7 +915,7 @@ BentleyStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumer
             }
 
         auto leftEnumerator = left->FindEnumeratorByName(enumeratorName);
-        if (MergePrimitive(enumeratorChange->DisplayLabel(), leftEnumerator, &ECEnumerator::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+        if (MergePrimitive(enumeratorChange->DisplayLabel(), leftEnumerator, &ECEnumerator::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
         if (MergePrimitive(enumeratorChange->Description(), leftEnumerator, &ECEnumerator::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -935,7 +933,7 @@ BentleyStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumer
 BentleyStatus SchemaMerger::MergePropertyCategory(SchemaMergeResult& result, PropertyCategoryP left, PropertyCategoryCP right, RefCountedPtr<PropertyCategoryChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &PropertyCategory::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(change->DisplayLabel(), left, &PropertyCategory::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
     if (MergePrimitive(change->Description(), left, &PropertyCategory::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -950,7 +948,7 @@ BentleyStatus SchemaMerger::MergePropertyCategory(SchemaMergeResult& result, Pro
 BentleyStatus SchemaMerger::MergePhenomenon(SchemaMergeResult& result, PhenomenonP left, PhenomenonCP right, RefCountedPtr<PhenomenonChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &Phenomenon::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(change->DisplayLabel(), left, &Phenomenon::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
     if (MergePrimitive(change->Description(), left, &Phenomenon::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -968,7 +966,7 @@ BentleyStatus SchemaMerger::MergePhenomenon(SchemaMergeResult& result, Phenomeno
 BentleyStatus SchemaMerger::MergeUnitSystem(SchemaMergeResult& result, UnitSystemP left, UnitSystemCP right, RefCountedPtr<UnitSystemChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &UnitSystem::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(change->DisplayLabel(), left, &UnitSystem::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
           return BentleyStatus::ERROR;
     if (MergePrimitive(change->Description(), left, &UnitSystem::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
           return BentleyStatus::ERROR;
@@ -981,7 +979,7 @@ BentleyStatus SchemaMerger::MergeUnitSystem(SchemaMergeResult& result, UnitSyste
 BentleyStatus SchemaMerger::MergeUnit(SchemaMergeResult& result, ECUnitP left, ECUnitCP right, RefCountedPtr<UnitChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &ECUnit::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(change->DisplayLabel(), left, &ECUnit::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
           return BentleyStatus::ERROR;
     if (MergePrimitive(change->Description(), left, &ECUnit::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
           return BentleyStatus::ERROR;
@@ -1040,7 +1038,7 @@ BentleyStatus SchemaMerger::MergeUnit(SchemaMergeResult& result, ECUnitP left, E
 BentleyStatus SchemaMerger::MergeFormat(SchemaMergeResult& result, ECFormatP left, ECFormatCP right, RefCountedPtr<FormatChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &ECFormat::SetDisplayLabel, key, result, options) != BentleyStatus::SUCCESS)
+    if (MergePrimitive(change->DisplayLabel(), left, &ECFormat::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
     if (MergePrimitive(change->Description(), left, &ECFormat::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
