@@ -58,8 +58,10 @@ BentleyStatus SchemaMerger::MergePrimitive(PrimitiveChange<T>& change, TParent* 
     if(opCode == ECChange::OpCode::Deleted)
         return BentleyStatus::SUCCESS;
 
-    //if we prefer left values, and there is a valid old value, we keep it.
-    if(preferLeftValue && opCode == ECChange::OpCode::Modified && change.GetOld().IsValid())
+    // If the change type we're looking at is DisplayLabel and the "OverwriteDisplayLabel" flag is set in the merge options, we want to set the display label with the rightmost label value.
+    // Else, if we prefer left values or "OverwriteDisplayLabel" flag is unset, and there is a valid old value, we keep it.
+    if(!(change.GetType() == ECChange::Type::DisplayLabel && options.GetOverwriteDisplayLabel())
+        && preferLeftValue && opCode == ECChange::OpCode::Modified && change.GetOld().IsValid())
         return BentleyStatus::SUCCESS;
 
     auto newValue = change.GetNew();
@@ -237,8 +239,11 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
                     result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
                     failedToFillSchemas = true;
                     }
-                copiedSchema->SetOriginalECXmlVersion(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
-                result.GetSchemaCache().AddSchema(*copiedSchema);
+                if (copiedSchema.IsValid())
+                    {
+                    copiedSchema->SetOriginalECXmlVersion(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
+                    result.GetSchemaCache().AddSchema(*copiedSchema);
+                    }
                 }
             }
         };
