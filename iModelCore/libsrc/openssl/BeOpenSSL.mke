@@ -1818,11 +1818,13 @@ $(o)cipher_aes_gcm_siv_hw$(oext) : $(vendorSrc)providers/implementations/ciphers
 
 $(o)cipher_aes_gcm_siv_polyval$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_siv_polyval.c ${MultiCompileDepends}
 
+$(o)cipher_aes_ocb$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_hw.c ${MultiCompileDepends}
+
 $(o)cipher_aes_ocb$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_ocb.c ${MultiCompileDepends}
 
-$(o)cipher_aes_siv$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_siv.c ${MultiCompileDepends}
-
 $(o)cipher_aes_ocb_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_ocb_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_siv$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_siv.c ${MultiCompileDepends}
 
 $(o)cipher_aes_wrp$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_wrp.c ${MultiCompileDepends}
 
@@ -1882,7 +1884,7 @@ $(o)cipher_null$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_nu
 
 $(o)cipher_idea_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_idea_hw.c ${MultiCompileDepends}
 
-$(o)cipher_rc2$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc2.c ${MultiCompileDepends}
+#$(o)cipher_rc2$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc2.c ${MultiCompileDepends}
 
 $(o)cipher_rc4$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc4.c ${MultiCompileDepends}
 
