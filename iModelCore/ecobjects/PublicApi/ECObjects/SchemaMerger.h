@@ -87,7 +87,7 @@ public:
     void SetRenamePropertyOnConflict(bool flag) { m_json[SCHEMAMERGER_RENAMEPROPERTYONCONFLICT] = flag; }
     bool GetRenamePropertyOnConflict() const { return m_json[SCHEMAMERGER_RENAMEPROPERTYONCONFLICT].asBool(false); }
 
-    //! Setting this flag makes the merger overwrite display labels. 
+    //! Setting this flag makes the merger prefer the right side display labels.
     //! The schema and/or primitives will be assigned the display labels of the corresponding rightmost schema and/or primitive in the merge process.
     //! Defaults to false
     void SetPreferRightSideDisplayLabel(bool flag) { m_json[SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL] = flag; }
