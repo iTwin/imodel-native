@@ -1308,7 +1308,7 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
         else
             {
             PropertyMap const* duplicatePropMap = it->second;
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Multiple properties map to the column '%s.%s'. This is often an indication that unsupported schema changes were made. Properties mapped to the column are: '%s.%s' and '%s.%s'",
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The column '%s.%s' is used by multiple properties. Conflict between '%s.%s' and '%s.%s'.",
                             column.GetTable().GetName().c_str(), column.GetName().c_str(),
                             propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(),
                             duplicatePropMap->GetClassMap().GetClass().GetFullName(), duplicatePropMap->GetAccessString().c_str());

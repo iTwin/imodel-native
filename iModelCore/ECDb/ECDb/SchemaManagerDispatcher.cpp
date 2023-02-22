@@ -977,7 +977,8 @@ VirtualSchemaManager const& MainSchemaManager::GetVirtualSchemaManager() const {
     return m_vsm;
 }
 
-#if !defined(NDEBUG) && !defined(ANDROID)
+//#define ALLOW_ECDB_SCHEMAIMPORT_DUMP
+#if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
 void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> const& schemas, Utf8CP suffix)
     {
     BeFileName directory(parentDirectory);
@@ -1002,7 +1003,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
-    #if !defined(NDEBUG) && !defined(ANDROID)
+    #if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
     /*
     In Debug builds, the environment variable can be set to a directory path to
     dump existing and incoming schemas to for every ImportSchemas call.
