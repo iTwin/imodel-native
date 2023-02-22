@@ -2108,8 +2108,6 @@ $(o)file_store_any2obj$(oext) : $(vendorSrc)providers/implementations/storemgmt/
 
 $(o)file_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/file_store.c ${MultiCompileDepends}
 
-$(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
 
@@ -2180,6 +2178,8 @@ objs =% $(MultiCompileObjectList)
     $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/aesni-gcm-x86_64.asm ${MultiCompileDepends}
 
     $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.asm ${MultiCompileDepends}
+
+    $(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
 
     always:
       ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
