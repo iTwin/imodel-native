@@ -4807,6 +4807,115 @@ TEST_F(SchemaMergerTests, CustomAttributesAddedLocalSchema)
     CompareResults(expectedSchemasXml, result);
     }
 
+  TEST_F(SchemaMergerTests, TestOverwriteDisplayLabelSchemaMergerFlag)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemaXml {
+      R"schema(<?xml version='1.0' encoding='utf-8'?>
+      <ECSchema schemaName='MySchema' alias='mys' version='01.00.00' displayLabel='Initial Schema Display Label' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+        <ECEntityClass typeName='MyEntity' displayLabel='Initial MyEntity Label'>
+           <ECProperty propertyName='A' typeName='string' displayLabel='Initial Property 1' />
+        </ECEntityClass>
+        <ECStructClass typeName='MyStruct' displayLabel='Initial MyStruct Label'/>
+        <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='Initial CA' />
+        <ECEnumeration typeName='MyEnum1' backingTypeName='int' isStrict='true'>
+          <ECEnumerator name='a' value='0' displayLabel='Initial Enum'/>
+        </ECEnumeration>
+        <Phenomenon typeName='LENGTH' definition='LENGTH' displayLabel='Initial Phenomenon' />
+        <UnitSystem typeName='SI' displayLabel='Initial UnitSystem' />
+        <Unit typeName='M' phenomenon='LENGTH' unitSystem='SI' definition='M' denominator='10.0' displayLabel='Old M' />
+        <Format typeName='Format1' type='decimal' precision='6' formatTraits='keepSingleZero|keepDecimalPoint|showUnitLabel' displayLabel='Initial Format'/>
+        <KindOfQuantity typeName='MYLENGTH' displayLabel='Initial KOQ' persistenceUnit='M' presentationUnits='Format1[M]' relativeError='0.0001' />
+      </ECSchema>)schema"};
+
+    bvector<Utf8CP> rightSchemaXml {
+      R"schema(<?xml version='1.0' encoding='utf-8'?>
+      <ECSchema schemaName='MySchema' alias='mys' version='01.00.01' description='Description' displayLabel='New Display Label' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+        <ECEntityClass typeName='MyEntity' description='Entity Description' displayLabel='New MyEntity Label' modifier='Abstract'>
+          <ECProperty propertyName='A' typeName='string' displayLabel='New Property 1' />
+        </ECEntityClass>
+        <ECStructClass typeName='MyStruct' description='Struct Description' displayLabel='New MyStruct Label' modifier='Abstract'>
+          <ECProperty propertyName='B' typeName='string' displayLabel='New Property 2' />
+        </ECStructClass>
+        <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='New CA' />
+        <ECEnumeration typeName='MyEnum1' backingTypeName='int' isStrict='true'>
+          <ECEnumerator name='a' value='0' displayLabel='New Enum'/>
+        </ECEnumeration>
+        <Phenomenon typeName='LENGTH' definition='LENGTH' displayLabel='New Phenomenon' />
+        <UnitSystem typeName='SI' displayLabel='New UnitSystem' />
+        <Unit typeName='M' phenomenon='LENGTH' unitSystem='SI' definition='M' denominator='10.0' displayLabel='New M' />
+        <Format typeName='Format1' type='decimal' precision='6' formatTraits='keepSingleZero|keepDecimalPoint|showUnitLabel' displayLabel='New Format'/>
+        <KindOfQuantity typeName='MYLENGTH' displayLabel='New KOQ' persistenceUnit='M' presentationUnits='Format1[M]' relativeError='0.0001' />
+      </ECSchema>)schema"};
+
+    // Schemas to compare against
+    bvector<Utf8CP> expectedSchemaXmlLabelNotUpdated {
+      R"schema(<?xml version='1.0' encoding='utf-8'?>'
+      <ECSchema schemaName='MySchema' alias='mys' version='01.00.01' description='Description' displayLabel='Initial Schema Display Label' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+        <ECEntityClass typeName='MyEntity' description='Entity Description' displayLabel='Initial MyEntity Label' modifier='Abstract'>
+          <ECProperty propertyName='A' typeName='string' displayLabel='Initial Property 1' />
+        </ECEntityClass>
+        <ECStructClass typeName='MyStruct' description='Struct Description' displayLabel='Initial MyStruct Label' modifier='Abstract'>
+          <ECProperty propertyName='B' typeName='string' displayLabel='New Property 2' />
+        </ECStructClass>
+        <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='Initial CA' />
+        <ECEnumeration typeName='MyEnum1' backingTypeName='int' isStrict='true'>
+          <ECEnumerator name='a' value='0' displayLabel='Initial Enum'/>
+        </ECEnumeration>
+        <Phenomenon typeName='LENGTH' definition='LENGTH' displayLabel='Initial Phenomenon' />
+        <UnitSystem typeName='SI' displayLabel='Initial UnitSystem' />
+        <Unit typeName='M' phenomenon='LENGTH' unitSystem='SI' definition='M' denominator='10.0' displayLabel='Old M' />
+        <Format typeName='Format1' type='decimal' precision='6' formatTraits='keepSingleZero|keepDecimalPoint|showUnitLabel' displayLabel='Initial Format'/>
+        <KindOfQuantity typeName='MYLENGTH' displayLabel='Initial KOQ' persistenceUnit='M' presentationUnits='Format1[M]' relativeError='0.0001' />
+      </ECSchema>)schema"};
+
+    bvector<Utf8CP> expectedSchemaXmlLabelUpdated {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>'
+      <ECSchema schemaName='MySchema' alias='mys' version='01.00.01' description='Description' displayLabel='New Display Label' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+        <ECEntityClass typeName='MyEntity' description='Entity Description' displayLabel='New MyEntity Label' modifier='Abstract'>
+          <ECProperty propertyName='A' typeName='string' displayLabel='New Property 1' />
+        </ECEntityClass>
+        <ECStructClass typeName='MyStruct' description='Struct Description' displayLabel='New MyStruct Label' modifier='Abstract'>
+          <ECProperty propertyName='B' typeName='string' displayLabel='New Property 2' />
+        </ECStructClass>
+        <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='New CA' />
+        <ECEnumeration typeName='MyEnum1' backingTypeName='int' isStrict='true'>
+          <ECEnumerator name='a' value='0' displayLabel='New Enum'/>
+        </ECEnumeration>
+        <Phenomenon typeName='LENGTH' definition='LENGTH' displayLabel='New Phenomenon' />
+        <UnitSystem typeName='SI' displayLabel='New UnitSystem' />
+        <Unit typeName='M' phenomenon='LENGTH' unitSystem='SI' definition='M' denominator='10.0' displayLabel='New M' />
+        <Format typeName='Format1' type='decimal' precision='6' formatTraits='keepSingleZero|keepDecimalPoint|showUnitLabel' displayLabel='New Format'/>
+        <KindOfQuantity typeName='MYLENGTH' displayLabel='New KOQ' persistenceUnit='M' presentationUnits='Format1[M]' relativeError='0.0001' />
+      </ECSchema>)schema"};
+
+    auto leftContext = InitializeReadContextWithAllSchemas(leftSchemaXml);
+    auto leftSchema = leftContext->GetCache().GetSchemas();
+    auto rightContext = InitializeReadContextWithAllSchemas(rightSchemaXml);
+    auto rightSchema = rightContext->GetCache().GetSchemas();
+
+    // Test Case 1 : OverwriteDisplayLabel not specified (defaults to false)
+    // Result : Display label should NOT be overwritten.
+    SchemaMergeResult testCase1Result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase1Result, leftSchema, rightSchema));
+    CompareResults({expectedSchemaXmlLabelNotUpdated}, testCase1Result);
+
+    // Test Case 2 : OverwriteDisplayLabel set to true
+    // Result : Display label should be updated.
+    SchemaMergeResult testCase2Result;
+    SchemaMergeOptions options;
+    options.SetPreferRightSideDisplayLabel(true);
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase2Result, leftSchema, rightSchema, options));
+    CompareResults({expectedSchemaXmlLabelUpdated}, testCase2Result);
+
+    // Test Case 3 : OverwriteDisplayLabel set to false
+    // Result : Display label should NOT be overwritten.
+    SchemaMergeResult testCase3Result;
+    options.SetPreferRightSideDisplayLabel(false);
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase3Result, leftSchema, rightSchema, options));
+    CompareResults({expectedSchemaXmlLabelNotUpdated}, testCase3Result);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
