@@ -4807,7 +4807,7 @@ TEST_F(SchemaMergerTests, CustomAttributesAddedLocalSchema)
     CompareResults(expectedSchemasXml, result);
     }
 
-  TEST_F(SchemaMergerTests, TestOverwriteDisplayLabelSchemaMergerFlag)
+  TEST_F(SchemaMergerTests, TestPreferRightSideDisplayLabelSchemaMergerFlag)
     {
     // Initialize two sets of schemas
     bvector<Utf8CP> leftSchemaXml {
