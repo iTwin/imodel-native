@@ -18,5 +18,9 @@
     #elif defined (BENTLEY_WIN32)
         # define DSO_WIN32
         # define DSO_EXTENSION ".dll"
+    #elif defined (__APPLE__)
+        # define DSO_DLFCN
+        # define HAVE_DLFCN_H
+        # define DSO_EXTENSION ".dylib"
     #endif
 #endif

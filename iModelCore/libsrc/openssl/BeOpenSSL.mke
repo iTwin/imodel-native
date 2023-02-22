@@ -768,6 +768,8 @@ $(o)curve25519$(oext) : $(vendorSrc)crypto/ec/curve25519.c ${MultiCompileDepends
 
 $(o)f_impl32$(oext) : $(vendorSrc)crypto/ec/curve448/arch_32/f_impl32.c ${MultiCompileDepends}
 
+$(o)f_impl64$(oext) : $(vendorSrc)crypto/ec/curve448/arch_64/f_impl64.c ${MultiCompileDepends}
+
 $(o)curve448$(oext) : $(vendorSrc)crypto/ec/curve448/curve448.c ${MultiCompileDepends}
 
 $(o)curve448_tables$(oext) : $(vendorSrc)crypto/ec/curve448/curve448_tables.c ${MultiCompileDepends}
