@@ -889,19 +889,32 @@ ComplexQueryBuilder& ComplexQueryBuilder::From(PresentationQuery const& nestedQu
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexQueryBuilder& ComplexQueryBuilder::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings)
+static Utf8CP GetClauseJoinOperatorStr(ClauseJoinOperator op)
     {
-    return Where(QueryClauseAndBindings(whereClause, BoundQueryValuesList(bindings)));
+    switch (op)
+        {
+        case ClauseJoinOperator::And: return " AND ";
+        case ClauseJoinOperator::Or: return " OR ";
+        }
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Invalid ClauseJoinOperator value");
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexQueryBuilder& ComplexQueryBuilder::Where(QueryClauseAndBindings clause)
+ComplexQueryBuilder& ComplexQueryBuilder::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings, ClauseJoinOperator op)
+    {
+    return Where(QueryClauseAndBindings(whereClause, BoundQueryValuesList(bindings)), op);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ComplexQueryBuilder& ComplexQueryBuilder::Where(QueryClauseAndBindings clause, ClauseJoinOperator op)
     {
     InvalidateQuery();
     clause.GetClause().assign(Utf8String("(").append(clause.GetClause()).append(")"));
-    m_whereClause.Append(clause, " AND ");
+    m_whereClause.Append(clause, GetClauseJoinOperatorStr(op));
     return *this;
     }
 
@@ -2106,7 +2119,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<PrimitiveType> BoundECValueSet::GetValueType() const 
+Nullable<PrimitiveType> BoundECValueSet::GetValueType() const
     {
     auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
 
@@ -2122,7 +2135,7 @@ Nullable<PrimitiveType> BoundECValueSet::GetValueType() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb) const 
+void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb) const
     {
     auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
 

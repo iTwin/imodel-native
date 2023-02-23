@@ -715,7 +715,7 @@ private:
             pathQuery->SelectContract(*contract, targetClassAlias.c_str())
                 .From(selectClass)
                 .Join(path.m_path)
-                .Where(Utf8PrintfString("[%s].[ECInstanceId] = %s", selectClass.GetAlias().c_str(), m_ecInstanceIdField->GetSelectClause(m_selectClass.GetAlias().c_str()).GetClause().c_str()).c_str(), {});
+                .Where(Utf8PrintfString("[%s].[ECInstanceId] = %s", selectClass.GetAlias().c_str(), m_ecInstanceIdField->GetSelectClause(m_selectClass.GetAlias().c_str()).GetClause().c_str()).c_str(), BoundQueryValuesList());
             QueryBuilderHelpers::SetOrUnion(query, *pathQuery);
             }
         if (query.IsValid())
