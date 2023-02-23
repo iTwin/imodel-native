@@ -849,7 +849,8 @@ ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR
 
     pClass->SetClassModifier(ECClassModifier::Abstract);
 
-    IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("IsMixin");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, "IsMixin");
     if (!mixinInstance.IsValid())
         {
         delete pClass;

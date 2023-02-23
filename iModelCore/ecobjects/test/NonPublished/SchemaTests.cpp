@@ -88,13 +88,14 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaTest, CreateDynamicSchema)
     {
-    auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass("DynamicSchema");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass(schemaContext, "DynamicSchema");
     IECInstancePtr dynamicSchemaCA = dynamicClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
     EC_ASSERT_SUCCESS(schema->SetCustomAttribute(*dynamicSchemaCA));
     
 

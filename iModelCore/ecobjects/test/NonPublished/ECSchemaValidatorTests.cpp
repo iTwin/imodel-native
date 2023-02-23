@@ -566,7 +566,8 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty_Rul
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     {
-    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, "DynamicSchema");
     // Element Aspect Relationship TestsF
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -581,7 +582,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_TRUE(validator.Validate(*schema)) << "There is no derived aspect relationship but schema is marked as dynamic so validation should pass";
     }
@@ -617,7 +618,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsMultiAspect.  This should fail even though the schema is dynamic";
     }
@@ -766,7 +767,8 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     {
-    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, "DynamicSchema");
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -780,7 +782,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_TRUE(validator.Validate(*schema)) << "There is no relationship but schema is marked as dynamic so validation should pass";
     }
@@ -815,7 +817,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsUniqueAspect.  This should fail even though the schema is dynamic";
     }
@@ -2327,9 +2329,10 @@ TEST_F(SchemaValidatorTests, EntityClassesMayNotHaveTheSameDisplayLabel)
     EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity1, "E1"));
     EC_ASSERT_SUCCESS(entity1->AddBaseClass(*bisEntity));
 
-    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema()));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext)));
     
-    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass("DynamicSchema");
+    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass(schemaContext, "DynamicSchema");
     StandaloneECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
     schema->SetCustomAttribute(*dynamicSchemaInstance.get());
     ASSERT_TRUE(schema->IsDynamicSchema());
@@ -2408,9 +2411,10 @@ TEST_F(SchemaValidatorTests, PropertiesMayNotHaveTheSameDisplayLabelAndCategory)
     EC_ASSERT_SUCCESS(schema->CreatePropertyCategory(cat2, "category2"));
     EC_ASSERT_SUCCESS(entity->AddBaseClass(*bisEntity));
 
-    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema()));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext)));
 
-    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass("DynamicSchema");
+    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass(schemaContext, "DynamicSchema");
     StandaloneECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
     schema->SetCustomAttribute(*dynamicSchemaInstance.get());
     ASSERT_TRUE(schema->IsDynamicSchema());

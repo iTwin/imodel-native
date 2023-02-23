@@ -1484,7 +1484,8 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
         }
     auto mapping = it->second;
 
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(schemaContext);
 
     ECClassP customAttributeClass = customAttributeSchema->GetClassP(mapping.GetNewCustomAttributeName().c_str());
     IECInstancePtr targetAttributeInstance = customAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1844,7 +1845,8 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
     bool if3d = getBoolValue(instance, IF3D, true);
     bool showProp = !if2d && !if3d;
 
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(schemaContext);
     IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue value(showProp);
@@ -1875,7 +1877,8 @@ ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR s
     bool hideSchema = shouldHide(instance);
     if (hideSchema)
         {
-        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(schemaContext);
         IECInstancePtr hiddenSchema = customAttributeSchema->GetClassCP(HIDDEN_SCHEMA)->GetDefaultStandaloneEnabler()->CreateInstance();
         schema.AddReferencedSchema(*customAttributeSchema);
         schema.SetCustomAttribute(*hiddenSchema);
@@ -1891,7 +1894,8 @@ ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR sc
     {
     bool hideClass = shouldHide(instance);
 
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(schemaContext);
     IECInstancePtr hiddenClass = customAttributeSchema->GetClassCP(HIDDEN_CLASS)->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue show(!hideClass);
     hiddenClass->SetValue(SHOW, show);

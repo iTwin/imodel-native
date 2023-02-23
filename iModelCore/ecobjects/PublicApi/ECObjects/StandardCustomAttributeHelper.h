@@ -62,8 +62,7 @@ private:
     CoreCustomAttributeHelper();
     ~CoreCustomAttributeHelper();
 
-    static ECSchemaPtr m_schema;
-    static ECSchemaPtr _GetSchema();
+    static ECSchemaPtr _GetSchema(ECSchemaReadContextPtr schemaContext);
 
 public:
     //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
@@ -89,12 +88,12 @@ public:
     //! Returns the specified ECCustomAttributeClass from the CoreCustomAttributes schema
     //! @param[in] attributeName The name of the ECCustomAttributeClass
     //! @return An ECCustomAttributeClass, if the class is found in the CoreCustomAttributes schema. Otherwise, nullptr will be returned.
-    ECOBJECTS_EXPORT static ECCustomAttributeClassCP GetCustomAttributeClass(Utf8CP attributeName);
+    ECOBJECTS_EXPORT static ECCustomAttributeClassCP GetCustomAttributeClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName);
 
     //! Returns the specified ECClass from the CoreCustomAttributes schema
     //! @param[in] attributeName The name of the ECClass
     //! @return An ECClass, if the class is found in the CoreCustomAttributes schema. Otherwise, nullptr will be returned.
-    ECOBJECTS_EXPORT static ECClassCP GetClass(Utf8CP attributeName);
+    ECOBJECTS_EXPORT static ECClassCP GetClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName);
 
     //! Creates a custom attribute instance for the given custom attribute from the CoreCustomAttributes schema
     //! @remarks The only supported custom attributes at this time are SupplementalSchemaMetaData, SupplementalProvenance, and
@@ -102,9 +101,9 @@ public:
     //! class.
     //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
     //! @return An IECInstance of the given custom attribute name, if it is one of the supported custom attributes. Otherwise, nullptr will be returned.
-    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName);
 
-    ECOBJECTS_EXPORT static ECSchemaPtr GetSchema();
+    ECOBJECTS_EXPORT static ECSchemaPtr GetSchema(ECSchemaReadContextPtr schemaContext);
     };
 
 //=======================================================================================    
@@ -119,7 +118,7 @@ struct ConversionCustomAttributeHelper final
         ConversionCustomAttributeHelper();
         ~ConversionCustomAttributeHelper();
 
-        static ECSchemaPtr m_schema;
+        static ECSchemaPtr s_schema;
         static ECSchemaPtr _GetSchema();
 
     public:

@@ -72,7 +72,7 @@ IECInstancePtr StandardCustomAttributeHelper::CreateCustomAttributeInstance(ECSc
     return enabler->CreateInstance().get();
     }
 
-static Utf8CP kCoreCustomAttributes = "CoreCustomAttributes";
+const Utf8CP kCoreCustomAttributes = "CoreCustomAttributes";
 const Utf8CP kSupplementalAccessor = "SupplementalSchema";
 const Utf8CP kIsMixinAccessor = "IsMixin";
 const Utf8CP kDynamicSchema = "DynamicSchema";
@@ -81,21 +81,16 @@ const uint32_t kCoreCAVersionRead = 1u;
 const uint32_t kCoreCAVersionWrite = 0u;
 const uint32_t kCoreCAVersionMinor = 0u;
 
-ECSchemaPtr CoreCustomAttributeHelper::m_schema = nullptr;
 //*********************** CoreCustomAttributeHelper *************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSchemaPtr CoreCustomAttributeHelper::_GetSchema()
+ECSchemaPtr CoreCustomAttributeHelper::_GetSchema(ECSchemaReadContextPtr schemaContext)
     {
-    if (m_schema == nullptr)
-        {
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-        SchemaKey key(kCoreCustomAttributes, kCoreCAVersionRead, kCoreCAVersionWrite, kCoreCAVersionMinor);
-        m_schema = ECSchema::LocateSchema(key, *schemaContext);
-        }
-    return m_schema;
+    SchemaKey key(kCoreCustomAttributes, kCoreCAVersionRead, kCoreCAVersionWrite, kCoreCAVersionMinor);
+    ECSchemaPtr schema = ECSchema::LocateSchema(key, *schemaContext);
+    return schema;
     }
 
 //---------------------------------------------------------------------------------------
@@ -154,9 +149,9 @@ BentleyStatus CoreCustomAttributeHelper::GetCurrentTimeStampProperty(PrimitiveEC
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECCustomAttributeClassCP CoreCustomAttributeHelper::GetCustomAttributeClass(Utf8CP attributeName)
+ECCustomAttributeClassCP CoreCustomAttributeHelper::GetCustomAttributeClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
     {
-    ECSchemaPtr coreCaSchema = GetSchema();
+    ECSchemaPtr coreCaSchema = GetSchema(schemaContext);
     if (!coreCaSchema.IsValid())
         {
         LOG.errorv("Cannot load standard schema '%s'", kCoreCustomAttributes);
@@ -173,9 +168,9 @@ ECCustomAttributeClassCP CoreCustomAttributeHelper::GetCustomAttributeClass(Utf8
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECClassCP CoreCustomAttributeHelper::GetClass(Utf8CP attributeName)
+ECClassCP CoreCustomAttributeHelper::GetClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
     {
-    ECSchemaPtr coreCaSchema = GetSchema();
+    ECSchemaPtr coreCaSchema = GetSchema(schemaContext);
     if (!coreCaSchema.IsValid())
         {
         LOG.errorv("Cannot load standard schema '%s'", kCoreCustomAttributes);
@@ -189,18 +184,18 @@ ECClassCP CoreCustomAttributeHelper::GetClass(Utf8CP attributeName)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSchemaPtr CoreCustomAttributeHelper::GetSchema()
+ECSchemaPtr CoreCustomAttributeHelper::GetSchema(ECSchemaReadContextPtr schemaContext)
     {
-    return _GetSchema();
+    return _GetSchema(schemaContext);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
+IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
     {
-    ECSchemaPtr coreCaSchema = GetSchema();
+    ECSchemaPtr coreCaSchema = GetSchema(schemaContext);
     if (!coreCaSchema.IsValid())
         {
         LOG.errorv("Cannot load standard schema '%s'", kCoreCustomAttributes);
@@ -236,7 +231,7 @@ const Utf8CP kIsFlattened = "IsFlattened";
 const uint32_t kConvVersionRead = 1;
 const uint32_t kConvVersionMinor = 0;
 
-ECSchemaPtr ConversionCustomAttributeHelper::m_schema = nullptr;
+ECSchemaPtr ConversionCustomAttributeHelper::s_schema = nullptr;
 //*********************** ConversionCustomAttributeHelper *************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -244,14 +239,14 @@ ECSchemaPtr ConversionCustomAttributeHelper::m_schema = nullptr;
 //static
 ECSchemaPtr ConversionCustomAttributeHelper::_GetSchema()
     {
-    if (m_schema == nullptr)
+    if (s_schema == nullptr)
         {
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         schemaContext->SetCalculateChecksum(true);
         SchemaKey key(kConvSchemaName, kConvVersionRead, kConvVersionMinor);
-        m_schema = ECSchema::LocateSchema(key, *schemaContext);
+        s_schema = ECSchema::LocateSchema(key, *schemaContext);
         }
-    return m_schema;
+    return s_schema;
     }
 
 //---------------------------------------------------------------------------------------
@@ -293,7 +288,7 @@ IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Ut
 //static
 void ConversionCustomAttributeHelper::Reset()
     {
-    m_schema = nullptr;
+    s_schema = nullptr;
     }
 
 

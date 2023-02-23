@@ -868,8 +868,9 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_NoExclusions)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ECEntityClassP baseClass;
     schema->CreateEntityClass(baseClass, "BaseClass");
-    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass("NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass(schemaContext, "NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
     baseClass->SetCustomAttribute(*notSubClassable);
 
     ECEntityClassP localDerivedClass;
@@ -899,11 +900,12 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_WithExclusions)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ECEntityClassP baseClass;
     schema->CreateEntityClass(baseClass, "BaseClass");
-    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass("NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass(schemaContext, "NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue exclusion0("RefingSchema:RemoteDerivedClass");
     notSubClassable->AddArrayElements("Exceptions", 2);
     ASSERT_EQ(ECObjectsStatus::Success, notSubClassable->SetValue("Exceptions", exclusion0, 0));
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
     baseClass->SetCustomAttribute(*notSubClassable);
 
     ECEntityClassP localDerivedClass;
