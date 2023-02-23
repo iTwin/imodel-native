@@ -5,7 +5,6 @@
 #pragma once
 
 #include <ECPresentation/ECPresentation.h>
-#include <ECPresentation/ECPresentationErrors.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 

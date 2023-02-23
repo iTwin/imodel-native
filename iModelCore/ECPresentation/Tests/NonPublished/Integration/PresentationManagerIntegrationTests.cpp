@@ -324,6 +324,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, expectedInstances](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
+        ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, n.GetType().c_str());
         VerifyNodeInstances(n, expectedInstances);
         };
     }
