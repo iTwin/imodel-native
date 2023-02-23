@@ -32,13 +32,13 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortByRulesAndLabelAndNotSorted
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         ComplexQueryBuilderPtr rulesSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA)
             .OrderBy("[this].[PropA]"));
 
         SelectClass<ECClass> selectClassC(*classC, "this", true);
         ComplexQueryBuilderPtr labelSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClassC)), "this")
             .From(selectClassC));
         labelSortedQuery->OrderBy(GetECInstanceNodesOrderByClause().c_str());
 
@@ -47,7 +47,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortByRulesAndLabelAndNotSorted
 
         SelectClass<ECClass> selectClassB(*classB, "this", true);
         ComplexQueryBuilderPtr notSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB));
 
         return UnionQueryBuilder::Create({ rulesSortedQuery, labelSortedQueryWrapper, notSortedQuery });
@@ -75,7 +75,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortSingleECClassByRule)
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr rulesSortedQuery = &ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "PropA").c_str());
@@ -102,7 +102,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortSingleECClassByDoNotSortRul
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr notSortedQuery = ComplexQueryBuilder::Create();
         notSortedQuery->SelectContract(*contract, "this");
         notSortedQuery->From(selectClass);
@@ -131,7 +131,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_SortDescending)
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr rulesSortedQuery = ComplexQueryBuilder::Create();
         rulesSortedQuery->SelectContract(*contract, "this");
         rulesSortedQuery->From(selectClass);
@@ -166,13 +166,13 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_AppliedToAllSchemaClasses)
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         ComplexQueryBuilderPtr queryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "Prop").c_str()));
 
         SelectClass<ECClass> selectClassB(*classB, "this", true);
         ComplexQueryBuilderPtr queryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "Prop").c_str()));
 
@@ -203,7 +203,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_AppliedToClassesOfAllSchemas)
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .OrderBy(Utf8PrintfString("%s([this].[%s])", FUNCTION_NAME_GetSortingValue, "Prop").c_str()));
         return query;
@@ -231,7 +231,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_IgnoresRulesWithInvalidProperty
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
@@ -267,7 +267,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_OverridenBySpecificationsDoNotS
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
 
         ComplexQueryBuilderPtr notSortedQuery = ComplexQueryBuilder::Create();
         notSortedQuery->SelectContract(*contract, "this");
@@ -298,7 +298,7 @@ TEST_F (NavigationQueryBuilderTests, SortingRule_DoesntSortWhenGroupingByClass)
 
     ValidateQuery(spec, queries[0], [&]()
         {
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr);
+        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery());
 
         ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
@@ -339,7 +339,7 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsByProperty_WhenUsingParentI
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this")
             .From(selectClass)
@@ -386,7 +386,7 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsUsingRelatedInstancePropert
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
         RelatedClass relatedInstanceClass(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, "b", true));
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this")
             .From(selectClass)

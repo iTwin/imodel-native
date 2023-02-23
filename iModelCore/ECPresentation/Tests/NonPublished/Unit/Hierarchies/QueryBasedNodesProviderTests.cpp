@@ -54,7 +54,8 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
+    ComplexQueryBuilderPtr instanceKeysQuery = &ComplexQueryBuilder::Create()->SelectContract(*ECClassGroupedInstancesQueryContract::Create()).From(selectClass);
+    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *instanceKeysQuery, m_widgetClass, CreateDisplayLabelField(selectClass));
     ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
 
@@ -100,7 +101,8 @@ TEST_F(QueryBasedNodesProviderTests, HasNodesDoesntQueryChildrenIfAlwaysReturnsC
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
+    ComplexQueryBuilderPtr instanceKeysQuery = &ComplexQueryBuilder::Create()->SelectContract(*ECClassGroupedInstancesQueryContract::Create()).From(selectClass);
+    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *instanceKeysQuery, m_widgetClass, CreateDisplayLabelField(selectClass));
     ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
     query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 
@@ -118,7 +120,8 @@ TEST_F(QueryBasedNodesProviderTests, DoesntFlagProviderAsInitializedInCacheIfPro
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     SelectClass<ECClass> selectClass(*m_widgetClass, "this", false);
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", m_widgetClass, CreateDisplayLabelField(selectClass));
+    ComplexQueryBuilderPtr instanceKeysQuery = &ComplexQueryBuilder::Create()->SelectContract(*ECClassGroupedInstancesQueryContract::Create()).From(selectClass);
+    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *instanceKeysQuery, m_widgetClass, CreateDisplayLabelField(selectClass));
     ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract).From(selectClass);
     query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 

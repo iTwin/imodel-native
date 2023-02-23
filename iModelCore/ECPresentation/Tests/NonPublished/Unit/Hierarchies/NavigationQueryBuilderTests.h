@@ -49,6 +49,7 @@ struct NavigationQueryBuilderTests : QueryBuilderTest
     RefCountedPtr<SimpleQueryContract> CreateRelatedInstancesQueryContract();
     RefCountedPtr<SimpleQueryContract> CreateSelect1QueryContract();
     ComplexQueryBuilderR SetLabelGroupingNodeChildrenWhereClause(ComplexQueryBuilderR query);
+    ComplexQueryBuilderPtr CreateInstanceKeysSelectQuery();
 
     Utf8String GetECInstanceNodesOrderByClause();
     Utf8String GetLabelGroupingNodesOrderByClause();

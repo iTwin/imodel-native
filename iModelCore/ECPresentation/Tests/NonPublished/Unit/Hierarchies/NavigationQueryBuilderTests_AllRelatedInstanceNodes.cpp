@@ -102,7 +102,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_ForwardR
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -148,7 +148,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_Backward
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -211,7 +211,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_BothDire
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         ComplexQueryBuilderPtr nestedQueryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (%s)",
                 ComplexQueryBuilder::Create()->SelectContract(*CreateRelatedInstancesQueryContract(), "relatedInstances")
@@ -223,7 +223,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_BothDire
 
         SelectClass<ECClass> selectClassC(*classC, "this", true);
         ComplexQueryBuilderPtr nestedQueryC = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClassC)), "this")
             .From(selectClassC)
             .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) }));
@@ -279,7 +279,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass)
 
     ValidateQuery(spec, queries[0], [&]()
         {
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr);
+        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery());
 
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         ComplexQueryBuilderPtr nestedQueryA = &ComplexQueryBuilder::Create()
@@ -368,7 +368,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass_Childr
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classC, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass));
 
         ComplexQueryBuilderPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
@@ -435,7 +435,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel)
         {
         SelectClass<ECClass> selectClassA(*classA, "this", true);
         ComplexQueryBuilderPtr nestedQueryA = &ComplexQueryBuilder::Create()
-            ->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classA, CreateDisplayLabelField(selectClassA)), "this")
+            ->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA)
             .Where(Utf8PrintfString("[this].[ECInstanceId] IN (%s)",
                 ComplexQueryBuilder::Create()->SelectContract(*CreateRelatedInstancesQueryContract(), "relatedInstances")
@@ -447,12 +447,12 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel)
 
         SelectClass<ECClass> selectClassC(*classC, "this", true);
         ComplexQueryBuilderPtr nestedQueryC = &ComplexQueryBuilder::Create()
-            ->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classC, CreateDisplayLabelField(selectClassC)), "this")
+            ->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClassC)), "this")
             .From(selectClassC)
             .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) });
 
-        auto contract = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, nullptr, CreateGroupingDisplayLabelField());
+        auto contract = DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), nullptr, CreateGroupingDisplayLabelField());
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
         query->From(*UnionQueryBuilder::Create({ nestedQueryA, nestedQueryC }));
@@ -517,7 +517,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel_Childr
         ComplexQueryBuilderPtr nestedQueryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(
             *classA,
             SetLabelGroupingNodeChildrenWhereClause(
-                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
                 .From(selectClassA)
                 .Where(Utf8PrintfString("[this].[ECInstanceId] IN (%s)",
                     ComplexQueryBuilder::Create()->SelectContract(*CreateRelatedInstancesQueryContract(), "relatedInstances")
@@ -532,7 +532,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel_Childr
         ComplexQueryBuilderPtr nestedQueryC = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(
             *classC,
             SetLabelGroupingNodeChildrenWhereClause(
-                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC)), "this")
+                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClassC)), "this")
                 .From(selectClassC)
                 .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, "related", true), false))
                 .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) })
@@ -591,7 +591,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classC, "this", true);
-        auto contract = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classC, CreateDisplayLabelField(selectClass));
+        auto contract = DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
         query->From(ComplexQueryBuilder::Create()
@@ -657,7 +657,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classC, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             SetLabelGroupingNodeChildrenWhereClause(
                 ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
@@ -710,7 +710,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_InstanceLabelOverri
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass, {},
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass, {},
             {
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop2")),
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop1")),
@@ -778,14 +778,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_InstanceLabelOverri
         {
         SelectClass<ECClass> selectClassB(*classB, "this", true);
         ComplexQueryBuilderPtr nestedQueryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB)
             .Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) }));
 
         SelectClass<ECClass> selectClassC(*classC, "this", true);
         ComplexQueryBuilderPtr nestedQueryC = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC, {}, { &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("PropC")) })), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClassC, {}, { &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("PropC")) })), "this")
             .From(selectClassC)
             .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) }));

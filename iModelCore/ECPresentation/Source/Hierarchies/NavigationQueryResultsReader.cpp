@@ -16,24 +16,6 @@ static GroupedInstanceKeysList ParseInstanceKeys(ECSqlStatementCR stmt, Navigati
     return ValueHelpers::GetECInstanceKeysFromJsonString(str);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static std::unique_ptr<PresentationQuery> CreateInstanceKeysQuery(bvector<ECInstanceKey> const& keys)
-    {
-    Utf8String query;
-    BoundQueryValuesList bindings;
-    for (size_t i = 0; i < keys.size(); ++i)
-        {
-        if (i > 0)
-            query.append(" UNION ALL ");
-        query.append("SELECT ? AS ECClassId, ? AS ECInstanceId");
-        bindings.push_back(std::make_unique<BoundQueryId>(keys[i].GetClassId()));
-        bindings.push_back(std::make_unique<BoundQueryId>(keys[i].GetInstanceId()));
-        }
-    return std::make_unique<PresentationQuery>(query, bindings);
-    }
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -74,6 +56,8 @@ protected:
 struct ECInstanceNodeReader : ECInstanceNodeReaderBase
 {
 typedef ECInstanceNodesQueryContract Contract;
+private:
+    Contract const& GetContract() const {return static_cast<Contract const&>(NavNodesReader::GetContract());}
 protected:
     NavNodePtr _ReadNode(ECSqlStatementCR statement) const override
         {
@@ -84,7 +68,7 @@ protected:
         NavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection(), specificationIdentifier, GetParentKey(), ecClassId, ecInstanceId, *LabelDefinition::FromString(displayLabel));
         if (node.IsValid())
             {
-            node->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery({ ECInstanceKey(ecClassId, ecInstanceId) }));
+            node->GetKey()->SetInstanceKeysSelectQuery(GetContract().CreateInstanceKeysSelectQuery(ECInstanceKey(ecClassId, ecInstanceId))->CreateQuery());
             NavNodesHelper::AddRelatedInstanceInfo(*node, statement.GetValueText(GetContract().GetIndex(Contract::RelatedInstanceInfoFieldName)));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
@@ -106,6 +90,8 @@ public:
 struct MultiECInstanceNodeReader : ECInstanceNodeReaderBase
 {
 typedef MultiECInstanceNodesQueryContract Contract;
+private:
+    Contract const& GetContract() const {return static_cast<Contract const&>(NavNodesReader::GetContract());}
 protected:
     NavNodePtr _ReadNode(ECSqlStatementCR statement) const override
         {
@@ -115,7 +101,7 @@ protected:
         NavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection(), specificationIdentifier, GetParentKey(), keys, *LabelDefinition::FromString(displayLabel));
         if (node.IsValid())
             {
-            node->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(keys));
+            node->GetKey()->SetInstanceKeysSelectQuery(GetContract().CreateInstanceKeysSelectQuery(keys)->CreateQuery());
             NavNodesHelper::AddRelatedInstanceInfo(*node, statement.GetValueText(GetContract().GetIndex(Contract::RelatedInstanceInfoFieldName)));
 #ifdef wip_skipped_instance_keys_performance_issue
             NavNodesHelper::SetSkippedInstanceKeys(*node, statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName)));
@@ -136,6 +122,9 @@ public:
 struct MergingMultiECInstanceNodeReader : NavNodesReader
 {
 typedef MultiECInstanceNodesQueryContract Contract;
+
+private:
+    Contract const& GetContract() const { return static_cast<Contract const&>(NavNodesReader::GetContract()); }
 
 private:
     NavNodePtr m_inProgressNode;
@@ -178,7 +167,7 @@ protected:
             InitNode(*m_inProgressNode);
             node = m_inProgressNode;
             node->SetNodeKey(*ECInstancesNodeKey::Create(GetConnection(), m_inProgressNode->GetKey()->GetSpecificationIdentifier(), GetParentKey(), m_inProgressInstanceKeys));
-            node->GetKey()->SetInstanceKeysSelectQuery(CreateInstanceKeysQuery(m_inProgressInstanceKeys));
+            node->GetKey()->SetInstanceKeysSelectQuery(GetContract().CreateInstanceKeysSelectQuery(m_inProgressInstanceKeys)->CreateQuery());
             return true;
             }
         return false;

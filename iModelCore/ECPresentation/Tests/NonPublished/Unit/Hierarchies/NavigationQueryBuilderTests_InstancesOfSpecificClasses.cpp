@@ -30,12 +30,12 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_Classes_NotPolymo
         {
         SelectClass<ECClass> selectClassA(*classA, "this", false);
         ComplexQueryBuilderPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA));
 
         SelectClass<ECClass> selectClassB(*classB, "this", false);
         ComplexQueryBuilderPtr nestedQuery2 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB));
 
         UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQuery1, nestedQuery2 });
@@ -64,7 +64,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_Classes_Polymorph
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -108,7 +108,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_ExcludedClasses)
         selectClassA.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classB, "", false));
         selectClassA.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classC, "", true));
         ComplexQueryBuilderPtr nestedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA));
         nestedQuery->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         return nestedQuery;
@@ -135,12 +135,12 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_ClassNames_NotPo
         {
         SelectClass<ECClass> selectClassA(*classA, "this", false);
         ComplexQueryBuilderPtr nestedQueryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA));
 
         SelectClass<ECClass> selectClassB(*classB, "this", false);
         ComplexQueryBuilderPtr nestedQueryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB));
 
         UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQueryA, nestedQueryB });
@@ -166,7 +166,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_ClassNames_Polym
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -201,7 +201,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClass)
 
     ValidateQuery(spec, queries[0], [&]()
         {
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr);
+        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery());
 
         ComplexQueryBuilderPtr grouped = ComplexQueryBuilder::Create();
         grouped->SelectAll();
@@ -238,7 +238,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClass_Chi
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(*classA, false, "this"));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -266,15 +266,15 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByLabel)
         {
         SelectClass<ECClass> selectClass1(*classA, "this", false);
         ComplexQueryBuilderPtr nestedQuery1 = ComplexQueryBuilder::Create();
-        nestedQuery1->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classA, CreateDisplayLabelField(selectClass1)), "this");
+        nestedQuery1->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass1)), "this");
         nestedQuery1->From(selectClass1);
 
         SelectClass<ECClass> selectClass2(*classB, "this", false);
         ComplexQueryBuilderPtr nestedQuery2 = ComplexQueryBuilder::Create();
-        nestedQuery2->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classB, CreateDisplayLabelField(selectClass2)), "this");
+        nestedQuery2->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass2)), "this");
         nestedQuery2->From(selectClass2);
 
-        auto contract = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, nullptr, CreateGroupingDisplayLabelField());
+        auto contract = DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), nullptr, CreateGroupingDisplayLabelField());
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this");
         query->From(*UnionQueryBuilder::Create({ nestedQuery1, nestedQuery2 }));
@@ -312,13 +312,13 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByLabel_Chi
         SelectClass<ECClass> selectClass1(*classA, "this", false);
         ComplexQueryBuilderPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             SetLabelGroupingNodeChildrenWhereClause(
-                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass1)), "this").From(selectClass1)
+                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass1)), "this").From(selectClass1)
             ));
 
         SelectClass<ECClass> selectClass2(*classB, "this", false);
         ComplexQueryBuilderPtr nestedQuery2 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             SetLabelGroupingNodeChildrenWhereClause(
-                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass2)), "this").From(selectClass2)
+                ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass2)), "this").From(selectClass2)
             ));
 
         UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQuery1, nestedQuery2 });
@@ -351,7 +351,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create("", nullptr, classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*contract, "this")
             .From(ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass))
@@ -390,7 +390,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
 
         ComplexQueryBuilderPtr nestedQuery = ComplexQueryBuilder::Create();
         nestedQuery->SelectContract(*contract, "this");
@@ -423,7 +423,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter)
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .Where("[this].[Name] = 2", BoundQueryValuesList()));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -450,7 +450,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_L
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -477,7 +477,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass));
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -510,7 +510,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -551,7 +551,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -595,7 +595,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -632,12 +632,12 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceLabelOve
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClassA(*classA, "this", false);
-        NavigationQueryContractPtr contractA = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA));
+        NavigationQueryContractPtr contractA = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA));
         ComplexQueryBuilderPtr queryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contractA, "this").From(selectClassA));
 
         SelectClass<ECClass> selectClassB(*classB, "this", false);
-        NavigationQueryContractPtr contractB = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB, {}, { &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("PropB")) }));
+        NavigationQueryContractPtr contractB = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB, {}, { &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("PropB")) }));
         ComplexQueryBuilderPtr queryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contractB, "this").From(selectClassB));
 
@@ -675,7 +675,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceLabelOve
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop2")),
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop1")),
             });
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, labelField);
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, labelField);
         ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass));
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
@@ -704,7 +704,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass));
@@ -720,7 +720,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -754,12 +754,12 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
         {
         SelectClass<ECClass> selectClassA(*classA, "this", false);
         ComplexQueryBuilderPtr nestedQueryA = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClassA)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClassA)), "this")
             .From(selectClassA));
 
         SelectClass<ECClass> selectClassB(*classB, "this", false);
         ComplexQueryBuilderPtr nestedQueryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB)), "this")
             .From(selectClassB));
 
         UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQueryA, nestedQueryB });
@@ -775,7 +775,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -809,7 +809,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass));
@@ -825,7 +825,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -867,7 +867,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass));
@@ -886,7 +886,7 @@ TEST_F(NavigationQueryBuilderTests, InstancesOfSpecificClasses_HierarchyLevelIns
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classA, "this", true);
-        auto contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        auto contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         auto query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)

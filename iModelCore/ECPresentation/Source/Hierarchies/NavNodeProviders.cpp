@@ -2083,13 +2083,13 @@ static std::unique_ptr<PresentationQuery> CreateRowsCheckQuery(PresentationQuery
         auto resultType = source.GetNavigationResultParameters().GetResultType();
 
         if (resultType == NavigationQueryResultType::ClassGroupingNodes && dynamic_cast<ECClassGroupingNodesQueryContract const*>(contract))
-            return CreateSelect1Query(*static_cast<ECClassGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery());
+            return CreateSelect1Query(static_cast<ECClassGroupingNodesQueryContract const*>(contract)->GetInstanceKeysSelectQuery());
 
         if (resultType == NavigationQueryResultType::DisplayLabelGroupingNodes && dynamic_cast<DisplayLabelGroupingNodesQueryContract const*>(contract))
-            return CreateSelect1Query(*static_cast<DisplayLabelGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery());
+            return CreateSelect1Query(static_cast<DisplayLabelGroupingNodesQueryContract const*>(contract)->GetInstanceKeysSelectQuery());
 
         if (resultType == NavigationQueryResultType::PropertyGroupingNodes && dynamic_cast<ECPropertyGroupingNodesQueryContract const*>(contract))
-            return CreateSelect1Query(*static_cast<ECPropertyGroupingNodesQueryContract const*>(contract)->CreateInstanceKeysSelectQuery());
+            return CreateSelect1Query(static_cast<ECPropertyGroupingNodesQueryContract const*>(contract)->GetInstanceKeysSelectQuery());
 
         return CreateSelect1Query(source);
         }

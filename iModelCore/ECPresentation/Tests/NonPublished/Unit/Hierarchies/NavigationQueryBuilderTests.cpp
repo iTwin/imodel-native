@@ -93,6 +93,15 @@ ComplexQueryBuilderR NavigationQueryBuilderTests::SetLabelGroupingNodeChildrenWh
     return query;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ComplexQueryBuilderPtr NavigationQueryBuilderTests::CreateInstanceKeysSelectQuery()
+    {
+    // query builder tests don't validate instance keys select query - no need to create a valid one here
+    return ComplexQueryBuilder::Create();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -346,7 +355,7 @@ TEST_F (NavigationQueryBuilderTests, JoinsWithAdditionalRelatedInstances)
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
         RelatedClass relatedInstanceClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "a", true));
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
@@ -395,7 +404,7 @@ TEST_F (NavigationQueryBuilderTests, FiltersByRelatedInstanceProperties)
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
         RelatedClass relatedInstanceClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "a", true));
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
@@ -441,7 +450,7 @@ TEST_F (NavigationQueryBuilderTests, InnerJoinsWithAdditionalRelatedInstances)
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
         RelatedClass relatedInstanceClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "a", true), false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
@@ -501,7 +510,7 @@ TEST_F(NavigationQueryBuilderTests, JoinsWithAdditionalRelatedInstances_ReusesSa
         SelectClass<ECClass> selectClass(*classA, "this", false);
         RelatedClass relatedB1(*classA, SelectClass<ECRelationshipClass>(*relAToB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAToB, 0)), true, SelectClass<ECClass>(*classB1, "relatedB1", true), false);
         RelatedClass relatedB2(*classA, SelectClass<ECRelationshipClass>(*relAToB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAToB, 0)), true, SelectClass<ECClass>(*classB2, "relatedB2", true), false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedB1, relatedB2} }), { RelatedClassPath{relatedB1, relatedB2} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedB1, relatedB2} }), { RelatedClassPath{relatedB1, relatedB2} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
