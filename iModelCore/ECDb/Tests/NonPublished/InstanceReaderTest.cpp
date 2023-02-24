@@ -27,7 +27,28 @@ struct InstanceReaderFixture : ECDbTestFixture {
     }
 
 };
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_link_table_serialization) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        BeJsDocument doc;
+        ASSERT_FALSE(stmt.IsValueNull(0)) << "$ cannot be NULL";
+        doc.Parse(stmt.GetValueText(0));
+        ASSERT_TRUE(doc.hasMember("ECInstanceId"))       << "Must have ECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("ECClassId"))          << "Must have ECClassId Property";
+        ASSERT_TRUE(doc.hasMember("SourceECInstanceId")) << "Must have SourceECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("SourceECClassId"))    << "Must have SourceECClassId Property";
+        ASSERT_TRUE(doc.hasMember("TargetECInstanceId")) << "Must have TargetECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("TargetECClassId"))    << "Must have TargetECClassId Property";
+    }
+    stmt.Finalize();
+
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
