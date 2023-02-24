@@ -374,6 +374,53 @@ Utf8StringR Utf8String::Trim ()
     return *this;
     }
 
+#define U_CHARSET_IS_UTF8 1
+#include <unicode/utypes.h>
+#include <unicode/utf8.h>
+#include <unicode/uchar.h>
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8StringR Utf8String::TrimUtf8 ()
+    {
+    if (empty ())
+        return *this;
+
+    size_t firstNonSpaceIdx = 0;
+    int32_t len = size();
+    const char* start = data();
+    for (auto i = 0; i < len;) {
+      UChar32 c;
+      const auto prev_i = i;
+      U8_NEXT(start, i, len, c);
+      const auto incSize = i - prev_i;
+      if (u_isspace(c)) {
+        firstNonSpaceIdx += incSize;
+      } else {
+        break;
+      }
+    }
+
+    size_t lastNonSpaceIdx = len - 1;
+    for (auto i = len; i > firstNonSpaceIdx;) {
+      UChar32 c;
+      const auto prev_i = i;
+      U8_PREV(start, 0, i, c);
+      const auto decSize = prev_i - i;
+      if (u_isspace(c)) {
+        lastNonSpaceIdx -= decSize;
+      } else {
+        break;
+      }
+    }
+
+    erase ((begin () + lastNonSpaceIdx + 1), this->end ());
+    erase (begin (), (begin () + firstNonSpaceIdx));
+    return *this;
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
