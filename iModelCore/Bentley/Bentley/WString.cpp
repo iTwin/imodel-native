@@ -384,7 +384,7 @@ Utf8StringR Utf8String::Trim ()
 //---------------------------------------------------------------------------------------
 Utf8StringR Utf8String::TrimUtf8 ()
     {
-    if (empty ())
+    if (empty())
         return *this;
 
     size_t firstNonSpaceIdx = 0;
@@ -415,8 +415,8 @@ Utf8StringR Utf8String::TrimUtf8 ()
       }
     }
 
-    erase ((begin () + lastNonSpaceIdx + 1), this->end ());
-    erase (begin (), (begin () + firstNonSpaceIdx));
+    erase(begin() + lastNonSpaceIdx + 1, end());
+    erase(begin(), begin() + firstNonSpaceIdx);
     return *this;
     }
 
