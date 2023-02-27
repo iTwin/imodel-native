@@ -1314,6 +1314,25 @@ TEST(BeStringUtilitiesTests, IsValidCodePage)
 #endif
     }
 
+TEST (BeStringUtilitiesTests, TestStrICmpASCIIWithUnderscore)
+    {
+    // Identical strings, should match completely
+    EXPECT_EQ(BeStringUtilities::StricmpAscii("TestCase", "Testcase"), 0);
+    EXPECT_EQ(BeStringUtilities::StricmpAscii("Test_Case", "Test_case"), 0);
+
+    // When 'C' (ASCII value 67) is compared with '_' (ASCII value 95), the result should be a negative integer
+    EXPECT_LT(BeStringUtilities::StricmpAscii("TestCase", "Test_Case"), 0);
+
+    // When '_' (ASCII value 95) is compared with 'C' (ASCII value 67), the result should be a positive integer
+    EXPECT_GT(BeStringUtilities::StricmpAscii("Test_Case", "TestCase"), 0);
+
+    // When 'c' (ASCII value 99) is compared with '_' (ASCII value 95), the result should be a positive integer
+    EXPECT_GT(BeStringUtilities::StricmpAscii("Testcase", "Test_case"), 0);
+    
+    // When '_' (ASCII value 95) is compared with 'c' (ASCII value 99), the result should be a negative integer
+    EXPECT_LT(BeStringUtilities::StricmpAscii("Test_case", "Testcase"), 0);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

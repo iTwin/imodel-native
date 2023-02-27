@@ -1,1 +1,11 @@
+#----------------------------------------------------------------------------------------
+#   Tests that need to be looked at
+#----------------------------------------------------------------------------------------
 
+# This test case is working as expected and has been ignored temporarily. The issue is with the function BeStringUtilities::StricmpAscii.
+# Once this behavior explained below is fixed, the test case can be removed from the ignore list.
+# The Function BeStringUtilities::StricmpAscii converts all characters to lowercase before comparing them. This is causing a problem when one of the strings contains any of the following characters: [\]^_`
+# These characters lie between the uppercase and lowercase characters in the ASCII table.
+# Since the function StricmpAscii converts everything to lowercase, the alpha characters always end up greater than these special characters and the function always returns a positive value.
+# This is not the expected behavior. When these special characters are compared with uppercase characters, the function should return a negative value.
+BeStringUtilitiesTests.TestStrICmpASCIIWithUnderscore

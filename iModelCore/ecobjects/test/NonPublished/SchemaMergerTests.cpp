@@ -4922,11 +4922,13 @@ TEST_F(SchemaMergerTests, TestBaseClassAdditionAndRemoval)
     R"schema(<?xml version='1.0' encoding='utf-8' ?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="Schema Merge Test Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
       <ECEntityClass typeName="BaseEntity" />
-      <ECEntityClass typeName="EntityCommonToBoth" />
+      <ECEntityClass typeName="EntityCommonToBoth1" />
+      <ECEntityClass typeName="EntitycommonToBoth2" />
       <ECEntityClass typeName="Entity_OnlyInLeft" />
       <ECEntityClass typeName="TestClass">
         <BaseClass>BaseEntity</BaseClass>
-        <BaseClass>EntityCommonToBoth</BaseClass>
+        <BaseClass>EntityCommonToBoth1</BaseClass>
+        <BaseClass>EntitycommonToBoth2</BaseClass>
         <BaseClass>Entity_OnlyInLeft</BaseClass>
       </ECEntityClass>
     </ECSchema>)schema"};
@@ -4935,11 +4937,13 @@ TEST_F(SchemaMergerTests, TestBaseClassAdditionAndRemoval)
     R"schema(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="Schema Merge Test Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
       <ECEntityClass typeName="BaseEntity" />
-      <ECEntityClass typeName="EntityCommonToBoth" />
+      <ECEntityClass typeName="EntityCommonToBoth1" />
+      <ECEntityClass typeName="EntitycommonToBoth2" />
       <ECEntityClass typeName="Entity_OnlyInRight" />
       <ECEntityClass typeName="TestClass">
         <BaseClass>BaseEntity</BaseClass>
-        <BaseClass>EntityCommonToBoth</BaseClass>
+        <BaseClass>EntityCommonToBoth1</BaseClass>
+        <BaseClass>EntitycommonToBoth2</BaseClass>
         <BaseClass>Entity_OnlyInRight</BaseClass>
       </ECEntityClass>
     </ECSchema>)schema"};
@@ -4960,12 +4964,14 @@ TEST_F(SchemaMergerTests, TestBaseClassAdditionAndRemoval)
     R"schema(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="Schema Merge Test Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
       <ECEntityClass typeName="BaseEntity" />
-      <ECEntityClass typeName="EntityCommonToBoth" />
+      <ECEntityClass typeName="EntityCommonToBoth1" />
+      <ECEntityClass typeName="EntitycommonToBoth2" />
       <ECEntityClass typeName="Entity_OnlyInLeft" />
       <ECEntityClass typeName="Entity_OnlyInRight" />
       <ECEntityClass typeName="TestClass">
         <BaseClass>BaseEntity</BaseClass>
-        <BaseClass>EntityCommonToBoth</BaseClass>
+        <BaseClass>EntityCommonToBoth1</BaseClass>
+        <BaseClass>EntitycommonToBoth2</BaseClass>
         <BaseClass>Entity_OnlyInLeft</BaseClass>
         <BaseClass>Entity_OnlyInRight</BaseClass>
       </ECEntityClass>
