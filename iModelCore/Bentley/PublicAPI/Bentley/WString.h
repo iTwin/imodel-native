@@ -360,7 +360,8 @@ public:
     BENTLEYDLL_EXPORT bool EndsWith(Utf8StringCR ending) const;
     // Removes all whitespace from the left and right sides. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
     BENTLEYDLL_EXPORT Utf8StringR Trim();
-    // Removes all whitespace from the left and right sides. Uses libicu's `u_isspace`
+    // Removes all whitespace from the left and right sides. Uses libicu's `u_isspace` which includes '\x00a0' (&nbsp;), not all their API does,
+    // not even their `trim` function, which follow's Java's old decision that nbsp is semantically not supposed to be trimmed
     // SEE: "Detailed Description" section of https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/uchar_8h.html
     BENTLEYDLL_EXPORT Utf8StringR TrimUtf8();
     // Removes all whitespace from the end. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
