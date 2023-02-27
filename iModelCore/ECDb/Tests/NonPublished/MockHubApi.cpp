@@ -172,7 +172,9 @@ std::string SchemaSyncTestFixture::GetIndexDDL(ECDbCR ecdb, Utf8CP indexName) {
 SharedSchemaDb::SharedSchemaDb(Utf8CP name){
     BeFileName outPath;
     BeTest::GetHost().GetOutputRoot(outPath);
-    outPath.AppendToPath(WPrintfString(L"%s.ecdb", name).GetWCharCP());
+    Utf8String fileName = name;
+    fileName.append(".ecdb");
+    outPath.AppendToPath(WString(fileName.c_str(), true).GetWCharCP());
     if (outPath.DoesPathExist()) {
         if (outPath.BeDeleteFile() != BeFileNameStatus::Success) {
             throw std::runtime_error("unable to delete file");
@@ -689,7 +691,7 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
         result = iter.GetFKeyConflicts(&nConflicts);
         BeAssert(result == BE_SQLITE_OK);
         LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
-        return ChangeSet::ConflictResolution::Abort ;
+        return ChangeSet::ConflictResolution::Skip ;
     }
     if(cause == ChangeSet::ConflictCause::NotFound) {
         if (opcode == DbOpcode::Delete) {
@@ -717,7 +719,9 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName ECDbHub::BuildECDbPath(Utf8CP name) const {
     BeFileName outPath = m_basePath;
-    outPath.AppendToPath(WPrintfString(L"%s.ecdb", name).GetWCharCP());
+    Utf8String fileName = name;
+    fileName.append(".ecdb");
+    outPath.AppendToPath(WString(fileName.c_str(), true).c_str());
     return outPath;
 }
 
@@ -818,7 +822,12 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
             return rc;
         }
     }
-
+    if (!changesetsToApply.empty()) {
+        auto rc = AfterSchemaChangeSetApplied();
+        if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+    }
     m_tracker->EnableTracking(true);
     if (!m_tracker->GetLocalChangesets().empty()){
         auto changeset = m_tracker->MakeChangeset(true, comment);
@@ -828,6 +837,7 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
         }
         m_changesetId = m_hub->PushNewChangeset(std::move(changeset));
     }
+
     return BE_SQLITE_OK;
 
 }

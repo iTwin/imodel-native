@@ -199,8 +199,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
     Test("PullMergePush for b2", [&]() {
         ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 import schema")) << "b2->PullMergePush()";
         b2->AbandonChanges();
-
     });
+
+    
 }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -469,7 +469,11 @@ DbResult SchemaSynchronizer::SyncData(ECDbR conn, Utf8CP syncDbPath, SyncAction 
 
     auto syncInfo = SourceSyncInfo::From(conn);
     rc = syncInfo.Update(sharedDbInfo, conn);
-    return rc;
+	if (rc != BE_SQLITE_OK) {
+        return rc;
+	}
+
+    return conn.Schemas().RepopulateCacheTables() == SUCCESS ? BE_SQLITE_OK : BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------
