@@ -2887,7 +2887,8 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
                                     SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
         {
-        IECInstancePtr attribute = info->CreateCustomAttribute();
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        IECInstancePtr attribute = info->CreateCustomAttribute(schemaContext);
         if (attribute.IsValid())
             {
             auto& coreCA = attribute->GetClass().GetSchema();

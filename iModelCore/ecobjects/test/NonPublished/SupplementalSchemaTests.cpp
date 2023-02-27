@@ -53,7 +53,8 @@ struct SchemaHolderTestFixture : ECTestFixture
                 ECSchema::CreateSchema(supplementalSchema, supplementalSchemaName, alias, supplementalReadVersion, supplementalWriteVersion, supplementalMinorVersion);
                 SupplementalSchemaMetaData metaData(primarySchemaName, primaryReadVersion, primaryWriteVersion, primaryMinorVersion, precedence, purpose);
                 supplementalSchema->AddReferencedSchema(*m_coreCASchema);
-                supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+                ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+                supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute(context)));
                 }
             }
 
@@ -941,7 +942,8 @@ TEST_F(SupplementalSchemaMetaDataTests, CreateMetaData)
     supplementalSchema->AddReferencedSchema(*m_coreCASchema);
 
     SupplementalSchemaMetaDataPtr metaData = SupplementalSchemaMetaData::Create("TestSchema", 1, 0, 2, 100, "OverrideWidgets");
-    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData->CreateCustomAttribute()));
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData->CreateCustomAttribute(context)));
 
     // validate returned values
     ASSERT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplementalSchema));

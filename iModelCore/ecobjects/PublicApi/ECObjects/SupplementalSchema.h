@@ -84,7 +84,7 @@ public:
     ECOBJECTS_EXPORT bool IsSupplemental(ECSchemaP supplementalSchema) const;
 
     //! Creates a Custom Attribute from the current SupplementalSchemaMetaData instance
-    ECOBJECTS_EXPORT IECInstancePtr CreateCustomAttribute();
+    ECOBJECTS_EXPORT IECInstancePtr CreateCustomAttribute(ECSchemaReadContextPtr schemaContext);
 
     Utf8StringCR GetPrimarySchemaName() const {return m_schemaName;} //!< Gets the primary schema name
     void SetPrimarySchemaName(Utf8CP name) {m_schemaName = name;} //!< Sets the primary schema name
@@ -403,7 +403,7 @@ public:
     ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, Utf8StringCR purpose) const;
 
     //! Creates a custom attribute defining the supplemental schema names and their purposes
-    IECInstancePtr CreateCustomAttribute();
+    IECInstancePtr CreateCustomAttribute(ECSchemaReadContextPtr schemaContext);
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
     static Utf8CP GetCustomAttributeAccessor();
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema.

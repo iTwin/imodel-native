@@ -452,7 +452,7 @@ TEST_F(CustomAttributeTest, CanRetrieveBothPrimaryAndSupplementedCustomAttribute
     ECSchema::CreateSchema(supplementalSchema, "Supplemental", "sup", 1, 0, 1);
     SupplementalSchemaMetaData metaData(primary->GetName().c_str(), primary->GetVersionRead(), primary->GetVersionWrite(), primary->GetVersionMinor(), 10, "Testing");
     supplementalSchema->AddReferencedSchema(*coreCASchema);
-    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute(schemaContext)));
 
     ECEntityClassP supClass;
     supplementalSchema->CreateEntityClass(supClass, "ClassWithProperties");
@@ -613,7 +613,7 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     caClass->CreatePrimitiveProperty (stringProp, caUtf8StringPropName, PRIMITIVETYPE_String);
 
         // *** WIP_PORTABILITY: Use an escape such as \u here. Don't try to use extended ascii directly
-    WCharCP caPropValueString = L"äöüßá³µ";
+    WCharCP caPropValueString = L"ï¿½ï¿½ï¿½ï¿½á³µ";
     Utf8String expectedCAPropValueUtf8String;
     EXPECT_EQ (SUCCESS, BeStringUtilities::WCharToUtf8 (expectedCAPropValueUtf8String, caPropValueString));
 

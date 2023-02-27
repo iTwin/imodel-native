@@ -178,7 +178,8 @@ bool SupplementalSchemaMetaData::TryGetFromSchema(SupplementalSchemaMetaDataPtr&
 // static
 void SupplementalSchemaMetaData::SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaData)
     {
-    IECInstancePtr instance = supplementalSchemaData.CreateCustomAttribute();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr instance = supplementalSchemaData.CreateCustomAttribute(schemaContext);
     supplementalSchema.SetCustomAttribute(*instance);
     }
 
@@ -196,9 +197,8 @@ bool SupplementalSchemaMetaData::IsSupplemental(ECSchemaP supplementalSchema) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute()
+IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute(ECSchemaReadContextPtr schemaContext)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     instance->SetValue(GetPrimarySchemaNamePropertyAccessor(), ECValue(GetPrimarySchemaName().c_str()));
     instance->SetValue(GetPrimarySchemaReadVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaReadVersion()));
@@ -1036,9 +1036,8 @@ Utf8CP SupplementalSchemaInfo::GetCustomAttributeSchemaName()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
+IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute(ECSchemaReadContextPtr schemaContext)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, GetCustomAttributeAccessor());
     if (!instance.IsValid())
         return instance;
