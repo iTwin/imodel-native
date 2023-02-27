@@ -5404,7 +5404,6 @@ static void initLanguageSupportOnDb(sqlite3* db)
         }
     }
 
-extern "C" int sqlite3_closure_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_routines const* pApi);
 
 /*---------------------------------------------------------------------------------**//**
 * this function is called for every new database connection.
@@ -5412,11 +5411,6 @@ extern "C" int sqlite3_closure_init(sqlite3* db, char** pzErrMsg, struct sqlite3
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_routines const* pApi)
     {
-    // install the "closure" virtual table
-    int rc = sqlite3_closure_init(db, pzErrMsg, pApi);
-    UNUSED_VARIABLE(rc);
-    BeAssert(BE_SQLITE_OK == rc);
-
     // and the "InVirtualSet" SQL function. It requires at least two arguments: the address of the VirtualSet and the value(s) to test
     rc = sqlite3_create_function_v2(db, "InVirtualSet", -1, SQLITE_UTF8, nullptr, &isInVirtualSet, nullptr, nullptr, nullptr);
     BeAssert(BE_SQLITE_OK == rc);
