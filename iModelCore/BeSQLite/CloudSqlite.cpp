@@ -244,7 +244,6 @@ int CloudCache::FindToken(Utf8CP storage, Utf8CP accessName, Utf8CP containerNam
 
 /**
  * Attempt to connect this container to a CloudCache and its cloud container
- * @note this function requires the cloudcache to be connected to the cloud container
  */
 CloudResult CloudContainer::Connect(CloudCache& cache) {
     if (nullptr != m_cache)
