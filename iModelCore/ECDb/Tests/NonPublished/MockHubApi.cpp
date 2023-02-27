@@ -56,7 +56,7 @@ std::unique_ptr<TrackedECDb> SchemaSyncTestFixture::OpenECDb(Utf8CP asFileNam) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaSyncTestFixture::GetSchemaHash(ECDbCR db) {
     ECSqlStatement stmt;
-    if (stmt.Prepare(db, "PRAGMA checksum(ec_schema)") != ECSqlStatus::Success) {
+    if (stmt.Prepare(db, "PRAGMA checksum(ecdb_schema)") != ECSqlStatus::Success) {
         return "";
     }
     if (stmt.Step() == BE_SQLITE_ROW) {
@@ -70,7 +70,7 @@ Utf8String SchemaSyncTestFixture::GetSchemaHash(ECDbCR db) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaSyncTestFixture::GetMapHash(ECDbCR db) {
     ECSqlStatement stmt;
-    if (stmt.Prepare(db, "PRAGMA checksum(ec_map)") != ECSqlStatus::Success) {
+    if (stmt.Prepare(db, "PRAGMA checksum(ecdb_map)") != ECSqlStatus::Success) {
         return "";
     }
     if (stmt.Step() == BE_SQLITE_ROW) {
@@ -84,7 +84,7 @@ Utf8String SchemaSyncTestFixture::GetMapHash(ECDbCR db) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaSyncTestFixture::GetDbSchemaHash(ECDbCR db) {
     ECSqlStatement stmt;
-    if (stmt.Prepare(db, "PRAGMA checksum(db_schema)") != ECSqlStatus::Success) {
+    if (stmt.Prepare(db, "PRAGMA checksum(sqlite_schema)") != ECSqlStatus::Success) {
         return "";
     }
     if (stmt.Step() == BE_SQLITE_ROW) {
@@ -145,9 +145,9 @@ std::string SchemaSyncTestFixture::GetLastChangesetAsSql(TrackedECDb& db) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaSyncTestFixture::PrintHash(ECDbR ecdb, Utf8CP desc) {
     printf("=====%s======\n", desc);
-    printf("\tSchema: SHA1-%s\n", GetSchemaHash(ecdb).c_str());
-    printf("\t   Map: SHA1-%s\n", GetMapHash(ecdb).c_str());
-    printf("\t    Db: SHA1-%s\n", GetDbSchemaHash(ecdb).c_str());
+    printf("\tSchema: SHA3-%s\n", GetSchemaHash(ecdb).c_str());
+    printf("\t   Map: SHA3-%s\n", GetMapHash(ecdb).c_str());
+    printf("\t    Db: SHA3-%s\n", GetDbSchemaHash(ecdb).c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**

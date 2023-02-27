@@ -11,6 +11,38 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+const char* DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
+const char* DEFAULT_SHA3_256_ECDB_MAP = "9c7834d13177336f0fa57105b9c1175b912b2e12e62ca2224482c0ffd9dfd337";
+const char* DEFAULT_SHA3_256_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
+
+TEST_F(SchemaSyncTestFixture, checksum_pragma) {
+    ECDbHub hub;
+    auto b1 = hub.CreateBriefcase();
+
+    // PrintHash(*b1, "checksum for seed file");
+
+    Test("schema checksum", [&]() {
+        ECSqlStatement stmt;
+        EXPECT_EQ(stmt.Prepare(*b1, "PRAGMA checksum(ecdb_schema)"), ECSqlStatus::Success);
+        EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        EXPECT_STREQ(stmt.GetValueText(0), DEFAULT_SHA3_256_ECDB_SCHEMA);
+    });
+
+    Test("map checksum", [&]() {
+        ECSqlStatement stmt;
+        EXPECT_EQ(stmt.Prepare(*b1, "PRAGMA checksum(ecdb_map)"), ECSqlStatus::Success);
+        EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        EXPECT_STREQ(stmt.GetValueText(0), DEFAULT_SHA3_256_ECDB_MAP);
+    });
+
+    Test("sqlite schema checksum", [&]() {
+        ECSqlStatement stmt;
+        EXPECT_EQ(stmt.Prepare(*b1, "PRAGMA checksum(sqlite_schema)"), ECSqlStatus::Success);
+        EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        EXPECT_STREQ(stmt.GetValueText(0), DEFAULT_SHA3_256_SQLITE_SCHEMA);
+    });
+}
+
 
 TEST_F(SchemaSyncTestFixture, Test) {
     ECDbHub hub;
@@ -30,21 +62,25 @@ TEST_F(SchemaSyncTestFixture, Test) {
 
     if ("check syn db hash") {
         schemaChannel.WithReadOnly([&](ECDbR syncDb) {
-            EXPECT_STREQ("9a0c2041a498d674fc0045cb0209e3dd8951b904", GetSchemaHash(syncDb).c_str());
-            EXPECT_STREQ("49675fee5c0f1264853df55142364516b5ef5202", GetMapHash(syncDb).c_str());
-            EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(syncDb).c_str());
+            EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_SCHEMA, GetSchemaHash(syncDb).c_str());
+            EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_MAP, GetMapHash(syncDb).c_str());
+            EXPECT_STREQ(DEFAULT_SHA3_256_SQLITE_SCHEMA, GetDbSchemaHash(syncDb).c_str());
         });
     }
 
-    EXPECT_STREQ("9a0c2041a498d674fc0045cb0209e3dd8951b904", GetSchemaHash(*b1).c_str());
-    EXPECT_STREQ("49675fee5c0f1264853df55142364516b5ef5202", GetMapHash(*b1).c_str());
-    EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(*b1).c_str());
+    EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_SCHEMA, GetSchemaHash(*b1).c_str());
+    EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_MAP, GetMapHash(*b1).c_str());
+    EXPECT_STREQ(DEFAULT_SHA3_256_SQLITE_SCHEMA, GetDbSchemaHash(*b1).c_str());
 
-    EXPECT_STREQ("9a0c2041a498d674fc0045cb0209e3dd8951b904", GetSchemaHash(*b2).c_str());
-    EXPECT_STREQ("49675fee5c0f1264853df55142364516b5ef5202", GetMapHash(*b2).c_str());
-    EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(*b2).c_str());
+    EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_SCHEMA, GetSchemaHash(*b2).c_str());
+    EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_MAP, GetMapHash(*b2).c_str());
+    EXPECT_STREQ(DEFAULT_SHA3_256_SQLITE_SCHEMA, GetDbSchemaHash(*b2).c_str());
 
     ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Push(*b1)) << "Push changes to from b1 to schemaChannel";
+
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "57df4675ccbce3493d2bb882ad3bb28f3266425c2f22fd55e57e187808b3add3";
+    const auto SCHEMA1_HASH_ECDB_MAP = "8b1c6d8fa5b29e085bf94fae710527f56fa1c1792bd7404ff5775ed07f86f21f";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "8608aab5fa8a874b3f9140451ab8410c785483a878c8d915f48a26ef20e8241c";
     Test("import schema into b1", [&]() {
         auto schema1 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -76,10 +112,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
 
         ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
-
-        EXPECT_STREQ("58378b2ff3c9c4ad9664395274173d2c9dee1970", GetSchemaHash(*b1).c_str());
-        EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*b1).c_str());
-        EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b1).c_str());
+        EXPECT_STREQ(SCHEMA1_HASH_ECDB_SCHEMA, GetSchemaHash(*b1).c_str());
+        EXPECT_STREQ(SCHEMA1_HASH_ECDB_MAP, GetMapHash(*b1).c_str());
+        EXPECT_STREQ(SCHEMA1_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b1).c_str());
     });
 
     Test("check if sync-db has changes but not tables and index", [&]() {
@@ -89,9 +124,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
             ASSERT_EQ(pipe1->GetPropertyCount(), 2);
             ASSERT_FALSE(syncDb.TableExists("ts_Pipe1"));
             ASSERT_STRCASEEQ(GetIndexDDL(syncDb, "idx_pipe1_p1").c_str(), "");
-            EXPECT_STREQ("58378b2ff3c9c4ad9664395274173d2c9dee1970", GetSchemaHash(syncDb).c_str());
-            EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(syncDb).c_str());
-            EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(syncDb).c_str()); // It should not change
+            EXPECT_STREQ(SCHEMA1_HASH_ECDB_SCHEMA, GetSchemaHash(syncDb).c_str());
+            EXPECT_STREQ(SCHEMA1_HASH_ECDB_MAP, GetMapHash(syncDb).c_str());
+            EXPECT_STREQ(DEFAULT_SHA3_256_SQLITE_SCHEMA, GetDbSchemaHash(syncDb).c_str()); // It should not change
             ASSERT_TRUE(ForeignkeyCheck(syncDb));
         });
     });
@@ -103,13 +138,16 @@ TEST_F(SchemaSyncTestFixture, Test) {
             ASSERT_EQ(pipe1->GetPropertyCount(), 2);
             ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
             ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
-            EXPECT_STREQ("58378b2ff3c9c4ad9664395274173d2c9dee1970", GetSchemaHash(*b2).c_str());
-            EXPECT_STREQ("fe4dfa5552f7a28b49e003ba2d2989ef3380538b", GetMapHash(*b2).c_str());
-            EXPECT_STREQ("c7c7a104e2197c9aeb95e76534318a1c6ecc68d7", GetDbSchemaHash(*b2).c_str());
+            EXPECT_STREQ(SCHEMA1_HASH_ECDB_SCHEMA, GetSchemaHash(*b2).c_str());
+            EXPECT_STREQ(SCHEMA1_HASH_ECDB_MAP, GetMapHash(*b2).c_str());
+            EXPECT_STREQ(SCHEMA1_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b2).c_str());
             ASSERT_TRUE(ForeignkeyCheck(*b2));
         })) << "Pull changes from schemaChannel into b2";
     });
 
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "4a674e4d762c6960fa5276c7395d813c786dc4023843674e93548e9f9ad8cd62";
+    const auto SCHEMA2_HASH_ECDB_MAP = "d9bb9b10a0b3745b1878eff131e692e7930d34883ae52506b5be23bd4e8d2b5f";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "a5903dad8066700b537ea5f939043e8d8cbfe1297ea6fa0c3e20d7c00e5e3d44";
     Test("update schema by adding more properties and expand index in b2", [&]() {
         auto schema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -144,10 +182,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
 
         ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
-
-        EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b2).c_str());
-        EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b2).c_str());
-        EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b2).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b2).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b2).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b2).c_str());
     });
 
     Test("check if sync-db has changes but not tables and index", [&]() {
@@ -156,9 +193,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 4);
             ASSERT_STRCASEEQ(GetIndexDDL(syncDb, "idx_pipe1_p1").c_str(), "");
-            EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(syncDb).c_str());
-            EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(syncDb).c_str());
-            EXPECT_STREQ("c6f37c87a652dbeb8b0413ad3dca36b59e8b273b", GetDbSchemaHash(syncDb).c_str());
+            EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(syncDb).c_str());
+            EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(syncDb).c_str());
+            EXPECT_STREQ(DEFAULT_SHA3_256_SQLITE_SCHEMA, GetDbSchemaHash(syncDb).c_str());
             ASSERT_TRUE(ForeignkeyCheck(syncDb));
         });
     });
@@ -172,9 +209,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
             ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
             ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
 
-            EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b1).c_str());
-            EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b1).c_str());
-            EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b1).c_str());
+            EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b1).c_str());
+            EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b1).c_str());
+            EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b1).c_str());
             ASSERT_TRUE(ForeignkeyCheck(*b1));
         })) << "Pull changes from schemaChannel into b1";
     });
@@ -190,9 +227,9 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_EQ(pipe1->GetPropertyCount(), 4);
         ASSERT_TRUE(b3->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(GetIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
-        EXPECT_STREQ("5cbd24c81c6f5bd432a3c4829b4691c53977e490", GetSchemaHash(*b3).c_str());
-        EXPECT_STREQ("5775dbd6f8956d6cb25e5f55c57948eaeefd7a42", GetMapHash(*b3).c_str());
-        EXPECT_STREQ("a0ecfd5f3845cc756be16b9649b1a3d5d8be3325", GetDbSchemaHash(*b3).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b3).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b3).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b3).c_str());
     });
 
 
@@ -201,7 +238,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
         b2->AbandonChanges();
     });
 
-    
+
 }
 
 END_ECDBUNITTESTS_NAMESPACE

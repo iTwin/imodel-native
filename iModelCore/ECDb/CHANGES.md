@@ -9,10 +9,10 @@ This document including important changes to syntax or file format.
 
 ## `2/13/2023`: Add PRAGMA checksum(ec_schema|ec_map|db_schema)
 * ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
-* PRAGMA checksum(ec_schema|ec_map|db_schema)
-    * `PRAGMA checksum(ec_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
-    * `PRAGMA checksum(ec_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
-    * `PRAGMA checksum(db_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
+* PRAGMA checksum(ecdb_schema|ec_map|db_schema)
+    * `PRAGMA checksum(ecdb_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
+    * `PRAGMA checksum(ecdb_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
+    * `PRAGMA checksum(sqlite_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
 
 
 ## `2/7/2023`: Add ECDb validity/integrity checks

@@ -45,8 +45,8 @@ struct SharedSchemaDbInfo final {
         constexpr static char JPropertyNamespace[] = "ec_Db";
         constexpr static char JSourceDbGuid[] = "source_db_guid";
         constexpr static char JSourceProjectGuid[] = "source_project_guid";
-        constexpr static char JSchemaSHA1[] = "schema_sha1";
-        constexpr static char JMapSHA1[] = "map_sha1";
+        constexpr static char JSchemaSHA3[] = "schema_sha1";
+        constexpr static char JMapSHA3[] = "map_sha1";
 
 		BeGuid m_syncId;
 		DateTime m_created;
@@ -54,8 +54,8 @@ struct SharedSchemaDbInfo final {
 		BeInt64Id m_version;
         BeGuid m_sourceProjectGuid;
         BeGuid m_sourceDbGuid;
-        Utf8String m_schemaSHA1;
-        Utf8String m_mapSHA1;
+        Utf8String m_schemaSHA3;
+        Utf8String m_mapSHA3;
         SharedSchemaDbInfo(){}
 
 	public:

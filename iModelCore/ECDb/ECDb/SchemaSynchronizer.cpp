@@ -596,29 +596,29 @@ DbResult SchemaSynchronizer::InitSharedSchemaDb(ECDbR conn, Utf8CP sharedSchemaD
 DbResult SharedSchemaDbInfo::UpdateVersion(ECDbR syncDb) {
 	auto info = SharedSchemaDbInfo::From(syncDb);
 	ECSqlStatement stmt;
-	if (ECSqlStatus::Success != stmt.Prepare(syncDb, "PRAGMA checksum(ec_schema)")) {
+	if (ECSqlStatus::Success != stmt.Prepare(syncDb, "PRAGMA checksum(ecdb_schema)")) {
 		return BE_SQLITE_ERROR;
 	}
 	if (stmt.Step() != BE_SQLITE_ROW) {
 		return BE_SQLITE_ERROR;
 	}
-	const Utf8String schemaSHA1 = stmt.GetValueText(0);
+	const Utf8String schemaSHA3 = stmt.GetValueText(0);
 
 	stmt.Finalize();
-	if (ECSqlStatus::Success != stmt.Prepare(syncDb, "PRAGMA checksum(ec_map)")) {
+	if (ECSqlStatus::Success != stmt.Prepare(syncDb, "PRAGMA checksum(ecdb_map)")) {
 		return BE_SQLITE_ERROR;
 	}
 	if (stmt.Step() != BE_SQLITE_ROW) {
 		return BE_SQLITE_ERROR;
 	}
-	const Utf8String mapSHA1 = stmt.GetValueText(0);
-	if (schemaSHA1.empty() || mapSHA1.empty()) {
+	const Utf8String mapSHA3 = stmt.GetValueText(0);
+	if (schemaSHA3.empty() || mapSHA3.empty()) {
 		return BE_SQLITE_ERROR;
 	}
-	if (info.m_schemaSHA1 != schemaSHA1 || info.m_mapSHA1 != mapSHA1) {
+	if (info.m_schemaSHA3 != schemaSHA3 || info.m_mapSHA3 != mapSHA3) {
 		info.m_version = BeInt64Id(info.m_version.GetValueUnchecked() + 1);
-		info.m_mapSHA1 = mapSHA1;
-		info.m_schemaSHA1 = schemaSHA1;
+		info.m_mapSHA3 = mapSHA3;
+		info.m_schemaSHA3 = schemaSHA3;
 	}
 	return info.SaveTo(syncDb);
 }
@@ -651,8 +651,8 @@ DbResult SharedSchemaDbInfo::SaveTo(DbR db) const {
 	doc[JVersion] = m_version.ToHexStr();
 	doc[JSourceProjectGuid] = m_sourceProjectGuid.ToString();
 	doc[JSourceDbGuid] = m_sourceDbGuid.ToString();
-	doc[JSchemaSHA1] = m_schemaSHA1;
-	doc[JMapSHA1] = m_mapSHA1;
+	doc[JSchemaSHA3] = m_schemaSHA3;
+	doc[JMapSHA3] = m_mapSHA3;
 	return db.SavePropertyString(propSpec, doc.Stringify());
 }
 
@@ -719,14 +719,14 @@ SharedSchemaDbInfo SharedSchemaDbInfo::From(DbCR db) {
 		return SharedSchemaDbInfo::Empty();
 	}
 
-	if (doc.hasMember(JSchemaSHA1)){
-		info.m_schemaSHA1 = doc[JSchemaSHA1].asCString();
+	if (doc.hasMember(JSchemaSHA3)){
+		info.m_schemaSHA3 = doc[JSchemaSHA3].asCString();
 	} else {
 		return SharedSchemaDbInfo::Empty();
 	}
 
-	if (doc.hasMember(JMapSHA1)){
-		info.m_mapSHA1 = doc[JMapSHA1].asCString();
+	if (doc.hasMember(JMapSHA3)){
+		info.m_mapSHA3 = doc[JMapSHA3].asCString();
 	} else {
 		return SharedSchemaDbInfo::Empty();
 	}

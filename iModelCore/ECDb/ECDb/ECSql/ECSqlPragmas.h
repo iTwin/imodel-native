@@ -90,16 +90,26 @@ struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct DataSHA1 final {
-    private:
-        static void AppendRow(SHA1& hash, Statement& stmt, bool includeNulls);
-        static DbResult AppendRows(SHA1& hash, Statement& stmt, bool includeNulls);
-        static bool TableExists(DbCR db, Utf8CP tableName, Utf8CP dbAlias = "main");
-        static DbResult ComputeTableHash(SHA1& hash, DbCR db, Utf8CP tableName, Utf8CP dbAlias = "main", bool includeNulls = false, bool sortColumns = false);
-    public:
-        static DbResult ComputeSchemaHash(SHA1& hash, DbCR db, Utf8CP dbAlias = "main");
-        static DbResult ComputeMapHash(SHA1& hash, DbCR db, Utf8CP dbAlias = "main");
-        static DbResult ComputeDbSchemaHash(SHA1& hash, DbCR db, Utf8CP dbAlias = "main");
+struct SHA3Helper final {
+    enum class HashSize {
+        SHA3_224 = 224,
+        SHA3_256 = 256,
+        SHA3_384 = 384,
+        SHA3_512 = 512,
+    };
+    enum class SourceType {
+        ECDB_SCHEMA,
+        ECDB_MAP,
+        SQLITE_SCHEMA,
+    };
+
+
+private:
+    static bool TableExists(DbCR db, Utf8CP tableName, Utf8CP dbAlias);
+    static DbResult ComputeHash(Utf8String& hash, DbCR db, std::vector<std::string> const & tables, Utf8CP dbAlias, HashSize hashSize, bool skipTableThatDoesNotExists);
+    static DbResult ComputeSQLiteSchemaHash(Utf8String& hash, DbCR db, Utf8CP dbAlias, HashSize hashSize);
+public:
+    static DbResult ComputeHash(Utf8StringR hash, DbCR db, SourceType type, Utf8CP dbAlias = "main", HashSize hashSize = HashSize::SHA3_256);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
