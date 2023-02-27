@@ -64,7 +64,6 @@
 #endif
 
 #include "sqlite3.c"
-#include "closure.c"
 #include "blockcachevfs.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
