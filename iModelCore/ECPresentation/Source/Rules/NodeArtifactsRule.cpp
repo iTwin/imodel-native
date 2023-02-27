@@ -59,7 +59,7 @@ bool NodeArtifactsRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodeArtifactsRule::_WriteJson(JsonValueR json) const
+void NodeArtifactsRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     for (auto entry : m_items)

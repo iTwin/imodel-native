@@ -392,7 +392,7 @@ bool RelatedPropertiesSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedPropertiesSpecification::_WriteJson(JsonValueR json) const
+void RelatedPropertiesSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
 
@@ -411,11 +411,11 @@ void RelatedPropertiesSpecification::_WriteJson(JsonValueR json) const
     if (RequiredRelationDirection_Both != m_requiredDirection)
         json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
     if (!m_relationshipClassNames.empty())
-        json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relationshipClassNames);
+        CommonToolsInternal::WriteSchemaAndClassNamesToJson(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS], m_relationshipClassNames);
     if (!m_relatedClassNames.empty())
-        json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relatedClassNames);
+        CommonToolsInternal::WriteSchemaAndClassNamesToJson(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES], m_relatedClassNames);
     if (m_propertiesSourceSpecification)
-        json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESSOURCE] = m_propertiesSourceSpecification->WriteJson();
+        m_propertiesSourceSpecification->WriteJson(json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESSOURCE]);
 
     if (NoPropertiesIncluded(m_properties))
         json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES] = INCLUDE_NO_PROPERTIES_SPEC;

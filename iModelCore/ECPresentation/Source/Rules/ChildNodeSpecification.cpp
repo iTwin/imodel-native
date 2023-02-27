@@ -204,7 +204,7 @@ bool ChildNodeSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::_WriteJson(JsonValueR json) const
+void ChildNodeSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationRuleSpecification::_WriteJson(json);
     if (ChildrenHint::Unknown != m_hasChildren)

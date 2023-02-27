@@ -32,7 +32,7 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     //! Accept nested customization rule visitor
     ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
@@ -131,7 +131,7 @@ struct InstanceLabelOverrideCompositeValueSpecification : InstanceLabelOverrideV
         Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
         Utf8CP _GetJsonElementType() const override {return nullptr;}
         ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+        ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
         ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
         ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     public:
@@ -154,7 +154,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 public:
     InstanceLabelOverrideCompositeValueSpecification(): m_separator(" ") {}
     InstanceLabelOverrideCompositeValueSpecification(bvector<Part*> parts, Utf8String separator = " "): m_parts(parts), m_separator(separator) {}
@@ -182,7 +182,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 public:
     InstanceLabelOverridePropertyValueSpecification() {}
     InstanceLabelOverridePropertyValueSpecification(Utf8String propertyName, RelationshipPathSpecification spec = RelationshipPathSpecification())
@@ -207,7 +207,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 public:
     InstanceLabelOverrideClassNameValueSpecification() : m_full(false) {}
     InstanceLabelOverrideClassNameValueSpecification(bool full) : m_full(full) {}
@@ -262,7 +262,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 public:
     InstanceLabelOverrideStringValueSpecification() {}
     InstanceLabelOverrideStringValueSpecification(Utf8String value) : m_value(value) {}
@@ -284,7 +284,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 public:
     InstanceLabelOverrideRelatedInstanceLabelSpecification() {}
     InstanceLabelOverrideRelatedInstanceLabelSpecification(RelationshipPathSpecification spec)

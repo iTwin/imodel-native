@@ -148,7 +148,7 @@ bool AllRelatedInstanceNodesSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AllRelatedInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+void AllRelatedInstanceNodesSpecification::_WriteJson(BeJsValue json) const
     {
     ChildNodeSpecification::_WriteJson(json);
     if (!m_groupByClass)
@@ -158,7 +158,7 @@ void AllRelatedInstanceNodesSpecification::_WriteJson(JsonValueR json) const
     if (0 != m_skipRelatedLevel)
         json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL] = m_skipRelatedLevel;
     if (!m_supportedSchemas.empty())
-        json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+        CommonToolsInternal::WriteSupportedSchemasToJson(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS], m_supportedSchemas);
     if (RequiredRelationDirection_Both != m_requiredDirection)
         json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
     }

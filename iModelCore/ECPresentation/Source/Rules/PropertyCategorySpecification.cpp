@@ -99,7 +99,7 @@ bool PropertyCategoryIdentifier::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCategoryIdentifier::_WriteJson(JsonValueR json) const
+void PropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
     {
     switch (m_type)
         {
@@ -165,7 +165,7 @@ bool IdPropertyCategoryIdentifier::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IdPropertyCategoryIdentifier::_WriteJson(JsonValueR json) const
+void IdPropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
     {
     PropertyCategoryIdentifier::_WriteJson(json);
     json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID] = m_categoryId;
@@ -274,19 +274,19 @@ bool PropertyCategorySpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCategorySpecification::_WriteJson(JsonValueR json) const
+void PropertyCategorySpecification::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
     json[PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_ID] = m_id;
     if (m_parentId)
-        json[PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_PARENTID] = m_parentId->WriteJson();
+        m_parentId->WriteJson(json[PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_PARENTID]);
     json[PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_LABEL] = m_label;
     if (!m_description.empty())
         json[PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_DESCRIPTION] = m_description;
     if (m_autoExpand)
         json[PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_AUTOEXPAND] = m_autoExpand;
     if (m_rendererOverride)
-        json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_RENDERER] = m_rendererOverride->WriteJson();
+        m_rendererOverride->WriteJson(json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_RENDERER]);
     }
 
 /*---------------------------------------------------------------------------------**//**

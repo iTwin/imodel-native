@@ -60,7 +60,7 @@ bool RequiredSchemaSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RequiredSchemaSpecification::_WriteJson(JsonValueR json) const
+void RequiredSchemaSpecification::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
     json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_NAME] = m_name;

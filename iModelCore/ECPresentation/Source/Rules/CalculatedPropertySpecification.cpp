@@ -75,7 +75,7 @@ bool CalculatedPropertiesSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CalculatedPropertiesSpecification::_WriteJson(JsonValueR json) const
+void CalculatedPropertiesSpecification::_WriteJson(BeJsValue json) const
     {
     PrioritizedPresentationKey::_WriteJson(json);
     json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE] = m_value;

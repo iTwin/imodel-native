@@ -120,12 +120,12 @@ bool SortingRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SortingRule::_WriteJson(JsonValueR json) const
+void SortingRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
 
     if (!m_schemaName.empty() && !m_className.empty())
-        json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
+        CommonToolsInternal::WriteSchemaAndClassNameToJson(json[COMMON_JSON_ATTRIBUTE_CLASS], m_schemaName, m_className);
     if (m_isPolymorphic)
         json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC] = m_isPolymorphic;
 

@@ -203,7 +203,7 @@ bool ContentModifiersList::ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentModifiersList::WriteJson(JsonValueR json) const
+void ContentModifiersList::WriteJson(BeJsValue json) const
     {
     if (!m_calculatedProperties.empty())
         {
@@ -330,12 +330,12 @@ bool ContentModifier::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentModifier::_WriteJson(JsonValueR json) const
+void ContentModifier::_WriteJson(BeJsValue json) const
     {
     PrioritizedPresentationKey::_WriteJson(json);
 
     if (!m_schemaName.empty() && !m_className.empty())
-        json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
+        CommonToolsInternal::WriteSchemaAndClassNameToJson(json[COMMON_JSON_ATTRIBUTE_CLASS], m_schemaName, m_className);
 
     m_modifiers.WriteJson(json);
 

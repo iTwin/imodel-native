@@ -31,7 +31,7 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     //! Accepts customization rule visitor
     ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;

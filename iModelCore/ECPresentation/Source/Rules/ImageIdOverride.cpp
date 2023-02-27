@@ -77,7 +77,7 @@ bool ImageIdOverride::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImageIdOverride::_WriteJson(JsonValueR json) const
+void ImageIdOverride::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_imageIdExpression.empty())

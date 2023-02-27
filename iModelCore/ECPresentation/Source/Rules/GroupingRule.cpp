@@ -140,11 +140,11 @@ bool GroupingRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GroupingRule::_WriteJson(JsonValueR json) const
+void GroupingRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_schemaName.empty() && !m_className.empty())
-        json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
+        CommonToolsInternal::WriteSchemaAndClassNameToJson(json[COMMON_JSON_ATTRIBUTE_CLASS], m_schemaName, m_className);
     if (!m_groups.empty())
         CommonToolsInternal::WriteRulesToJson<GroupSpecification, GroupList>(json[GROUPING_RULE_JSON_ATTRIBUTE_GROUPS], m_groups);
     }
@@ -325,7 +325,7 @@ bool GroupSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GroupSpecification::_WriteJson(JsonValueR json) const
+void GroupSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     if (!m_defaultLabel.empty())
@@ -427,7 +427,7 @@ bool SameLabelInstanceGroup::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SameLabelInstanceGroup::_WriteJson(JsonValueR json) const
+void SameLabelInstanceGroup::_WriteJson(BeJsValue json) const
     {
     GroupSpecification::_WriteJson(json);
     if (m_applicationStage != SameLabelInstanceGroupApplicationStage::Query)
@@ -547,13 +547,13 @@ bool ClassGroup::_ReadJson (BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassGroup::_WriteJson(JsonValueR json) const
+void ClassGroup::_WriteJson(BeJsValue json) const
     {
     GroupSpecification::_WriteJson(json);
     if (m_createGroupForSingleItem)
         json[GROUP_JSON_ATTRIBUTE_CREATEGROUPFORSINGLEITEM] = m_createGroupForSingleItem;
     if (!m_schemaName.empty() && !m_baseClassName.empty())
-        json[CLASS_GROUP_JSON_ATTRIBUTE_BASECLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_baseClassName);
+        CommonToolsInternal::WriteSchemaAndClassNameToJson(json[CLASS_GROUP_JSON_ATTRIBUTE_BASECLASS], m_schemaName, m_baseClassName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -776,7 +776,7 @@ bool PropertyGroup::_ReadJson (BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyGroup::_WriteJson(JsonValueR json) const
+void PropertyGroup::_WriteJson(BeJsValue json) const
     {
     GroupSpecification::_WriteJson(json);
     json[COMMON_JSON_ATTRIBUTE_PROPERTYNAME] = m_propertyName;
@@ -967,7 +967,7 @@ bool PropertyRangeGroupSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyRangeGroupSpecification::_WriteJson(JsonValueR json) const
+void PropertyRangeGroupSpecification::_WriteJson(BeJsValue json) const
     {
     json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE] = m_fromValue;
     json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE] = m_toValue;

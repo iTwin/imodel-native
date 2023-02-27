@@ -95,7 +95,7 @@ bool ConditionalCustomizationRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConditionalCustomizationRule::_WriteJson(JsonValueR json) const
+void ConditionalCustomizationRule::_WriteJson(BeJsValue json) const
     {
     CustomizationRule::_WriteJson(json);
     if (!m_condition.empty())

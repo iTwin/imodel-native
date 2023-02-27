@@ -125,7 +125,7 @@ bool AllInstanceNodesSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AllInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+void AllInstanceNodesSpecification::_WriteJson(BeJsValue json) const
     {
     ChildNodeSpecification::_WriteJson(json);
     if (!m_groupByClass)
@@ -133,7 +133,7 @@ void AllInstanceNodesSpecification::_WriteJson(JsonValueR json) const
     if (!m_groupByLabel)
         json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL] = m_groupByLabel;
     if (!m_supportedSchemas.empty())
-        json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+        CommonToolsInternal::WriteSupportedSchemasToJson(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS], m_supportedSchemas);
     }
 
 /*---------------------------------------------------------------------------------**//**

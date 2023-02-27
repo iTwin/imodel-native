@@ -57,7 +57,7 @@ protected:
 
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
 
-    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue json) const override;
 
     //! Clones this specification.
     virtual ChildNodeSpecification* _Clone() const = 0;

@@ -82,7 +82,7 @@ bool LabelOverride::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LabelOverride::_WriteJson(JsonValueR json) const
+void LabelOverride::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_label.empty())

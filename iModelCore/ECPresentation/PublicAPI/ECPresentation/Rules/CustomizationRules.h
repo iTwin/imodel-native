@@ -68,7 +68,7 @@ protected:
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue json) const override;
 
     //! Compute rule hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;

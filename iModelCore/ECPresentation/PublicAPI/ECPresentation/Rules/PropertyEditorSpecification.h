@@ -49,7 +49,7 @@ struct PropertyEditorJsonParameters : PropertyEditorParametersSpecification
     DEFINE_T_SUPER(PropertyEditorParametersSpecification)
 
 private:
-    Json::Value m_json;
+    BeJsDocument m_json;
 
 protected:
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
@@ -58,16 +58,20 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
-    PropertyEditorParametersSpecification* _Clone() const override {return new PropertyEditorJsonParameters(*this);}
+    PropertyEditorParametersSpecification* _Clone() const override { return new PropertyEditorJsonParameters(*this); }
 
 public:
+    PropertyEditorJsonParameters(PropertyEditorJsonParameters const& other)
+        {
+        m_json.From(other.m_json);
+        }
     PropertyEditorJsonParameters() {}
-    PropertyEditorJsonParameters(Json::Value json) : m_json(json) {}
+    PropertyEditorJsonParameters(BeJsConst json) { m_json.From(json); }
     BeJsConst GetJson() const {return m_json;}
 };
 
@@ -90,7 +94,7 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
@@ -123,7 +127,7 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
@@ -160,7 +164,7 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
@@ -202,7 +206,7 @@ protected:
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     PropertyEditorSpecification() {}

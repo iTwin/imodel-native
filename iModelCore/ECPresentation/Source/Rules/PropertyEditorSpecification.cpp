@@ -140,7 +140,7 @@ bool PropertyEditorSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorSpecification::_WriteJson(JsonValueR json) const
+void PropertyEditorSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME] = m_name;
@@ -209,7 +209,8 @@ bool PropertyEditorJsonParameters::_ReadXml(BeXmlNodeP xmlNode)
     {
     Utf8String content;
     xmlNode->GetContent(content);
-    if (!Json::Reader::Parse(content, m_json))
+    m_json.Parse(content);
+    if (m_json.hasParseError())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse property editor JSON parameters: %s", content.c_str()));
         return false;
@@ -222,7 +223,7 @@ bool PropertyEditorJsonParameters::_ReadXml(BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PropertyEditorJsonParameters::_WriteXml(BeXmlNodeP xmlNode) const
     {
-    xmlNode->SetContent(WString(m_json.ToString().c_str(), BentleyCharEncoding::Utf8).c_str());
+    xmlNode->SetContent(WString(m_json.Stringify().c_str(), BentleyCharEncoding::Utf8).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,16 +239,16 @@ Utf8CP PropertyEditorJsonParameters::_GetJsonElementType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PropertyEditorJsonParameters::_ReadJson(BeJsConst json)
     {
-    // JSON:VALUE m_json = json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON];
+    m_json.From(json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON]);
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorJsonParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorJsonParameters::_WriteJson(BeJsValue json) const
     {
-    json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON] = m_json;
+    json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON].From(m_json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,7 +257,7 @@ void PropertyEditorJsonParameters::_WriteJson(JsonValueR json) const
 MD5 PropertyEditorJsonParameters::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
-    Utf8String jsonString = m_json.ToString();
+    Utf8String jsonString = m_json.Stringify();
     ADD_STR_VALUE_TO_HASH(md5, PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON, jsonString);
     return md5;
     }
@@ -316,7 +317,7 @@ bool PropertyEditorMultilineParameters::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorMultilineParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorMultilineParameters::_WriteJson(BeJsValue json) const
     {
     json[PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_ATTRIBUTE_HEIGHT] = m_height;
     }
@@ -400,7 +401,7 @@ bool PropertyEditorRangeParameters::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorRangeParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorRangeParameters::_WriteJson(BeJsValue json) const
     {
     if (m_min.IsValid())
         json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MINIMUM] = m_min.Value();
@@ -510,7 +511,7 @@ bool PropertyEditorSliderParameters::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorSliderParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorSliderParameters::_WriteJson(BeJsValue json) const
     {
     json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM] = m_min;
     json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM] = m_max;

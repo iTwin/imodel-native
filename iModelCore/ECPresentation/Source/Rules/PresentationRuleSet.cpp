@@ -444,11 +444,11 @@ bool PresentationRuleSet::ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRuleSet::WriteJson(JsonValueR json) const
+void PresentationRuleSet::WriteJson(BeJsValue json) const
     {
     json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID] = m_ruleSetId;
     if (!m_supportedSchemas.empty())
-        json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+        CommonToolsInternal::WriteSupportedSchemasToJson(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS], m_supportedSchemas);
     if (!m_requiredSchemas.empty())
         {
         CommonToolsInternal::WriteRulesToJson<RequiredSchemaSpecification, RequiredSchemaSpecificationsList>
@@ -457,7 +457,7 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
     if (m_isSupplemental)
         json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO][PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO_PURPOSE] = m_supplementationPurpose;
 
-    Json::Value rulesJson(Json::arrayValue);
+    BeJsValue rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
     CommonToolsInternal::WriteRulesToJson<RootNodeRule, RootNodeRuleList>(rulesJson, m_rootNodesRules);
     CommonToolsInternal::WriteRulesToJson<ChildNodeRule, ChildNodeRuleList>(rulesJson, m_childNodesRules);
     CommonToolsInternal::WriteRulesToJson<ContentRule, ContentRuleList>(rulesJson, m_contentRules);
@@ -472,7 +472,6 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
     CommonToolsInternal::WriteRulesToJson<CheckBoxRule, CheckBoxRuleList>(rulesJson, m_checkBoxRules);
     CommonToolsInternal::WriteRulesToJson<SortingRule, SortingRuleList>(rulesJson, m_sortingRules);
     CommonToolsInternal::WriteRulesToJson<DefaultPropertyCategoryOverride, DefaultPropertyCategoryOverridesList>(rulesJson, m_defaultPropertyCategoryOverrides);
-    json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES] = rulesJson;
 
     if (!m_userSettings.empty())
         CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings);
@@ -488,7 +487,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(BeJsConst json)
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
     if (!json.isNull() && ruleSet->ReadJson(json))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Successfully read: %s", ruleSet->WriteToJsonValue().ToString().c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Successfully read: %s", ruleSet->WriteToJsonValue().Stringify().c_str()));
         return ruleSet;
         }
 
@@ -502,7 +501,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(BeJsConst json)
 PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonString(Utf8StringCR jsonString)
     {
     auto scope = Diagnostics::Scope::Create("Read PresentationRuleSet from JSON string");
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     return ReadFromJsonValue(json);
     }
 
@@ -536,9 +535,9 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonFile(BeFileNameCR jsonFi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PresentationRuleSet::WriteToJsonValue() const
+BeJsDocument PresentationRuleSet::WriteToJsonValue() const
     {
-    Json::Value json;
+    BeJsDocument json;
     WriteJson(json);
     return json;
     }
@@ -548,8 +547,8 @@ Json::Value PresentationRuleSet::WriteToJsonValue() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationRuleSet::WriteToJsonFile(BeFileNameCR jsonFilePath) const
     {
-    Json::Value json = WriteToJsonValue();
-    Utf8String serializedJson = json.toStyledString();
+    BeJsDocument json = WriteToJsonValue();
+    Utf8String serializedJson = json.Stringify();
 
     BeFile f;
     BeFileStatus status = BeFileStatus::UnknownError;

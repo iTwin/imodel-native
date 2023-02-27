@@ -116,7 +116,7 @@ bool SelectedNodeInstancesSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectedNodeInstancesSpecification::_WriteJson(JsonValueR json) const
+void SelectedNodeInstancesSpecification::_WriteJson(BeJsValue json) const
     {
     ContentSpecification::_WriteJson(json);
     if (!m_acceptableSchemaName.empty())
@@ -128,7 +128,10 @@ void SelectedNodeInstancesSpecification::_WriteJson(JsonValueR json) const
         bvector<Utf8String> names;
         BeStringUtilities::Split(m_acceptableClassNames.c_str(), ",", names);
         for (Utf8StringCR name : names)
-            json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES].append(name);
+            {
+            BeJsValue acceptableClassNames = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
+            acceptableClassNames[acceptableClassNames.size()] = name;
+            }
         }
     }
 

@@ -107,7 +107,7 @@ bool UserSettingsGroup::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsGroup::_WriteJson(JsonValueR json) const
+void UserSettingsGroup::_WriteJson(BeJsValue json) const
     {
     PrioritizedPresentationKey::_WriteJson(json);
     json[USER_SETTINGS_JSON_ATTRIBUTE_CATEGORY_LABEL] = m_categoryLabel;
@@ -266,7 +266,7 @@ bool UserSettingsItem::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsItem::_WriteJson(JsonValueR json) const
+void UserSettingsItem::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID] = m_id;

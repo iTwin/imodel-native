@@ -29,7 +29,7 @@ protected:
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     RelationshipStepSpecification() : m_direction(RequiredRelationDirection_Forward) {}
@@ -87,7 +87,7 @@ protected:
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     RelationshipPathSpecification() {}
@@ -123,7 +123,7 @@ protected:
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     RepeatableRelationshipStepSpecification() : RelationshipStepSpecification(), m_count(1) {}
@@ -174,7 +174,7 @@ protected:
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     RepeatableRelationshipPathSpecification() {}

@@ -98,13 +98,14 @@ static Utf8String GetIsEnabledExpression(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value GetIsEnabledJsonValue(Utf8StringCR expr)
+static void WriteGetIsEnabledJsonValue(BeJsValue json, Utf8StringCR expr)
     {
     if (expr.EqualsI("true"))
-        return Json::Value(true);
-    if (expr.EqualsI("false"))
-        return Json::Value(false);
-    return Json::Value(expr);
+        json = true;
+    else if (expr.EqualsI("false"))
+        json = false;
+    else 
+        json = expr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,7 +126,7 @@ bool CheckBoxRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CheckBoxRule::_WriteJson(JsonValueR json) const
+void CheckBoxRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_propertyName.empty())
@@ -133,7 +134,7 @@ void CheckBoxRule::_WriteJson(JsonValueR json) const
     if (m_useInversedPropertyValue)
         json[CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE] = m_useInversedPropertyValue;
     if (!m_isEnabled.empty())
-        json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED] = GetIsEnabledJsonValue(m_isEnabled);
+        WriteGetIsEnabledJsonValue(json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED], m_isEnabled);
     if (m_defaultValue)
         json[CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE] = m_defaultValue;
     }

@@ -56,7 +56,7 @@ bool CustomRendererSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomRendererSpecification::_WriteJson(JsonValueR json) const
+void CustomRendererSpecification::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
     json[PROPERTY_RENDERERS_SPECIFICATION_JSON_ATTRIBUTE_RENDERERNAME] = m_rendererName;

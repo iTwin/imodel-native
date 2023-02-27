@@ -99,18 +99,16 @@ bool MultiSchemaClass::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MultiSchemaClass::_WriteJson(JsonValueR json) const
+void MultiSchemaClass::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
     if (!m_schemaName.empty())
         json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME] = m_schemaName;
     if (!m_classNames.empty())
         {
-        Json::Value classNamesJson(Json::arrayValue);
+        BeJsValue classNames = json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES];
         for (auto const& className : m_classNames)
-            classNamesJson.append(className.c_str());
-
-        json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES] = classNamesJson;
+            classNames[classNames.size()] = className.c_str();
         }
     if (m_arePolymorphic)
         json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC] = m_arePolymorphic;

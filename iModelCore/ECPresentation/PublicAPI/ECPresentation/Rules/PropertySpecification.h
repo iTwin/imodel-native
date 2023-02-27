@@ -106,7 +106,7 @@ protected:
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     PropertySpecification(): m_overridesPriority(1000), m_rendererOverride(nullptr), m_editorOverride(nullptr), m_doNotHideOtherPropertiesOnDisplayOverride(false) {}

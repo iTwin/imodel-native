@@ -87,7 +87,7 @@ bool StyleOverride::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StyleOverride::_WriteJson(JsonValueR json) const
+void StyleOverride::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_foreColor.empty())

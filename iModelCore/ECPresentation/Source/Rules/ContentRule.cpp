@@ -105,12 +105,10 @@ bool ContentRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRule::_WriteJson(JsonValueR json) const
+void ContentRule::_WriteJson(BeJsValue json) const
     {
     ConditionalPresentationRule::_WriteJson(json);
-    Json::Value specificationsJson(Json::arrayValue);
-    CommonToolsInternal::WriteRulesToJson<ContentSpecification, ContentSpecificationList>(specificationsJson, m_specifications);
-    json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS] = specificationsJson;
+    CommonToolsInternal::WriteRulesToJson<ContentSpecification, ContentSpecificationList>(json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**

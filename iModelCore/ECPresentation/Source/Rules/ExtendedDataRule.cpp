@@ -59,7 +59,7 @@ bool ExtendedDataRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ExtendedDataRule::_WriteJson(JsonValueR json) const
+void ExtendedDataRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     for (auto entry : m_items)

@@ -65,11 +65,11 @@ bool DefaultPropertyCategoryOverride::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefaultPropertyCategoryOverride::_WriteJson(JsonValueR json) const
+void DefaultPropertyCategoryOverride::_WriteJson(BeJsValue json) const
     {
     PresentationRule::_WriteJson(json);
     json[COMMON_JSON_ATTRIBUTE_RULETYPE] = _GetJsonElementType();
-    json[DEFAULT_PROPERTY_CATEGORY_OVERRIDE_JSON_ATTRIBUTE_SPECIFICATION] = m_specification->WriteJson();
+    m_specification->WriteJson(json[DEFAULT_PROPERTY_CATEGORY_OVERRIDE_JSON_ATTRIBUTE_SPECIFICATION]);
     }
 
 /*---------------------------------------------------------------------------------**//**

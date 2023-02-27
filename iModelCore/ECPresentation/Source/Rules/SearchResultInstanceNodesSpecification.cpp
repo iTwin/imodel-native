@@ -143,7 +143,7 @@ bool SearchResultInstanceNodesSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SearchResultInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+void SearchResultInstanceNodesSpecification::_WriteJson(BeJsValue json) const
     {
     ChildNodeSpecification::_WriteJson(json);
     if (!m_groupByClass)
@@ -278,10 +278,10 @@ bool QuerySpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuerySpecification::_WriteJson(JsonValueR json) const
+void QuerySpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
-    json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
+    CommonToolsInternal::WriteSchemaAndClassNameToJson(json[COMMON_JSON_ATTRIBUTE_CLASS], m_schemaName, m_className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -364,7 +364,7 @@ bool StringQuerySpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StringQuerySpecification::_WriteJson(JsonValueR json) const
+void StringQuerySpecification::_WriteJson(BeJsValue json) const
     {
     QuerySpecification::_WriteJson(json);
     json[STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY] = m_query;
@@ -450,7 +450,7 @@ bool ECPropertyValueQuerySpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPropertyValueQuerySpecification::_WriteJson(JsonValueR json) const
+void ECPropertyValueQuerySpecification::_WriteJson(BeJsValue json) const
     {
     QuerySpecification::_WriteJson(json);
     json[ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME] = m_parentPropertyName;

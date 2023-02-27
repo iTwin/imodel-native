@@ -175,7 +175,7 @@ bool ContentRelatedInstancesSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRelatedInstancesSpecification::_WriteJson(JsonValueR json) const
+void ContentRelatedInstancesSpecification::_WriteJson(BeJsValue json) const
     {
     ContentSpecification::_WriteJson(json);
     if (0 != m_skipRelatedLevel)
@@ -185,9 +185,9 @@ void ContentRelatedInstancesSpecification::_WriteJson(JsonValueR json) const
     if (!m_instanceFilter.empty())
         json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER] = m_instanceFilter;
     if (!m_relationshipClassNames.empty())
-        json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relationshipClassNames);
+        CommonToolsInternal::WriteSchemaAndClassNamesToJson(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS], m_relationshipClassNames);
     if (!m_relatedClassNames.empty())
-        json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relatedClassNames);
+        CommonToolsInternal::WriteSchemaAndClassNamesToJson(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES], m_relatedClassNames);
     if (RequiredRelationDirection_Both != m_requiredDirection)
         json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
     if (!m_relationshipPaths.empty())

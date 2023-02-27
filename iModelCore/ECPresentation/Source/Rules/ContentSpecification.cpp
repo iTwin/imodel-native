@@ -127,7 +127,7 @@ bool ContentSpecification::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecification::_WriteJson(JsonValueR json) const
+void ContentSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationRuleSpecification::_WriteJson(json);
     if (m_showImages)

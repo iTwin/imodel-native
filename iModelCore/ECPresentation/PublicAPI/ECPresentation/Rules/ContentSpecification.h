@@ -33,7 +33,7 @@ protected:
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
-    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue json) const override;
 
     //! Clones this content specification.
     virtual ContentSpecification* _Clone() const = 0;
