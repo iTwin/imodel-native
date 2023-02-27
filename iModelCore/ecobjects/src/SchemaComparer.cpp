@@ -916,7 +916,7 @@ BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBa
         }
     
     // now compare mixins by full name
-    bset<Utf8String, CompareIUtf8Ascii> oldMixinFullNames, newMixinFullNames;
+    bset<Utf8String> oldMixinFullNames, newMixinFullNames;
     std::for_each(oldFirstMixin, oldBaseClasses.end(), [&oldMixinFullNames](ECClassP element) { oldMixinFullNames.insert(Utf8String(element->GetFullName())); });
     std::for_each(newFirstMixin, newBaseClasses.end(), [&newMixinFullNames](ECClassP element) { newMixinFullNames.insert(Utf8String(element->GetFullName())); });
 

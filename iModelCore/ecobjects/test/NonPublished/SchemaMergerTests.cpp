@@ -4807,6 +4807,65 @@ TEST_F(SchemaMergerTests, CustomAttributesAddedLocalSchema)
     CompareResults(expectedSchemasXml, result);
     }
 
+TEST_F(SchemaMergerTests, TestBaseClassAdditionAndRemoval)
+  {
+  bvector<Utf8CP> leftSchemaXml {
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="Schema Merge Test Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECEntityClass typeName="BaseEntity" />
+      <ECEntityClass typeName="EntityCommonToBoth" />
+      <ECEntityClass typeName="Entity_OnlyInLeft" />
+      <ECEntityClass typeName="TestClass">
+        <BaseClass>BaseEntity</BaseClass>
+        <BaseClass>EntityCommonToBoth</BaseClass>
+        <BaseClass>Entity_OnlyInLeft</BaseClass>
+      </ECEntityClass>
+    </ECSchema>)schema"};
+
+  bvector<Utf8CP> rightSchemaXml {
+    R"schema(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="Schema Merge Test Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECEntityClass typeName="BaseEntity" />
+      <ECEntityClass typeName="EntityCommonToBoth" />
+      <ECEntityClass typeName="Entity_OnlyInRight" />
+      <ECEntityClass typeName="TestClass">
+        <BaseClass>BaseEntity</BaseClass>
+        <BaseClass>EntityCommonToBoth</BaseClass>
+        <BaseClass>Entity_OnlyInRight</BaseClass>
+      </ECEntityClass>
+    </ECSchema>)schema"};
+
+  auto leftContext = InitializeReadContextWithAllSchemas(leftSchemaXml);
+  auto leftSchema = leftContext->GetCache().GetSchemas();
+  auto rightContext = InitializeReadContextWithAllSchemas(rightSchemaXml);
+  auto rightSchema = rightContext->GetCache().GetSchemas();
+
+  //merge the schemas
+  SchemaMergeResult result;
+  MergerTestIssueListener issues;
+  result.AddIssueListener(issues);
+  EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchema, rightSchema));
+
+  // Compare result
+  bvector<Utf8CP> expectedSchemasXml {
+    R"schema(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="Schema Merge Test Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECEntityClass typeName="BaseEntity" />
+      <ECEntityClass typeName="EntityCommonToBoth" />
+      <ECEntityClass typeName="Entity_OnlyInLeft" />
+      <ECEntityClass typeName="Entity_OnlyInRight" />
+      <ECEntityClass typeName="TestClass">
+        <BaseClass>BaseEntity</BaseClass>
+        <BaseClass>EntityCommonToBoth</BaseClass>
+        <BaseClass>Entity_OnlyInLeft</BaseClass>
+        <BaseClass>Entity_OnlyInRight</BaseClass>
+      </ECEntityClass>
+    </ECSchema>)schema"};
+
+  CompareResults(expectedSchemasXml, result);
+  EXPECT_TRUE(issues.m_issues.empty());
+  }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
