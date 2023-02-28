@@ -375,9 +375,6 @@ Utf8StringR Utf8String::Trim ()
     }
 
 #define U_NO_DEFAULT_INCLUDE_UTF_HEADERS 1
-#if !defined (BENTLEY_WIN32)
-    #define U_CHARSET_IS_UTF8 1
-#endif
 #include <unicode/utypes.h>
 #include <unicode/utf8.h>
 #include <unicode/uchar.h>
