@@ -384,8 +384,7 @@ Utf8StringR Utf8String::Trim ()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8StringR Utf8String::TrimUtf8 ()
-    {
+Utf8StringR Utf8String::TrimUtf8() {
     if (empty())
         return *this;
 
