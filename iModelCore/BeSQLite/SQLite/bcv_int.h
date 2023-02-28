@@ -487,8 +487,6 @@ int bcvContainerOpen(
 );
 void bcvContainerClose(BcvContainer*);
 
-void bcvDispatchFail(BcvDispatch*, BcvContainer*, int, const char*);
-
 int bcv_socket_is_valid(BCV_SOCKET_TYPE s);
 void bcv_close_socket(BCV_SOCKET_TYPE s);
 void bcv_socket_init();

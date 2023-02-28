@@ -181,7 +181,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesDefaultInstanceDisplay
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::RULESENGINE_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::LABEL_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -201,7 +201,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_HandlesEmptyInstanceLabel)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, classJ->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, instanceJId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::RULESENGINE_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::LABEL_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,7 +317,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_GroupingByNullValue_LabelI
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "MyID", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindNull(3));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::RULESENGINE_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::LABEL_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -341,7 +341,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRan
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 9.99));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::RULESENGINE_OTHER).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::LABEL_OTHER).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1195,7 +1195,7 @@ TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_ReturnsNotSpecifiedIfLabe
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::RULESENGINE_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::LABEL_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1252,7 +1252,7 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_NoRule_NotSpecifiedStringRetu
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::RULESENGINE_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(CommonStrings::LABEL_NOTSPECIFIED).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**

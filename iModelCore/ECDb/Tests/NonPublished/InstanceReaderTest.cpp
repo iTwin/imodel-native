@@ -9,7 +9,243 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct InstanceReaderFixture : ECDbTestFixture {};
+struct InstanceReaderFixture : ECDbTestFixture {
+
+    DbResult OpenECDbTestDataFile(Utf8CP name) {
+        auto getDataPath = []() {
+            BeFileName docRoot;
+            BeTest::GetHost().GetDocumentsRoot(docRoot);
+            docRoot.AppendToPath(L"ECDb");
+            return docRoot;
+        };
+
+        const auto bimPath = getDataPath().AppendToPath(WString(name, true).c_str());
+        if (m_ecdb.IsDbOpen()) {
+            m_ecdb.CloseDb();
+        }
+        return m_ecdb.OpenBeSQLiteDb(bimPath, Db::OpenParams(Db::OpenMode::Readonly));
+    }
+
+};
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_link_table_serialization) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        BeJsDocument doc;
+        ASSERT_FALSE(stmt.IsValueNull(0)) << "$ cannot be NULL";
+        doc.Parse(stmt.GetValueText(0));
+        ASSERT_TRUE(doc.hasMember("ECInstanceId"))       << "Must have ECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("ECClassId"))          << "Must have ECClassId Property";
+        ASSERT_TRUE(doc.hasMember("SourceECInstanceId")) << "Must have SourceECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("SourceECClassId"))    << "Must have SourceECClassId Property";
+        ASSERT_TRUE(doc.hasMember("TargetECInstanceId")) << "Must have TargetECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("TargetECClassId"))    << "Must have TargetECClassId Property";
+    }
+    stmt.Finalize();
+
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_instance_serialization) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.Element"));
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        BeJsDocument doc;
+        doc.Parse(stmt.GetValueText(0));
+        ASSERT_TRUE(doc.hasMember("ECInstanceId")) << "Must have ECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("ECClassId")) << "Must have ECClassId Property";
+    }
+    stmt.Finalize();
+
+    auto expectedJson = R"json(
+        [
+            {
+                "ECInstanceId":"0x38",
+                "ECClassId":"Generic.PhysicalObject",
+                "Model":{
+                    "Id":"0x1f",
+                    "RelECClassId":"BisCore.ModelContainsElements"
+                },
+                "LastMod":"2017-07-25T20:44:59.926Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.ElementScopesCode"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":6.494445575423782,
+                    "Y":19.89784647571006,
+                    "Z":8.020100502512559
+                },
+                "Yaw":25.949359512071446,
+                "Pitch":4.770832022195274e-15,
+                "Roll":114.7782627769506,
+                "BBoxLow":{
+                    "X":-9.735928156263862,
+                    "Y":-9.735928156263864,
+                    "Z":-9.735928156263858
+                },
+                "BBoxHigh":{
+                    "X":9.735928156263858,
+                    "Y":9.73592815626386,
+                    "Z":9.735928156263855
+                },
+                "GeometryStream":"encoding=base64;yw=="
+            },
+            {
+                "ECInstanceId":"0x39",
+                "ECClassId":"Generic.PhysicalObject",
+                "Model":{
+                    "Id":"0x24",
+                    "RelECClassId":"BisCore.ModelContainsElements"
+                },
+                "LastMod":"2017-07-25T20:44:59.926Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.ElementScopesCode"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":17.534003916481428,
+                    "Y":13.798192542788694,
+                    "Z":0.0
+                },
+                "Yaw":65.4666878656572,
+                "Pitch":-3.1805546814635176e-15,
+                "Roll":63.6877065778212,
+                "BBoxLow":{
+                    "X":-7.538875423282141,
+                    "Y":-7.538875423282143,
+                    "Z":-7.538875423282142
+                },
+                "BBoxHigh":{
+                    "X":7.538875423282141,
+                    "Y":7.538875423282143,
+                    "Z":7.538875423282142
+                },
+                "GeometryStream":"encoding=base64;yQ=="
+            },
+            {
+                "ECInstanceId":"0x3a",
+                "ECClassId":"Generic.PhysicalObject",
+                "Model":{
+                    "Id":"0x22",
+                    "RelECClassId":"BisCore.ModelContainsElements"
+                },
+                "LastMod":"2017-07-25T20:44:59.926Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.ElementScopesCode"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":3.5267011211011448,
+                    "Y":-0.14981669899059627,
+                    "Z":4.0100502512562795
+                },
+                "Yaw":25.94935951207144,
+                "Pitch":-3.1805546814635168e-15,
+                "Roll":114.7782627769506,
+                "BBoxLow":{
+                    "X":-9.735928156263856,
+                    "Y":-9.735928156263853,
+                    "Z":-9.735928156263855
+                },
+                "BBoxHigh":{
+                    "X":9.735928156263856,
+                    "Y":9.735928156263853,
+                    "Z":9.735928156263855
+                },
+                "GeometryStream":"encoding=base64;zA=="
+            },
+            {
+                "ECInstanceId":"0x3b",
+                "ECClassId":"Generic.PhysicalObject",
+                "Model":{
+                    "Id":"0x23",
+                    "RelECClassId":"BisCore.ModelContainsElements"
+                },
+                "LastMod":"2017-07-25T20:44:59.942Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"BisCore.ElementScopesCode"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":2.080496897152193,
+                    "Y":-4.824215490117017,
+                    "Z":0.0
+                },
+                "Yaw":65.4666878656572,
+                "Pitch":-3.1805546814635176e-15,
+                "Roll":63.6877065778212,
+                "BBoxLow":{
+                    "X":-7.538875423282141,
+                    "Y":-7.538875423282143,
+                    "Z":-7.538875423282142
+                },
+                "BBoxHigh":{
+                    "X":7.538875423282141,
+                    "Y":7.538875423282143,
+                    "Z":7.538875423282142
+                },
+                "GeometryStream":"encoding=base64;yQ=="
+            }
+        ]
+
+    )json";
+
+    BeJsDocument expectedDoc;
+    expectedDoc.Parse(expectedJson);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select JSON_GROUP_ARRAY(JSON($)) from bis.GeometricElement3d"));
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
