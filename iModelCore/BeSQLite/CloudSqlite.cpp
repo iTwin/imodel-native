@@ -271,7 +271,7 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
 
 /**
  * Disconnect this container from the CloudCache. If the containerDb is open, close it first.
- * @note this function requires the cloudcache to be connected to the cloud container. See CloudContainer::Connect
+ * @note This funciton does nothing if there is no cloudcache connected to the cloud container. See CloudContainer::Connect
  */
 CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
     if (nullptr == m_cache)
@@ -296,7 +296,7 @@ CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
 
 /**
  * Permanently disconnect and then detach this container from the CloudCache.
- * @note this function requires the cloudcache to be connected to the cloud container. See CloudContainer::Connect
+ * @note This funciton does nothing if there is no cloudcache connected to the cloud container. See CloudContainer::Connect
  */
 CloudResult CloudContainer::Detach() {
     if (nullptr == m_cache)
@@ -312,7 +312,7 @@ static int uploadBusy(void* container, int nTries) {
 
 /**
  * Upload all local changes from this container.
- * @note this function requires the cloudcache to be connected to the cloud container. See CloudContainer::Connect
+ * @note this function requires a cloudcache to be connected to the cloud container. 
  */
 CloudResult CloudContainer::UploadChanges() {
     BeAssert(m_writeLockHeld);
@@ -321,7 +321,7 @@ CloudResult CloudContainer::UploadChanges() {
 
 /**
  * Revert all local changes from this container.
- * @note this function requires the cloudcache to be connected to the cloud container. See CloudContainer::Connect
+ * @note this function requires a cloudcache to be connected to the cloud container. 
  */
 CloudResult CloudContainer::RevertChanges() {
     return CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_revert(m_cache->m_vfs, m_alias.c_str(), msg); }, "revert");
@@ -331,7 +331,7 @@ CloudResult CloudContainer::RevertChanges() {
  * Make a copy of a database in the manifest with a new name.
  * @note this does *not* actually copy any data, it merely makes a second entry in the manifest pointing to all the same blocks.
  * The two databases only differ when one or the other is modified later.
- * @note this function requires the cloudcache to be connected to the cloud container. See CloudContainer::Connect
+ * @note this function requires a cloudcache to be connected to the cloud container. 
  */
 CloudResult CloudContainer::CopyDatabase(Utf8StringCR dbFrom, Utf8StringCR dbTo) {
     if (dbFrom.empty() || dbTo.empty())
@@ -341,7 +341,7 @@ CloudResult CloudContainer::CopyDatabase(Utf8StringCR dbFrom, Utf8StringCR dbTo)
 
 /**
  * Remove a database from the CloudContainer.
- * @note this function requires the cloudcache to be connected to the cloud container. See CloudContainer::Connect
+ * @note this function requires a cloudcache to be connected to the cloud container. 
  */
 CloudResult CloudContainer::DeleteDatabase(Utf8StringCR dbName) {
     if (dbName.empty())
@@ -351,7 +351,7 @@ CloudResult CloudContainer::DeleteDatabase(Utf8StringCR dbName) {
 
 /**
  * Poll the cloud container for updates to the manifest (made by others).
- * @note this function requires the cloudcache to be connected to the cloud container. See CloudContainer::Connect
+ * @note this function requires a cloudcache to be connected to the cloud container. 
  */
 CloudResult CloudContainer::PollManifest() {
     return CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_poll(m_cache->m_vfs, m_alias.c_str(), msg); }, "poll");
