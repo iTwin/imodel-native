@@ -1484,6 +1484,10 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
         if (range_variable->count() > 0)
             alias = range_variable->getChild(1/*SQL_TOKEN_NAME*/)->getTokenValue().c_str();
 
+        // TODO: Read ClassName/ClassId. Like for ClassNameExp. Where to get it from?
+        // Utf8CP className = range_variable->getChild(0/*SQL_TOKEN_NAME*/)->getTokenValue().c_str();
+
+
         exp = std::make_unique<SubqueryRefExp>(std::move(subqueryExp), alias, polymorphicConst);
         return SUCCESS;
         }
