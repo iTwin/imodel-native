@@ -374,7 +374,10 @@ Utf8StringR Utf8String::Trim ()
     return *this;
     }
 
-#define U_CHARSET_IS_UTF8 1
+#define U_NO_DEFAULT_INCLUDE_UTF_HEADERS 1
+#if !defined (BENTLEY_WIN32)
+    #define U_CHARSET_IS_UTF8 1
+#endif
 #include <unicode/utypes.h>
 #include <unicode/utf8.h>
 #include <unicode/uchar.h>
@@ -392,9 +395,9 @@ Utf8StringR Utf8String::TrimUtf8 ()
     const char* start = data();
     for (auto i = 0; i < len;) {
       UChar32 c;
-      const auto prev_i = i;
+      const auto prevI = i;
       U8_NEXT(start, i, len, c);
-      const auto incSize = i - prev_i;
+      const auto incSize = i - prevI;
       if (u_isspace(c)) {
         firstNonSpaceIdx += incSize;
       } else {
@@ -405,9 +408,9 @@ Utf8StringR Utf8String::TrimUtf8 ()
     size_t lastNonSpaceIdx = len - 1;
     for (auto i = len; i > firstNonSpaceIdx;) {
       UChar32 c;
-      const auto prev_i = i;
+      const auto prevI = i;
       U8_PREV(start, 0, i, c);
-      const auto decSize = prev_i - i;
+      const auto decSize = prevI - i;
       if (u_isspace(c)) {
         lastNonSpaceIdx -= decSize;
       } else {
