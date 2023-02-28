@@ -1653,7 +1653,7 @@ rapidjson::Value IModelJsECPresentationSerializer::_AsJson(ContextR ctx, KindOfQ
     rapidjson::Value json(rapidjson::kObjectType);
     json.AddMember("name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
     json.AddMember("label", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
-    json.AddMember("persistenceUnit", rapidjson::Value(koq.GetPersistenceUnit()->GetName().c_str(), allocator), allocator);
+    json.AddMember("persistenceUnit", rapidjson::Value(koq.GetPersistenceUnit()->GetFullName().c_str(), allocator), allocator);
 
     IECPropertyFormatter const* formatter = ctx.GetPropertyFormatter();
     if (formatter == nullptr)
