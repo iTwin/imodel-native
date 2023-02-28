@@ -389,7 +389,7 @@ Utf8StringR Utf8String::TrimUtf8() {
         return *this;
 
     size_t firstNonSpaceIdx = 0;
-    int32_t len = size();
+    int32_t len = (int32_t) size();
     const char* start = data();
     for (auto i = 0; i < len;) {
       UChar32 c;
