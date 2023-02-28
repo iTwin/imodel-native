@@ -419,7 +419,7 @@ Utf8StringR Utf8String::TrimUtf8() {
     erase(begin() + lastNonSpaceIdx + 1, end());
     erase(begin(), begin() + firstNonSpaceIdx);
     return *this;
-    }
+}
 
 
 //---------------------------------------------------------------------------------------
