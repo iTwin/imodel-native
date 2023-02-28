@@ -487,7 +487,6 @@ TEST(Utf8StringTest,TrimUtf8) {
         const auto pretrim = pretrimMut;
         pretrimMut.TrimUtf8();
         const auto& trimmed = pretrimMut;
-        EXPECT_STREQ(trimmed.c_str(), expected.c_str())
-            << "expected trimmed string '" << trimmed << "' to match expected '" << expected << "'";
+        EXPECT_STREQ(trimmed.c_str(), expected.c_str());
     }
 }
