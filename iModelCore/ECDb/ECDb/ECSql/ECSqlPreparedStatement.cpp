@@ -978,7 +978,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 return ECSqlStatus::Error;
                 }
 
-            if (getTablesVisitor.GetTables().find(&table) == getTablesVisitor.GetTables().end())
+            if (!getTablesVisitor.Contains(table))
                 {
                 ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
                                                                 prepareInfo.GetExp().ToECSql().c_str(), assignmentExp.ToECSql().c_str());
@@ -1087,8 +1087,7 @@ bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareI
             return false;
             }
 
-        std::set<DbTable const*> const& mappedTables = getTablesVisitor.GetTables();
-        if (mappedTables.find(singleTableInvolvedInAssignment) == mappedTables.end())
+        if (!getTablesVisitor.Contains(*singleTableInvolvedInAssignment))
             return true;
         }
 
