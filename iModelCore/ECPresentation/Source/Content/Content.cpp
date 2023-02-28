@@ -1731,8 +1731,8 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR f
 std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreateDefaultCategory() const
     {
     return std::make_unique<ContentDescriptor::Category>("/selected-item/",
-        CommonStrings::ECPRESENTATION_LABEL_SELECTEDITEMS,
-        CommonStrings::ECPRESENTATION_DESCRIPTION_SELECTEDITEMS,
+        CommonStrings::SELECTEDITEMS_LABEL,
+        CommonStrings::SELECTEDITEMS_DESCRIPTION,
         1000);
     }
 /*---------------------------------------------------------------------------------**//**
