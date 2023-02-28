@@ -16,6 +16,13 @@
 #include <Bentley/WString.h>
 #include <Bentley/BeAssert.h>
 
+// we do not need the defaults and this is recommended post ICU>49 (we're on 64 as of writing)
+// https://unicode-org.github.io/icu/userguide/icu4c/build.html#recommended-build-options
+#define U_NO_DEFAULT_INCLUDE_UTF_HEADERS 1
+#include <unicode/utypes.h>
+#include <unicode/utf8.h>
+#include <unicode/uchar.h>
+
 USING_NAMESPACE_BENTLEY
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,13 +380,6 @@ Utf8StringR Utf8String::Trim ()
     erase (begin (), (begin () + firstNonSpaceIdx));
     return *this;
     }
-
-// we do not need the defaults and this is recommended post ICU>49 (we're on 64 as of writing)
-// https://unicode-org.github.io/icu/userguide/icu4c/build.html#recommended-build-options
-#define U_NO_DEFAULT_INCLUDE_UTF_HEADERS 1
-#include <unicode/utypes.h>
-#include <unicode/utf8.h>
-#include <unicode/uchar.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
