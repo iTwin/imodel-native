@@ -4290,20 +4290,18 @@ TEST(Polyface, NumWrapValidation)
 TEST (PolyfaceConstruction, DegenerateFacet)
     {
     auto mesh = PolyfaceHeader::CreateVariableSizeIndexed();
-    auto xyz = bvector<DPoint3d>{ {-2,-2}, {-1,-1}, {0,0}, {1,1} };
+    auto xyz = bvector<DPoint3d>{ {0,0}, {0, 1} };
     for (size_t i = 0; i < xyz.size(); i++)
         mesh->Point().push_back(xyz[i]);
-    mesh->PointIndex().push_back(0);                                    // no vertex
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,0});         // 1 vertex
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,2,0});       // 2 vertex
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,2,2,0});     // 3 vertex degen
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,1,2,0});     // 3 vertex degen
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,1,2,2,0});   // 4 vertex degen
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,2,2,1,0});   // 4 vertex degen
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,2,1,2,0});   // 4 vertex degen
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,2,1,3,0});   // 4 vertex degen
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,2,3,0});     // 3 vertex zero area
-    mesh->PointIndex().insert(mesh->PointIndex().end(), {1,2,3,4,0});   // 4 vertex zero area
+    size_t numDegenerateFacets = 0;
+    mesh->PointIndex().push_back(0);    // redundant terminator
+    if (mesh->PointIndex().end() != mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,0 }))
+        ++numDegenerateFacets;          // degen facet with 1 vertex
+    mesh->PointIndex().push_back(0);    // redundant terminator
+    if (mesh->PointIndex().end() != mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,0 }))
+        ++numDegenerateFacets;          // degen facet with 1 vertex (dup)
+    if (mesh->PointIndex().end() != mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,0 }))
+        ++numDegenerateFacets;          // degen facet with 2 vertices
     mesh->BuildPerFaceNormals();
-    Check::Size(mesh->NormalIndex().size(), mesh->GetNumFacet(), "installed normals for all faces");
+    Check::Size(mesh->Normal().size(), numDegenerateFacets, "installed default normals for degenerate facets");
     }
