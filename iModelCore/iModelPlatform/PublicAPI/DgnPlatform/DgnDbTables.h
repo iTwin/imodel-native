@@ -210,9 +210,9 @@ public:
     //! Create an empty code value
     DgnCodeValue() { }
     //! Create a code value from a Utf8String
-    DgnCodeValue(Utf8StringCR str) : m_value(str) { m_value.Trim(); }
+    DgnCodeValue(Utf8StringCR str) : m_value(str) { m_value.TrimUtf8(); }
     //! Create a code value from a pointer to a UTF-8 string
-    DgnCodeValue(Utf8CP str) : m_value(str) { m_value.Trim(); }
+    DgnCodeValue(Utf8CP str) : m_value(str) { m_value.TrimUtf8(); }
 
     //! Get the value as a Utf8String
     Utf8StringCR GetUtf8() const { return m_value; }
