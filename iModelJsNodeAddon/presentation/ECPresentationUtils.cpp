@@ -281,17 +281,7 @@ Utf8StringCR ECPresentationResult::GetSerializedSuccessResponse() const
 
     if (m_serializedSuccessResponse.empty())
         {
-        if (m_isJsonCppResponse)
-            {
-            m_serializedSuccessResponse = m_jsoncppSuccessResponse.ToString();
-            }
-        else
-            {
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            m_successResponse.Accept(writer);
-            m_serializedSuccessResponse = buffer.GetString();
-            }
+        m_serializedSuccessResponse = m_successResponse.Stringify();
         }
     return m_serializedSuccessResponse;
     }
@@ -356,7 +346,7 @@ ECPresentationResult ECPresentationUtils::SetupRulesetDirectories(ECPresentation
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str()));
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+    return ECPresentationResult(BeJsDocument::Null(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -366,7 +356,7 @@ ECPresentationResult ECPresentationUtils::SetupSupplementalRulesetDirectories(EC
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str())));
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+    return ECPresentationResult(BeJsDocument::Null(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -375,13 +365,12 @@ ECPresentationResult ECPresentationUtils::SetupSupplementalRulesetDirectories(EC
 ECPresentationResult ECPresentationUtils::GetRulesets(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId)
     {
     bvector<PresentationRuleSetPtr> rulesets = locater.LocateRuleSets(rulesetId.c_str());
-    Json::Value json(Json::arrayValue);
+    BeJsDocument json;
     for (PresentationRuleSetPtr const& ruleset : rulesets)
-        {
-        Json::Value hashedRulesetJson;
-        hashedRulesetJson["ruleset"] = ruleset->WriteToJsonValue();
+        {        
+        BeJsValue hashedRulesetJson = json[json.size()];
+        hashedRulesetJson["ruleset"].From(ruleset->WriteToJsonValue());
         hashedRulesetJson["hash"] = ruleset->GetHash();
-        json.append(hashedRulesetJson);
         }
     return ECPresentationResult(std::move(json), true);
     }
@@ -397,8 +386,20 @@ ECPresentationResult ECPresentationUtils::AddRuleset(SimpleRuleSetLocater& locat
     locater.AddRuleSet(*ruleset);
     rapidjson::Document result;
     result.SetString(ruleset->GetHash().c_str(), result.GetAllocator());
-    return ECPresentationResult(std::move(result), true);
+    return ECPresentationResult(BeJsConst(result), true);
     }
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static BeJsConst ToBeJsConst(rapidjson::Value const& value)
+{
+    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
+    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
+    // a read-write `BeJsValue` for all the operations.
+    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
+    return BeJsConst(value, s_staticRapidJsonAllocator);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -411,10 +412,10 @@ ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& lo
         if (ruleset->GetHash().Equals(hash))
             {
             locater.RemoveRuleSet(rulesetId);
-            return ECPresentationResult(rapidjson::Value(true), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value(true)), true);
             }
         }
-    return ECPresentationResult(rapidjson::Value(false), true);
+    return ECPresentationResult(ToBeJsConst(rapidjson::Value(false)), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -423,19 +424,7 @@ ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& lo
 ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& locater)
     {
     locater.Clear();
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
-    }
-
-/*---------------------------------------------------------------------------------**/ /**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-static BeJsConst ToBeJsConst(rapidjson::Value const& value)
-    {
-    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
-    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
-    // a read-write `BeJsValue` for all the operations.
-    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
-    return BeJsConst(value, s_staticRapidJsonAllocator);
+    return ECPresentationResult(BeJsDocument::Null(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,7 +584,7 @@ ECPresentationResult ECPresentationUtils::SetRulesetVariableValue(ECPresentation
         }
     else
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+    return ECPresentationResult(BeJsDocument::Null(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -605,7 +594,7 @@ ECPresentationResult ECPresentationUtils::UnsetRulesetVariableValue(ECPresentati
     {
     IUserSettings& settings = manager.GetUserSettings().GetSettings(rulesetId);
     settings.UnsetValue(variableId.c_str());
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+    return ECPresentationResult(BeJsDocument::Null(), false);
     }
 
 #define PRESENTATION_JSON_ATTRIBUTE_BaseRequestParams_UnitSystem    "unitSystem"
@@ -755,7 +744,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPre
 
     return manager.GetNodesCount(CreateAsyncParams(params, db, paramsJson)).then([](NodesCountResponse response)
         {
-        return ECPresentationResult(rapidjson::Value((int64_t)*response), true);
+        return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*response)), true);
         });
     }
 
@@ -841,7 +830,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
     return manager.GetNodesCount(CreateAsyncParams(params, connection->GetECDb(), paramsJson))
         .then([](NodesCountResponse nodesCountResponse)
             {
-            return ECPresentationResult(rapidjson::Value((int64_t)*nodesCountResponse), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*nodesCountResponse)), true);
             });
     }
 
@@ -904,7 +893,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetHierarchyLevelDescri
             {
             auto const& descriptor = *descriptorResponse;
             if (descriptor.IsNull())
-                return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+                return ECPresentationResult(BeJsDocument::Null(), true);
 
             ECPresentationSerializerContext serializerCtx(descriptor->GetUnitSystem(), formatter);
             return ECPresentationResult(descriptor->AsJson(serializerCtx), true);
@@ -1512,7 +1501,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(EC
             {
             auto const& descriptor = *response;
             if (descriptor.IsNull())
-                return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+                return ECPresentationResult(BeJsDocument::Null(), true);
 
             ECPresentationSerializerContext serializerCtx(descriptor->GetUnitSystem(), formatter);
             return ECPresentationResult(descriptor->AsJson(serializerCtx), true);
@@ -1556,7 +1545,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
 
             ContentDescriptorCPtr descriptor = *descriptorResponse;
             if (descriptor.IsNull())
-                return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+                return ECPresentationResult(BeJsDocument::Null(), true);
 
             descriptorOverrides.Apply(descriptor);
             return manager.GetContent(ECPresentation::MakePaged(AsyncContentRequestParams::Create(db, *descriptor), pageOptions))
@@ -1605,12 +1594,12 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPre
 
         ContentDescriptorCPtr descriptor = *descriptorResponse;
         if (descriptor.IsNull())
-            return ECPresentationResult(rapidjson::Value(0), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value(0)), true);
 
         descriptorOverrides.Apply(descriptor);
         return manager.GetContentSetSize(AsyncContentRequestParams::Create(db, *descriptor)).then([](ContentSetSizeResponse contentSetSizeResponse)
             {
-            return ECPresentationResult(rapidjson::Value((int64_t)*contentSetSizeResponse), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*contentSetSizeResponse)), true);
             });
         });
     }
