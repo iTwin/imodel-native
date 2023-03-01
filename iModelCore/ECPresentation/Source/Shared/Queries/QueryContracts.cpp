@@ -84,7 +84,7 @@ uint8_t PresentationQueryContract::GetIndex(Utf8CP fieldName) const
             aggregateFieldsCount++;
         else if (-1 != aggregateFieldIndex)
             nonAggregateFieldsCount++;
-        if (field.GetDefaultName() == fieldName || 0 == strcmp(field.GetDefaultName(), fieldName))
+        if (0 == strcmp(field.GetName(), fieldName))
             {
             if (field.IsAggregateField())
                 aggregateFieldIndex = (int)(i - unusedFieldsCount);

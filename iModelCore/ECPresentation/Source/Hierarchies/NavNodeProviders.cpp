@@ -1752,8 +1752,8 @@ std::unique_ptr<DirectNodesIterator> QueryBasedNodesProvider::_CreateDirectNodes
 
     // read all nodes in this provider
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Query for direct nodes: `%s`", m_query->GetQuery()->GetQueryString().c_str()));
-    auto contract = NavigationQueryContractsFilter(*m_query).GetContract();
-    auto nodesReader = NavNodesReader::Create(GetContext().GetNodesFactory(), GetContext().GetConnection(), *contract,
+    NavigationQueryContractsFilter contractsProvider(*m_query);
+    auto nodesReader = NavNodesReader::Create(GetContext().GetNodesFactory(), GetContext().GetConnection(), contractsProvider,
         m_query->GetNavigationResultParameters().GetResultType(), m_query->GetNavigationResultParameters().GetNavNodeExtendedData(), parent.IsValid() ? parent->GetKey().get() : nullptr);
     QueryExecutor executor(GetContext().GetConnection(), *m_query->GetQuery());
     NavNodePtr node;

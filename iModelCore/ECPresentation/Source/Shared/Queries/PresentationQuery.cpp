@@ -627,10 +627,19 @@ bool ShouldSelectWithClause(PresentationQueryContractFieldCR field, Presentation
     if (!nestedContract)
         return true;
 
+    if (field.GetSelectClause().GetClause().empty())
+        return false;
+
     bvector<PresentationQueryContractFieldCPtr> nestedFields = nestedContract->GetFields();
     for (PresentationQueryContractFieldCPtr const& nestedField : nestedFields)
         {
-        if (0 == strcmp(nestedField->GetName(), field.GetName()) && (FieldVisibility::Outer != nestedField->GetVisibility()))
+        if (0 != strcmp(nestedField->GetName(), field.GetName()))
+            continue;
+
+        if (nestedField->GetSelectClause() != field.GetSelectClause())
+            return true;
+        
+        if (FieldVisibility::Outer != nestedField->GetVisibility())
             return false;
         }
     return true;
@@ -703,8 +712,9 @@ void ComplexQueryBuilder::InitSelectClause() const
             }
         }
 
-    bvector<QueryClauseAndBindings> selectClauseFields;
+    auto skipNestedClauses = CreateQueryFieldLookupFunc(m_nestedQuery.get());
 
+    bvector<QueryClauseAndBindings> selectClauseFields;
     if (m_isSelectAll && !hasNestedInnerFields)
         {
         selectClauseFields.push_back("*");
@@ -726,14 +736,9 @@ void ComplexQueryBuilder::InitSelectClause() const
             bool selectWithClause = ShouldSelectWithClause(*field, nestedContract);
             Utf8String wrappedName = QueryHelpers::Wrap(field->GetName());
             if (selectWithClause)
-                {
-                auto skipNestedClauses = CreateQueryFieldLookupFunc(m_nestedQuery.get());
                 SelectField(selectClauseFields, field->GetSelectClause(m_selectPrefix.c_str(), skipNestedClauses), wrappedName);
-                }
             else
-                {
                 SelectField(selectClauseFields, QueryClauseAndBindings(), wrappedName);
-                }
             }
         }
 
@@ -747,14 +752,9 @@ void ComplexQueryBuilder::InitSelectClause() const
                 continue;
 
             if (m_groupingContract.get() == groupingContract)
-                {
-                auto skipNestedClauses = CreateQueryFieldLookupFunc(m_nestedQuery.get());
                 SelectField(selectClauseFields, field->GetSelectClause(m_selectPrefix.c_str(), skipNestedClauses), field->GetName());
-                }
             else
-                {
                 SelectField(selectClauseFields, QueryClauseAndBindings(), QueryHelpers::Wrap(field->GetName()));
-                }
             }
         }
 
@@ -1042,9 +1042,13 @@ Utf8String ComplexQueryBuilder::CreateGroupByClause() const
         if (field->IsAggregateField() || FieldVisibility::Both != field->GetVisibility())
             continue;
 
+        Utf8CP fieldGroupingClause = field->GetGroupingClause();
+        if (!fieldGroupingClause || !*fieldGroupingClause)
+            continue;
+
         if (!groupByClause.empty())
             groupByClause.append(", ");
-        groupByClause.append(QueryHelpers::Wrap(field->GetGroupingClause()));
+        groupByClause.append(QueryHelpers::Wrap(fieldGroupingClause));
         }
     return groupByClause;
     }

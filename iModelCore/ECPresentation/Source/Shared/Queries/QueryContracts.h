@@ -176,6 +176,7 @@ public:
     NavigationQueryContract const* AsNavigationQueryContract() const {return _AsNavigationQueryContract();}
     ContentQueryContract const* AsContentQueryContract() const {return _AsContentQueryContract();}
     uint64_t GetId() const {return m_id;}
+    void SetId(uint64_t id) {m_id = id;}
     ECPRESENTATION_EXPORT uint8_t GetIndex(Utf8CP fieldName) const;
     void SetECInstanceIdFieldName(Utf8CP name) {_SetECInstanceIdFieldName(name);}
     void SetECClassIdFieldName(Utf8CP name) {_SetECClassIdFieldName(name);}

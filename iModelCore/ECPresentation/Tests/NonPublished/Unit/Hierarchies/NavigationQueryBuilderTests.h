@@ -55,6 +55,8 @@ struct NavigationQueryBuilderTests : QueryBuilderTest
     Utf8String GetLabelGroupingNodesOrderByClause();
     Utf8String GetECPropertyGroupingNodesOrderByClause();
     Utf8String GetECClassGroupingNodesOrderByClause();
+
+    static NavigationQueryContractPtr WithId(uint64_t id, NavigationQueryContractCR contract);
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE
