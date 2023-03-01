@@ -172,7 +172,8 @@ describe("basic tests", () => {
     const pathToDb = path.join(getAssetsDir(), "InvalidFile.bim");
 
     const db = new iModelJsNative.SQLiteDb();
-    db.openDb(pathToDb, {openMode: OpenMode.ReadWrite});
+    expect(() => db.openDb(pathToDb, {openMode: OpenMode.ReadWrite})).to.throw("file is not a database");
+    expect(() => db.openDb(pathToDb, {openMode: OpenMode.ReadWrite, rawSQLite: true})).to.not.throw();
     db.closeDb();
   });
 
