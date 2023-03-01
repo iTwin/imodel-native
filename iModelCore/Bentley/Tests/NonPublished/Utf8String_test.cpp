@@ -448,9 +448,6 @@ TEST(Utf8StringTest, Compare)
 //---------------------------------------------------------------------------------------
 TEST(Utf8StringTest,TrimUtf8) {
 
-    #ifdef WIN32
-    #pragma execution_character_set("utf-8")
-    #endif
     #define NBSP u8"\u00a0"
     #define EMSPC u8"\u2003"
     static_assert(sizeof(EMSPC) - 1 == 3, "emspace char size was not 3");
