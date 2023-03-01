@@ -112,6 +112,7 @@ private:
     BeGuid m_id;
     BeGuid m_hierarchyLevelId;
     std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
+    Nullable<uint64_t> m_resultSetSizelimit;
     bvector<uint64_t> m_index;
 public:
     DataSourceIdentifier() : m_id(), m_hierarchyLevelId() {}
@@ -145,6 +146,8 @@ public:
     BeGuidCR GetHierarchyLevelId() const {return m_hierarchyLevelId;}
     bvector<uint64_t> const& GetIndex() const {return m_index;}
     std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
+    Nullable<uint64_t> const& GetResultSetSizeLimit() const {return m_resultSetSizelimit;}
+    void SetResultSetSizeLimit(Nullable<uint64_t> value) {m_resultSetSizelimit = value;}
 };
 
 /*=================================================================================**//**
@@ -207,10 +210,12 @@ struct DataSourceInfo
         PART_HasNodes           = 1 << 7,
         PART_DirectNodesCount   = 1 << 8,
         PART_IsFinalized        = 1 << 9,
-        PART_CustomJson         = 1 << 10,
-        PART_HasPartialProviders= 1 << 11,
+        PART_LimitedInstancesCount = 1 << 10,
+        PART_CustomJson         = 1 << 11,
+        PART_HasPartialProviders= 1 << 12,
         PARTS_All = PART_Vars | PART_Filter | PART_RelatedClasses | PART_SpecificationHash | PART_NodeTypes | PART_ParentId
-            | PART_TotalNodesCount | PART_HasNodes | PART_DirectNodesCount | PART_IsFinalized | PART_CustomJson | PART_HasPartialProviders
+            | PART_TotalNodesCount | PART_HasNodes | PART_DirectNodesCount | PART_IsFinalized | PART_LimitedInstancesCount
+            | PART_CustomJson | PART_HasPartialProviders
         };
 
 private:
@@ -226,6 +231,7 @@ private:
     Nullable<size_t> m_directNodesCount;
     Nullable<size_t> m_totalNodesCount;
     Nullable<bool> m_hasNodes;
+    Nullable<size_t> m_limitedInstancesCount;
     BeJsDocument m_customJson;
 public:
     DataSourceInfo(): m_isFinalized(false) {}
@@ -238,6 +244,7 @@ public:
         m_directNodesCount = other.m_directNodesCount;
         m_totalNodesCount = other.m_totalNodesCount;
         m_hasNodes = other.m_hasNodes;
+        m_limitedInstancesCount = other.m_limitedInstancesCount;
         m_customJson.From(other.m_customJson);
         }
     DataSourceInfo(DataSourceIdentifier identifier) : m_identifier(identifier), m_isFinalized(false) {}
@@ -246,7 +253,7 @@ public:
         : m_identifier(identifier), m_relatedVariables(relatedVariables), m_filter(filter), m_relatedClasses(relatedClasses),
         m_specificationHash(specificationHash), m_nodeTypes(nodeTypes), m_isFinalized(false)
         {}
-    DataSourceInfo& operator=(DataSourceInfo const& other) 
+    DataSourceInfo& operator=(DataSourceInfo const& other)
         {
         m_identifier = other.m_identifier;
         m_relatedVariables = other.m_relatedVariables;
@@ -260,6 +267,7 @@ public:
         m_directNodesCount = other.m_directNodesCount;
         m_totalNodesCount = other.m_totalNodesCount;
         m_hasNodes = other.m_hasNodes;
+        m_limitedInstancesCount = other.m_limitedInstancesCount;
         m_customJson.From(other.m_customJson);
         return *this;
         }
@@ -288,6 +296,8 @@ public:
     void SetHasNodes(Nullable<bool> value) {m_hasNodes = value;}
     Nullable<size_t> const& GetDirectNodesCount() const {return m_directNodesCount;}
     void SetDirectNodesCount(Nullable<size_t> value) {m_directNodesCount = value;}
+    Nullable<size_t> const& GetLimitedInstancesCount() const {return m_limitedInstancesCount;}
+    void SetLimitedInstancesCount(Nullable<size_t> value) {m_limitedInstancesCount = value;}
     BeJsConst GetCustomJson() const {return m_customJson;}
     BeJsValue GetCustomJson() {return m_customJson;}
 };

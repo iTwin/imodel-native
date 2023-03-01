@@ -94,8 +94,8 @@ struct IHierarchyCache
 
 protected:
     virtual NavNodePtr _GetNode(BeGuidCR nodeId) const = 0;
+    virtual bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const = 0;
     virtual NodeVisibility _GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const = 0;
-    virtual bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const = 0;
     virtual NavNodePtr _GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const = 0;
     virtual BeGuid _GetVirtualParentNodeId(BeGuidCR nodeId) const = 0;
 
@@ -117,11 +117,11 @@ protected:
 
     virtual void _Update(DataSourceInfo const&, int partsToUpdate) = 0;
 
-    virtual void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) = 0;
-    virtual void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) = 0;
+    virtual void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) = 0;
+    virtual void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) = 0;
 
-    virtual bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, InstanceFilterDefinitionCP) const = 0;
-    virtual bool _IsHierarchyLevelInitialized(BeGuidCR, RulesetVariables const&, InstanceFilterDefinitionCP) const = 0;
+    virtual bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const = 0;
+    virtual bool _IsHierarchyLevelInitialized(BeGuidCR, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const = 0;
     virtual bool _IsDataSourceInitialized(BeGuidCR) const = 0;
 
     virtual SavepointPtr _CreateSavepoint(bool) = 0;
@@ -132,8 +132,8 @@ public:
     virtual ~IHierarchyCache() {}
 
     NavNodePtr GetNode(BeGuidCR nodeId) const {return _GetNode(nodeId);}
+    bvector<uint64_t> GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter, Nullable<uint64_t> const& resultSetSizeLimit) const { return _GetNodeIndex(hierarchyLevelId, nodeId, contextVariables, instanceFilter, resultSetSizeLimit); }
     NodeVisibility GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const {return _GetNodeVisibility(nodeId, contextVariables, instanceFilter);}
-    bvector<uint64_t> GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const { return _GetNodeIndex(hierarchyLevelId, nodeId, contextVariables, instanceFilter); }
     NavNodePtr GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const {return _GetPhysicalParentNode(nodeId, contextVariables, instanceFilter);}
     BeGuid GetVirtualParentNodeId(BeGuidCR nodeId) const {return _GetVirtualParentNodeId(nodeId);}
 
@@ -158,11 +158,11 @@ public:
 
     void Update(DataSourceInfo const& info, int partsToUpdate) {_Update(info, partsToUpdate);}
 
-    void MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) {_MakeVirtual(nodeId, contextVariables, instanceFilter);}
-    void MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) {_MakeHidden(nodeId, contextVariables, instanceFilter);}
+    void MakeVirtual(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter, Nullable<uint64_t> const& resultSetSizeLimit) {_MakeVirtual(nodeId, contextVariables, instanceFilter, resultSetSizeLimit);}
+    void MakeHidden(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter, Nullable<uint64_t> const& resultSetSizeLimit) {_MakeHidden(nodeId, contextVariables, instanceFilter, resultSetSizeLimit);}
 
-    bool IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter) const {return _IsCombinedHierarchyLevelInitialized(info, variables, instanceFilter);}
-    bool IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter) const {return _IsHierarchyLevelInitialized(id, variables, instanceFilter);}
+    bool IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter, Nullable<uint64_t> const& resultSetSizeLimit) const {return _IsCombinedHierarchyLevelInitialized(info, variables, instanceFilter, resultSetSizeLimit);}
+    bool IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter, Nullable<uint64_t> const& resultSetSizeLimit) const {return _IsHierarchyLevelInitialized(id, variables, instanceFilter, resultSetSizeLimit);}
     bool IsDataSourceInitialized(BeGuidCR id) const {return _IsDataSourceInitialized(id);}
 
     SavepointPtr CreateSavepoint(bool bulkTransaction = false) {return _CreateSavepoint(bulkTransaction);}
@@ -276,7 +276,8 @@ private:
     void CacheNode(BeGuidCR hierarchyLevelId, NavNodeR);
     void CacheDataSourceNodeAssociation(BeGuidCR datasourceId, BeGuidCR nodeId, bvector<uint64_t> const& fullIndex, NodeVisibility);
     void CacheEmptyDataSource(DataSourceIdentifier&, DataSourceFilter const&, BeGuidCR variablesId, Utf8StringCR specificationHash, Utf8StringCR nodeTypes,
-        BeGuidCR parentId, Nullable<size_t> const& directNodesCount, bool isFinalized, Nullable<bool> const& hasNodes, Nullable<size_t> const& nodesCount);
+        BeGuidCR parentId, Nullable<size_t> const& directNodesCount, bool isFinalized, Nullable<bool> const& hasNodes, Nullable<size_t> const& nodesCount,
+        Nullable<size_t> const& limitedInstancesCount);
     void CacheRelatedClassIds(BeGuidCR datasourceId, bmap<ECClassId, bool> const&);
     BeGuid CacheRelatedVariables(BeGuidCR rulesetId, RulesetVariables const& variables);
     void CacheNodeKey(NavNodeCR);
@@ -285,7 +286,7 @@ private:
     void ChangeVisibility(BeGuidCR nodeId, BeGuidCR dataSourceId, NodeVisibility visibility);
     void ResetDataSource(DataSourceIdentifier const&);
     DataSourceInfo CreateDataSourceInfo(DataSourceIdentifier, int partsToGet) const;
-    BeGuid GetNodeDataSourceId(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP) const;
+    BeGuid GetNodeDataSourceId(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const;
     BeGuid GetHierarchyLevelRulesetId(BeGuidCR hierarchyLevelId) const;
 
     void AddQuick(NavNodeR) const;
@@ -301,8 +302,8 @@ private:
 protected:
     // IHierarchyCache
     ECPRESENTATION_EXPORT NavNodePtr _GetNode(BeGuidCR) const override;
+    ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const override;
     ECPRESENTATION_EXPORT NodeVisibility _GetNodeVisibility(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
-    ECPRESENTATION_EXPORT bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
     ECPRESENTATION_EXPORT NavNodePtr _GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
     ECPRESENTATION_EXPORT BeGuid _GetVirtualParentNodeId(BeGuidCR nodeId) const override;
 
@@ -319,10 +320,10 @@ protected:
     ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&) override;
     ECPRESENTATION_EXPORT void _Cache(NavNodeR, DataSourceIdentifier const&, bvector<uint64_t> const&, NodeVisibility) override;
     ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, int partsToUpdate) override;
-    ECPRESENTATION_EXPORT void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override;
-    ECPRESENTATION_EXPORT void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override;
-    ECPRESENTATION_EXPORT bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
-    ECPRESENTATION_EXPORT bool _IsHierarchyLevelInitialized(BeGuidCR, RulesetVariables const&, InstanceFilterDefinitionCP) const override;
+    ECPRESENTATION_EXPORT void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) override;
+    ECPRESENTATION_EXPORT void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) override;
+    ECPRESENTATION_EXPORT bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const&, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const override;
+    ECPRESENTATION_EXPORT bool _IsHierarchyLevelInitialized(BeGuidCR, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const override;
     ECPRESENTATION_EXPORT bool _IsDataSourceInitialized(BeGuidCR) const override;
     ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint(bool) override;
     ECPRESENTATION_EXPORT std::shared_ptr<IHierarchyLevelLocker> _CreateHierarchyLevelLocker(CombinedHierarchyLevelIdentifier const& identifier) override;

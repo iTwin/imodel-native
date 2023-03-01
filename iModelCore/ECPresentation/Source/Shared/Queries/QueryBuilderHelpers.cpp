@@ -135,6 +135,36 @@ void QueryBuilderHelpers::Limit(PresentationQueryBuilder& query, uint64_t limit,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBuilderPtr QueryBuilderHelpers::GetInstanceKeysQuery(PresentationQueryBuilderCR sourceNavigationQuery)
+    {
+    if (sourceNavigationQuery.AsComplexQueryBuilder())
+        return static_cast<NavigationQuerySelectContract const*>(sourceNavigationQuery.GetContract())->GetInstanceKeysSelectQuery().Clone();
+
+    if (sourceNavigationQuery.AsUnionQueryBuilder())
+        {
+        return UnionQueryBuilder::Create(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(
+            sourceNavigationQuery.AsUnionQueryBuilder()->GetQueries(), 
+            [](auto const& query)
+                {
+                return GetInstanceKeysQuery(*query);
+                })
+            );
+        }
+
+    if (sourceNavigationQuery.AsExceptQueryBuilder())
+        {
+        return ExceptQueryBuilder::Create(
+            *GetInstanceKeysQuery(*sourceNavigationQuery.AsExceptQueryBuilder()->GetBase()),
+            *GetInstanceKeysQuery(*sourceNavigationQuery.AsExceptQueryBuilder()->GetExcept())
+            );
+        }
+
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Unexpected query type");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ComplexQueryBuilder> QueryBuilderHelpers::CreateNestedQuery(PresentationQueryBuilder& innerQuery)
     {
     RefCountedPtr<ComplexQueryBuilder> query = ComplexQueryBuilder::Create();

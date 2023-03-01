@@ -134,7 +134,7 @@ protected:
         auto iter = m_nodeVisibilities.find(nodeId);
         return (m_nodeVisibilities.end() != iter) ? iter->second : NodeVisibility::Hidden;
         }
-    bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) const override
+    bvector<uint64_t> _GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_nodeIndexes.find(nodeId);
@@ -238,7 +238,7 @@ protected:
         {
         BeMutexHolder lock(m_mutex);
 
-        if (!IsCombinedHierarchyLevelInitialized(info, context.GetRulesetVariables(), context.GetInstanceFilter()))
+        if (!IsCombinedHierarchyLevelInitialized(info, context.GetRulesetVariables(), context.GetInstanceFilter(), nullptr))
             return nullptr;
 
         auto iter = m_physicalHierarchy.find(info);
@@ -251,7 +251,7 @@ protected:
         {
         BeMutexHolder lock(m_mutex);
 
-        if (!IsHierarchyLevelInitialized(id, context.GetRulesetVariables(), context.GetInstanceFilter()))
+        if (!IsHierarchyLevelInitialized(id, context.GetRulesetVariables(), context.GetInstanceFilter(), nullptr))
             return nullptr;
 
         for (auto const& entry : m_virtualHierarchy)
@@ -313,20 +313,20 @@ protected:
             m_cacheNodeHandler(node, visibility);
         }
 
-    void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override
+    void _MakeVirtual(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) override
         {
         BeMutexHolder lock(m_mutex);
         m_nodeVisibilities.erase(nodeId);
         m_nodeVisibilities.Insert(nodeId, NodeVisibility::Virtual);
         }
-    void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP) override
+    void _MakeHidden(BeGuidCR nodeId, RulesetVariables const&, InstanceFilterDefinitionCP, Nullable<uint64_t> const&) override
         {
         BeMutexHolder lock(m_mutex);
         m_nodeVisibilities.erase(nodeId);
         m_nodeVisibilities.Insert(nodeId, NodeVisibility::Hidden);
         }
 
-    bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter) const override
+    bool _IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier const& info, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter, Nullable<uint64_t> const&) const override
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_physicalHierarchy.find(info);
@@ -343,7 +343,7 @@ protected:
             }
         return true;
         }
-    bool _IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter) const override
+    bool _IsHierarchyLevelInitialized(BeGuidCR id, RulesetVariables const& variables, InstanceFilterDefinitionCP instanceFilter, Nullable<uint64_t> const&) const override
         {
         BeMutexHolder lock(m_mutex);
         for (auto const& entry : m_virtualHierarchy)
