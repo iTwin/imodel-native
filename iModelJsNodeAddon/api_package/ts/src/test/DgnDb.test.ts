@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
@@ -166,6 +166,14 @@ describe("basic tests", () => {
     assert.isTrue(undefined === props.find((nvpair) => nvpair.name === "dynamic3"));
 
     // iModelJsNative.NativeDevTools.signal(3);
+  });
+
+  it("should be able to open partially valid db", async () => {
+    const pathToDb = path.join(getAssetsDir(), "InvalidFile.bim");
+
+    const db = new iModelJsNative.SQLiteDb();
+    db.openDb(pathToDb, {openMode: OpenMode.ReadWrite});
+    db.closeDb();
   });
 
   it("WAL mode", () => {
