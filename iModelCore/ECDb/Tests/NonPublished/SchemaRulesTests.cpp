@@ -252,7 +252,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                     </ECCustomAttributeClass>
                </ECSchema>)xml"))) << "Multi-inheritance for non-abstract custom attribute classes is not supported";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECEntityClass typeName="Base" modifier="None">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -261,9 +261,9 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                       <BaseClass>Base</BaseClass>
                       <ECProperty propertyName="SubProp1" typeName="string" />
                     </ECEntityClass>
-               </ECSchema>)xml"))) << "Abstract entity class may not inherit concrete entity class";
+               </ECSchema>)xml"))) << "Abstract entity class may inherit concrete entity class";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECStructClass typeName="Base" modifier="None">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -272,9 +272,9 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                       <BaseClass>Base</BaseClass>
                       <ECProperty propertyName="SubProp1" typeName="string" />
                     </ECStructClass>
-               </ECSchema>)xml"))) << "Abstract struct class may not inherit concrete struct class";
+               </ECSchema>)xml"))) << "Abstract struct class may inherit concrete struct class, though structs should not have inheritance";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECCustomAttributeClass typeName="Base" modifier="None" appliesTo="Schema">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -283,7 +283,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                       <BaseClass>Base</BaseClass>
                       <ECProperty propertyName="SubProp1" typeName="string" />
                     </ECCustomAttributeClass>
-               </ECSchema>)xml"))) << "Abstract CA class may not inherit concrete CA class";
+               </ECSchema>)xml"))) << "Abstract CA class may inherit concrete CA class, though CAs should not have inheritance";
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECEntityClass typeName="A" modifier="None">

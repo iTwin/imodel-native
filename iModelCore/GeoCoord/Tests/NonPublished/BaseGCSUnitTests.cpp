@@ -4718,7 +4718,7 @@ TEST_F(BaseGCSUnitTests, AdditionalTransformPath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (BaseGCSUnitTests, GCSTransformToFullJsonThenBack)
     {
-    const bvector<Utf8String>& listOfGCS = GeoCoordTestCommon::GetSmallListOfGCS();
+    const bvector<Utf8String>& listOfGCS = GeoCoordTestCommon::GetRepresentativeMiniListOfGCS();
 
     double parameters[12] = {1.0, 0.0, 10.0, 20.0, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
