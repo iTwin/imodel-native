@@ -4295,15 +4295,11 @@ TEST (PolyfaceConstruction, DegenerateFacet)
         mesh->Point().push_back(xyz[i]);
     size_t numDegenerateFacets = 0;
     mesh->PointIndex().push_back(0);    // redundant terminator
-    if (mesh->PointIndex().end() != mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,0 }))
-        ++numDegenerateFacets;          // degen facet with 1 vertex
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,0 });       ++numDegenerateFacets;  // degen facet with 1 vertex
     mesh->PointIndex().push_back(0);    // redundant terminator
-    if (mesh->PointIndex().end() != mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,0 }))
-        ++numDegenerateFacets;          // degen facet with 1 vertex (dup)
-    if (mesh->PointIndex().end() != mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,0 }))
-        ++numDegenerateFacets;          // degen facet with 2 vertices
-    if (mesh->PointIndex().end() != mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,0 }))
-        ++numDegenerateFacets;          // degen facet with 3 vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,0 });     ++numDegenerateFacets;  // degen facet with 1 vertex (dup)
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,0 });     ++numDegenerateFacets;  // degen facet with 2 vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,0 });   ++numDegenerateFacets;  // degen facet with 3 vertices
     mesh->BuildPerFaceNormals();
     Check::Size(mesh->Normal().size(), numDegenerateFacets, "installed default normals for degenerate facets");
     }
