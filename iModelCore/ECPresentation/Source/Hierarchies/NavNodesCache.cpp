@@ -1744,7 +1744,7 @@ DataSourceInfo NodesCache::CreateDataSourceInfo(DataSourceIdentifier identifier,
     Nullable<size_t> totalNodesCount;
     Nullable<bool> hasNodes;
     Nullable<bool> hasPartialProviders;
-    Json::Value customJson;
+    BeJsDocument customJson;
     if (0 != ((DataSourceInfo::PARTS_All & ~DataSourceInfo::PART_RelatedClasses) & partsToGet))
         {
         LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
@@ -1794,7 +1794,7 @@ DataSourceInfo NodesCache::CreateDataSourceInfo(DataSourceIdentifier identifier,
                     hasNodes = stmt->GetValueBoolean(8);
 
                 if (0 != (DataSourceInfo::PART_CustomJson & partsToGet) && !stmt->IsColumnNull(9))
-                    customJson = Json::Value::From(stmt->GetValueText(9));
+                    (BeJsValue)customJson = stmt->GetValueText(9);
 
                 if (0 != (DataSourceInfo::PART_HasPartialProviders & partsToGet))
                     hasPartialProviders = stmt->GetValueBoolean(10);
@@ -1827,7 +1827,7 @@ DataSourceInfo NodesCache::CreateDataSourceInfo(DataSourceIdentifier identifier,
     info.SetDirectNodesCount(directNodesCount);
     info.SetTotalNodesCount(totalNodesCount);
     info.SetIsInitialized(isFinalized);
-    info.GetCustomJson().swap(customJson);
+    info.GetCustomJson().From(customJson);
     return info;
     }
 
@@ -2336,7 +2336,7 @@ void NodesCache::_Update(DataSourceInfo const& info, int partsToUpdate)
         if (0 != (DataSourceInfo::PART_IsFinalized & partsToUpdate))
             stmt->BindBoolean(++bindingIndex, info.IsInitialized());
         if (0 != (DataSourceInfo::PART_CustomJson & partsToUpdate))
-            stmt->BindText(++bindingIndex, info.GetCustomJson().ToString(), Statement::MakeCopy::Yes);
+            stmt->BindText(++bindingIndex, info.GetCustomJson().Stringify(), Statement::MakeCopy::Yes);
         NodesCacheHelpers::BindGuid(*stmt, ++bindingIndex, info.GetIdentifier().GetId());
 
         stmt->Step();

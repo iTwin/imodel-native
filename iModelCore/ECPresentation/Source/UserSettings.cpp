@@ -12,6 +12,17 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T>
+BeJsDocument convertToBeJsValue(T value)
+    {
+    BeJsDocument doc;
+    (BeJsValue)doc = value;
+    return doc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettings::_UnsetValue(Utf8CP id)
     {
     BeMutexHolder lock(m_mutex);
@@ -23,7 +34,7 @@ void UserSettings::_UnsetValue(Utf8CP id)
         return;
 
     Utf8PrintfString settingId("%s:%s", m_rulesetId.c_str(), id);
-    m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, settingId.c_str(), Json::Value());
+    m_localState->SaveValue(USER_SETTINGS_NAMESPACE, settingId.c_str(), BeJsDocument::Null());
     m_settingIds.erase(std::remove_if(m_settingIds.begin(), m_settingIds.end(), [&settingId](auto const& entry){return entry.first.Equals(settingId);}), m_settingIds.end());
 
     if (nullptr != m_changeListener)
@@ -44,7 +55,7 @@ void UserSettings::_SetSettingValue(Utf8CP id, Utf8CP value)
         return;
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), value);
+    m_localState->SaveValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), convertToBeJsValue(value));
     m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "string"));
 
     if (!m_isInitializing && nullptr != m_changeListener)
@@ -65,7 +76,7 @@ void UserSettings::_SetSettingIntValue(Utf8CP id, int64_t value)
         return;
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), Json::Value(value));
+    m_localState->SaveValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), convertToBeJsValue(value));
     m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "int"));
 
     if (!m_isInitializing && nullptr != m_changeListener)
@@ -75,12 +86,12 @@ void UserSettings::_SetSettingIntValue(Utf8CP id, int64_t value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<int64_t> VectorFromJsonArray(JsonValueCR json)
+static bvector<int64_t> VectorFromJsonArray(BeJsConst json)
     {
     bvector<int64_t> vec;
     if (!json.isArray())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Expected a JSON array");
-    for (Json::ArrayIndex i = 0; i < json.size(); ++i)
+    for (BeJsConst::ArrayIndex i = 0; i < json.size(); ++i)
         vec.push_back(json[i].asInt64());
     return vec;
     }
@@ -88,11 +99,12 @@ static bvector<int64_t> VectorFromJsonArray(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value JsonArrayFromVector(bvector<int64_t> const& vec)
+static BeJsDocument JsonArrayFromVector(bvector<int64_t> const& vec)
     {
-    Json::Value json(Json::arrayValue);
+    BeJsDocument json;
+    json.toArray();
     for (int64_t v : vec)
-        json.append(Json::Value(v));
+        json[json.size()] = v;
     return json;
     }
 
@@ -110,7 +122,7 @@ void UserSettings::_SetSettingIntValues(Utf8CP id, bvector<int64_t> const& value
         return;
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), JsonArrayFromVector(values));
+    m_localState->SaveValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), JsonArrayFromVector(values));
     m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "ints"));
 
     if (!m_isInitializing && nullptr != m_changeListener)
@@ -131,7 +143,7 @@ void UserSettings::_SetSettingBoolValue(Utf8CP id, bool value)
         return;
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), value);
+    m_localState->SaveValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), convertToBeJsValue(value));
     m_settingIds.insert(bpair<Utf8String, Utf8String>(id, "bool"));
 
     if (!m_isInitializing && nullptr != m_changeListener)
@@ -150,7 +162,7 @@ Utf8String UserSettings::_GetSettingValue(Utf8CP id) const
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Local state not set up");
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    Json::Value value = m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
+    BeJsDocument value = m_localState->GetValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
     return value.isString() ? value.asCString() : s_defaultValue;
     }
 
@@ -166,8 +178,8 @@ int64_t UserSettings::_GetSettingIntValue(Utf8CP id) const
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Local state not set up");
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    Json::Value value = m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
-    return (value.isConvertibleTo(Json::intValue) || value.isConvertibleTo(Json::uintValue)) ? value.asInt64() : s_defaultValue;
+    BeJsDocument value = m_localState->GetValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
+    return value.isNumeric() ? value.asInt64() : s_defaultValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,7 +194,7 @@ bvector<int64_t> UserSettings::_GetSettingIntValues(Utf8CP id) const
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Local state not set up");
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    Json::Value jsonValues = m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
+    BeJsDocument jsonValues = m_localState->GetValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
     if (!jsonValues.isArray())
         return values;
 
@@ -201,14 +213,14 @@ bool UserSettings::_GetSettingBoolValue(Utf8CP id) const
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Local state not set up");
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    Json::Value value = m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
-    return value.isConvertibleTo(Json::booleanValue) ? value.asBool() : s_defaultValue;
+    BeJsDocument value = m_localState->GetValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
+    return value.isBool() ? value.asBool() : s_defaultValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UserSettings::_GetSettingValueAsJson(Utf8CP id) const
+BeJsDocument UserSettings::_GetSettingValueAsJson(Utf8CP id) const
     {
     BeMutexHolder lock(m_mutex);
 
@@ -216,7 +228,7 @@ Json::Value UserSettings::_GetSettingValueAsJson(Utf8CP id) const
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Local state not set up");
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    return m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
+    return m_localState->GetValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,27 +247,28 @@ bool UserSettings::_HasSetting(Utf8CP id) const
     BeMutexHolder lock(m_mutex);
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    return !m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str()).isNull();
+    BeJsDocument json = m_localState->GetValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
+    return !json.isNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettings::AddValues(JsonValueR groupListJson) const
+void UserSettings::AddValues(BeJsValue groupListJson) const
     {
-    for (Json::ArrayIndex i = 0; i < groupListJson.size(); i++)
+    for (BeJsValue::ArrayIndex i = 0; i < groupListJson.size(); i++)
         {
-        JsonValueR groupJson = groupListJson[i];
+        BeJsValue groupJson = groupListJson[i];
         if (groupJson.isMember("Items"))
             {
             for (Json::ArrayIndex j = 0; j < groupJson["Items"].size(); j++)
                 {
-                JsonValueR itemJson = groupJson["Items"][j];
+                BeJsValue itemJson = groupJson["Items"][j];
                 Utf8CP options = itemJson["Options"].asCString();
                 if (0 == strcmp("StringValue", options))
                     itemJson["Value"] = GetSettingValue(itemJson["Id"].asCString()).c_str();
                 else if (0 == strcmp("IntValue", options))
-                    itemJson["Value"] = Json::Value(GetSettingIntValue(itemJson["Id"].asCString()));
+                    itemJson["Value"] = GetSettingIntValue(itemJson["Id"].asCString());
                 else
                     itemJson["Value"] = GetSettingBoolValue(itemJson["Id"].asCString());
                 }
@@ -268,16 +281,15 @@ void UserSettings::AddValues(JsonValueR groupListJson) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UserSettings::_GetPresentationInfo() const
+BeJsConst UserSettings::_GetPresentationInfo() const
     {
     BeMutexHolder lock(m_mutex);
 
     if (nullptr == m_localState)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Local state not set up");
 
-    Json::Value json = m_presentationInfo;
-    AddValues(json);
-    return json;
+    AddValues(m_presentationInfo);
+    return m_presentationInfo;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,7 +306,7 @@ void UserSettings::_InitFrom(UserSettingsGroupList const& rules)
         return;
 
     m_isInitializing = true;
-    m_presentationInfo.clear();
+    m_presentationInfo.SetNull();
     InitFromJson(rules, m_presentationInfo);
     m_initializedFrom = &rules;
     m_isInitializing = false;
@@ -316,20 +328,21 @@ static Utf8String GetSettingType(Utf8StringCR options)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettings::InitFromJson(UserSettingsGroupList const& rules, JsonValueR presentationInfo)
+void UserSettings::InitFromJson(UserSettingsGroupList const& rules, BeJsValue presentationInfo)
     {
-    presentationInfo = Json::Value(Json::arrayValue);
+    presentationInfo.toArray();
     for (UserSettingsGroupCP group : rules)
         {
-        Json::Value groupJson(Json::objectValue);
+        BeJsValue groupJson = presentationInfo[presentationInfo.size()];
+        groupJson.toObject();
         groupJson["Label"] = group->GetCategoryLabel();
         if (!group->GetSettingsItems().empty())
-            groupJson["Items"] = Json::Value(Json::arrayValue);
+            groupJson["Items"].toArray();
 
         for (UserSettingsItemCP item : group->GetSettingsItems())
             {
             Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), item->GetId().c_str());
-            if (m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str()).isNull())
+            if (m_localState->GetValue(USER_SETTINGS_NAMESPACE, stringId.c_str()).isNull())
                 {
                 // save the value in local state
                 if (item->GetOptions().Equals("StringValue"))
@@ -353,17 +366,15 @@ void UserSettings::InitFromJson(UserSettingsGroupList const& rules, JsonValueR p
                 }
 
             // create the presentation info
-            Json::Value itemPresentationInfo(Json::objectValue);
+            BeJsValue groupJsonItems = groupJson["Items"];
+            BeJsValue itemPresentationInfo = groupJsonItems[groupJsonItems.size()];
             itemPresentationInfo["Id"] = item->GetId();
             itemPresentationInfo["Label"] = item->GetLabel();
             itemPresentationInfo["Options"] = item->GetOptions().empty() ? "TrueFalse" : item->GetOptions();
-            groupJson["Items"].append(itemPresentationInfo);
             }
 
         if (!group->GetNestedSettings().empty())
             InitFromJson(group->GetNestedSettings(), groupJson["NestedGroups"]);
-
-        presentationInfo.append(groupJson);
         }
     }
 

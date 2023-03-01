@@ -39,7 +39,7 @@ struct IUserSettings
 protected:
     virtual ~IUserSettings() {}
 
-    virtual Json::Value _GetPresentationInfo() const = 0;
+    virtual BeJsConst _GetPresentationInfo() const = 0;
 
     virtual bvector<bpair<Utf8String, Utf8String>> _GetSettings() const = 0;
 
@@ -56,11 +56,11 @@ protected:
     virtual int64_t _GetSettingIntValue(Utf8CP id) const = 0;
     virtual bvector<int64_t> _GetSettingIntValues(Utf8CP id) const = 0;
     virtual bool _GetSettingBoolValue(Utf8CP id) const = 0;
-    virtual Json::Value _GetSettingValueAsJson(Utf8CP id) const = 0;
+    virtual BeJsDocument _GetSettingValueAsJson(Utf8CP id) const = 0;
 
 public:
     //! Get the presentation info for user settings stored in this instance.
-    Json::Value GetPresentationInfo() const {return _GetPresentationInfo();}
+    BeJsConst GetPresentationInfo() const {return _GetPresentationInfo();}
 
     //! Get existing settings ids and types
     bvector<bpair<Utf8String, Utf8String>> GetSettings() const {return _GetSettings();}
@@ -90,7 +90,7 @@ public:
     //! Get a setting value.
     bool GetSettingBoolValue(Utf8CP id) const {return _GetSettingBoolValue(id);}
     //! Get a setting value.
-    Json::Value GetSettingValueAsJson(Utf8CP id) const {return _GetSettingValueAsJson(id);}
+    BeJsDocument GetSettingValueAsJson(Utf8CP id) const {return _GetSettingValueAsJson(id);}
 };
 
 //=======================================================================================
@@ -106,7 +106,7 @@ friend struct UserSettingsManager;
 private:
     Utf8String m_rulesetId;
     IJsonLocalState* m_localState;
-    Json::Value m_presentationInfo;
+    BeJsDocument m_presentationInfo;
     IUserSettingsChangeListener const* m_changeListener;
     bool m_isInitializing;
     UserSettingsGroupList const* m_initializedFrom;
@@ -114,11 +114,11 @@ private:
     mutable BeMutex m_mutex;
 
 private:
-    void AddValues(JsonValueR) const;
-    void InitFromJson(UserSettingsGroupList const& rules, JsonValueR presentationObj);
+    void AddValues(BeJsValue) const;
+    void InitFromJson(UserSettingsGroupList const& rules, BeJsValue presentationObj);
 
 protected:
-    ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo() const override;
+    ECPRESENTATION_EXPORT BeJsConst _GetPresentationInfo() const override;
     ECPRESENTATION_EXPORT bvector<bpair<Utf8String, Utf8String>> _GetSettings() const override;
     ECPRESENTATION_EXPORT bool _HasSetting(Utf8CP id) const override;
     ECPRESENTATION_EXPORT void _InitFrom(UserSettingsGroupList const&) override;
@@ -131,7 +131,7 @@ protected:
     ECPRESENTATION_EXPORT int64_t _GetSettingIntValue(Utf8CP id) const override;
     ECPRESENTATION_EXPORT bvector<int64_t> _GetSettingIntValues(Utf8CP id) const override;
     ECPRESENTATION_EXPORT bool _GetSettingBoolValue(Utf8CP id) const override;
-    ECPRESENTATION_EXPORT Json::Value _GetSettingValueAsJson(Utf8CP id) const override;
+    ECPRESENTATION_EXPORT BeJsDocument _GetSettingValueAsJson(Utf8CP id) const override;
 
 public:
     //! Constructor.

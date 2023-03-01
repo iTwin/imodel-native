@@ -226,9 +226,35 @@ private:
     Nullable<size_t> m_directNodesCount;
     Nullable<size_t> m_totalNodesCount;
     Nullable<bool> m_hasNodes;
-    Json::Value m_customJson;
+    BeJsDocument m_customJson;
 public:
     DataSourceInfo(): m_isFinalized(false) {}
+    DataSourceInfo& operator=(DataSourceInfo const& other) {
+        m_identifier = other.m_identifier;
+        m_relatedVariables = other.m_relatedVariables;
+        m_filter = other.m_filter;
+        m_relatedClasses = other.m_relatedClasses;
+        m_specificationHash = other.m_specificationHash;
+        m_nodeTypes = other.m_nodeTypes;
+        m_parentId = other.m_parentId;
+        m_hasPartialProviders = other.m_hasPartialProviders;
+        m_isFinalized = other.m_isFinalized;
+        m_directNodesCount = other.m_directNodesCount;
+        m_totalNodesCount = other.m_totalNodesCount;
+        m_hasNodes = other.m_hasNodes;
+        m_customJson.From(other.m_customJson);
+        return *this;
+        }
+    DataSourceInfo(DataSourceInfo const& other) :  DataSourceInfo(other.m_identifier, other.m_relatedVariables, other.m_filter, other.m_relatedClasses, other.m_specificationHash, other.m_nodeTypes)
+        {
+        m_parentId = other.m_parentId;
+        m_hasPartialProviders = other.m_hasPartialProviders;
+        m_isFinalized = other.m_isFinalized;
+        m_directNodesCount = other.m_directNodesCount;
+        m_totalNodesCount = other.m_totalNodesCount;
+        m_hasNodes = other.m_hasNodes;
+        m_customJson.From(other.m_customJson);
+        }
     DataSourceInfo(DataSourceIdentifier identifier) : m_identifier(identifier), m_isFinalized(false) {}
     DataSourceInfo(DataSourceIdentifier identifier, RulesetVariables relatedVariables, DataSourceFilter filter, bmap<ECClassId, bool> relatedClasses,
         Utf8String specificationHash, Utf8String nodeTypes)
@@ -260,8 +286,8 @@ public:
     void SetHasNodes(Nullable<bool> value) {m_hasNodes = value;}
     Nullable<size_t> const& GetDirectNodesCount() const {return m_directNodesCount;}
     void SetDirectNodesCount(Nullable<size_t> value) {m_directNodesCount = value;}
-    JsonValueCR GetCustomJson() const {return m_customJson;}
-    JsonValueR GetCustomJson() {return m_customJson;}
+    BeJsConst GetCustomJson() const {return m_customJson;}
+    BeJsValue GetCustomJson() {return m_customJson;}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

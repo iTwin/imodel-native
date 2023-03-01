@@ -1936,10 +1936,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<QueryBasedNodesProvider::PageNodeCounts> ParsePageNodeCounts(JsonValueCR json)
+static bvector<QueryBasedNodesProvider::PageNodeCounts> ParsePageNodeCounts(BeJsConst json)
     {
     bvector<QueryBasedNodesProvider::PageNodeCounts> counts;
-    for (Json::ArrayIndex i = 0; i < json.size(); ++i)
+    for (BeJsConst::ArrayIndex i = 0; i < json.size(); ++i)
         counts.push_back({ (size_t)json[i]["Total"].asUInt64(), (size_t)json[i]["Unique"].asUInt64() });
     return counts;
     }
@@ -1947,17 +1947,14 @@ static bvector<QueryBasedNodesProvider::PageNodeCounts> ParsePageNodeCounts(Json
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value SerializePageNodeCounts(bvector<QueryBasedNodesProvider::PageNodeCounts> const& counts)
+static void WriteSerializePageNodeCounts(BeJsValue json, bvector<QueryBasedNodesProvider::PageNodeCounts> const& counts)
     {
-    Json::Value json(Json::ValueType::arrayValue);
     for (auto const& entry : counts)
         {
-        Json::Value entryJson;
-        entryJson["Total"] = Json::Value((uint64_t)entry.total);
-        entryJson["Unique"] = Json::Value((uint64_t)entry.unique);
-        json.append(entryJson);
+        BeJsValue entryJson = json[json.size()];
+        entryJson["Total"] = (int64_t)entry.total;
+        entryJson["Unique"] = (int64_t)entry.unique;
         }
-    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2011,7 +2008,9 @@ QueryBasedNodesProvider::NodeCounts QueryBasedNodesProvider::QueryNodeCounts() c
 
     dsInfo.SetTotalNodesCount(counts.totalUnique);
     dsInfo.SetHasNodes(counts.totalUnique > 0);
-    dsInfo.GetCustomJson()["PageCounts"] = SerializePageNodeCounts(counts.pages);
+    BeJsValue json = dsInfo.GetCustomJson();
+    if (!json.isNull() && !json.isObject()) json.SetEmptyObject();
+    WriteSerializePageNodeCounts(json["PageCounts"], counts.pages);
     int partsToUpdate = DataSourceInfo::PART_TotalNodesCount | DataSourceInfo::PART_HasNodes | DataSourceInfo::PART_CustomJson;
     GetContext().GetNodesCache().Update(dsInfo, partsToUpdate);
 
@@ -3211,7 +3210,7 @@ struct PostProcessedClassesFinder : CustomizationRuleVisitor
 
 private:
     ECSchemaHelper const& m_schemaHelper;
-    IJsonLocalState const* m_localState;
+    ECPresentation::IJsonLocalState const* m_localState;
     bset<ECClassCP> m_classes;
 protected:
     void _Visit(GroupingRuleCR rule) override
@@ -3225,7 +3224,7 @@ protected:
             }
         }
 public:
-    PostProcessedClassesFinder(ECSchemaHelper const& schemaHelper, IJsonLocalState const* localState)
+    PostProcessedClassesFinder(ECSchemaHelper const& schemaHelper, ECPresentation::IJsonLocalState const* localState)
         : m_schemaHelper(schemaHelper), m_localState(localState)
         {}
     bset<ECClassCP> const& GetClasses() const { return m_classes; }

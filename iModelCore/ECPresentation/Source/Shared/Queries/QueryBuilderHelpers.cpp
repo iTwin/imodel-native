@@ -1071,9 +1071,9 @@ GroupSpecificationCP QueryBuilderHelpers::GetActiveGroupingSpecification(Groupin
     if (rule.GetSettingsId().empty() || nullptr == localState)
         return rule.GetGroups()[0];
 
-    Json::Value settingValue = localState->GetJsonValue(RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE, Utf8String(rule.GetSettingsId().c_str()).c_str());
-    if (!settingValue.isInt())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected active group index to be an integer, actual type: %d", (int)settingValue.type()));
+    BeJsDocument settingValue = localState->GetValue(RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE, Utf8String(rule.GetSettingsId().c_str()).c_str());
+    if (!settingValue.isNumeric())
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected active group index to be an integer, actual type: %d", 10/*(int)settingValue.type()*/));
 
     int activeGroupIndex = settingValue.asInt();
     if (activeGroupIndex < 0 || activeGroupIndex >= (int)rule.GetGroups().size())

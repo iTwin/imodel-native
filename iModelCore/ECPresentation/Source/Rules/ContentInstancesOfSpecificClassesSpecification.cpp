@@ -134,7 +134,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
 void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     ContentSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::MultiSchemaClassesToJson(m_classes)).c_str());
+    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::WriteMultiSchemaClassesToJson(m_classes)).c_str());
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
 
     bool handlePolymorphically = m_classes.empty() ? false : m_classes.front()->GetArePolymorphic();

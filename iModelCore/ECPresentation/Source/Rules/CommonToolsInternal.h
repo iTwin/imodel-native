@@ -44,20 +44,22 @@ public:
     static bvector<Utf8String> ParsePropertiesNames(Utf8StringCR value);
 
     static Utf8String SupportedSchemasToString(BeJsConst json);
-    static Json::Value SupportedSchemasToJson(Utf8StringCR str);
+    static void WriteSupportedSchemasToJson(BeJsValue json, Utf8StringCR str);
 
     static void ParseSchemaAndClassName(Utf8StringR schemaName, Utf8StringR className, BeJsConst json, Utf8CP attributeIdentifier);
     static Utf8String SchemaAndClassNameToString(BeJsConst json, Utf8CP attributeIdentifier);
-    static Json::Value SchemaAndClassNameToJson(Utf8StringCR str);
-    static Json::Value SchemaAndClassNameToJson(Utf8StringCR schemaName, Utf8StringCR className);
+    static void WriteSchemaAndClassNameToJson(BeJsValue json, Utf8StringCR str);
+    static void WriteSchemaAndClassNameToJson(BeJsValue json, Utf8StringCR schemaName, Utf8StringCR className);
 
     static bool ParseMultiSchemaClassesFromJson(BeJsConst json, bool defaultPoly, bvector<MultiSchemaClass*>& classes, HashableBase* parent);
     static bool ParseMultiSchemaClassesFromClassNamesString(Utf8StringCR classNames, bool defaultPolymorphism, bvector<MultiSchemaClass*>& classes, HashableBase* parent);
 
-    static Json::Value MultiSchemaClassesToJson(bvector<MultiSchemaClass*> const& multiSchemaClasses);
+    static BeJsDocument WriteMultiSchemaClassesToJson(bvector<MultiSchemaClass*> const& multiSchemaClasses);
+    static void WriteMultiSchemaClassesToJson(BeJsValue json, bvector<MultiSchemaClass*> const& multiSchemaClasses);
 
     static Utf8String SchemaAndClassNamesToString(BeJsConst json);
-    static Json::Value SchemaAndClassNamesToJson(Utf8StringCR str);
+    static BeJsDocument WriteSchemaAndClassNamesToJson(Utf8StringCR str);
+    static void WriteSchemaAndClassNamesToJson(BeJsValue json, Utf8StringCR str);
 
     //! Copies the rules in source vector into the target vector.
     template<typename T>
@@ -220,10 +222,10 @@ public:
 
     //! Write rules to json
     template<typename TRule, typename TCollection>
-    static void WriteRulesToJson(JsonValueR rulesList, TCollection const& rulesCollection)
+    static void WriteRulesToJson(BeJsValue rulesList, TCollection const& rulesCollection)
         {
         for (TRule const* rule : rulesCollection)
-            rulesList.append(rule->WriteJson());
+            rule->WriteJson(rulesList[rulesList.size()]);
         }
 
     static Utf8CP GetRapidJsonTypeStr(BeJsConst json)

@@ -67,7 +67,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         bool ReadJson(BeJsConst json);
 
         //Writes PresentationRuleSet to JSON.
-        void WriteJson(JsonValueR json) const;
+        void WriteJson(BeJsValue json) const;
 
     protected:
         //! Allow lots of refcounted references to a ruleset
@@ -131,7 +131,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         //! Writes PresentationRuleSet to XmlFile.
         ECPRESENTATION_EXPORT bool                           WriteToXmlFile (BeFileNameCR xmlFilePath) const;
 
-        // !Reads PresentationRuleSet from Json::Value.
+        // !Reads PresentationRuleSet from BeJsConst.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonValue(BeJsConst json);
 
         //! Reads PresentationRuleSet from JSON string.
@@ -140,8 +140,8 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         //! Reads PresentationRuleSet from JSON file.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonFile(BeFileNameCR jsonFilePath);
 
-        //! Writes PresentationRuleSet to Json::Value.
-        ECPRESENTATION_EXPORT Json::Value                    WriteToJsonValue() const;
+        //! Writes PresentationRuleSet to BeJsDocument.
+        ECPRESENTATION_EXPORT BeJsDocument                    WriteToJsonValue() const;
 
         //! Writes PresentationRuleSet to JSON file.
         ECPRESENTATION_EXPORT bool                           WriteToJsonFile(BeFileNameCR jsonFilePath) const;

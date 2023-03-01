@@ -83,9 +83,19 @@ bool PresentationKey::ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PresentationKey::WriteJson() const
+void PresentationKey::WriteJson(BeJsValue json) const
     {
-    Json::Value json(Json::objectValue);
+    if (nullptr != _GetJsonElementTypeAttributeName() && nullptr != _GetJsonElementType())
+        json[_GetJsonElementTypeAttributeName()] = _GetJsonElementType();
+    _WriteJson(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeJsDocument PresentationKey::WriteJson() const
+    {
+    BeJsDocument json;
     if (nullptr != _GetJsonElementTypeAttributeName() && nullptr != _GetJsonElementType())
         json[_GetJsonElementTypeAttributeName()] = _GetJsonElementType();
     _WriteJson(json);
@@ -149,7 +159,7 @@ bool PrioritizedPresentationKey::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrioritizedPresentationKey::_WriteJson(JsonValueR json) const
+void PrioritizedPresentationKey::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     if (1000 != m_priority)
@@ -269,7 +279,7 @@ bool PresentationRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRule::_WriteJson(JsonValueR json) const
+void PresentationRule::_WriteJson(BeJsValue json) const
     {
     PrioritizedPresentationKey::_WriteJson(json);
 
@@ -374,7 +384,7 @@ bool ConditionalPresentationRule::_ReadJson(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConditionalPresentationRule::_WriteJson(JsonValueR json) const
+void ConditionalPresentationRule::_WriteJson(BeJsValue json) const
     {
     PresentationRule::_WriteJson(json);
     if (!m_condition.empty())

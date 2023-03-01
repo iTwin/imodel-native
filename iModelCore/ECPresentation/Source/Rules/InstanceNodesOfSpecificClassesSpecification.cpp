@@ -161,7 +161,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml(BeXmlNodeP xmlNode)
 void InstanceNodesOfSpecificClassesSpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
     ChildNodeSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::MultiSchemaClassesToJson(m_classes)).c_str());
+    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::WriteMultiSchemaClassesToJson(m_classes)).c_str());
     xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);

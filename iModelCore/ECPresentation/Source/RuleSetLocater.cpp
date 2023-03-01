@@ -731,12 +731,12 @@ void EmbeddedRuleSetLocater::LoadRuleSets() const
         {
         BeInt64Id elementId = entry.first.first;
         DateTime lastMod = entry.first.second;
-        Json::Value json = Json::Value::From(entry.second);
+        BeJsDocument json(entry.second);
 
         // note: we used to put the ruleset under a `jsonProperties` attribute and now we don't, but we still need to support both formats:
         // - old format: JsonProperties = { jsonProperties: RULESET_JSON }
         // - new format: JsonProperties = RULESET_JSON
-        JsonValueCR rulesetJson = json["jsonProperties"].isNull() ? json : json["jsonProperties"];
+        BeJsValue rulesetJson = json["jsonProperties"].isNull() ? json : json["jsonProperties"];
 
         if (rulesetJson.isNull())
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Ruleset element %" PRIu64 " doesn't store a valid ruleset definition", elementId.GetValue()));
