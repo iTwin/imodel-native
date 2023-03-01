@@ -8137,6 +8137,10 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
     ASSERT_NE(propId, nullptr);
     ASSERT_STREQ(propId->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");
 
+    // Some tests below have been marked "Wrong" in a comment.
+    // The expected results for them are incorrect, but they are what we expect due to a "feature" that renders classid as Id instead of the class name in itwinjs/imodel console.
+    // These "wrong" results are hence required to be so for itwinjs tests to pass.
+
     // meta.ClassHasBaseClasses
 
     if ("sub query relationship") {

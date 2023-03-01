@@ -86,6 +86,14 @@ public:
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
+class ProfileUpgrader_4003 final : public ProfileUpgrader
+    {
+    DbResult _Upgrade(ECDbCR) const override;
+    };
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct ProfileUpgrader_4002 final : ProfileUpgrader
     {
 //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
@@ -144,7 +152,7 @@ private:
     static BentleyStatus ReadSchemaFromDisk(ECN::ECSchemaReadContextR readContext, ECN::SchemaKey&, Utf8CP ecdbFileName);
 
 public:
-    static DbResult ImportProfileSchemas(ECDbCR);
+    static DbResult ImportProfileSchemas(ECDbCR, SchemaManager::SchemaImportOptions);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -1164,10 +1164,10 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneItemKindOfQuantity)
     koq->AddPresentationFormatByString("f:AmerFI[u:FT|feets][u:IN|inches]", formatMapper, unitMapper);
     koq->SetRelativeError(3);
 
-    Json::Value schemaJson;
+    BeJsDocument schemaJson;
     EXPECT_TRUE(koq->ToJson(schemaJson, true));
 
-    Json::Value testDataJson;
+    BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneKindOfQuantity.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);

@@ -15,12 +15,12 @@ describe("SQLite statements", () => {
   before((done) => {
     dgndb = openDgnDb(dbFileName);
     done();
-  })
+  });
 
   after((done) => {
     dgndb.closeIModel();
     done();
-  })
+  });
 
   it("Select using alias without table", () => {
     const stmt = new iModelJsNative.ECSqlStatement();
@@ -47,7 +47,7 @@ describe("SQLite statements", () => {
       const value = stmt.getValue(0);
       const colInfo = value.getColumnInfo();
 
-      expect(colInfo.getPropertyName()).to.exist; //we generate a pseudo name automatically
+      expect(colInfo.getPropertyName()).to.exist; // we generate a pseudo name automatically
       expect(colInfo.getOriginPropertyName()).to.be.undefined;
     } finally {
       stmt.dispose();
@@ -69,7 +69,6 @@ describe("SQLite statements", () => {
       stmt.dispose();
     }
   });
-
 
   it("Select without table using recursive cte", () => {
     const stmt = new iModelJsNative.ECSqlStatement();
@@ -114,12 +113,12 @@ describe("SQLite statements", () => {
     const stmt = new iModelJsNative.SqliteStatement();
     try {
       const sql = "SELECT 100 from xxx";
-      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table");
       expect(errorLogStub.callCount).eq(1);
 
       Logger.setLevel("BeSQLite", LogLevel.None);
       iModelJsNative.clearLogLevelCache();
-      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table")
+      expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table");
       expect(errorLogStub.callCount).eq(1);
     } finally {
       stmt.dispose();

@@ -223,7 +223,7 @@ DbResult RevisionChangesFileReaderBase::Reader::StartInput() {
     m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
     if (actuallyRead != sizeof(header) || !header.IsValid()) {
         BeAssert(false && "Attempt to read an invalid revision version");
-        return BE_SQLITE_ERROR_InvalidRevisionVersion;
+        return BE_SQLITE_ERROR_InvalidChangeSetVersion;
     }
 
     ZipErrors zipStatus = m_lzmaDecoder.StartDecompress(*m_inLzmaFileStream);

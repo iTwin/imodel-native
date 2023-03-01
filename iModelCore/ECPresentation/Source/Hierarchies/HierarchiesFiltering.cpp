@@ -91,8 +91,8 @@ static bvector<ECClassCP> GetRelationshipPathTargetClasses(RepeatableRelationshi
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void TraverseChildNodeSpecifications(
-    PresentationRuleSpecificationVisitorR visitor, 
-    CustomNodeSpecificationCR specification, 
+    PresentationRuleSpecificationVisitorR visitor,
+    CustomNodeSpecificationCR specification,
     TraverseHierarchyRulesProps const& props
 )
     {
@@ -108,8 +108,8 @@ static void TraverseChildNodeSpecifications(
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void TraverseChildNodeSpecifications(
-    PresentationRuleSpecificationVisitorR visitor, 
-    InstanceNodesOfSpecificClassesSpecificationCR specification, 
+    PresentationRuleSpecificationVisitorR visitor,
+    InstanceNodesOfSpecificClassesSpecificationCR specification,
     TraverseHierarchyRulesProps const& props
 )
     {
@@ -127,9 +127,9 @@ static void TraverseChildNodeSpecifications(
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void TraverseChildNodeSpecifications(
-    PresentationRuleSpecificationVisitorR visitor, 
-    RelatedInstanceNodesSpecificationCR specification, 
-    RepeatableRelationshipPathSpecification const& pathSpecification, 
+    PresentationRuleSpecificationVisitorR visitor,
+    RelatedInstanceNodesSpecificationCR specification,
+    RepeatableRelationshipPathSpecification const& pathSpecification,
     TraverseHierarchyRulesProps const& props
 )
     {
@@ -147,8 +147,8 @@ static void TraverseChildNodeSpecifications(
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void TraverseChildNodeSpecifications(
-    PresentationRuleSpecificationVisitorR visitor, 
-    SearchResultInstanceNodesSpecificationCR specification, 
+    PresentationRuleSpecificationVisitorR visitor,
+    SearchResultInstanceNodesSpecificationCR specification,
     TraverseHierarchyRulesProps const& props
 )
     {
@@ -198,10 +198,14 @@ public:
     void _Visit(InstanceNodesOfSpecificClassesSpecification const& spec) override
         {
         HandleCommonAttributes(spec);
+        if (spec.GetInstanceFilter().ContainsI("parent."))
+            REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to \"parent\" symbol being used in instance filter", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         }
     void _Visit(RelatedInstanceNodesSpecification const& spec) override
         {
         HandleCommonAttributes(spec);
+        if (spec.GetInstanceFilter().ContainsI("parent."))
+            REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to \"parent\" symbol being used in instance filter", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         if (spec.GetSkipRelatedLevel() != 0)
             REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to deprecated \"skip related level\" attribute", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         if (!spec.GetSupportedSchemas().empty())
@@ -339,30 +343,36 @@ struct HierarchySpecsToContentRulesetConverter : PresentationRuleSpecificationVi
             return [
                 &converter,
                 wasInputReset = converter.m_inputReset,
-                wasPathPrefix = converter.m_pathPrefix
+                wasPathPrefix = converter.m_pathPrefix,
+                wasSpecsStack = converter.m_specsStack
             ]()
                 {
                 converter.m_inputReset = wasInputReset;
                 converter.m_pathPrefix = wasPathPrefix;
+                converter.m_specsStack = wasSpecsStack;
                 };
             }
     public:
-        ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, InstanceNodesOfSpecificClassesSpecification const&)
+        ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, InstanceNodesOfSpecificClassesSpecification const& spec)
             : m_restoreState(CreateStateRestoreFunc(converter))
             {
             converter.m_inputReset = true;
             converter.m_pathPrefix.clear();
+            converter.m_specsStack.push_back(&spec);
             }
-        ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, SearchResultInstanceNodesSpecification const&)
+        ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, SearchResultInstanceNodesSpecification const& spec)
             : m_restoreState(CreateStateRestoreFunc(converter))
             {
             converter.m_inputReset = true;
             converter.m_pathPrefix.clear();
+            converter.m_specsStack.push_back(&spec);
             }
         ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, RelatedInstanceNodesSpecification const& spec, RepeatableRelationshipPathSpecification const& path)
             : m_restoreState(CreateStateRestoreFunc(converter))
             {
-            converter.m_pathPrefix.push_back(&path);
+            if (!converter.m_isParentGroupingNode)
+                converter.m_pathPrefix.push_back(&path);
+            converter.m_specsStack.push_back(&spec);
             }
         ~ChainedSpecificationsContext()
             {
@@ -373,12 +383,15 @@ struct HierarchySpecsToContentRulesetConverter : PresentationRuleSpecificationVi
 
 private:
     TraverseHierarchyRulesProps const& m_props;
+    bool m_isParentGroupingNode;
 
     PresentationRuleSetPtr m_ruleset;
     ContentRuleP m_contentRule;
+    bool m_didAddSelectedNodeInstancesSpec;
     bool m_inputReset;
     bvector<RepeatableRelationshipPathSpecification const*> m_pathPrefix;
     bset<ChildNodeSpecificationCP> m_visitedSpecs;
+    bvector<ChildNodeSpecificationCP> m_specsStack;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -398,6 +411,18 @@ private:
             m_ruleset->AddPresentationRule(*m_contentRule);
             }
         return *m_contentRule;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddSelectedNodeInstancesSpec()
+        {
+        if (m_didAddSelectedNodeInstancesSpec)
+            return;
+
+        GetInProgressContentRule().AddSpecification(*new SelectedNodeInstancesSpecification());
+        m_didAddSelectedNodeInstancesSpec = true;
         }
 
 protected:
@@ -455,6 +480,12 @@ protected:
             return;
             }
 
+        if (m_isParentGroupingNode && m_specsStack.empty())
+            {
+            AddSelectedNodeInstancesSpec();
+            return;
+            }
+
         auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
             1000,
             false,
@@ -488,38 +519,47 @@ protected:
         ENSURE_NOT_VISITED(m_visitedSpecs, specification);
         ENSURE_SUPPORTS_FILTERING(specification);
 
+        if (specification.GetHideNodesInHierarchy())
+            {
+            // if the nodes are hidden - fake a parent node, find child specifications and recurse
+            for (auto const& pathSpec : specification.GetRelationshipPaths())
+                {
+                ChainedSpecificationsContext chained(*this, specification, *pathSpec);
+                TraverseChildNodeSpecifications(*this, specification, *pathSpec, m_props);
+                }
+            return;
+            }
+
         if (m_inputReset)
             {
             // we get here if either `InstanceNodesOfSpecificClassesSpecification` or `SearchResultInstanceNodesSpecification` was detected
             // when traversing hidden hierarchy levels
             for (auto const& pathSpec : specification.GetRelationshipPaths())
                 {
-                if (specification.GetHideNodesInHierarchy())
-                    {
-                    // if the nodes are hidden - fake a parent node, find child specifications and recurse
-                    ChainedSpecificationsContext chained(*this, specification, *pathSpec);
-                    TraverseChildNodeSpecifications(*this, specification, *pathSpec, m_props);
-                    }
-                else
-                    {
-                    // create a `ContentInstancesOfSpecificClassesSpecification` for the target classes
-                    auto targetClasses = GetRelationshipPathTargetClasses(*pathSpec, m_props.GetSchemaHelper());
-                    auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
-                        1000,
-                        false,
-                        specification.GetInstanceFilter(),
-                        ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(targetClasses, [](auto targetClass)
-                            {
-                            return new MultiSchemaClass(targetClass->GetSchema().GetName(), true, { targetClass->GetName() });
-                            }),
-                        bvector<MultiSchemaClass*>(),
-                        true
-                        );
-                    for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
-                        contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
-                    GetInProgressContentRule().AddSpecification(*contentSpec);
-                    }
+                // create a `ContentInstancesOfSpecificClassesSpecification` for the target classes
+                auto targetClasses = GetRelationshipPathTargetClasses(*pathSpec, m_props.GetSchemaHelper());
+                auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
+                    1000,
+                    false,
+                    specification.GetInstanceFilter(),
+                    ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(targetClasses, [](auto targetClass)
+                        {
+                        return new MultiSchemaClass(targetClass->GetSchema().GetName(), true, { targetClass->GetName() });
+                        }),
+                    bvector<MultiSchemaClass*>(),
+                    true
+                    );
+                for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
+                    contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
+                GetInProgressContentRule().AddSpecification(*contentSpec);
                 }
+            return;
+            }
+
+        if (m_isParentGroupingNode && m_specsStack.empty())
+            {
+            AddSelectedNodeInstancesSpec();
+            return;
             }
 
         // In case we had a chain of hidden `RelatedInstanceNodesSpecification` specifications, we accumulate their paths. At this point
@@ -569,6 +609,12 @@ protected:
             return;
             }
 
+        if (m_isParentGroupingNode && m_specsStack.empty())
+            {
+            AddSelectedNodeInstancesSpec();
+            return;
+            }
+
         auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
             1000,
             false,
@@ -592,8 +638,8 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    HierarchySpecsToContentRulesetConverter(TraverseHierarchyRulesProps const& props)
-        : m_contentRule(nullptr), m_props(props), m_inputReset(false)
+    HierarchySpecsToContentRulesetConverter(TraverseHierarchyRulesProps const& props, bool isParentGroupingNode)
+        : m_contentRule(nullptr), m_props(props), m_inputReset(false), m_isParentGroupingNode(isParentGroupingNode), m_didAddSelectedNodeInstancesSpec(false)
         {}
 
     /*---------------------------------------------------------------------------------**//**
@@ -616,7 +662,8 @@ public:
 PresentationRuleSetPtr HierarchiesFilteringHelper::CreateHierarchyLevelDescriptorRuleset(NavNodeCP parentNode, TraverseHierarchyRulesProps const& props)
     {
     bvector<ChildNodeSpecificationCP> nodeSpecs = GetDirectChildNodeSpecifications(parentNode, props.GetRulesPreprocessor());
-    HierarchySpecsToContentRulesetConverter contentRulesetFactory(props);
+    bool isParentGroupingNode = parentNode && parentNode->GetKey()->AsGroupingNodeKey();
+    HierarchySpecsToContentRulesetConverter contentRulesetFactory(props, isParentGroupingNode);
     for (auto spec : nodeSpecs)
         spec->Accept(contentRulesetFactory);
     return contentRulesetFactory.GetRuleset();

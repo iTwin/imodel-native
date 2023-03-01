@@ -260,7 +260,7 @@ static NodesPathElement FindNode(ECPresentationManager::Impl& manager, NodeByIns
 
         if (nullptr != node->GetKey()->AsGroupingNodeKey())
             {
-            if (instanceKeysProvider->ContainsInstanceKey(*node, params.GetInstanceKey()))
+            if (instanceKeysProvider->ContainsInstanceKey(*node->GetKey(), params.GetInstanceKey()))
                 return NodesPathElement(*node, nodeIndex);
             }
 

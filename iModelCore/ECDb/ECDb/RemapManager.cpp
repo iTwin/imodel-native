@@ -87,6 +87,15 @@ BentleyStatus RemapManager::CleanModifiedMappings()
     std::set<ECPropertyId> cleanedPropertyIds; //hold a unique list of rootPropertyIds that have been cleaned, so we can purge orphans later
     for (auto& [key, remapInfo] : m_remapInfos)
         {
+        if(!remapInfo.m_classId.IsValid())
+            {
+            remapInfo.m_classId = m_schemaManager.GetClassId(remapInfo.m_schemaName, remapInfo.m_className);
+            if(!remapInfo.m_classId.IsValid())
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+            }
         for(auto& addedProperty : remapInfo.m_addedProperties)
             {
             if(CleanAddedProperty(remapInfo, addedProperty, cleanedPropertyIds) != SUCCESS)
@@ -95,6 +104,15 @@ BentleyStatus RemapManager::CleanModifiedMappings()
 
         for(auto& addedBaseClass : remapInfo.m_addedBaseClasses)
             {
+            if(!addedBaseClass.m_id.IsValid())
+                {
+                addedBaseClass.m_id = m_schemaManager.GetClassId(addedBaseClass.m_schemaName, addedBaseClass.m_name);
+                if(!addedBaseClass.m_id.IsValid())
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+                }
             if(CleanAddedBaseClass(remapInfo, addedBaseClass, cleanedPropertyIds) != SUCCESS)
                 return ERROR;
             }
@@ -279,69 +297,116 @@ WHERE [ecp].[Name] = ? AND [col].[ColumnKind] = 4 AND [pm].[ClassId] IN (SELECT 
 
 BentleyStatus RemapManager::CleanAddedBaseClass(RemapInfosForClass& remapInfo, AddedBaseClass& addedBaseClass, std::set<ECPropertyId>& cleanedPropertyIds)
     {
-    //Parameters: 1 BaseClass Name, 2 BaseClass SchemaName, 3 DerivedClass Name, 4 DerivedClass SchemaName
-    Utf8CP detectPropertiesToRemapSql = R"sqlstatement(
-        WITH
-    [baseClassColumns]([ColumnId]) AS(
-        SELECT DISTINCT [cn].[Id]
-        FROM   [ec_Property] [pt]
-               JOIN [ec_Cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [pt].[ClassId]
-               JOIN [ec_Class] [baseCl] ON [baseCl].[Id] = [ch].[BaseClassId]
-               JOIN [ec_Schema] [baseSchema] ON [baseSchema].[Id] = [baseCl].[SchemaId]
-               JOIN [ec_Class] [cl] ON [cl].[Id] = [ch].[ClassId]
-               JOIN [ec_Propertypath] [pp] ON [pp].[RootPropertyId] = [pt].[Id]
-               JOIN [ec_PropertyMap] [pm] ON [pm].[PropertyPathId] = [pp].[Id]
-                    AND [pm].[ClassId] = [cl].[Id]
-               JOIN [ec_Column] [cn] ON [cn].[Id] = [pm].[ColumnId] AND [cn].[ColumnKind] = 4
-        WHERE  [baseCl].[Name] = ?
-          AND  [baseSchema].[Name] = ?
-          AND [cn].ColumnKind = 4
-    ),
-    [derivedClassColumns]([PropertyMapId], [ColumnId]) AS(
-        SELECT
-               [pm].[Id],
-               [pm].[ColumnId]
-        FROM   [ec_Property] [pt]
-               JOIN [ec_Cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [pt].[ClassId]
-               JOIN [ec_Class] [baseCl] ON [baseCl].[Id] = [ch].[BaseClassId]
-               JOIN [ec_Schema] [baseSchema] ON [baseSchema].[Id] = [baseCl].[SchemaId]
-               JOIN [ec_Class] [cl] ON [cl].[Id] = [ch].[ClassId]
-               JOIN [ec_Propertypath] [pp] ON [pp].[RootPropertyId] = [pt].[Id]
-               JOIN [ec_PropertyMap] [pm] ON [pm].[PropertyPathId] = [pp].[Id]
-                    AND [pm].[ClassId] = [cl].[Id]
-               JOIN [ec_Column] [cn] ON [cn].[Id] = [pm].[ColumnId] AND [cn].[ColumnKind] = 4
-        WHERE  [baseCl].[Name] = ?
-          AND  [baseSchema].[Name] = ?
-          AND [cn].[ColumnKind] = 4
-    ),
-    [propertiesWhichNeedRemapping]([PropertyMapId]) AS(
-        SELECT DISTINCT [PropertyMapId]
-        FROM   [derivedClassColumns]
-        WHERE  [ColumnId] IN (SELECT [ColumnId] FROM [baseClassColumns])
-    )
-SELECT
-       DISTINCT [pp].[RootPropertyId] [RootPropertyId],[pm].[ClassId] [MappedClassId], [c].[Name], [p].[Name]
-FROM   [propertiesWhichNeedRemapping] [remap]
-       JOIN [ec_PropertyMap] [pm] ON [pm].[id] = [remap].[PropertyMapId]
-       JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
-       JOIN [ec_Property] [p] on [pp].[RootPropertyId] = [p].[Id]
-       JOIN [ec_Class] [c] on [pm].[ClassId] = [c].[Id]
+    //#define ALLOW_ECDB_SCHEMAIMPORT_DIAGNOSTICS
+    #if defined(ALLOW_ECDB_SCHEMAIMPORT_DIAGNOSTICS)
+
+    LOG.warning("----------------------------ECDB_SCHEMAIMPORT_DIAGNOSTICS-----------------------------------");
+    LOG.warningv("Processing added base class %s:%s on class %s:%s", addedBaseClass.m_schemaName.c_str(), addedBaseClass.m_name.c_str(), remapInfo.m_schemaName.c_str(), remapInfo.m_className.c_str());
+    { //Select down the hierarchy (from derived class, including the derived class itself)
+    LOG.warningv(">>Classes down the hierarchy of %s:%s", remapInfo.m_schemaName.c_str(), remapInfo.m_className.c_str());
+    Utf8CP sql = R"sqlstatement(
+    SELECT DISTINCT cl.Name
+        FROM   [ec_Cache_ClassHierarchy] [ch]
+            JOIN [ec_Class] [cl] ON [cl].[Id] = [ch].[ClassId]
+        WHERE  [ch].[BaseClassId] = ?
     )sqlstatement";
 
-    //ColumnKind 4 indicates shared columns
-    Utf8CP collectInfoSql = R"sqlstatement(
-SELECT [rootSchema].[Name], [rootClass].[Name], [rootClass].[Id], [s].[Name], [c].[Name], [c].[Id], [ecp].[Id], [ecp].[Name], [pp].[AccessString], [tab].[Name], [col].[Name], [pm].[ClassId]
-    FROM [ec_PropertyMap] [pm]
-    JOIN [ec_Property] [ecp] on [ecp].[Id] = [pp].[RootPropertyId]
-    JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
-    JOIN [ec_Column] [col] on [col].[Id] = [pm].[ColumnId]
-    JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id]
-    JOIN [ec_Class] [c] on [c].[Id] = [pm].[ClassId]
-    JOIN [ec_Class] [rootClass] on [rootClass].[Id] = [ecp].[ClassId]
-    JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
-    JOIN [ec_Schema] [rootSchema] on [rootSchema].[Id] = [rootClass].[SchemaId]
-WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] from [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2) AND [col].[ColumnKind] = 4
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql);
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, remapInfo.m_classId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        Utf8String cName = stmt->GetValueText(0);
+        LOG.warningv("> %s", cName.c_str());
+        }
+    }
+
+    {
+    LOG.warning(">>Mapped columns for these classes:");
+    Utf8CP sql = R"sqlstatement(
+    SELECT distinct [col].[Id] as [ColumnId], [pp].[AccessString] as [AccessString], [col].[Name] as [ColumnName]
+        FROM [ec_PropertyMap] [pm]
+            JOIN [ec_Column] [col] ON [col].[Id] = [pm].[ColumnId]
+            JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+        WHERE [pm].[ClassId] IN (SELECT DISTINCT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?1)
+        AND [col].[ColumnKind] = 4
     )sqlstatement";
+
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql);
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, remapInfo.m_classId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        Utf8String accessString = stmt->GetValueText(1);
+        Utf8String columnName = stmt->GetValueText(2);
+        LOG.warningv("> %s > column: %s", accessString.c_str(), columnName.c_str());
+        }
+    }
+
+    { //Select up and down the hierarchy (from new base class, including the class itself, but EXCLUDING the new derived class and everything below)
+    LOG.warningv(">>Classes up and down the hierarchy of new base class %s:%s", addedBaseClass.m_schemaName.c_str(), addedBaseClass.m_name.c_str());
+    Utf8CP sql = R"sqlstatement(
+    SELECT [c].[Name]
+        FROM (SELECT ClassId as cid from [ec_Cache_ClassHierarchy] [ch] WHERE [ch].[BaseClassId] = ?1 AND NOT EXISTS(SELECT 1 from [ec_Cache_ClassHierarchy] WHERE ClassId = [ch].[ClassId] AND BaseClassId = ?2)
+            UNION SELECT BaseClassId as cid from [ec_Cache_ClassHierarchy] WHERE [ClassId] = ?1)
+        JOIN ec_Class [c] ON [c].Id = cid   
+    )sqlstatement";
+
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql);
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, addedBaseClass.m_id))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt->BindId(2, remapInfo.m_classId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        Utf8String cName = stmt->GetValueText(0);
+        LOG.warningv("> %s", cName.c_str());
+        }
+    }
+
+    {
+    LOG.warning(">>Mapped columns for these classes:");
+    Utf8CP sql = R"sqlstatement(
+        SELECT distinct [col].[Id] as [ColumnId], [pp].[AccessString] as [AccessString], [col].[Name] as [ColumnName]
+        FROM [ec_PropertyMap] [pm]
+            JOIN [ec_Column] [col] ON [col].[Id] = [pm].[ColumnId]
+            JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+        WHERE [pm].[ClassId] IN (SELECT ClassId from [ec_Cache_ClassHierarchy] [ch] WHERE [ch].[BaseClassId] = ?1 AND NOT EXISTS(SELECT 1 from [ec_Cache_ClassHierarchy] WHERE ClassId = [ch].[ClassId] AND BaseClassId = ?2)
+                                UNION SELECT BaseClassId as ClassId from [ec_Cache_ClassHierarchy] WHERE [ClassId] = ?1)
+        AND [col].[ColumnKind] = 4
+    )sqlstatement";
+
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql);
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, addedBaseClass.m_id))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt->BindId(2, remapInfo.m_classId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        Utf8String accessString = stmt->GetValueText(1);
+        Utf8String columnName = stmt->GetValueText(2);
+        LOG.warningv("> %s > column: %s", accessString.c_str(), columnName.c_str());
+        }
+    }
+
+    LOG.warning("----------------------------END OF ECDB_SCHEMAIMPORT_DIAGNOSTICS-----------------------------------");
+    #endif
 
     Utf8CP cleanMappingsSql = R"sqlstatement(
 DELETE FROM [ec_PropertyMap] WHERE [Id] IN(
@@ -354,35 +419,73 @@ SELECT [pm].[Id]
 WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] from [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2) AND [col].[ColumnKind] = 4)
     )sqlstatement";
 
-
+    //Parameters: 1 BaseClassId, 2 ClassId
+    Utf8CP detectPropertiesToRemapSql = R"sqlstatement(
+WITH
+[residentColumns]([ColumnId],[AccessString],[ColumnName]) AS(
+    SELECT distinct [col].[Id] as [ColumnId], [pp].[AccessString] as [AccessString], [col].[Name] as [ColumnName]
+    FROM [ec_PropertyMap] [pm]
+        JOIN [ec_Column] [col] ON [col].[Id] = [pm].[ColumnId]
+        JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+    WHERE [pm].[ClassId] IN (SELECT ClassId from [ec_Cache_ClassHierarchy] [ch] WHERE [ch].[BaseClassId] = ?1 
+                                AND NOT EXISTS(SELECT 1 from [ec_Cache_ClassHierarchy] WHERE [ClassId] = [ch].[ClassId] AND [BaseClassId] = ?2)
+                             UNION SELECT [BaseClassId] as [ClassId] from [ec_Cache_ClassHierarchy] WHERE [ClassId] = ?1)
+    AND [col].[ColumnKind] = 4
+),
+[migratingColumns]([ColumnId],[AccessString],[ColumnName],[RootPropertyId]) AS(
+    SELECT distinct [col].[Id] as [ColumnId], [pp].[AccessString] as [AccessString], [col].[Name] as [ColumnName], [pp].[RootPropertyId] as [RootPropertyId]
+        FROM [ec_PropertyMap] [pm]
+            JOIN [ec_Column] [col] ON [col].[Id] = [pm].[ColumnId]
+            JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+        WHERE [pm].[ClassId] IN (SELECT DISTINCT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2)
+        AND [col].[ColumnKind] = 4
+)
+SELECT distinct [mc].[RootPropertyId], [prop].[Name], [cl].[Name] FROM [migratingColumns] [mc]
+    JOIN [ec_Property] [prop] ON [prop].[Id] = [mc].[RootPropertyId]
+    JOIN [ec_Class] [cl] ON [prop].[ClassId] = [cl].[Id]
+ WHERE EXISTS (
+    SELECT 1 from [residentColumns] [rc] 
+        WHERE [rc].[ColumnId] = [mc].[ColumnId] AND [rc].[AccessString] != [mc].[AccessString])
+    )sqlstatement";
     CachedStatementPtr detectPropertiesToRemapStmt = m_ecdb.GetCachedStatement(detectPropertiesToRemapSql);
     if (detectPropertiesToRemapStmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != detectPropertiesToRemapStmt->BindText(1, addedBaseClass.m_name, Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != detectPropertiesToRemapStmt->BindId(1, addedBaseClass.m_id))
         return ERROR;
-    if (BE_SQLITE_OK != detectPropertiesToRemapStmt->BindText(2, addedBaseClass.m_schemaName, Statement::MakeCopy::No))
-        return ERROR;
-    if (BE_SQLITE_OK != detectPropertiesToRemapStmt->BindText(3, remapInfo.m_className, Statement::MakeCopy::No))
-        return ERROR;
-    if (BE_SQLITE_OK != detectPropertiesToRemapStmt->BindText(4, remapInfo.m_schemaName, Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != detectPropertiesToRemapStmt->BindId(2, remapInfo.m_classId))
         return ERROR;
 
     while (detectPropertiesToRemapStmt->Step() == BE_SQLITE_ROW)
         {
         ECPropertyId rootPropertyId = detectPropertiesToRemapStmt->GetValueId<ECPropertyId>(0);
-        ECClassId classId = detectPropertiesToRemapStmt->GetValueId<ECClassId>(1);
+        Utf8String propertyName = detectPropertiesToRemapStmt->GetValueText(1);
         Utf8String className = detectPropertiesToRemapStmt->GetValueText(2);
-        Utf8String propertyName = detectPropertiesToRemapStmt->GetValueText(3);
-        LOG.infov("Property %s:%s needs to be remapped...", className.c_str(), propertyName.c_str());
+        
+        LOG.infov("The migrating class %s:%s needs to move its property %s:%s due to a mapping conflict with its new base class...", remapInfo.m_schemaName.c_str(), remapInfo.m_className.c_str(),
+            className.c_str(), propertyName.c_str());
 
+        //ColumnKind 4 indicates shared columns, Param1: root prop id, param2: classId to iterate downwards from
+        Utf8CP collectInfoSql = R"sqlstatement(
+            SELECT [rootSchema].[Name], [rootClass].[Name], [rootClass].[Id], [s].[Name], [c].[Name], [c].[Id], [ecp].[Id], [ecp].[Name], [pp].[AccessString], [tab].[Name], [col].[Name], [pm].[ClassId]
+                FROM [ec_PropertyMap] [pm]
+                JOIN [ec_Property] [ecp] on [ecp].[Id] = [pp].[RootPropertyId]
+                JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
+                JOIN [ec_Column] [col] on [col].[Id] = [pm].[ColumnId]
+                JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id]
+                JOIN [ec_Class] [c] on [c].[Id] = [pm].[ClassId]
+                JOIN [ec_Class] [rootClass] on [rootClass].[Id] = [ecp].[ClassId]
+                JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
+                JOIN [ec_Schema] [rootSchema] on [rootSchema].[Id] = [rootClass].[SchemaId]
+            WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] from [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2) AND [col].[ColumnKind] = 4
+                )sqlstatement";
         CachedStatementPtr collectInfoStmt = m_ecdb.GetCachedStatement(collectInfoSql);
         if (collectInfoStmt == nullptr)
             return ERROR;
 
         if (BE_SQLITE_OK != collectInfoStmt->BindId(1, rootPropertyId))
             return ERROR;
-        if (BE_SQLITE_OK != collectInfoStmt->BindId(2, classId))
+        if (BE_SQLITE_OK != collectInfoStmt->BindId(2, remapInfo.m_classId))
             return ERROR;
 
         int results = 0;
@@ -418,7 +521,7 @@ WHERE [ecp].[Id] = ?1 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SE
             }
         if (BE_SQLITE_OK != cleanMappingsStmt->BindId(1, rootPropertyId))
             return ERROR;
-        if (BE_SQLITE_OK != cleanMappingsStmt->BindId(2, classId))
+        if (BE_SQLITE_OK != cleanMappingsStmt->BindId(2, remapInfo.m_classId))
             return ERROR;
 
         if (BE_SQLITE_DONE != cleanMappingsStmt->Step())
@@ -594,7 +697,7 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
     return SUCCESS;
     }
 
-BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties()
+BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties(SchemaImportContext& ctx)
     {
     ECDB_PERF_LOG_SCOPE( "Schema import> Upgrading existing ECInstances with remapped properties to different columns");
     for(auto& pair : m_remappedColumns)
@@ -620,12 +723,12 @@ BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties()
             return ERROR;
             }
 
-        if(UpdateRemappedData(sortedUpdates) != SUCCESS)
+        if(UpdateRemappedData(sortedUpdates, ctx) != SUCCESS)
             {
             return ERROR;
             }
 
-        if(UpdateRemappedCircularData(circularUpdates) != SUCCESS)
+        if(UpdateRemappedCircularData(circularUpdates, ctx) != SUCCESS)
             {
             return ERROR;
             }
@@ -737,7 +840,7 @@ void RemapManager::SortCircularRemappedColumnInfos(std::vector<std::vector<Remap
         }
     }
 
-BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos)
+BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos, SchemaImportContext& ctx)
     {
     if(infos.empty())
         return SUCCESS;
@@ -749,28 +852,24 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
         if (remapInfo->m_isSameTableName)
             {
                 {
-                auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s]=[%s] WHERE([ECClassId]=%s)",
-                                                                remapInfo->m_newTableName.c_str(),
-                                                                remapInfo->m_newColumnName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_columnName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-                if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to update remapped property columns for %s. Error: %s", remapInfo->ToString().c_str(), m_ecdb.GetLastError().c_str());
-                    return ERROR;
-                    }
+                const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",remapInfo->ToString().c_str()).GetUtf8CP();
+                const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s]=[%s] WHERE([ECClassId]=%s)",
+                                                       remapInfo->m_newTableName.c_str(),
+                                                       remapInfo->m_newColumnName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_columnName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str())
+                                           .GetUtf8CP();
+                ctx.GetDataTransform().Append(desc, sql);
                 }
 
                 {
-                auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s]=NULL WHERE([ECClassId]=%s)",
-                                                                remapInfo->m_newTableName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_columnName.c_str(),
-                                                                remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-                if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                    {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean old column for remapped property %s. Error: %s", remapInfo->ToString().c_str(), m_ecdb.GetLastError().c_str());
-                    return ERROR;
-                    }
+                const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",remapInfo->ToString().c_str()).GetUtf8CP();
+                const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s]=NULL WHERE([ECClassId]=%s)",
+                                                       remapInfo->m_newTableName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_columnName.c_str(),
+                                                       remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str())
+                                           .GetUtf8CP();
+                ctx.GetDataTransform().Append(desc, sql);
                 }
             }
         else
@@ -785,7 +884,8 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
                 return ERROR;
                 }
 
-            auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s] = (SELECT [%s] FROM [%s] WHERE [%s].[%s] = [%s].[%s]) WHERE([ECClassId]=%s)",
+            const Utf8String desc = SqlPrintfString("remap property statement to move property data into different table. Property %s.",remapInfo->ToString().c_str()).GetUtf8CP();
+            const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s] = (SELECT [%s] FROM [%s] WHERE [%s].[%s] = [%s].[%s]) WHERE([ECClassId]=%s)",
                                                             remapInfo->m_newTableName.c_str(),
                                                             remapInfo->m_newColumnName.c_str(),
                                                             remapInfo->m_cleanedMapping.m_columnName.c_str(),
@@ -794,26 +894,17 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
                                                             oldInstanceIdColumn.c_str(),
                                                             remapInfo->m_newTableName.c_str(),
                                                             newInstanceIdColumn.c_str(),
-                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-            if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to execute remap property statement to move property data into different table. Property %s. Error: %s", remapInfo->ToString().c_str(),
-                    m_ecdb.GetLastError().c_str());
-                return ERROR;
-                }
+                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()).GetUtf8CP();
+            ctx.GetDataTransform().Append(desc, sql);
             }
 
             {
-            auto rc = m_ecdb.TryExecuteSql(SqlPrintfString("UPDATE [%s] SET [%s] = NULL WHERE([ECClassId]=%s)",
+            const Utf8String desc = SqlPrintfString("update statement for removing remapped property data from old column. Property %s.",remapInfo->ToString().c_str()).GetUtf8CP();
+            const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s] = NULL WHERE([ECClassId]=%s)",
                                                             remapInfo->m_cleanedMapping.m_tableName.c_str(),
                                                             remapInfo->m_cleanedMapping.m_columnName.c_str(),
-                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()));
-            if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-                {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to execute update statement for removing remapped property data from old column. Property %s. Error: %s",
-                    remapInfo->ToString().c_str(), m_ecdb.GetLastError().c_str());
-                return ERROR;
-                }
+                                                            remapInfo->m_cleanedMapping.m_classId.ToHexStr().c_str()).GetUtf8CP();
+            ctx.GetDataTransform().Append(desc, sql);
             }
             } // move between tables
         } //for each remap info
@@ -834,7 +925,7 @@ bool RemapManager::CheckIfAllUpdatesAreWithinSameTable(std::vector<std::vector<R
     return true;
     }
 
-BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos)
+BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos, SchemaImportContext& ctx)
     {
     if(infos.empty())
         return SUCCESS;
@@ -868,12 +959,8 @@ BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<R
             }
         SqlPrintfString classIdPart(" WHERE([ECClassId]=%s)", first->m_cleanedMapping.m_classId.ToHexStr().c_str());
         updateStmt.append(classIdPart.GetUtf8CP());
-        auto rc = m_ecdb.TryExecuteSql(updateStmt.c_str());
-        if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
-            {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to update remapped property columns (circular) for %s. Error: %s", first->ToString().c_str(), m_ecdb.GetLastError().c_str());
-            return ERROR;
-            }
+        const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",first->ToString().c_str()).GetUtf8CP();
+        ctx.GetDataTransform().Append(desc, updateStmt);
         }
 
     return SUCCESS;

@@ -4191,7 +4191,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_UsesRelatedInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression, R"*(
     <ECEntityClass typeName="Model">
         <ECProperty propertyName="ModelName" typeName="string" />
     </ECEntityClass>
@@ -4205,7 +4205,7 @@ DEFINE_SCHEMA(UsesRelatedInstanceInFilterExpression, R"*(
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilterExpression)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_UsesRelatedInstanceInFilterExpression)
     {
     ECClassCP modelClass = GetClass("Model");
     ECClassCP elementClass = GetClass("Element");
@@ -4226,7 +4226,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInFilter
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), false, false);
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "model.ModelName = \"a\"", elementClass->GetFullName(), true, true);
     spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Backward, modelClass->GetFullName())), "model"));
     rule->AddSpecification(*spec);
 
@@ -4683,7 +4683,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLa
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4731,7 +4731,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4777,7 +4777,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4978,7 +4978,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     ASSERT_EQ(1, contentSet.GetSize());
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    Utf8PrintfString expectedValue(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString expectedValue(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
     EXPECT_STREQ(expectedValue.c_str(), recordJson["DisplayValues"][content->GetDescriptor().GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     EXPECT_TRUE(contentSet.Get(0)->IsMerged(content->GetDescriptor().GetVisibleFields()[0]->GetUniqueName()));
     }
@@ -5036,7 +5036,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_DisplayLabelG
 
     EXPECT_STREQ("Test", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5092,7 +5092,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Displ
 
     EXPECT_STREQ("Test", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5204,7 +5204,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelGetsCreatedFrom
     ASSERT_EQ(2, contentSet.GetSize());
 
     ContentSetItemCPtr record1 = contentSet.Get(0);
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, record1->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, record1->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
     ContentSetItemCPtr record2 = contentSet.Get(1);
     EXPECT_STREQ("test value", record2->GetDisplayLabelDefinition().GetDisplayValue().c_str());
@@ -5670,9 +5670,11 @@ DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAp
     </ECEntityClass>
     <ECEntityClass typeName="Derived1">
         <BaseClass>Base</BaseClass>
+        <ECProperty propertyName="Property1" typeName="string" />
     </ECEntityClass>
     <ECEntityClass typeName="Derived2">
         <BaseClass>Base</BaseClass>
+        <ECProperty propertyName="Property2" typeName="string" />
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAppliedToOnlyOneChildClassPolymorphically)
@@ -5681,28 +5683,34 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     ECClassCP baseClass = GetClass("Base");
     ECClassCP derived1Class = GetClass("Derived1")->GetEntityClassCP();
     ECClassCP derived2Class = GetClass("Derived2")->GetEntityClassCP();
-    IECInstancePtr derived1Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived1Class,
-        [](IECInstanceR instance) { instance.SetValue("Property", ECValue("Derived1")); });
-    IECInstancePtr derived2Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived2Class,
-        [](IECInstanceR instance) { instance.SetValue("Property", ECValue("Derived2")); });
+    IECInstancePtr derived1Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived1Class, [](IECInstanceR instance)
+        {
+        instance.SetValue("Property", ECValue("Derived1"));
+        instance.SetValue("Property1", ECValue("-111"));
+        });
+    IECInstancePtr derived2Instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derived2Class, [](IECInstanceR instance)
+        {
+        instance.SetValue("Property", ECValue("Derived2"));
+        instance.SetValue("Property2", ECValue("-222"));
+        });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true, true);
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "Derived2");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property & this.Property2"));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(4, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -5715,12 +5723,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("Derived1", jsonValues[FIELD_NAME(baseClass, "Property")].GetString());
+    EXPECT_STREQ("-111", jsonValues[FIELD_NAME(derived1Class, "Property1")].GetString());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(derived2Class, "Property2")].IsNull());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_STREQ("Derived2", jsonValues2[FIELD_NAME(baseClass, "Property")].GetString());
-    EXPECT_STREQ("Derived2", jsonValues2["CalculatedProperty_0"].GetString());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(derived1Class, "Property1")].IsNull());
+    EXPECT_STREQ("-222", jsonValues2[FIELD_NAME(derived2Class, "Property2")].GetString());
+    EXPECT_STREQ("Derived2-222", jsonValues2["CalculatedProperty_0"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9506,7 +9518,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenVal
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
@@ -9571,7 +9583,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSom
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSomeValuesAreNull)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
@@ -9691,7 +9703,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenArraySizesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenArraySizesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
@@ -9751,7 +9763,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenValuesInArrayAreDifferent, R"
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenValuesInArrayAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
@@ -9813,7 +9825,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("ClassA");
@@ -10231,7 +10243,7 @@ DEFINE_SCHEMA(MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDiffe
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
@@ -10363,7 +10375,7 @@ DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenValuesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     // unused - ECClassCP structClass = GetClass("MyStruct");
@@ -10428,7 +10440,7 @@ DEFINE_SCHEMA(MergesStructPropertyValueWhenClassesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWhenClassesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("ClassA");
@@ -10799,7 +10811,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValues
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -10954,7 +10966,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenArraySizesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValuesWhenArraySizesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -11036,7 +11048,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenArrayValuesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValuesWhenArrayValuesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -11113,7 +11125,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyValueWhenClassesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValueWhenClassesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -12775,7 +12787,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -12819,7 +12831,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12859,7 +12871,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12900,7 +12912,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12946,7 +12958,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13722,7 +13734,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     ASSERT_EQ(1, contentSet.GetSize());
 
     // Expecting "Not specified" label
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13781,7 +13793,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 #ifdef wip_related_content_without_instances
@@ -13937,7 +13949,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultip
     LabelDefinitionCPtr label = GetValidatedResponse(m_manager->GetDisplayLabel(AsyncKeySetDisplayLabelRequestParams::Create(s_project->GetECDb(), *keys)));
 
     // verify
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, label->GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, label->GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -15642,6 +15654,108 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRuleset, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenClassGroupingNodeDependsOnAnotherRuleset)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    // set up ruleset for hierarchy
+    PresentationRuleSetPtr nodeRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*nodeRules);
+
+    RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
+    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false, "", classA->GetFullName(), false));
+
+    nodeRules->AddPresentationRule(*nodeRule);
+
+    // set up ruleset for content
+    PresentationRuleSetPtr contentRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest() + Utf8String("contentRuleset"));
+    m_locater->AddRuleSet(*contentRules);
+
+    ContentRule* contentRule = new ContentRule("", 1000, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+
+    contentRules->AddPresentationRule(*contentRule);
+
+    // request nodes
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), RulesetVariables()))); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
+
+    // request
+    KeySetPtr input = KeySet::Create(bvector<NavNodeKeyCPtr>{rootNodes[0]->GetKey()});
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::KeysOnly, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ a.get() }, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRuleset, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsContentWhenPropertyGroupingNodeDependsOnAnotherRuleset)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Property", ECValue(5));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Property", ECValue(5)); });
+
+    // set up ruleset for hierarchy
+    PresentationRuleSetPtr nodeRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*nodeRules);
+
+    RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
+    nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), false));
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classA->GetName(), "", "", "");;
+    nodeRules->AddPresentationRule(*groupingRule);
+    groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
+
+    nodeRules->AddPresentationRule(*nodeRule);
+
+    // set up ruleset for content
+    PresentationRuleSetPtr contentRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest() + Utf8String("contentRuleset"));
+    m_locater->AddRuleSet(*contentRules);
+
+    ContentRule* contentRule = new ContentRule("", 1000, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+
+    contentRules->AddPresentationRule(*contentRule);
+
+    // request nodes
+    auto rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() {return GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), nodeRules->GetRuleSetId(), RulesetVariables()))); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
+
+    // request
+    KeySetPtr input = KeySet::Create(bvector<NavNodeKeyCPtr>{rootNodes[0]->GetKey()});
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), contentRules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::KeysOnly, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ instance1.get(), instance2.get() }, * content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(SetsTypeNameAsExtendedTypeNameIfProvided, R"*(
     <ECEntityClass typeName="MyClass">
         <ECProperty propertyName="MyProperty" typeName="string" extendedTypeName="URL" />
@@ -16151,3 +16265,119 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyOverrideRuleWithAst
     // validate content set
     RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{a1.get()}, *content);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetContentForDisplayLabelGroupingNode, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropC" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGroupingNode)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("PropB", ECValue(3)); });
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("PropC", ECValue("string")); });
+
+    // setup ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
+        bvector<MultiSchemaClass*> { new MultiSchemaClass(BeTest::GetNameOfCurrentTest(), true, bvector<Utf8String> { "A" })}, bvector<MultiSchemaClass*>());
+    rootRule->AddSpecification(*spec);
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "type", "node", "", ""));
+    rules->AddPresentationRule(*rootRule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification("label") }));
+    ContentRuleP contentRule = new ContentRule(Utf8PrintfString("SelectedNode.IsOfClass(\"B\", \"%s\")", classB->GetSchema().GetName().c_str()), 1, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*contentRule);
+    m_locater->AddRuleSet(*rules);
+
+    // cache hierarchy
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
+    ASSERT_EQ(2, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str());
+
+    // validate content descriptor
+    NavNodeKeyCPtr selectedNode = rootNodes[0]->GetKey();
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*selectedNode))));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetContentForDisplayLabelGroupingNode_WithMultipleRulesets, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+        <ECProperty propertyName="PropC" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGroupingNode_WithMultipleRulesets)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("PropB", ECValue(3)); });
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("PropC", ECValue("string")); });
+
+    // setup ruleset
+    PresentationRuleSetPtr hierarchyRules = PresentationRuleSet::CreateInstance(Utf8PrintfString("%s_Nodes", BeTest::GetNameOfCurrentTest()));
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
+        bvector<MultiSchemaClass*> { new MultiSchemaClass(BeTest::GetNameOfCurrentTest(), true, bvector<Utf8String> { "A" })}, bvector<MultiSchemaClass*>());
+    rootRule->AddSpecification(*spec);
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "type", "node", "", ""));
+    hierarchyRules->AddPresentationRule(*rootRule);
+    hierarchyRules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification("label") }));
+    m_locater->AddRuleSet(*hierarchyRules);
+
+    PresentationRuleSetPtr contentRules = PresentationRuleSet::CreateInstance(Utf8PrintfString("%s_Content", BeTest::GetNameOfCurrentTest()));
+    ContentRuleP contentRule = new ContentRule(Utf8PrintfString("SelectedNode.IsOfClass(\"B\", \"%s\")", classB->GetSchema().GetName().c_str()), 1, false);
+    contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    contentRules->AddPresentationRule(*contentRule);
+    m_locater->AddRuleSet(*contentRules);
+
+    // cache hierarchy
+    NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), hierarchyRules->GetRuleSetId(), RulesetVariables())));
+    ASSERT_EQ(2, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[0]->GetType().c_str());
+
+    // validate content descriptor
+    NavNodeKeyCPtr selectedNode = rootNodes[0]->GetKey();
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        contentRules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*selectedNode))));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
+    }
+

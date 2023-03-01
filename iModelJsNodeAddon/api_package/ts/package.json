@@ -8,16 +8,13 @@
   },
   "scripts": {
     "build": "tsc 1>&2",
+    "lint": "eslint -f visualstudio \"./src/**/*.ts\" 1>&2",
+    "buildAndLint": "npm run -s build && npm run -s lint",
     "clean": "rimraf lib",
     "copy:test-assets": "cpx \"./assets/test/**/*\" ./lib/test/assets",
-    "lint": "eslint -f visualstudio \"./src/**/*.ts\" 1>&2",
     "pretest": "npm run copy:test-assets",
     "test": "node ./lib/test/index.js"
   },
-  "//dependencies:": [
-    "NOTE: May depend only on iModel.js 'wire format' or other pure types, which are declared in @itwin/core-bentley, @itwin/core-common and @itwin/core-geometry",
-    "NOTE: Tests may NOT depend on other iModel.js packages"
-  ],
   "devDependencies": {
     "@itwin/build-tools": "rc",
     "@itwin/core-bentley": "rc",

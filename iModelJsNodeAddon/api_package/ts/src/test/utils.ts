@@ -44,7 +44,7 @@ export function loadLocalBuildOfAddon(): any {
   const platformSubDirs = {
     win32: "Winx64",
     linux: "LinuxX64",
-    darwin: "MacOS" + process.arch.toUpperCase(),
+    darwin: `MacOS${process.arch.toUpperCase()}`,
   };
 
   if (!platformSubDirs.hasOwnProperty(process.platform)) {

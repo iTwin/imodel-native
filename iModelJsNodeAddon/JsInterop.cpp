@@ -31,7 +31,6 @@ namespace Render = Dgn::Render;
 
 namespace IModelJsNative {
 
-
 /*=================================================================================**//**
 * An implementation of IKnownLocationsAdmin that is useful for desktop applications.
 * This implementation works for Windows, Linux, and MacOS.
@@ -879,62 +878,33 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames)
+DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType, const SchemaImportOptions& opts)
     {
-    if (0 == schemaFileNames.size())
-        return BE_SQLITE_NOTFOUND;
+    if (0 == schemaSources.size())
+        return BE_SQLITE_ERROR;
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
+    if (schemaContext.IsNull())
+        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
     JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
-
     bvector<ECSchemaCP> schemas;
 
-    for (Utf8String schemaFileName : schemaFileNames)
-        {
-        BeFileName schemaFile(schemaFileName.c_str(), BentleyCharEncoding::Utf8);
-        if (!schemaFile.DoesPathExist())
-            return BE_SQLITE_NOTFOUND;
-
-
-        SchemaReadStatus schemaStatus;
-        ECSchemaPtr schema = ECSchema::LocateSchema(schemaFileName.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
-
-        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
-            continue;
-
-        if (SchemaReadStatus::Success != schemaStatus)
-            return BE_SQLITE_ERROR;
-
-        schemas.push_back(schema.get());
-        }
-
-    if (0 == schemas.size())
-        return BE_SQLITE_NOTFOUND;
-
-    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
-    if (status != SchemaStatus::Success)
-        return DgnDb::SchemaStatusToDbResult(status, true);
-
-    return dgndb.SaveChanges();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& serializedXmlSchemas)
-    {
-    if (0 == serializedXmlSchemas.size())
-        return BE_SQLITE_NOTFOUND;
-
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
-
-    bvector<ECSchemaCP> schemas;
-
-    for (Utf8String schemaXml : serializedXmlSchemas)
+    for (Utf8String schemaSource : schemaSources)
         {
         ECSchemaPtr schema;
-        SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext);
+        SchemaReadStatus schemaStatus;
+        if (sourceType == SchemaSourceType::File)
+            {
+            BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
+            if (!schemaFile.DoesPathExist())
+                return BE_SQLITE_ERROR_FileNotFound;
+
+            schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
+            }
+        else
+            schemaStatus = ECSchema::ReadFromXmlString(schema, schemaSource.c_str(), *schemaContext);
+
         if (SchemaReadStatus::DuplicateSchema == schemaStatus)
             continue;
 
@@ -945,9 +915,9 @@ DbResult JsInterop::ImportXmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& se
         }
 
     if (0 == schemas.size())
-        return BE_SQLITE_NOTFOUND;
+        return BE_SQLITE_ERROR;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 

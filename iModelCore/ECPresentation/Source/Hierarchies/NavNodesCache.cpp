@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/ECPresentationManager.h>
+#include <ECPresentation/DefaultECPresentationSerializer.h>
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/Profiler.h>
 #include "../Shared/ExtendedData.h"
@@ -16,7 +17,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_SUFFIX            L"-hierarchies"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR     35
+#define NAVNODES_CACHE_DB_VERSION_MAJOR     36
 #define NAVNODES_CACHE_DB_VERSION_MINOR     0
 
 #define NAVNODES_CACHE_LockWaitTime 200
@@ -540,8 +541,7 @@ BentleyStatus NodesCache::DbFactory::InitializeCacheTables(Db& db)
             "[Id] " NAVNODES_CACHE_ID_TYPE " PRIMARY KEY NOT NULL, "
             "[HierarchyLevelId] " NAVNODES_CACHE_ID_TYPE " NOT NULL, "
             "[Data] TEXT NOT NULL, "
-            "[Label] TEXT, "
-            "[InstanceKeysSelectQuery] TEXT";
+            "[Label] TEXT ";
         EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_Nodes, ddl));
         EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_" NODESCACHE_TABLENAME_Nodes "_HierarchyLevelId] ON [" NODESCACHE_TABLENAME_Nodes "]([HierarchyLevelId])"));
         }
@@ -557,7 +557,8 @@ BentleyStatus NodesCache::DbFactory::InitializeCacheTables(Db& db)
             "[SerializedPropertyValues] INT,"
             "[GroupedInstanceKeysCount] INT,"
             "[GroupedInstanceKeys] TEXT,"
-            "[PathFromRoot] TEXT NOT NULL";
+            "[PathFromRoot] TEXT NOT NULL,"
+            "[InstanceKeysSelectQuery] TEXT";
         EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_NodeKeys, ddl));
         EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_NodeKeys_Lookup] ON [" NODESCACHE_TABLENAME_NodeKeys "]([Type],[PathFromRoot])"));
         }
@@ -1194,6 +1195,21 @@ static void BindOptionalInstanceKeys(Statement& stmt, int bindingIndex, bvector<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void BindInstanceKeysSelectQuery(Statement& stmt, int bindingIndex, NavNodeKeyCR key)
+    {
+    if (key.GetInstanceKeysSelectQuery() != nullptr)
+        {
+        ECPresentationSerializerContext ctx;
+        DefaultECPresentationSerializer serializer;
+        stmt.BindText(bindingIndex, BeRapidJsonUtilities::ToString(serializer.AsJson(ctx, *key.GetInstanceKeysSelectQuery(), nullptr)), Statement::MakeCopy::Yes);
+        }
+    else
+        stmt.BindNull(bindingIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::CacheNodeKey(NavNodeCR node)
     {
     LOCK_MUTEX_ON_CONDITION(m_mutex, m_ensureThreadSafety);
@@ -1216,8 +1232,8 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         {
         static Utf8CP insertQuery =
             "INSERT INTO [" NODESCACHE_TABLENAME_NodeKeys "] "
-            "([NodeId],[Type],[SpecificationIdentifier],[PathFromRoot])"
-            "VALUES (?, ?, ?, ?)";
+            "([NodeId],[Type],[SpecificationIdentifier],[PathFromRoot],[InstanceKeysSelectQuery])"
+            "VALUES (?, ?, ?, ?, ?)";
 
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), insertQuery))
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare instance node key insertion query");
@@ -1227,6 +1243,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindText(bindingIndex++, key.GetType(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, key.GetSpecificationIdentifier(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
 
         CacheNodeInstanceKeys(node.GetNodeId(), key.AsECInstanceNodeKey()->GetInstanceKeys());
@@ -1235,8 +1252,8 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         {
         static Utf8CP insertQuery =
             "INSERT INTO [" NODESCACHE_TABLENAME_NodeKeys "] "
-            "([NodeId],[Type],[SpecificationIdentifier],[ClassId],[IsClassPolymorphic],[GroupedInstanceKeysCount],[GroupedInstanceKeys],[PathFromRoot])"
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            "([NodeId],[Type],[SpecificationIdentifier],[ClassId],[IsClassPolymorphic],[GroupedInstanceKeysCount],[GroupedInstanceKeys],[PathFromRoot],[InstanceKeysSelectQuery])"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), insertQuery))
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare class grouping node key insertion query");
@@ -1250,14 +1267,15 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindUInt64(bindingIndex++, key.AsECClassGroupingNodeKey()->GetGroupedInstancesCount());
         BindOptionalInstanceKeys(*stmt, bindingIndex++, key.AsECClassGroupingNodeKey()->GetGroupedInstanceKeys());
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     else if (key.AsECPropertyGroupingNodeKey())
         {
         static Utf8CP insertQuery =
             "INSERT INTO [" NODESCACHE_TABLENAME_NodeKeys "] "
-            "([NodeId],[Type],[SpecificationIdentifier],[ClassId],[PropertyName],[SerializedPropertyValues],[GroupedInstanceKeysCount],[GroupedInstanceKeys],[PathFromRoot])"
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "([NodeId],[Type],[SpecificationIdentifier],[ClassId],[PropertyName],[SerializedPropertyValues],[GroupedInstanceKeysCount],[GroupedInstanceKeys],[PathFromRoot],[InstanceKeysSelectQuery])"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), insertQuery))
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare property grouping node key insertion query");
@@ -1272,14 +1290,15 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindUInt64(bindingIndex++, key.AsECPropertyGroupingNodeKey()->GetGroupedInstancesCount());
         BindOptionalInstanceKeys(*stmt, bindingIndex++, key.AsECPropertyGroupingNodeKey()->GetGroupedInstanceKeys());
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     else if (key.AsLabelGroupingNodeKey())
         {
         static Utf8CP insertQuery =
             "INSERT INTO [" NODESCACHE_TABLENAME_NodeKeys "] "
-            "([NodeId],[Type],[SpecificationIdentifier],[GroupedInstanceKeysCount],[GroupedInstanceKeys],[PathFromRoot])"
-            "VALUES (?, ?, ?, ?, ?, ?)";
+            "([NodeId],[Type],[SpecificationIdentifier],[GroupedInstanceKeysCount],[GroupedInstanceKeys],[PathFromRoot],[InstanceKeysSelectQuery])"
+            "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), insertQuery))
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare node key insertion query");
@@ -1291,14 +1310,15 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindUInt64(bindingIndex++, key.AsLabelGroupingNodeKey()->GetGroupedInstancesCount());
         BindOptionalInstanceKeys(*stmt, bindingIndex++, key.AsLabelGroupingNodeKey()->GetGroupedInstanceKeys());
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     else
         {
         static Utf8CP insertQuery =
             "INSERT INTO [" NODESCACHE_TABLENAME_NodeKeys "] "
-            "([NodeId],[Type],[SpecificationIdentifier],[PathFromRoot])"
-            "VALUES (?, ?, ?, ?)";
+            "([NodeId],[Type],[SpecificationIdentifier],[PathFromRoot],[InstanceKeysSelectQuery])"
+            "VALUES (?, ?, ?, ?, ?)";
 
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), insertQuery))
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare node key insertion query");
@@ -1308,6 +1328,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
         stmt->BindText(bindingIndex++, key.GetType(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, key.GetSpecificationIdentifier(), Statement::MakeCopy::No);
         stmt->BindText(bindingIndex++, NavNodesHelper::NodeKeyHashPathToString(key), Statement::MakeCopy::Yes);
+        BindInstanceKeysSelectQuery(*stmt, bindingIndex++, key);
         stmt->Step();
         }
     }
@@ -1425,8 +1446,8 @@ void NodesCache::CacheNode(BeGuidCR hierarchyLevelId, NavNodeR node)
     {
     static Utf8CP query =
         "INSERT INTO [" NODESCACHE_TABLENAME_Nodes "] ("
-        "  [Id], [HierarchyLevelId], [Data], [Label], [InstanceKeysSelectQuery]"
-        ") VALUES (?, ?, ?, ?, ?)";
+        "  [Id], [HierarchyLevelId], [Data], [Label]"
+        ") VALUES (?, ?, ?, ?)";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -1443,11 +1464,6 @@ void NodesCache::CacheNode(BeGuidCR hierarchyLevelId, NavNodeR node)
     stmt->BindText(bindingIndex++, nodeStr.c_str(), Statement::MakeCopy::No);
 
     stmt->BindText(bindingIndex++, node.GetLabelDefinition().GetDisplayValue(), Statement::MakeCopy::Yes);
-
-    if (node.GetInstanceKeysSelectQuery() != nullptr)
-        stmt->BindText(bindingIndex++, BeRapidJsonUtilities::ToString(node.GetInstanceKeysSelectQuery()->ToJson()), Statement::MakeCopy::Yes);
-    else
-        stmt->BindNull(bindingIndex++);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_DONE != result)

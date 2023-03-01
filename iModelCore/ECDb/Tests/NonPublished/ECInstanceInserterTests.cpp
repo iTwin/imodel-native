@@ -67,10 +67,10 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
         IECInstancePtr expected = instances[i];
         IECInstancePtr actual = dataAdapter.GetInstance();
 
-        Json::Value expectedJson, actualJson;
+        BeJsDocument expectedJson, actualJson;
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedJson, *expected, nullptr, true));
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJson, *actual, nullptr, true));
-        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson));
+        ASSERT_EQ(expectedJson, actualJson);
         i++;
         }
     }
@@ -842,7 +842,7 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
 
     ScopedDisableFailOnAssertion disableFailOnAssertion;
     // Parse JSON value using JsonCpp
-    Json::Value jsonInput;
+    BeJsDocument jsonInput;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(jsonInput, jsonInputFile));
 
     JsonInserter jsonInserter(m_ecdb, *employee, nullptr);
