@@ -985,14 +985,14 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesQueryForAllNodeE
         ComplexQueryBuilderPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
-            .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*rel2, RULES_ENGINE_RELATED_CLASS_ALIAS(*rel2, 0)), false, SelectClass<ECClass>(*classB, "related", true), false))
-            .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)2)) })); 
+            .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*rel1, RULES_ENGINE_RELATED_CLASS_ALIAS(*rel1, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
+            .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)1)) }));
 
         ComplexQueryBuilderPtr nestedQuery2 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(2, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
-            .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*rel1, RULES_ENGINE_RELATED_CLASS_ALIAS(*rel1, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
-            .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)1)) }));
+            .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*rel2, RULES_ENGINE_RELATED_CLASS_ALIAS(*rel2, 0)), false, SelectClass<ECClass>(*classB, "related", true), false))
+            .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)2)) }));
 
         UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQuery1, nestedQuery2 });
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());

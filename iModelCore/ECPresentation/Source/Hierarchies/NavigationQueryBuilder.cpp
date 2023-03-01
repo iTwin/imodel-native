@@ -2987,9 +2987,9 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<ECClassCP, bvector<ECInstanceId>> GroupClassInstanceKeys(bvector<ECClassInstanceKey> const& vec)
+static bmap<ECClassCP, bvector<ECInstanceId>, ECClassNameComparer> GroupClassInstanceKeys(bvector<ECClassInstanceKey> const& vec)
     {
-    bmap<ECClassCP, bvector<ECInstanceId>> map;
+    bmap<ECClassCP, bvector<ECInstanceId>, ECClassNameComparer> map;
     for (ECClassInstanceKeyCR key : vec)
         {
         auto iter = map.find(key.GetClass());
@@ -3024,7 +3024,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
 
     // get the parent instance keys
     bvector<ECClassInstanceKey> const& parentInstanceKeys = groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
-    bmap<ECClassCP, bvector<ECInstanceId>> parentClassInstanceIdsMap = GroupClassInstanceKeys(parentInstanceKeys);
+    auto parentClassInstanceIdsMap = GroupClassInstanceKeys(parentInstanceKeys);
 
     // preserve specification instance filter
     auto specificationInstanceFilter = std::make_unique<InstanceFilterDefinition>(specification.GetInstanceFilter());
@@ -3189,7 +3189,7 @@ protected:
             }
 
         ECInstancesNodeKey const& key = *m_parentNode->GetKey()->AsECInstanceNodeKey();
-        bmap<ECClassCP, bvector<ECInstanceId>> parentClassInstanceIds = GroupClassInstanceKeys(key.GetInstanceKeys());
+        auto parentClassInstanceIds = GroupClassInstanceKeys(key.GetInstanceKeys());
         DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Parent ECInstance node is based on %" PRIu64 " instances", (uint64_t)key.GetInstanceKeys().size()));
 
         ECClassInstanceKey usedParentInstanceKey;
