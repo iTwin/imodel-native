@@ -119,7 +119,6 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
 
     ASSERT_EQ(2, provider->GetContentSetSize());
 
-    Json::Value json;
     ContentSetItemPtr item;
 
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
@@ -160,7 +159,6 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     EXPECT_EQ(8, descriptor->GetVisibleFields().size());
     ASSERT_EQ(2, provider->GetContentSetSize());
 
-    Json::Value json;
     ContentSetItemPtr item;
 
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
@@ -394,7 +392,6 @@ TEST_F (ContentProviderTests, PagingUnsortedData)
 
     ASSERT_EQ(2, provider->GetContentSetSize());
 
-    Json::Value json;
     ContentSetItemPtr item;
 
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
@@ -447,7 +444,6 @@ TEST_F (ContentProviderTests, PagingSortedData)
     provider->SetPageOptions(PageOptions(1, 5));
     ASSERT_EQ(2, provider->GetContentSetSize());
 
-    Json::Value json;
     ContentSetItemPtr item;
 
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
@@ -491,7 +487,6 @@ TEST_F (ContentProviderTests, PageDoesNotExceedPageSize)
     provider->SetPageOptions(PageOptions(0, 2));
     ASSERT_EQ(2, provider->GetContentSetSize());
 
-    Json::Value json;
     ContentSetItemPtr item;
 
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));

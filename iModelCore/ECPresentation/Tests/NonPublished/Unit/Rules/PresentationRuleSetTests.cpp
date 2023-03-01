@@ -203,12 +203,12 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRuleSetTests, LoadsFromJsonValue)
     {
-    Json::Value json = Json::Reader::DoParse(RuleSetJsonString);
+    BeJsDocument json(RuleSetJsonString);
     EXPECT_FALSE(json.isNull());
 
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(json);
 
-    ASSERT_FALSE(ruleSet.IsNull());
+    ASSERT_FALSE(ruleSet.IsNull()); 
     EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
     EXPECT_STREQ("supportedSchema", ruleSet->GetSupportedSchemas().c_str());
     EXPECT_TRUE(ruleSet->GetIsSupplemental());
@@ -304,7 +304,7 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonStringWithDefaultValues)
 TEST_F(PresentationRuleSetTests, LoadsFromJsonValueWithDefaultValues)
     {
     Utf8CP jsonString = R"({"id":"Items"})";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(json);

@@ -25,7 +25,7 @@ TEST_F(RelationshipPathSpecificationTests, LoadsFromJsonObject)
         "direction": "Forward",
         "targetClass": {"schemaName": "schema", "className": "class"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelationshipPathSpecification spec;
@@ -45,7 +45,7 @@ TEST_F(RelationshipPathSpecificationTests, LoadsFromJsonObjectWithDefaultValues)
         "relationship": {"schemaName": "schema", "className": "rel"},
         "direction": "Forward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelationshipPathSpecification spec;
@@ -68,7 +68,7 @@ TEST_F(RelationshipPathSpecificationTests, LoadsFromJsonArray)
         "relationship": {"schemaName": "schema2", "className": "rel2"},
         "direction": "Forward"
     }])";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelationshipPathSpecification spec;
@@ -87,13 +87,13 @@ TEST_F(RelationshipPathSpecificationTests, WriteToJsonAsJsonObjectWhenThereIsOne
     {
     RelationshipPathSpecification spec;
     spec.AddStep(*new RelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2"));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "relationship": {"schemaName": "s1", "className": "c1"},
         "direction": "Backward",
         "targetClass": {"schemaName": "s2", "className": "c2"}
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,8 +104,8 @@ TEST_F(RelationshipPathSpecificationTests, WriteToJsonAsJsonArrayWhenThereAreMul
     RelationshipPathSpecification spec;
     spec.AddStep(*new RelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2"));
     spec.AddStep(*new RelationshipStepSpecification("s3:c3", RequiredRelationDirection_Forward));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"([{
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"([{
         "relationship": {"schemaName": "s1", "className": "c1"},
         "direction": "Backward",
         "targetClass": {"schemaName": "s2", "className": "c2"}
@@ -113,7 +113,7 @@ TEST_F(RelationshipPathSpecificationTests, WriteToJsonAsJsonArrayWhenThereAreMul
         "relationship": {"schemaName": "s3", "className": "c3"},
         "direction": "Forward"
     }])");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -190,7 +190,7 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, LoadsFromJsonObject)
         "targetClass": {"schemaName": "schema", "className": "class"},
         "count": "2"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RepeatableRelationshipPathSpecification spec;
@@ -212,7 +212,7 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, LoadsFromJsonObjectWithStar
         "direction": "Forward",
         "count": "*"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RepeatableRelationshipPathSpecification spec;
@@ -230,7 +230,7 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, LoadsFromJsonObjectWithDefa
         "relationship": {"schemaName": "schema", "className": "rel"},
         "direction": "Forward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RepeatableRelationshipPathSpecification spec;
@@ -254,7 +254,7 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, LoadsFromJsonArray)
         "relationship": {"schemaName": "schema2", "className": "rel2"},
         "direction": "Forward"
     }])";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RepeatableRelationshipPathSpecification spec;
@@ -273,14 +273,14 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, WriteToJsonAsJsonObjectWhen
     {
     RepeatableRelationshipPathSpecification spec;
     spec.AddStep(*new RepeatableRelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2", 3));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "relationship": {"schemaName": "s1", "className": "c1"},
         "direction": "Backward",
         "targetClass": {"schemaName": "s2", "className": "c2"},
         "count": 3
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -291,8 +291,8 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, WriteToJsonAsJsonArrayWhenT
     RepeatableRelationshipPathSpecification spec;
     spec.AddStep(*new RepeatableRelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2", 3));
     spec.AddStep(*new RepeatableRelationshipStepSpecification("s3:c3", RequiredRelationDirection_Forward));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"([{
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"([{
         "relationship": {"schemaName": "s1", "className": "c1"},
         "direction": "Backward",
         "targetClass": {"schemaName": "s2", "className": "c2"},
@@ -301,7 +301,7 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, WriteToJsonAsJsonArrayWhenT
         "relationship": {"schemaName": "s3", "className": "c3"},
         "direction": "Forward"
     }])");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -311,14 +311,14 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, WriteToJsonWithCountZero)
     {
     RepeatableRelationshipPathSpecification spec;
     spec.AddStep(*new RepeatableRelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2", 0));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "relationship": {"schemaName": "s1", "className": "c1"},
         "direction": "Backward",
         "targetClass": {"schemaName": "s2", "className": "c2"},
         "count": "*"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -54,7 +54,7 @@ TEST_F(InstanceLabelOverrideTests, LoadsFromJson)
             "value": "test"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     InstanceLabelOverride rule;
@@ -110,8 +110,8 @@ TEST_F(InstanceLabelOverrideTests, WriteToJson)
     specs.push_back(new InstanceLabelOverrideStringValueSpecification(" test "));
     InstanceLabelOverride rule(123, true, "s:c", specs);
 
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "InstanceLabelOverride",
         "priority": 123,
         "onlyIfNotHandled": true,
@@ -147,7 +147,7 @@ TEST_F(InstanceLabelOverrideTests, WriteToJson)
             "value": " test "
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -59,8 +59,8 @@ public:
         }
     void Save(Reporter& reporter) const
         {
-        reporter.Record(REPORT_FIELD_TimeToLoadAllHierarchy, Json::Value(m_totalTime / m_sourceCount));
-        reporter.Record(REPORT_FIELD_TotalNodesCount, Json::Value((uint64_t)m_totalNodesCount));
+        reporter.Record(REPORT_FIELD_TimeToLoadAllHierarchy, m_totalTime / m_sourceCount);
+        reporter.Record(REPORT_FIELD_TotalNodesCount, (int64_t)m_totalNodesCount);
         }
 };
 
@@ -146,17 +146,17 @@ struct HierarchyPagedLoadPerformanceMetricsStorage
             for (auto const& entry : m_targetPagesLoads)
                 {
                 Utf8String prefix = m_cacheState == HierarchyCacheState::Cold ? COLD_CACHE : WARM_CACHE;
-                Json::Value pageTimes(Json::objectValue);
+                BeJsDocument pageTimes;
                 pageTimes["max"] = entry.second.maxTime;
                 pageTimes["avg"] = entry.second.totalTime / entry.second.count;
-                reporter.Record(Utf8PrintfString("%sPage %d load times", prefix.c_str(), entry.first).c_str(), pageTimes);
+                reporter.Record(Utf8PrintfString("%sPage %d load times", prefix.c_str(), entry.first).c_str(), (BeJsConst)pageTimes);
                 }
 
-            reporter.Record(FIELD_NAME(REPORT_FIELD_MaxTimeForPage), Json::Value(m_pageLoadsMax.second));
-            reporter.Record(FIELD_NAME(REPORT_FIELD_NumberOfPageWithMaxTime), Json::Value(m_pageLoadsMax.first));
-            reporter.Record(FIELD_NAME(REPORT_FIELD_AvgTimeForPage), Json::Value(m_pageLoads.Avg()));
-            reporter.Record(FIELD_NAME(REPORT_FIELD_NumberOfPagesAboveThreshold), Json::Value(m_numberOfPagesAboveThreshold));
-            reporter.Record(FIELD_NAME(REPORT_FIELD_TimeToLoadAllHierarchyPaged), Json::Value(m_totalTime / m_sourceCount));
+            reporter.Record(FIELD_NAME(REPORT_FIELD_MaxTimeForPage), m_pageLoadsMax.second);
+            reporter.Record(FIELD_NAME(REPORT_FIELD_NumberOfPageWithMaxTime), m_pageLoadsMax.first);
+            reporter.Record(FIELD_NAME(REPORT_FIELD_AvgTimeForPage), m_pageLoads.Avg());
+            reporter.Record(FIELD_NAME(REPORT_FIELD_NumberOfPagesAboveThreshold), (int64_t)m_numberOfPagesAboveThreshold);
+            reporter.Record(FIELD_NAME(REPORT_FIELD_TimeToLoadAllHierarchyPaged), m_totalTime / m_sourceCount);
             }
     };
 
