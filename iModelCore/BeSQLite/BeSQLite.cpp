@@ -2798,8 +2798,10 @@ bool Db::IsWalMode() const {
         return true;
 
     Statement stmt;
-    stmt.Prepare(*this, "pragma journal_mode");
-    stmt.Step();
+    if ((stmt.Prepare(*this, "pragma journal_mode")) != BE_SQLITE_OK) 
+        return false;
+    if ((stmt.Step()) != BE_SQLITE_ROW)
+        return false;
     return 0 == strncmp("wal", stmt.GetValueText(0), 3);
 };
 
