@@ -56,7 +56,9 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipOneRelatedLevel_Fo
             RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), false),
             RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false),
             };
+#ifdef wip_skipped_instance_keys_performance_issue
         contract->SetPathFromSelectToParentClass(relationshipPath);
+#endif
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -149,7 +151,9 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipRelatedLevel_Group
             RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false),
             };
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass));
+#ifdef wip_skipped_instance_keys_performance_issue
         contract->SetPathFromSelectToParentClass(relationshipPath);
+#endif
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)

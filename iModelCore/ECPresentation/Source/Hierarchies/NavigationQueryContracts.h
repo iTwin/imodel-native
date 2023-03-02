@@ -13,6 +13,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE NavigationQueryContract : PresentationQueryContract
 {
 public:
+    ECPRESENTATION_EXPORT static Utf8CP ContractIdFieldName;
     ECPRESENTATION_EXPORT static Utf8CP SpecificationIdentifierFieldName;
     ECPRESENTATION_EXPORT static Utf8CP SkippedInstanceKeysFieldName;
     ECPRESENTATION_EXPORT static Utf8CP SkippedInstanceKeysInternalFieldName;
@@ -21,14 +22,17 @@ private:
     Utf8String m_specificationIdentifier;
     mutable PresentationQueryContractFieldCPtr m_skippedInstanceKeysField;
     mutable PresentationQueryContractFieldCPtr m_skippedInstanceKeysInternalField;
+#ifdef wip_skipped_instance_keys_performance_issue
     RelatedClassPath m_pathFromSelectToParentClass;
+#endif
+    PresentationQueryBuilderCPtr m_instanceKeysSelectQuery;
 
 protected:
-    NavigationQueryContract(Utf8String specificationIdentifier)
-        : PresentationQueryContract(0), m_specificationIdentifier(specificationIdentifier)
+    NavigationQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery)
+        : PresentationQueryContract(0), m_specificationIdentifier(specificationIdentifier), m_instanceKeysSelectQuery(&instanceKeysSelectQuery)
         {}
-    NavigationQueryContract(uint64_t id, Utf8String specificationIdentifier)
-        : PresentationQueryContract(id), m_specificationIdentifier(specificationIdentifier)
+    NavigationQueryContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery)
+        : PresentationQueryContract(id), m_specificationIdentifier(specificationIdentifier), m_instanceKeysSelectQuery(&instanceKeysSelectQuery)
         {}
     NavigationQueryContract const* _AsNavigationQueryContract() const override {return this;}
     virtual NavigationQueryResultType _GetResultType() const = 0;
@@ -39,51 +43,20 @@ public:
     RefCountedPtr<NavigationQueryContract> Clone() const {return _Clone();}
     Utf8StringCR GetSpecificationIdentifier() const {return m_specificationIdentifier;}
     NavigationQueryResultType GetResultType() const {return _GetResultType();}
+#ifdef wip_skipped_instance_keys_performance_issue
     RelatedClassPath const& GetPathFromSelectToParentClass() const {return m_pathFromSelectToParentClass;}
     void SetPathFromSelectToParentClass(RelatedClassPath path) {m_pathFromSelectToParentClass = path;}
+#endif
+    PresentationQueryBuilderCR GetInstanceKeysSelectQuery() const { return *m_instanceKeysSelectQuery; }
 };
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct NavigationQuerySelectContract : NavigationQueryContract
+struct EXPORT_VTABLE_ATTRIBUTE ECInstanceNodesQueryContract : NavigationQueryContract
 {
-public:
-    ECPRESENTATION_EXPORT static Utf8CP ContractIdFieldName;
-private:
-    PresentationQueryBuilderCPtr m_instanceKeysSelectQuery;
-protected:
-    NavigationQuerySelectContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery)
-        : NavigationQueryContract(id, specificationIdentifier), m_instanceKeysSelectQuery(&instanceKeysSelectQuery)
-        {}
-    ECPRESENTATION_EXPORT virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
-public:
-    PresentationQueryBuilderCR GetInstanceKeysSelectQuery() const {return *m_instanceKeysSelectQuery;}
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct InstanceKeysSelectContract : NavigationQueryContract
-{
-public:
-    ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;
-    ECPRESENTATION_EXPORT static Utf8CP ECClassIdFieldName;
-
-protected:
-    InstanceKeysSelectContract(Utf8String specificationIdentifier)
-        : NavigationQueryContract(specificationIdentifier)
-        {}
-    NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::Invalid;}
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE ECInstanceNodesQueryContract : NavigationQuerySelectContract
-{
-DEFINE_T_SUPER(NavigationQuerySelectContract);
-friend struct NavigationQuerySelectContract;
+DEFINE_T_SUPER(NavigationQueryContract);
+friend struct NavigationQueryContract;
 
 public:
     ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;
@@ -119,10 +92,10 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE MultiECInstanceNodesQueryContract : NavigationQuerySelectContract
+struct EXPORT_VTABLE_ATTRIBUTE MultiECInstanceNodesQueryContract : NavigationQueryContract
 {
-DEFINE_T_SUPER(NavigationQuerySelectContract);
-friend struct NavigationQuerySelectContract;
+DEFINE_T_SUPER(NavigationQueryContract);
+friend struct NavigationQueryContract;
 
 public:
     ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;
@@ -164,14 +137,10 @@ public:
 struct ECClassGroupedInstancesQueryContract : InstanceKeysSelectContract
 {
 DEFINE_T_SUPER(InstanceKeysSelectContract);
-
 private:
-    ECClassGroupedInstancesQueryContract() : T_Super("") {}
-
+    ECClassGroupedInstancesQueryContract() : T_Super() {}
 protected:
-    RefCountedPtr<NavigationQueryContract> _Clone() const override {return new ECClassGroupedInstancesQueryContract(*this);}
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
-
 public:
     static RefCountedPtr<ECClassGroupedInstancesQueryContract> Create() {return new ECClassGroupedInstancesQueryContract();}
 };
@@ -179,10 +148,10 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodesQueryContract : NavigationQuerySelectContract
+struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodesQueryContract : NavigationQueryContract
 {
-DEFINE_T_SUPER(NavigationQuerySelectContract);
-friend struct NavigationQuerySelectContract;
+DEFINE_T_SUPER(NavigationQueryContract);
+friend struct NavigationQueryContract;
 
 public:
     ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;
@@ -227,17 +196,12 @@ public:
 struct DisplayLabelGroupedInstancesQueryContract : InstanceKeysSelectContract
 {
 DEFINE_T_SUPER(InstanceKeysSelectContract);
-
 private:
     PresentationQueryContractFieldPtr m_displayLabelField;
-
 private:
-    DisplayLabelGroupedInstancesQueryContract(PresentationQueryContractFieldPtr displayLabelField) : T_Super(""), m_displayLabelField(displayLabelField) {}
-
+    DisplayLabelGroupedInstancesQueryContract(PresentationQueryContractFieldPtr displayLabelField) : T_Super(), m_displayLabelField(displayLabelField) {}
 protected:
-    RefCountedPtr<NavigationQueryContract> _Clone() const override {return new DisplayLabelGroupedInstancesQueryContract(*this);}
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
-
 public:
     static RefCountedPtr<DisplayLabelGroupedInstancesQueryContract> Create(PresentationQueryContractFieldPtr displayLabelField) {return new DisplayLabelGroupedInstancesQueryContract(displayLabelField);}
 };
@@ -246,10 +210,10 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE DisplayLabelGroupingNodesQueryContract : NavigationQuerySelectContract
+struct EXPORT_VTABLE_ATTRIBUTE DisplayLabelGroupingNodesQueryContract : NavigationQueryContract
 {
-DEFINE_T_SUPER(NavigationQuerySelectContract);
-friend struct NavigationQuerySelectContract;
+DEFINE_T_SUPER(NavigationQueryContract);
+friend struct NavigationQueryContract;
 
 private:
     static Utf8CP ECInstanceIdFieldName;
@@ -293,17 +257,12 @@ public:
 struct ECPropertyGroupedInstancesQueryContract : InstanceKeysSelectContract
 {
 DEFINE_T_SUPER(InstanceKeysSelectContract);
-
 private:
     Utf8String m_propertyValueSelector;
-
 private:
-    ECPropertyGroupedInstancesQueryContract(Utf8String propertyValueSelector) : T_Super(""), m_propertyValueSelector(propertyValueSelector) {}
-
+    ECPropertyGroupedInstancesQueryContract(Utf8String propertyValueSelector) : T_Super(), m_propertyValueSelector(propertyValueSelector) {}
 protected:
-    RefCountedPtr<NavigationQueryContract> _Clone() const override {return new ECPropertyGroupedInstancesQueryContract(*this);}
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
-
 public:
     static RefCountedPtr<ECPropertyGroupedInstancesQueryContract> Create(Utf8String propertyValueSelector) {return new ECPropertyGroupedInstancesQueryContract(propertyValueSelector);}
 };
@@ -311,10 +270,10 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE ECPropertyGroupingNodesQueryContract : NavigationQuerySelectContract
+struct EXPORT_VTABLE_ATTRIBUTE ECPropertyGroupingNodesQueryContract : NavigationQueryContract
 {
-DEFINE_T_SUPER(NavigationQuerySelectContract);
-friend struct NavigationQuerySelectContract;
+DEFINE_T_SUPER(NavigationQueryContract);
+friend struct NavigationQueryContract;
 
 public:
     ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;

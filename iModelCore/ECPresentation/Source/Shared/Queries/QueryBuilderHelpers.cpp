@@ -138,12 +138,12 @@ void QueryBuilderHelpers::Limit(PresentationQueryBuilder& query, uint64_t limit,
 PresentationQueryBuilderPtr QueryBuilderHelpers::GetInstanceKeysQuery(PresentationQueryBuilderCR sourceNavigationQuery)
     {
     if (sourceNavigationQuery.AsComplexQueryBuilder())
-        return static_cast<NavigationQuerySelectContract const*>(sourceNavigationQuery.GetContract())->GetInstanceKeysSelectQuery().Clone();
+        return sourceNavigationQuery.GetContract()->AsNavigationQueryContract()->GetInstanceKeysSelectQuery().Clone();
 
     if (sourceNavigationQuery.AsUnionQueryBuilder())
         {
         return UnionQueryBuilder::Create(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(
-            sourceNavigationQuery.AsUnionQueryBuilder()->GetQueries(), 
+            sourceNavigationQuery.AsUnionQueryBuilder()->GetQueries(),
             [](auto const& query)
                 {
                 return GetInstanceKeysQuery(*query);

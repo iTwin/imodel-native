@@ -1478,12 +1478,12 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ComplexQueryBuilderPtr CreateQueryBase(NavigationQueryContractR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters) const
+    ComplexQueryBuilderPtr CreateQueryBase(PresentationQueryContractR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters) const
         {
-        NavigationQueryContractPtr queryContract = &contract;
+        PresentationQueryContractPtr queryContract = &contract;
 
         bool groupByContract = false;
-        if (queryContract->GetResultType() != NavigationQueryResultType::Invalid)
+        if (queryContract->AsNavigationQueryContract())
             {
             if (selectInfo.GetForcedGroupingContractFactory())
                 {
@@ -1530,10 +1530,12 @@ protected:
                 query->Join(pathFromSelectToParentClass);
                 }
 
+#ifdef wip_skipped_instance_keys_performance_issue
             // set the relationship path for the contract so it can include any skipped related instance keys into the select clause
             auto relatedQueryContract = queryContract->Clone();
             relatedQueryContract->SetPathFromSelectToParentClass(pathFromSelectToParentClass);
             queryContract = relatedQueryContract;
+#endif
 
             // TODO: since the path can include multiple relationships with different directions, this extended
             // data attribute is ambiguous - consider removal
@@ -1704,12 +1706,12 @@ private:
         // set to invalid so NavigationQuery doesn't attempt to set resultQuery result type to nested query result type
         query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::Invalid);
 
-        auto const& contract = static_cast<NavigationQuerySelectContract const&>(*query->GetContract());
-        auto const& instanceKeysSelectQuery = contract.GetInstanceKeysSelectQuery();
+        auto const* contract = query->GetContract()->AsNavigationQueryContract();
+        auto const& instanceKeysSelectQuery = contract->GetInstanceKeysSelectQuery();
 
         // note: we don't need to create a valid label field here because we're just wrapping another query - the valid clause is set there
         auto displayLabelField = PresentationQueryContractSimpleField::Create(MultiECInstanceNodesQueryContract::DisplayLabelFieldName, "", false);
-        auto resultContract = MultiECInstanceNodesQueryContract::Create(contract.GetId(), GetSpecificationIdentifierForContract(), instanceKeysSelectQuery, &info.GetSelectClass().GetClass(), displayLabelField, false, info.GetRelatedInstancePaths());
+        auto resultContract = MultiECInstanceNodesQueryContract::Create(contract->GetId(), GetSpecificationIdentifierForContract(), instanceKeysSelectQuery, &info.GetSelectClass().GetClass(), displayLabelField, false, info.GetRelatedInstancePaths());
         ComplexQueryBuilderPtr resultQuery = ComplexQueryBuilder::Create();
         resultQuery->SelectContract(*resultContract);
         resultQuery->From(*query);
@@ -1921,7 +1923,7 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create class grouping query");
 
-        NavigationQueryContractPtr groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
+        auto groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
         PresentationQueryBuilderPtr instanceKeysSelectQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *CreateQueryBase(*groupedInstanceKeysContract, *selectInfo, filters));
@@ -1929,7 +1931,7 @@ protected:
         if (instanceKeysSelectQuery.IsNull())
             return nullptr;
 
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery);
+        auto contract = ECClassGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery);
         PresentationQueryBuilderPtr unionQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(unionQuery, *CreateQueryBase(*contract, *selectInfo, filters));
@@ -1990,11 +1992,11 @@ protected:
             auto displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, GetQueryBuilderParams().GetSchemaHelper(),
                 selectInfo->GetSelectClass(), nullptr, nullptr, selectInfo->GetRelatedInstancePaths(), selectInfo->GetLabelOverrideValueSpecs());
 
-            NavigationQueryContractPtr instanceKeysSelectQueryContract = DisplayLabelGroupedInstancesQueryContract::Create(displayLabelField);
+            auto instanceKeysSelectQueryContract = DisplayLabelGroupedInstancesQueryContract::Create(displayLabelField);
             ComplexQueryBuilderPtr thisInstanceKeysSelectQuery = CreateQueryBase(*instanceKeysSelectQueryContract, *selectInfo, filters);
             QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *thisInstanceKeysSelectQuery);
 
-            NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *thisInstanceKeysSelectQuery, &selectInfo->GetSelectClass().GetClass(), displayLabelField);
+            auto contract = DisplayLabelGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *thisInstanceKeysSelectQuery, &selectInfo->GetSelectClass().GetClass(), displayLabelField);
             QueryBuilderHelpers::SetOrUnion(unionQuery, *CreateQueryBase(*contract, *selectInfo, filters));
             }
 
@@ -2105,7 +2107,7 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create base class grouping query");
 
-        NavigationQueryContractPtr groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
+        auto groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
         PresentationQueryBuilderPtr instanceKeysSelectQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *CreateQueryBase(*groupedInstanceKeysContract, *selectInfo, filters));
@@ -2113,7 +2115,7 @@ protected:
         if (instanceKeysSelectQuery.IsNull())
             return nullptr;
 
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery, GetGroupingHandler().GetBaseECClassId(), true);
+        auto contract = ECClassGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery, GetGroupingHandler().GetBaseECClassId(), true);
         PresentationQueryBuilderPtr unionQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(unionQuery, *CreateQueryBase(*contract, *selectInfo, filters));
@@ -2211,7 +2213,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ComplexQueryBuilderPtr CreateSelectInfoQuery(NavigationQueryContractR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters, RelatedClassCR relatedClass) const
+    ComplexQueryBuilderPtr CreateSelectInfoQuery(PresentationQueryContractR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters, RelatedClassCR relatedClass) const
         {
         ComplexQueryBuilderPtr query = CreateQueryBase(contract, selectInfo, filters);
         if (relatedClass.IsValid())
@@ -2292,11 +2294,11 @@ protected:
             SelectClass<ECClass> selectClass(*GetGroupingHandler().GetTargetClass(), selectAlias);
             Utf8String propertyValueSelector = CreatePropertyValueSelector(*groupingProperty, selectAlias);
 
-            NavigationQueryContractPtr instanceKeysSelectQueryContract = ECPropertyGroupedInstancesQueryContract::Create(propertyValueSelector);
+            auto instanceKeysSelectQueryContract = ECPropertyGroupedInstancesQueryContract::Create(propertyValueSelector);
             ComplexQueryBuilderPtr thisInstanceKeysSelectQuery = CreateSelectInfoQuery(*instanceKeysSelectQueryContract, *selectInfo, filters, foreignKeyClass);
             QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *thisInstanceKeysSelectQuery);
 
-            NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *thisInstanceKeysSelectQuery, selectClass, *groupingProperty,
+            auto contract = ECPropertyGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *thisInstanceKeysSelectQuery, selectClass, *groupingProperty,
                 GetGroupingHandler().GetGroupingSpecification(), foreignKeyClass.IsValid() ? &foreignKeyClass.GetTargetClass() : nullptr);
             ComplexQueryBuilderPtr query = CreateSelectInfoQuery(*contract, *selectInfo, filters, foreignKeyClass);
             QueryBuilderHelpers::SetOrUnion(unionQuery, *query);

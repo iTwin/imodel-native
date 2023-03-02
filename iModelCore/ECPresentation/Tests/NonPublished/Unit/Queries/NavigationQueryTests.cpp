@@ -1569,7 +1569,7 @@ struct TestNavigationContract : NavigationQueryContract
 private:
     bvector<PresentationQueryContractFieldCPtr> m_fields;
 protected:
-    TestNavigationContract() : NavigationQueryContract("") {}
+    TestNavigationContract() : NavigationQueryContract("", *StringQueryBuilder::Create("")) {}
     RefCountedPtr<NavigationQueryContract> _Clone() const override {return new TestNavigationContract(*this);}
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::ECInstanceNodes;}
     bvector<PresentationQueryContractFieldCPtr> _GetFields() const override {return m_fields;}

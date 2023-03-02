@@ -223,6 +223,19 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+struct InstanceKeysSelectContract : PresentationQueryContract
+{
+public:
+    ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;
+    ECPRESENTATION_EXPORT static Utf8CP ECClassIdFieldName;
+protected:
+    InstanceKeysSelectContract() : PresentationQueryContract() {}
+    ECPRESENTATION_EXPORT virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 template<typename TContract>
 struct IContractProvider
 {

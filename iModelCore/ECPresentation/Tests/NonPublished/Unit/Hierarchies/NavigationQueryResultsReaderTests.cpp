@@ -116,7 +116,9 @@ TEST_F (NavigationQueryResultsReaderTests, GetInstanceNodes_GroupsByInstanceKey)
         .Join(relationshipPath)
         .Where("widget1.ECInstanceId = ?", { std::make_shared<BoundQueryId>(widget1->GetInstanceId()) });
     RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create(1, "", *instanceKeysQuery, m_widgetClass, CreateDisplayLabelField(selectClass));
+#ifdef wip_skipped_instance_keys_performance_issue
     contract->SetPathFromSelectToParentClass(relationshipPath);
+#endif
     ComplexQueryBuilderPtr inner = ComplexQueryBuilder::Create();
     inner->SelectContract(*contract, "widget2")
         .From(selectClass)

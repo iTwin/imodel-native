@@ -284,6 +284,19 @@ CountQueryContract::CountQueryContract(Utf8CP groupingFieldName)
     AddField(*field);
     }
 
+Utf8CP InstanceKeysSelectContract::ECClassIdFieldName = "/ECClassId/";
+Utf8CP InstanceKeysSelectContract::ECInstanceIdFieldName = "/ECInstanceId/";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationQueryContractFieldCPtr> InstanceKeysSelectContract::_GetFields() const
+    {
+    bvector<PresentationQueryContractFieldCPtr> fields;
+    fields.push_back(PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId"));
+    fields.push_back(PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId"));
+    return fields;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
