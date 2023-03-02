@@ -229,23 +229,8 @@ private:
     BeJsDocument m_customJson;
 public:
     DataSourceInfo(): m_isFinalized(false) {}
-    DataSourceInfo& operator=(DataSourceInfo const& other) {
-        m_identifier = other.m_identifier;
-        m_relatedVariables = other.m_relatedVariables;
-        m_filter = other.m_filter;
-        m_relatedClasses = other.m_relatedClasses;
-        m_specificationHash = other.m_specificationHash;
-        m_nodeTypes = other.m_nodeTypes;
-        m_parentId = other.m_parentId;
-        m_hasPartialProviders = other.m_hasPartialProviders;
-        m_isFinalized = other.m_isFinalized;
-        m_directNodesCount = other.m_directNodesCount;
-        m_totalNodesCount = other.m_totalNodesCount;
-        m_hasNodes = other.m_hasNodes;
-        m_customJson.From(other.m_customJson);
-        return *this;
-        }
-    DataSourceInfo(DataSourceInfo const& other) :  DataSourceInfo(other.m_identifier, other.m_relatedVariables, other.m_filter, other.m_relatedClasses, other.m_specificationHash, other.m_nodeTypes)
+    DataSourceInfo(DataSourceInfo const& other)
+        : DataSourceInfo(other.m_identifier, other.m_relatedVariables, other.m_filter, other.m_relatedClasses, other.m_specificationHash, other.m_nodeTypes)
         {
         m_parentId = other.m_parentId;
         m_hasPartialProviders = other.m_hasPartialProviders;
@@ -261,6 +246,23 @@ public:
         : m_identifier(identifier), m_relatedVariables(relatedVariables), m_filter(filter), m_relatedClasses(relatedClasses),
         m_specificationHash(specificationHash), m_nodeTypes(nodeTypes), m_isFinalized(false)
         {}
+    DataSourceInfo& operator=(DataSourceInfo const& other) 
+        {
+        m_identifier = other.m_identifier;
+        m_relatedVariables = other.m_relatedVariables;
+        m_filter = other.m_filter;
+        m_relatedClasses = other.m_relatedClasses;
+        m_specificationHash = other.m_specificationHash;
+        m_nodeTypes = other.m_nodeTypes;
+        m_parentId = other.m_parentId;
+        m_hasPartialProviders = other.m_hasPartialProviders;
+        m_isFinalized = other.m_isFinalized;
+        m_directNodesCount = other.m_directNodesCount;
+        m_totalNodesCount = other.m_totalNodesCount;
+        m_hasNodes = other.m_hasNodes;
+        m_customJson.From(other.m_customJson);
+        return *this;
+        }
     DataSourceIdentifier& GetIdentifier() {return m_identifier;}
     DataSourceIdentifier const& GetIdentifier() const {return m_identifier;}
     bool IsInitialized() const {return m_isFinalized;}

@@ -74,7 +74,7 @@ public:
         m_status = other.m_status;
         m_errorMessage.swap(other.m_errorMessage);
         m_diagnostics.Swap(other.m_diagnostics);
-        m_successResponse.From(other.m_successResponse);
+        m_successResponse = other.m_successResponse;
         m_serializedSuccessResponse.swap(other.m_serializedSuccessResponse);
         return *this;
         }

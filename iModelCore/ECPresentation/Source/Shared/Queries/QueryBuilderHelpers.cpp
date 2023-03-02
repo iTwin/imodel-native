@@ -1073,7 +1073,7 @@ GroupSpecificationCP QueryBuilderHelpers::GetActiveGroupingSpecification(Groupin
 
     BeJsDocument settingValue = localState->GetValue(RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE, Utf8String(rule.GetSettingsId().c_str()).c_str());
     if (!settingValue.isNumeric())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected active group index to be an integer, actual type: %d", 10/*(int)settingValue.type()*/));
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Expected active group index to be an integer, actual type: %s", CommonToolsInternal::GetJsonTypeStr(settingValue)));
 
     int activeGroupIndex = settingValue.asInt();
     if (activeGroupIndex < 0 || activeGroupIndex >= (int)rule.GetGroups().size())

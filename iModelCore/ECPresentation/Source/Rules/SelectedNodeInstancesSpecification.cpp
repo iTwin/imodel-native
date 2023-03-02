@@ -127,9 +127,9 @@ void SelectedNodeInstancesSpecification::_WriteJson(BeJsValue json) const
         {
         bvector<Utf8String> names;
         BeStringUtilities::Split(m_acceptableClassNames.c_str(), ",", names);
+        BeJsValue acceptableClassNames = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
         for (Utf8StringCR name : names)
             {
-            BeJsValue acceptableClassNames = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
             acceptableClassNames[acceptableClassNames.size()] = name;
             }
         }

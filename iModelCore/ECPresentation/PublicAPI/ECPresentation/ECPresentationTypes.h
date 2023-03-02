@@ -585,7 +585,6 @@ public:
     BeJsDocument GetValue(Utf8CP nameSpace, Utf8CP key) const { return _GetValue(nameSpace, key); }
 };
 
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -603,7 +602,7 @@ protected:
         };
 
 public:
-    JsonLocalState(std::shared_ptr<ILocalState> localState) : m_storage(localState){};
+    JsonLocalState(std::shared_ptr<ILocalState> localState) : m_storage(localState) {}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

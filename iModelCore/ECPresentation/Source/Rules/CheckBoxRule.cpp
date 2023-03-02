@@ -98,7 +98,7 @@ static Utf8String GetIsEnabledExpression(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void WriteGetIsEnabledJsonValue(BeJsValue json, Utf8StringCR expr)
+static void WriteIsEnabledValueToJson(BeJsValue json, Utf8StringCR expr)
     {
     if (expr.EqualsI("true"))
         json = true;
@@ -134,7 +134,7 @@ void CheckBoxRule::_WriteJson(BeJsValue json) const
     if (m_useInversedPropertyValue)
         json[CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE] = m_useInversedPropertyValue;
     if (!m_isEnabled.empty())
-        WriteGetIsEnabledJsonValue(json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED], m_isEnabled);
+        WriteIsEnabledValueToJson(json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED], m_isEnabled);
     if (m_defaultValue)
         json[CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE] = m_defaultValue;
     }

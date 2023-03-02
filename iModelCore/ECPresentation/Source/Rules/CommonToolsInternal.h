@@ -192,7 +192,7 @@ public:
     template<typename TRule>
     static void LoadFromJson(Utf8CP ruleName, Utf8CP attributeName, BeJsConst json, bvector<TRule*>& collection, TRule*(*factory)(BeJsConst), HashableBase* parentHashable)
         {
-        if (!ValidateJsonValueType(ruleName, attributeName, json))
+        if (!ValidateJsonArrayValueType(ruleName, attributeName, json))
             return;
 
         for (BeJsConst::ArrayIndex i = 0; i < json.size(); i++)
@@ -208,7 +208,7 @@ public:
     template<typename TRule>
     static void LoadFromJsonByPriority(Utf8CP ruleName, Utf8CP attributeName, BeJsConst json, bvector<TRule*>& collection, TRule*(*factory)(BeJsConst), HashableBase* parentHashable)
         {
-        if (!ValidateJsonValueType(ruleName, attributeName, json))
+        if (!ValidateJsonArrayValueType(ruleName, attributeName, json))
             return;
 
         for (BeJsConst::ArrayIndex i = 0; i < json.size(); i++)
@@ -228,18 +228,24 @@ public:
             rule->WriteJson(rulesList[rulesList.size()]);
         }
 
-    static Utf8CP GetRapidJsonTypeStr(BeJsConst json)
+    static Utf8CP GetJsonTypeStr(BeJsConst json)
         {
-        if (json.isNull()) return "null";
-        else if (json.isNumeric()) return "number";
-        else if (json.isString()) return "string";
-        else if (json.isBool()) return "bool";
-        else if (json.isArray()) return "array";
-        else if (json.isObject()) return "object";
+        if (json.isNull())
+            return "null";
+        if (json.isNumeric())
+            return "number";
+        if (json.isString())
+            return "string";
+        if (json.isBool())
+            return "bool";
+        if (json.isArray())
+            return "array";
+        if (json.isObject())
+            return "object";
         return "<invalid>";
         }
 
-    static bool ValidateJsonValueType(Utf8CP ruleName, Utf8CP attributeName, BeJsConst attributeValue)
+    static bool ValidateJsonArrayValueType(Utf8CP ruleName, Utf8CP attributeName, BeJsConst attributeValue)
         {
         if (attributeValue.isArray())
             return true;
@@ -253,7 +259,7 @@ public:
             }
 
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid type for `%s`: `%s`. Expected `%s`.",
-            fullAttributeName.c_str(), GetRapidJsonTypeStr(attributeValue), "array"));
+            fullAttributeName.c_str(), GetJsonTypeStr(attributeValue), "array"));
         return false;
         }
 

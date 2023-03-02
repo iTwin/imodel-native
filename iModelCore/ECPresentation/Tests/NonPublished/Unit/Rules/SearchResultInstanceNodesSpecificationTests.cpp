@@ -43,7 +43,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
         "class": {"schemaName": "TestSchema", "className": "TestClass"},
         "query": "QueryString"
     })";
-    BeJsDocument json(jsonString);;
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     StringQuerySpecification spec;

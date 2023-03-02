@@ -261,7 +261,7 @@ void UserSettings::AddValues(BeJsValue groupListJson) const
         BeJsValue groupJson = groupListJson[i];
         if (groupJson.isMember("Items"))
             {
-            for (Json::ArrayIndex j = 0; j < groupJson["Items"].size(); j++)
+            for (BeJsValue::ArrayIndex j = 0; j < groupJson["Items"].size(); j++)
                 {
                 BeJsValue itemJson = groupJson["Items"][j];
                 Utf8CP options = itemJson["Options"].asCString();
@@ -288,8 +288,10 @@ BeJsConst UserSettings::_GetPresentationInfo() const
     if (nullptr == m_localState)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::RulesetVariables, "Local state not set up");
 
-    AddValues(m_presentationInfo);
-    return m_presentationInfo;
+    BeJsDocument json;
+    json.From(m_presentationInfo);
+    AddValues(json);
+    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**

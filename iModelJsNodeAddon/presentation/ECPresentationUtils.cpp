@@ -393,13 +393,13 @@ ECPresentationResult ECPresentationUtils::AddRuleset(SimpleRuleSetLocater& locat
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
 static BeJsConst ToBeJsConst(rapidjson::Value const& value)
-{
+    {
     // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
     // read-only and doesn't use it. The only reason it requires an allocator is that it uses
     // a read-write `BeJsValue` for all the operations.
     static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
     return BeJsConst(value, s_staticRapidJsonAllocator);
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

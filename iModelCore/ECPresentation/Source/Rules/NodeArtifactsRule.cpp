@@ -44,11 +44,11 @@ bool NodeArtifactsRule::_ReadJson(BeJsConst json)
         return false;
 
     itemsObject.ForEachProperty(
-        [&](Utf8CP name, BeJsConst object)
+        [&](Utf8CP name, BeJsConst value)
         {
-        if (CommonToolsInternal::CheckRuleIssue(!object.isString(), _GetJsonElementType(), Utf8PrintfString("%s.%s", NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS, name).c_str(), object, "string"))
+        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("%s.%s", NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS, name).c_str(), value, "string"))
             return false;
-        m_items.Insert(name, object.asCString());
+        m_items.Insert(name, value.asCString());
         return false;
         }
     );

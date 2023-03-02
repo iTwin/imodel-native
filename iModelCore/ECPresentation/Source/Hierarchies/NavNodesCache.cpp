@@ -1794,7 +1794,7 @@ DataSourceInfo NodesCache::CreateDataSourceInfo(DataSourceIdentifier identifier,
                     hasNodes = stmt->GetValueBoolean(8);
 
                 if (0 != (DataSourceInfo::PART_CustomJson & partsToGet) && !stmt->IsColumnNull(9))
-                    (BeJsValue)customJson = stmt->GetValueText(9);
+                    customJson.Parse(stmt->GetValueText(9));
 
                 if (0 != (DataSourceInfo::PART_HasPartialProviders & partsToGet))
                     hasPartialProviders = stmt->GetValueBoolean(10);

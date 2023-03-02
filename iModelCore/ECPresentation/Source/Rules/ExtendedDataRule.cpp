@@ -44,12 +44,12 @@ bool ExtendedDataRule::_ReadJson(BeJsConst json)
         return false;
 
     json[EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS].ForEachProperty(
-        [&](Utf8CP name, BeJsConst object)
+        [&](Utf8CP name, BeJsConst value)
         {
-        if (CommonToolsInternal::CheckRuleIssue(!object.isString(), _GetJsonElementType(), Utf8PrintfString("value.items.%s", name).c_str(), object, "non-empty string"))
+        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("value.items.%s", name).c_str(), value, "non-empty string"))
             return false;
 
-        m_items.Insert(name, object.asCString());
+        m_items.Insert(name, value.asCString());
         return false;
         }
     );

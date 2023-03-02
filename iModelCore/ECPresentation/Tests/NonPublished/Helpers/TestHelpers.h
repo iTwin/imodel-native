@@ -212,9 +212,9 @@ protected:
     // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
     BeJsDocument _GetValue(Utf8CP nameSpace, Utf8CP key) const override
         {
-        BeJsDocument json;
-        if (nullptr != m_getHandler) json.From(m_getHandler(nameSpace, key));
-        return json;
+        if (nullptr != m_getHandler) 
+            return m_getHandler(nameSpace, key);
+        return BeJsDocument();
         }
 
 public:

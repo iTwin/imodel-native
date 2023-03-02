@@ -604,5 +604,5 @@ bool InstanceLabelOverrideRelatedInstanceLabelSpecification::_ReadJson(BeJsConst
 void InstanceLabelOverrideRelatedInstanceLabelSpecification::_WriteJson(BeJsValue json) const
     {
     InstanceLabelOverrideValueSpecification::_WriteJson(json);
-    /*json[INSTANCE_LABEL_OVERRIDE_RELATED_INSTANCE_LABEL_SPECIFICATION_JSON_ATTRIBUTE_PATHTORELATEDINSTANCE] = m_pathToRelatedInstanceSpec.WriteJson();*/
+    m_pathToRelatedInstanceSpec.WriteJson(json[INSTANCE_LABEL_OVERRIDE_RELATED_INSTANCE_LABEL_SPECIFICATION_JSON_ATTRIBUTE_PATHTORELATEDINSTANCE]);
     }

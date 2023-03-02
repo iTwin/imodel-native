@@ -63,8 +63,7 @@ TEST_F(UserSettingsTests, GetsStringValueFromLocalState)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UserSettingsTests, GetsIntValueFromLocalState)
     {
-    BeJsDocument json = convertToBeJsDocument(999);
-    m_localState.SetGetHandler([&json](Utf8CP ns, Utf8CP id)
+    m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
         return convertToBeJsDocument(999);
@@ -99,7 +98,6 @@ TEST_F(UserSettingsTests, GetsIntValuesFromLocalState)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UserSettingsTests, GetsBoolValueFromLocalState)
     {
-    BeJsDocument json = convertToBeJsDocument(true);
     m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);

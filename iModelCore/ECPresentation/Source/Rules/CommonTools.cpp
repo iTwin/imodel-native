@@ -329,7 +329,8 @@ Utf8String CommonToolsInternal::SchemaAndClassNamesToString(BeJsConst json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CommonToolsInternal::ParseMultiSchemaClassesFromJson(BeJsConst json, bool defaultPoly, bvector<MultiSchemaClass*>& classes, HashableBase* parent)
     {
-    if (json.isNull()) return false;
+    if (json.isNull())
+        return false;
     auto readMultiSchemaClassFromJson = [&](BeJsConst jsonElement)
         {
         auto schemaClass = MultiSchemaClass::LoadFromJson(jsonElement, defaultPoly);
@@ -344,14 +345,11 @@ bool CommonToolsInternal::ParseMultiSchemaClassesFromJson(BeJsConst json, bool d
 
     if (json.isArray())
         {
-        auto iterationStopped = json.ForEachArrayMember(
-            [&](BeJsConst::ArrayIndex i, BeJsConst schemaClass)
+        auto iterationStopped = json.ForEachArrayMember([&](BeJsConst::ArrayIndex i, BeJsConst schemaClass)
             {
-            auto success = readMultiSchemaClassFromJson(schemaClass);
-            return !success ? true : false;
-            }
-        );
-        return iterationStopped ? false : true;
+            return !readMultiSchemaClassFromJson(schemaClass);
+            });
+        return !iterationStopped;
         }
 
     if (json.isObject())
@@ -432,20 +430,17 @@ void CommonToolsInternal::WriteSchemaAndClassNamesToJson(BeJsValue json, Utf8Str
                 {
                 return json[schemaIndexIter->second];
                 }
-            else
-                {
-                json[json.size()][SCHEMA_CLASS_SPECIFICATION_SCHEMANAME] = schemaName;
-                schemaIndexes.Insert(schemaName, json.size() - 1);
-                return json[json.size() - 1];
-                }
+            json[json.size()][SCHEMA_CLASS_SPECIFICATION_SCHEMANAME] = schemaName;
+            schemaIndexes.Insert(schemaName, json.size() - 1);
+            return json[json.size() - 1];
             };
 
-        BeJsValue schemaJsonPtr = getSchemaJson(json);
+        BeJsValue schemaJson = getSchemaJson(json);
         for (Utf8StringR className : classNames)
             {
             if (isExcludes)
                 className = Utf8String("E:").append(className);
-            BeJsValue classNames = schemaJsonPtr[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES];
+            BeJsValue classNames = schemaJson[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES];
             classNames[classNames.size()] = className;
             }
         }

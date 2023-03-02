@@ -97,9 +97,7 @@ BeJsDocument PresentationKey::WriteJson() const
     {
     BeJsDocument json;
     json.SetEmptyObject();
-    if (nullptr != _GetJsonElementTypeAttributeName() && nullptr != _GetJsonElementType())
-        json[_GetJsonElementTypeAttributeName()] = _GetJsonElementType();
-    _WriteJson(json);
+    WriteJson(json);
     return json;
     }
 

@@ -147,7 +147,7 @@ bool IdPropertyCategoryIdentifier::_ReadJson(BeJsConst json)
         if (m_categoryId.empty())
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), json.asCString(), "non-empty string or an object"));
+                _GetJsonElementType(), json.Stringify().c_str(), "non-empty string or an object"));
             return false;
             }
         return true;

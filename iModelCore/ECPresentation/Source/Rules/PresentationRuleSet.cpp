@@ -416,7 +416,7 @@ bool PresentationRuleSet::ReadJson(BeJsConst json)
     if (json.isMember(PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES))
         {
         BeJsConst rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
-        if (CommonToolsInternal::ValidateJsonValueType("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson))
+        if (CommonToolsInternal::ValidateJsonArrayValueType("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson))
             {
             CommonToolsInternal::LoadFromJsonByPriority("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, m_childNodesRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>, this);
             CommonToolsInternal::LoadFromJsonByPriority("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, m_rootNodesRules, CommonToolsInternal::LoadRuleFromJson<RootNodeRule>, this);

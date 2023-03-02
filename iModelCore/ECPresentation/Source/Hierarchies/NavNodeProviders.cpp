@@ -1947,7 +1947,7 @@ static bvector<QueryBasedNodesProvider::PageNodeCounts> ParsePageNodeCounts(BeJs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void WriteSerializePageNodeCounts(BeJsValue json, bvector<QueryBasedNodesProvider::PageNodeCounts> const& counts)
+static void SerializePageNodeCounts(BeJsValue json, bvector<QueryBasedNodesProvider::PageNodeCounts> const& counts)
     {
     for (auto const& entry : counts)
         {
@@ -2009,8 +2009,9 @@ QueryBasedNodesProvider::NodeCounts QueryBasedNodesProvider::QueryNodeCounts() c
     dsInfo.SetTotalNodesCount(counts.totalUnique);
     dsInfo.SetHasNodes(counts.totalUnique > 0);
     BeJsValue json = dsInfo.GetCustomJson();
-    if (!json.isNull() && !json.isObject()) json.SetEmptyObject();
-    WriteSerializePageNodeCounts(json["PageCounts"], counts.pages);
+    if (!json.isNull() && !json.isObject())
+        json.SetEmptyObject();
+    SerializePageNodeCounts(json["PageCounts"], counts.pages);
     int partsToUpdate = DataSourceInfo::PART_TotalNodesCount | DataSourceInfo::PART_HasNodes | DataSourceInfo::PART_CustomJson;
     GetContext().GetNodesCache().Update(dsInfo, partsToUpdate);
 

@@ -83,7 +83,6 @@ bool MultiSchemaClass::_ReadJson(BeJsConst json)
 
     m_schemaName = json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].asCString();
 
-    // bvector<Utf8String> classNames;
     json["classNames"].ForEachArrayMember(
         [&](BeJsConst::ArrayIndex i, BeJsConst className)
         {

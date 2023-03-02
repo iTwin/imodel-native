@@ -1421,18 +1421,10 @@ TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
-    // Deserialize RapidJson
     NavNodeKeyPtr deserializedKey = NavNodeKey::FromJson(*m_connection, actual);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
     EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
-
-    // Deserialize JsonValue
-    BeJsDocument expectedJsonValue(BeRapidJsonUtilities::ToString(actual));
-    NavNodeKeyPtr deserializedKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
-
-    EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1468,7 +1460,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
-    // Deserialize RapidJson
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECInstancesNodeKey const* deserializedKey = navNodeKey->AsECInstanceNodeKey();
@@ -1477,16 +1468,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
     EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
     EXPECT_EQ(key->GetInstanceKeys(), deserializedKey->GetInstanceKeys());
-
-    // Deserialize JsonValue
-    BeJsDocument expectedJsonValue(BeRapidJsonUtilities::ToString(actual));
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
-    ASSERT_TRUE(navNodeKey2.IsValid());
-    ECInstancesNodeKey const* deserializedKey2 = navNodeKey2->AsECInstanceNodeKey();
-    ASSERT_NE(nullptr, deserializedKey2);
-
-    EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1512,7 +1493,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
-    // Deserialiaze RapidJson
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECClassGroupingNodeKey const* deserializedKey = navNodeKey->AsECClassGroupingNodeKey();
@@ -1522,18 +1502,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
     EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
     EXPECT_EQ(key->GetECClassId(), deserializedKey->GetECClassId());
     EXPECT_EQ(false, deserializedKey->IsPolymorphic());
-
-    // Deserialize JsonValue
-    BeJsDocument expectedJsonValue(BeRapidJsonUtilities::ToString(actual));
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
-    ASSERT_TRUE(navNodeKey2.IsValid());
-    ECClassGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsECClassGroupingNodeKey();
-    ASSERT_NE(nullptr, deserializedKey2);
-
-    EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
-    EXPECT_EQ(key->GetECClassId(), deserializedKey2->GetECClassId());
-    EXPECT_EQ(false, deserializedKey2->IsPolymorphic());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1561,7 +1529,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
-    // Deserialiaze RapidJson
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECPropertyGroupingNodeKey const* deserializedKey = navNodeKey->AsECPropertyGroupingNodeKey();
@@ -1572,19 +1539,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     EXPECT_EQ(key->GetECClassId(), deserializedKey->GetECClassId());
     EXPECT_EQ(key->GetPropertyName(), deserializedKey->GetPropertyName());
     EXPECT_EQ(key->GetGroupingValuesArray(), deserializedKey->GetGroupingValuesArray());
-
-    // Deserialize JsonValue
-    BeJsDocument expectedJsonValue(BeRapidJsonUtilities::ToString(actual));
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
-    ASSERT_TRUE(navNodeKey2.IsValid());
-    ECPropertyGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsECPropertyGroupingNodeKey();
-    ASSERT_NE(nullptr, deserializedKey2);
-
-    EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
-    EXPECT_EQ(key->GetECClassId(), deserializedKey2->GetECClassId());
-    EXPECT_EQ(key->GetPropertyName(), deserializedKey2->GetPropertyName());
-    EXPECT_EQ(key->GetGroupingValuesArray(), deserializedKey2->GetGroupingValuesArray());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1615,7 +1569,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
-    // Deserialiaze
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECPropertyGroupingNodeKey const* deserializedKey = navNodeKey->AsECPropertyGroupingNodeKey();
@@ -1626,19 +1579,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     EXPECT_EQ(key->GetECClassId(), deserializedKey->GetECClassId());
     EXPECT_EQ(key->GetPropertyName(), deserializedKey->GetPropertyName());
     EXPECT_EQ(key->GetGroupingValuesArray(), deserializedKey->GetGroupingValuesArray());
-
-    // Deserialize JsonValue
-    BeJsDocument expectedJsonValue(BeRapidJsonUtilities::ToString(actual));
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
-    ASSERT_TRUE(navNodeKey2.IsValid());
-    ECPropertyGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsECPropertyGroupingNodeKey();
-    ASSERT_NE(nullptr, deserializedKey2);
-
-    EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
-    EXPECT_EQ(key->GetECClassId(), deserializedKey2->GetECClassId());
-    EXPECT_EQ(key->GetPropertyName(), deserializedKey2->GetPropertyName());
-    EXPECT_EQ(key->GetGroupingValuesArray(), deserializedKey2->GetGroupingValuesArray());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1663,7 +1603,6 @@ TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
-    // Deserialiaze
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     LabelGroupingNodeKey const* deserializedKey = navNodeKey->AsLabelGroupingNodeKey();
@@ -1672,17 +1611,6 @@ TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
     EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
     EXPECT_EQ(key->GetLabel(), deserializedKey->GetLabel());
-
-    // Deserialize JsonValue
-    BeJsDocument expectedJsonValue(BeRapidJsonUtilities::ToString(actual));
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
-    ASSERT_TRUE(navNodeKey2.IsValid());
-    LabelGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsLabelGroupingNodeKey();
-    ASSERT_NE(nullptr, deserializedKey2);
-
-    EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
-    EXPECT_EQ(key->GetLabel(), deserializedKey2->GetLabel());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1820,7 +1748,6 @@ TEST_F(DefaultECPresentationSerializerTests, KeySetSerialization)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
-    //Deserialize
     BeJsDocument expectedJson(BeRapidJsonUtilities::ToString(actual));
     KeySetPtr deserializedKeySet = KeySet::FromJson(*m_connection, expectedJson);
 
