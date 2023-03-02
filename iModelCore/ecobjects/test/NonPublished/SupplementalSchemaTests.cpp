@@ -906,7 +906,7 @@ TEST_F(SupplementalSchemaMetaDataTests, SetMetaDataUsingIndividualMethods)
     supplementalSchema->AddReferencedSchema(*m_coreCASchema);
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    IECInstancePtr supplementalSchemaMetaDataCustomAttribute = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, SupplementalSchemaMetaData::GetCustomAttributeAccessor());
+    IECInstancePtr supplementalSchemaMetaDataCustomAttribute = CoreCustomAttributeHelper::CreateCustomAttributeInstance(*schemaContext, SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     ECN::SupplementalSchemaMetaDataPtr metaData = SupplementalSchemaMetaData::Create(*supplementalSchemaMetaDataCustomAttribute);
     // use individual methods to set MetaData values
     metaData->SetSupplementalSchemaPurpose("Supplement Primary Schema");

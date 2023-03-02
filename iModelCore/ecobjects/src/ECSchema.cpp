@@ -834,7 +834,7 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR name, ECEntityClassCR appliesTo)
+ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR name, ECEntityClassCR appliesTo, ECSchemaReadContextR schemaContext)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -849,7 +849,6 @@ ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR
 
     pClass->SetClassModifier(ECClassModifier::Abstract);
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, "IsMixin");
     if (!mixinInstance.IsValid())
         {

@@ -199,7 +199,7 @@ bool SupplementalSchemaMetaData::IsSupplemental(ECSchemaP supplementalSchema) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute(ECSchemaReadContextPtr schemaContext)
     {
-    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, SupplementalSchemaMetaData::GetCustomAttributeAccessor());
+    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(*schemaContext, SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     instance->SetValue(GetPrimarySchemaNamePropertyAccessor(), ECValue(GetPrimarySchemaName().c_str()));
     instance->SetValue(GetPrimarySchemaReadVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaReadVersion()));
     instance->SetValue(GetPrimarySchemaWriteVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaWriteVersion()));
@@ -1038,11 +1038,11 @@ Utf8CP SupplementalSchemaInfo::GetCustomAttributeSchemaName()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute(ECSchemaReadContextPtr schemaContext)
     {
-    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, GetCustomAttributeAccessor());
+    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(*schemaContext, GetCustomAttributeAccessor());
     if (!instance.IsValid())
         return instance;
 
-    ECClassCP schemaNameAndPurpose = CoreCustomAttributeHelper::GetClass(schemaContext, "SchemaNameAndPurpose");
+    ECClassCP schemaNameAndPurpose = CoreCustomAttributeHelper::GetClass(*schemaContext, "SchemaNameAndPurpose");
     if (nullptr == schemaNameAndPurpose)
         return instance;
 

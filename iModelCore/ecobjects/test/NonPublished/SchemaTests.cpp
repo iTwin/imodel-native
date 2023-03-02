@@ -89,13 +89,13 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
 TEST_F(SchemaTest, CreateDynamicSchema)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass(schemaContext, "DynamicSchema");
+    auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass(*schemaContext, "DynamicSchema");
     IECInstancePtr dynamicSchemaCA = dynamicClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(schemaContext));
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     EC_ASSERT_SUCCESS(schema->SetCustomAttribute(*dynamicSchemaCA));
     
 
@@ -1294,7 +1294,8 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin)
 
     refSchema->CreateEntityClass(entityClass, "EntityClass");
     
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinClass, "Mixin", *entityClass)) << "Should not fail to add mixin with class in referenced schema";
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinClass, "Mixin", *entityClass, *schemaContext)) << "Should not fail to add mixin with class in referenced schema";
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema)) << "The CreateMixinClass succeeded without creating a reference to the schema the AppliesTo class is located in.";
 
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the appliesTo class was removed when it shouldn't be because it is still in use within the Mixin CA";
@@ -3087,7 +3088,7 @@ TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems)
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateEntityClass(baseEntityClass, "")) << "cannot create an entity class with an empty name";
 
     ECEntityClassP mixin;
-    EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateMixinClass(mixin, "", *baseEntityClass)) << "cannot create a mixin class with an empty name";
+    EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateMixinClass(mixin, "", *baseEntityClass, *readCtx)) << "cannot create a mixin class with an empty name";
 
     ECStructClassP structClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateStructClass(structClass, "")) << "cannot create a struct class with an empty name";

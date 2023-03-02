@@ -3292,12 +3292,13 @@ static void createV3_2SchemaWithAllItemTypes(ECSchemaPtr& schema)
     entityClass->SetDescription("An example entity class.");
     entityClass->AddBaseClass(*baseEntityClass);
 
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECEntityClassP mixinA;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinA, "mixinA", *entityClass));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinA, "mixinA", *entityClass, *schemaContext));
     entityClass->AddBaseClass(*mixinA);
 
     ECEntityClassP mixinB;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinB, "mixinB", *entityClass));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinB, "mixinB", *entityClass, *schemaContext));
     entityClass->AddBaseClass(*mixinB);
 
     ECStructClassP structClass;

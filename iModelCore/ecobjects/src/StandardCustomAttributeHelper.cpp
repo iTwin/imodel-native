@@ -86,10 +86,10 @@ const uint32_t kCoreCAVersionMinor = 0u;
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSchemaPtr CoreCustomAttributeHelper::_GetSchema(ECSchemaReadContextPtr schemaContext)
+ECSchemaPtr CoreCustomAttributeHelper::_GetSchema(ECSchemaReadContextR schemaContext)
     {
     SchemaKey key(kCoreCustomAttributes, kCoreCAVersionRead, kCoreCAVersionWrite, kCoreCAVersionMinor);
-    ECSchemaPtr schema = ECSchema::LocateSchema(key, *schemaContext);
+    ECSchemaPtr schema = ECSchema::LocateSchema(key, schemaContext);
     return schema;
     }
 
@@ -149,7 +149,7 @@ BentleyStatus CoreCustomAttributeHelper::GetCurrentTimeStampProperty(PrimitiveEC
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECCustomAttributeClassCP CoreCustomAttributeHelper::GetCustomAttributeClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
+ECCustomAttributeClassCP CoreCustomAttributeHelper::GetCustomAttributeClass(ECSchemaReadContextR schemaContext, Utf8CP attributeName)
     {
     ECSchemaPtr coreCaSchema = GetSchema(schemaContext);
     if (!coreCaSchema.IsValid())
@@ -168,7 +168,7 @@ ECCustomAttributeClassCP CoreCustomAttributeHelper::GetCustomAttributeClass(ECSc
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECClassCP CoreCustomAttributeHelper::GetClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
+ECClassCP CoreCustomAttributeHelper::GetClass(ECSchemaReadContextR schemaContext, Utf8CP attributeName)
     {
     ECSchemaPtr coreCaSchema = GetSchema(schemaContext);
     if (!coreCaSchema.IsValid())
@@ -184,7 +184,7 @@ ECClassCP CoreCustomAttributeHelper::GetClass(ECSchemaReadContextPtr schemaConte
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSchemaPtr CoreCustomAttributeHelper::GetSchema(ECSchemaReadContextPtr schemaContext)
+ECSchemaPtr CoreCustomAttributeHelper::GetSchema(ECSchemaReadContextR schemaContext)
     {
     return _GetSchema(schemaContext);
     }
@@ -193,7 +193,7 @@ ECSchemaPtr CoreCustomAttributeHelper::GetSchema(ECSchemaReadContextPtr schemaCo
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
+IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(ECSchemaReadContextR schemaContext, Utf8CP attributeName)
     {
     ECSchemaPtr coreCaSchema = GetSchema(schemaContext);
     if (!coreCaSchema.IsValid())
