@@ -170,12 +170,12 @@ describe("basic tests", () => {
 
   it("should be able to open partially valid db", async () => {
     // InvalidFile.bim has a valid sqlite db header, so it passes the isValidDbFile check, but has an overall invalid sqlite structure.
-    // So, It then fails with SQLITE_NOTADB when statements are stepped and prepared on it. 
+    // So, It then fails with SQLITE_NOTADB when statements are stepped and prepared on it.
     const pathToDb = path.join(getAssetsDir(), "InvalidFile.bim");
 
     const db = new iModelJsNative.SQLiteDb();
     // rawSQLite being false causes us to look for the presence of be_prop table, which gives us SQLITE_NOTADB
-    expect(() => db.openDb(pathToDb, {openMode: OpenMode.ReadWrite})).to.throw("file is not a database");  
+    expect(() => db.openDb(pathToDb, {openMode: OpenMode.ReadWrite})).to.throw("file is not a database");
     // rawSQLite being true skips be_prop check so we can open the database, but will fail later on if we step and prepare on the db.
     expect(() => db.openDb(pathToDb, {openMode: OpenMode.ReadWrite, rawSQLite: true})).to.not.throw();
     db.closeDb();
