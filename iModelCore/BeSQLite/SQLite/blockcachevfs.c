@@ -755,7 +755,7 @@ static void bcvfsProxyCloseTransactionIf(BcvfsFile *pFile){
 }
 
 static void bcvKVStoreFree(BcvKVStore *pKv){
-  sqlite3_close(pKv->db);
+  sqlite3_close_v2(pKv->db);
   sqlite3_free(pKv->zETag);
   memset(pKv, 0, sizeof(BcvKVStore));
 }
@@ -6970,6 +6970,9 @@ static int bcvFileVtabSync(sqlite3_vtab *tab){
   rc = sqlite3_exec(pTab->pFile->kv.db, "COMMIT", 0, 0, &pTab->base.zErrMsg);
   if( rc==SQLITE_OK ){
     rc = bcvKVStorePush(pTab);
+  }
+  if( rc!=SQLITE_OK ){
+    bcvKVStoreFree(&pTab->pFile->kv);
   }
   return rc;
 }

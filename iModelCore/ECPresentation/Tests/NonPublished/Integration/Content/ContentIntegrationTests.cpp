@@ -4683,7 +4683,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLa
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4731,7 +4731,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4777,7 +4777,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4978,7 +4978,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     ASSERT_EQ(1, contentSet.GetSize());
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    Utf8PrintfString expectedValue(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString expectedValue(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
     EXPECT_STREQ(expectedValue.c_str(), recordJson["DisplayValues"][content->GetDescriptor().GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     EXPECT_TRUE(contentSet.Get(0)->IsMerged(content->GetDescriptor().GetVisibleFields()[0]->GetUniqueName()));
     }
@@ -5036,7 +5036,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_DisplayLabelG
 
     EXPECT_STREQ("Test", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5092,7 +5092,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Displ
 
     EXPECT_STREQ("Test", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5204,7 +5204,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelGetsCreatedFrom
     ASSERT_EQ(2, contentSet.GetSize());
 
     ContentSetItemCPtr record1 = contentSet.Get(0);
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, record1->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, record1->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
     ContentSetItemCPtr record2 = contentSet.Get(1);
     EXPECT_STREQ("test value", record2->GetDisplayLabelDefinition().GetDisplayValue().c_str());
@@ -9518,7 +9518,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenVal
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
@@ -9583,7 +9583,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSom
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSomeValuesAreNull)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
@@ -9703,7 +9703,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenArraySizesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenArraySizesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
@@ -9763,7 +9763,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenValuesInArrayAreDifferent, R"
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenValuesInArrayAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
@@ -9825,7 +9825,7 @@ DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("ClassA");
@@ -10243,7 +10243,7 @@ DEFINE_SCHEMA(MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDiffe
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
@@ -10375,7 +10375,7 @@ DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenValuesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     // unused - ECClassCP structClass = GetClass("MyStruct");
@@ -10440,7 +10440,7 @@ DEFINE_SCHEMA(MergesStructPropertyValueWhenClassesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWhenClassesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP classA = GetClass("ClassA");
@@ -10811,7 +10811,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValues
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -10966,7 +10966,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenArraySizesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValuesWhenArraySizesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -11048,7 +11048,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenArrayValuesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValuesWhenArrayValuesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -11125,7 +11125,7 @@ DEFINE_SCHEMA(MergesStructArrayPropertyValueWhenClassesAreDifferent, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValueWhenClassesAreDifferent)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
@@ -12787,7 +12787,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
@@ -12831,7 +12831,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12871,7 +12871,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12912,7 +12912,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12958,7 +12958,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13734,7 +13734,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     ASSERT_EQ(1, contentSet.GetSize());
 
     // Expecting "Not specified" label
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13793,7 +13793,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonStrings::RULESENGINE_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 #ifdef wip_related_content_without_instances
@@ -13949,7 +13949,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultip
     LabelDefinitionCPtr label = GetValidatedResponse(m_manager->GetDisplayLabel(AsyncKeySetDisplayLabelRequestParams::Create(s_project->GetECDb(), *keys)));
 
     // verify
-    EXPECT_STREQ(CommonStrings::RULESENGINE_MULTIPLEINSTANCES, label->GetDisplayValue().c_str());
+    EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, label->GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

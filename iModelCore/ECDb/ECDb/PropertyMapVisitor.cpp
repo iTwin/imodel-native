@@ -99,8 +99,10 @@ DbColumn const* GetColumnsPropertyMapVisitor::GetSingleColumn() const
 //---------------------------------------------------------------------------------------
 BentleyStatus GetTablesPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    if (Enum::Contains(m_filter, propertyMap.GetType()))
-        m_tables.insert(&propertyMap.GetTable());
+    if (Enum::Contains(m_filter, propertyMap.GetType())) {
+        if (std::find(m_tables.begin(), m_tables.end(), &propertyMap.GetTable()) == m_tables.end())
+            m_tables.push_back(&propertyMap.GetTable());
+    }
 
     return SUCCESS;
     }
@@ -119,7 +121,8 @@ BentleyStatus GetTablesPropertyMapVisitor::_Visit(CompoundDataPropertyMap const&
                 return SUCCESS;
             }
 
-        m_tables.insert(&propertyMap.GetTable());
+        if (std::find(m_tables.begin(), m_tables.end(), &propertyMap.GetTable()) == m_tables.end())
+            m_tables.push_back(&propertyMap.GetTable());
         }
     return SUCCESS;
     }
@@ -129,8 +132,12 @@ BentleyStatus GetTablesPropertyMapVisitor::_Visit(CompoundDataPropertyMap const&
 //---------------------------------------------------------------------------------------
 BentleyStatus GetTablesPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
-    if (Enum::Contains(m_filter, propertyMap.GetType()))
-        m_tables.insert(propertyMap.GetTables().begin(), propertyMap.GetTables().end());
+    if (Enum::Contains(m_filter, propertyMap.GetType())) {
+        for (auto& table : propertyMap.GetTables()) {
+            if (!Contains(*table))
+                m_tables.push_back(table);
+        }
+    }
 
     return SUCCESS;
     }

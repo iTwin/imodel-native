@@ -356,7 +356,7 @@ void ContentItemBuilder::_CaptureNestedContentValueCounts()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentSetItemPtr ContentItemBuilder::BuildItem()
     {
-    static Utf8PrintfString const s_variesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    static Utf8PrintfString const s_variesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     _CaptureNestedContentValueCounts();
 
@@ -454,7 +454,7 @@ void MergingContentItemBuilder::_SetLabel(LabelDefinitionCR definition)
     {
     if (GetLabel().IsValid() && (*GetLabel()) != definition)
         {
-        ContentItemBuilder::_SetLabel(*LabelDefinition::Create(CommonStrings::RULESENGINE_MULTIPLEINSTANCES));
+        ContentItemBuilder::_SetLabel(*LabelDefinition::Create(CommonStrings::LABEL_MULTIPLEINSTANCES));
         }
     else
         ContentItemBuilder::_SetLabel(definition);
@@ -518,7 +518,7 @@ void MergingContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value,
         }
 
     existingValue.SetNull();
-    static Utf8PrintfString const s_variesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::RULESENGINE_VARIES);
+    static Utf8PrintfString const s_variesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
     existingDisplayValue.SetString(s_variesStr.c_str(), GetDisplayValues().GetAllocator());
     GetMergedFieldNames().insert(name);
     }
