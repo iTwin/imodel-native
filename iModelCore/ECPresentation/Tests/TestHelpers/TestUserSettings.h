@@ -29,16 +29,20 @@ private:
 
     Utf8String GetSettingType(BeJsConst json) const
         {
-        if (json.isNumeric()) return "int";
-        else if (json.isString()) return "string";
-        else if (json.isBool()) return "bool";
-        else if (json.isArray()) return "ints";
+        if (json.isNumeric()) 
+            return "int";
+        if (json.isString()) 
+            return "string";
+        if (json.isBool()) 
+            return "bool";
+        if (json.isArray()) 
+            return "ints";
         BeAssert(false);
         return "";
         }
 
 protected:
-    BeJsConst _GetPresentationInfo() const override {return BeJsDocument::Null();}
+    BeJsDocument _GetPresentationInfo() const override {return BeJsDocument();}
 
     bvector<bpair<Utf8String, Utf8String>> _GetSettings() const override
         {

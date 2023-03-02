@@ -12,12 +12,16 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Reporter::Next() { auto x = m_results[m_results.size()]; x.SetNull(); }
+void Reporter::Next() 
+    { 
+    BeJsValue json = m_results[m_results.size()]; 
+    json.SetNull(); 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetString(BeJsConst record, Utf8String groupingField)
+static Utf8String GetString(BeJsConst record, Utf8StringCR groupingField)
     {
     Utf8String groupingValue = "";
     record.ForEachProperty(

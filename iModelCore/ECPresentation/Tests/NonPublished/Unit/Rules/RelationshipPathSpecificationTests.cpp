@@ -188,7 +188,7 @@ TEST_F(RepeatableRelationshipPathSpecificationTests, LoadsFromJsonObject)
         "relationship": {"schemaName": "schema", "className": "rel"},
         "direction": "Forward",
         "targetClass": {"schemaName": "schema", "className": "class"},
-        "count": "2"
+        "count": 2
     })";
     BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());

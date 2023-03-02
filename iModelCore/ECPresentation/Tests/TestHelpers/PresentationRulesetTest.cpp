@@ -146,7 +146,8 @@ int PresentationRulesetTester::CheckNode(NavNodeCR node, BeJsConst tree, int ind
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileNameCR rulesetsDir) : m_localState(std::make_shared<RuntimeLocalState>())
+PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileNameCR rulesetsDir) 
+    : m_localState(std::make_shared<RuntimeLocalState>())
     {
     BeFileName assetsDirectory, temporaryDirectory;
     host.GetDgnPlatformAssetsDirectory(assetsDirectory);

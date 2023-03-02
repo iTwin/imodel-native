@@ -39,7 +39,7 @@ struct IUserSettings
 protected:
     virtual ~IUserSettings() {}
 
-    virtual BeJsConst _GetPresentationInfo() const = 0;
+    virtual BeJsDocument _GetPresentationInfo() const = 0;
 
     virtual bvector<bpair<Utf8String, Utf8String>> _GetSettings() const = 0;
 
@@ -60,7 +60,7 @@ protected:
 
 public:
     //! Get the presentation info for user settings stored in this instance.
-    BeJsConst GetPresentationInfo() const {return _GetPresentationInfo();}
+    BeJsDocument GetPresentationInfo() const {return _GetPresentationInfo();}
 
     //! Get existing settings ids and types
     bvector<bpair<Utf8String, Utf8String>> GetSettings() const {return _GetSettings();}
@@ -118,7 +118,7 @@ private:
     void InitFromJson(UserSettingsGroupList const& rules, BeJsValue presentationObj);
 
 protected:
-    ECPRESENTATION_EXPORT BeJsConst _GetPresentationInfo() const override;
+    ECPRESENTATION_EXPORT BeJsDocument _GetPresentationInfo() const override;
     ECPRESENTATION_EXPORT bvector<bpair<Utf8String, Utf8String>> _GetSettings() const override;
     ECPRESENTATION_EXPORT bool _HasSetting(Utf8CP id) const override;
     ECPRESENTATION_EXPORT void _InitFrom(UserSettingsGroupList const&) override;

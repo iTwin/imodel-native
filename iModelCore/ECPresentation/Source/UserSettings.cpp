@@ -281,7 +281,7 @@ void UserSettings::AddValues(BeJsValue groupListJson) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeJsConst UserSettings::_GetPresentationInfo() const
+BeJsDocument UserSettings::_GetPresentationInfo() const
     {
     BeMutexHolder lock(m_mutex);
 

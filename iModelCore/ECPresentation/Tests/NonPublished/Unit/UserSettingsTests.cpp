@@ -303,7 +303,7 @@ TEST_F(UserSettingsTests, InitializesFromRules)
     expectedPresentationInfo[1]["Items"][1]["Options"] = "IntValue";
     expectedPresentationInfo[1]["Items"][1]["Value"] = 999;
 
-    BeJsConst actualInfo = GetSettings().GetPresentationInfo();
+    BeJsDocument actualInfo = GetSettings().GetPresentationInfo();
     EXPECT_TRUE(expectedPresentationInfo.isExactEqual(actualInfo))
         << "Expected: " << expectedPresentationInfo.Stringify().c_str() << "\r\n"
         << "Actual:   " << actualInfo.Stringify().c_str();
@@ -358,7 +358,7 @@ TEST_F(UserSettingsTests, InitializesFromNestedRules)
     expectedPresentationInfo[0]["NestedGroups"][0]["Items"][1]["Options"] = "TrueFalse";
     expectedPresentationInfo[0]["NestedGroups"][0]["Items"][1]["Value"] = false;
 
-    BeJsConst actualInfo = GetSettings().GetPresentationInfo();
+    BeJsDocument actualInfo = GetSettings().GetPresentationInfo();
     EXPECT_TRUE(expectedPresentationInfo.isExactEqual(actualInfo))
         << "Expected: " << expectedPresentationInfo.Stringify().c_str() << "\r\n"
         << "Actual:   " << actualInfo.Stringify().c_str();
@@ -410,7 +410,7 @@ TEST_F(UserSettingsTests, InitializesFromRulesWithDefaults)
     GetSettings().InitFrom(rules);
 
     // additionally, check if Item5_Id has the "options" value "TrueFalse"
-    BeJsConst presentationInfo = GetSettings().GetPresentationInfo();
+    BeJsDocument presentationInfo = GetSettings().GetPresentationInfo();
     ASSERT_STREQ("TrueFalse", presentationInfo[0]["Items"][4]["Options"].asCString());
 
     for (UserSettingsGroupCP rule : rules)

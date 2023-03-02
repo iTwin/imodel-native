@@ -99,17 +99,8 @@ bool RepeatableRelationshipStepSpecification::_ReadJson(BeJsConst json)
     else if (json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].isString() && 0 == strcmp("*", json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asCString()))
         m_count = 0;
     else
-        {
-        BeJsConst object = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT];
-        if (object.isNumeric())
-            m_count = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asInt();
-        else
-            {
-            int32_t intValue = 1;;
-            Utf8String::Sscanf_safe(object.asCString(), "%" PRId32, &intValue);
-            m_count = intValue;
-            }
-        }
+        m_count = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asInt(1);
+      
     return true;
     }
 

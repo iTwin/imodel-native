@@ -22,12 +22,14 @@ public:
     template <typename T>
     void Record(Utf8StringCR field, T value)
         {
-        if (m_fields.end() == std::find(m_fields.begin(), m_fields.end(), field)) m_fields.push_back(field);
+        if (m_fields.end() == std::find(m_fields.begin(), m_fields.end(), field)) 
+            m_fields.push_back(field);
         m_results[m_results.size() - 1][field] = value;
         }
     void Record(Utf8StringCR field, BeJsConst value)
         {
-        if (m_fields.end() == std::find(m_fields.begin(), m_fields.end(), field)) m_fields.push_back(field);
+        if (m_fields.end() == std::find(m_fields.begin(), m_fields.end(), field)) 
+            m_fields.push_back(field);
         m_results[m_results.size() - 1][field].From(value);
         }
 
