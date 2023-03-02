@@ -43,6 +43,11 @@ dirToSearch = $(BuildContext)VendorAPI/icu4c/
 #Ignore unknown pragmas (i.e. pragma mark)
 LLVMCommonCompOpts  + -Wno-unknown-pragmas
 
+%if "APPLE_CLANG" == $(BUILD_TOOLSET)
+    OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
+    LLVMCommonCompOpts + -Wno-error=implicit-function-declaration
+%endif
+
 o = $(PartBuildDir)
 
 always:
@@ -106,6 +111,8 @@ $(o)Logging$(oext)              : $(bentleyDir)Logging.cpp $(BentleyAPISrc)Loggi
 
 %if $(TARGET_PLATFORM)=="Android"
     # Android-specific jstring conversion utilities
+    OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
+    LLVMCommonCompOpts + -Wno-error=implicit-function-declaration
     $(o)BeJStringUtilities$(oext) : $(nonportDir)BeJStringUtilities.cpp $(BentleyAPISrc)BeJStringUtilities.h ${MultiCompileDepends}
 %endif
 
