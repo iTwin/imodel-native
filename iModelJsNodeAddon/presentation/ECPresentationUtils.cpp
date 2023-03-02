@@ -722,6 +722,24 @@ static ParseResult<std::unique_ptr<InstanceFilterDefinition>> ParseHierarchyLeve
     return CreateParseResult<std::unique_ptr<InstanceFilterDefinition>>(nullptr);
     }
 
+#define PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit "sizeLimit"
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ParseResult<Nullable<size_t>> ParseHierarchyLevelSizeLimitFromJson(RapidJsonValueCR json)
+    {
+    if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit))
+        {
+        RapidJsonValueCR limitJson = json[PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit];
+        if (!limitJson.IsInt())
+            return CreateParseError<Nullable<size_t>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit "` to be an integer");
+        if (limitJson.GetInt64() <= 0)
+            return CreateParseError<Nullable<size_t>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit "` to be a positive integer");
+        return CreateParseResult<Nullable<size_t>>((size_t)limitJson.GetUint64());
+        }
+    return CreateParseResult<Nullable<size_t>>(nullptr);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -739,8 +757,13 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPre
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto params = HierarchyRequestParams(rulesetParams.GetValue());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodesCount(CreateAsyncParams(params, db, paramsJson)).then([](NodesCountResponse response)
         {
@@ -765,12 +788,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto pageParams = ParsePageOptionsFromJson(paramsJson);
     if (pageParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, pageParams.GetError());
 
     auto params = HierarchyRequestParams(rulesetParams.GetValue());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse nodesResponse)
@@ -824,8 +852,13 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodesCount(CreateAsyncParams(params, connection->GetECDb(), paramsJson))
         .then([](NodesCountResponse nodesCountResponse)
@@ -859,8 +892,13 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse nodesResponse)
