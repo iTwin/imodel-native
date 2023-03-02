@@ -43,6 +43,15 @@ android {
     dexOptions {
         javaMaxHeapSize "4g"
     } 
+
+    packagingOptions {
+        exclude 'resources.arsc'
+        exclude 'AndroidManifest.xml'
+    }
+
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
