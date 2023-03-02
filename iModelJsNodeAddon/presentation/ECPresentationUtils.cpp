@@ -30,6 +30,10 @@ ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::excep
         {
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what()));
         }
+    catch (ResultSetTooLargeError const& e)
+        {
+        return ECPresentationResult(ECPresentationStatus::ResultSetTooLarge, Utf8String(e.what()));
+        }
     catch (std::runtime_error const& e)
         {
         return ECPresentationResult(ECPresentationStatus::Error, Utf8String(e.what()));
