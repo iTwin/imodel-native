@@ -129,7 +129,7 @@ bvector<PresentationQueryContractFieldCPtr> ECInstanceNodesQueryContract::_GetFi
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilderPtr ECInstanceNodesQueryContract::CreateInstanceKeysSelectQuery(ECInstanceKey const& key) const
     {
-    Utf8String query("SELECT ? AS ECClassId, ? AS ECInstanceId");
+    Utf8PrintfString query("SELECT ? AS [%s], ? AS [%s]", ECClassIdFieldName, ECInstanceIdFieldName);
     BoundQueryValuesList bindings(
         {
         std::make_shared<BoundQueryId>(key.GetClassId()),
@@ -201,23 +201,18 @@ bvector<PresentationQueryContractFieldCPtr> MultiECInstanceNodesQueryContract::_
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilderPtr MultiECInstanceNodesQueryContract::CreateInstanceKeysSelectQuery(bvector<ECInstanceKey> const& keys) const
     {
-    bmap<ECClassId, bvector<ECInstanceId>> idsGroupedByClass;
+    static Utf8PrintfString const s_keySelectTemplate("SELECT ? AS [%s], ? AS [%s]", ECClassIdFieldName, ECInstanceIdFieldName);
+    Utf8String query;
+    BoundQueryValuesList bindings;
     for (auto const& key : keys)
-        idsGroupedByClass[key.GetClassId()].push_back(key.GetInstanceId());
-
-    auto query = ComplexQueryBuilder::Create();
-    query->SelectAll();
-    query->From(*GetInstanceKeysSelectQuery().Clone());
-    for (auto const& idsEntry : idsGroupedByClass)
         {
-        ValuesFilteringHelper idsFilter(idsEntry.second);
-        BoundQueryValuesList bindings({ std::make_shared<BoundQueryId>(idsEntry.first) });
-        ContainerHelpers::MovePush(bindings, idsFilter.CreateBoundValues());
-        Utf8String instanceIdWhereClause = idsFilter.CreateWhereClause(QueryHelpers::Wrap(InstanceKeysSelectContract::ECInstanceIdFieldName).c_str());
-        query->Where(QueryHelpers::Wrap(InstanceKeysSelectContract::ECClassIdFieldName).append(" = ? AND ").append(instanceIdWhereClause).c_str(),
-            bindings, ClauseJoinOperator::Or);
+        if (!query.empty())
+            query.append(" UNION ALL ");
+        query.append(s_keySelectTemplate);
+        bindings.push_back(std::make_shared<BoundQueryId>(key.GetClassId()));
+        bindings.push_back(std::make_shared<BoundQueryId>(key.GetInstanceId()));
         }
-    return query;
+    return StringQueryBuilder::Create(query, bindings);
     }
 
 Utf8CP ECClassGroupingNodesQueryContract::ECInstanceIdFieldName = "/ECInstanceId/";
@@ -267,7 +262,7 @@ PresentationQueryBuilderPtr ECClassGroupingNodesQueryContract::CreateInstanceKey
     auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(*GetInstanceKeysSelectQuery().Clone());
-    query->Where(Utf8PrintfString("ECClassId IS (%s%s)", isPolymorphic ? "" : "ONLY ", ecClass.GetFullName()).c_str(), BoundQueryValuesList());
+    query->Where(Utf8PrintfString("[%s] IS (%s%s)", ECClassIdFieldName, isPolymorphic ? "" : "ONLY ", ecClass.GetFullName()).c_str(), BoundQueryValuesList());
     return query;
     }
 
