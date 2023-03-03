@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Logging.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <json/writer.h>
 #include "PresentationRulesetTest.h"
 
