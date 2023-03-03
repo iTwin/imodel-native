@@ -21,25 +21,6 @@ void Reporter::Next()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetString(BeJsConst record, Utf8StringCR groupingField)
-    {
-    Utf8String groupingValue = "";
-    record.ForEachProperty(
-        [&groupingField, &groupingValue](Utf8CP name, BeJsConst group)
-        {
-        if (groupingField == name)
-            {
-            groupingValue = group.asCString();
-            return true;
-            }
-        return false;
-        });
-    return groupingValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void CreateJsonGroupingStructure(BeJsValue json, BeJsConst records, bvector<Utf8String> const& groupingFields)
     {
     if (groupingFields.empty())
@@ -50,7 +31,7 @@ static void CreateJsonGroupingStructure(BeJsValue json, BeJsConst records, bvect
     records.ForEachArrayMember(
         [&](BeJsConst::ArrayIndex i, BeJsConst record)
         {
-        Utf8String groupingValue = GetString(record, groupingField);
+        Utf8String groupingValue = record.hasMember(groupingField.c_str()) ? record[groupingField].asCString() : "";
         CreateJsonGroupingStructure(json[groupingValue], records, nestedGroupingFields);
         return false;
         });
@@ -66,29 +47,29 @@ BentleyStatus Reporter::ToJsonFile(BeFileNameCR path, bvector<Utf8String> const&
     if (BeFileStatus::Success != status)
         return ERROR;
 
-    BeJsDocument json;
+    BeJsDocument json; 
     json.toObject();
     CreateJsonGroupingStructure(json, m_results, groupingFields);
 
-    m_results.ForEachArrayMember(
-        [&](BeJsConst::ArrayIndex i, BeJsConst record)
+    m_results.ForEachArrayMemberValue(
+        [&](BeJsConst::ArrayIndex i, BeJsValue record)
         {
-        json.From(json);
+        std::unique_ptr<BeJsValue> container = std::make_unique<BeJsValue>(json);
         for (auto const& groupingField : groupingFields)
             {
-            Utf8String groupingValue = GetString(record, groupingField);
-            json.From(json[groupingValue]);
+            Utf8String groupingValue = record.hasMember(groupingField.c_str()) ? record[groupingField].asCString() : "";
+            container = std::make_unique<BeJsValue>((*container)[groupingValue]);
             }
 
         for (auto const& field : m_fields)
             {
             if (groupingFields.end() != std::find(groupingFields.begin(), groupingFields.end(), field))
                 continue;
-            Utf8String groupingField = GetString(record, field);
-            if (groupingField == "")
+
+            if (!record.hasMember(field.c_str()))
                 continue;
-            BeJsConst value = record[groupingField];
-            json[field].From(value);
+
+            (*container)[field].From(record[field]);
             }
         return false;
         });
@@ -123,43 +104,17 @@ BentleyStatus Reporter::ToExportCsvFile(BeFileNameCR path, Utf8StringCR suiteNam
         Utf8String testName;
         for (auto testNameField : testNameFields)
             {
-            Utf8String field;
-            auto allItemsIterated = record.ForEachProperty(
-                [&testNameField, &field](Utf8CP name, BeJsConst json)
-                {
-                if (name == testNameField)
-                    {
-                    if (json.isString()) field = json.asCString();
-                    return true;
-                    }
-                return false;
-                }
-            );
-            
-            if (!allItemsIterated && !field.empty())
+            if (record.hasMember(testNameField.c_str()) && record[testNameField].isString())
                 {
                 if (!testName.empty())
                     testName.append(" + ");
-                testName.append(field);
+                testName.append(record[testNameField].asCString());
                 }
             }
 
         for (auto const& fieldName : exportedFields)
             {
-            Utf8String field;
-            auto allItemsIterated = record.ForEachProperty(
-                [&fieldName, &field](Utf8CP name, BeJsConst json)
-                {
-                if (name == fieldName)
-                    {
-                    if (json.isString()) field = json.asCString();
-                    return true;
-                    }
-                return false;
-                }
-            );
-            Utf8String value = !allItemsIterated ? field : Utf8String();
-
+            Utf8String value = record.hasMember(fieldName.c_str()) ? record[fieldName].Stringify() : Utf8String();
             Utf8String line;
             line.append(suiteName).append(REPORT_CSV_FILE_SEPARATOR);
             line.append(testName).append(REPORT_CSV_FILE_SEPARATOR);
