@@ -7,7 +7,7 @@
     <SubPart PartName="iModelJsNodeAddonPRG"/>
   </Part>
 
-  <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon">
+  <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon" OnlyPlatforms="x64,linuxx64,macosx64,macosarm64">
     <SubPart PartName="iModelJsMakePackages"/>
     <SubPart PartName="RunUnitTests"/>
     <SubPart PartName="RunUnitTestsMacOSARM64"/>
@@ -165,7 +165,6 @@
   </Part>
 
   <Part Name="RunUnitTestsMacOSARM64" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke" OnlyPlatforms="MacOSARM64">
-    <RequiredRepository>nodejs16</RequiredRepository>
     <SubPart PartName="iModelJsMakePackages"/>
   </Part>
 

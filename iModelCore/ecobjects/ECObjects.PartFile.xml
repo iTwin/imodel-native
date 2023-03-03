@@ -282,7 +282,7 @@
         <SubPart PartName="SchemaRoundtripDependencies"/>
     </Part>
 
-    <Product Name="SchemaRoundtripValidation" SaveProduct="true" PrgOutputDir="SchemaRoundtripValidation">
+    <Product Name="SchemaRoundtripValidation" SaveProduct="true">
         <Directories DirectoryListName="AllBisSchemas-Directories" PartFile="schemas\BisSchemas\BisSchemas"/>
         <Directories DirectoryListName="SchemaComparison"/>
         <Directories DirectoryListName="SchemaRoundtrip"/>
@@ -313,7 +313,7 @@
         <Directories DirectoryListName="ECObjectsToolsNuGet" />
     </NuGetProduct>
 
-    <Part Name="ECObjectsToolsNuGet-TopLevel" PrgOutputDir="ECObjectsTools">
+    <Part Name="ECObjectsToolsNuGet-TopLevel">
         <SubNuGetProduct NuGetProductName="ECObjectsToolsNuGet" />
     </Part>
 
@@ -451,7 +451,7 @@
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
 
-    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true" AddIn="true">
+    <Product Name="ECObjectsTested" SaveProduct="true" AddIn="true">
         <SubProduct ProductName="ECObjects" />
         <!-- SubProduct ProductName="ECObjectsStatic" /-->
         <SubProduct ProductName="ECObjects-Tests" />
