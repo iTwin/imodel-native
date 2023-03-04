@@ -232,7 +232,7 @@
 
     <!-- ***NEEDS WORK: Does this really need to be a product? Does PRG build it? -->
     <ProductDirectoryList ListName="Empty" />
-    <Product Name="GeomLibsTested" AddIn="true" PrgOutputDir="GeomLibs" >
+    <Product Name="GeomLibsTested" AddIn="true">
         <SubPart PartName="RunGtest" />
         <Directories DirectoryListName="Empty" />
     </Product>
@@ -241,7 +241,7 @@
     <!-- //////////////////////////////////////////////////////////////////////////////////////////////////// -->
     <!-- GeomLibs Product -->
     <!-- //////////////////////////////////////////////////////////////////////////////////////////////////// -->
-    <Product Name="GeomLibs" PrgOutputDir="Geomlibs">
+    <Product Name="GeomLibs">
         <SubPart PartName= "GeomDlls" />
         <SubPart PartName="GeomDlls" LibType="Static"/>
         <SubPart PartName="GeomlibsSerialization"/>
