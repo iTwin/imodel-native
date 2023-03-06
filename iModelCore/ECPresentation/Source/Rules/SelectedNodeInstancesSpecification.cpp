@@ -92,7 +92,7 @@ Utf8CP SelectedNodeInstancesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
+bool SelectedNodeInstancesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ContentSpecification::_ReadJson(json))
         return false;
@@ -102,8 +102,8 @@ bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
 
     if (json.isMember(SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES))
         {
-        JsonValueCR acceptableClassNamesJson = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
-        for (Json::ArrayIndex i = 0; i < acceptableClassNamesJson.size(); ++i)
+        BeJsConst acceptableClassNamesJson = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
+        for (BeJsConst::ArrayIndex i = 0; i < acceptableClassNamesJson.size(); ++i)
             {
             if (!m_acceptableClassNames.empty())
                 m_acceptableClassNames.append(",");
@@ -116,7 +116,7 @@ bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectedNodeInstancesSpecification::_WriteJson(JsonValueR json) const
+void SelectedNodeInstancesSpecification::_WriteJson(BeJsValue json) const
     {
     ContentSpecification::_WriteJson(json);
     if (!m_acceptableSchemaName.empty())
@@ -127,8 +127,11 @@ void SelectedNodeInstancesSpecification::_WriteJson(JsonValueR json) const
         {
         bvector<Utf8String> names;
         BeStringUtilities::Split(m_acceptableClassNames.c_str(), ",", names);
+        BeJsValue acceptableClassNames = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
         for (Utf8StringCR name : names)
-            json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES].append(name);
+            {
+            acceptableClassNames[acceptableClassNames.size()] = name;
+            }
         }
     }
 

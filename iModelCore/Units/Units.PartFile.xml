@@ -60,7 +60,7 @@
         <ProductDirectory Name="VendorNotices"                   Path="Notices"/>
     </ProductDirectoryList>
 
-    <Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
+    <Product Name="UnitsTested" SaveProduct="true" AddIn="true">
         <SubPart PartName="RunGtest" />
         <SubPart PartName="RunAndroidJUnitTest" />
         <SubPart PartName="RuniOSXCTest" />

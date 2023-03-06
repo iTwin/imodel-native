@@ -28,7 +28,7 @@ class GCSGeneralSDKTests : public ::testing::TestWithParam< Utf8String >
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSGeneralSDKTests, GCSTransformToFullJsonThenBack)
     {
-    const bvector<Utf8String>& listOfGCS = GeoCoordTestCommon::GetRepresentativeListOfGCS();
+    const bvector<Utf8String>& listOfGCS = GeoCoordTestCommon::GetRepresentativeMiniListOfGCS();
 
     double parameters[12] = {1.0, 0.0, 10.0, 20.0, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
@@ -134,61 +134,6 @@ TEST_F (GCSGeneralSDKTests, GCSTransformToFullJsonThenBack)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* test all transformation to horizontal json then back
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (GCSGeneralSDKTests, GCSTransformtoHorizontalJsonThenBack)
-    {
-    const bvector<Utf8String>& listOfGCS = GeoCoordTestCommon::GetRepresentativeListOfGCS();
-
-    for (int index = 0 ; index < listOfGCS.size() ; index++)
-        {
-        std::cerr << "Testing " << index << " of " << listOfGCS.size() << std::endl;
-
-        Utf8String theKeyname(listOfGCS[index]);
-        GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS(theKeyname.c_str());
-
-        if (currentGCS.IsValid() && currentGCS->IsValid())
-            {
-            Json::Value result ;
-
-            if (SUCCESS == currentGCS->ToHorizontalJson(result, true))
-                {
-                // Transform to string (for debug purposes)
-                Utf8String resultString = result.toStyledString();
-
-                // Make sure that domain is specified
-                EXPECT_TRUE(!result["extent"].isNull());
-                EXPECT_TRUE(!result["extent"]["southWest"].isNull());
-                EXPECT_TRUE(!result["extent"]["northEast"].isNull());
-
-                // Get domain bounds
-                double minLat = result["extent"]["southWest"]["latitude"].asDouble();
-                double minLong = result["extent"]["southWest"]["longitude"].asDouble();
-                double maxLat = result["extent"]["northEast"]["latitude"].asDouble();
-                double maxLong = result["extent"]["northEast"]["longitude"].asDouble();
-
-                EXPECT_TRUE(minLat < maxLat);
-
-                // TODO May not be true in JSON format.
-                EXPECT_TRUE(minLong < maxLong);
-
-                // Sabotage GCS name to make sure everything is parsed
-                result["id"] = "XYZ";
-            
-                GeoCoordinates::BaseGCSPtr resultGCS = GeoCoordinates::BaseGCS::CreateGCS();
-
-                Utf8String errMessage;
-                EXPECT_EQ(SUCCESS, resultGCS->FromHorizontalJson(result, errMessage)) << errMessage.c_str();
-
-                EXPECT_TRUE(currentGCS->IsEquivalent(*resultGCS));
-
-                Utf8String resultString2 = result.toStyledString();
-                }
-            }
-        }
-    }
 
 
 

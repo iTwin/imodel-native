@@ -61,48 +61,57 @@ struct InstanceReader::Impl final {
     //=======================================================================================
     //! @bsiclass
     //+===============+===============+===============+===============+===============+======
-    struct Table final {
-        using Ptr = std::unique_ptr<Table> ;
+    struct TableView final {
+        using Ptr = std::unique_ptr<TableView> ;
 
         private:
             mutable ECSqlSelectPreparedStatement m_stmt;
             std::map<DbColumnId, int> m_colIndexMap;
             DbTableId m_id;
             int m_ecClassIdCol;
-
+            int m_ecSourceClassIdCol;
+            int m_ecTargetClassIdCol;
+            static Ptr CreateNullTableView(ECDbCR, DbTable const&);
+            static Ptr CreateTableView(ECDbCR, DbTable const&);
+            static Ptr CreateLinkTableView(ECDbCR, DbTable const&, RelationshipClassLinkTableMap const&);
+            static Ptr CreateEntityTableView(ECDbCR, DbTable const&, ClassMapCR);
         public:
-            explicit Table(ECDbCR conn): m_stmt(conn), m_ecClassIdCol(-1){}
-            Table(Table const&) = delete;
-            Table& operator =(Table const&) = delete;
+            explicit TableView(ECDbCR conn): m_stmt(conn), m_ecClassIdCol(-1),m_ecSourceClassIdCol(-1),m_ecTargetClassIdCol(-1) {}
+            TableView(TableView const&) = delete;
+            TableView& operator =(TableView const&) = delete;
             Statement& GetSqliteStmt() const { return m_stmt.GetSqliteStatement(); }
             ECSqlSelectPreparedStatement& GetECSqlStmt() const { return m_stmt;}
             int GetColumnIndexOf(DbColumnId) const;
             int GetColumnIndexOf(DbColumn const& col) const { return GetColumnIndexOf(col.GetId()); }
+            int GetClassIdCol() const { return m_ecClassIdCol; }
+            int GetSourceClassIdCol() const { return m_ecSourceClassIdCol; }
+            int GetTargetClassIdCol() const { return m_ecTargetClassIdCol; }
+
             size_t GetColumnCount() const { return m_colIndexMap.size(); }
             static Ptr Create(ECDbCR, DbTable const&);
             DbTableId GetId() const { return m_id; }
             bool Seek(ECInstanceId rowId, ECN::ECClassId* classId = nullptr) const;
     };
 
-    //=======================================================================================
+    //======================================================================================
     //! @bsiclass
     //+===============+===============+===============+===============+===============+======
     struct Property final {
         using Ptr = std::unique_ptr<Property> ;
 
         private:
-            Table const* m_table;
+            TableView const* m_table;
             std::unique_ptr<ECSqlField> m_field;
 
         public:
-            Property(Table const& table, std::unique_ptr<ECSqlField> field);
+            Property(TableView const& table, std::unique_ptr<ECSqlField> field);
             Property(Property const&) = delete;
             Utf8StringCR GetName() const { return m_field->GetColumnInfo().GetProperty()->GetName() ;}
             Property& operator = (Property const&) = delete;
             const IECSqlValue& GetValue() const { return *m_field;}
-            const Table& GetTable() const {return *m_table; }
+            const TableView& GetTable() const {return *m_table; }
             bool Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const;
-            static Ptr Create(Table const&, std::unique_ptr<ECSqlField>);
+            static Ptr Create(TableView const&, std::unique_ptr<ECSqlField>);
             ECSqlStatus OnAfterStep() const { return m_field->OnAfterStep(); }
             ECSqlStatus OnAfterReset() const { return m_field->OnAfterReset(); }
     };
@@ -115,20 +124,20 @@ struct InstanceReader::Impl final {
         struct Factory final {
             private:
                 static ECSqlPropertyPath GetPropertyPath (PropertyMap const&);
-                static std::unique_ptr<ECSqlField> CreatePrimitiveField(ECSqlSelectPreparedStatement&, PropertyMap const&, Table const&);
-                static std::unique_ptr<ECSqlField> CreateSystemField(ECSqlSelectPreparedStatement&, PropertyMap const&, Table const&);
-                static std::unique_ptr<ECSqlField> CreateStructField(ECSqlSelectPreparedStatement&, PropertyMap const&, Table const&);
-                static std::unique_ptr<ECSqlField> CreateNavigationField(ECSqlSelectPreparedStatement&, PropertyMap const&, Table const&);
-                static std::unique_ptr<ECSqlField> CreateArrayField(ECSqlSelectPreparedStatement&, PropertyMap const&, Table const&);
-                static std::unique_ptr<ECSqlField> CreateField(ECSqlSelectPreparedStatement&, PropertyMap const&, Table const&);
-                static std::unique_ptr<ECSqlField> CreateClassIdField(ECSqlSelectPreparedStatement&, PropertyMap const&, ECN::ECClassId, Table const&);
+                static std::unique_ptr<ECSqlField> CreatePrimitiveField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
+                static std::unique_ptr<ECSqlField> CreateSystemField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
+                static std::unique_ptr<ECSqlField> CreateStructField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
+                static std::unique_ptr<ECSqlField> CreateNavigationField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
+                static std::unique_ptr<ECSqlField> CreateArrayField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
+                static std::unique_ptr<ECSqlField> CreateField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
+                static std::unique_ptr<ECSqlField> CreateClassIdField(ECSqlSelectPreparedStatement&, PropertyMap const&, ECN::ECClassId, TableView const&);
 
             public:
-                static std::vector<Property::Ptr> Create(ClassMapCR, std::function<Table const*(DbTable const&)>);
+                static std::vector<Property::Ptr> Create(ClassMapCR, std::function<TableView const*(DbTable const&)>);
         };
 
         private:
-            std::vector<Table const*> m_tables;
+            std::vector<TableView const*> m_tables;
             std::vector<Property::Ptr> m_properties;
             ECN::ECClassId m_id;
 
@@ -140,10 +149,10 @@ struct InstanceReader::Impl final {
             size_t GetPropertyCount() const { return m_properties.size(); }
             Property const* FindProperty(Utf8CP) const;
             ECN::ECClassId GetClassId() const { return m_id; }
-            std::vector<Table const*> const& GetTables() const { return m_tables; }
+            std::vector<TableView const*> const& GetTables() const { return m_tables; }
             bool Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const;
-            static Ptr Create(ECDbCR conn, ECN::ECClassId, std::function<Table const*(DbTable const&)>);
-            static Ptr Create(ECDbCR conn, ClassMapCR , std::function<Table const*(DbTable const&)>);
+            static Ptr Create(ECDbCR conn, ECN::ECClassId, std::function<TableView const*(DbTable const&)>);
+            static Ptr Create(ECDbCR conn, ClassMapCR , std::function<TableView const*(DbTable const&)>);
     };
 
     //=======================================================================================
@@ -223,15 +232,15 @@ struct InstanceReader::Impl final {
             ECDbCR m_conn;
             mutable BeMutex m_mutex;
             mutable std::map<ECN::ECClassId, Class::Ptr> m_queryClassMap;
-            mutable std::map<DbTableId, Table::Ptr> m_queryTableMap;
+            mutable std::map<DbTableId, TableView::Ptr> m_queryTableMap;
             mutable SeekPos m_seekPos;
             mutable LastClassResolved m_lastClassResolved;
             mutable PropertyExists m_propExists;
         private:
             void _OnBeforeClearECDbCache() override { Clear(); }
             void _OnAfterClearECDbCache() override {}
-            Table const* GetOrAddTable(DbTableId tableId) const;
-            Table const* GetOrAddTable(DbTable const& tbl) const;
+            TableView const* GetOrAddTable(DbTableId tableId) const;
+            TableView const* GetOrAddTable(DbTable const& tbl) const;
             Class const* GetOrAddClass(ECN::ECClassCR ecClass) const;
             Class const* GetOrAddClass(ECN::ECClassId classId) const;
             bool PrepareRowSchema(ECN::ECClassId classId, Utf8CP accessString) const;

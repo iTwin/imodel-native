@@ -26,7 +26,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJson)
         "handlePropertiesPolymorphically": true,
         "instanceFilter": "filter"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -70,7 +70,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithSpe
         "handlePropertiesPolymorphically": true
     })";
 
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -95,7 +95,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadFromJsonFailsWhe
     static Utf8CP jsonString = R"({
         "specType": "ContentInstancesOfSpecificClasses"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -111,7 +111,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDef
         "specType": "ContentInstancesOfSpecificClasses",
         "classes": {"schemaName": "TestSchema", "classNames": ["TestClass"]}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -133,7 +133,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsExcludedClasses
         "classes": {"schemaName": "A", "classNames": ["A1"]},
         "excludedClasses": {"schemaName": "ExcludedTestSchema", "classNames": ["ExcludedTestClass"]}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -168,7 +168,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithInc
             "arePolymorphic": false
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -213,7 +213,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, FailsToLoadFromJsonW
         "specType": "ContentInstancesOfSpecificClasses",
         "classes": []
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -232,7 +232,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, FailsToLoadFromJsonW
             "classNames": []
         }
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentInstancesOfSpecificClassesSpecification spec;
@@ -254,8 +254,8 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, WriteToJson)
             new MultiSchemaClass("es2", false, bvector<Utf8String> {"ec3"})
         }, true);
 
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "ContentInstancesOfSpecificClasses",
         "priority": 123,
         "onlyIfNotHandled": true,
@@ -271,7 +271,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, WriteToJson)
         "handlePropertiesPolymorphically": true
     })");
 
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -9,7 +9,6 @@
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
@@ -111,7 +110,7 @@ Utf8CP AllInstanceNodesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AllInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+bool AllInstanceNodesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;
@@ -125,7 +124,7 @@ bool AllInstanceNodesSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AllInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+void AllInstanceNodesSpecification::_WriteJson(BeJsValue json) const
     {
     ChildNodeSpecification::_WriteJson(json);
     if (!m_groupByClass)
@@ -133,7 +132,7 @@ void AllInstanceNodesSpecification::_WriteJson(JsonValueR json) const
     if (!m_groupByLabel)
         json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL] = m_groupByLabel;
     if (!m_supportedSchemas.empty())
-        json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+        CommonToolsInternal::WriteSupportedSchemasToJson(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS], m_supportedSchemas);
     }
 
 /*---------------------------------------------------------------------------------**//**
