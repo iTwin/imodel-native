@@ -48,6 +48,7 @@ struct PropertyPriorityCustomAttributeConversionTest : ECTestFixture
 
 struct StandardCustomAttributeConversionTests : ECTestFixture 
     {
+    ECSchemaReadContextPtr m_readContext;
     ECSchemaPtr m_coreCASchema;
     ECSchemaPtr m_bscaSchema;
 
@@ -56,15 +57,14 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
     void SetUp() override
         {
         ECTestFixture::SetUp();
-
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        m_readContext = ECSchemaReadContext::CreateContext();
 
         SchemaKey key("Bentley_Standard_CustomAttributes", 1, 6);
-        m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
+        m_bscaSchema = ECSchema::LocateSchema(key, *m_readContext);
         ASSERT_TRUE(m_bscaSchema.IsValid());
 
         SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
-        m_coreCASchema = ECSchema::LocateSchema(coreCAKey, *schemaContext);
+        m_coreCASchema = ECSchema::LocateSchema(coreCAKey, *m_readContext);
         ASSERT_TRUE(m_coreCASchema.IsValid());
         }
     };
@@ -1142,7 +1142,8 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_Supplemental
     bvector<ECSchemaP> supSchemas;
     supSchemas.push_back(supSchema.get());
     SupplementedSchemaBuilder builder;
-    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*m_schema.get(), supSchemas, true)) << "Failed to supplement schema";
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*m_schema.get(), supSchemas, *context, true)) << "Failed to supplement schema";
     EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
 
     ECEnumerationCP ecEnum;
@@ -2367,12 +2368,11 @@ Utf8String StandardCustomAttributeConversionTests::GetDateTimeInfoValue(IECInsta
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(StandardCustomAttributeConversionTests, TestDateTimeAndClassHasCurrentTimeStampPropertyConversion)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"CAConversionTestSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"CAConversionTestSchema.01.00.ecschema.xml").c_str(), *m_readContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
 
-    ASSERT_EQ(true, ECSchemaConverter::Convert(*schema)) << "Failed to convert " << schema->GetFullSchemaName().c_str() << ".";
+    ASSERT_EQ(true, ECSchemaConverter::Convert(*schema, m_readContext.get())) << "Failed to convert " << schema->GetFullSchemaName().c_str() << ".";
 
     ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *m_coreCASchema)) << "Converted schema is missing schema reference to CoreCustomAttributes";
     
@@ -2424,10 +2424,9 @@ TEST_F(StandardCustomAttributeConversionTests, TestDynamicSchemaCAConversion)
         "</ECSchema>";
 
     ECSchemaPtr dynamicSchema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(dynamicSchema, schemaXml, *context);
+    ECSchema::ReadFromXmlString(dynamicSchema, schemaXml, *m_readContext);
     ASSERT_TRUE(dynamicSchema.IsValid());
-    ASSERT_TRUE(ECSchemaConverter::Convert(*dynamicSchema));
+    ASSERT_TRUE(ECSchemaConverter::Convert(*dynamicSchema, m_readContext.get()));
 
     EXPECT_TRUE(dynamicSchema->IsDefined("CoreCustomAttributes", "DynamicSchema"));
     EXPECT_FALSE(dynamicSchema->IsDefined("Bentley_Standard_CustomAttributes", "DynamicSchema"));
@@ -2456,10 +2455,9 @@ TEST_F(StandardCustomAttributeConversionTests, TestSupplementalSchemaMetaDataCon
         "</ECSchema>";
 
     ECSchemaPtr suppSchema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(suppSchema, schemaXml, *context);
+    ECSchema::ReadFromXmlString(suppSchema, schemaXml, *m_readContext.get());
     ASSERT_TRUE(suppSchema.IsValid());
-    ASSERT_TRUE(ECSchemaConverter::Convert(*suppSchema));
+    ASSERT_TRUE(ECSchemaConverter::Convert(*suppSchema, m_readContext.get()));
 
     EXPECT_TRUE(suppSchema->IsSupplementalSchema());
     EXPECT_TRUE(suppSchema->IsDefined("CoreCustomAttributes", "SupplementalSchema"));
@@ -2510,7 +2508,7 @@ TEST_F(StandardCustomAttributeConversionTests, TestSupplementedSchemaConversion)
     bvector<ECSchemaP> supSchemas;
     supSchemas.push_back(supSchema.get());
     SupplementedSchemaBuilder builder;
-    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*schema.get(), supSchemas, false)) << "Failed to supplement schema";
+    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*schema.get(), supSchemas, *context, false)) << "Failed to supplement schema";
     EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion failed";
 
     EXPECT_TRUE(schema->IsSupplemented());
@@ -3126,7 +3124,7 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityInherited_
     bvector<ECSchemaP> supSchemas;
     supSchemas.push_back(supSchema.get());
     SupplementedSchemaBuilder builder;
-    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*schema.get(), supSchemas, true)) << "Failed to supplement schema";
+    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*schema.get(), supSchemas, *context, true)) << "Failed to supplement schema";
     ASSERT_TRUE(schema->IsSupplemented()) << "Schema returned success but was not supplemented";
 
     {
@@ -3322,7 +3320,7 @@ TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
     ASSERT_TRUE(schema.IsValid());
     EXPECT_EQ(1, schema->GetReferencedSchemas().size());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
 
     verifyHiddenPropertyAppliedCorrectly(schema.get());
     }
@@ -3626,7 +3624,7 @@ TEST_F(StandardCustomAttributeConversionTests, DisplayOptionsCustomAttribute_App
     ASSERT_TRUE(schema.IsValid());
     EXPECT_EQ(1, schema->GetReferencedSchemas().size());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     verifySchemaReferencesOnlyCoreCAs(schema.get());
 
     for (const auto& ecClass : schema->GetClasses())

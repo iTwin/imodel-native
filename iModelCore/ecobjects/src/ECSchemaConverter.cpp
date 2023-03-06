@@ -1484,8 +1484,7 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
         }
     auto mapping = it->second;
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*schemaContext);
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
 
     ECClassP customAttributeClass = customAttributeSchema->GetClassP(mapping.GetNewCustomAttributeName().c_str());
     IECInstancePtr targetAttributeInstance = customAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1845,8 +1844,7 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
     bool if3d = getBoolValue(instance, IF3D, true);
     bool showProp = !if2d && !if3d;
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*schemaContext);
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
     IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue value(showProp);

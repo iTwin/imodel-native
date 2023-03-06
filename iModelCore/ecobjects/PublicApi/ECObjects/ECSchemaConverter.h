@@ -177,6 +177,7 @@ public:
     //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
     static bool Convert(ECSchemaR schema, ECSchemaReadContextP context = nullptr, bool doValidate = true)
         {
+        // TODO: ECSchemaReadContextP cannot be nullptr with new implementation
         if (nullptr != context)
             GetSingleton()->AddSchemaReadContext(*context);
         bool returnVal = GetSingleton()->Convert(schema, doValidate);

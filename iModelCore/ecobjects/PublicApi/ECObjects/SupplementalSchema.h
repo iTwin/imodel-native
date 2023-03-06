@@ -84,7 +84,7 @@ public:
     ECOBJECTS_EXPORT bool IsSupplemental(ECSchemaP supplementalSchema) const;
 
     //! Creates a Custom Attribute from the current SupplementalSchemaMetaData instance
-    ECOBJECTS_EXPORT IECInstancePtr CreateCustomAttribute(ECSchemaReadContextPtr schemaContext);
+    ECOBJECTS_EXPORT IECInstancePtr CreateCustomAttribute(ECSchemaReadContextR schemaContext);
 
     Utf8StringCR GetPrimarySchemaName() const {return m_schemaName;} //!< Gets the primary schema name
     void SetPrimarySchemaName(Utf8CP name) {m_schemaName = name;} //!< Sets the primary schema name
@@ -154,7 +154,7 @@ public:
     //! Sets the input supplementalSchemaMetadata as a custom attribute on the input supplementalSchema
     //! @param[in]  supplementalSchema    The schema to set the attribute on.
     //! @param[in]  supplementalSchemaMetadata  The attribute to set on the schema
-    ECOBJECTS_EXPORT static void SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaMetadata);
+    ECOBJECTS_EXPORT static void SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaMetadata, ECSchemaReadContextR schemaContext);
 
     //! Represents the Standard Purposes a supplemental schema can have
     struct StandardPurpose
@@ -335,7 +335,7 @@ public:
     //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
     //! the primary schema.  Defaults to true
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
-    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute = true);
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, ECSchemaReadContextR schemaContext, bool createCopyOfSupplementalCustomAttribute = true);
 
     //! Calling this method supplements the custom attributes of the primarySchema and all sub-containers, applies the
     //! supplemented custom attributes back to the primarySchema.
@@ -347,7 +347,7 @@ public:
     //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
     //! the primary schema.  Defaults to true
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
-    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute = true);
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, ECSchemaReadContextR schemaContext, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute = true);
     }; // SupplementalSchemaBuilder
 
 //=======================================================================================
@@ -403,7 +403,7 @@ public:
     ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, Utf8StringCR purpose) const;
 
     //! Creates a custom attribute defining the supplemental schema names and their purposes
-    IECInstancePtr CreateCustomAttribute(ECSchemaReadContextPtr schemaContext);
+    IECInstancePtr CreateCustomAttribute(ECSchemaReadContextR schemaContext);
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
     static Utf8CP GetCustomAttributeAccessor();
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema.

@@ -2878,7 +2878,7 @@ int ECSchema::RemoveUnusedSchemaReferences()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
+void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info, ECSchemaReadContextR readContext)
     {
     m_supplementalSchemaInfo = info;
     if (nullptr == info)
@@ -2886,8 +2886,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
                                     SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
         {
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-        IECInstancePtr attribute = info->CreateCustomAttribute(schemaContext);
+        IECInstancePtr attribute = info->CreateCustomAttribute(readContext);
         if (attribute.IsValid())
             {
             auto& coreCA = attribute->GetClass().GetSchema();
@@ -3205,7 +3204,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     if (supplementalSchemas.size() > 0)
         {
         ECN::SupplementedSchemaBuilder builder;
-        builder.UpdateSchema(*schemaOut, supplementalSchemas);
+        builder.UpdateSchema(*schemaOut, supplementalSchemas, schemaContext);
         }
 
     m_knownSchemas.Insert(lookup, schemaOut);

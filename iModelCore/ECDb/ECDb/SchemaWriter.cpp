@@ -141,7 +141,8 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
     ECDB_PERF_LOG_SCOPE("Schema import> Persist schemas");
     Context ctx(schemaImportCtx);
     bvector<ECSchemaCP> schemas;
-    if (SUCCESS != ctx.PreprocessSchemas(schemas, schemasRaw))
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    if (SUCCESS != ctx.PreprocessSchemas(schemas, schemasRaw, *schemaContext))
         {
         LOG.debug("SchemaWriter::ImportSchemas - failed to PreprocessSchemas");
         return SchemaImportResult::ERROR;
@@ -5226,7 +5227,7 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in)
+BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in, ECN::ECSchemaReadContextR schemaContext)
     {
     bvector<ECSchemaCP> schemasToImport = FindAllSchemasInGraph(in);
     for (ECSchemaCP schema : schemasToImport)
@@ -5280,7 +5281,7 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
 
             ECSchemaP primarySchemaP = const_cast<ECSchemaP> (primarySchema);
             SupplementedSchemaBuilder builder;
-            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
+            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, schemaContext, false /*dont create ca copy while supplementing*/);
             if (SupplementedSchemaStatus::Success != status)
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());

@@ -452,7 +452,7 @@ TEST_F(CustomAttributeTest, CanRetrieveBothPrimaryAndSupplementedCustomAttribute
     ECSchema::CreateSchema(supplementalSchema, "Supplemental", "sup", 1, 0, 1);
     SupplementalSchemaMetaData metaData(primary->GetName().c_str(), primary->GetVersionRead(), primary->GetVersionWrite(), primary->GetVersionMinor(), 10, "Testing");
     supplementalSchema->AddReferencedSchema(*coreCASchema);
-    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute(schemaContext)));
+    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute(*schemaContext)));
 
     ECEntityClassP supClass;
     supplementalSchema->CreateEntityClass(supClass, "ClassWithProperties");
@@ -462,7 +462,7 @@ TEST_F(CustomAttributeTest, CanRetrieveBothPrimaryAndSupplementedCustomAttribute
     bvector<ECSchemaP> supplementalSchemas;
     supplementalSchemas.push_back(supplementalSchema.get());
     SupplementedSchemaBuilder builder;
-    builder.UpdateSchema(*primary, supplementalSchemas);
+    builder.UpdateSchema(*primary, supplementalSchemas, *schemaContext);
 
     ECClassP containerClass = primary->GetClassP("ClassWithProperties");
     int count = 0;

@@ -176,9 +176,8 @@ bool SupplementalSchemaMetaData::TryGetFromSchema(SupplementalSchemaMetaDataPtr&
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-void SupplementalSchemaMetaData::SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaData)
+void SupplementalSchemaMetaData::SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaData, ECSchemaReadContextR schemaContext)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     IECInstancePtr instance = supplementalSchemaData.CreateCustomAttribute(schemaContext);
     supplementalSchema.SetCustomAttribute(*instance);
     }
@@ -197,9 +196,9 @@ bool SupplementalSchemaMetaData::IsSupplemental(ECSchemaP supplementalSchema) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute(ECSchemaReadContextPtr schemaContext)
+IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute(ECSchemaReadContextR schemaContext)
     {
-    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(*schemaContext, SupplementalSchemaMetaData::GetCustomAttributeAccessor());
+    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     instance->SetValue(GetPrimarySchemaNamePropertyAccessor(), ECValue(GetPrimarySchemaName().c_str()));
     instance->SetValue(GetPrimarySchemaReadVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaReadVersion()));
     instance->SetValue(GetPrimarySchemaWriteVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaWriteVersion()));
@@ -223,15 +222,15 @@ bool SupplementalSchemaMetaData::IsForPrimarySchema(Utf8StringCR querySchemaName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute)
+SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, ECSchemaReadContextR schemaContext, bool createCopyOfSupplementalCustomAttribute)
     {
-    return UpdateSchema(primarySchema, supplementalSchemaList, "", createCopyOfSupplementalCustomAttribute);
+    return UpdateSchema(primarySchema, supplementalSchemaList, schemaContext, "", createCopyOfSupplementalCustomAttribute);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute)
+SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, ECSchemaReadContextR schemaContext, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute)
     {
     m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
     StopWatch timer(true);
@@ -256,10 +255,10 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR prima
         return status;
 
     SupplementalSchemaInfoPtr info = SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes);
-    primarySchema.SetSupplementalSchemaInfo(info.get());
+    primarySchema.SetSupplementalSchemaInfo(info.get(), schemaContext);
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
     if (SupplementedSchemaStatus::Success != status)
-        primarySchema.SetSupplementalSchemaInfo(nullptr); // NEEDS_WORK: Should probably attempt to rollback partial changes
+        primarySchema.SetSupplementalSchemaInfo(nullptr, schemaContext); // NEEDS_WORK: Should probably attempt to rollback partial changes
 
     primarySchema.SetIsSupplemented(true);
     
@@ -1036,13 +1035,13 @@ Utf8CP SupplementalSchemaInfo::GetCustomAttributeSchemaName()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute(ECSchemaReadContextPtr schemaContext)
+IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute(ECSchemaReadContextR schemaContext)
     {
-    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(*schemaContext, GetCustomAttributeAccessor());
+    IECInstancePtr instance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, GetCustomAttributeAccessor());
     if (!instance.IsValid())
         return instance;
 
-    ECClassCP schemaNameAndPurpose = CoreCustomAttributeHelper::GetClass(*schemaContext, "SchemaNameAndPurpose");
+    ECClassCP schemaNameAndPurpose = CoreCustomAttributeHelper::GetClass(schemaContext, "SchemaNameAndPurpose");
     if (nullptr == schemaNameAndPurpose)
         return instance;
 

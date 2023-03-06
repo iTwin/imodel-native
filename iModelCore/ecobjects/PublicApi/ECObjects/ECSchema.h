@@ -3162,7 +3162,7 @@ private:
     ECObjectsStatus SetVersionFromString(Utf8CP versionString);
     ECObjectsStatus SetECVersion(ECVersion ecVersion);
 
-    void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
+    void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info, ECSchemaReadContextR readContext);
 
     ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext);
     void CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const;
