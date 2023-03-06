@@ -27,7 +27,13 @@ def createGTestFilter(exeDir):
     exePath = os.path.join(exeDir, "iModelEvolutionTests.exe")
     sys.stdout.flush();
     output = subprocess.Popen([exePath, "--gtest_list_tests"], stdout=subprocess.PIPE).communicate()[0].decode()
-    output = output.split("BEGTEST_LOGGING_CONFIG in environment.")[1].split('\n')
+
+    subStr = "BEGTEST_LOGGING_CONFIG in environment."
+    if subStr in output:
+        print("Cleanup is required in logs...")
+        output = output.split(subStr)[1]
+        
+    output = output.split('\n')
     output = [i.strip() for i in output]
     testsList = filter(lambda x: x != "", output)
     testsList = list(testsList)
