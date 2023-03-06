@@ -27,7 +27,7 @@ TEST_F(SortingRuleTests, PropertySorting_LoadsFromJson)
         "sortAscending": false,
         "isPolymorphic": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SortingRule rule;
@@ -48,7 +48,7 @@ TEST_F(SortingRuleTests, PropertySorting_LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "PropertySorting"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SortingRule rule;
@@ -67,8 +67,8 @@ TEST_F(SortingRuleTests, PropertySorting_LoadsFromJsonWithDefaultValues)
 TEST_F(SortingRuleTests, PropertySorting_WriteToJson)
     {
     SortingRule rule("cond", 123, "schema", "class", "prop", false, false, true);
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "PropertySorting",
         "priority": 123,
         "condition": "cond",
@@ -77,7 +77,7 @@ TEST_F(SortingRuleTests, PropertySorting_WriteToJson)
         "sortAscending": false,
         "isPolymorphic": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -90,7 +90,7 @@ TEST_F(SortingRuleTests, DisabledSorting_LoadsFromJson)
         "class": {"schemaName": "TestSchema", "className": "TestClass"},
         "isPolymorphic": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SortingRule rule;
@@ -111,7 +111,7 @@ TEST_F(SortingRuleTests, DisabledSorting_LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "DisabledSorting"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SortingRule rule;
@@ -130,15 +130,15 @@ TEST_F(SortingRuleTests, DisabledSorting_LoadsFromJsonWithDefaultValues)
 TEST_F(SortingRuleTests, DisabledSorting_WriteToJson)
     {
     SortingRule rule("cond", 123, "schema", "class", "", false, true, true);
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "DisabledSorting",
         "priority": 123,
         "condition": "cond",
         "class": {"schemaName": "schema", "className": "class"},
         "isPolymorphic": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -41,7 +41,7 @@ PropertyEditorSpecification::~PropertyEditorSpecification()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyEditorParametersSpecification* PropertyEditorParametersSpecification::Create(JsonValueCR json)
+PropertyEditorParametersSpecification* PropertyEditorParametersSpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_PARAMSTYPE].asCString("");
     PropertyEditorParametersSpecification* spec = nullptr;
@@ -117,7 +117,7 @@ Utf8CP PropertyEditorSpecification::_GetJsonElementType() const {return "Propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSpecification::_ReadJson(JsonValueCR json)
+bool PropertyEditorSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -140,7 +140,7 @@ bool PropertyEditorSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorSpecification::_WriteJson(JsonValueR json) const
+void PropertyEditorSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME] = m_name;
@@ -209,7 +209,8 @@ bool PropertyEditorJsonParameters::_ReadXml(BeXmlNodeP xmlNode)
     {
     Utf8String content;
     xmlNode->GetContent(content);
-    if (!Json::Reader::Parse(content, m_json))
+    m_json.Parse(content);
+    if (m_json.hasParseError())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse property editor JSON parameters: %s", content.c_str()));
         return false;
@@ -222,7 +223,7 @@ bool PropertyEditorJsonParameters::_ReadXml(BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PropertyEditorJsonParameters::_WriteXml(BeXmlNodeP xmlNode) const
     {
-    xmlNode->SetContent(WString(m_json.ToString().c_str(), BentleyCharEncoding::Utf8).c_str());
+    xmlNode->SetContent(WString(m_json.Stringify().c_str(), BentleyCharEncoding::Utf8).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -236,18 +237,18 @@ Utf8CP PropertyEditorJsonParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorJsonParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorJsonParameters::_ReadJson(BeJsConst json)
     {
-    m_json = json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON];
+    m_json.From(json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON]);
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorJsonParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorJsonParameters::_WriteJson(BeJsValue json) const
     {
-    json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON] = m_json;
+    json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON].From(m_json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,7 +257,7 @@ void PropertyEditorJsonParameters::_WriteJson(JsonValueR json) const
 MD5 PropertyEditorJsonParameters::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
-    Utf8String jsonString = m_json.ToString();
+    Utf8String jsonString = m_json.Stringify();
     ADD_STR_VALUE_TO_HASH(md5, PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON, jsonString);
     return md5;
     }
@@ -307,7 +308,7 @@ Utf8CP PropertyEditorMultilineParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorMultilineParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorMultilineParameters::_ReadJson(BeJsConst json)
     {
     m_height = json[PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_ATTRIBUTE_HEIGHT].asUInt(1);
     return true;
@@ -316,7 +317,7 @@ bool PropertyEditorMultilineParameters::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorMultilineParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorMultilineParameters::_WriteJson(BeJsValue json) const
     {
     json[PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_ATTRIBUTE_HEIGHT] = m_height;
     }
@@ -384,15 +385,15 @@ Utf8CP PropertyEditorRangeParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorRangeParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorRangeParameters::_ReadJson(BeJsConst json)
     {
-    JsonValueCR minJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
-    if (!minJson.isNull() && minJson.isConvertibleTo(Json::ValueType::realValue))
-        m_min = minJson.asDouble();
+    BeJsConst minJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
+    if (!minJson.isNull() && minJson.isNumeric())
+        m_min = minJson.GetDouble();
 
-    JsonValueCR maxJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
-    if (!maxJson.isNull() && maxJson.isConvertibleTo(Json::ValueType::realValue))
-        m_max = maxJson.asDouble();
+    BeJsConst maxJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
+    if (!maxJson.isNull() && minJson.isNumeric())
+        m_max = maxJson.GetDouble();
 
     return true;
     }
@@ -400,7 +401,7 @@ bool PropertyEditorRangeParameters::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorRangeParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorRangeParameters::_WriteJson(BeJsValue json) const
     {
     if (m_min.IsValid())
         json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MINIMUM] = m_min.Value();
@@ -486,15 +487,15 @@ Utf8CP PropertyEditorSliderParameters::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSliderParameters::_ReadJson(JsonValueCR json)
+bool PropertyEditorSliderParameters::_ReadJson(BeJsConst json)
     {
     // required:
-    JsonValueCR minJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
-    JsonValueCR maxJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
+    BeJsConst minJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
+    BeJsConst maxJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
 
     bool hasIssues = false
-        || CommonToolsInternal::CheckRuleIssue(minJson.isNull() || !minJson.isConvertibleTo(Json::ValueType::realValue), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM, minJson, "floating point value")
-        || CommonToolsInternal::CheckRuleIssue(maxJson.isNull() || !maxJson.isConvertibleTo(Json::ValueType::realValue), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM, maxJson, "floating point value");
+        || CommonToolsInternal::CheckRuleIssue(minJson.isNull() || !minJson.isNumeric(), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM, minJson, "floating point value")
+        || CommonToolsInternal::CheckRuleIssue(maxJson.isNull() || !maxJson.isNumeric(), _GetJsonElementType(), PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM, maxJson, "floating point value");
     if (hasIssues)
         return false;
 
@@ -510,7 +511,7 @@ bool PropertyEditorSliderParameters::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorSliderParameters::_WriteJson(JsonValueR json) const
+void PropertyEditorSliderParameters::_WriteJson(BeJsValue json) const
     {
     json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM] = m_min;
     json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM] = m_max;

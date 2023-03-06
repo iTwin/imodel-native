@@ -46,7 +46,7 @@ TEST_F(DefaultPropertyCategoryOverrideTests, LoadsFromJson)
             "label": "test label"
         }
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     DefaultPropertyCategoryOverride rule;
@@ -62,8 +62,8 @@ TEST_F(DefaultPropertyCategoryOverrideTests, LoadsFromJson)
 TEST_F(DefaultPropertyCategoryOverrideTests, WriteToJson)
     {
     DefaultPropertyCategoryOverride rule(*new PropertyCategorySpecification("test id", "test label"), 789);
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "DefaultPropertyCategoryOverride",
         "priority": 789,
         "specification": {
@@ -71,7 +71,7 @@ TEST_F(DefaultPropertyCategoryOverrideTests, WriteToJson)
             "label": "test label"
         }
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

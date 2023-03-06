@@ -1498,12 +1498,14 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PicksActiveGroupingSpecificationFro
     TestLocalState localState;
     GetBuilder().GetParameters().SetLocalState(localState);
     int localStateRequestsCount = 0;
-    localState.SetGetHandler([&localStateRequestsCount](Utf8CP ns, Utf8CP key) -> Json::Value
+    localState.SetGetHandler([&localStateRequestsCount](Utf8CP ns, Utf8CP key)
         {
         EXPECT_STREQ(RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE, ns);
         EXPECT_STREQ("TestSettingsId", key);
         ++localStateRequestsCount;
-        return 1;
+        BeJsDocument jsonValue;
+        (BeJsValue)jsonValue = 1;
+        return jsonValue;
         });
 
     auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);

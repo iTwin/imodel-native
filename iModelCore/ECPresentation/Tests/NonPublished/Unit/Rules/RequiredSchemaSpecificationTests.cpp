@@ -42,7 +42,7 @@ TEST_F(RequiredSchemaSpecificationTests, LoadsFromJson)
         "minVersion": "01.02.03",
         "maxVersion": "04.05.06"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RequiredSchemaSpecification rule;
@@ -61,7 +61,7 @@ TEST_F(RequiredSchemaSpecificationTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "name": "TestSchema"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RequiredSchemaSpecification rule;
@@ -78,13 +78,13 @@ TEST_F(RequiredSchemaSpecificationTests, LoadsFromJsonWithDefaultValues)
 TEST_F(RequiredSchemaSpecificationTests, WriteToJson)
     {
     RequiredSchemaSpecification rule("TestSchema", Version(1, 2, 3), Version(4, 5, 6));
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "name": "TestSchema",
         "minVersion": "1.2.3",
         "maxVersion": "4.5.6"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

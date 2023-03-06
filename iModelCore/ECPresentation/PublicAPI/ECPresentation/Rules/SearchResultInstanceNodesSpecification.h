@@ -48,15 +48,15 @@ protected:
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue) const override;
 
     virtual void _Accept(QuerySpecificationVisitor& visitor) const = 0;
     virtual QuerySpecification* _Clone() const = 0;
 
 public:
     virtual ~QuerySpecification() {}
-    ECPRESENTATION_EXPORT static QuerySpecification* Create(JsonValueCR);
+    ECPRESENTATION_EXPORT static QuerySpecification* Create(BeJsConst);
 
     QuerySpecification* Clone() const {return _Clone();}
 
@@ -93,8 +93,8 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
     QuerySpecification* _Clone() const override {return new StringQuerySpecification(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
@@ -131,8 +131,8 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
     QuerySpecification* _Clone() const override{return new ECPropertyValueQuerySpecification(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
@@ -178,8 +178,8 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     //! Clones this specification.
     ChildNodeSpecification* _Clone() const override {return new SearchResultInstanceNodesSpecification(*this);}
