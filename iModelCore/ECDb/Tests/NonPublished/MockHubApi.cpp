@@ -18,7 +18,7 @@ void SchemaSyncTestFixture::Test(Utf8CP name, std::function<void()> test){
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts) {
+SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts, SharedSchemaChannel::ChannelUri uri) {
     auto schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     bvector<ECSchemaCP> importSchemas;
@@ -30,14 +30,14 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<
         }
         importSchemas.push_back(schema.get());
     }
-    return ecdb.Schemas().ImportSchemas(importSchemas, opts);
+    return ecdb.Schemas().ImportSchemas(importSchemas, opts,nullptr, uri);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts) {
-    return ImportSchemas(ecdb, std::vector<SchemaItem>{item}, opts);
+SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts, SharedSchemaChannel::ChannelUri uri) {
+    return ImportSchemas(ecdb, std::vector<SchemaItem>{item}, opts, uri);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -771,6 +771,8 @@ std::unique_ptr<TrackedECDb> ECDbHub::CreateBriefcase() {
     ecdb->ResetBriefcaseId(briefcaseId);
     ecdb->SaveChanges();
     ecdb->SetHub(*this);
+    ecdb->PullMergePush("");
+    ecdb->SaveChanges();
     return std::move(ecdb);
 }
 

@@ -53,6 +53,12 @@ TEST_F(SchemaSyncTestFixture, Test) {
     ECDbHub hub;
     SharedSchemaDb schemaChannel("sync-db");
     auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS,
+        b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri()));
+
+    b1->PullMergePush("init");
+    b1->SaveChanges();
+
     auto b2 = hub.CreateBriefcase();
     auto b3 = hub.CreateBriefcase();
 
@@ -61,9 +67,6 @@ TEST_F(SchemaSyncTestFixture, Test) {
     ASSERT_EQ(b2->GetBriefcaseId().GetValue(), 12);
     ASSERT_EQ(b3->GetBriefcaseId().GetValue(), 13);
 
-
-    ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS,
-        b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri()));
 
     if ("check syn db hash") {
         schemaChannel.WithReadOnly([&](ECDbR syncDb) {
@@ -109,7 +112,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
                     <ECProperty propertyName="p2" typeName="int" />
                 </ECEntityClass>
             </ECSchema>)xml");
-        ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b1, schema1));
+        ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b1, schema1, SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
         ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
 
         ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
@@ -178,7 +181,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
                     <ECProperty propertyName="p4" typeName="int" />
                 </ECEntityClass>
             </ECSchema>)xml");
-        ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b2, schema2));
+        ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b2, schema2, SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
         ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
         ASSERT_TRUE(b2->TableExists("ts_Pipe1"));

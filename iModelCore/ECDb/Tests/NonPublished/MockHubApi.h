@@ -174,8 +174,8 @@ struct SharedSchemaDb final {
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaSyncTestFixture : public ECDbTestFixture {
-    static SchemaImportResult ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
-    static SchemaImportResult ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
+    static SchemaImportResult ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SharedSchemaChannel::ChannelUri uri = SharedSchemaChannel::ChannelUri());
+    static SchemaImportResult ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SharedSchemaChannel::ChannelUri uri = SharedSchemaChannel::ChannelUri());
     static std::unique_ptr<TrackedECDb> OpenECDb(Utf8CP asFileNam);
     static Utf8String GetSchemaHash(ECDbCR db);
     static Utf8String GetMapHash(ECDbCR db);

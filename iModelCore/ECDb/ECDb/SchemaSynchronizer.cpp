@@ -54,7 +54,7 @@ struct SharedSchemaChannelHelper final {
     using StringList = bvector<Utf8String>;
     static constexpr auto ALIAS_SHARED_DB = "channel_db";
 	static constexpr auto ALIAS_MAIN_DB = "main";
-    static constexpr auto TABLE_BE_PROPS = "be_Props";
+    static constexpr auto TABLE_BE_PROP = "be_Prop";
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod
@@ -241,6 +241,9 @@ struct SharedSchemaChannelHelper final {
 	// @bsimethod
 	//+---------------+---------------+---------------+---------------+---------------+------
 	static Utf8String Join(StringList const& list, Utf8String delimiter = ",", Utf8String prefix = "", Utf8String postfix = "") {
+		if (list.empty()) {
+            return prefix + postfix;
+        }
 		return prefix + std::accumulate(
 			std::next(list.begin()),
 			std::end(list),
@@ -301,7 +304,7 @@ struct SharedSchemaChannelHelper final {
 	// @bsimethod
 	//+---------------+---------------+---------------+---------------+---------------+------
 	static DbResult SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
-		DbResult rc;
+        DbResult rc;
 		auto sourceCols = StringList{};
 		rc = GetColumnNames(conn, sourceDbAlias, tableName, sourceCols);
 		if (BE_SQLITE_OK != rc)
@@ -363,7 +366,7 @@ struct SharedSchemaChannelHelper final {
 		const auto targetPkColsSql = Join(targetPkCols);
 		const auto deleteColsSql = Join(delClauseExprs, " AND ");
 
-		const auto allowDelete = true;
+        const auto allowDelete = Utf8String(tableName).StartsWith("ec_");
 		if (allowDelete) {
 			const auto deleteTargetSql = Utf8String {
 				SqlPrintfString("DELETE FROM %s AS [T] WHERE NOT EXISTS (SELECT 1 FROM %s [S] WHERE %s)",
@@ -384,14 +387,14 @@ struct SharedSchemaChannelHelper final {
 			}
 		}
 
-		const auto sql = Utf8String{SqlPrintfString(
+		Utf8String sql = SqlPrintfString(
 			"insert into %s(%s) select %s from %s where 1 on conflict do update set %s",
 			targetTableSql.c_str(),
 			targetColsSql.c_str(),
 			sourceColsSql.c_str(),
 			sourceTableSql.c_str(),
 			updateColsSql.c_str()
-		).GetUtf8CP()};
+		).GetUtf8CP();
 
 		Statement stmt;
 		rc = stmt.Prepare(conn, sql.c_str());
@@ -399,7 +402,10 @@ struct SharedSchemaChannelHelper final {
 			return rc;
 		}
 		rc = stmt.Step();
-		return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+		if (rc != BE_SQLITE_DONE) {
+			return rc;
+		}
+		return BE_SQLITE_OK;
 	}
 };
 
@@ -478,7 +484,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
 	}
 
     sharedDb.CloseDb();
-    return Push(channelURI, additionTables);
+    return PushInternal(channelURI, additionTables);
 }
 
 //---------------------------------------------------------------------------------------
@@ -563,7 +569,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelURI, TableList additionTables) {
+SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& channelURI, TableList additionTables) {
     const auto vrc = VerifyChannel(channelURI, true);
 	if  (vrc != Status::SUCCESS) {
         return vrc;
@@ -621,13 +627,19 @@ SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelU
 		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
         return Status::ERROR;
     }
+
+	rc = m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+    if (rc != BE_SQLITE_OK) {
+		return Status::ERROR;
+	}
+
     return Status::SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::Push(ChannelUri const& channelURI, TableList additionTables) {
+SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& channelURI, TableList additionTables) {
     const auto vrc = VerifyChannel(channelURI, false);
 	if  (vrc != Status::SUCCESS) {
         return vrc;
@@ -674,17 +686,24 @@ SharedSchemaChannel::Status SharedSchemaChannel::Push(ChannelUri const& channelU
         return Status::ERROR;
     }
 
+	rc = m_conn.SaveChanges();
+    if (rc != BE_SQLITE_OK) {
+		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+        return Status::ERROR;
+    }
+
+	rc = m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+    if (rc != BE_SQLITE_OK) {
+        return Status::ERROR;
+	}
+
     rc = UpdateOrCreateSharedChannelInfo(channelURI);
     if (rc != BE_SQLITE_OK) {
-		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
         return Status::ERROR;
     }
 
     rc = UpdateOrCreateLocalChannelInfo(channelURI.GetInfo());
     if (rc != BE_SQLITE_OK) {
-		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
         return Status::ERROR;
     }
     return Status::SUCCESS;
@@ -697,7 +716,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
 	ECDB_PERF_LOG_SCOPE("Initializing shared schema channel");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SharedSchemaChannel::Init");
 	BeMutexHolder holder(m_conn.GetImpl().GetMutex());
-    const auto rc = Init(channelURI, { SharedSchemaChannelHelper::TABLE_BE_PROPS });
+    const auto rc = Init(channelURI, { SharedSchemaChannelHelper::TABLE_BE_PROP });
 	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SharedSchemaChannel::Init");
     return rc;
 }
@@ -721,7 +740,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelU
     SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
     m_conn.ClearECDbCache();
 
-    const auto rc = Pull(channelURI, {});
+    const auto rc = PullInternal(channelURI, {});
 	if (rc != Status::SUCCESS) {
         return rc;
     }
@@ -760,7 +779,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Push(ChannelUri const& channelU
     ECDB_PERF_LOG_SCOPE("Pushing tp shared schema channel");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SharedSchemaChannel::Push");
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
-    const auto rc = Push(channelURI, {});
+    const auto rc = PushInternal(channelURI, {});
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SharedSchemaChannel::Push");
     return rc;
@@ -826,7 +845,7 @@ DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(DbR channelDb) {
 	BeJsDocument jsonDoc;
     info.To(BeJsValue(jsonDoc));
     auto rc = channelDb.SavePropertyString(propSpec, jsonDoc.Stringify());
-	if (rc != BE_SQLITE_DONE) {
+	if (rc != BE_SQLITE_OK) {
         return rc;
 	}
     return BE_SQLITE_OK;
@@ -843,7 +862,7 @@ DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(ChannelUri channel
     }
 
     rc = UpdateOrCreateSharedChannelInfo(conn);
-    if (rc != BE_SQLITE_DONE) {
+    if (rc != BE_SQLITE_OK) {
         conn.AbandonChanges();
         return rc;
     }
@@ -855,12 +874,7 @@ DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(ChannelUri channel
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SharedSchemaChannel::UpdateOrCreateLocalChannelInfo(SharedChannelInfo const& from) {
     auto info = GetInfo();
-	if (info.IsEmpty()) {
-        info.m_dataVer = 0;
-    } else {
-		info.m_dataVer = from.m_dataVer;
-	}
-
+	info.m_dataVer = from.m_dataVer;
 	info.m_lastModUtc = from.GetLastModUtc();
 	info.m_channelId = from.m_channelId;
 
@@ -869,7 +883,7 @@ DbResult SharedSchemaChannel::UpdateOrCreateLocalChannelInfo(SharedChannelInfo c
 	BeJsDocument jsonDoc;
     info.To(BeJsValue(jsonDoc));
     auto rc = m_conn.SavePropertyString(propSpec, jsonDoc.Stringify());
-	if (rc != BE_SQLITE_DONE) {
+	if (rc != BE_SQLITE_OK) {
         return rc;
     }
     return BE_SQLITE_OK;

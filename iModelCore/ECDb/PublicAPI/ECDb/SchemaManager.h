@@ -120,8 +120,8 @@ private:
     Utf8String GetParentRevisionId() const;
     void GetParentRevision(int32_t& index, Utf8StringR id) const;
     Status Init(ChannelUri const&, TableList);
-    Status Pull(ChannelUri const&, TableList);
-    Status Push(ChannelUri const&, TableList);
+    Status PullInternal(ChannelUri const&, TableList);
+    Status PushInternal(ChannelUri const&, TableList);
     Status VerifyChannel(ChannelUri const&, bool isPull);
 public:
     SharedSchemaChannel(SharedSchemaChannel&&) = delete;
@@ -131,7 +131,7 @@ public:
     explicit SharedSchemaChannel(ECDbR conn):m_conn(conn){}
     ECDB_EXPORT LocalChannelInfo GetInfo() const;
     bool IsEnabled() const { return !GetInfo().IsEmpty(); }
-    ECDB_EXPORT Status Init(ChannelUri const&); 
+    ECDB_EXPORT Status Init(ChannelUri const&);
     ECDB_EXPORT Status Pull(ChannelUri const&, SchemaImportToken const* token = nullptr); // read/write op
     ECDB_EXPORT Status Push(ChannelUri const&);
 };
