@@ -120,29 +120,6 @@ bool SchemaSyncTestFixture::ForeignkeyCheck(ECDbCR db) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string SchemaSyncTestFixture::GetLastChangesetAsSql(TrackedECDb& db) {
-    std::vector<std::string> sqlList;
-    const auto changesets = db.GetTracker()->GetLocalChangesets();
-    if (changesets.size() == 0) {
-        return "";
-    }
-    changesets.back()->ToSQL(db, [&](std::string const& tbl, std::string const& sql) {
-        sqlList.push_back(sql);
-    });
-    std::sort(sqlList.begin(), sqlList.end());
-    return std::accumulate(
-        std::next(sqlList.begin()),
-        std::end(sqlList),
-        std::string{sqlList.front()},
-        [&](std::string const& acc, const std::string& piece) {
-            return acc + "\n" + piece;
-        }
-    );
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaSyncTestFixture::PrintHash(ECDbR ecdb, Utf8CP desc) {
     printf("=====%s======\n", desc);
     printf("\tSchema: SHA3-%s\n", GetSchemaHash(ecdb).c_str());
@@ -243,20 +220,20 @@ void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SharedSchemaDb::Push(ECDbR ecdb, std::function<void()> cb) {
-    auto rc = ecdb.Schemas().SyncSchemas(GetFileName().GetNameUtf8(), SchemaManager::SyncAction::Push);
-    if (rc == BE_SQLITE_OK && cb != nullptr) {
-        cb();
-    }
-    return rc;
-}
+// DbResult SharedSchemaDb::Push(ECDbR ecdb, std::function<void()> cb) {
+//     auto rc = ecdb.Schemas().SyncSchemas(GetFileName().GetNameUtf8(), SchemaManager::SyncAction::Push);
+//     if (rc == BE_SQLITE_OK && cb != nullptr) {
+//         cb();
+//     }
+//     return rc;
+// }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SharedSchemaDb::Pull(ECDbR ecdb, std::function<void()> cb) {
-    auto rc = ecdb.Schemas().SyncSchemas(GetFileName().GetNameUtf8(), SchemaManager::SyncAction::Pull);
-    if (rc == BE_SQLITE_OK && cb != nullptr) {
+SharedSchemaChannel::Status SharedSchemaDb::Pull(ECDbR ecdb, std::function<void()> cb) {
+    auto rc = ecdb.Schemas().GetSharedChannel().Pull(GetChannelUri());
+    if (rc == SharedSchemaChannel::Status::SUCCESS && cb != nullptr) {
         cb();
     }
     return rc;
@@ -501,9 +478,9 @@ ECDbChangeTracker::Ptr ECDbChangeTracker::Clone(ECDb& db) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbChangeSet::ToSQL(DbCR db, std::function<void(std::string const&, std::string const&)> cb) const{
+void ECDbChangeSet::ToSQL(DbCR db, std::function<void(bool isDDL, std::string const&)> cb) const{
 	for (auto& ddl : GetDDLs()) {
-		cb("",  ddl + ";");
+		cb(true,  ddl + ";");
 	}
 	bmap<Utf8String,bvector<Utf8String>> tableColMap;
 	auto toString = [](DbValue const& val) -> std::string {
@@ -553,7 +530,6 @@ void ECDbChangeSet::ToSQL(DbCR db, std::function<void(std::string const&, std::s
 			db.GetColumns(it->second, tableName);
 		}
 		auto const& columns = it->second;
-		auto const& tbl = it->first;
 		if (opCode == DbOpcode::Delete) {
 			sql = "DELETE FROM ";
 			sql.append(tableName).append(" WHERE ");
@@ -571,7 +547,7 @@ void ECDbChangeSet::ToSQL(DbCR db, std::function<void(std::string const&, std::s
 				}
 			}
 			sql.append(";");
-			cb(tbl, sql);
+			cb(false, sql);
 		} else if (opCode == DbOpcode::Insert) {
 			sql = "INSERT INTO ";
 			sql.append(tableName).append("(");
@@ -593,7 +569,7 @@ void ECDbChangeSet::ToSQL(DbCR db, std::function<void(std::string const&, std::s
 				val.append(toString(dbVal));
 			}
 			sql.append(")").append(val).append(");");
-			cb(tbl, sql);
+			cb(false, sql);
 		} else if (opCode == DbOpcode::Update) {
 			sql = "UPDATE ";
 			sql.append(tableName).append(" SET ");
@@ -621,7 +597,7 @@ void ECDbChangeSet::ToSQL(DbCR db, std::function<void(std::string const&, std::s
 				}
 			}
 			sql.append(where).append(";");
-			cb(tbl, sql);
+			cb(false, sql);
 		}
 	}
 }
@@ -691,14 +667,14 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
         result = iter.GetFKeyConflicts(&nConflicts);
         BeAssert(result == BE_SQLITE_OK);
         LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
-        return ChangeSet::ConflictResolution::Skip ;
+        return ChangeSet::ConflictResolution::Abort ;
     }
     if(cause == ChangeSet::ConflictCause::NotFound) {
         if (opcode == DbOpcode::Delete) {
             // Caused by CASCADE DELETE on a foreign key, and is usually not a problem.
             return ChangeSet::ConflictResolution::Skip;
         }
-        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3)) {
+  if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3)) {
             // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise
             return ChangeSet::ConflictResolution::Skip;
         }
@@ -798,6 +774,30 @@ std::unique_ptr<TrackedECDb> ECDbHub::CreateBriefcase() {
     return std::move(ecdb);
 }
 
+struct PrintChangeSet {
+    public:
+        static void Print(ECDbCR conn, ECDbChangeSet const& cs) {
+            std::vector<std::string> ddlList;
+            std::vector<std::string> dmlList;
+            cs.ToSQL(conn, [&](bool isDDL, const std::string& sql) {
+                if (isDDL) {
+                    ddlList.push_back(sql);
+                } else {
+                    dmlList.push_back(sql);
+                }
+            });
+            int i = 0;
+            std::sort(dmlList.begin(), dmlList.end());
+            printf("====================================================\n");
+            for(auto& v: ddlList) {
+                printf("%2d. %s\n", ++i, v.c_str());
+            }
+            for(auto& v: dmlList) {
+                printf("%2d. %s\n", ++i, v.c_str());
+            }
+            printf("====================================================\n");
+        }
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -806,25 +806,45 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
         return BE_SQLITE_ERROR;
     }
     auto changesetsToApply = m_hub->Query(m_changesetId + 1);
+
+#ifdef TRACE_CS
+    auto cancelTrace = GetTraceStmtEvent().AddListener([](TraceContext const& ctx, Utf8CP sql) {
+        printf("[STMT] %s\n", ctx.GetExpandedSql().c_str());
+
+    });
+#endif
     m_tracker->EnableTracking(false);
     for (auto& changesetToApply : changesetsToApply) {
+        changesetToApply->SetECDb(*this);
+#ifdef TRACE_CS
+        PrintChangeSet::Print(*this, *changesetToApply);
+#endif
         for (auto& ddl : changesetToApply->GetDDLs()) {
             auto rc = TryExecuteSql(ddl.c_str());
             if (rc != BE_SQLITE_OK && false) {
                 m_tracker->EnableTracking(true);
                 LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
+#ifdef TRACE_CS
+                cancelTrace();
+#endif
                 return rc;
             }
         }
         auto rc = changesetToApply->ApplyChanges(*this);
         if (rc != BE_SQLITE_OK) {
             LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
+#ifdef TRACE_CS
+            cancelTrace();
+#endif
             return rc;
         }
     }
     if (!changesetsToApply.empty()) {
         auto rc = AfterSchemaChangeSetApplied();
         if (rc != BE_SQLITE_OK) {
+#ifdef TRACE_CS
+            cancelTrace();
+#endif
             return rc;
         }
     }
@@ -833,11 +853,16 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
         auto changeset = m_tracker->MakeChangeset(true, comment);
         if (changeset == nullptr) {
             m_tracker->EnableTracking(true);
+#ifdef TRACE_CS
+            cancelTrace();
+#endif
             return BE_SQLITE_ERROR;
         }
         m_changesetId = m_hub->PushNewChangeset(std::move(changeset));
     }
-
+#ifdef TRACE_CS
+    cancelTrace();
+#endif
     return BE_SQLITE_OK;
 
 }

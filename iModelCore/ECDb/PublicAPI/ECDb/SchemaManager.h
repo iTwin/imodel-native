@@ -20,7 +20,121 @@ enum class SchemaChangeType {
 //! Schema change event notify about event that led to schema change.
 using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
 
+//=======================================================================================
+//! @ingroup ECDbGroup
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SharedSchemaChannel final {
+    using FileUri = Utf8String;
+    using ChannelVer = uint64_t;
+    using TableList = bvector<Utf8String>;
+    enum class Status {
+        SUCCESS,
+        ERROR,
+        ERROR_SHARED_CHANNEL_ALREADY_INITIALIZED,
+        ERROR_OPENING_SHARED_DB,
+        ERROR_FAIL_TO_INIT_SHARED_DB,
+        ERROR_INVALID_SHARED_DB,
+        ERROR_INVALID_LOCAL_DB,
+        ERROR_READONLY,
+        ERROR_INVALID_SHARED_CHANNEL,
+        ERROR_UNABLE_TO_ATTACH,
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct SharedChannelInfo final{
+        friend struct SharedSchemaChannel;
+        private:
+            ChannelVer m_dataVer;
+            BeGuid m_channelId;
+            BeGuid m_projectId;
+            BeGuid m_fileId;
+            DateTime m_lastModUtc;
+            Utf8String m_changesetId;
+            int32_t m_changesetIndex;
 
+        public:
+            SharedChannelInfo():m_dataVer(0),m_changesetIndex(-1){}
+            SharedChannelInfo(SharedChannelInfo&&)=default;
+            SharedChannelInfo(SharedChannelInfo const&)=default;
+            SharedChannelInfo& operator=(SharedChannelInfo&&)=default;
+            SharedChannelInfo& operator=(SharedChannelInfo const&)=default;
+            BeGuidCR GetChannelId() const { return m_channelId; }
+            BeGuidCR GetProjectId() const { return m_projectId; }
+            BeGuidCR GetFileId() const { return m_fileId; }
+            ChannelVer GetDataVersion() const { return m_dataVer; }
+            DateTimeCR GetLastModUtc() const { return m_lastModUtc; }
+            Utf8StringCR GetChangeSetId() const { return m_changesetId; }
+            int32_t GetChangeSetIndex() const { return m_changesetIndex; }
+            bool IsEmpty() const { return !m_channelId.IsValid(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static SharedChannelInfo From(BeJsConst);
+            ECDB_EXPORT static SharedChannelInfo From(DbCR);
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct LocalChannelInfo final {
+        friend struct SharedSchemaChannel;
+        private:
+            ChannelVer m_dataVer;
+            BeGuid m_channelId;
+            DateTime m_lastModUtc;
+
+        public:
+            LocalChannelInfo():m_dataVer(0){}
+            LocalChannelInfo(LocalChannelInfo&&)=default;
+            LocalChannelInfo(LocalChannelInfo const&)=default;
+            LocalChannelInfo& operator=(LocalChannelInfo&&)=default;
+            LocalChannelInfo& operator=(LocalChannelInfo const&)=default;
+            BeGuidCR GetChannelId() const { return m_channelId; }
+            ChannelVer GetDataVersion() const { return m_dataVer; }
+            DateTimeCR GetLastModUtc() const { return m_lastModUtc; }
+            bool IsEmpty() const { return !m_channelId.IsValid(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static LocalChannelInfo From(BeJsConst);
+            ECDB_EXPORT static LocalChannelInfo From(DbCR);
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct ChannelUri final{
+        private:
+            Utf8String m_uri;
+        public:
+            ChannelUri(ChannelUri&&)=default;
+            ChannelUri(ChannelUri const&)=default;
+            ChannelUri& operator=(ChannelUri&&)=default;
+            ChannelUri& operator=(ChannelUri const&)=default;
+            ChannelUri(Utf8CP uri = ""):m_uri(uri){};
+            Utf8StringCR GetUri() const { return m_uri; }
+            bool IsEmpty() const {return m_uri.empty();}
+            ECDB_EXPORT SharedChannelInfo GetInfo() const;
+    };
+private:
+    ECDbR m_conn;
+    DbResult UpdateOrCreateSharedChannelInfo(DbR channelDb);
+    DbResult UpdateOrCreateSharedChannelInfo(ChannelUri channelUri);
+    DbResult UpdateOrCreateLocalChannelInfo(SharedChannelInfo const& from);
+    Utf8String GetParentRevisionId() const;
+    void GetParentRevision(int32_t& index, Utf8StringR id) const;
+    Status Init(ChannelUri const&, TableList);
+    Status Pull(ChannelUri const&, TableList);
+    Status Push(ChannelUri const&, TableList);
+    Status VerifyChannel(ChannelUri const&, bool isPull);
+public:
+    SharedSchemaChannel(SharedSchemaChannel&&) = delete;
+    SharedSchemaChannel(SharedSchemaChannel const&)=delete;
+    SharedSchemaChannel& operator=(SharedSchemaChannel&&)=delete;
+    SharedSchemaChannel& operator=(SharedSchemaChannel const&)=delete;
+    explicit SharedSchemaChannel(ECDbR conn):m_conn(conn){}
+    ECDB_EXPORT LocalChannelInfo GetInfo() const;
+    bool IsEnabled() const { return !GetInfo().IsEmpty(); }
+    ECDB_EXPORT Status Init(ChannelUri const&); 
+    ECDB_EXPORT Status Pull(ChannelUri const&, SchemaImportToken const* token = nullptr); // read/write op
+    ECDB_EXPORT Status Push(ChannelUri const&);
+};
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
 //! @ingroup ECDbGroup
@@ -34,7 +148,6 @@ struct SchemaImportResult final
         ERROR = BE_SQLITE_ERROR,
         ERROR_DATA_TRANSFORM_REQUIRED = BE_SQLITE_ERROR_DataTransformRequired,
         ERROR_READONLY = BE_SQLITE_READONLY,
-        ERROR_SYNC_SCHEMA,
         };
 
     private:
@@ -106,12 +219,12 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct InstanceFinder {
 
-    struct ForignKeyRelation final {
+    struct ForeignKeyRelation final {
         private:
             ECInstanceKey m_thisEnd;
             ECInstanceKey m_otherEnd;
         public:
-            ForignKeyRelation(ECInstanceKey&& thisEnd, ECInstanceKey&& otherEnd) :m_thisEnd(thisEnd), m_otherEnd(otherEnd) {}
+            ForeignKeyRelation(ECInstanceKey&& thisEnd, ECInstanceKey&& otherEnd) :m_thisEnd(thisEnd), m_otherEnd(otherEnd) {}
             ECInstanceKey const& GetThisEndKey() const { return m_thisEnd; }
             ECInstanceKey const& GetOtherEndKey() const { return m_otherEnd; }
     };
@@ -149,16 +262,16 @@ struct InstanceFinder {
         private:
             std::map<ECN::ECClassId, std::vector<ECInstanceKey>> m_entityKeyMap;
             std::map<ECN::ECClassId, std::vector<LinkTableRelation>> m_linktableRelMap;
-            std::map<ECN::ECClassId, std::vector<ForignKeyRelation>> m_foreignKeyMap;
+            std::map<ECN::ECClassId, std::vector<ForeignKeyRelation>> m_foreignKeyMap;
             ECDB_EXPORT static void ToJson(BeJsValue v, ECInstanceKey const& key, JsonFormatOptions const* options);
-            ECDB_EXPORT static void ToJson(BeJsValue v, ForignKeyRelation const& key, JsonFormatOptions const* options);
+            ECDB_EXPORT static void ToJson(BeJsValue v, ForeignKeyRelation const& key, JsonFormatOptions const* options);
             ECDB_EXPORT static void ToJson(BeJsValue v, LinkTableRelation const& key, JsonFormatOptions const* options);
         public:
             SearchResults() {}
             SearchResults(
                 std::map<ECN::ECClassId, std::vector<ECInstanceKey>>&& entities,
                 std::map<ECN::ECClassId, std::vector<LinkTableRelation>>&& linkTableRels,
-                std::map<ECN::ECClassId, std::vector<ForignKeyRelation>>&& fkRels
+                std::map<ECN::ECClassId, std::vector<ForeignKeyRelation>>&& fkRels
                 ) : m_entityKeyMap(entities), m_linktableRelMap(linkTableRels), m_foreignKeyMap(fkRels){}
             SearchResults(SearchResults&& rhs)
                 :m_linktableRelMap(std::move(rhs.m_linktableRelMap)),
@@ -290,10 +403,6 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
             AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
             };
-        enum class SyncAction {
-            Pull, //!< Pull schema changes to a target db
-            Push //!< Push schema changes to a target db
-        };
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;
 #endif
@@ -321,9 +430,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         ~SchemaManager();
 #endif
 
-        //! Following will create the sync-db file from current file.
-        ECDB_EXPORT DbResult InitSharedSchemaDb(Utf8StringCR sharedSchemaDbUri) const;
-        ECDB_EXPORT DbResult SyncSchemas(Utf8StringCR sharedSchemaDbUri, SyncAction action, SchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT SharedSchemaChannel& GetSharedChannel() const;
 
         //! Drop a leaf schema from ecdb as long as it has no instances
         //! @param[in] name  name of schema to be dropped.
@@ -355,7 +462,12 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const { return ImportSchemas(schemas, SchemaImportOptions::None, token); }
+        SchemaImportResult ImportSchemas(
+            bvector<ECN::ECSchemaCP> const& schemas,
+            SchemaImportToken const* token = nullptr,
+            SharedSchemaChannel::ChannelUri sharedChannel = SharedSchemaChannel::ChannelUri()) const {
+                return ImportSchemas(schemas, SchemaImportOptions::None, token, sharedChannel);
+            }
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
@@ -377,7 +489,11 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        ECDB_EXPORT SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT SchemaImportResult ImportSchemas(
+            bvector<ECN::ECSchemaCP> const& schemas,
+            SchemaImportOptions options,
+            SchemaImportToken const* token = nullptr,
+            SharedSchemaChannel::ChannelUri sharedChannel = SharedSchemaChannel::ChannelUri()) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.

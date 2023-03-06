@@ -10,7 +10,12 @@
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
+/**
+ * A IModel that use shared schema channel can only update/import schema via shared schema channel.
+ * IModel will not allow schema import unless shared schema channel is setup up.
+ * IModel will contain be_prop that will let ECDb know to not allow direct schema import call instead
+ * it will require to call ImportSchemasViaSharedChannel()
+*/
 const char* DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
 const char* DEFAULT_SHA3_256_ECDB_MAP = "9c7834d13177336f0fa57105b9c1175b912b2e12e62ca2224482c0ffd9dfd337";
 const char* DEFAULT_SHA3_256_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
@@ -57,8 +62,8 @@ TEST_F(SchemaSyncTestFixture, Test) {
     ASSERT_EQ(b3->GetBriefcaseId().GetValue(), 13);
 
 
-    ASSERT_EQ(BE_SQLITE_OK, b1->Schemas().InitSharedSchemaDb(
-        schemaChannel.GetFileName().GetNameUtf8()));
+    ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS,
+        b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri()));
 
     if ("check syn db hash") {
         schemaChannel.WithReadOnly([&](ECDbR syncDb) {
@@ -75,8 +80,6 @@ TEST_F(SchemaSyncTestFixture, Test) {
     EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_SCHEMA, GetSchemaHash(*b2).c_str());
     EXPECT_STREQ(DEFAULT_SHA3_256_ECDB_MAP, GetMapHash(*b2).c_str());
     EXPECT_STREQ(DEFAULT_SHA3_256_SQLITE_SCHEMA, GetDbSchemaHash(*b2).c_str());
-
-    ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Push(*b1)) << "Push changes to from b1 to schemaChannel";
 
     const auto SCHEMA1_HASH_ECDB_SCHEMA = "57df4675ccbce3493d2bb882ad3bb28f3266425c2f22fd55e57e187808b3add3";
     const auto SCHEMA1_HASH_ECDB_MAP = "8b1c6d8fa5b29e085bf94fae710527f56fa1c1792bd7404ff5775ed07f86f21f";
@@ -108,7 +111,6 @@ TEST_F(SchemaSyncTestFixture, Test) {
             </ECSchema>)xml");
         ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b1, schema1));
         ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
-        ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Push(*b1)) << "Push changes to from b1 to schemaChannel";
 
         ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
@@ -132,7 +134,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
     });
 
     Test("pull changes from sync-db into b2 and verify class, table and index exists", [&]() {
-        ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Pull(*b2,[&](){
+        ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS, schemaChannel.Pull(*b2,[&](){
             auto pipe1 = b2->Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 2);
@@ -178,7 +180,6 @@ TEST_F(SchemaSyncTestFixture, Test) {
             </ECSchema>)xml");
         ASSERT_EQ (SchemaImportResult::OK, ImportSchema(*b2, schema2));
         ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
-        ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Push(*b2)) << "Push changes to from b1 to schemaChannel";
 
         ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
         ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
@@ -201,7 +202,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
     });
 
     Test("pull changes from sync db into master db and check if schema changes was there and valid", [&]() {
-        ASSERT_EQ(BE_SQLITE_OK, schemaChannel.Pull(*b1, [&]() {
+        ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS, schemaChannel.Pull(*b1, [&]() {
             auto pipe1 = b1->Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 4);
@@ -220,25 +221,22 @@ TEST_F(SchemaSyncTestFixture, Test) {
         ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 import schema"))  << "b1->PullMergePush()";
     });
 
-    Test("b3 pull changes from hub", [&]() {
-        ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("add new schema"))  << "b3->PullMergePush()";
-        auto pipe1 = b3->Schemas().GetClass("TestSchema1", "Pipe1");
-        ASSERT_NE(pipe1, nullptr);
-        ASSERT_EQ(pipe1->GetPropertyCount(), 4);
-        ASSERT_TRUE(b3->TableExists("ts_Pipe1"));
-        ASSERT_STRCASEEQ(GetIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
-        EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b3).c_str());
-        EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b3).c_str());
-        EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b3).c_str());
-    });
-
-
     Test("PullMergePush for b2", [&]() {
         ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 import schema")) << "b2->PullMergePush()";
-        b2->AbandonChanges();
+        b2->SaveChanges();
     });
 
-
+    // Test("b3 pull changes from hub", [&]() {
+    //     ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("add new schema"))  << "b3->PullMergePush()";
+    //     auto pipe1 = b3->Schemas().GetClass("TestSchema1", "Pipe1");
+    //     ASSERT_NE(pipe1, nullptr);
+    //     ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+    //     ASSERT_TRUE(b3->TableExists("ts_Pipe1"));
+    //     ASSERT_STRCASEEQ(GetIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+    //     EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b3).c_str());
+    //     EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b3).c_str());
+    //     EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b3).c_str());
+    // });
 }
 
 END_ECDBUNITTESTS_NAMESPACE

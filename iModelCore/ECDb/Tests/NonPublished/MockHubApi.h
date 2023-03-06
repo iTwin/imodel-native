@@ -28,18 +28,21 @@ struct ECDbChangeSet : public BeSQLite::ChangeSet {
         Utf8String m_ddl;
         bool m_hasSchemaChanges;
         int m_index;
+        ECDb const* m_ecdb;
 
     private:
         ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
 
     public:
         ECDbChangeSet(int index, Utf8CP op, Utf8CP ddl, bool isSchemaChangeset)
-            : m_operation(op), m_ddl(ddl), m_hasSchemaChanges(isSchemaChangeset || !Utf8String::IsNullOrEmpty(ddl)), m_index(index) {}
+            : m_operation(op), m_ddl(ddl), m_hasSchemaChanges(isSchemaChangeset || !Utf8String::IsNullOrEmpty(ddl)), m_index(index), m_ecdb(nullptr) {}
         int GetIndex() const { return m_index; }
         bool HasSchemaChanges() const { return m_hasSchemaChanges; }
         bvector<Utf8String> GetDDLs() const;
+        void SetECDb(ECDbCR ecdb) { m_ecdb = &ecdb; }
+        ECDb const* GetECDb() const { return m_ecdb; }
         Ptr Clone() const;
-        void ToSQL(DbCR db, std::function<void(std::string const&, std::string const&)> cb) const;
+        void ToSQL(DbCR db, std::function<void(bool, std::string const&)> cb) const;
         static Ptr From(ECDbChangeTracker& tracker, Utf8CP comment);
         static Ptr Create(int index, Utf8CP op, Utf8CP ddl, bool isSchemaChangeset);
 };
@@ -75,10 +78,10 @@ private:
     ECDbChangeSet::Ptr MakeChangeset(bool deleteLocalChangesets, Utf8CP op);
     std::vector<ECDbChangeSet const*> GetLocalChangesets() const;
 
-    void ToSql(std::function<void(ECDbChangeSet const&, std::string const&, std::string const&)> cb) const {
+    void ToSql(std::function<void(ECDbChangeSet const&, bool, std::string const&)> cb) const {
         for (auto&  cs: m_localChangesets) {
-            cs->ToSQL(m_mdb, [&](std::string const& tbl, std::string const& sql) {
-                cb(*cs, tbl, sql);
+            cs->ToSQL(m_mdb, [&](bool isDDL, std::string const& sql) {
+                cb(*cs, isDDL, sql);
             });
         }
     }
@@ -162,8 +165,9 @@ struct SharedSchemaDb final {
         std::unique_ptr<ECDb> OpenReadWrite(DefaultTxn mode = DefaultTxn::Yes);
         void WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode = DefaultTxn::Yes);
         void WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode = DefaultTxn::Yes);
-        DbResult Push(ECDbR ecdb, std::function<void()> cb = nullptr);
-        DbResult Pull(ECDbR ecdb, std::function<void()> cb = nullptr);
+        //SharedSchemaChannel::Status Push(ECDbR ecdb, std::function<void()> cb = nullptr);
+        SharedSchemaChannel::Status Pull(ECDbR ecdb, std::function<void()> cb = nullptr);
+        SharedSchemaChannel::ChannelUri GetChannelUri() const { return SharedSchemaChannel::ChannelUri(m_fileName.GetNameUtf8().c_str()); }
 };
 
 //=======================================================================================
@@ -177,7 +181,6 @@ struct SchemaSyncTestFixture : public ECDbTestFixture {
     static Utf8String GetMapHash(ECDbCR db);
     static Utf8String GetDbSchemaHash(ECDbCR db);
     static bool ForeignkeyCheck(ECDbCR db);
-    static std::string GetLastChangesetAsSql(TrackedECDb& db);
     static void PrintHash(ECDbR ecdb, Utf8CP desc);
     static std::string GetIndexDDL(ECDbCR ecdb, Utf8CP indexName);
     static void Test(Utf8CP name, std::function<void()> test);

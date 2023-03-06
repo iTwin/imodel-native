@@ -880,78 +880,6 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult MainSchemaManager::InitSharedSchemaDb(Utf8StringCR sharedSchemaDbUri) const {
-    ECDB_PERF_LOG_SCOPE("Create SyncDb");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::InitSharedSchemaDb");
-    auto& ecdb = const_cast<ECDbR>(m_ecdb);
-    BeMutexHolder holder(ecdb.GetImpl().GetMutex());
-    const auto rc = SchemaSynchronizer::InitSharedSchemaDb(ecdb, sharedSchemaDbUri.c_str());
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::InitSharedSchemaDb");
-    return rc;
-}
-/*---------------------------------------------------------------------------------------
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult MainSchemaManager::SyncSchemas(Utf8StringCR sharedSchemaDbUri, SchemaManager::SyncAction action, SchemaImportToken const* schemaImportToken) const {
-    ECDB_PERF_LOG_SCOPE("Sync Schemas");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::SyncSchemas");
-    const bool isPull = (action == SchemaManager::SyncAction::Pull);
-
-    if(isPull) {
-        // pull changes local schema
-        OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-        Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
-        if (!policy.IsSupported()) {
-            LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
-            return BE_SQLITE_ERROR;
-        }
-    }
-
-    auto& ecdb = const_cast<ECDbR>(m_ecdb);
-    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
-    BeMutexHolder holder(ecdb.GetImpl().GetMutex());
-    if(isPull) {
-        // pull changes local schema
-        m_ecdb.ClearECDbCache();
-    }
-
-    const auto rc = SchemaSynchronizer::SyncData(ecdb, sharedSchemaDbUri.c_str(), action);
-
-    if (rc != BE_SQLITE_OK) {
-        return rc;
-    }
-    if(isPull) {
-        if (SUCCESS != GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
-            return BE_SQLITE_ERROR;
-        }
-        // pull changes local schema
-        if (SUCCESS != CreateOrUpdateRequiredTables()) {
-            return BE_SQLITE_ERROR;
-        }
-
-        if (SUCCESS != CreateOrUpdateIndexesInDb(ctx)) {
-            return BE_SQLITE_ERROR;
-        }
-
-        if (SUCCESS != PurgeOrphanTables(ctx)) {
-            return BE_SQLITE_ERROR;
-        }
-
-        if (SUCCESS != DbMapValidator(ctx).Validate()) {
-            return BE_SQLITE_ERROR;
-        }
-
-        m_ecdb.ClearECDbCache();
-        OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    }
-
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::SyncSchemas");
-    return BE_SQLITE_OK;
-}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* schemaImportToken, bool logIssue) const {
     ECDB_PERF_LOG_SCOPE("Drop schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchema");
@@ -1016,13 +944,13 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const
+SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SharedSchemaChannel::ChannelUri sharedChannel) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_ecdb, options);
-    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token);
+    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token, sharedChannel);
     ResetIds(schemas);
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1077,7 +1005,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
+SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SharedSchemaChannel::ChannelUri channelUri) const
     {
     #if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
     /*
@@ -1122,6 +1050,29 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return SchemaImportResult::ERROR;
+        }
+
+    const auto localChannelInfo = m_ecdb.Schemas().GetSharedChannel().GetInfo();
+    if (!localChannelInfo.IsEmpty())
+        {
+        if (channelUri.IsEmpty())
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use shared schema channel but not shared channel was provided. Channel-Id: {%s}.",
+                localChannelInfo.GetChannelId().ToString().c_str());
+            return SchemaImportResult::ERROR;
+            }
+
+        if (m_ecdb.Schemas().GetSharedChannel().Pull(channelUri) != SharedSchemaChannel::Status::SUCCESS)
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Unable to pull changes from Channel-Id: {%s}, uri: {%s}.",
+                localChannelInfo.GetChannelId().ToString().c_str(),
+                channelUri.GetUri().c_str());
+            return SchemaImportResult::ERROR;
+            }
         }
 
     for (auto schema: schemas) {
@@ -1172,6 +1123,20 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         LOG.debug("MainSchemaManager::ImportSchemas - failed to MapSchemas");
         return rc;
         }
+
+    if (!localChannelInfo.IsEmpty() && rc.IsOk())
+        {
+        if (m_ecdb.Schemas().GetSharedChannel().Push(channelUri) != SharedSchemaChannel::Status::SUCCESS)
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Unable to push changes to Channel-Id: {%s}, uri: {%s}.",
+                localChannelInfo.GetChannelId().ToString().c_str(),
+                channelUri.GetUri().c_str());
+            return SchemaImportResult::ERROR;
+            }
+        }
+
     return SchemaImportResult::OK;
     }
 
