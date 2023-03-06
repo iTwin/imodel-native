@@ -26,7 +26,7 @@ TEST_F(MultiSchemaClassTests, LoadsFromJsonObject)
             "arePolymorphic": true
         }
     )";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     MultiSchemaClass multiSchemaClass;
@@ -88,8 +88,8 @@ TEST_F(MultiSchemaClassTests, WritesToJson)
     multiSchemaClass.SetClassNames(bvector<Utf8String>{ "className1", "className2" });
     multiSchemaClass.SetArePolymorphic(true);
 
-    Json::Value generatedJson = multiSchemaClass.WriteJson();
-    Json::Value expectedJson = Json::Reader::DoParse(R"(
+    BeJsDocument generatedJson = multiSchemaClass.WriteJson();
+    BeJsDocument expectedJson(R"(
         {
             "schemaName": "someSchemaName",
             "classNames": ["className1", "className2"],
@@ -97,7 +97,7 @@ TEST_F(MultiSchemaClassTests, WritesToJson)
         }
     )");
 
-    EXPECT_STREQ(ToPrettyString(expectedJson).c_str(), ToPrettyString(generatedJson).c_str());
+    EXPECT_TRUE(expectedJson.isExactEqual(generatedJson));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,7 +111,7 @@ TEST_F(MultiSchemaClassTests, LoadsMultiSchemaClassWithDefaultPolymorphism)
             "classNames": ["testClassName1", "testClassName2"]
         }
     )";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     auto const multiSchemaClassTrue = std::unique_ptr<MultiSchemaClass>(MultiSchemaClass::LoadFromJson(json, true));
@@ -135,7 +135,7 @@ TEST_F(MultiSchemaClassTests, LoadsMultiSchemaClassWithSpecifiedPolymorphism)
             "arePolymorphic": true
         }
     )";
-    Json::Value jsonArePolymorphicTrue = Json::Reader::DoParse(jsonStringArePolymorphicTrue);
+    BeJsDocument jsonArePolymorphicTrue(jsonStringArePolymorphicTrue);
     ASSERT_FALSE(jsonArePolymorphicTrue.isNull());
 
     auto const multiSchemaClassTrue = std::unique_ptr<MultiSchemaClass>(MultiSchemaClass::LoadFromJson(jsonArePolymorphicTrue, false));
@@ -149,7 +149,7 @@ TEST_F(MultiSchemaClassTests, LoadsMultiSchemaClassWithSpecifiedPolymorphism)
             "arePolymorphic": false
         }
     )";
-    Json::Value jsonArePolymorphicFalse = Json::Reader::DoParse(jsonStringArePolymorphicFalse);
+    BeJsDocument jsonArePolymorphicFalse(jsonStringArePolymorphicFalse);
     ASSERT_FALSE(jsonArePolymorphicFalse.isNull());
 
     auto const multiSchemaClassFalse = std::unique_ptr<MultiSchemaClass>(MultiSchemaClass::LoadFromJson(jsonArePolymorphicFalse, true));

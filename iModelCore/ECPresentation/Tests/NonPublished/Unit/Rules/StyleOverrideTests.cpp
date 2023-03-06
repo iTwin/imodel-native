@@ -26,7 +26,7 @@ TEST_F(StyleOverrideTests, LoadsFromJson)
         "backColor": "back",
         "fontStyle": "font"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     StyleOverride override;
@@ -44,7 +44,7 @@ TEST_F(StyleOverrideTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "StyleOverride"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     StyleOverride override;
@@ -60,8 +60,8 @@ TEST_F(StyleOverrideTests, LoadsFromJsonWithDefaultValues)
 TEST_F(StyleOverrideTests, WriteToJson)
     {
     StyleOverride rule("cond", 123, "f", "b", "fs");
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "StyleOverride",
         "priority": 123,
         "condition": "cond",
@@ -69,7 +69,7 @@ TEST_F(StyleOverrideTests, WriteToJson)
         "backColor": "b",
         "fontStyle": "fs"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

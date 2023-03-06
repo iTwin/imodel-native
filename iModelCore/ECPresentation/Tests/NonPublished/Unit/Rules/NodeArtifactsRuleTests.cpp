@@ -28,7 +28,7 @@ TEST_F(NodeArtifactsRuleTests, LoadsFromJson)
             "item2": "value2"
         }
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     NodeArtifactsRule rule;
@@ -50,8 +50,8 @@ TEST_F(NodeArtifactsRuleTests, WriteToJson)
     items.Insert("key1", "value1");
     items.Insert("key2", "value2");
     NodeArtifactsRule rule("cond", items);
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "NodeArtifacts",
         "condition": "cond",
         "items": {
@@ -59,7 +59,7 @@ TEST_F(NodeArtifactsRuleTests, WriteToJson)
             "key2": "value2"
         }
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

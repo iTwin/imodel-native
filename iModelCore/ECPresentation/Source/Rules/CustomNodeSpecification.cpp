@@ -106,7 +106,7 @@ Utf8CP CustomNodeSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomNodeSpecification::_ReadJson(JsonValueCR json)
+bool CustomNodeSpecification::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;
@@ -130,7 +130,7 @@ bool CustomNodeSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodeSpecification::_WriteJson(JsonValueR json) const
+void CustomNodeSpecification::_WriteJson(BeJsValue json) const
     {
     ChildNodeSpecification::_WriteJson(json);
     json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_TYPE] = m_type;

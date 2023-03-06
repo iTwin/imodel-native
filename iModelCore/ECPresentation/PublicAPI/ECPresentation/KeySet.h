@@ -101,7 +101,7 @@ public:
 
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* = nullptr) const;
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* = nullptr) const;
-    ECPRESENTATION_EXPORT static KeySetPtr FromJson(IConnectionCR, JsonValueCR);
+    ECPRESENTATION_EXPORT static KeySetPtr FromJson(IConnectionCR, BeJsConst);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

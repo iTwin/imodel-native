@@ -27,8 +27,8 @@ struct MultiSchemaClass : NoXmlSupport<PresentationKey>
 
         Utf8CP _GetJsonElementTypeAttributeName() const override { return nullptr; }
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+        ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+        ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
     public:
         MultiSchemaClass() : m_arePolymorphic(false) {}
@@ -44,7 +44,7 @@ struct MultiSchemaClass : NoXmlSupport<PresentationKey>
         // move constructor
         ECPRESENTATION_EXPORT MultiSchemaClass(MultiSchemaClass&&);
 
-        ECPRESENTATION_EXPORT static MultiSchemaClass* LoadFromJson(JsonValueCR json, bool defaultPolymorphism);
+        ECPRESENTATION_EXPORT static MultiSchemaClass* LoadFromJson(BeJsConst json, bool defaultPolymorphism);
 
         Utf8StringCR GetSchemaName() const { return m_schemaName; }
         void SetSchemaName(Utf8String value) { m_schemaName = value; InvalidateHash(); }

@@ -20,7 +20,7 @@ struct ContentFieldEditorParamsTests : ECPresentationTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentFieldEditorParamsTests, JsonParams_Equalty)
     {
-    Json::Value json;
+    BeJsDocument json;
     json["Test"] = 1;
     PropertyEditorJsonParameters spec(json);
     FieldEditorJsonParams params(spec);
@@ -28,7 +28,7 @@ TEST_F(ContentFieldEditorParamsTests, JsonParams_Equalty)
     FieldEditorJsonParams params2(spec);
     EXPECT_TRUE(params.Equals(params2));
 
-    Json::Value json2;
+    BeJsDocument json2;
     json2["Test"] = 2;
     PropertyEditorJsonParameters spec2(json2);
     FieldEditorJsonParams params3(spec2);

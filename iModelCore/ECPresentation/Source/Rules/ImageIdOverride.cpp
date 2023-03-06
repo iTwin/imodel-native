@@ -65,7 +65,7 @@ Utf8CP ImageIdOverride::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ImageIdOverride::_ReadJson(JsonValueCR json)
+bool ImageIdOverride::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;
@@ -77,7 +77,7 @@ bool ImageIdOverride::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImageIdOverride::_WriteJson(JsonValueR json) const
+void ImageIdOverride::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_imageIdExpression.empty())

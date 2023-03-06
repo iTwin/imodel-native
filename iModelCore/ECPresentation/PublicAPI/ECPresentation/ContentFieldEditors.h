@@ -26,7 +26,7 @@ protected:
 public:
     FieldEditorJsonParams(PropertyEditorJsonParameters const& spec)
         {
-        m_json.Parse(Json::FastWriter().write(spec.GetJson()).c_str());
+        m_json.Parse(spec.GetJson().Stringify().c_str());
         }
     FieldEditorJsonParams(FieldEditorJsonParams const& other)
         {

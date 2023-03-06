@@ -31,7 +31,7 @@ TEST_F(PropertyCategorySpecificationTests, LoadsFromJson)
             "rendererName": "test renderer"
         }
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyCategorySpecification spec;
@@ -55,7 +55,7 @@ TEST_F(PropertyCategorySpecificationTests, LoadsFromJsonWithDefaultValues)
         "id": "test id",
         "label": "test label"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     PropertyCategorySpecification spec;
@@ -77,7 +77,7 @@ TEST_F(PropertyCategorySpecificationTests, LoadFromJsonFailsIfIdNotSpecified)
     static Utf8CP jsonString = R"({
         "label": "test label"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyCategorySpecification spec;
@@ -92,7 +92,7 @@ TEST_F(PropertyCategorySpecificationTests, LoadFromJsonFailsLabelIdNotSpecified)
     static Utf8CP jsonString = R"({
         "id": "test id"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyCategorySpecification spec;
@@ -106,8 +106,8 @@ TEST_F(PropertyCategorySpecificationTests, WriteToJson)
     {
     PropertyCategorySpecification spec("test id", "test label", "test description", 123, true, std::make_unique<CustomRendererSpecification>("test renderer"),
         PropertyCategoryIdentifier::CreateForId("test parent id"));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "id": "test id",
         "parentId": {
             "type": "Id",
@@ -121,7 +121,7 @@ TEST_F(PropertyCategorySpecificationTests, WriteToJson)
             "rendererName": "test renderer"
         }
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
