@@ -33,7 +33,7 @@
 #include "ECDbMapSchemaHelper.h"
 #include "PolicyManager.h"
 
-#include "SchemaSynchronizer.h"
+#include "SharedSchemaChannel.h"
 
 #include "ECDbSqlFunctions.h"
 
