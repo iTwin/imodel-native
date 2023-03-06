@@ -2165,11 +2165,7 @@ size_t QueryBasedNodesProvider::_GetLimitedInstancesCount(size_t limit) const
 
     // when hiding nodes produced by this query, we want to count the ones we're going to actually show
     if (m_query->GetNavigationResultParameters().GetNavNodeExtendedData().HideNodesInHierarchy())
-        {
-        MaxNodesToLoadContext limitLoadedNodesCount(*this, limit);
-        const_cast<QueryBasedNodesProvider*>(this)->InitializeNodes();
         return T_Super::_GetLimitedInstancesCount(limit);
-        }
 
     // run the limited query to count resulting instances
     auto instanceKeysQuery = QueryBuilderHelpers::GetInstanceKeysQuery(*m_query);
@@ -2788,7 +2784,7 @@ NavNodesProvider::Iterator MultiNavNodesProvider::_CreateBackIterator() const {r
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderPtr MultiNavNodesProvider::_FindNestedProvider(DataSourceIdentifier const& identifier)
     {
-    const_cast<MultiNavNodesProviderP>(this)->InitializeNodes();
+    InitializeNodes();
     for (auto const& provider : m_providers)
         {
         if (provider->GetIdentifier() == identifier)
@@ -2817,6 +2813,12 @@ std::unordered_set<ECClassCP> MultiNavNodesProvider::_GetResultInstanceNodesClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t MultiNavNodesProvider::_GetLimitedInstancesCount(size_t limit) const
     {
+    // need to make sure `m_providers` is initialized
+        {
+        MaxNodesToLoadContext limitLoadedNodesCount(*this, limit);
+        const_cast<MultiNavNodesProvider*>(this)->InitializeNodes();
+        }
+
     size_t count = 0;
     for (auto const& provider : m_providers)
         {

@@ -1033,16 +1033,12 @@ RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Created a new provider");
         }
 
-    // post-process
-    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Provider post-processed");
-
     // check if the hierarchy level supports filtering
     auto supportsFiltering = HierarchiesFilteringHelper::SupportsFiltering(
         context.GetVirtualParentNode().get(),
         TraverseHierarchyRulesProps(context.GetNodesFactory(), context.GetRulesPreprocessor(), context.GetSchemaHelper()),
         nullptr
-        );
+    );
 
     // apply limiting
     if (context.GetResultSetSizeLimit().IsValid() && supportsFiltering)
@@ -1052,6 +1048,10 @@ RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl
         if (instancesCount > limit)
             throw ResultSetTooLargeError(limit);
         }
+
+    // post-process
+    provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Provider post-processed");
 
     // apply paging
     provider->SetPageOptions(CreateProviderPageOptions(pageOptions));

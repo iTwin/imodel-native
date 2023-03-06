@@ -850,6 +850,7 @@ protected:
     ECPRESENTATION_EXPORT Iterator _CreateBackIterator() const override;
     ECPRESENTATION_EXPORT void _OnPageOptionsSet() override;
     ECPRESENTATION_EXPORT void _InitializeDataSources() override;
+    size_t _GetLimitedInstancesCount(size_t limit) const override {return m_wrappedProvider->GetLimitedInstancesCount(limit);}
 
 public:
     static RefCountedPtr<PostProcessingNodesProviderDeprecated> Create(NavNodesProviderR provider)
