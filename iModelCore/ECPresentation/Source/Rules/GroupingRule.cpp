@@ -120,7 +120,7 @@ Utf8CP GroupingRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GroupingRule::_ReadJson(JsonValueCR json)
+bool GroupingRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;
@@ -140,11 +140,11 @@ bool GroupingRule::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GroupingRule::_WriteJson(JsonValueR json) const
+void GroupingRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_schemaName.empty() && !m_className.empty())
-        json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
+        CommonToolsInternal::WriteSchemaAndClassNameToJson(json[COMMON_JSON_ATTRIBUTE_CLASS], m_schemaName, m_className);
     if (!m_groups.empty())
         CommonToolsInternal::WriteRulesToJson<GroupSpecification, GroupList>(json[GROUPING_RULE_JSON_ATTRIBUTE_GROUPS], m_groups);
     }
@@ -239,7 +239,7 @@ bool GroupingRule::_ShallowEqual(PresentationKeyCR other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupSpecification* GroupSpecification::Create(JsonValueCR json)
+GroupSpecification* GroupSpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString("");
     GroupSpecification* spec = nullptr;
@@ -313,7 +313,7 @@ Utf8CP GroupSpecification::_GetJsonElementTypeAttributeName() const { return COM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GroupSpecification::_ReadJson(JsonValueCR json)
+bool GroupSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -325,7 +325,7 @@ bool GroupSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GroupSpecification::_WriteJson(JsonValueR json) const
+void GroupSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     if (!m_defaultLabel.empty())
@@ -415,7 +415,7 @@ Utf8CP SameLabelInstanceGroup::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SameLabelInstanceGroup::_ReadJson(JsonValueCR json)
+bool SameLabelInstanceGroup::_ReadJson(BeJsConst json)
     {
     if (!GroupSpecification::_ReadJson(json))
         return false;
@@ -427,7 +427,7 @@ bool SameLabelInstanceGroup::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SameLabelInstanceGroup::_WriteJson(JsonValueR json) const
+void SameLabelInstanceGroup::_WriteJson(BeJsValue json) const
     {
     GroupSpecification::_WriteJson(json);
     if (m_applicationStage != SameLabelInstanceGroupApplicationStage::Query)
@@ -532,7 +532,7 @@ Utf8CP ClassGroup::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassGroup::_ReadJson (JsonValueCR json)
+bool ClassGroup::_ReadJson (BeJsConst json)
     {
     if (!GroupSpecification::_ReadJson(json))
         return false;
@@ -547,13 +547,13 @@ bool ClassGroup::_ReadJson (JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassGroup::_WriteJson(JsonValueR json) const
+void ClassGroup::_WriteJson(BeJsValue json) const
     {
     GroupSpecification::_WriteJson(json);
     if (m_createGroupForSingleItem)
         json[GROUP_JSON_ATTRIBUTE_CREATEGROUPFORSINGLEITEM] = m_createGroupForSingleItem;
     if (!m_schemaName.empty() && !m_baseClassName.empty())
-        json[CLASS_GROUP_JSON_ATTRIBUTE_BASECLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_baseClassName);
+        CommonToolsInternal::WriteSchemaAndClassNameToJson(json[CLASS_GROUP_JSON_ATTRIBUTE_BASECLASS], m_schemaName, m_baseClassName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -746,7 +746,7 @@ Utf8CP PropertyGroup::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyGroup::_ReadJson (JsonValueCR json)
+bool PropertyGroup::_ReadJson (BeJsConst json)
     {
     if (!GroupSpecification::_ReadJson(json))
         return false;
@@ -776,7 +776,7 @@ bool PropertyGroup::_ReadJson (JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyGroup::_WriteJson(JsonValueR json) const
+void PropertyGroup::_WriteJson(BeJsValue json) const
     {
     GroupSpecification::_WriteJson(json);
     json[COMMON_JSON_ATTRIBUTE_PROPERTYNAME] = m_propertyName;
@@ -944,7 +944,7 @@ Utf8CP PropertyRangeGroupSpecification::_GetJsonElementType() const { return "Pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyRangeGroupSpecification::_ReadJson(JsonValueCR json)
+bool PropertyRangeGroupSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -967,7 +967,7 @@ bool PropertyRangeGroupSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyRangeGroupSpecification::_WriteJson(JsonValueR json) const
+void PropertyRangeGroupSpecification::_WriteJson(BeJsValue json) const
     {
     json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE] = m_fromValue;
     json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE] = m_toValue;

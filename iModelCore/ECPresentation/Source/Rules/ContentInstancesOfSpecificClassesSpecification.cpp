@@ -134,7 +134,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
 void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     ContentSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::MultiSchemaClassesToJson(m_classes)).c_str());
+    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::WriteMultiSchemaClassesToJson(m_classes)).c_str());
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
 
     bool handlePolymorphically = m_classes.empty() ? false : m_classes.front()->GetArePolymorphic();
@@ -152,7 +152,7 @@ Utf8CP ContentInstancesOfSpecificClassesSpecification::_GetJsonElementType() con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
+bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ContentSpecification::_ReadJson(json))
         return false;
@@ -184,7 +184,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     if (!CommonToolsInternal::ParseMultiSchemaClassesFromJson(json[COMMON_JSON_ATTRIBUTE_CLASSES], defaultPolymorphism, m_classes, this) || m_classes.empty())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-            _GetJsonElementType(), json.ToString().c_str(), "at least one class"));
+            _GetJsonElementType(), json.Stringify().c_str(), "at least one class"));
         return false;
         }
     return true;
@@ -193,12 +193,12 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::_WriteJson(JsonValueR json) const
+void ContentInstancesOfSpecificClassesSpecification::_WriteJson(BeJsValue json) const
     {
     ContentSpecification::_WriteJson(json);
-    json[COMMON_JSON_ATTRIBUTE_CLASSES] = CommonToolsInternal::MultiSchemaClassesToJson(m_classes);
+    CommonToolsInternal::WriteMultiSchemaClassesToJson(json[COMMON_JSON_ATTRIBUTE_CLASSES], m_classes);
     if (!m_excludedClasses.empty())
-        json[COMMON_JSON_ATTRIBUTE_EXCLUDEDCLASSES] = CommonToolsInternal::MultiSchemaClassesToJson(m_excludedClasses);
+        CommonToolsInternal::WriteMultiSchemaClassesToJson(json[COMMON_JSON_ATTRIBUTE_EXCLUDEDCLASSES], m_excludedClasses);
     if (m_handlePropertiesPolymorphically)
         json[CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_ATTRIBUTE_HANDLEPROPERTIESPOLYMORPHICALLY] = true;
     if (!m_instanceFilter.empty())

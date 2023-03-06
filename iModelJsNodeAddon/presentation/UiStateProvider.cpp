@@ -147,5 +147,5 @@ ECPresentationResult IModelJsECPresentationUiStateProvider::UpdateHierarchyState
         hierarchyLevelState.SetInstanceFilters(instanceFilters);
         }
 
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+    return ECPresentationResult(BeJsDocument::Null(), false);
     }

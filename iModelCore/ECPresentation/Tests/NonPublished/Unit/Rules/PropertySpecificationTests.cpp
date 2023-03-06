@@ -94,7 +94,7 @@ TEST_F(PropertySpecificationTests, LoadsFromJson)
         "isReadOnly": false,
         "priority": 10
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertySpecification spec;
@@ -125,7 +125,7 @@ TEST_F(PropertySpecificationTests, LoadsFromJsonIsDisplayedStringValue)
         "name": "p1",
         "isDisplayed":"ECExpression"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     PropertySpecification spec;
@@ -143,7 +143,7 @@ TEST_F(PropertySpecificationTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "name": "p1"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     PropertySpecification spec;
@@ -166,7 +166,7 @@ TEST_F(PropertySpecificationTests, LoadsFromJsonWithDefaultValues)
 TEST_F(PropertySpecificationTests, LoadFromJsonFailsIfPropertyNameNotSpecified)
     {
     static Utf8CP jsonString = "{}";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertySpecification spec;
@@ -180,8 +180,8 @@ TEST_F(PropertySpecificationTests, WriteToJson)
     {
     PropertySpecification spec("p1", 123, "custom label", PropertyCategoryIdentifier::CreateForId("category id"), true,
         new CustomRendererSpecification("custom renderer"), new PropertyEditorSpecification("custom editor"), true, true, 10);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "name": "p1",
         "overridesPriority": 123,
         "labelOverride": "custom label",
@@ -200,7 +200,7 @@ TEST_F(PropertySpecificationTests, WriteToJson)
         "isReadOnly": true,
         "priority": 10
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,14 +209,14 @@ TEST_F(PropertySpecificationTests, WriteToJson)
 TEST_F(PropertySpecificationTests, WriteToJsonShouldNotWriteDoNotHidePropertiesFlagWhenDisplayFalse)
     {
     PropertySpecification spec("p15", 22, "test", nullptr, false, nullptr, nullptr, true);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "name": "p15",
         "overridesPriority": 22,
         "labelOverride": "test",
         "isDisplayed": false
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,14 +225,14 @@ TEST_F(PropertySpecificationTests, WriteToJsonShouldNotWriteDoNotHidePropertiesF
 TEST_F(PropertySpecificationTests, WriteToJsonShouldNotWriteDoNotHidePropertiesFlagWhenItIsFalse)
     {
     PropertySpecification spec("p15", 22, "test", nullptr, true, nullptr, nullptr, false);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "name": "p15",
         "overridesPriority": 22,
         "labelOverride": "test",
         "isDisplayed": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,12 +241,12 @@ TEST_F(PropertySpecificationTests, WriteToJsonShouldNotWriteDoNotHidePropertiesF
 TEST_F(PropertySpecificationTests, WriteToJsonIsDisplayedStringValue)
     {
     PropertySpecification spec("p15", 1000, "", nullptr, "ECExpression");
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "name": "p15",
         "isDisplayed": "ECExpression"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

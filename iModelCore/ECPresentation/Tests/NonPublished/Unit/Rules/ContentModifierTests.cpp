@@ -81,7 +81,7 @@ TEST_F(ContentModifierTests, LoadsFromJson)
             }
         ]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentModifier modifier;
@@ -104,7 +104,7 @@ TEST_F(ContentModifierTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "ContentModifier"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentModifier modifier;
@@ -130,8 +130,8 @@ TEST_F(ContentModifierTests, WriteToJson)
     rule.AddRelatedProperty(*new RelatedPropertiesSpecification());
     rule.AddPropertyCategory(*new PropertyCategorySpecification());
     rule.AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("TestSchema"));
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected (R"({
         "ruleType": "ContentModifier",
         "class": {"schemaName": "schema", "className": "class"},
         "requiredSchemas": [{"name": "TestSchema"}],
@@ -150,7 +150,7 @@ TEST_F(ContentModifierTests, WriteToJson)
             "label": ""
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

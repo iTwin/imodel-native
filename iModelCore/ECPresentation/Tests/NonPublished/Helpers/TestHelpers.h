@@ -199,28 +199,28 @@ struct RulesEngineTestHelpers
 struct TestLocalState : IJsonLocalState
 {
 private:
-    std::function<void(Utf8CP, Utf8CP, JsonValueCR)> m_saveHandler;
-    std::function<Json::Value(Utf8CP, Utf8CP)> m_getHandler;
+    std::function<void(Utf8CP, Utf8CP, BeJsConst)> m_saveHandler;
+    std::function<BeJsDocument(Utf8CP, Utf8CP)> m_getHandler;
 
 protected:
     // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
-    void _SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+    void _SaveValue (Utf8CP nameSpace, Utf8CP key, BeJsConst value) override
         {
-        Json::Value jsonValue;
-        Json::Reader().parse(value, jsonValue, false);
         if (nullptr != m_saveHandler)
-            m_saveHandler(nameSpace, key, jsonValue);
+            m_saveHandler(nameSpace, key, value);
         }
     // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
-    Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+    BeJsDocument _GetValue(Utf8CP nameSpace, Utf8CP key) const override
         {
-        return nullptr != m_getHandler ? Json::FastWriter().write(m_getHandler(nameSpace, key)) : "null";
+        if (nullptr != m_getHandler) 
+            return m_getHandler(nameSpace, key);
+        return BeJsDocument();
         }
 
 public:
     TestLocalState(){}
-    void SetSaveHandler(std::function<void(Utf8CP, Utf8CP, JsonValueCR)> const& handler) {m_saveHandler = handler;}
-    void SetGetHandler(std::function<Json::Value(Utf8CP, Utf8CP)> const& handler) {m_getHandler = handler;}
+    void SetSaveHandler(std::function<void(Utf8CP, Utf8CP, BeJsConst)> const& handler) {m_saveHandler = handler;}
+    void SetGetHandler(std::function<BeJsDocument(Utf8CP, Utf8CP)> const& handler) {m_getHandler = handler;}
 };
 
 /*=================================================================================**//**

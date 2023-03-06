@@ -2889,31 +2889,27 @@ static void bcvDispatchJobUpdate(BcvDispatchJob *pJob){
 }
 
 
-void bcvDispatchFail(
+static void bcvDispatchFail(
   BcvDispatch *pDisp, 
-  BcvContainer *p, 
   int rc, 
   const char *zErr
 ){
-  BcvDispatchJob *pJob;
   BcvDispatchJob *pNext;
 
-  for(pJob=pDisp->pJobList; pJob; pJob=pNext){
-    pNext = pJob->pNext;
-    if( pJob->pCont==p ){
-      BcvDispatchReq *pReq;
-      while( (pReq = pJob->pWaiting) ){
-        pJob->pWaiting = pReq->pNext;
-        pReq->rc = rc;
-        sqlite3_free(pReq->zStatus);
-        pReq->zStatus = (char*)zErr;
-        pReq->xCallback(pJob, pReq, pReq->pApp);
-        pReq->zStatus = 0;
-        curl_multi_remove_handle(pDisp->pMulti, pReq->pCurl);
-        bcvDispatchReqFree(pReq);
-      }
-      bcvDispatchJobUpdate(pJob);
+  while( pDisp->pJobList ){
+    BcvDispatchJob *pJob = pDisp->pJobList;
+    BcvDispatchReq *pReq;
+    while( (pReq = pJob->pWaiting) ){
+      pJob->pWaiting = pReq->pNext;
+      pReq->rc = rc;
+      sqlite3_free(pReq->zStatus);
+      pReq->zStatus = (char*)zErr;
+      pReq->xCallback(pJob, pReq, pReq->pApp);
+      pReq->zStatus = 0;
+      curl_multi_remove_handle(pDisp->pMulti, pReq->pCurl);
+      bcvDispatchReqFree(pReq);
     }
+    bcvDispatchJobUpdate(pJob);
   }
 }
 
@@ -3009,6 +3005,14 @@ int bcvDispatchRun(BcvDispatch *p, struct curl_waitfd *aFd, int nFd, int ms){
   i64 nMs;                        /* ms to wait for */
   i64 iTime = 0;                  /* Current time */
 
+#ifdef SQLITE_DEBUG
+  {
+    void *pRet = sqlite3_malloc64(64);
+    if( pRet==0 ) return SQLITE_NOMEM;
+    sqlite3_free(pRet);
+  }
+#endif
+
   for(pJob=p->pJobList; pJob; pJob=pJob->pNext){
     i64 iJobTime = bcvDispatchJobRetryTime(pJob);
     if( iJobTime && (iMinTime==0 || iJobTime<iMinTime) ) iMinTime = iJobTime;
@@ -3093,6 +3097,10 @@ int bcvDispatchRunAll(BcvDispatch *p){
   while( rc==SQLITE_OK && p->pJobList ){
     rc = bcvDispatchRun(p, 0, 0, 1000);
   }
+  if( rc!=SQLITE_OK ){
+    bcvDispatchFail(p, rc, 0);
+  }
+  assert( p->pJobList==0 );
   return rc;
 }
 
@@ -3295,7 +3303,7 @@ int bcvOpenLocal(
   memset(pFd, 0, nByte);
   zOpen = &((char*)pFd)[pVfs->szOsFile + 4];
   rc = pVfs->xFullPathname(pVfs, zFile, pVfs->mxPathname+1, zOpen);
-  if( rc==SQLITE_OK ){
+  if( (rc & 0xFF)==SQLITE_OK ){
     int n = strlen(zOpen);
     zOpen[n+1] = '\0';
     rc = pVfs->xOpen(pVfs, zOpen, pFd, flags, &flags);

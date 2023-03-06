@@ -18,7 +18,7 @@ Utf8CP RelationshipStepSpecification::_GetJsonElementType() const { return "Rela
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipStepSpecification::_ReadJson(JsonValueCR json)
+bool RelationshipStepSpecification::_ReadJson(BeJsConst json)
     {
     if (!T_Super::_ReadJson(json))
         return false;
@@ -43,13 +43,13 @@ bool RelationshipStepSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipStepSpecification::_WriteJson(JsonValueR json) const
+void RelationshipStepSpecification::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
-    json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP] = CommonToolsInternal::SchemaAndClassNameToJson(m_relationshipClassName);
+    CommonToolsInternal::WriteSchemaAndClassNameToJson(json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP], m_relationshipClassName);
     json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_DIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_direction);
     if (!m_targetClassName.empty())
-        json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_TARGETCLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_targetClassName);
+        CommonToolsInternal::WriteSchemaAndClassNameToJson(json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_TARGETCLASS], m_targetClassName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -89,7 +89,7 @@ Utf8CP RepeatableRelationshipStepSpecification::_GetJsonElementType() const { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RepeatableRelationshipStepSpecification::_ReadJson(JsonValueCR json)
+bool RepeatableRelationshipStepSpecification::_ReadJson(BeJsConst json)
     {
     if (!RelationshipStepSpecification::_ReadJson(json))
         return false;
@@ -100,13 +100,14 @@ bool RepeatableRelationshipStepSpecification::_ReadJson(JsonValueCR json)
         m_count = 0;
     else
         m_count = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asInt(1);
+      
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RepeatableRelationshipStepSpecification::_WriteJson(JsonValueR json) const
+void RepeatableRelationshipStepSpecification::_WriteJson(BeJsValue json) const
     {
     RelationshipStepSpecification::_WriteJson(json);
     if (m_count == 0)
@@ -194,7 +195,7 @@ Utf8CP RelationshipPathSpecification::_GetJsonElementType() const { return "Rela
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipPathSpecification::_ReadJson(JsonValueCR json)
+bool RelationshipPathSpecification::_ReadJson(BeJsConst json)
     {
     // note: intentionally not calling base
     if (json.isArray())
@@ -203,7 +204,7 @@ bool RelationshipPathSpecification::_ReadJson(JsonValueCR json)
         if (m_steps.empty())
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), json.ToString().c_str(), "at least one step specification"));
+                _GetJsonElementType(), json.Stringify().c_str(), "at least one step specification"));
             return false;
             }
         return true;
@@ -224,16 +225,16 @@ bool RelationshipPathSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipPathSpecification::_WriteJson(JsonValueR json) const
+void RelationshipPathSpecification::_WriteJson(BeJsValue json) const
     {
     // note: intentionally not calling base
     if (m_steps.size() == 1)
         {
-        json = m_steps[0]->WriteJson();
+        m_steps[0]->WriteJson(json);
         return;
         }
 
-    json = Json::Value(Json::arrayValue);
+    json.SetEmptyArray();
     CommonToolsInternal::WriteRulesToJson<RelationshipStepSpecification, bvector<RelationshipStepSpecification*>>(json, m_steps);
     }
 
@@ -320,7 +321,7 @@ Utf8CP RepeatableRelationshipPathSpecification::_GetJsonElementType() const { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RepeatableRelationshipPathSpecification::_ReadJson(JsonValueCR json)
+bool RepeatableRelationshipPathSpecification::_ReadJson(BeJsConst json)
     {
     // note: intentionally not calling base
     if (json.isArray())
@@ -329,7 +330,7 @@ bool RepeatableRelationshipPathSpecification::_ReadJson(JsonValueCR json)
         if (m_steps.empty())
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), json.ToString().c_str(), "at least one step specification"));
+                _GetJsonElementType(), json.Stringify().c_str(), "at least one step specification"));
             return false;
             }
         return true;
@@ -350,16 +351,16 @@ bool RepeatableRelationshipPathSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RepeatableRelationshipPathSpecification::_WriteJson(JsonValueR json) const
+void RepeatableRelationshipPathSpecification::_WriteJson(BeJsValue json) const
     {
     // note: intentionally not calling base
     if (m_steps.size() == 1)
         {
-        json = m_steps[0]->WriteJson();
+        m_steps[0]->WriteJson(json);
         return;
         }
 
-    json = Json::Value(Json::arrayValue);
+    json.SetEmptyArray();
     CommonToolsInternal::WriteRulesToJson<RepeatableRelationshipStepSpecification, bvector<RepeatableRelationshipStepSpecification*>>(json, m_steps);
     }
 

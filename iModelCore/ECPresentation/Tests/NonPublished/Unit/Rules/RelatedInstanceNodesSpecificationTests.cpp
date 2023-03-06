@@ -33,7 +33,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJsonDeprecated)
         "relatedClasses": {"schemaName": "q", "classNames": ["w"]},
         "requiredDirection": "Backward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceNodesSpecification spec;
@@ -77,7 +77,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJson)
             "targetClass": {"schemaName": "s", "className": "t"}
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceNodesSpecification spec;
@@ -115,7 +115,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultvalues)
             "direction": "Forward"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceNodesSpecification spec;
@@ -139,7 +139,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, FailsToLoadFromInvalidJson)
     static Utf8CP jsonString = R"({
         "specType": "RelatedInstanceNodes"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceNodesSpecification spec;
@@ -153,8 +153,8 @@ TEST_F(RelatedInstanceNodesSpecificationTests, WriteToJsonDeprecated)
     {
     RelatedInstanceNodesSpecification spec(1000, true, true, true, true, true, true, true,
         3, "filter", RequiredRelationDirection_Both, "s1,s2", "s3:c1", "s4:c2");
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "RelatedInstanceNodes",
         "hasChildren": "Always",
         "hideNodesInHierarchy": true,
@@ -165,7 +165,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, WriteToJsonDeprecated)
         "skipRelatedLevel": 3,
         "instanceFilter": "filter"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,8 +175,8 @@ TEST_F(RelatedInstanceNodesSpecificationTests, WriteToJson)
     {
     RelatedInstanceNodesSpecification spec(1000, ChildrenHint::Never, true, true, true, true, "filter",
         {new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification("a:b", RequiredRelationDirection_Forward, "c:d", 9))});
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "RelatedInstanceNodes",
         "hasChildren": "Never",
         "hideNodesInHierarchy": true,
@@ -189,7 +189,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, WriteToJson)
         }],
         "instanceFilter": "filter"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

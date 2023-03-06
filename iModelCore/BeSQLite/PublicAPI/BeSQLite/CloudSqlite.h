@@ -75,6 +75,7 @@ struct CloudCache {
 
 /**
  * A cloud-based container of SQLite databases.
+ * @note some CloudContainer methods may require the CloudContainer be connected a CloudCache. See CloudContainer::Connect
  */
 struct CloudContainer {
     CloudCache* m_cache = nullptr;

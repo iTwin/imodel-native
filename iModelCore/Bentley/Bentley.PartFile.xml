@@ -10,7 +10,7 @@
         <ProductDirectory Name="TestBin"         Path="Dlls"/>
     </ProductDirectoryList>
 
-    <Part Name="BentleyLib" PrgOutputDir="BentleyLib">
+    <Part Name="BentleyLib">
         <SubPart PartName="BentleyDll" />
     </Part>
 

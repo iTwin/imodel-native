@@ -12,36 +12,29 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Reporter::Record(Utf8StringCR field, Json::Value value)
-    {
-    if (m_fields.end() == std::find(m_fields.begin(), m_fields.end(), field))
-        m_fields.push_back(field);
-
-    m_results.back()[field] = value;
+void Reporter::Next() 
+    { 
+    BeJsValue json = m_results[m_results.size()]; 
+    json.SetNull(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Reporter::Next() { m_results.push_back(bmap<Utf8String, Json::Value>()); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void CreateJsonGroupingStructure(JsonValueR json, bvector<bmap<Utf8String, Json::Value>> const& records, bvector<Utf8String> const& groupingFields)
+static void CreateJsonGroupingStructure(BeJsValue json, BeJsConst records, bvector<Utf8String> const& groupingFields)
     {
     if (groupingFields.empty())
         return;
 
     auto const& groupingField = groupingFields[0];
     bvector<Utf8String> nestedGroupingFields(groupingFields.begin() + 1, groupingFields.end());
-    for (auto const& record : records)
+    records.ForEachArrayMember(
+        [&](BeJsConst::ArrayIndex i, BeJsConst record)
         {
-        auto iter = record.find(groupingField);
-        Utf8String groupingValue = (record.end() != iter) ? iter->second.asCString() : "";
-        json[groupingValue] = Json::Value();
+        Utf8String groupingValue = record.hasMember(groupingField.c_str()) ? record[groupingField].asCString() : "";
         CreateJsonGroupingStructure(json[groupingValue], records, nestedGroupingFields);
-        }
+        return false;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,31 +47,33 @@ BentleyStatus Reporter::ToJsonFile(BeFileNameCR path, bvector<Utf8String> const&
     if (BeFileStatus::Success != status)
         return ERROR;
 
-    Json::Value json(Json::objectValue);
+    BeJsDocument json; 
+    json.toObject();
     CreateJsonGroupingStructure(json, m_results, groupingFields);
 
-    for (auto const& record : m_results)
+    m_results.ForEachArrayMemberValue(
+        [&](BeJsConst::ArrayIndex i, BeJsValue record)
         {
-        Json::Value* container = &json;
+        std::unique_ptr<BeJsValue> container = std::make_unique<BeJsValue>(json);
         for (auto const& groupingField : groupingFields)
             {
-            auto iter = record.find(groupingField);
-            Utf8CP groupingValue = (record.end() != iter) ? iter->second.asCString() : "";
-            container = &(*container)[groupingValue];
+            Utf8String groupingValue = record.hasMember(groupingField.c_str()) ? record[groupingField].asCString() : "";
+            container = std::make_unique<BeJsValue>((*container)[groupingValue]);
             }
 
         for (auto const& field : m_fields)
             {
             if (groupingFields.end() != std::find(groupingFields.begin(), groupingFields.end(), field))
                 continue;
-            auto iter = record.find(field);
-            Json::Value value = (record.end() != iter) ? iter->second : Json::Value();
-            if (value.empty())
+
+            if (!record.hasMember(field.c_str()))
                 continue;
-            (*container)[field] = value;
+
+            (*container)[field].From(record[field]);
             }
-        }
-    reportFile->PutLine(WString(Json::StyledWriter().write(json).c_str(), true).c_str(), true);
+        return false;
+        });
+    reportFile->PutLine(WString(json.Stringify(Indented).c_str(), true).c_str(), true);
     return SUCCESS;
     }
 
@@ -103,25 +98,23 @@ BentleyStatus Reporter::ToExportCsvFile(BeFileNameCR path, Utf8StringCR suiteNam
         true);
 
     // add values
-    for (auto const& record : m_results)
+    m_results.ForEachArrayMember(
+        [&](BeJsConst::ArrayIndex i, BeJsConst record)
         {
         Utf8String testName;
         for (auto testNameField : testNameFields)
             {
-            auto iter = record.find(testNameField);
-            if (record.end() != iter && iter->second.isString())
+            if (record.hasMember(testNameField.c_str()) && record[testNameField].isString())
                 {
                 if (!testName.empty())
                     testName.append(" + ");
-                testName.append(iter->second.asCString());
+                testName.append(record[testNameField].asCString());
                 }
             }
 
         for (auto const& fieldName : exportedFields)
             {
-            auto iter = record.find(fieldName);
-            Utf8String value = (record.end() != iter) ? iter->second.ToString() : Utf8String();
-
+            Utf8String value = record.hasMember(fieldName.c_str()) ? record[fieldName].Stringify() : Utf8String();
             Utf8String line;
             line.append(suiteName).append(REPORT_CSV_FILE_SEPARATOR);
             line.append(testName).append(REPORT_CSV_FILE_SEPARATOR);
@@ -131,6 +124,8 @@ BentleyStatus Reporter::ToExportCsvFile(BeFileNameCR path, Utf8StringCR suiteNam
             line.append("{}");
             reportFile->PutLine(WString(line.c_str(), true).c_str(), true);
             }
+        return false;
         }
+    );
     return SUCCESS;
     }

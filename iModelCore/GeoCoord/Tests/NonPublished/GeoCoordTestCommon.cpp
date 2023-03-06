@@ -112,30 +112,12 @@ const bvector<Utf8String>& GeoCoordTestCommon::GetListOfGCS()
     return s_listOfGCS;
     };
 
-static bvector<Utf8String> s_smallListOfGCS = {
-"UTM84-12N",
-"BritishNatGrid",
-"CA-II",
-"CA83-II",
-"ETRF89.ArticZn4-26",
-"PortageWISCRS-A-M",
-"ICS83-Metropolis",
-"AZ83/2011-WIF"
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-const bvector<Utf8String>& GeoCoordTestCommon::GetSmallListOfGCS()
+const bvector<Utf8String>& GeoCoordTestCommon::GetRepresentativeMiniListOfGCS()
     {
-    return s_smallListOfGCS;
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-const bvector<Utf8String>& GeoCoordTestCommon::GetRepresentativeListOfGCS()
-    {
+    GeoCoordTestCommon::Initialize();
 
     static bvector<Utf8String> s_representativeListOfGCS;
 
@@ -144,6 +126,8 @@ const bvector<Utf8String>& GeoCoordTestCommon::GetRepresentativeListOfGCS()
 
         const bvector<Utf8String>& listOfGCS = GeoCoordTestCommon::GetListOfGCS();
     
+        const bvector<Utf8String>& listOfRepresentativeDatums = GeoCoordTestCommon::GetListOfRepresentativeDatums();
+        
         bvector<Utf8String> listOfDatumsFound;
         
         bvector<GeoCoordinates::BaseGCS::ProjectionCodeValue> listOfProjectionMethod;
@@ -158,18 +142,22 @@ const bvector<Utf8String>& GeoCoordTestCommon::GetRepresentativeListOfGCS()
                 {
                 Utf8String datumName = currentGCS->GetDatumName();
                 
-                if (find(listOfDatumsFound.begin(), listOfDatumsFound.end(), datumName) == listOfDatumsFound.end())
+                // If it is not a datum we already have and the datum is part of the representative datum list ... we add
+                if (find(listOfDatumsFound.begin(), listOfDatumsFound.end(), datumName) == listOfDatumsFound.end() && 
+                    find(listOfRepresentativeDatums.begin(), listOfRepresentativeDatums.end(), datumName) != listOfRepresentativeDatums.end())
                     {
                     listOfDatumsFound.push_back(datumName);
                     s_representativeListOfGCS.push_back(GCSName);
                     }
                 else if (find(listOfProjectionMethod.begin(), listOfProjectionMethod.end(), currentGCS->GetProjectionCode()) == listOfProjectionMethod.end())
                     {
+                    // Not a projection we have ...
                     listOfProjectionMethod.push_back(currentGCS->GetProjectionCode());
                     s_representativeListOfGCS.push_back(GCSName);
                     }
                 else
                     {
+                    // Not a unit we have
                     Utf8String unitName;
                     currentGCS->GetUnits(unitName);
                     if (find(listOfUnitsFound.begin(), listOfUnitsFound.end(), unitName) == listOfUnitsFound.end())
@@ -185,101 +173,80 @@ const bvector<Utf8String>& GeoCoordTestCommon::GetRepresentativeListOfGCS()
     return s_representativeListOfGCS;
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-const bvector<Utf8String>& GeoCoordTestCommon::GetListOfDatums()
-    {
-    GeoCoordTestCommon::Initialize();
-    static bvector<Utf8String> s_listOfDatums;
-
-    if(s_listOfDatums.empty())
-        {
-        GeoCoordinates::DatumEnumeratorP enumerator = GeoCoordinates::Datum::CreateEnumerator();
-
-        if (nullptr != enumerator)
-            {
-            while (enumerator->MoveNext())
-                {
-                GeoCoordinates::DatumCP theDatum = enumerator->GetCurrent();
-
-                s_listOfDatums.push_back(theDatum->GetName());
-                
-                theDatum->Destroy();
-                }
-
-            enumerator->Destroy();
-            }
-        }
-    return s_listOfDatums;
-    };
-
-// The following datums define grid files based transformation but we do not distribute the grid files or are meant to be overridden.
-static bvector<Utf8String> s_listOfNotSupportedDatums = {
-"GENGRID-WGS84",
-"GENGRID-CLRK-ARC",
-"GENGRID-CLRK80",
-"GENGRID-CLRK66",
-"GENGRID-GRS80",
-"GENGRID-BESSEL",
-"GENGRID-INTNL",
-"GENGRID-AIRY30",
-"GENGRID-WGS84-1",
-"GENGRID-CLRK-ARC-1",
-"GENGRID-CLRK80-1",
-"GENGRID-CLRK66-1",
-"GENGRID-GRS80-1",
-"GENGRID-BESSEL-1",
-"GENGRID-INTNL-1",
-"GENGRID-AIRY30-1",
-"GENGRID-WGS84-2",
-"GENGRID-CLRK-ARC-2",
-"GENGRID-CLRK80-2",
-"GENGRID-CLRK66-2",
-"GENGRID-GRS80-2",
-"GENGRID-BESSEL-2",
-"GENGRID-INTNL-2",
-"GENGRID-AIRY30-2",
-"GENGRID-WGS84-3",
-"GENGRID-CLRK-ARC-3",
-"GENGRID-CLRK80-3",
-"GENGRID-CLRK66-3",
-"GENGRID-GRS80-3",
-"GENGRID-BESSEL-3",
-"GENGRID-INTNL-3",
-"GENGRID-AIRY30-3",
-"GENGRID-WGS84-4",
-"GENGRID-CLRK-ARC-4",
-"GENGRID-CLRK80-4",
-"GENGRID-CLRK66-4",
-"GENGRID-GRS80-4",
-"GENGRID-BESSEL-4",
-"GENGRID-INTNL-4",
-"GENGRID-AIRY30-4",
-"ATS77",
-"CSRS",
-"EPSG:6140",
-"EPSG:6608",
-"EPSG:6609",
-"EPSG:6122",
-"NAD27/CGQ77-83",
-"NAD27/CGQ77-98",
-"NAD27/1976",
-"CAPE/GSB",
-"AGD66", // TODO The followings Australian datum are not supported on LINUX because the GSB filenames contains the '(' and ')' characters.
+static bvector<Utf8String> s_listOfRepresentativeDatums = {
+"WGS84",
+"ADINDAN",
+"AINELABD",
+"Ascension58",
+"ADOS714",
+"AZORES-G",
+"ASTRLA66-Tasmania",
 "AGD84",
+"NZGD2000",
+"NZGD49",
+"MGI-1901",
+"NEWISR-7P",
+"PULKOVO-KZCSP-7P",
+"JPNGSI-Grid",
+"NTF-G-Grid",
+"ED50-DK34",
+"Accra",
+"GBK19-IRF",
+"HeathrowT5",
+"NAD83/2011",
+"NSRS11",
+"NSRS07",
+"NAD83/HARN-A",
+"NAD83/HARN",
+"NAD27",
+"PuertoRico",
+"NSRS07",
+"NSRS11",
+"HPGN",
+"NAD83",
+"EPSG:6269",
+"CSRS",
+"EPSG:6267",
+"AGD66",
 "ASTRLA66-Grid",
+"AGD84",
 "ASTRLA84-Grid",
 "EPSG:6202",
-"EPSG:6203"
-};    
+"EPSG:6203",
+"JGD2011",
+"JGD2000",
+"JGD2000-7P",
+"JPNGSI-Grid",
+"EPSG:6612",
+"TOKYO",
+"Tokyo-Grid",
+"CH1903/GSB",
+"CH1903Plus_1",
+"CH1903Plus_2",
+"CHTRF95",
+"GDA2020",
+"GDA94",
+"GDA94/GSB",
+"Hartebeesthoek1994",
+"ITRF2005-Macau",
+"NTF",
+"NTF-G-Grid",
+"NTF-G-Grid-ClrkIGN",
+"NZGD2000",
+"NZGD49",
+"RGF93",
+"SIRGAS2000",
+"Slov/JTSK-NULL",
+"Slov/JTSK03",
+"Karbala79/P",
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-const bvector<Utf8String>& GeoCoordTestCommon::GetListOfUnsupportedDatums()
+const bvector<Utf8String>& GeoCoordTestCommon::GetListOfRepresentativeDatums()
     {
-    return s_listOfNotSupportedDatums;
+    return s_listOfRepresentativeDatums;
     };
 
 static bvector<Utf8String> s_listOfDatumsWithAdditionalPaths = {

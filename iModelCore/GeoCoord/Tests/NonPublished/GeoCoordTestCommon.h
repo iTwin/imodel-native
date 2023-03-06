@@ -15,12 +15,9 @@ class GeoCoordTestCommon
         static const Utf8String& InitializedLibraryPath();
 
         static const bvector<Utf8String>& GetListOfGCS();
-        static const bvector<Utf8String>& GetSmallListOfGCS();
-        static const bvector<Utf8String>& GetRepresentativeListOfGCS();
+        static const bvector<Utf8String>& GetRepresentativeMiniListOfGCS();
         
-
-        static const bvector<Utf8String>& GetListOfDatums();
-        static const bvector<Utf8String>& GetListOfUnsupportedDatums();
+        static const bvector<Utf8String>& GetListOfRepresentativeDatums();
         static const bvector<Utf8String>& GetListOfDatumsWithAdditionalPaths();
         
         static bool doubleSame(double val1, double val2) {

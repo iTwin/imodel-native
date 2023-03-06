@@ -63,7 +63,7 @@ void PresentationKey::WriteXml(BeXmlNodeP parentXmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationKey::ReadJson(JsonValueCR json)
+bool PresentationKey::ReadJson(BeJsConst json)
     {
     Utf8CP jsonRuleTypeAttributeName = _GetJsonElementTypeAttributeName();
     if (nullptr != jsonRuleTypeAttributeName)
@@ -83,12 +83,21 @@ bool PresentationKey::ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PresentationKey::WriteJson() const
+void PresentationKey::WriteJson(BeJsValue json) const
     {
-    Json::Value json(Json::objectValue);
     if (nullptr != _GetJsonElementTypeAttributeName() && nullptr != _GetJsonElementType())
         json[_GetJsonElementTypeAttributeName()] = _GetJsonElementType();
     _WriteJson(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeJsDocument PresentationKey::WriteJson() const
+    {
+    BeJsDocument json;
+    json.SetEmptyObject();
+    WriteJson(json);
     return json;
     }
 
@@ -140,7 +149,7 @@ void PrioritizedPresentationKey::_WriteXml(BeXmlNodeP xmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrioritizedPresentationKey::_ReadJson(JsonValueCR json)
+bool PrioritizedPresentationKey::_ReadJson(BeJsConst json)
     {
     m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
     return true;
@@ -149,7 +158,7 @@ bool PrioritizedPresentationKey::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrioritizedPresentationKey::_WriteJson(JsonValueR json) const
+void PrioritizedPresentationKey::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     if (1000 != m_priority)
@@ -253,7 +262,7 @@ Utf8CP PresentationRule::_GetJsonElementTypeAttributeName() const {return COMMON
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRule::_ReadJson(JsonValueCR json)
+bool PresentationRule::_ReadJson(BeJsConst json)
     {
     if (!PrioritizedPresentationKey::_ReadJson(json))
         return false;
@@ -269,7 +278,7 @@ bool PresentationRule::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRule::_WriteJson(JsonValueR json) const
+void PresentationRule::_WriteJson(BeJsValue json) const
     {
     PrioritizedPresentationKey::_WriteJson(json);
 
@@ -362,7 +371,7 @@ void ConditionalPresentationRule::_WriteXml(BeXmlNodeP xmlNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalPresentationRule::_ReadJson(JsonValueCR json)
+bool ConditionalPresentationRule::_ReadJson(BeJsConst json)
     {
     if (!PresentationRule::_ReadJson(json))
         return false;
@@ -374,7 +383,7 @@ bool ConditionalPresentationRule::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConditionalPresentationRule::_WriteJson(JsonValueR json) const
+void ConditionalPresentationRule::_WriteJson(BeJsValue json) const
     {
     PresentationRule::_WriteJson(json);
     if (!m_condition.empty())
