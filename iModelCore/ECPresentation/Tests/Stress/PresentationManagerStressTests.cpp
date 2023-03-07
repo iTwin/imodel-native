@@ -58,13 +58,15 @@ struct PresentationManagerStressTests : ECPresentationTest
     std::shared_ptr<TestECInstanceChangeEventsSource> m_eventsSource = std::make_shared<TestECInstanceChangeEventsSource>();
     std::shared_ptr<TestUpdateRecordsHandler> m_updateRecordsHandler = std::make_shared<TestUpdateRecordsHandler>();
     std::shared_ptr<TestHierarchyChangeRecordsHandler> m_changeRecordsHandler = std::make_shared<TestHierarchyChangeRecordsHandler>();
-    RuntimeJsonLocalState m_localState;
+    ECPresentation::JsonLocalState m_localState;
 
     // Data
     bvector<ECClassInstanceKey> m_project1GeometricElementKeys;
     bvector<ECClassInstanceKey> m_project2GeometricElementKeys;
     bvector<NavNodeCPtr> m_nodesPath1Items;
     bvector<NavNodeCPtr> m_nodesPath2Items;
+
+    PresentationManagerStressTests() : m_localState(std::make_shared<RuntimeLocalState>()) {}
 
     void SetUp() override
         {

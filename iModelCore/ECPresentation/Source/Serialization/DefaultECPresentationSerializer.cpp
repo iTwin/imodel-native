@@ -929,7 +929,7 @@ ECInstancesNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFrom
     if (json.isMember("InstanceKeys") && json["InstanceKeys"].isArray())
         {
         BeJsConst instanceKeysJson = json["InstanceKeys"];
-        for (Json::ArrayIndex i = 0; i < instanceKeysJson.size(); ++i)
+        for (BeJsConst::ArrayIndex i = 0; i < instanceKeysJson.size(); ++i)
             {
             ECClassId classId(instanceKeysJson[i]["ECClassId"].GetUInt64());
             ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
