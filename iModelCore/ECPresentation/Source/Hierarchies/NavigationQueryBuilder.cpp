@@ -2504,6 +2504,7 @@ private:
     std::unique_ptr<ECInstanceSelectQueryHandler> m_ecInstancesSelectHandler;
     std::unordered_map<GroupingHandler const*, std::unique_ptr<SelectQueryHandler const>> m_groupingSelectQueryHandlers;
     std::unordered_map<SelectQueryHandler const*, bvector<std::shared_ptr<SelectQueryInfo const>>> m_selectsByHandler;
+    bvector< SelectQueryHandler const*> selectQueryHandlersOrder;
     bvector<GroupingNodeAndHandler> m_groupingFilters;
     uint64_t m_contractIdCounter;
 
@@ -2614,14 +2615,21 @@ public:
             if (result.GetPartialAcceptCriteria())
                 queryHandlersCriteria.push_back(result.GetPartialAcceptCriteria());
 
+            auto selectHandlerIter = m_selectsByHandler.find(handler);
+            if (m_selectsByHandler.end() == selectHandlerIter)
+                {
+                selectHandlerIter = m_selectsByHandler.insert(std::make_pair(handler, bvector<std::shared_ptr<SelectQueryInfo const>>())).first;
+                selectQueryHandlersOrder.push_back(handler);
+                }
+
             if (result.GetStatus() == SelectQueryHandler::AcceptResult::Status::AcceptFully)
                 {
-                m_selectsByHandler[handler].push_back(currSelectInfo);
+                selectHandlerIter->second.push_back(currSelectInfo);
                 break;
                 }
             if (result.GetStatus() == SelectQueryHandler::AcceptResult::Status::AcceptPartially)
                 {
-                m_selectsByHandler[handler].push_back(currSelectInfo);
+                selectHandlerIter->second.push_back(currSelectInfo);
                 currSelectInfo = result.GetPartialQueryInfo();
                 continue;
                 }
@@ -2639,7 +2647,10 @@ public:
         auto scope = Diagnostics::Scope::Create("Create queries");
 
         bvector<bpair<SelectQueryHandler const*, bvector<std::shared_ptr<SelectQueryInfo const>>>> orderedSelects;
-        ContainerHelpers::TransformContainer(orderedSelects, m_selectsByHandler, [](auto const& entry){return make_bpair(entry.first, entry.second);});
+        ContainerHelpers::TransformContainer(orderedSelects, selectQueryHandlersOrder, [&](auto const& handler)
+            {
+            return make_bpair(handler, m_selectsByHandler.find(handler)->second);
+            });
         std::stable_sort(orderedSelects.begin(), orderedSelects.end(), [](auto const& lhs, auto const& rhs){return lhs.first->GetOrderInUnion() > rhs.first->GetOrderInUnion();});
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Total select handlers: %" PRIu64, (uint64_t)orderedSelects.size()));
 
