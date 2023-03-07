@@ -623,19 +623,19 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
     if (m_cachedNodesCount.IsNull())
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Nodes count not cached in memory");
-        Nullable<size_t> cachedTotalNodesCount = GetResultOrLockHierarchy<Nullable<size_t>>(GetContext().GetHierarchyLevelLocker(),
+        Nullable<uint64_t> cachedTotalNodesCount = GetResultOrLockHierarchy<Nullable<uint64_t>>(GetContext().GetHierarchyLevelLocker(),
             [&]()
             {
             if (!GetIdentifier().IsValid())
-                return make_bpair(true, Nullable<size_t>());
+                return make_bpair(true, Nullable<uint64_t>());
 
-            Nullable<size_t> totalCount = GetContext().GetNodesCache().FindDataSource(GetIdentifier(), GetContext().GetRulesetVariables(), DataSourceInfo::PART_TotalNodesCount).GetTotalNodesCount();
+            Nullable<uint64_t> totalCount = GetContext().GetNodesCache().FindDataSource(GetIdentifier(), GetContext().GetRulesetVariables(), DataSourceInfo::PART_TotalNodesCount).GetTotalNodesCount();
             return make_bpair(totalCount.IsValid(), totalCount);
             });
 
         if (cachedTotalNodesCount.IsValid())
             {
-            m_cachedNodesCount = cachedTotalNodesCount.Value();
+            m_cachedNodesCount = (size_t)cachedTotalNodesCount.Value();
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count found in persistent cache: %" PRIu64, m_cachedNodesCount.Value()));
             }
         else if (GetContext().GetOptimizationFlags().GetMaxNodesToLoad() == 1)
@@ -646,7 +646,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
             if (hasNodes)
                 return CountInfo(1, false);
 
-            m_cachedNodesCount = (uint64_t)0;
+            m_cachedNodesCount = (size_t)0;
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count deduced from 'has nodes' flag: %" PRIu64, m_cachedNodesCount.Value()));
             }
         else
@@ -2404,7 +2404,7 @@ std::unique_ptr<DirectNodesIterator> NodesCreatingMultiNavNodesProvider::GetDire
     auto cachedDirectNodesIterator = GetResultOrLockHierarchy<std::unique_ptr<DirectNodesIterator>>(GetContext().GetHierarchyLevelLocker(), [&]() -> bpair<bool, std::unique_ptr<DirectNodesIterator>>
         {
         // cached direct nodes count suggests that direct nodes for this data source have been cached
-        Nullable<size_t> count = GetContext().GetNodesCache().FindDataSource(
+        Nullable<uint64_t> count = GetContext().GetNodesCache().FindDataSource(
             GetIdentifier(),
             GetContext().GetRulesetVariables(),
             DataSourceInfo::PART_DirectNodesCount

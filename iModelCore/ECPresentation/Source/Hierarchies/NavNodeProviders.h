@@ -138,7 +138,7 @@ private:
     bset<ArtifactsCapturer*> m_artifactsCapturers;
     std::function<void(NavNodesProviderContextR)> m_onHierarchyLevelLoaded;
     std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
-    Nullable<size_t> m_resultSetSizeLimit;
+    Nullable<uint64_t> m_resultSetSizeLimit;
 
     // optimization flags
     OptimizationFlagsContainer m_optFlags;
