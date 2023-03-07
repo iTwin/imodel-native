@@ -290,7 +290,7 @@ void RelatedPropertiesSpecification::ParsePropertiesFromPropertyJson(PropertySpe
 
     if (propertySpecsJson.isArray() && !propertySpecsJson.isNull())
         {
-        for (Json::ArrayIndex i = 0; i < propertySpecsJson.size(); ++i)
+        for (BeJsConst::ArrayIndex i = 0; i < propertySpecsJson.size(); ++i)
             {
             PropertySpecificationP spec = nullptr;
             if (propertySpecsJson[i].isObject() && !propertySpecsJson[i].isNull())

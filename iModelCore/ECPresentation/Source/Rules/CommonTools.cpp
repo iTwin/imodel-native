@@ -164,7 +164,7 @@ Utf8String CommonToolsInternal::SupportedSchemasToString(BeJsConst json)
     if (json.isMember(SCHEMAS_SPECIFICATION_ISEXCLUDE) && json[SCHEMAS_SPECIFICATION_ISEXCLUDE].asBool())
         str.append("E:");
 
-    for (Json::ArrayIndex i = 0; i < json[SCHEMAS_SPECIFICATION_SCHEMANAMES].size(); ++i)
+    for (BeJsConst::ArrayIndex i = 0; i < json[SCHEMAS_SPECIFICATION_SCHEMANAMES].size(); ++i)
         {
         if (i > 0)
             str.append(",");
@@ -263,7 +263,7 @@ static void ParseSchemaAndClassNames(BeJsConst json, Utf8StringR schemaName, bve
         return;
 
     schemaName = json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].asCString();
-    for (Json::ArrayIndex i = 0; i < json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES].size(); ++i)
+    for (BeJsConst::ArrayIndex i = 0; i < json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES].size(); ++i)
         {
         Utf8CP className = json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES][i].asCString();
         if (0 == BeStringUtilities::Strnicmp("E:", className, 2))
