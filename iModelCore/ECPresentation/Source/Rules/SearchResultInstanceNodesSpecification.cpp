@@ -123,7 +123,7 @@ Utf8CP SearchResultInstanceNodesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+bool SearchResultInstanceNodesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;
@@ -143,7 +143,7 @@ bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SearchResultInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+void SearchResultInstanceNodesSpecification::_WriteJson(BeJsValue json) const
     {
     ChildNodeSpecification::_WriteJson(json);
     if (!m_groupByClass)
@@ -201,7 +201,7 @@ MD5 SearchResultInstanceNodesSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuerySpecification* QuerySpecification::Create(JsonValueCR json)
+QuerySpecification* QuerySpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString("");
     QuerySpecification* spec = nullptr;
@@ -262,7 +262,7 @@ Utf8CP QuerySpecification::_GetJsonElementTypeAttributeName() const {return COMM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QuerySpecification::_ReadJson(JsonValueCR json)
+bool QuerySpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -278,10 +278,10 @@ bool QuerySpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuerySpecification::_WriteJson(JsonValueR json) const
+void QuerySpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
-    json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
+    CommonToolsInternal::WriteSchemaAndClassNameToJson(json[COMMON_JSON_ATTRIBUTE_CLASS], m_schemaName, m_className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -348,7 +348,7 @@ Utf8CP StringQuerySpecification::_GetJsonElementType() const {return STRING_QUER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool StringQuerySpecification::_ReadJson(JsonValueCR json)
+bool StringQuerySpecification::_ReadJson(BeJsConst json)
     {
     if (!QuerySpecification::_ReadJson(json))
         return false;
@@ -364,7 +364,7 @@ bool StringQuerySpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StringQuerySpecification::_WriteJson(JsonValueR json) const
+void StringQuerySpecification::_WriteJson(BeJsValue json) const
     {
     QuerySpecification::_WriteJson(json);
     json[STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY] = m_query;
@@ -434,7 +434,7 @@ Utf8CP ECPropertyValueQuerySpecification::_GetJsonElementType() const {return EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECPropertyValueQuerySpecification::_ReadJson(JsonValueCR json)
+bool ECPropertyValueQuerySpecification::_ReadJson(BeJsConst json)
     {
     if (!QuerySpecification::_ReadJson(json))
         return false;
@@ -450,7 +450,7 @@ bool ECPropertyValueQuerySpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPropertyValueQuerySpecification::_WriteJson(JsonValueR json) const
+void ECPropertyValueQuerySpecification::_WriteJson(BeJsValue json) const
     {
     QuerySpecification::_WriteJson(json);
     json[ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME] = m_parentPropertyName;

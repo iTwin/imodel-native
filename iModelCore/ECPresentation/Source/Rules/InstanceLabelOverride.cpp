@@ -116,7 +116,7 @@ Utf8CP InstanceLabelOverride::_GetJsonElementType() const { return INSTANCE_LABE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverride::_ReadJson(JsonValueCR json)
+bool InstanceLabelOverride::_ReadJson(BeJsConst json)
     {
     if (!CustomizationRule::_ReadJson(json))
         return false;
@@ -135,14 +135,13 @@ bool InstanceLabelOverride::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverride::_WriteJson(JsonValueR json) const
+void InstanceLabelOverride::_WriteJson(BeJsValue json) const
     {
     CustomizationRule::_WriteJson(json);
-    json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_className);
+    CommonToolsInternal::WriteSchemaAndClassNameToJson(json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_CLASS], m_className);
 
-    Json::Value specificationsJson(Json::arrayValue);
-    CommonToolsInternal::WriteRulesToJson<InstanceLabelOverrideValueSpecification, bvector<InstanceLabelOverrideValueSpecification*>>(specificationsJson, m_valueSpecifications);
-    json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_VALUES] = specificationsJson;
+    json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_VALUES].SetEmptyArray();
+    CommonToolsInternal::WriteRulesToJson<InstanceLabelOverrideValueSpecification, bvector<InstanceLabelOverrideValueSpecification*>>(json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_VALUES], m_valueSpecifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -188,7 +187,7 @@ void InstanceLabelOverride::AddValueSpecification(InstanceLabelOverrideValueSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceLabelOverrideValueSpecification* InstanceLabelOverrideValueSpecification::Create(JsonValueCR json)
+InstanceLabelOverrideValueSpecification* InstanceLabelOverrideValueSpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[INSTANCE_LABEL_OVERRIDE_VALUE_SPECIFICATION_BASE_JSON_ATTRIBUTE_TYPE].asCString("");
     InstanceLabelOverrideValueSpecification* spec = nullptr;
@@ -281,11 +280,11 @@ bool InstanceLabelOverrideCompositeValueSpecification::_ShallowEqual(Presentatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static InstanceLabelOverrideCompositeValueSpecification::Part* PartsFactory(JsonValueCR partJson) { return CommonToolsInternal::LoadRuleFromJson<InstanceLabelOverrideCompositeValueSpecification::Part>(partJson); }
+static InstanceLabelOverrideCompositeValueSpecification::Part* PartsFactory(BeJsConst partJson) { return CommonToolsInternal::LoadRuleFromJson<InstanceLabelOverrideCompositeValueSpecification::Part>(partJson); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideCompositeValueSpecification::_ReadJson(JsonValueCR json)
+bool InstanceLabelOverrideCompositeValueSpecification::_ReadJson(BeJsConst json)
     {
     if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
         return false;
@@ -300,7 +299,7 @@ bool InstanceLabelOverrideCompositeValueSpecification::_ReadJson(JsonValueCR jso
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverrideCompositeValueSpecification::_WriteJson(JsonValueR json) const
+void InstanceLabelOverrideCompositeValueSpecification::_WriteJson(BeJsValue json) const
     {
     InstanceLabelOverrideValueSpecification::_WriteJson(json);
     if (!m_separator.Equals(" "))
@@ -344,13 +343,13 @@ bool InstanceLabelOverrideCompositeValueSpecification::Part::_ShallowEqual(Prese
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideCompositeValueSpecification::Part::_ReadJson(JsonValueCR json)
+bool InstanceLabelOverrideCompositeValueSpecification::Part::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
 
     // required:
-    if (CommonToolsInternal::CheckRuleIssue(!json.isMember(INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC), INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC ".Part", INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC, Json::Value(), "valid JSON object"))
+    if (CommonToolsInternal::CheckRuleIssue(!json.isMember(INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC), INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC ".Part", INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC, BeJsDocument::Null(), "valid JSON object"))
         return false;
 
     m_specification = InstanceLabelOverrideValueSpecification::Create(json[INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC]);
@@ -368,11 +367,11 @@ bool InstanceLabelOverrideCompositeValueSpecification::Part::_ReadJson(JsonValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverrideCompositeValueSpecification::Part::_WriteJson(JsonValueR json) const
+void InstanceLabelOverrideCompositeValueSpecification::Part::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     if (m_specification)
-        json[INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC] = m_specification->WriteJson();
+        m_specification->WriteJson(json[INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC]);
     if (m_isRequired)
         json[INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_ISREQUIRED] = m_isRequired;
     }
@@ -411,7 +410,7 @@ bool InstanceLabelOverridePropertyValueSpecification::_ShallowEqual(Presentation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverridePropertyValueSpecification::_ReadJson(JsonValueCR json)
+bool InstanceLabelOverridePropertyValueSpecification::_ReadJson(BeJsConst json)
     {
     if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
         return false;
@@ -430,12 +429,12 @@ bool InstanceLabelOverridePropertyValueSpecification::_ReadJson(JsonValueCR json
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverridePropertyValueSpecification::_WriteJson(JsonValueR json) const
+void InstanceLabelOverridePropertyValueSpecification::_WriteJson(BeJsValue json) const
     {
     InstanceLabelOverrideValueSpecification::_WriteJson(json);
     json[INSTANCE_LABEL_OVERRIDE_PROPERTY_VALUE_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME] = m_propertyName;
     if (m_pathToRelatedInstanceSpec.GetSteps().size() > 0)
-        json[INSTANCE_LABEL_OVERRIDE_PROPERTY_VALUE_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYSOURCE] = m_pathToRelatedInstanceSpec.WriteJson();
+        m_pathToRelatedInstanceSpec.WriteJson(json[INSTANCE_LABEL_OVERRIDE_PROPERTY_VALUE_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYSOURCE]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -469,7 +468,7 @@ bool InstanceLabelOverrideClassNameValueSpecification::_ShallowEqual(Presentatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideClassNameValueSpecification::_ReadJson(JsonValueCR json)
+bool InstanceLabelOverrideClassNameValueSpecification::_ReadJson(BeJsConst json)
     {
     if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
         return false;
@@ -482,7 +481,7 @@ bool InstanceLabelOverrideClassNameValueSpecification::_ReadJson(JsonValueCR jso
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverrideClassNameValueSpecification::_WriteJson(JsonValueR json) const
+void InstanceLabelOverrideClassNameValueSpecification::_WriteJson(BeJsValue json) const
     {
     InstanceLabelOverrideValueSpecification::_WriteJson(json);
     if (m_full)
@@ -535,7 +534,7 @@ bool InstanceLabelOverrideStringValueSpecification::_ShallowEqual(PresentationKe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideStringValueSpecification::_ReadJson(JsonValueCR json)
+bool InstanceLabelOverrideStringValueSpecification::_ReadJson(BeJsConst json)
     {
     if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
         return false;
@@ -550,7 +549,7 @@ bool InstanceLabelOverrideStringValueSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverrideStringValueSpecification::_WriteJson(JsonValueR json) const
+void InstanceLabelOverrideStringValueSpecification::_WriteJson(BeJsValue json) const
     {
     InstanceLabelOverrideValueSpecification::_WriteJson(json);
     json[INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE] = m_value;
@@ -587,7 +586,7 @@ bool InstanceLabelOverrideRelatedInstanceLabelSpecification::_ShallowEqual(Prese
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideRelatedInstanceLabelSpecification::_ReadJson(JsonValueCR json)
+bool InstanceLabelOverrideRelatedInstanceLabelSpecification::_ReadJson(BeJsConst json)
     {
     if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
         return false;
@@ -602,8 +601,8 @@ bool InstanceLabelOverrideRelatedInstanceLabelSpecification::_ReadJson(JsonValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverrideRelatedInstanceLabelSpecification::_WriteJson(JsonValueR json) const
+void InstanceLabelOverrideRelatedInstanceLabelSpecification::_WriteJson(BeJsValue json) const
     {
     InstanceLabelOverrideValueSpecification::_WriteJson(json);
-    json[INSTANCE_LABEL_OVERRIDE_RELATED_INSTANCE_LABEL_SPECIFICATION_JSON_ATTRIBUTE_PATHTORELATEDINSTANCE] = m_pathToRelatedInstanceSpec.WriteJson();
+    m_pathToRelatedInstanceSpec.WriteJson(json[INSTANCE_LABEL_OVERRIDE_RELATED_INSTANCE_LABEL_SPECIFICATION_JSON_ATTRIBUTE_PATHTORELATEDINSTANCE]);
     }

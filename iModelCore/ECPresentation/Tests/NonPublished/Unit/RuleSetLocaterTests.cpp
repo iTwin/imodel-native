@@ -567,10 +567,10 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsJsonRuleSets)
     BeFileName::CreateNewDirectory(directory.c_str());
 
     PresentationRuleSetPtr ruleset1 = PresentationRuleSet::CreateInstance("id_1");
-    CreateFileWithContent(ruleset1->WriteToJsonValue().ToString().c_str(), "1.PresentationRuleSet.json", &directory);
+    CreateFileWithContent(ruleset1->WriteToJsonValue().Stringify().c_str(), "1.PresentationRuleSet.json", &directory);
 
     PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("id_2");
-    CreateFileWithContent(ruleset2->WriteToJsonValue().ToString().c_str(), "2.PresentationRuleSet.json", &directory);
+    CreateFileWithContent(ruleset2->WriteToJsonValue().Stringify().c_str(), "2.PresentationRuleSet.json", &directory);
 
     Utf8String list(directory.c_str());
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());

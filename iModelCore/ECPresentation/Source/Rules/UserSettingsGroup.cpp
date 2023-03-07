@@ -85,7 +85,7 @@ Utf8CP UserSettingsGroup::_GetJsonElementType() const {return USER_SETTINGS_JSON
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserSettingsGroup::_ReadJson(JsonValueCR json)
+bool UserSettingsGroup::_ReadJson(BeJsConst json)
     {
     if (!PrioritizedPresentationKey::_ReadJson(json))
         return false;
@@ -107,7 +107,7 @@ bool UserSettingsGroup::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsGroup::_WriteJson(JsonValueR json) const
+void UserSettingsGroup::_WriteJson(BeJsValue json) const
     {
     PrioritizedPresentationKey::_WriteJson(json);
     json[USER_SETTINGS_JSON_ATTRIBUTE_CATEGORY_LABEL] = m_categoryLabel;
@@ -241,7 +241,7 @@ Utf8CP UserSettingsItem::_GetJsonElementType() const { return "UserSettingsItem"
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserSettingsItem::_ReadJson(JsonValueCR json)
+bool UserSettingsItem::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -266,7 +266,7 @@ bool UserSettingsItem::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsItem::_WriteJson(JsonValueR json) const
+void UserSettingsItem::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
     json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID] = m_id;

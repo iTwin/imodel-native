@@ -22,10 +22,6 @@ struct PresentationRulesTests : ECPresentationTest
         xml.ToString(str, (BeXmlDom::ToStringOption)options);
         return str;
         }
-    static Utf8String ToPrettyString(JsonValueCR json)
-        {
-        return json.toStyledString();
-        }
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

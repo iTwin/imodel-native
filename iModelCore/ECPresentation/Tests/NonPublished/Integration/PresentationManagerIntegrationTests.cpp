@@ -70,7 +70,6 @@ void PresentationManagerIntegrationTests::SetUp()
     {
     ECPresentationTest::SetUp();
 
-    m_localState.GetValues().clear();
     m_locater = DelayLoadingRuleSetLocater::Create();
     m_connectionManager = _CreateConnectionManager();
     ReCreatePresentationManager(CreateManagerParams());

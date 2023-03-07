@@ -139,7 +139,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, AllowsLocatingRulese
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, UserSettingsManagerCallsItsCallbacksOnECPresentationThread)
     {
-    RuntimeJsonLocalState localState;
+    ECPresentation::JsonLocalState localState(std::make_shared<RuntimeLocalState>());
     m_manager->GetUserSettings().SetLocalState(&localState);
     TestUserSettingsChangeListener listener;
     m_manager->GetUserSettings().SetChangesListener(&listener);

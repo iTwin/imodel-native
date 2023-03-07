@@ -26,7 +26,7 @@ TEST_F(CheckBoxPresRuleTests, LoadsFromJson)
   	    "defaultValue": true,
   	    "isEnabled": "isEnabledExpression"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     CheckBoxRule rule;
@@ -47,7 +47,7 @@ TEST_F(CheckBoxPresRuleTests, LoadsFromJsonWhenIsEnabledIsBoolean)
   	    "propertyName": "checkBoxProperty",
   	    "isEnabled": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     CheckBoxRule rule;
@@ -62,8 +62,8 @@ TEST_F(CheckBoxPresRuleTests, LoadsFromJsonWhenIsEnabledIsBoolean)
 TEST_F(CheckBoxPresRuleTests, WriteToJson)
     {
     CheckBoxRule rule("cond", 123, true, "prop", true, true, "a = b");
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "CheckBox",
         "priority": 123,
         "onlyIfNotHandled": true,
@@ -73,7 +73,7 @@ TEST_F(CheckBoxPresRuleTests, WriteToJson)
         "defaultValue": true,
         "isEnabled": "a = b"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -84,7 +84,7 @@ TEST_F(CheckBoxPresRuleTests, LoadsFromXmlJsonDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "CheckBox"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     CheckBoxRule rule;

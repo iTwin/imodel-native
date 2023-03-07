@@ -33,25 +33,25 @@ Utf8CP NodeArtifactsRule::_GetJsonElementType() const { return NODE_ARTIFACTS_RU
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodeArtifactsRule::_ReadJson(JsonValueCR json)
+bool NodeArtifactsRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;
 
-    JsonValueCR itemsObject = json[NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS];
+    BeJsConst itemsObject = json[NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS];
     bool isItemsObjectValid = itemsObject.isObject() && !itemsObject.isNull();
     if (CommonToolsInternal::CheckRuleIssue(!isItemsObjectValid, _GetJsonElementType(), NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS, json[NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS], "JSON object"))
         return false;
 
-    auto memberNames = itemsObject.getMemberNames();
-    for (Utf8StringCR memberName : memberNames)
+    itemsObject.ForEachProperty(
+        [&](Utf8CP name, BeJsConst value)
         {
-        JsonValueCR value = itemsObject[memberName];
-        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("%s.%s", NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS, memberName.c_str()).c_str(), value, "string"))
-            continue;
-
-        m_items.Insert(memberName, value.asCString());
+        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("%s.%s", NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS, name).c_str(), value, "string"))
+            return false;
+        m_items.Insert(name, value.asCString());
+        return false;
         }
+    );
 
     return true;
     }
@@ -59,7 +59,7 @@ bool NodeArtifactsRule::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodeArtifactsRule::_WriteJson(JsonValueR json) const
+void NodeArtifactsRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     for (auto entry : m_items)

@@ -56,8 +56,8 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     //!Accepts customization rule visitor
     ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
@@ -141,8 +141,8 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue json) const override;
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
@@ -153,7 +153,7 @@ public:
     virtual ~GroupSpecification(){}
 
 public:
-    static GroupSpecification* Create(JsonValueCR);
+    static GroupSpecification* Create(BeJsConst);
 
     //! Clones this specification.
     GroupSpecification* Clone() const {return _Clone();}
@@ -192,8 +192,8 @@ private:
 protected:
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     //! Allows the visitor to visit this group specification.
     ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
@@ -235,8 +235,8 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     //! Allows the visitor to visit this group specification.
     ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
@@ -299,8 +299,8 @@ protected:
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     //! Allows the visitor to visit this group specification.
     ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
@@ -383,8 +383,8 @@ protected:
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.

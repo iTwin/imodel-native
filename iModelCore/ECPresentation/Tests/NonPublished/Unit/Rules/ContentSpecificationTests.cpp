@@ -24,8 +24,8 @@ struct TestContentSpecification : ContentSpecification
     bool _ReadXml(BeXmlNodeP xmlNode) override {return ContentSpecification::_ReadXml(xmlNode);}
     void _WriteXml(BeXmlNodeP xmlNode) const override {ContentSpecification::_WriteXml(xmlNode);}
     Utf8CP _GetJsonElementType() const override {return "testSpecification";}
-    bool _ReadJson(JsonValueCR json) override {return ContentSpecification::_ReadJson(json);}
-    void _WriteJson(JsonValueR json) const override {ContentSpecification::_WriteJson(json);}
+    bool _ReadJson(BeJsConst json) override {return ContentSpecification::_ReadJson(json);}
+    void _WriteJson(BeJsValue json) const override {ContentSpecification::_WriteJson(json);}
     ContentSpecification* _Clone() const override {return new TestContentSpecification(*this);}
     };
 
@@ -65,7 +65,7 @@ TEST_F(ContentSpecificationsTests, LoadsFromJson)
             "alias":"TestAlias"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     TestContentSpecification spec;
@@ -87,7 +87,7 @@ TEST_F(ContentSpecificationsTests, LoadFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "specType": "testSpecification"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     TestContentSpecification spec;
@@ -115,8 +115,8 @@ TEST_F(ContentSpecificationsTests, WriteToJson)
     spec.AddPropertyOverride(*new PropertySpecification("prop1", 456, "", nullptr, nullptr));
     spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "s1:c1", "s2:c2", "alias", true));
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification());
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "testSpecification",
         "showImages": true,
         "onlyIfNotHandled": true,
@@ -146,7 +146,7 @@ TEST_F(ContentSpecificationsTests, WriteToJson)
             "properties": "_none_"
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
