@@ -963,7 +963,7 @@ IdSet<BeInt64Id> QueryBuilderHelpers::CreateIdSetFromJsonArray(RapidJsonValueCR 
     IdSet<BeInt64Id> ids;
     if (!json.IsArray())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Expected a JSON array");
-    for (Json::ArrayIndex i = 0; i < json.Size(); i++)
+    for (BeJsConst::ArrayIndex i = 0; i < json.Size(); i++)
         ids.insert(BeInt64Id(json[i].GetUint64()));
     return ids;
     }
