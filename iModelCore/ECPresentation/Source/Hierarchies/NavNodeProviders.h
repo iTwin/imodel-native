@@ -202,8 +202,8 @@ public:
     std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilterPtr() const {return m_instanceFilter;}
     InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter.get();}
     void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
-    Nullable<size_t> const& GetResultSetSizeLimit() const {return m_resultSetSizeLimit;}
-    void SetResultSetSizeLimit(Nullable<size_t> value) {m_resultSetSizeLimit = value;}
+    Nullable<uint64_t> const& GetResultSetSizeLimit() const {return m_resultSetSizeLimit;}
+    void SetResultSetSizeLimit(Nullable<uint64_t> value) {m_resultSetSizeLimit = value;}
 
     // page options
     void SetPageOptions(std::shared_ptr<PageOptions> value) {m_pageOptions = value;}

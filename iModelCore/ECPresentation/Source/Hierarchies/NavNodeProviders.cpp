@@ -2150,7 +2150,7 @@ size_t QueryBasedNodesProvider::_GetLimitedInstancesCount(size_t limit) const
     auto scope = Diagnostics::Scope::Create("Get limited instances count");
 
     // attempt to find the count in cache
-    auto cachedCount = GetResultOrLockHierarchy<Nullable<size_t>>(GetContext().GetHierarchyLevelLocker(),
+    auto cachedCount = GetResultOrLockHierarchy<Nullable<uint64_t>>(GetContext().GetHierarchyLevelLocker(),
         [&]()
         {
         DataSourceInfo info = GetContext().GetNodesCache().FindDataSource(
@@ -2161,7 +2161,7 @@ size_t QueryBasedNodesProvider::_GetLimitedInstancesCount(size_t limit) const
         return make_bpair(info.GetLimitedInstancesCount().IsValid(), info.GetLimitedInstancesCount());
         });
     if (cachedCount.IsValid())
-        return *cachedCount;
+        return (size_t)*cachedCount;
 
     // when hiding nodes produced by this query, we want to count the ones we're going to actually show
     if (m_query->GetNavigationResultParameters().GetNavNodeExtendedData().HideNodesInHierarchy())
@@ -2182,10 +2182,10 @@ size_t QueryBasedNodesProvider::_GetLimitedInstancesCount(size_t limit) const
     auto count = QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *countQuery->GetQuery());
 
     DataSourceInfo dsInfo(GetIdentifier());
-    dsInfo.SetLimitedInstancesCount(cachedCount);
+    dsInfo.SetLimitedInstancesCount(count);
     GetContext().GetNodesCache().Update(dsInfo, DataSourceInfo::PART_LimitedInstancesCount);
 
-    return count;
+    return (size_t)count;
     }
 
 /*=================================================================================**//**
@@ -2884,7 +2884,7 @@ size_t BVectorNodesProvider::_GetLimitedInstancesCount(size_t limit) const
         if (auto instanceKey = node->GetKey()->AsECInstanceNodeKey())
             count += instanceKey->GetInstanceKeys().size();
         else if (auto groupingKey = node->GetKey()->AsGroupingNodeKey())
-            count += groupingKey->GetGroupedInstancesCount();
+            count += (size_t)groupingKey->GetGroupedInstancesCount();
         }
     return count;
     }
@@ -3559,8 +3559,8 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 
     // update the merged nodes provider with the actual information
     mergedDatasourceInfo.SetIsInitialized(true);
-    mergedDatasourceInfo.SetDirectNodesCount((size_t)mergedNodesCount);
-    mergedDatasourceInfo.SetTotalNodesCount((size_t)mergedNodesCount);
+    mergedDatasourceInfo.SetDirectNodesCount(mergedNodesCount);
+    mergedDatasourceInfo.SetTotalNodesCount(mergedNodesCount);
     mergedDatasourceInfo.SetHasNodes(mergedNodesCount > 0);
     context->GetNodesCache().Update(mergedDatasourceInfo, DataSourceInfo::PART_TotalNodesCount | DataSourceInfo::PART_HasNodes | DataSourceInfo::PART_IsFinalized | DataSourceInfo::PART_DirectNodesCount);
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Updated merged provider");

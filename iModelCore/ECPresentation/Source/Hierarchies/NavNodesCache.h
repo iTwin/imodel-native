@@ -275,9 +275,7 @@ private:
     BeGuid CacheHierarchyLevel(BeGuidCR parentNodeId, Utf8StringCR rulesetId, BeGuidCR removalId);
     void CacheNode(BeGuidCR hierarchyLevelId, NavNodeR);
     void CacheDataSourceNodeAssociation(BeGuidCR datasourceId, BeGuidCR nodeId, bvector<uint64_t> const& fullIndex, NodeVisibility);
-    void CacheEmptyDataSource(DataSourceIdentifier&, DataSourceFilter const&, BeGuidCR variablesId, Utf8StringCR specificationHash, Utf8StringCR nodeTypes,
-        BeGuidCR parentId, Nullable<size_t> const& directNodesCount, bool isFinalized, Nullable<bool> const& hasNodes, Nullable<size_t> const& nodesCount,
-        Nullable<size_t> const& limitedInstancesCount);
+    void CacheEmptyDataSource(DataSourceInfo&, BeGuidCR variablesId);
     void CacheRelatedClassIds(BeGuidCR datasourceId, bmap<ECClassId, bool> const&);
     BeGuid CacheRelatedVariables(BeGuidCR rulesetId, RulesetVariables const& variables);
     void CacheNodeKey(NavNodeCR);
@@ -432,7 +430,7 @@ private:
     BeMutex& m_cacheMutex;
     NavNodesProviderContextCPtr m_context;
     mutable Nullable<bool> m_hasVirtualNodes;
-    mutable Nullable<size_t> m_nodesCount;
+    mutable Nullable<uint64_t> m_nodesCount;
     mutable Nullable<int> m_offset;
     std::unique_ptr<bvector<NavNodePtr>> m_loadedNodes;
     int m_currNodeIndex;

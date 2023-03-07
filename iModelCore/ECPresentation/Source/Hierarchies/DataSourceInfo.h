@@ -228,10 +228,10 @@ private:
     BeGuid m_parentId;
     Nullable<bool> m_hasPartialProviders;
     bool m_isFinalized;
-    Nullable<size_t> m_directNodesCount;
-    Nullable<size_t> m_totalNodesCount;
+    Nullable<uint64_t> m_directNodesCount;
+    Nullable<uint64_t> m_totalNodesCount;
     Nullable<bool> m_hasNodes;
-    Nullable<size_t> m_limitedInstancesCount;
+    Nullable<uint64_t> m_limitedInstancesCount;
     BeJsDocument m_customJson;
 public:
     DataSourceInfo(): m_isFinalized(false) {}
@@ -290,14 +290,14 @@ public:
     void SetParentId(BeGuid value) {m_parentId = value;}
     Nullable<bool> const& HasPartialProviders() const {return m_hasPartialProviders;}
     void SetHasPartialProviders(Nullable<bool> value) {m_hasPartialProviders = value;}
-    Nullable<size_t> const& GetTotalNodesCount() const {return m_totalNodesCount;}
-    void SetTotalNodesCount(Nullable<size_t> value) {m_totalNodesCount = value;}
+    Nullable<uint64_t> const& GetTotalNodesCount() const {return m_totalNodesCount;}
+    void SetTotalNodesCount(Nullable<uint64_t> value) {m_totalNodesCount = value;}
     Nullable<bool> const& HasNodes() const {return m_hasNodes;}
     void SetHasNodes(Nullable<bool> value) {m_hasNodes = value;}
-    Nullable<size_t> const& GetDirectNodesCount() const {return m_directNodesCount;}
-    void SetDirectNodesCount(Nullable<size_t> value) {m_directNodesCount = value;}
-    Nullable<size_t> const& GetLimitedInstancesCount() const {return m_limitedInstancesCount;}
-    void SetLimitedInstancesCount(Nullable<size_t> value) {m_limitedInstancesCount = value;}
+    Nullable<uint64_t> const& GetDirectNodesCount() const {return m_directNodesCount;}
+    void SetDirectNodesCount(Nullable<uint64_t> value) {m_directNodesCount = value;}
+    Nullable<uint64_t> const& GetLimitedInstancesCount() const {return m_limitedInstancesCount;}
+    void SetLimitedInstancesCount(Nullable<uint64_t> value) {m_limitedInstancesCount = value;}
     BeJsConst GetCustomJson() const {return m_customJson;}
     BeJsValue GetCustomJson() {return m_customJson;}
 };

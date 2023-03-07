@@ -954,7 +954,8 @@ NavNodesProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateNodesProv
     if (context.IsValid())
         {
         context->SetInstanceFilter(params.GetInstanceFilter());
-        context->SetResultSetSizeLimit(params.GetLimit());
+        if (params.GetLimit().IsValid())
+            context->SetResultSetSizeLimit((uint64_t)*params.GetLimit());
         }
     return context;
     }
@@ -1043,7 +1044,7 @@ RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl
     // apply limiting
     if (context.GetResultSetSizeLimit().IsValid() && supportsFiltering)
         {
-        auto limit = *context.GetResultSetSizeLimit();
+        auto limit = (size_t)*context.GetResultSetSizeLimit();
         auto instancesCount = provider->GetLimitedInstancesCount(limit + 1);
         if (instancesCount > limit)
             throw ResultSetTooLargeError(limit);
