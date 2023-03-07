@@ -155,7 +155,7 @@ bvector<Utf8String> CommonToolsInternal::ParsePropertiesNames(Utf8StringCR prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CommonToolsInternal::SupportedSchemasToString(JsonValueCR json)
+Utf8String CommonToolsInternal::SupportedSchemasToString(BeJsConst json)
     {
     if (!json.isMember(SCHEMAS_SPECIFICATION_SCHEMANAMES) || !json[SCHEMAS_SPECIFICATION_SCHEMANAMES].isArray())
         return "";
@@ -164,7 +164,7 @@ Utf8String CommonToolsInternal::SupportedSchemasToString(JsonValueCR json)
     if (json.isMember(SCHEMAS_SPECIFICATION_ISEXCLUDE) && json[SCHEMAS_SPECIFICATION_ISEXCLUDE].asBool())
         str.append("E:");
 
-    for (Json::ArrayIndex i = 0; i < json[SCHEMAS_SPECIFICATION_SCHEMANAMES].size(); ++i)
+    for (BeJsConst::ArrayIndex i = 0; i < json[SCHEMAS_SPECIFICATION_SCHEMANAMES].size(); ++i)
         {
         if (i > 0)
             str.append(",");
@@ -177,9 +177,8 @@ Utf8String CommonToolsInternal::SupportedSchemasToString(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CommonToolsInternal::SupportedSchemasToJson(Utf8StringCR str)
+void CommonToolsInternal::WriteSupportedSchemasToJson(BeJsValue json, Utf8StringCR str)
     {
-    Json::Value json;
     size_t pos = 0;
     if (str.StartsWithI("E:"))
         {
@@ -187,15 +186,18 @@ Json::Value CommonToolsInternal::SupportedSchemasToJson(Utf8StringCR str)
         pos = 2;
         }
     Utf8String schemaName;
+
+    BeJsValue schemaNames = json[SCHEMAS_SPECIFICATION_SCHEMANAMES];
     while (Utf8String::npos != (pos = str.GetNextToken(schemaName, ",", pos)))
-        json[SCHEMAS_SPECIFICATION_SCHEMANAMES].append(schemaName.Trim());
-    return json;
+        {
+        schemaNames[schemaNames.size()] = schemaName.Trim();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CommonToolsInternal::ParseSchemaAndClassName(Utf8StringR schemaName, Utf8StringR className, JsonValueCR json, Utf8CP attributeIdentifier)
+void CommonToolsInternal::ParseSchemaAndClassName(Utf8StringR schemaName, Utf8StringR className, BeJsConst json, Utf8CP attributeIdentifier)
     {
     bool hasIssues = false;
     if (!json.isMember(SCHEMA_CLASS_SPECIFICATION_SCHEMANAME) || !json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].isString())
@@ -218,7 +220,7 @@ void CommonToolsInternal::ParseSchemaAndClassName(Utf8StringR schemaName, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CommonToolsInternal::SchemaAndClassNameToString(JsonValueCR json, Utf8CP attributeIdentifier)
+Utf8String CommonToolsInternal::SchemaAndClassNameToString(BeJsConst json, Utf8CP attributeIdentifier)
     {
     Utf8String schemaName, className;
     ParseSchemaAndClassName(schemaName, className, json, attributeIdentifier);
@@ -230,31 +232,29 @@ Utf8String CommonToolsInternal::SchemaAndClassNameToString(JsonValueCR json, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CommonToolsInternal::SchemaAndClassNameToJson(Utf8StringCR schemaName, Utf8StringCR className)
+void CommonToolsInternal::WriteSchemaAndClassNameToJson(BeJsValue json, Utf8StringCR schemaName, Utf8StringCR className)
     {
-    Json::Value json;
     json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME] = schemaName;
     json[SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME] = className;
-    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CommonToolsInternal::SchemaAndClassNameToJson(Utf8StringCR str)
+void CommonToolsInternal::WriteSchemaAndClassNameToJson(BeJsValue json, Utf8StringCR str)
     {
     bvector<Utf8String> parts;
     BeStringUtilities::Split(str.c_str(), ":", parts);
     if (parts.size() != 2)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Failed to serialize schema and class name to JSON: '%s'", str.c_str()));
 
-    return SchemaAndClassNameToJson(parts[0], parts[1]);
+    WriteSchemaAndClassNameToJson(json, parts[0], parts[1]);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ParseSchemaAndClassNames(JsonValueCR json, Utf8StringR schemaName, bvector<Utf8String>& includedClassNames, bvector<Utf8String>& excludedClassNames)
+static void ParseSchemaAndClassNames(BeJsConst json, Utf8StringR schemaName, bvector<Utf8String>& includedClassNames, bvector<Utf8String>& excludedClassNames)
     {
     if (!json.isMember(SCHEMA_CLASS_SPECIFICATION_SCHEMANAME) || !json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].isString())
         return;
@@ -263,7 +263,7 @@ static void ParseSchemaAndClassNames(JsonValueCR json, Utf8StringR schemaName, b
         return;
 
     schemaName = json[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME].asCString();
-    for (Json::ArrayIndex i = 0; i < json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES].size(); ++i)
+    for (BeJsConst::ArrayIndex i = 0; i < json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES].size(); ++i)
         {
         Utf8CP className = json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES][i].asCString();
         if (0 == BeStringUtilities::Strnicmp("E:", className, 2))
@@ -276,13 +276,13 @@ static void ParseSchemaAndClassNames(JsonValueCR json, Utf8StringR schemaName, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CommonToolsInternal::SchemaAndClassNamesToString(JsonValueCR json)
+Utf8String CommonToolsInternal::SchemaAndClassNamesToString(BeJsConst json)
     {
     Utf8String str;
     if (json.isArray())
         {
         bmap<Utf8String, bvector<Utf8String>> schemaExcludes;
-        for (Json::ArrayIndex i = 0; i < json.size(); ++i)
+        for (BeJsConst::ArrayIndex i = 0; i < json.size(); ++i)
             {
             Utf8String schemaName;
             bvector<Utf8String> includes, excludes;
@@ -327,9 +327,11 @@ Utf8String CommonToolsInternal::SchemaAndClassNamesToString(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CommonToolsInternal::ParseMultiSchemaClassesFromJson(JsonValueCR json, bool defaultPoly, bvector<MultiSchemaClass*>& classes, HashableBase* parent)
+bool CommonToolsInternal::ParseMultiSchemaClassesFromJson(BeJsConst json, bool defaultPoly, bvector<MultiSchemaClass*>& classes, HashableBase* parent)
     {
-    auto readMultiSchemaClassFromJson = [&](JsonValueCR jsonElement)
+    if (json.isNull())
+        return false;
+    auto readMultiSchemaClassFromJson = [&](BeJsConst jsonElement)
         {
         auto schemaClass = MultiSchemaClass::LoadFromJson(jsonElement, defaultPoly);
         if (nullptr != schemaClass)
@@ -343,30 +345,37 @@ bool CommonToolsInternal::ParseMultiSchemaClassesFromJson(JsonValueCR json, bool
 
     if (json.isArray())
         {
-        for (auto const& schemaClass : json)
+        auto iterationStopped = json.ForEachArrayMember([&](BeJsConst::ArrayIndex i, BeJsConst schemaClass)
             {
-            auto success = readMultiSchemaClassFromJson(schemaClass);
-            if (!success)
-                return false;
-            }
-        return true;
+            return !readMultiSchemaClassFromJson(schemaClass);
+            });
+        return !iterationStopped;
         }
 
     if (json.isObject())
         return readMultiSchemaClassFromJson(json);
 
-    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Failed to parse schema and class names from JSON. Expected array or object, got: '%s'", json.ToString().c_str()));
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Serialization, Utf8PrintfString("Failed to parse schema and class names from JSON. Expected array or object, got: '%s'", json.Stringify().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CommonToolsInternal::MultiSchemaClassesToJson(bvector<MultiSchemaClass*> const& multiSchemaClasses)
+BeJsDocument CommonToolsInternal::WriteMultiSchemaClassesToJson(bvector<MultiSchemaClass*> const& multiSchemaClasses)
     {
-    Json::Value json(Json::arrayValue);
-    for (auto const& multiSchemaClass : multiSchemaClasses)
-        json.append(multiSchemaClass->WriteJson());
+    BeJsDocument json;
+    CommonToolsInternal::WriteMultiSchemaClassesToJson(json, multiSchemaClasses);
     return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void CommonToolsInternal::WriteMultiSchemaClassesToJson(BeJsValue json, bvector<MultiSchemaClass*> const& multiSchemaClasses)
+    {
+    json.SetEmptyArray();
+    for (auto const& multiSchemaClass : multiSchemaClasses)
+        multiSchemaClass->WriteJson(json[json.size()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,17 +383,26 @@ Json::Value CommonToolsInternal::MultiSchemaClassesToJson(bvector<MultiSchemaCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CommonToolsInternal::ParseMultiSchemaClassesFromClassNamesString(Utf8StringCR classNames, bool defaultPolymorphism, bvector<MultiSchemaClass*>& classes, HashableBase* parent)
     {
-    return CommonToolsInternal::ParseMultiSchemaClassesFromJson(CommonToolsInternal::SchemaAndClassNamesToJson(classNames), defaultPolymorphism, classes, parent);
+    return CommonToolsInternal::ParseMultiSchemaClassesFromJson(CommonToolsInternal::WriteSchemaAndClassNamesToJson(classNames), defaultPolymorphism, classes, parent);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CommonToolsInternal::SchemaAndClassNamesToJson(Utf8StringCR str)
+BeJsDocument CommonToolsInternal::WriteSchemaAndClassNamesToJson(Utf8StringCR str)
     {
-    Json::Value json(Json::arrayValue);
+    BeJsDocument json;
+    WriteSchemaAndClassNamesToJson(json, str);
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void CommonToolsInternal::WriteSchemaAndClassNamesToJson(BeJsValue json, Utf8StringCR str)
+    {
     bool isExcludes = false;
-    bmap<Utf8String, Json::ArrayIndex> schemaIndexes;
+    bmap<Utf8String, BeJsConst::ArrayIndex> schemaIndexes;
     bvector<Utf8String> parts;
     BeStringUtilities::Split(str.c_str(), ";", parts);
     for (Utf8StringCR part : parts)
@@ -405,29 +423,29 @@ Json::Value CommonToolsInternal::SchemaAndClassNamesToJson(Utf8StringCR str)
         bvector<Utf8String> classNames;
         BeStringUtilities::Split(schemaAndClasses[1 + indexOffset].c_str(), ",", classNames);
 
-        Json::Value* schemaJsonPtr = nullptr;
         auto schemaIndexIter = schemaIndexes.find(schemaName);
-        if (schemaIndexes.end() != schemaIndexIter)
+        auto getSchemaJson = [&](BeJsConst jsonElement)
             {
-            schemaJsonPtr = &json[schemaIndexIter->second];
-            }
-        else
-            {
-            Json::Value schemaClasses;
-            schemaClasses[SCHEMA_CLASS_SPECIFICATION_SCHEMANAME] = schemaName;
-            schemaJsonPtr = &json.append(schemaClasses);
+            if (schemaIndexes.end() != schemaIndexIter)
+                {
+                return json[schemaIndexIter->second];
+                }
+            json[json.size()][SCHEMA_CLASS_SPECIFICATION_SCHEMANAME] = schemaName;
             schemaIndexes.Insert(schemaName, json.size() - 1);
-            }
+            return json[json.size() - 1];
+            };
+
+        BeJsValue schemaJson = getSchemaJson(json);
         for (Utf8StringR className : classNames)
             {
             if (isExcludes)
                 className = Utf8String("E:").append(className);
-            (*schemaJsonPtr)[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES].append(className);
+            BeJsValue classNames = schemaJson[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES];
+            classNames[classNames.size()] = className;
             }
         }
     if (json.size() == 1)
-        return json[0];
-    return json;
+        json.From(json[0]);
     }
 
 /*---------------------------------------------------------------------------------**//**

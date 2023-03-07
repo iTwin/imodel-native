@@ -36,11 +36,11 @@ struct ECExpressionContextsProviderTests : ECPresentationTest
     static ECDbTestProject* s_project;
     static IConnectionPtr s_connection;
     ECSqlStatementCache m_statementCache;
-    RuntimeJsonLocalState m_localState;
+    ECPresentation::JsonLocalState m_localState;
     RulesetVariables m_rulesetVariables;
     TestNodeLocater m_nodeLocater;
 
-    ECExpressionContextsProviderTests() : m_statementCache(10) {}
+    ECExpressionContextsProviderTests() : m_statementCache(10), m_localState(std::make_shared<RuntimeLocalState>()) {}
 
     ECSchemaCR GetSchema() {return *s_project->GetECDb().Schemas().GetSchema("TestSchema");}
 

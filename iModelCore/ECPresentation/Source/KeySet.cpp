@@ -197,7 +197,7 @@ rapidjson::Document KeySet::AsJson(rapidjson::Document::AllocatorType* allocator
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::FromJson(IConnectionCR connection, JsonValueCR json)
+KeySetPtr KeySet::FromJson(IConnectionCR connection, BeJsConst json)
     {
     return ECPresentationManager::GetSerializer().GetKeySetFromJson(connection, json);
     }
