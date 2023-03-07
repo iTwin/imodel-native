@@ -2504,7 +2504,7 @@ private:
     std::unique_ptr<ECInstanceSelectQueryHandler> m_ecInstancesSelectHandler;
     std::unordered_map<GroupingHandler const*, std::unique_ptr<SelectQueryHandler const>> m_groupingSelectQueryHandlers;
     std::unordered_map<SelectQueryHandler const*, bvector<std::shared_ptr<SelectQueryInfo const>>> m_selectsByHandler;
-    bvector< SelectQueryHandler const*> selectQueryHandlersOrder;
+    bvector<SelectQueryHandler const*> selectQueryHandlersOrder;
     bvector<GroupingNodeAndHandler> m_groupingFilters;
     uint64_t m_contractIdCounter;
 
