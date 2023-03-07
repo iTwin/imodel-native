@@ -414,7 +414,7 @@ TEST_F(StandardValueToEnumConversionTest, StandardValuesTest)
 
     ReadSchema(schemaXML);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     ECEnumerationCP ecEnum;
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title")) << "Failed to Create Name_Title Enum";
     EXPECT_EQ(5, ecEnum->GetEnumeratorCount());
@@ -482,7 +482,7 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestSimple)
 
     ReadSchema(schemaXML);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     ASSERT_EQ(3, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
@@ -554,7 +554,7 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestInheritence_ParentPropertySt
 
     ReadSchema(schemaXML);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
@@ -604,7 +604,7 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestInheritence_ParentPropertyWi
 
     ReadSchema(schemaXML);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
@@ -722,7 +722,7 @@ TEST_F(StandardValueToEnumConversionTest, DuplicateSDValues)
 
     ReadSchema(schemaXML);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     ASSERT_EQ(2, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
@@ -817,10 +817,10 @@ TEST_F(StandardValueToEnumConversionTest, DuplicatSDValues_MultipleSchemas_Expec
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema1, schemaXML1, *m_readContext));
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schemaXML2, *m_readContext));
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema1.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema1.get(), m_readContext.get())) << "Failed to convert schema";
     EXPECT_EQ(1, schema1->GetEnumerationCount());
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema2.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema2.get(), m_readContext.get())) << "Failed to convert schema";
     EXPECT_EQ(1, schema2->GetEnumerationCount());
     }
 
@@ -929,7 +929,7 @@ TEST_F(StandardValueToEnumConversionTest, NOTDuplicateSDValues)
         "</ECSchema>";
 
     ReadSchema(schemaXML);
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     ASSERT_EQ(5, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
@@ -997,7 +997,7 @@ TEST_F(StandardValueToEnumConversionTest, Strict_Duplicate_Inherited_Combo_Expec
 
     ReadSchema(schemaXML);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     //even though the two values are same it still creates two enums.
     //Name inherits from basename, which has no CA, so mustbelist is false
     ASSERT_EQ(2, m_schema->GetEnumerationCount());
@@ -1068,7 +1068,7 @@ TEST_F(StandardValueToEnumConversionTest, Strict_Duplicate_Inherited_Combo_Expec
 
     ReadSchema(schemaXML);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     //even though the two values are different, as mustbelist values are different
     //Name inherits from basename, which has no ca, making mustbelist false
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
@@ -1144,7 +1144,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_Supplemental
     SupplementedSchemaBuilder builder;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*m_schema.get(), supSchemas, *context, true)) << "Failed to supplement schema";
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion failed";
 
     ECEnumerationCP ecEnum;
     Utf8String enumName = "B_TitleA";
@@ -1199,7 +1199,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
         "</ECSchema>";
 
     ReadSchema(schemaXML);
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion failed";
 
     ECEnumerationCP ecEnum;
     Utf8String enumName = "B_TitleA";
@@ -1275,7 +1275,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
     Utf8PrintfString schema1Xml(schemaXml, instance1Xml, instance1Xml, instance2Xml);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema1Xml.c_str(), *context));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Schema conversion should have succeeded";
     CheckTypeName("B_TitleA", *schema, "TitleA", {"A", "B", "C"});
     EXPECT_EQ(1, schema->GetEnumerationCount()) << "Conversion should have created 1 enum";
     ValidateSchema(*schema);
@@ -1285,7 +1285,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
     Utf8PrintfString schema2Xml(schemaXml, instance2Xml, instance1Xml, instance1Xml);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schema2Xml.c_str(), *context));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion should have succeeded";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get(), context.get())) << "Schema conversion should have succeeded";
     CheckTypeName("B_TitleA", *schema2, "TitleA", {"A", "B", "C"});
     EXPECT_EQ(1, schema2->GetEnumerationCount()) << "Conversion should have created 1 enum";
     ValidateSchema(*schema2);
@@ -1295,7 +1295,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
     Utf8PrintfString schema3Xml(schemaXml, instance1Xml, instance2Xml, instance1Xml);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schema3Xml.c_str(), *context));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have succeeded";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get(), context.get())) << "Schema conversion should have succeeded";
     CheckTypeName("B_TitleA", *schema3, "TitleA", {"A", "B", "C"});
     EXPECT_EQ(1, schema3->GetEnumerationCount()) << "Conversion should have created 1 enum";
     ValidateSchema(*schema3);
@@ -1360,7 +1360,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionFa
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema1Xml.c_str(), *context));
     
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded by renaming the properties";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Schema conversion should have succeeded by renaming the properties";
     CheckTypeName("B_TitleA", *schema, "TitleA", {"B","C"});
     EXPECT_EQ(2, schema->GetEnumerationCount()) << "Conversion should have created two enums";
     
@@ -1371,7 +1371,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionFa
     Utf8PrintfString schema2Xml(schemaXml, instance1Xml, instance1Xml, instance2Xml);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schema2Xml.c_str(), *context));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion should have succeeded by renaming the properties";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get(), context.get())) << "Schema conversion should have succeeded by renaming the properties";
     EXPECT_EQ(2, schema2->GetEnumerationCount()) << "Conversion should have created two enums";
     CheckTypeName("A_tr_TitleA_", *schema2, "tr_TitleA_", {"A"});
     CheckTypeName("A_tr_TitleA_", *schema2, "TitleA", {"C"});
@@ -1382,7 +1382,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionFa
     context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schema3Xml.c_str(), *context));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have succeeded";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get(), context.get())) << "Schema conversion should have succeeded";
     EXPECT_EQ(2, schema3->GetEnumerationCount()) << "Conversion should have created two enums";
     CheckTypeName("A_tr_TitleA_", *schema2, "tr_TitleA_", {"A"});
     CheckTypeName("A_tr_TitleA_", *schema2, "TitleA", {"C"});
@@ -1426,7 +1426,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSuccess)
         "</ECSchema>";
 
     ReadSchema(schemaXML);
-    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Failed to convert schema";
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
     Utf8String enumName = "C_TitleA";
@@ -1476,7 +1476,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
     ECSchemaPtr schema1;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema1, schemaXML, *m_readContext));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema1.get())) << "Schema conversion should not have failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema1.get(), m_readContext.get())) << "Schema conversion should not have failed";
     CheckTypeName("A_tr_TitleA_", *schema1, "tr_TitleA_", {"A"});
     CheckTypeName("B_TitleA", *schema1, "TitleA", {"B"});
     EXPECT_EQ(2, schema1->GetEnumerationCount()) << "Conversion should have created two enums";
@@ -1526,7 +1526,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
     ECSchemaPtr schema2;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schemaXML2, *m_readContext));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion should have passed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get(), m_readContext.get())) << "Schema conversion should have passed";
     CheckTypeName("B_TitleA", *schema2, "TitleA", { "A", "B", "C" });
     EXPECT_EQ(1, schema2->GetEnumerationCount()) << "Conversion should have created one enum";
     ValidateSchema(*schema2);
@@ -1573,7 +1573,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
     ECSchemaPtr schema3;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schemaXML3, *m_readContext));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have failed to convert";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get(), m_readContext.get())) << "Schema conversion should have failed to convert";
     CheckTypeName("A_tr_TitleA_", *schema1, "tr_TitleA_", {"A"});
     CheckTypeName("B_TitleA", *schema3, "TitleA", {"B", "C"});
     EXPECT_EQ(2, schema3->GetEnumerationCount()) << "Conversion should have created two enums";
@@ -1623,7 +1623,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
     ECSchemaPtr schema4;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema4, schemaXML4, *m_readContext));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema4.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema4.get(), m_readContext.get())) << "Schema conversion failed";
     CheckTypeName("B_TitleA", *schema4, "TitleA", {"A", "B", "C"});
     EXPECT_EQ(1, schema4->GetEnumerationCount()) << "Conversion should have created 1 enum";
     ValidateSchema(*schema4);
@@ -1699,7 +1699,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_Conversion_MultipleS
 
     ReadSchemaWithRef(schemaXMLRef, schemaXML);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion should have passed.";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion should have passed.";
     CheckTypeName("trRef:D_TitleA", *m_schema, "TitleA", { "A", "B", "C" });
     CheckTypeName("D_TitleA", *m_refSchema, "TitleA", { "D" });
     EXPECT_EQ(0, m_schema->GetEnumerationCount()) << "Conversion should not have created any enums in the schema";
@@ -1755,8 +1755,8 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSucess_Mul
         "</ECSchema>";
 
     ReadSchemaWithRef(schemaXMLRef, schemaXML);
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_refSchema.get())) << "Schema conversion failed";
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_refSchema.get(), m_readContext.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion failed";
 
     CheckTypeName("trRef:D_TitleA", *m_schema, "TitleA", { "C" });
     CheckTypeName("D_TitleA", *m_refSchema, "TitleA", { "D" });
@@ -1811,7 +1811,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSucess_Mul
 
     ReadSchemaWithRef(schemaXMLRef, schemaXML);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion failed";
 
     CheckTypeName("trRef:D_TitleA", *m_schema, "TitleA", { "A" });
     CheckTypeName("D_TitleA", *m_refSchema, "TitleA", { "D" });
@@ -1920,7 +1920,7 @@ TEST_F(StandardValueToEnumConversionTest, EnumName_NamingConvention)
 
     ReadSchema(schemaXML);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion failed";
 
     ASSERT_EQ(7, m_schema->GetEnumerationCount());
     //enum name is combined of className and property name with _ in between
@@ -1982,7 +1982,7 @@ TEST_F(StandardValueToEnumConversionTest, PrimitiveArraySupport)
 
     ReadSchema(schemaXML);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion failed";
 
     ASSERT_EQ(1, m_schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
 
@@ -2068,7 +2068,7 @@ TEST_F(StandardValueToEnumConversionTest, UseBasePropertyStandardValueIfSubset)
 
     ReadSchema(schemaXML);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get(), m_readContext.get())) << "Schema conversion failed";
 
     ASSERT_EQ(1, m_schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
 
@@ -2124,7 +2124,7 @@ TEST_F(StandardValueToEnumConversionTest, TestRootClassInSeparateSchema)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Schema conversion failed";
 
     ASSERT_EQ(0, schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
     ASSERT_EQ(1, baseSchema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
@@ -2347,7 +2347,7 @@ TEST_F(StandardValueToEnumConversionTest, DroppedWhenAppliedToUnsupportedType)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Schema conversion failed";
 
     ASSERT_EQ(0, schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
     ASSERT_TRUE(schema->GetReferencedSchemas().end() == schema->GetReferencedSchemas().Find(SchemaKey("EditorCustomAttributes", 1, 0), SchemaMatchType::Latest));
@@ -2509,7 +2509,7 @@ TEST_F(StandardCustomAttributeConversionTests, TestSupplementedSchemaConversion)
     supSchemas.push_back(supSchema.get());
     SupplementedSchemaBuilder builder;
     ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*schema.get(), supSchemas, *context, false)) << "Failed to supplement schema";
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion failed";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Schema conversion failed";
 
     EXPECT_TRUE(schema->IsSupplemented());
     EXPECT_FALSE(schema->IsSupplementalSchema());
@@ -2560,7 +2560,7 @@ void TestDropAllOldCustomAttributesWithAConversion(ECSchemaCR oldStandardSchema,
     EXPECT_TRUE(nullptr != caClass);
     EXPECT_TRUE(relClass->IsDefinedLocal(*caClass));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
     ECClassCP relClassAfterConv = schema->GetClassCP("ARelB");
     EXPECT_TRUE(nullptr != relClassAfterConv);
@@ -2603,7 +2603,7 @@ TEST_F(StandardCustomAttributeConversionTests, DropAllOldCustomAttributesWithout
     EXPECT_TRUE(nullptr != caClass);
     EXPECT_TRUE(relClass->IsDefinedLocal(*caClass));
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
     ECClassCP relClassAfterConv = schema->GetClassCP("ARelB");
     EXPECT_TRUE(nullptr != relClassAfterConv);
@@ -2671,7 +2671,7 @@ TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NoConflic
     ASSERT_TRUE(nullptr != a2Prop);
     IECInstancePtr appleCatCA = a2Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
     ECClassCP aConvClass = schema->GetClassCP("A");
     EXPECT_TRUE(nullptr != aConvClass);
@@ -2731,7 +2731,7 @@ TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_Conflicti
     ASSERT_TRUE(nullptr != a1Prop);
     IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
     ECClassCP aConvClass = schema->GetClassCP("A");
     EXPECT_TRUE(nullptr != aConvClass);
@@ -2789,7 +2789,7 @@ TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_CategoryN
     ASSERT_TRUE(nullptr != a1Prop);
     IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
     ECClassCP aConvClass = schema->GetClassCP("A");
     EXPECT_TRUE(nullptr != aConvClass);
@@ -2839,7 +2839,7 @@ TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NameNotVa
     ASSERT_TRUE(nullptr != a1Prop);
     IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
     ECClassCP aConvClass = schema->GetClassCP("A");
     EXPECT_TRUE(nullptr != aConvClass);
@@ -2882,7 +2882,7 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, EmptyPropertyPriorityIsRem
     ECPropertyCP ecProp = ecClass->GetPropertyP("propWithPriority");
     CheckForPropertyPriorityCALocally(ecProp, true);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
 
     ECClassCP afterConv = schema->GetClassCP("A");
@@ -2921,7 +2921,7 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, LocallyDefinedPropertyPrio
     ECPropertyCP ecProp = ecClass->GetPropertyP("propWithPriority");
     CheckForPropertyPriorityCALocally(ecProp, true);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
 
     ECClassCP afterConv = schema->GetClassCP("A");
@@ -2954,7 +2954,7 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, LocallyDefinedPropertyPrio
     ECPropertyCP ecProp = ecClass->GetPropertyP("propWithPriority");
     CheckForPropertyPriorityCALocally(ecProp, true);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
 
     ECClassCP afterConv = schema->GetClassCP("A");
@@ -3007,7 +3007,7 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityOverride)
     ECPropertyCP propB = classB->GetPropertyP("propWithPriority");
     CheckForPropertyPriorityCALocally(propB, true);
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
 
     ECClassCP afterConvClassA = schema->GetClassCP("A");
@@ -3060,7 +3060,7 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityInherited)
     CheckForPropertyPriorityCALocally(propB, false);
     }
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size());
 
     {
@@ -3137,7 +3137,7 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityInherited_
     CheckForPropertyPriorityCALocally(propB, false);
     }
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     EXPECT_EQ(1, schema->GetReferencedSchemas().size()); //CoreCustomAttributes schema referenced for new Supplemental info
 
     {
@@ -3333,7 +3333,7 @@ void verifyHiddenSchemaAppliedCorrectly(Utf8CP schemaXml)
     ASSERT_TRUE(schema.IsValid());
     EXPECT_EQ(1, schema->GetReferencedSchemas().size());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
 
     IECInstancePtr hiddenSchemaCA = schema->GetCustomAttribute("CoreCustomAttributes", "HiddenSchema");
     if (schema->GetDescription().Equals("Hide"))
@@ -3672,7 +3672,7 @@ TEST_F(RelationshipConversionTest, BaseClassHasConstraintClasses)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     ECClassCP ecClass = schema->GetClassCP("DerivedARelB");
     ECRelationshipClassCP derivedRelClass = ecClass->GetRelationshipClassCP();
     EXPECT_EQ(1, derivedRelClass->GetSource().GetConstraintClasses().size());
@@ -3716,7 +3716,7 @@ TEST_F(RelationshipConversionTest, BaseClassHasConstraintClasses)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
     ECClassCP ecClass = schema->GetClassCP("DerivedARelB");
     ECRelationshipClassCP derivedRelClass = ecClass->GetRelationshipClassCP();
     EXPECT_EQ(2, derivedRelClass->GetSource().GetConstraintClasses().size());
@@ -4022,7 +4022,7 @@ TEST_F(CustomAttributeRemovalTest, RemoveCustomAttrsInSchemaConversionWithDiffPr
     auto context = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(schema, schemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert Schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert Schema";
     verifyCAs(*schema.get(), {"XpathDGMapperProperty", "DataGroupCatalogInstanceNameProperty", "DGPropTypeMapperProperty", "DataGroupClassNameProperty", "DGExtendedType"}, {"OtherCA"});
     }
 
