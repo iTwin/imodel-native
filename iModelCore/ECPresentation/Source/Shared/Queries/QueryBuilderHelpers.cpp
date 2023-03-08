@@ -135,6 +135,36 @@ void QueryBuilderHelpers::Limit(PresentationQueryBuilder& query, uint64_t limit,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBuilderPtr QueryBuilderHelpers::GetInstanceKeysQuery(PresentationQueryBuilderCR sourceNavigationQuery)
+    {
+    if (sourceNavigationQuery.AsComplexQueryBuilder())
+        return sourceNavigationQuery.GetContract()->AsNavigationQueryContract()->GetInstanceKeysSelectQuery().Clone();
+
+    if (sourceNavigationQuery.AsUnionQueryBuilder())
+        {
+        return UnionQueryBuilder::Create(ContainerHelpers::TransformContainer<bvector<PresentationQueryBuilderPtr>>(
+            sourceNavigationQuery.AsUnionQueryBuilder()->GetQueries(),
+            [](auto const& query)
+                {
+                return GetInstanceKeysQuery(*query);
+                })
+            );
+        }
+
+    if (sourceNavigationQuery.AsExceptQueryBuilder())
+        {
+        return ExceptQueryBuilder::Create(
+            *GetInstanceKeysQuery(*sourceNavigationQuery.AsExceptQueryBuilder()->GetBase()),
+            *GetInstanceKeysQuery(*sourceNavigationQuery.AsExceptQueryBuilder()->GetExcept())
+            );
+        }
+
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Unexpected query type");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ComplexQueryBuilder> QueryBuilderHelpers::CreateNestedQuery(PresentationQueryBuilder& innerQuery)
     {
     RefCountedPtr<ComplexQueryBuilder> query = ComplexQueryBuilder::Create();
@@ -715,7 +745,7 @@ private:
             pathQuery->SelectContract(*contract, targetClassAlias.c_str())
                 .From(selectClass)
                 .Join(path.m_path)
-                .Where(Utf8PrintfString("[%s].[ECInstanceId] = %s", selectClass.GetAlias().c_str(), m_ecInstanceIdField->GetSelectClause(m_selectClass.GetAlias().c_str()).GetClause().c_str()).c_str(), {});
+                .Where(Utf8PrintfString("[%s].[ECInstanceId] = %s", selectClass.GetAlias().c_str(), m_ecInstanceIdField->GetSelectClause(m_selectClass.GetAlias().c_str()).GetClause().c_str()).c_str(), BoundQueryValuesList());
             QueryBuilderHelpers::SetOrUnion(query, *pathQuery);
             }
         if (query.IsValid())

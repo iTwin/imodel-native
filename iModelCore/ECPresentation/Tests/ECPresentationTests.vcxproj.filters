@@ -376,6 +376,9 @@
     <ClCompile Include="NonPublished\Integration\Content\Content_Filtering.cpp">
       <Filter>Integration\Content</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_Limiting.cpp">
+      <Filter>Integration\Hierarchies</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\Helpers\ECDbTestProject.h">

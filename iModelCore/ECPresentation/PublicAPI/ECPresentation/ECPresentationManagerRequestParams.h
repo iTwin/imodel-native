@@ -78,6 +78,7 @@ private:
     NavNodeKeyCPtr m_parentNodeKey;
     NavNodeCPtr m_parentNode;
     std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
+    Nullable<size_t> m_limit;
 public:
     //! Root nodes request
     HierarchyRequestParams(RequestWithRulesetParams const& rulesetParams)
@@ -115,6 +116,8 @@ public:
     void SetParentNodeKey(NavNodeKeyCP value) {m_parentNodeKey = value; m_parentNode = nullptr;}
     std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
     void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
+    Nullable<size_t> const& GetLimit() const {return m_limit;}
+    void SetLimit(Nullable<size_t> value) {m_limit = value;}
 };
 
 //=======================================================================================

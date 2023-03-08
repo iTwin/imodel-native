@@ -9,6 +9,7 @@
 #include <ECPresentation/Content.h>
 #include <ECPresentation/ContentFieldEditors.h>
 #include <ECPresentation/Update.h>
+#include <ECPresentation/PresentationQuery.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 

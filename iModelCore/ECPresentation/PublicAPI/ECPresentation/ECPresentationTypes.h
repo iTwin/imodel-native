@@ -6,7 +6,6 @@
 
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/Diagnostics.h>
-#include <ECPresentation/PresentationQuery.h>
 
 ECPRESENTATION_TYPEDEFS(ECPresentationManager)
 
@@ -538,6 +537,7 @@ public:
     PossiblyApproximate(TValue value, bool isApproximate)
         : m_value(value), m_isApproximate(isApproximate)
         {}
+    bool operator==(PossiblyApproximate const& other) const {return m_value == other.m_value && m_isApproximate == other.m_isApproximate;}
     TValue const& GetValue() const {return m_value;}
     bool IsApproximate() const {return m_isApproximate;}
 };
