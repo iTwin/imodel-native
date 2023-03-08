@@ -1,14 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: vendor/config.h $
-|    $RCSfile: HIERasterReference.cpp,v $
-|   $Revision: 1.207 $
-|       $Date: 2011/01/18 15:06:27 $
-|     $Author: Marc.Bedard $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 
 //This is a wrapper file that includes that define config for a visual studio compilation. We kept the original extension(.in) to 

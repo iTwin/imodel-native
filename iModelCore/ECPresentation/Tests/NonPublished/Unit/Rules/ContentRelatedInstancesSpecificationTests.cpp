@@ -28,7 +28,7 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJsonDeprecated)
         "instanceFilter": "this.PropertyName = 10",
         "isRecursive": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     ContentRelatedInstancesSpecification spec;
@@ -65,7 +65,7 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJson)
             "targetClass": {"schemaName": "s", "className": "t"}
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     ContentRelatedInstancesSpecification spec;
@@ -101,7 +101,7 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadsFromJsonWithDefaultValues
             "direction": "Forward"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentRelatedInstancesSpecification spec;
@@ -121,8 +121,8 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadsFromJsonWithDefaultValues
 TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJsonDeprecated)
     {
     ContentRelatedInstancesSpecification spec(123, 3, true, "filter", RequiredRelationDirection_Backward, "s1:c1", "E:s2:c2");
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "ContentRelatedInstances",
         "priority": 123,
         "skipRelatedLevel": 3,
@@ -132,7 +132,7 @@ TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJsonDeprecated)
         "relationships": {"schemaName": "s1", "classNames": ["c1"]},
         "relatedClasses": {"schemaName": "s2", "classNames": ["E:c2"]}
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,8 +141,8 @@ TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJsonDeprecated)
 TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJson)
     {
     ContentRelatedInstancesSpecification spec(123, true, "filter", {new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2", 5))});
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "ContentRelatedInstances",
         "priority": 123,
         "onlyIfNotHandled": true,
@@ -154,7 +154,7 @@ TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJson)
             "count": 5
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

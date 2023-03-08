@@ -34,7 +34,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonDeprecated)
         }],
         "autoExpand": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -86,7 +86,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
         "relationshipProperties": ["Relationship", "Properties"],
         "forceCreateRelationshipCategory": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -140,7 +140,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithSpecifiedPropertie
             "name": "RelProp2"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -186,7 +186,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithPropertiesSortedBy
             "name": "RP4"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -222,7 +222,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithSpecifiedPropertie
             {"name": "RelProp"}
         ]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -248,7 +248,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithEmptyPropertiesSpe
         "properties": [],
         "relationshipProperties": []
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -270,7 +270,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithNonePropertiesSpec
         "properties": "_none_",
         "relationshipProperties": "_none_"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -292,7 +292,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithAllPropertiesSpec)
         "properties": "*",
         "relationshipProperties": "*"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -314,7 +314,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithSpecifiedDeprecate
         },
         "propertyNames": ["Prop1", "Prop2"]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -336,7 +336,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithEmptyDeprecatedPro
         },
         "propertyNames": []
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -356,7 +356,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithNoneDeprecatedProp
         },
         "propertyNames": "_none_"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -375,7 +375,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
             "direction": "Forward"
         }
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedPropertiesSpecification spec;
@@ -401,8 +401,8 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonDeprecated)
     PropertySpecificationsList list =  {new PropertySpecification("p1"), new PropertySpecification(Utf8String("p2"))};
     RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", list,
         RelationshipMeaning::SameInstance, true, true);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "requiredDirection": "Backward",
         "relationships": {"schemaName": "s1", "classNames": ["c1"]},
         "relatedClasses": {"schemaName": "s2", "classNames": ["c2", "c3"]},
@@ -415,7 +415,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonDeprecated)
         "handleTargetClassPolymorphically": true,
         "autoExpand": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -428,8 +428,8 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
         {new PropertySpecification("rp1"), new PropertySpecification("rp2")}, true);
     spec.SetInstanceFilter("xxx");
     spec.SetSkipIfDuplicate(true);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "propertiesSource": {
             "relationship": {"schemaName": "s1", "className": "c1"},
             "direction": "Backward",
@@ -452,7 +452,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
         }],
         "forceCreateRelationshipCategory": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -509,11 +509,11 @@ TEST_F(RelatedPropertiesSpecificationsTests, AddsRelationshipPropertiesSortedByO
 TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithNoPropertiesIncluded)
     {
     RelatedPropertiesSpecification spec;
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "properties": "_none_"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,10 +524,10 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithAllPropertiesInclude
     RelatedPropertiesSpecification spec;
     auto propSpec = new PropertySpecification("*");
     spec.AddProperty(*propSpec);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -537,11 +537,11 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithAllIncludedPropertie
     {
     RelatedPropertiesSpecification spec;
     spec.AddProperty(*new PropertySpecification("*", 2000, "newLabel"));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "properties": [{"name": "*", "overridesPriority": 2000, "labelOverride": "newLabel"}]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -552,12 +552,12 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithAllRelationshipPrope
     RelatedPropertiesSpecification spec;
     auto relPropSpec = new PropertySpecification("*");
     spec.AddRelationshipProperty(*relPropSpec);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "properties": "_none_",
         "relationshipProperties": "*"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,12 +567,12 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithAllIncludedRelations
     {
     RelatedPropertiesSpecification spec;
     spec.AddRelationshipProperty(*new PropertySpecification("*", 2000, "newLabel"));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "properties": "_none_",
         "relationshipProperties": [{"name": "*", "overridesPriority": 2000, "labelOverride": "newLabel"}]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -28,7 +28,7 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJson)
         "supportedSchemas": {"schemaNames": ["TestSchema"]},
         "suppressSimilarAncestorsCheck": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     AllInstanceNodesSpecification spec;
@@ -48,7 +48,7 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "specType": "AllInstanceNodes"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     AllInstanceNodesSpecification spec;
@@ -68,8 +68,8 @@ TEST_F(AllInstanceNodesSpecificationTests, WriteToJson)
     AllInstanceNodesSpecification spec(1000, true, true, true, true, true, "SupportedSchema");
     spec.SetSuppressSimilarAncestorsCheck(true);
     spec.SetHideExpression("hide expr");
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "AllInstanceNodes",
         "hasChildren": "Always",
         "hideNodesInHierarchy": true,
@@ -78,7 +78,7 @@ TEST_F(AllInstanceNodesSpecificationTests, WriteToJson)
         "suppressSimilarAncestorsCheck": true,
         "supportedSchemas": {"schemaNames": ["SupportedSchema"]}
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

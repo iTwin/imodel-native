@@ -80,7 +80,7 @@ Utf8CP RelatedInstanceSpecification::_GetJsonElementType() const { return "Relat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceSpecification::_ReadJson(JsonValueCR json)
+bool RelatedInstanceSpecification::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -126,10 +126,10 @@ bool RelatedInstanceSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceSpecification::_WriteJson(JsonValueR json) const
+void RelatedInstanceSpecification::_WriteJson(BeJsValue json) const
     {
     PresentationKey::_WriteJson(json);
-    json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPATH] = m_relationshipPath.WriteJson();
+    m_relationshipPath.WriteJson(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPATH]);
     json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS] = m_alias;
     if (m_isRequired)
         json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED] = m_isRequired;

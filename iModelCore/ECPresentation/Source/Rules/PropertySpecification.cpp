@@ -66,7 +66,7 @@ Utf8CP PropertySpecification::_GetJsonElementType() const { return "PropertySpec
 * note: this is only needed to support deprecated PropertyEditorsSpecification
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertySpecification::ReadEditorSpecificationJson(JsonValueCR json)
+bool PropertySpecification::ReadEditorSpecificationJson(BeJsConst json)
     {
     // required:
     m_propertyName = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME].asCString();
@@ -83,7 +83,7 @@ bool PropertySpecification::ReadEditorSpecificationJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertySpecification::_ReadJson(JsonValueCR json)
+bool PropertySpecification::_ReadJson(BeJsConst json)
     {
     if (!T_Super::_ReadJson(json))
         return false;
@@ -136,7 +136,7 @@ bool PropertySpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertySpecification::_WriteJson(JsonValueR json) const
+void PropertySpecification::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
     json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_NAME] = m_propertyName;
@@ -158,11 +158,11 @@ void PropertySpecification::_WriteJson(JsonValueR json) const
     if (m_priority.IsValid())
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_PRIORITY] = m_priority.Value();
     if (nullptr != m_rendererOverride)
-        json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_RENDERER] = m_rendererOverride->WriteJson();
+        m_rendererOverride->WriteJson(json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_RENDERER]);
     if (nullptr != m_editorOverride)
-        json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_EDITOR] = m_editorOverride->WriteJson();
+        m_editorOverride->WriteJson(json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_EDITOR]);
     if (m_categoryId)
-        json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID] = m_categoryId->WriteJson();
+        m_categoryId->WriteJson(json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID]);
     }
 
 /*---------------------------------------------------------------------------------**//**

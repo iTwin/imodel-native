@@ -60,7 +60,7 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJson)
         "specType": "SameLabelInstance",
         "applicationStage": "PostProcess"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SameLabelInstanceGroup rule;
@@ -76,7 +76,7 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "specType": "SameLabelInstance"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SameLabelInstanceGroup rule;
@@ -92,12 +92,12 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJsonWithDefaultValues)
 TEST_F(GroupingRuleTests, SameLabelInstanceGroup_WriteToJson)
     {
     SameLabelInstanceGroup rule(SameLabelInstanceGroupApplicationStage::PostProcess);
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "SameLabelInstance",
         "applicationStage": "PostProcess"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,7 +162,7 @@ TEST_F(GroupingRuleTests, ClassGroup_LoadsFromJson)
         "createGroupForSingleItem": true,
         "baseClass": {"schemaName": "TestSchema", "className": "TestClass"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ClassGroup rule;
@@ -182,7 +182,7 @@ TEST_F(GroupingRuleTests, ClassGroup_LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "specType": "Class"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ClassGroup rule;
@@ -200,13 +200,13 @@ TEST_F(GroupingRuleTests, ClassGroup_LoadsFromJsonWithDefaultValues)
 TEST_F(GroupingRuleTests, ClassGroup_WriteToJson)
     {
     ClassGroup rule("", "true", "s", "c");
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "Class",
         "createGroupForSingleItem": true,
         "baseClass": {"schemaName": "s", "className": "c"}
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -278,7 +278,7 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadsFromJson)
         "label": "label",
         "imageId": "imgId"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyRangeGroupSpecification rule;
@@ -298,7 +298,7 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadsFromJsonWithDefau
         "fromValue": "fromValue",
         "toValue": "toValue"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyRangeGroupSpecification rule;
@@ -317,7 +317,7 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromJsonFailsWhenF
     static Utf8CP jsonString = R"({
         "toValue": "toValue"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyRangeGroupSpecification rule;
@@ -332,7 +332,7 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromJsonFailsWhenT
     static Utf8CP jsonString = R"({
         "fromValue": "fromValue"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyRangeGroupSpecification rule;
@@ -345,14 +345,14 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromJsonFailsWhenT
 TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_WriteToJson)
     {
     PropertyRangeGroupSpecification rule("label", "imageid", "f", "t");
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "label": "label",
         "imageId": "imageid",
         "fromValue": "f",
         "toValue": "t"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -465,7 +465,7 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadsFromJson)
             "imageId": "imgId"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyGroup rule;
@@ -488,7 +488,7 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadsFromJsonWithDefaultValues)
         "specType": "Property",
         "propertyName": "property"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyGroup rule;
@@ -510,7 +510,7 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadFromJsonFailsWhenPropertyNameIsNorSp
     static Utf8CP jsonString = R"({
         "specType": "Property"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyGroup rule;
@@ -527,7 +527,7 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadFromJsonAssertsWhenPropertyGroupingV
         "propertyName": "property",
         "groupingValue": "InvalidValue"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyGroup rule;
@@ -545,8 +545,8 @@ TEST_F(GroupingRuleTests, PropertyGroup_WriteToJson)
     rule.SetCreateGroupForUnspecifiedValues(true);
     rule.SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
     rule.AddRange(*new PropertyRangeGroupSpecification("range", "", "f", "t"));
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "Property",
         "createGroupForSingleItem": true,
         "propertyName": "prop",
@@ -559,7 +559,7 @@ TEST_F(GroupingRuleTests, PropertyGroup_WriteToJson)
             "toValue": "t"
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -686,7 +686,7 @@ TEST_F(GroupingRuleTests, LoadsFromJson)
             "baseClass": {"schemaName": "TestSchema", "className": "TestClass"}
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     GroupingRule rule;
@@ -705,7 +705,7 @@ TEST_F(GroupingRuleTests, LoadFromJsonWithDefaultValues)
         "ruleType": "Grouping",
         "class": {"schemaName": "TestSchema", "className": "TestClass"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     GroupingRule rule;
@@ -727,7 +727,7 @@ TEST_F(GroupingRuleTests, LoadFromJsonFailsWhenClassNameIsNotSpecified)
         "ruleType": "Grouping",
         "class": {"schemaName": "TestSchema"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     GroupingRule rule;
@@ -743,7 +743,7 @@ TEST_F(GroupingRuleTests, LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
         "ruleType": "Grouping",
         "class": {"className": "TestClass"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     GroupingRule rule;
@@ -759,8 +759,8 @@ TEST_F(GroupingRuleTests, WriteToJson)
     rule.AddGroup(*new SameLabelInstanceGroup());
     rule.AddGroup(*new ClassGroup());
     rule.AddGroup(*new PropertyGroup());
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "Grouping",
         "priority": 123,
         "onlyIfNotHandled": true,
@@ -775,7 +775,7 @@ TEST_F(GroupingRuleTests, WriteToJson)
             "propertyName": ""
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

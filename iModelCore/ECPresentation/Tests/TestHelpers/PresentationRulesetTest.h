@@ -21,7 +21,7 @@ private:
     ECPresentationManager* m_presentationManager;
     ECDb* m_db;
     ECPresentation::Tests::IssueReporter m_issueReporter;
-    RuntimeJsonLocalState m_localState;
+    JsonLocalState m_localState;
 
     //! Compare a node we read from the BIM file with the corresponding node in the JSON expected output file
     //! The last 3 arguments are used to recursively call the function on the node's children
@@ -32,7 +32,7 @@ private:
     //! @param[in] presentationManager The presentationManager used to navigate the DgnDb
     //! @param[in] rulesetParams Params for the tested ruleset
     //! @return the number of errors encountered in the comparison. Any errors will be logged
-    int CheckNode(NavNodeCR node, JsonValueCR tree, int index, ECPresentationManager* presentationManager,
+    int CheckNode(NavNodeCR node, BeJsConst tree, int index, ECPresentationManager* presentationManager,
         RequestWithRulesetParams const& rulesetParams);
 
 public:
@@ -62,21 +62,21 @@ public:
     //! @param[in] rulesetId The rulesetId used to find the Presentation Rule Set in the designated folder
     //! @param[in] treeFile The expected output in JSON format
     //! @return the number of errors encountered during the comparison
-    int ValidateTree(Utf8CP rulesetId, JsonValueCR treeFile);
+    int ValidateTree(Utf8CP rulesetId, BeJsConst treeFile);
 
-    //! Create a JSON file from a Json::Value
-    //! @param[in] jsonValue The Json::Value to be read into the file
+    //! Create a JSON file from a BeJsConst
+    //! @param[in] jsonValue The BeJsConst to be read into the file
     //! @param[in] fileName The name of the file to be written to
-    int GenerateJsonFile(JsonValueCR jsonValue, BeFileNameCR fileName);
+    int GenerateJsonFile(BeJsConst jsonValue, BeFileNameCR fileName);
 
     //! Generates the JSON Value of a NavNode to be used in the creation of a JSON Value of an entire ruleset
     //! @param[in] node The NavNode that the output JSON Value is to be created from
     //! @param[in] options The current set of options which determine the state for the JSON Value to be based in
-    Json::Value CreateJsonNode(NavNodeCPtr node, RequestWithRulesetParams const& options);
+    void WriteCreateJsonNode(BeJsValue jsonNode, NavNodeCPtr node, RequestWithRulesetParams const& options);
 
     //! Create a JSON Value based on a given rulset
     //! @param[in] rulesetId The name of the rulseset to be used
-    Json::Value ExportJson(Utf8CP rulesetId);
+    BeJsDocument ExportJson(Utf8CP rulesetId);
 
     //! Set ECDb to use for testing
     void SetECDb(ECDbR db);
@@ -95,7 +95,7 @@ public:
 
     //! Read json from a file, this method is similar to IJsonConfigurationReader::Read
     //! method in DgnClientFx/ConfigurableUI/Configurable.h
-    BentleyStatus ReadJsonFromFile(BeFileNameCR configurationFilePath, JsonValueR configuration);
+    BentleyStatus ReadJsonFromFile(BeFileNameCR configurationFilePath, BeJsDocument& configuration);
 };
 
 //=======================================================================================
@@ -141,7 +141,7 @@ public:
     //! @param[in] datasetName The datasetName used to find the Dataset in designated folder
     //! @param[in] treeFile The expected output in JSON format
     //! @return the number of errors encountered during the comparison
-    int ValidateTree(Utf8CP rulesetId, Utf8CP datasetName, JsonValueCR treeFile);
+    int ValidateTree(Utf8CP rulesetId, Utf8CP datasetName, BeJsConst treeFile);
 
     //! Gets the UserSettingsManager for a given ruleset
     //! @param[in] rulesetId The name of the rulseset to be used

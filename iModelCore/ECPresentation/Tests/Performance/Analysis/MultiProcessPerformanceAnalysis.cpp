@@ -202,8 +202,8 @@ struct MultiProcessPerformanceAnalysis : RulesEnginePerformanceAnalysisTests
         m_reporter = std::make_unique<Reporter>();
         }
 
-    void TearDown() override {RulesEnginePerformanceAnalysisTests::TearDown();}
-    Reporter& _GetCsvReporter() {return *m_aggregateReporter;}
+    void TearDown() override { RulesEnginePerformanceAnalysisTests::TearDown(); }
+    Reporter& _GetCsvReporter() { return *m_aggregateReporter; }
 
     void LoadConfiguration();
     BentleyStatus OpenProject();
@@ -222,7 +222,7 @@ struct MultiProcessPerformanceAnalysis : RulesEnginePerformanceAnalysisTests
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String ParseProjectFileNameFromJson(Json::Value& json)
+static Utf8String ParseProjectFileNameFromJson(BeJsConst json)
     {
     if (!json.hasMember("imodel") || !json["imodel"].isString())
         return DEFAULT_PROJECT_FILE_NAME;
@@ -233,24 +233,24 @@ static Utf8String ParseProjectFileNameFromJson(Json::Value& json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<TestCase> ParseTestCasesFromJson(Json::Value& json)
+static bvector<TestCase> ParseTestCasesFromJson(BeJsConst json)
     {
     static bvector<TestCase> s_defaultTestCases = { TestCase(1,1),TestCase(1,4),TestCase(4,1),TestCase(4,4) };
     if (!json.hasMember("testCases") || !json["testCases"].isArray())
         return s_defaultTestCases;
 
     bvector<TestCase> testCases;
-    Json::Value& testCasesJson = json["testCases"];
-    for (auto iter = testCasesJson.begin(); iter != testCasesJson.end(); iter++)
+    BeJsConst testCasesJson = json["testCases"];
+    testCasesJson.ForEachArrayMember(
+        [&testCases](BeJsConst::ArrayIndex i, BeJsConst testCaseJson)
         {
-        Json::Value& testCaseJson = *iter;
         int managersCount = testCaseJson["managersCount"].asInt();
         int threadsCount = testCaseJson["threadsCount"].asInt();
         if (threadsCount == 0 || managersCount == 0)
-            continue;
+            return false;
         testCases.push_back(TestCase(managersCount, threadsCount));
-        }
-
+        return false;
+        });
     return testCases.empty() ? s_defaultTestCases : testCases;
     }
 
@@ -265,7 +265,7 @@ void MultiProcessPerformanceAnalysis::LoadConfiguration()
     Utf8String jsonString;
     PresentationManagerTestsHelper::ReadFileContent(configFilePath, jsonString);
 
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     m_config.m_projectFileName = ParseProjectFileNameFromJson(json);
     m_config.m_testCases = ParseTestCasesFromJson(json);
     }
@@ -421,7 +421,7 @@ folly::Future<folly::Unit> MultiProcessPerformanceAnalysis::GetNodesPaged(ECPres
     return PresentationManagerTestsHelper::GatAllNodesPaged(manager, params, NODES_PAGE_SIZE, [&metrics](int pageIndex, double pageTime, double countTime)
         {
         metrics.ReportPageLoad(pageIndex, pageTime, countTime);
-        }).then([timer, &metrics]() {metrics.ReportTotalTime(timer->GetCurrentSeconds());});
+        }).then([timer, &metrics]() {metrics.ReportTotalTime(timer->GetCurrentSeconds()); });
     }
 
 /*---------------------------------------------------------------------------------**//**

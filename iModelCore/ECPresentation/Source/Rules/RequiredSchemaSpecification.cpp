@@ -18,7 +18,7 @@ Utf8CP RequiredSchemaSpecification::_GetJsonElementType() const { return "Requir
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RequiredSchemaSpecification::_ReadJson(JsonValueCR json)
+bool RequiredSchemaSpecification::_ReadJson(BeJsConst json)
     {
     if (!T_Super::_ReadJson(json))
         return false;
@@ -37,7 +37,7 @@ bool RequiredSchemaSpecification::_ReadJson(JsonValueCR json)
         else
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MINVERSION, json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MINVERSION].ToString().c_str(),
+                _GetJsonElementType(), REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MINVERSION, json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MINVERSION].Stringify().c_str(),
                 "version string in format {read version}.{write version}.{minor version}"));
             }
         }
@@ -49,7 +49,7 @@ bool RequiredSchemaSpecification::_ReadJson(JsonValueCR json)
         else
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-                _GetJsonElementType(), REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MAXVERSION, json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MAXVERSION].ToString().c_str(),
+                _GetJsonElementType(), REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MAXVERSION, json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MAXVERSION].Stringify().c_str(),
                 "version string in format {read version}.{write version}.{minor version}"));
             }
         }
@@ -60,7 +60,7 @@ bool RequiredSchemaSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RequiredSchemaSpecification::_WriteJson(JsonValueR json) const
+void RequiredSchemaSpecification::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
     json[REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_NAME] = m_name;

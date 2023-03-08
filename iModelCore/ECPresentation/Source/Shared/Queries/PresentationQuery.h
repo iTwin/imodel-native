@@ -358,10 +358,10 @@ public:
         }
     Utf8String ToString() const
         {
-        Json::Value json;
+        BeJsDocument json;
         for (auto const& query : m_queries)
-            json.append(query->GetQuery()->GetQueryString());
-        return json.toStyledString();
+            json[json.size()] = query->GetQuery()->GetQueryString();
+        return json.Stringify();
         }
 };
 

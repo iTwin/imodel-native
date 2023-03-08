@@ -73,7 +73,7 @@ Utf8CP StyleOverride::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool StyleOverride::_ReadJson(JsonValueCR json)
+bool StyleOverride::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;
@@ -87,7 +87,7 @@ bool StyleOverride::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StyleOverride::_WriteJson(JsonValueR json) const
+void StyleOverride::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_foreColor.empty())

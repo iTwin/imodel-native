@@ -28,7 +28,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJson)
         "instanceFilter": "filter"
     })";
 
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     InstanceNodesOfSpecificClassesSpecification spec;
@@ -71,7 +71,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJsonWithSpecif
         "arePolymorphic": true
     })";
 
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     InstanceNodesOfSpecificClassesSpecification spec;
@@ -97,7 +97,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDefaul
         "specType": "InstanceNodesOfSpecificClasses",
         "classes": {"schemaName": "TestSchema", "classNames": ["TestClass"]}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     InstanceNodesOfSpecificClassesSpecification spec;
@@ -120,7 +120,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsExcludedClassesFro
         "classes": {"schemaName": "A", "classNames": ["A1"]},
         "excludedClasses": {"schemaName": "ExcludedTestSchema", "classNames": ["ExcludedTestClass"]}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     InstanceNodesOfSpecificClassesSpecification spec;
@@ -137,7 +137,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJsonFailsWhenC
     static Utf8CP jsonString = R"({
         "specType": "InstanceNodesOfSpecificClasses"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     InstanceNodesOfSpecificClassesSpecification spec;
@@ -159,8 +159,8 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, WriteToJson)
             new MultiSchemaClass("es2", false, bvector<Utf8String> {"ec3"})
         });
 
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "InstanceNodesOfSpecificClasses",
         "priority": 456,
         "hasChildren": "Always",
@@ -177,7 +177,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, WriteToJson)
         "instanceFilter": "filter"
     })");
 
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

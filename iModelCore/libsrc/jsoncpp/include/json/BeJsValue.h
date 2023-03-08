@@ -913,6 +913,13 @@ public:
     BeJsDocument(Utf8CP jsonString) : BeJsDocument() { Parse(jsonString); }
     // construct a BeJsDocument initialized from stringified JSON
     BeJsDocument(std::string const& jsonString) : BeJsDocument(jsonString.c_str()) {}
+    // allow to move BeJsDocument
+    BeJsDocument& operator=(BeJsDocument&& rhs)
+        {
+        m_doc.Swap(rhs.m_doc);
+        m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator());
+        return *this;
+        }
     // replace the content of this document with the parsed value of stringified JSON
     void Parse(Utf8CP jsonString) { m_doc.Parse(jsonString); }
     // replace the content of this document with the parsed value of stringified JSON
