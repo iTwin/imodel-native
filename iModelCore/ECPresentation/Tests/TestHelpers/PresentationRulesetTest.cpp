@@ -113,7 +113,7 @@ int PresentationRulesetTester::CheckNode(NavNodeCR node, BeJsConst tree, int ind
         if (jsonChildSize != nodeChildSize)
             {
             GetIssueReporter().Report("Error validating tree: Different number of child nodes. jsonNodes: %d, DgnDb nodes: %d \nExpected nodes: \n", static_cast<int>(jsonChildSize), static_cast<int>(nodeChildSize));
-            for (Json::ArrayIndex jsonChildIndex = 0; jsonChildIndex < jsonChildSize; jsonChildIndex++)
+            for (BeJsConst::ArrayIndex jsonChildIndex = 0; jsonChildIndex < jsonChildSize; jsonChildIndex++)
                 {
                 GetIssueReporter().Report("\t%s \n", (childArray[jsonChildIndex].hasMember("Label") ? childArray[jsonChildIndex]["Label"] : BeJsDocument::Null()).asString().c_str());
                 }
