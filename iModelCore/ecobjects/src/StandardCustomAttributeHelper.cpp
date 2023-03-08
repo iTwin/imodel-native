@@ -222,73 +222,154 @@ IECInstancePtr CoreCustomAttributeHelper::CreateCustomAttributeInstance(ECSchema
     return enabler->CreateInstance().get();
     }
 
-const Utf8CP kConvSchemaName = "ECv3ConversionAttributes";
-const Utf8CP kRenamedAccessor = "RenamedPropertiesMapping";
-const Utf8CP kOldUnitAccessor = "OldPersistenceUnit";
-const Utf8CP kOldDerivedClasses = "OldDerivedClasses";
-const Utf8CP kIsFlattened = "IsFlattened";
+//*********************** ConversionCustomAttributesSchemaHolder *************************************
 
-const uint32_t kConvVersionRead = 1;
-const uint32_t kConvVersionMinor = 0;
+//=======================================================================================
+//! Helper class to hold the ECv3ConversionAttributes schema
+//! The primary use-case is to facilitate adding the PropertyRenamed CA to an ECProperty
+//! for Instance transformation.
+//! @bsiclass
+//=======================================================================================
+struct ConversionCustomAttributesSchemaHolder
+    {
+    const Utf8CP s_convSchemaName = "ECv3ConversionAttributes";
+    const Utf8CP s_renamedAccessor = "RenamedPropertiesMapping";
+    const Utf8CP s_oldUnitAccessor = "OldPersistenceUnit";
+    const Utf8CP s_oldDerivedClasses = "OldDerivedClasses";
+    const Utf8CP s_isFlattened = "IsFlattened";
 
-ECSchemaPtr ConversionCustomAttributeHelper::s_schema = nullptr;
-//*********************** ConversionCustomAttributeHelper *************************************
+    const uint32_t s_convVersionRead = 1;
+    const uint32_t s_convVersionMinor = 0;
+
+    private:
+        ECSchemaPtr m_schema;
+        bmap<Utf8String, StandaloneECEnablerPtr> m_enablers;
+
+        ConversionCustomAttributesSchemaHolder();
+        ECSchemaPtr _GetSchema() {return m_schema;}
+        IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
+        bool Initialize();
+
+    public:
+        static ConversionCustomAttributesSchemaHolder* GetHolder();
+        static bool HasHolder() { return true; }
+        static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
+        static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute) {return GetHolder()->_CreateCustomAttributeInstance(attribute);}
+        void Reset();
+    };
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSchemaPtr ConversionCustomAttributeHelper::_GetSchema()
+ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
     {
-    if (s_schema == nullptr)
+    Initialize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ConversionCustomAttributesSchemaHolder::Initialize()
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetCalculateChecksum(true);
+    SchemaKey key(s_convSchemaName, s_convVersionRead, s_convVersionMinor);
+
+    m_schema = ECSchema::LocateSchema(key, *schemaContext);
+    if (!m_schema.IsValid())
         {
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-        schemaContext->SetCalculateChecksum(true);
-        SchemaKey key(kConvSchemaName, kConvVersionRead, kConvVersionMinor);
-        s_schema = ECSchema::LocateSchema(key, *schemaContext);
-        }
-    return s_schema;
+        LOG.errorv("Could not load the standard schema '%s'", s_convSchemaName);
+        return false;
+    }
+
+    ECClassP metaDataClass = m_schema->GetClassP(s_renamedAccessor);
+    StandaloneECEnablerPtr enabler;
+    if (nullptr != metaDataClass)
+        enabler = metaDataClass->GetDefaultStandaloneEnabler();
+
+    m_enablers.Insert(s_renamedAccessor, enabler);
+
+    ECClassP oldUnitClass = m_schema->GetClassP(s_oldUnitAccessor);
+    StandaloneECEnablerPtr oldUnitEnabler;
+    if (nullptr != oldUnitClass)
+        oldUnitEnabler = oldUnitClass->GetDefaultStandaloneEnabler();
+    m_enablers.Insert(s_oldUnitAccessor, oldUnitEnabler);
+
+    ECClassP oldDerivedClass = m_schema->GetClassP(s_oldDerivedClasses);
+    StandaloneECEnablerPtr oldDerivedEnabler;
+    if (nullptr != oldDerivedClass)
+        oldDerivedEnabler = oldDerivedClass->GetDefaultStandaloneEnabler();
+    m_enablers.Insert(s_oldDerivedClasses, oldDerivedEnabler);
+
+    ECClassP isFlattened = m_schema->GetClassP(s_isFlattened);
+    StandaloneECEnablerPtr isFlattenedEnabler;
+    if (nullptr != isFlattened)
+        isFlattenedEnabler = isFlattened->GetDefaultStandaloneEnabler();
+    m_enablers.Insert(s_isFlattened, isFlattenedEnabler);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+void ConversionCustomAttributesSchemaHolder::Reset()
+    {
+    m_schema = nullptr;
+    m_enablers.clear();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
+ConversionCustomAttributesSchemaHolder* ConversionCustomAttributesSchemaHolder::GetHolder()
     {
-    ECSchemaPtr schema = _GetSchema();
-    if (!schema.IsValid())
+    static auto s_schemaHolder = new ConversionCustomAttributesSchemaHolder();
+    return s_schemaHolder;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+IECInstancePtr ConversionCustomAttributesSchemaHolder::_CreateCustomAttributeInstance(Utf8CP attribute)
+    {
+    if (!m_schema.IsValid() && !Initialize())
         {
-        LOG.errorv("Could not load standard schema '%s'", kConvSchemaName);
+        LOG.errorv("Could not load standard schema '%s'", s_convSchemaName);
         return nullptr;
         }
 
-    if (0 != strcmp(attributeName, kRenamedAccessor) &&
-        0 != strcmp(attributeName, kOldUnitAccessor) &&
-        0 != strcmp(attributeName, kOldDerivedClasses) &&
-        0 != strcmp(attributeName, kIsFlattened))
+    auto enablerIterator = m_enablers.find(attribute);
+    if (enablerIterator == m_enablers.end())
         {
-        BeDataAssert(false && "Unknown custom attribute class name. Currently only RenamedPropertiesMapping, OldPersistenceUnit, OldDerivedClasses, and IsFlattened are supported.");
+        BeDataAssert(false && "Unknown custom attribute class name. Currently only RenamedPropertiesMapping is supported.");
+        LOG.errorv("Could not find an enabler for Custom Attribute class '%s'", attribute);
         return nullptr;
         }
 
-    ECClassP ecClass = schema->GetClassP(attributeName);
-    StandaloneECEnablerPtr enabler;
-    if (nullptr != ecClass)
-        enabler = ecClass->GetDefaultStandaloneEnabler();
-
+    StandaloneECEnablerPtr enabler = enablerIterator->second;
     if (!enabler.IsValid())
         return nullptr;
 
     return enabler->CreateInstance().get();
     }
 
+//*********************** ConversionCustomAttributeHelper *************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Utf8CP attributeName)
+    {
+    return ConversionCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-//static
 void ConversionCustomAttributeHelper::Reset()
     {
-    s_schema = nullptr;
+    ConversionCustomAttributesSchemaHolder::GetHolder()->Reset();
     }
 
 

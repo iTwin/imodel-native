@@ -40,11 +40,13 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty);
 
     //! Returns the specified CustomAttribute ECClass
+    //! @param[in] context The context to locate the Bentley_Standard_CustomAttributes schema from.
     //! @param[in] attributeName The name of the CustomAttribute ECClass
     //! @return An ECClassCP, if the attribute is found.  NULL otherwise.
     ECOBJECTS_EXPORT static ECClassCP GetCustomAttributeClass(ECSchemaReadContextR schemaContext, Utf8CP attributeName);
 
     //! Creates a custom attribute instance for the given attribute
+    //! @param[in] context The context to locate the Bentley_Standard_CustomAttributes schema from.
     //! @param[in] attributeName The name of the custom attribute to create
     //! @return An instance of the given custom attribute
     ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(ECSchemaReadContextR schemaContext, Utf8CP attributeName);
@@ -86,6 +88,7 @@ public:
     ECOBJECTS_EXPORT static BentleyStatus GetCurrentTimeStampProperty(PrimitiveECPropertyCP& currentTimeStampProp, ECClassCR ecClass);
 
     //! Returns the specified ECCustomAttributeClass from the CoreCustomAttributes schema
+    //! @param[in] context The context to locate the CoreCustomAttributes schema from.
     //! @param[in] attributeName The name of the ECCustomAttributeClass
     //! @return An ECCustomAttributeClass, if the class is found in the CoreCustomAttributes schema. Otherwise, nullptr will be returned.
     ECOBJECTS_EXPORT static ECCustomAttributeClassCP GetCustomAttributeClass(ECSchemaReadContextR schemaContext, Utf8CP attributeName);
@@ -96,9 +99,10 @@ public:
     ECOBJECTS_EXPORT static ECClassCP GetClass(ECSchemaReadContextR schemaContext, Utf8CP attributeName);
 
     //! Creates a custom attribute instance for the given custom attribute from the CoreCustomAttributes schema
-    //! @remarks The only supported custom attributes at this time are SupplementalSchemaMetaData, SupplementalProvenance, and
-    //! IsMixin. If any other custom attributes are desired, use GetCustomAttributeClass and create an instance from the resulting
+    //! @remarks The only supported custom attributes at this time are SupplementalSchemaMetaData, SupplementalProvenance, IsMixin, and
+    //! DynamicSchema. If any other custom attributes are desired, use GetCustomAttributeClass and create an instance from the resulting
     //! class.
+    //! @param[in] context The context to locate the CoreCustomAttributes schema from.
     //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
     //! @return An IECInstance of the given custom attribute name, if it is one of the supported custom attributes. Otherwise, nullptr will be returned.
     ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(ECSchemaReadContextR schemaContext, Utf8CP attributeName);
@@ -117,9 +121,6 @@ struct ConversionCustomAttributeHelper final
         //static class
         ConversionCustomAttributeHelper();
         ~ConversionCustomAttributeHelper();
-
-        static ECSchemaPtr s_schema;
-        static ECSchemaPtr _GetSchema();
 
     public:
         //! Creates a custom attribute instance for the given custom attribute from the ECv3ConversionAttributes schema
